@@ -82,7 +82,6 @@ class OptionVersionTest {
             BooleanOption.ENABLE_LEGACY_VARIANT_API,
             BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE,
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
-            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES,
             BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
             BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES,
             BooleanOption.FULL_R8,

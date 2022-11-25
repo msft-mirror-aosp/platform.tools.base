@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
@@ -184,14 +185,13 @@ enum class BooleanOption(
 
     ENFORCE_UNIQUE_PACKAGE_NAMES(
         "android.uniquePackageNames",
-        false,
+        true,
         FeatureStage.Supported,
         FutureStage(
             true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
-        )
-    ),
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )),
 
     // Flag added to work around b/130596259.
     FORCE_JACOCO_OUT_OF_PROCESS("android.forceJacocoOutOfProcess", false, FeatureStage.Supported),
