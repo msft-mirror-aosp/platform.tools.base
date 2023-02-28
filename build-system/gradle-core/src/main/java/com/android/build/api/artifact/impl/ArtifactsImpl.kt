@@ -107,14 +107,27 @@ class ArtifactsImpl(
 
   fun <FILE_TYPE : FileSystemLocation> get(type: Single<FILE_TYPE>): Provider<FILE_TYPE> = getArtifactContainer(type).get()
 
+  override fun <FILE_TYPE : FileSystemLocation, ArtifactTypeT> get(
+    type: ArtifactTypeT,
+    attributes: Map<String, String>,
+  ): Provider<FILE_TYPE> where ArtifactTypeT : MultipleArtifact<FILE_TYPE>, ArtifactTypeT : Artifact.WithQualifiers =
+    getArtifactContainer(type).getWithAttributes(ArtifactTypeQualifiers(attributes))
+
+  fun <FILE_TYPE : FileSystemLocation, ArtifactTypeT> get(type: ArtifactTypeT, attributes: Map<String, String>): Provider<FILE_TYPE>
+    where ArtifactTypeT : Multiple<FILE_TYPE>, ArtifactTypeT : Artifact.WithQualifiers =
+    getArtifactContainer(type).getWithAttributes(ArtifactTypeQualifiers(attributes))
+
   override fun <FileTypeT : FileSystemLocation> getAll(type: MultipleArtifact<FileTypeT>): Provider<List<FileTypeT>> =
     getArtifactContainer(type).get()
 
   fun <FILE_TYPE : FileSystemLocation> getAll(type: Multiple<FILE_TYPE>): Provider<List<FILE_TYPE>> = getArtifactContainer(type).get()
 
-  fun <FileTypeT : FileSystemLocation> add(type: Multiple<FileTypeT>, artifact: FileTypeT) {
+  override fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(type: ArtifactTypeT)
+    where ArtifactTypeT : Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers = getArtifactContainer(type).getAllWithAttributes()
 
-    addStaticProvider(getArtifactContainer(type), type, artifact)
+  fun <FileTypeT : FileSystemLocation> add(type: Multiple<FileTypeT>, artifact: FileTypeT, attributes: Map<String, String>? = null) {
+    val artifactTypeQualifiers = attributes?.let { ArtifactTypeQualifiers(attributes).also { assertNonExistence(type, it) } }
+    addStaticProvider(getArtifactContainer(type), type, artifact, artifactTypeQualifiers)
   }
 
   @Deprecated("Deprecated in superclass")
@@ -126,6 +139,13 @@ class ArtifactsImpl(
   override fun <MultipleArtifactT> addStaticDirectory(type: MultipleArtifactT, inputLocation: Directory)
     where MultipleArtifactT : MultipleArtifact<Directory>, MultipleArtifactT : Artifact.Appendable {
     addStaticProvider(getArtifactContainer(type), type, inputLocation)
+  }
+
+  private fun <FileTypeT : FileSystemLocation, ArtifactTypeT> assertNonExistence(type: ArtifactTypeT, attributes: ArtifactTypeQualifiers)
+    where ArtifactTypeT : Multiple<FileTypeT> {
+    getArtifactContainer(type).getImplWithAttributes(attributes)?.run {
+      throw IllegalArgumentException("An artifact with the same attributes has already been added : $this")
+    }
   }
 
   override fun <TaskT : Task> use(taskProvider: TaskProvider<TaskT>): TaskBasedOperationImpl<TaskT> {
@@ -269,14 +289,23 @@ class ArtifactsImpl(
     type: Multiple<FILE_TYPE>,
     taskProvider: TaskProvider<TASK>,
     property: (TASK) -> FileSystemLocationProperty<FILE_TYPE>,
+    attributes: ArtifactTypeQualifiers? = null,
   ) {
     val artifactContainer = getArtifactContainer(type)
-    taskProvider.configure {
+    taskProvider.configure { task ->
       // since the taskProvider will execute, resolve its output path, and since there can
       // be multiple ones, just put the task name at all times.
-      property(it).set(type.getOutputPath(buildDirectory, identifier, taskProvider.name))
+      val paths = mutableListOf<String>(taskProvider.name)
+      attributes?.toPath(paths)
+      property(task).set(type.getOutputPath(buildDirectory, identifier, paths = paths.toTypedArray()))
     }
-    artifactContainer.addInitialProvider(taskProvider, taskProvider.flatMap { property(it) })
+    attributes?.let {
+      if (type is Artifact.WithQualifiers) {
+        it.ensureAttributesCorrectness(type)
+      }
+      it.ensureAttributesUniqueness(artifactContainer)
+    }
+    artifactContainer.addInitialProvider(taskProvider = taskProvider, item = taskProvider.flatMap { property(it) }, attributes = attributes)
   }
 
   /**
@@ -318,7 +347,7 @@ class ArtifactsImpl(
    * Appends a single [Provider] of [T] to a [Artifact.Multiple] of <T>
    *
    * @param type the multiple type to append to.
-   * @param element the element to add.
+   * @param from the element to add.
    */
   fun <T : FileSystemLocation> appendTo(type: Multiple<T>, from: Single<T>) {
     getArtifactContainer(type).transferFrom(this, from)
@@ -380,14 +409,19 @@ class ArtifactsImpl(
    *
    * @param item the static file/directory to add.
    */
-  internal fun <T : FileSystemLocation> addStaticProvider(container: MultipleArtifactContainer<T>, type: Artifact<T>, item: T) {
+  internal fun <T : FileSystemLocation> addStaticProvider(
+    container: MultipleArtifactContainer<T>,
+    type: Artifact<T>,
+    item: T,
+    attributes: ArtifactTypeQualifiers? = null,
+  ) {
     // if no one is producing T yet, create an empty Task, register its output to be T
     // and register it to the providers for this artifact type.
     synchronized(staticProviders) {
       val taskProvider =
         staticProviders.getOrPut(type) {
           // register a unique task by combining the artifact type name and the variant name
-          var taskName = "prepare$identifier${type.name()}StaticFile"
+          val taskName = "prepare$identifier${type.name()}StaticFile"
           taskContainer.register(taskName)
         }
       // whether the task just go registered or not, we need to add the new static file or
@@ -395,7 +429,7 @@ class ArtifactsImpl(
       taskProvider.configure { task -> task.outputs.file(item) }
 
       val mappedValue = taskProvider.map { _ -> item }
-      container.addInitialProvider(taskProvider, mappedValue)
+      container.addInitialProvider(taskProvider, mappedValue, attributes)
     }
   }
 

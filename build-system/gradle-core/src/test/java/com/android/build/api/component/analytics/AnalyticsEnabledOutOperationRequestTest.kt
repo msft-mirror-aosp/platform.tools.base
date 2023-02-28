@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.api.component.analytics
 
 import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.OutOperationRequest
 import com.android.build.api.artifact.SingleArtifact
+import com.android.tools.build.gradle.internal.profile.VariantApiArtifactType
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
+import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.file.Directory
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
@@ -59,6 +63,11 @@ class AnalyticsEnabledOutOperationRequestTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
       .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.TO_APPEND_TO_VALUE))
     verify(delegate, times(1)).toAppendTo(MultipleArtifact.NATIVE_DEBUG_METADATA)
+
+    Truth.assertThat(stats.variantApiAccess.artifactAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.artifactAccessList.first().type).isEqualTo(ArtifactAccess.AccessType.APPEND)
+    Truth.assertThat(stats.variantApiAccess.artifactAccessList.first().inputArtifactType)
+      .isEqualTo(VariantApiArtifactType.NATIVE_DEBUG_METADATA_VALUE)
   }
 
   @Test
@@ -70,5 +79,19 @@ class AnalyticsEnabledOutOperationRequestTest {
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
       .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.SINGLE_TO_LISTEN_TO_VALUE))
     verify(delegate, times(1)).toListenTo(SingleArtifact.APK)
+  }
+
+  @Test
+  fun toAppendToWithAttributes() {
+    proxy.toAppendTo(TestMultipleArtifactType.TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "device1"))
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TO_APPEND_TO_WITH_ATTRIBUTES_VALUE)
+    Mockito.verify(delegate, Mockito.times(1))
+      .toAppendTo(TestMultipleArtifactType.TEST_FILES_WITH_ATTRIBUTES, mapOf("DEVICE_ID" to "device1"))
+
+    Truth.assertThat(stats.variantApiAccess.artifactAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.artifactAccessList.first().type).isEqualTo(ArtifactAccess.AccessType.APPEND)
   }
 }

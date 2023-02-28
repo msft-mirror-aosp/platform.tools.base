@@ -18,6 +18,7 @@ package com.android.build.api.artifact
 
 import com.android.build.api.variant.BuiltArtifactsLoader
 import com.android.build.api.variant.ScopedArtifacts
+import org.gradle.api.Incubating
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
@@ -46,11 +47,43 @@ interface Artifacts {
   fun <FileTypeT : FileSystemLocation> get(type: SingleArtifact<FileTypeT>): Provider<FileTypeT>
 
   /**
+   * Looks up the [Provider] of [FileTypeT] for the passed artifact type matching the provided attributes.
+   *
+   * @param type Type of the [Artifact.Multiple<FileTypeT>]
+   * @param attributes the attributes that must be matched against those used to register the instance with the
+   *   [OutOperationRequest.toAppendTo] method.
+   * @throws IllegalArgumentException if the attributes cannot be matched with a registered instance.
+   */
+  @Incubating
+  fun <FileTypeT : FileSystemLocation, ArtifactTypeT> get(type: ArtifactTypeT, attributes: Map<String, String>): Provider<FileTypeT>
+    where ArtifactTypeT : MultipleArtifact<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers
+
+  /**
    * Get all the [Provider]s of [FileTypeT] for the passed [Artifact].
    *
    * @param type Type of the multiple artifact.
    */
   fun <FileTypeT : FileSystemLocation> getAll(type: MultipleArtifact<FileTypeT>): Provider<List<FileTypeT>>
+
+  /**
+   * Get all the [Provider] and associated qualifiers for the passed [Artifact]. The [Provider] and attributes are packaged as a
+   * [RegisteredArtifactWithQualifiers].
+   *
+   * None of the [Provider]s returned are resolved when calling this method.
+   *
+   * Accessing the providers can be done by
+   *
+   * ```kotlin
+   * artifacts.getAllWithAttributes(TYPE).map(
+   *    RegisteredArtifactWithAttributes<FileTypeT>::artifact
+   * )
+   * ```
+   */
+  @Incubating
+  fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(
+    type: ArtifactTypeT
+  ): Collection<RegisteredArtifactWithQualifiers<FileTypeT>>
+    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers
 
   /**
    * Add an existing [FileTypeT] for the passed [Artifact]. For task generated folder or file, do not use this API but instead use the [use]

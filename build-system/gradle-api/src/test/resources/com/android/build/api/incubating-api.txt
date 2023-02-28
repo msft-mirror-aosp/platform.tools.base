@@ -454,6 +454,15 @@ https://issuetracker.google.com/336296433
   * com.android.build.api.variant.DeviceTestBuilder.setEnableCodeCoverage: void (boolean)
 https://issuetracker.google.com/336985668
   * com.android.build.api.variant.UnitTest.configureTestTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test, kotlin.Unit>)
+https://issuetracker.google.com/342408447
+  * com.android.build.api.artifact.Artifact$WithQualifiers
+  * com.android.build.api.artifact.Artifact$WithQualifiers.getQualifierKeys: java.util.List<java.lang.String> ()
+  * com.android.build.api.artifact.Artifacts.get: org.gradle.api.provider.Provider<FileTypeT> (ArtifactTypeT, java.util.Map<java.lang.String, java.lang.String>)
+  * com.android.build.api.artifact.Artifacts.getAllWithAttributes: java.util.Collection<com.android.build.api.artifact.RegisteredArtifactWithQualifiers<FileTypeT>> (ArtifactTypeT)
+  * com.android.build.api.artifact.OutOperationRequest.toAppendTo: void (ArtifactTypeT, java.util.Map<java.lang.String, java.lang.String>)
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers.getArtifact: org.gradle.api.provider.Provider<FileTypeT> ()
+  * com.android.build.api.artifact.RegisteredArtifactWithQualifiers.getQualifiers: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/349614565
   * com.android.build.api.dsl.ApplicationAndroidResources.getLocaleFilters: java.util.Set<java.lang.String> ()
   * com.android.build.api.variant.ApplicationAndroidResources.getLocaleFilters: org.gradle.api.provider.SetProperty<java.lang.String> ()

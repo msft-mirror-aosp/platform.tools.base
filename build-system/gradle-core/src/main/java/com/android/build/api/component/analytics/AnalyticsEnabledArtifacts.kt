@@ -19,6 +19,7 @@ package com.android.build.api.component.analytics
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.Artifacts
 import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.api.artifact.RegisteredArtifactWithQualifiers
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.TaskBasedOperation
 import com.android.build.api.variant.BuiltArtifactsLoader
@@ -53,6 +54,18 @@ constructor(val delegate: Artifacts, val stats: GradleBuildVariant.Builder, val 
     return delegate.get(type)
   }
 
+  override fun <FileTypeT : FileSystemLocation, ArtifactTypeT> get(
+    type: ArtifactTypeT,
+    attributes: Map<String, String>,
+  ): Provider<FileTypeT> where ArtifactTypeT : MultipleArtifact<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ARTIFACT_WITH_ATTRIBUTES_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.GET
+    }
+    return delegate.get(type, attributes)
+  }
+
   override fun <FileTypeT : FileSystemLocation> getAll(type: MultipleArtifact<FileTypeT>): Provider<List<FileTypeT>> {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ALL_ARTIFACTS_VALUE
     stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
@@ -60,6 +73,18 @@ constructor(val delegate: Artifacts, val stats: GradleBuildVariant.Builder, val 
       it.type = ArtifactAccess.AccessType.GET_ALL
     }
     return delegate.getAll(type)
+  }
+
+  override fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(
+    type: ArtifactTypeT
+  ): Collection<RegisteredArtifactWithQualifiers<FileTypeT>>
+    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ALL_WITH_ATTRIBUTES_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.GET_ALL
+    }
+    return delegate.getAllWithAttributes(type)
   }
 
   override fun <FileTypeT : FileSystemLocation> add(type: MultipleArtifact<FileTypeT>, artifact: FileTypeT) {
