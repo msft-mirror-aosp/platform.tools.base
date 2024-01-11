@@ -26,7 +26,6 @@ import com.android.tools.lint.checks.KotlincFE10Detector
 import com.android.tools.lint.checks.LintDetectorDetector
 import com.android.tools.lint.checks.NoOpDetector
 import com.android.tools.lint.checks.RestrictToDetector
-import com.android.tools.lint.checks.SamDetector
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.LintClient.Companion.isStudio
 import com.android.tools.lint.client.api.Vendor
@@ -44,6 +43,11 @@ class StudioIssueRegistry : IssueRegistry() {
     LintDetectorDetector.MISSING_DOC_EXAMPLE.setEnabledByDefault(true)
     if (isStudio) {
       LintDetectorDetector.PSI_COMPARE.setEnabledByDefault(true)
+    }
+
+    // Optionally enable extra checks to migrate away from deprecated platform APIs.
+    if (System.getProperty("studio.lint.check.platform.api.usages").toBoolean()) {
+      IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL.setEnabledByDefault(true)
     }
 
     // A few other standard lint checks disabled by default which we want enforced
@@ -86,6 +90,7 @@ class StudioIssueRegistry : IssueRegistry() {
       HdpiDetector.ISSUE,
       HtmlPaneDetector.ISSUE,
       ImplicitExecutorDetector.ISSUE,
+      IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL,
       IntellijThreadDetector.ISSUE,
       LintDetectorDetector.CHECK_URL,
       LintDetectorDetector.DOLLAR_STRINGS,
