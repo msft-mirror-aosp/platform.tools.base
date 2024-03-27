@@ -22,5 +22,6 @@
 class AppInspectionAgentCommand {
  public:
   static void RegisterAppInspectionCommandHandler(JavaVM* vm);
+  static void DeamonTerminated(JavaVM* vm);
 };
 #endif  // APP_INSPECTION_AGENT_COMMAND_H_
