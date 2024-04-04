@@ -128,6 +128,22 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
       )
 
     @JvmField
+    val IS_EAP =
+      Issue.create(
+        id = "ApplicationManagerIsEap",
+        briefDescription = "Do not use `Application.isEap`",
+        explanation =
+          """
+              `com.intellij.openapi.application.Application.isEap` depends on the underlying intellij platform prebuilt, rather than the version of Studio released.
+
+              Instead, consider using a StudioFlag with ChannelDefault.
+              """,
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
+
     val ADD_DEPENDENCY =
       Issue.create(
         id = "AddDependencyUsage",
@@ -183,7 +199,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames(): List<String> =
-    listOf("intern", "copy", "when", "addArtifact", "applyPlugin", "addPlatformArtifact")
+    listOf("intern", "copy", "when", "addArtifact", "applyPlugin", "addPlatformArtifact", "isEAP")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // String#intern
@@ -236,6 +252,21 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         fix,
       )
     }
+    // Application.isEAP
+    if (
+      method.name == "isEAP" &&
+        context.evaluator.isMemberInClass(method, "com.intellij.openapi.application.Application")
+    ) {
+      context.report(
+        IS_EAP,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `com.intellij.openapi.application.Application.isEap`. " +
+          "`Application.isEap` depends on the underlying intellij platform prebuilt, rather than the version of Studio released. " +
+          "Instead, consider using a StudioFlag.`",
+      )
+    }
+
     // DependenciesModel#addArtifact/addPlatformArtifact
     if (
       (method.name == "addArtifact" || method.name == "addPlatformArtifact") &&
