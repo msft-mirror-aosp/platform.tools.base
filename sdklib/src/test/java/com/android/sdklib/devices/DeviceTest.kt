@@ -108,4 +108,10 @@ class DeviceTest {
     assertThat(pixel3aXLPhone?.getScreenSize(ScreenOrientation.LANDSCAPE)).isEqualTo(Dimension(2160, 1080))
   }
 
+  @Test
+  fun testIsXr() {
+    val xr = checkNotNull(devMgr.getDevice("xr_device", "Google"))
+    assertThat(Device.isXr(xr)).isTrue()
+    assertThat(Device.isPhone(xr)).isFalse()
+  }
 }

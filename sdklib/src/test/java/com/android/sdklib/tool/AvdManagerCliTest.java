@@ -16,6 +16,7 @@
 
 package com.android.sdklib.tool;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -46,6 +47,7 @@ import com.android.testutils.MockLog;
 import com.android.testutils.file.InMemoryFileSystems;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.FileSystem;
@@ -454,6 +456,8 @@ public class AvdManagerCliTest {
                         "P wearos_rect\n",
                         "P wearos_small_round\n",
                         "P wearos_square\n",
+                        "P xr_device\n",
+                        "P xr_device_no_gpu\n",
                         "P 2.7in QVGA\n",
                         "P 2.7in QVGA slider\n",
                         "P 3.2in HVGA slider (ADP1)\n",
@@ -490,19 +494,17 @@ public class AvdManagerCliTest {
                         avdPath.toString(),
                         null);
         mCli.run(new String[] {"list", "devices"});
-        assertTrue(
-                Joiner.on("")
-                        .join(mLogger.getMessages())
-                        .contains(
-                                "P ---------\n"
-                                        + "P id: 65 or \"4in WVGA (Nexus S)\"\n"
-                                        + "P     Name: 4\" WVGA (Nexus S)\n"
-                                        + "P     OEM : Generic\n"
-                                        + "P ---------\n"
-                                        + "P id: 66 or \"4.65in 720p (Galaxy Nexus)\"\n"
-                                        + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
-                                        + "P     OEM : Generic\n"
-                                        + "P ---------"));
+        assertThat(Joiner.on("").join(mLogger.getMessages()))
+                .contains(
+                        "P ---------\n"
+                                + "P id: 67 or \"4in WVGA (Nexus S)\"\n"
+                                + "P     Name: 4\" WVGA (Nexus S)\n"
+                                + "P     OEM : Generic\n"
+                                + "P ---------\n"
+                                + "P id: 68 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
+                                + "P     OEM : Generic\n"
+                                + "P ---------");
     }
 
     @Test

@@ -182,7 +182,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
 
         assertThat(dm.getDevice("Nexus One", "Google").getDisplayName()).isEqualTo("Nexus One");
 
@@ -264,7 +266,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
     }
 
     @Test
@@ -394,7 +398,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
 
         assertThat(listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)))
                 .containsExactly(
@@ -475,7 +481,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
     }
 
     @Test
@@ -599,7 +607,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
 
         assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
                 .containsExactly(
@@ -680,7 +690,9 @@ public class DeviceManagerTest {
                         "Pixel 7a",
                         "Pixel 8",
                         "Pixel 8 Pro",
-                        "Pixel 8a");
+                        "Pixel 8a",
+                        "XR Device",
+                        "XR Device No GPU");
     }
 
     @Test
