@@ -102,12 +102,12 @@ class KaptCreationAction(
         // Never add jdk classes to classpath with Android as android.jar should be used
         task.addJdkClassesToClasspath.set(false)
         task.classpath.setFrom(
+            creationConfig.global.bootClasspath,
             creationConfig.getJavaClasspath(
                 AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                 AndroidArtifacts.ArtifactType.CLASSES_JAR,
                 null
             ),
-            creationConfig.global.bootClasspath
         )
         val externalKaptDeps = creationConfig.variantDependencies.getArtifactFileCollection(
             AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR,

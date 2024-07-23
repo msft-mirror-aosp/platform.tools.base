@@ -91,12 +91,12 @@ class KaptStubGenerationCreationAction(
 
         val taskClasspath =
             creationConfig.services.fileCollection().from(
+                creationConfig.global.bootClasspath,
                 creationConfig.getJavaClasspath(
                     AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                     AndroidArtifacts.ArtifactType.CLASSES_JAR,
                     null
                 ),
-                creationConfig.global.bootClasspath
             )
         task.libraries.from(taskClasspath)
 

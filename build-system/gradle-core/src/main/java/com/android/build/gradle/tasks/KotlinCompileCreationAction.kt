@@ -92,12 +92,12 @@ class KotlinCompileCreationAction(
 
         val taskClasspath =
             creationConfig.services.fileCollection().from(
+                creationConfig.global.bootClasspath,
                 creationConfig.getJavaClasspath(
                     AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                     AndroidArtifacts.ArtifactType.CLASSES_JAR,
                     null
                 ),
-                creationConfig.global.bootClasspath
             )
         creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_CLASSES_DIR)?.let { taskClasspath.from(it) }
         task.libraries.setFrom(taskClasspath)
