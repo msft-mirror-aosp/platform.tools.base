@@ -16,7 +16,6 @@
 
 package com.android.sdklib.tool;
 
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -479,7 +478,6 @@ public class AvdManagerCliTest {
                         "P wearos_small_round\n",
                         "P wearos_square\n",
                         "P xr_device\n",
-                        "P xr_device_no_gpu\n",
                         "P 2.7in QVGA\n",
                         "P 2.7in QVGA slider\n",
                         "P 3.2in HVGA slider (ADP1)\n",
@@ -521,11 +519,11 @@ public class AvdManagerCliTest {
                         .join(mLogger.getMessages())
                         .contains(
                                 "P ---------\n"
-                                        + "P id: 73 or \"4in WVGA (Nexus S)\"\n"
+                                        + "P id: 72 or \"4in WVGA (Nexus S)\"\n"
                                         + "P     Name: 4\" WVGA (Nexus S)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------\n"
-                                        + "P id: 74 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                        + "P id: 73 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                         + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------"));
