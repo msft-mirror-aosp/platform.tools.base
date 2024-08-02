@@ -348,6 +348,21 @@ class LocalEmulatorProvisionerPluginTest {
   }
 
   @Test
+  fun xrDeviceType() = runBlockingWithTimeout {
+    avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.XR_TAG))
+
+    yieldUntil { provisioner.devices.value.size == 1 }
+
+    val handle = provisioner.devices.value[0]
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
+
+    handle.activationAction?.activate()
+    handle.awaitReady()
+
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
+  }
+
+  @Test
   fun editDevice() = runBlockingWithTimeout {
     avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.GOOGLE_TV_TAG))
 
