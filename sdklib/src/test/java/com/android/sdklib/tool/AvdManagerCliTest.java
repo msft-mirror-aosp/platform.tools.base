@@ -401,6 +401,8 @@ public class AvdManagerCliTest {
                 ImmutableList.of(
                         "P automotive_1024p_landscape\n",
                         "P automotive_1080p_landscape\n",
+                        "P automotive_1408p_landscape_with_google_apis\n",
+                        "P automotive_1408p_landscape_with_play\n",
                         "P automotive_distant_display\n",
                         "P automotive_distant_display_with_play\n",
                         "P automotive_large_portrait\n",
@@ -494,17 +496,19 @@ public class AvdManagerCliTest {
                         avdPath.toString(),
                         null);
         mCli.run(new String[] {"list", "devices"});
-        assertThat(Joiner.on("").join(mLogger.getMessages()))
-                .contains(
-                        "P ---------\n"
-                                + "P id: 67 or \"4in WVGA (Nexus S)\"\n"
-                                + "P     Name: 4\" WVGA (Nexus S)\n"
-                                + "P     OEM : Generic\n"
-                                + "P ---------\n"
-                                + "P id: 68 or \"4.65in 720p (Galaxy Nexus)\"\n"
-                                + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
-                                + "P     OEM : Generic\n"
-                                + "P ---------");
+        assertTrue(
+                Joiner.on("")
+                        .join(mLogger.getMessages())
+                        .contains(
+                                "P ---------\n"
+                                        + "P id: 69 or \"4in WVGA (Nexus S)\"\n"
+                                        + "P     Name: 4\" WVGA (Nexus S)\n"
+                                        + "P     OEM : Generic\n"
+                                        + "P ---------\n"
+                                        + "P id: 70 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                        + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
+                                        + "P     OEM : Generic\n"
+                                        + "P ---------"));
     }
 
     @Test
