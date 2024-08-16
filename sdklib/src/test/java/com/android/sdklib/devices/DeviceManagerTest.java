@@ -185,6 +185,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
 
@@ -271,6 +275,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
     }
@@ -405,6 +413,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
 
@@ -490,6 +502,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
     }
@@ -618,6 +634,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
 
@@ -703,6 +723,10 @@ public class DeviceManagerTest {
                         "Pixel 8",
                         "Pixel 8 Pro",
                         "Pixel 8a",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold",
                         "XR Device",
                         "XR Device No GPU");
     }

@@ -45,8 +45,12 @@ import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.targets.SystemImageManager;
 import com.android.testutils.MockLog;
 import com.android.testutils.file.InMemoryFileSystems;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -55,8 +59,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Tests for {@link AvdManagerCli}
@@ -194,9 +196,15 @@ public class AvdManagerCliTest {
         assertEquals("none", config.get("runtime.network.latency"));
         assertEquals("full", config.get("runtime.network.speed"));
         assertEquals("false", config.get("PlayStore.enabled"));
-        assertEquals(new Storage(1536, Storage.Unit.MiB), Storage.getStorageFromString(config.get("hw.ramSize")));
-        assertEquals(new Storage(512, Storage.Unit.MiB), Storage.getStorageFromString(config.get("sdcard.size")));
-        assertEquals(new Storage(384, Storage.Unit.MiB), Storage.getStorageFromString(config.get("vm.heapSize")));
+        assertEquals(
+                new Storage(1536, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("hw.ramSize")));
+        assertEquals(
+                new Storage(512, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("sdcard.size")));
+        assertEquals(
+                new Storage(384, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("vm.heapSize")));
     }
 
     @Test
@@ -248,9 +256,15 @@ public class AvdManagerCliTest {
         assertEquals("none", config.get("runtime.network.latency"));
         assertEquals("full", config.get("runtime.network.speed"));
         assertEquals("true", config.get("PlayStore.enabled"));
-        assertEquals(new Storage(1536, Storage.Unit.MiB), Storage.getStorageFromString(config.get("hw.ramSize")));
-        assertEquals(new Storage(512, Storage.Unit.MiB), Storage.getStorageFromString(config.get("sdcard.size")));
-        assertEquals(new Storage(384, Storage.Unit.MiB), Storage.getStorageFromString(config.get("vm.heapSize")));
+        assertEquals(
+                new Storage(1536, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("hw.ramSize")));
+        assertEquals(
+                new Storage(512, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("sdcard.size")));
+        assertEquals(
+                new Storage(384, Storage.Unit.MiB),
+                Storage.getStorageFromString(config.get("vm.heapSize")));
     }
 
     @Test
@@ -332,7 +346,8 @@ public class AvdManagerCliTest {
                         + InMemoryFileSystems.getPlatformSpecificPath("/avd/testGapiAvd.avd")
                         + "\n"
                         + "P   Target: Google APIs (Google)\n"
-                        + "P           Based on: Android 7.1.1 (\"Nougat\")P  Tag/ABI: google_apis/x86\n"
+                        + "P           Based on: Android 7.1.1 (\"Nougat\")P  Tag/ABI:"
+                        + " google_apis/x86\n"
                         + "P   Sdcard: 512 MB\n"
                         + "P ---------\n"
                         + "P     Name: testWearApi\n"
@@ -341,7 +356,8 @@ public class AvdManagerCliTest {
                         + InMemoryFileSystems.getPlatformSpecificPath("/avd/testWearApi.avd")
                         + "\n"
                         + "P   Target: Google APIs\n"
-                        + "P           Based on: Android 8.0 (\"Oreo\")P  Tag/ABI: android-wear/armeabi-v7a\n"
+                        + "P           Based on: Android 8.0 (\"Oreo\")P  Tag/ABI:"
+                        + " android-wear/armeabi-v7a\n"
                         + "P   Sdcard: 512 MB\n",
                 Joiner.on("").join(mLogger.getMessages()));
     }
@@ -444,6 +460,10 @@ public class AvdManagerCliTest {
                         "P pixel_8\n",
                         "P pixel_8_pro\n",
                         "P pixel_8a\n",
+                        "P pixel_9\n",
+                        "P pixel_9_pro\n",
+                        "P pixel_9_pro_fold\n",
+                        "P pixel_9_pro_xl\n",
                         "P pixel_c\n",
                         "P pixel_fold\n",
                         "P pixel_tablet\n",
@@ -501,11 +521,11 @@ public class AvdManagerCliTest {
                         .join(mLogger.getMessages())
                         .contains(
                                 "P ---------\n"
-                                        + "P id: 69 or \"4in WVGA (Nexus S)\"\n"
+                                        + "P id: 73 or \"4in WVGA (Nexus S)\"\n"
                                         + "P     Name: 4\" WVGA (Nexus S)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------\n"
-                                        + "P id: 70 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                        + "P id: 74 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                         + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------"));
@@ -551,23 +571,35 @@ public class AvdManagerCliTest {
                             AvdManagerCli.validateResponse("45", aProperty, mLogger));
                     break;
                 case "stringPropName":
-                    assertEquals("String 'Whatever$^*)#?!' should be valid",
-                                 "Whatever$^*)#?!", AvdManagerCli.validateResponse("Whatever$^*)#?!", aProperty, mLogger));
+                    assertEquals(
+                            "String 'Whatever$^*)#?!' should be valid",
+                            "Whatever$^*)#?!",
+                            AvdManagerCli.validateResponse("Whatever$^*)#?!", aProperty, mLogger));
                     break;
                 case "stringEnumPropName":
-                    assertEquals("String enum 'okString0' should be valid",
-                                 "okString0", AvdManagerCli.validateResponse("okString0", aProperty, mLogger));
+                    assertEquals(
+                            "String enum 'okString0' should be valid",
+                            "okString0",
+                            AvdManagerCli.validateResponse("okString0", aProperty, mLogger));
                     assertNull(
                             "String enum 'okString3' should be invalid",
                             AvdManagerCli.validateResponse("okString3", aProperty, mLogger));
                     break;
                 case "stringEnumTemplatePropName":
-                    assertEquals("String enum 'fixedString' should be valid",
-                                 "fixedString", AvdManagerCli.validateResponse("fixedString", aProperty, mLogger));
-                    assertEquals("String enum 'extensibleString0' should be valid",
-                                 "extensibleString0", AvdManagerCli.validateResponse("extensibleString0", aProperty, mLogger));
-                    assertEquals("String enum 'extensibleString123' should be valid",
-                                 "extensibleString123", AvdManagerCli.validateResponse("extensibleString123", aProperty, mLogger));
+                    assertEquals(
+                            "String enum 'fixedString' should be valid",
+                            "fixedString",
+                            AvdManagerCli.validateResponse("fixedString", aProperty, mLogger));
+                    assertEquals(
+                            "String enum 'extensibleString0' should be valid",
+                            "extensibleString0",
+                            AvdManagerCli.validateResponse(
+                                    "extensibleString0", aProperty, mLogger));
+                    assertEquals(
+                            "String enum 'extensibleString123' should be valid",
+                            "extensibleString123",
+                            AvdManagerCli.validateResponse(
+                                    "extensibleString123", aProperty, mLogger));
                     assertNull(
                             "String enum 'extensibleStringPlus' should be invalid",
                             AvdManagerCli.validateResponse(
@@ -580,8 +612,10 @@ public class AvdManagerCliTest {
                             AvdManagerCli.validateResponse("fixedString3", aProperty, mLogger));
                     break;
                 case "diskSizePropName":
-                    assertEquals("Disk size '50MB' should be valid",
-                                 "50MB", AvdManagerCli.validateResponse("50MB", aProperty, mLogger));
+                    assertEquals(
+                            "Disk size '50MB' should be valid",
+                            "50MB",
+                            AvdManagerCli.validateResponse("50MB", aProperty, mLogger));
                     break;
                 default:
                     fail("Unexpected hardware property type: " + aProperty.getName());
