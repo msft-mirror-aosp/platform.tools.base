@@ -71,6 +71,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
+import com.android.tools.agent.appinspection.XrHelper
 
 private const val LAYOUT_INSPECTION_ID = "layoutinspector.view.inspection"
 
@@ -120,7 +121,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
     @property:VisibleForTesting
     var foldSupportOverrideForTests: FoldSupport? = null
 
-    private val rootsDetector = RootsDetector(connection, ::onRootsChanged) { checkpoint = it }
+    private val xrHelper = XrHelper(environment)
+    private val rootsDetector = RootsDetector(xrHelper, connection, ::onRootsChanged) { checkpoint = it }
 
     override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
         val command = Command.parseFrom(data)
@@ -458,7 +460,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             var tries = 0
             while (tries++ < MAX_START_FETCH_RETRIES) {
                 val result = ThreadUtils.runOnMainThread {
-                    val rootViews = getRootViews()
+                    val rootViews = getRootViews(xrHelper)
                     if (rootViews.isEmpty()) {
                         false
                     } else {
@@ -513,7 +515,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         if (changed) {
             updateAllCapturingCallbacks()
             ThreadUtils.runOnMainThread {
-                for (rootView in getRootViews()) {
+                for (rootView in getRootViews(xrHelper)) {
                     rootView.invalidate()
                 }
             }
@@ -545,7 +547,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 context.isLastCapture = true
             }
             ThreadUtils.runOnMainThread {
-                getRootViews()
+                getRootViews(xrHelper)
                     .filter { view -> contextMap.containsKey(view.uniqueDrawingId) }
                     .forEach { view -> view.invalidate() }
             }
@@ -558,7 +560,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
     ) {
 
         ThreadUtils.runOnMainThread {
-            val foundView = getRootViews()
+            val foundView = getRootViews(xrHelper)
                 .asSequence()
                 .filter { it.uniqueDrawingId == propertiesCommand.rootViewId }
                 .flatMap { rootView -> rootView.flatten() }
@@ -583,7 +585,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         state.snapshotRequests.clear()
 
         scope.launch {
-            val roots = ThreadUtils.runOnMainThreadAsync { getRootViews() }.await()
+            val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
             val windowSnapshots = roots.map { view ->
                 SnapshotRequest().also {
                     state.snapshotRequests[view.uniqueDrawingId] = it

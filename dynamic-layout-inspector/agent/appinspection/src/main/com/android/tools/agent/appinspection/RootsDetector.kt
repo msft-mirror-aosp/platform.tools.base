@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * handle updates that the system doesn't tell us about.
  */
 class RootsDetector(
+    private val xrHelper: XrHelper,
     private val connection: Connection,
     private val onRootsChanged: (List<Long>, List<Long>, Map<Long, View>) -> Unit,
     private val setCheckpoint: (ProgressCheckpoint) -> Unit
@@ -127,7 +128,7 @@ class RootsDetector(
         while (!quit.get()) {
             try {
                 return ThreadUtils.runOnMainThread {
-                    getRootViews().associateBy { it.uniqueDrawingId }
+                    getRootViews(xrHelper).associateBy { it.uniqueDrawingId }
                 }.get(100, TimeUnit.MILLISECONDS)
             } catch (e: TimeoutException) {
                 // Ignore and try again.
@@ -138,11 +139,17 @@ class RootsDetector(
     }
 }
 
-fun getRootViews(): List<View> {
-    ThreadUtils.assertOnMainThread()
+fun getRootViews(xrHelper: XrHelper): List<View> {
+    val xrViews = xrHelper.getXrViews()
+    val androidViews = getAndroidViews()
 
-    val views = WindowInspector.getGlobalWindowViews()
-    return views
+    return (xrViews + androidViews)
         .filter { view -> view.visibility == View.VISIBLE && view.isAttachedToWindow }
         .sortedBy { view -> view.z }
+}
+
+private fun getAndroidViews(): List<View> {
+    ThreadUtils.assertOnMainThread()
+    val views = WindowInspector.getGlobalWindowViews()
+    return views
 }
