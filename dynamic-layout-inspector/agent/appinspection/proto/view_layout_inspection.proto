@@ -355,6 +355,7 @@ message LayoutEvent {
     // the main window, but can be positive for floating windows (e.g. dialogs).
     Point root_offset = 5;
     optional Screenshot screenshot = 6;
+    bool is_xr = 7;
 }
 
 // An event fired whenever a new root is added or an old root is removed.

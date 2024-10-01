@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class RootsDetector(
     private val xrHelper: XrHelper,
     private val connection: Connection,
-    private val onRootsChanged: (List<Long>, List<Long>, Map<Long, View>) -> Unit,
+    private val onRootsChanged: (List<Long>, List<Long>, Map<Long, InspectorView>) -> Unit,
     private val setCheckpoint: (ProgressCheckpoint) -> Unit
 ) {
     private var quit = AtomicBoolean(false)
@@ -124,11 +124,11 @@ class RootsDetector(
         }
     }
 
-    private fun getRootViewsOnMainThread(): Map<Long, View> {
+    private fun getRootViewsOnMainThread(): Map<Long, InspectorView> {
         while (!quit.get()) {
             try {
                 return ThreadUtils.runOnMainThread {
-                    getRootViews(xrHelper).associateBy { it.uniqueDrawingId }
+                    getRootViews(xrHelper).associateBy { it.view.uniqueDrawingId }
                 }.get(100, TimeUnit.MILLISECONDS)
             } catch (e: TimeoutException) {
                 // Ignore and try again.
@@ -139,13 +139,15 @@ class RootsDetector(
     }
 }
 
-fun getRootViews(xrHelper: XrHelper): List<View> {
-    val xrViews = xrHelper.getXrViews()
-    val androidViews = getAndroidViews()
+data class InspectorView(val view: View, val isXr: Boolean)
+
+fun getRootViews(xrHelper: XrHelper): List<InspectorView> {
+    val xrViews = xrHelper.getXrViews().map { InspectorView(it, true) }
+    val androidViews = getAndroidViews().map { InspectorView(it, false) }
 
     return (xrViews + androidViews)
-        .filter { view -> view.visibility == View.VISIBLE && view.isAttachedToWindow }
-        .sortedBy { view -> view.z }
+        .filter { it.view.visibility == View.VISIBLE && it.view.isAttachedToWindow }
+        .sortedBy { it.view.z }
 }
 
 private fun getAndroidViews(): List<View> {

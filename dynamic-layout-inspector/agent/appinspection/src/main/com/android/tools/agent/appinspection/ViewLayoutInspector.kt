@@ -74,6 +74,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
 import com.android.tools.agent.appinspection.XrHelper
+import com.android.tools.agent.appinspection.InspectorView
 
 private const val LAYOUT_INSPECTION_ID = "layoutinspector.view.inspection"
 
@@ -169,13 +170,13 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
      * Stop any stale roots from capturing and, depending on [InspectorState.fetchContinuously],
      * may start capturing new roots.
      */
-    private fun onRootsChanged(added: List<Long>, removed: List<Long>, roots: Map<Long, View>) {
+    private fun onRootsChanged(added: List<Long>, removed: List<Long>, roots: Map<Long, InspectorView>) {
         synchronized(state.lock) {
             for (toRemove in removed) {
                 state.captureContextMap.remove(toRemove)?.shutdown()
             }
-            added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it) }
-            removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it) }
+            added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it.view) }
+            removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it.view) }
 
             if (state.fetchContinuously) {
                 if (added.isNotEmpty()) {
@@ -209,7 +210,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                         // When a window goes away, we expect remaining views to send a
                         // signal causing the client to refresh, but this doesn't always
                         // happen, so to be safe, we force it ourselves.
-                        roots.values.forEach { view -> view.invalidate() }
+                        roots.values.forEach { it.view.invalidate() }
                     }
                 }
             }
@@ -226,8 +227,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         }
     }
 
-    private fun startCapturing(root: View) {
-        if (!root.isHardwareAccelerated() && !root.hasHardwareFlagSetInLayoutParams()) {
+    private fun startCapturing(root: InspectorView) {
+        if (!root.view.isHardwareAccelerated() && !root.view.hasHardwareFlagSetInLayoutParams()) {
             rootsDetector.stop()
             throw noHardwareAcceleration()
         }
@@ -237,7 +238,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         val captureExecutor = CaptureExecutor(
             captureOutputStream,
             state,
-            root,
+            root.view,
+            root.isXr,
             rootsDetector,
             foldSupport,
             updateState = { checkpoint = it },
@@ -245,14 +247,14 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         )
         captureExecutor.doBeforeRun = doBeforeCapture
 
-        updateCapturingCallback(root, captureExecutor, captureOutputStream)
+        updateCapturingCallback(root.view, captureExecutor, captureOutputStream)
         checkpoint = ProgressCheckpoint.STARTED
 
         // Force a re-render to immediately send the current screen.
         // Otherwise, Layout Inspector will have to wait for the next refresh to happen.
         // Use postInvalidate instead of invalidate because in some apps,
         // for example sysui, the view is not guaranteed to be created by the main thread.
-        root.postInvalidate();
+        root.view.postInvalidate();
     }
 
     /**
@@ -473,7 +475,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                         for (root in rootViews) {
                             startCapturing(root)
                         }
-                        foldSupport?.initialize(rootViews.first().context)
+                        foldSupport?.initialize(rootViews.first().view.context)
                         true
                     }
                 }.get()
@@ -522,7 +524,7 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             updateAllCapturingCallbacks()
             ThreadUtils.runOnMainThread {
                 for (rootView in getRootViews(xrHelper)) {
-                    rootView.invalidate()
+                    rootView.view.invalidate()
                 }
             }
         }
@@ -566,8 +568,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             }
             ThreadUtils.runOnMainThread {
                 getRootViews(xrHelper)
-                    .filter { view -> contextMap.containsKey(view.uniqueDrawingId) }
-                    .forEach { view -> view.invalidate() }
+                    .filter { contextMap.containsKey(it.view.uniqueDrawingId) }
+                    .forEach { it.view.invalidate() }
             }
         }
     }
@@ -580,9 +582,9 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         ThreadUtils.runOnMainThread {
             val foundView = getRootViews(xrHelper)
                 .asSequence()
-                .filter { it.uniqueDrawingId == propertiesCommand.rootViewId }
-                .flatMap { rootView -> rootView.flatten() }
-                .filter { view -> view.uniqueDrawingId == propertiesCommand.viewId }
+                .filter { it.view.uniqueDrawingId == propertiesCommand.rootViewId }
+                .flatMap { it.view.flatten() }
+                .filter { it.uniqueDrawingId == propertiesCommand.viewId }
                 .firstOrNull()
 
             environment.executors().primary().execute {
@@ -604,17 +606,17 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
         scope.launch {
             val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
-            val windowSnapshots = roots.map { view ->
+            val windowSnapshots = roots.map { root ->
                 SnapshotRequest().also {
-                    state.snapshotRequests[view.uniqueDrawingId] = it
+                    state.snapshotRequests[root.view.uniqueDrawingId] = it
                 }.result
             }
             // At this point we need to switch to capturing SKPs if we aren't already.
             updateAllCapturingCallbacks()
-            ThreadUtils.runOnMainThread { roots.forEach { it.invalidate() } }
+            ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
             val reply = LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder().apply {
                 windowRoots = WindowRootsEvent.newBuilder().apply {
-                    addAllIds(roots.map { it.uniqueDrawingId })
+                    addAllIds(roots.map { it.view.uniqueDrawingId })
                 }.build()
                 addAllWindowSnapshots(windowSnapshots.awaitAll())
             }.build()
