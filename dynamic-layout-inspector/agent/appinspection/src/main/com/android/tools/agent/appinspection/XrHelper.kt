@@ -36,7 +36,6 @@ private const val CREATE_METHOD = "create"
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
 
 class XrHelper(private val environment: InspectorEnvironment) {
-  // TODO: control this with a command from Studio.
   var enabled = false
 
   /** Get all the views from XR. */

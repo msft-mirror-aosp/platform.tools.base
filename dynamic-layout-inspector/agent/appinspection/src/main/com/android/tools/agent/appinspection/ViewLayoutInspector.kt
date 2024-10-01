@@ -62,6 +62,8 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.WindowRootsEvent
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotCommand
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotResponse
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionCommand
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionResponse
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -146,6 +148,10 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             )
             Command.SpecializedCase.ENABLE_BITMAP_SCREENSHOT_COMMAND -> handleEnableBitmapScreenshotCommand(
                 command.enableBitmapScreenshotCommand,
+                callback
+            )
+            Command.SpecializedCase.ENABLE_XR_INSPECTION_COMMAND -> handleEnableXrInspectionCommand(
+                command.enableXrInspectionCommand,
                 callback
             )
             else -> error("Unexpected view inspector command case: ${command.specializedCase}")
@@ -531,6 +537,18 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         }
         callback.reply {
             enableBitmapScreenshotResponse = EnableBitmapScreenshotResponse.getDefaultInstance()
+        }
+    }
+
+    private fun handleEnableXrInspectionCommand(
+        enableXrInspectionCommand: EnableXrInspectionCommand,
+        callback: CommandCallback
+    ) {
+        synchronized(state.lock) {
+            xrHelper.enabled = enableXrInspectionCommand.enable
+        }
+        callback.reply {
+            enableXrInspectionResponse = EnableXrInspectionResponse.getDefaultInstance()
         }
     }
 
