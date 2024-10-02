@@ -365,12 +365,19 @@ enum class ConnectionType {
   NETWORK,
 }
 
-data class DeviceIcons(val handheld: Icon, val wear: Icon, val tv: Icon, val automotive: Icon) {
+data class DeviceIcons(
+  val handheld: Icon,
+  val wear: Icon,
+  val tv: Icon,
+  val automotive: Icon,
+  val headset: Icon,
+) {
   fun iconForDeviceType(type: DeviceType?) =
     when (type) {
       DeviceType.TV -> tv
       DeviceType.AUTOMOTIVE -> automotive
       DeviceType.WEAR -> wear
+      DeviceType.XR -> headset
       else -> handheld
     }
 }

@@ -55,7 +55,13 @@ class LocalEmulatorProvisionerPluginTest {
 
   val session = FakeAdbSession()
   private val deviceIcons =
-    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT)
+    DeviceIcons(
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+    )
 
   private lateinit var avdsPath: Path
   private lateinit var avdManager: FakeAvdManager
