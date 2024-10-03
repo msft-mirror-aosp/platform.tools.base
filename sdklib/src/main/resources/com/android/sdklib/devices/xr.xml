@@ -13,8 +13,9 @@
                 <d:pixel-density>xhdpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
-                    <d:x-dimension>2368</d:x-dimension>
-                    <d:y-dimension>2560</d:y-dimension>
+                    <!-- X and Y dimensions are temporarily reversed to workaround b/369630150 -->
+                    <d:x-dimension>2560</d:x-dimension>
+                    <d:y-dimension>2368</d:y-dimension>
                 </d:dimensions>
                 <d:xdpi>320</d:xdpi>
                 <d:ydpi>320</d:ydpi>
