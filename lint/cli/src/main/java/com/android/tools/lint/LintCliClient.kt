@@ -84,6 +84,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.intellij.codeInsight.ExternalAnnotationsManager
 import com.intellij.mock.MockProject
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.psi.PsiClass
@@ -99,12 +100,14 @@ import java.net.URLConnection
 import java.nio.file.Files
 import java.nio.file.Path
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
+import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys.PERF_MANAGER
 import org.jetbrains.kotlin.cli.common.CommonCompilerPerformanceManager
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.js.inline.util.toIdentitySet
+import org.jetbrains.kotlin.light.classes.symbol.withMultiplatformLightClassSupport
 import org.jetbrains.kotlin.util.PerformanceCounter.Companion.resetAllCounters
 import org.w3c.dom.Document
 
@@ -209,6 +212,20 @@ open class LintCliClient : LintClient {
         return project.buildVariant?.name ?: continue
       }
       return LintBaseline.VARIANT_ALL
+    }
+
+  @OptIn(KaNonPublicApi::class)
+  override fun <T> runReadAction(computable: Computable<T>): T =
+    when (uastEnvironment?.isKMP) {
+      true -> withMultiplatformLightClassSupport { super.runReadAction(computable) }
+      else -> super.runReadAction(computable)
+    }
+
+  @OptIn(KaNonPublicApi::class)
+  override fun runReadAction(runnable: Runnable) =
+    when (uastEnvironment?.isKMP) {
+      true -> withMultiplatformLightClassSupport { super.runReadAction(runnable) }
+      else -> super.runReadAction(runnable)
     }
 
   /**
