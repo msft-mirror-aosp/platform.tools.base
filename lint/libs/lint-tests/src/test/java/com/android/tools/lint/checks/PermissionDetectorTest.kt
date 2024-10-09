@@ -19,6 +19,7 @@ package com.android.tools.lint.checks
 import com.android.SdkConstants.TAG_USES_PERMISSION
 import com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23
 import com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M
+import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.ProjectDescription
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestMode
@@ -1774,10 +1775,13 @@ class PermissionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
+        src/test/pkg/MyActivity.kt:10: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or explicitly handle a potential SecurityException [MissingPermission]
+                    notify(notificationId, notification)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/MyActivity.kt:10: Error: Missing permissions required by NotificationManagerCompat.notify: android.permission.POST_NOTIFICATIONS [MissingPermission]
                     notify(notificationId, notification)
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        1 errors, 0 warnings
+        2 errors, 0 warnings
         """
       )
   }
@@ -1835,6 +1839,62 @@ class PermissionDetectorTest : AbstractCheckTest() {
       .skipTestModes(TestMode.IF_TO_WHEN)
       .run()
       .expectClean()
+  }
+
+  fun testMissingPermissionCheckMultiModule() {
+    // https://issuetracker.google.com/204897515
+
+    val lib =
+      project()
+        .name("lib")
+        .type(ProjectDescription.Type.LIBRARY)
+        .files(
+          LintDetectorTest.kotlin(
+              """
+              package com.example.mylibrary
+
+              import android.Manifest
+              import androidx.annotation.RequiresPermission
+
+              class Foo {
+                  fun foo() {
+                      bar()
+                  }
+
+                  @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+                  fun bar() {}
+              }
+              """
+            )
+            .indented(),
+          manifest().pkg("com.example.mylibrary").minSdk(25),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+
+    val app =
+      project()
+        .name("app")
+        .type(ProjectDescription.Type.APP)
+        .dependsOn(lib)
+        .files(
+          manifest()
+            .pkg("com.example.app")
+            .minSdk(25)
+            .targetSdk(30)
+            .permissions("android.permission.RECORD_AUDIO")
+        )
+
+    lint()
+      .projects(app)
+      .run()
+      .expect(
+        """
+        ../lib/src/com/example/mylibrary/Foo.kt:8: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or explicitly handle a potential SecurityException [MissingPermission]
+                bar()
+                ~~~~~
+        1 errors, 0 warnings
+        """
+      )
   }
 
   private val notificationManagerCompatStub: TestFile =

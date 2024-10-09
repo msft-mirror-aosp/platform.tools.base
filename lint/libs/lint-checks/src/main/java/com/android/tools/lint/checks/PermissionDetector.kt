@@ -184,9 +184,21 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (requirement.isConditional && !conditionMet(context, requirement, method)) {
       return
     }
-    var permissions = getPermissions(context)
-    if (!requirement.isSatisfied(permissions)) {
+    val manifestPermissions = getPermissions(context)
+    checkMissingManifestPermission(context, requirement, manifestPermissions, node, result, method)
+    checkMissingPermissionCheck(requirement, manifestPermissions, context, node)
+  }
 
+  private fun checkMissingManifestPermission(
+    context: JavaContext,
+    requirement: PermissionRequirement,
+    manifestPermissions: PermissionHolder,
+    node: UElement,
+    result: PermissionFinder.Result?,
+    method: PsiMethod?,
+  ) {
+    var permissions = manifestPermissions
+    if (!requirement.isSatisfied(permissions)) {
       // See if it looks like we're holding the permission implicitly by @RequirePermission
       // annotations in the surrounding context
       val localPermissionRequirements =
@@ -329,12 +341,21 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         return
       }
     }
+  }
 
-    if (
-      requirement.isRevocable(permissions) &&
-        context.project.targetSdkVersion.featureLevel >= 23 &&
-        requirement.lastApplicableApi >= 23
-    ) {
+  private fun checkMissingPermissionCheck(
+    requirement: PermissionRequirement,
+    manifestPermissions: PermissionHolder,
+    context: JavaContext,
+    node: UElement,
+  ) {
+    if (requirement.isRevocable(manifestPermissions) && requirement.lastApplicableApi >= 23) {
+      // Revocable permissions only apply when targeting 23 and above.
+      if (
+        context.driver.isGlobalAnalysis() && context.mainProject.targetSdkVersion.featureLevel < 23
+      ) {
+        return
+      }
 
       var handlesMissingPermission = handlesSecurityException(node)
 
@@ -350,8 +371,8 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             PermissionHolder.SetPermissionLookup(
               mutableSetOf(),
               mutableSetOf(),
-              permissions.minSdkVersion,
-              permissions.targetSdkVersion,
+              manifestPermissions.minSdkVersion,
+              manifestPermissions.targetSdkVersion,
             ),
             localPermissionRequirements,
           )
@@ -383,7 +404,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             fix()
               .data(
                 KEY_MISSING_PERMISSIONS,
-                requirement.getRevocablePermissions(permissions).toList(),
+                requirement.getRevocablePermissions(manifestPermissions).toList(),
                 KEY_REQUIREMENT,
                 requirement.serialize(),
               ),
@@ -408,10 +429,14 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     val requirementString = map.getString(KEY_REQUIREMENT, null)
     if (requirementString == null) {
-      if (!isAndroidThingsProject(context)) {
-        return true
-      }
-      return false
+      // This is a missing permission check incident (not a missing manifest permission incident).
+
+      // Revocable permissions only apply when targeting 23 and above.
+      if (context.project.targetSdkVersion.featureLevel < 23) return false
+
+      if (isAndroidThingsProject(context)) return false
+
+      return true
     }
 
     val requirement = PermissionRequirement.deserialize(requirementString)
