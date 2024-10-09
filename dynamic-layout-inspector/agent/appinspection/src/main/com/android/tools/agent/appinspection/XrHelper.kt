@@ -33,6 +33,7 @@ private const val JXR_CORE_RUNTIME_ENTITY = "com.google.vr.androidx.xr.core.JXRC
 
 private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"
 private const val CREATE_METHOD = "create"
+private const val IS_HIDDEN_METHOD = "isHidden"
 
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
 private const val RT_PANEL_ENTITY_FIELD = "rtPanelEntity"
@@ -71,6 +72,10 @@ class XrHelper(private val environment: InspectorEnvironment) {
   }
 
   private fun getView(entity: Any): View? {
+    if (isHidden(entity)) {
+        return null
+    }
+
     return entity.mapAllFields { field ->
         if (field.name == RT_PANEL_ENTITY_FIELD) {
           val fieldInstance = field.get(entity)!!
@@ -117,6 +122,22 @@ class XrHelper(private val environment: InspectorEnvironment) {
     }
   }
 
+  fun isHidden(instance: Any): Boolean {
+    var isHidden = false
+
+    runCatching {
+        instance.mapAllMethods { method ->
+            if (method.name == IS_HIDDEN_METHOD) {
+                isHidden = method.invoke(instance, true) as Boolean
+                return@mapAllMethods
+            }
+
+        }
+    }
+
+    return isHidden
+  }
+
   private fun <T> Any.mapAllFields(block: (filed: Field) -> T): List<T> {
     var clazz: Class<*>? = javaClass
     val results = mutableListOf<T>()
@@ -134,6 +155,23 @@ class XrHelper(private val environment: InspectorEnvironment) {
 
     return results
   }
+
+  fun <T> Any.mapAllMethods(block: (method: Method) -> T): List<T> {
+    var clazz: Class<*>? = javaClass
+    val results = mutableListOf<T>()
+
+    while (clazz != Any::class.java && clazz != null) {
+        clazz.declaredMethods.forEach { method ->
+            method.isAccessible = true
+            results.add(block(method))
+        }
+
+        // Move to the superclass
+        clazz = clazz.superclass
+    }
+
+    return results
+}
 
   private fun loadClass(name: String): Class<*> {
     return XrHelper::class.java.classLoader.loadClass(name)
