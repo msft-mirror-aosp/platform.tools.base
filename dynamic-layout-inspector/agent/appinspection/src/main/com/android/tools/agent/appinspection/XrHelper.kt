@@ -26,6 +26,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 import com.google.vr.androidx.xr.core.Session
 
+private const val MAIN_PANEL_ENTITY_CLASS = "com.google.vr.realitycore.runtime.androidxr.MainPanelEntityImpl"
 private const val JXR_CORE_RUNTIME_CLASS = "com.google.vr.androidx.xr.core.JXRCoreRuntime"
 private const val PANEL_ENTITY_CLASS = "com.google.vr.androidx.xr.core.PanelEntity"
 private const val JXR_CORE_RUNTIME_ENTITY = "com.google.vr.androidx.xr.core.JXRCoreRuntime\$Entity"
@@ -34,6 +35,7 @@ private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"
 private const val CREATE_METHOD = "create"
 
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
+private const val RT_PANEL_ENTITY_FIELD = "rtPanelEntity"
 
 class XrHelper(private val environment: InspectorEnvironment) {
   var enabled = false
@@ -70,7 +72,16 @@ class XrHelper(private val environment: InspectorEnvironment) {
 
   private fun getView(entity: Any): View? {
     return entity.mapAllFields { field ->
-        if (field.type.name == JXR_CORE_RUNTIME_ENTITY) {
+        if (field.name == RT_PANEL_ENTITY_FIELD) {
+          val fieldInstance = field.get(entity)!!
+          if (fieldInstance.javaClass.name == MAIN_PANEL_ENTITY_CLASS) {
+            getMainPanelEntityImplView(fieldInstance)
+          }
+          else {
+            null
+          }
+        }
+        else if (field.type.name == JXR_CORE_RUNTIME_ENTITY) {
           val fieldInstance = field.get(entity)!!
           getRuntimeEntityView(fieldInstance)
         }
@@ -79,6 +90,19 @@ class XrHelper(private val environment: InspectorEnvironment) {
         }
     }.filterNotNull().firstOrNull()
   }
+
+  fun getMainPanelEntityImplView(instance: Any): View? {
+    val clazz = instance.javaClass
+    val runtimeActivityField = runCatching { clazz.getDeclaredField("runtimeActivity") }.getOrNull()
+    return if (runtimeActivityField != null) {
+        runtimeActivityField.isAccessible = true
+        val runtimeActivityInstance = runtimeActivityField.get(instance) as Activity
+        runtimeActivityInstance.window.decorView
+    }
+    else {
+        null
+    }
+}
 
   private fun getRuntimeEntityView(instance: Any): View? {
     val clazz = instance.javaClass
