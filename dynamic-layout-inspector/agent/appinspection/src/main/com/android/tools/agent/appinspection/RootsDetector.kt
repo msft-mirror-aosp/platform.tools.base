@@ -143,7 +143,16 @@ data class InspectorView(val view: View, val isXr: Boolean)
 
 fun getRootViews(xrHelper: XrHelper): List<InspectorView> {
     val xrViews = xrHelper.getXrViews().map { InspectorView(it, true) }
-    val androidViews = getAndroidViews().map { InspectorView(it, false) }
+
+    // If there are xr panels, we want to ignore regular android views.
+    // In practice, there are no regular views in an xr app, but the regular view APIs
+    // still return the main panel views as a regular view. So getting views both using
+    // xr and regular view APIs would duplicate the main panel.
+    val androidViews = if (xrViews.isEmpty()) {
+      getAndroidViews().map { InspectorView(it, false) }
+    } else {
+      emptyList()
+    }
 
     return (xrViews + androidViews)
         .filter { it.view.visibility == View.VISIBLE && it.view.isAttachedToWindow }
