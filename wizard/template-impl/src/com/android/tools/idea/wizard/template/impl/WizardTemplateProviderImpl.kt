@@ -42,6 +42,7 @@ import com.android.tools.idea.wizard.template.impl.activities.scrollActivity.scr
 import com.android.tools.idea.wizard.template.impl.activities.settingsActivity.settingsActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.tabbedActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.viewModelActivityTemplate
+import com.android.tools.idea.wizard.template.impl.activities.xrActivity.xrActivityTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.blankFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment.fullscreenFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.googleAdMobAdsFragmentTemplate
@@ -75,6 +76,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
   override fun getTemplates(): List<Template> = listOf(
       composeActivityMaterial3Template,
       genAiActivityTemplate,
+      xrActivityTemplate,
     androidTVActivityTemplate,
     basicActivityTemplate,
     composeWearActivityWithTileAndComplicationTemplate,
