@@ -60,7 +60,6 @@ class StandaloneRenderModelModule(
     override val manifest: RenderModelManifest? = null
 
     override fun getClassLoaderProvider(
-        weakRenderTask: WeakReference<RenderTask>,
         privateClassLoader: Boolean,
     ): RenderModelModule.ClassLoaderProvider {
         return RenderModelModule.ClassLoaderProvider {
