@@ -17,7 +17,7 @@ package com.android.tools.idea.wizard.template.impl.activities.xrActivity.res.va
 
 fun stringsXml() = """
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Basic Headset Activity</string>
     <string name="hello_android_xr">Hello Android XR.</string>
     <string name="switch_to_home_space_mode">Switch to Home Space Mode</string>
     <string name="switch_to_full_space_mode">Switch to Full Space Mode</string>

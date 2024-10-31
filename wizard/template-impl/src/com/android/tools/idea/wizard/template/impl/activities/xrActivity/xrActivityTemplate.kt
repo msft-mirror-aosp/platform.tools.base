@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,23 +21,20 @@ import com.android.tools.idea.wizard.template.Constraint.CLASS
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
 import com.android.tools.idea.wizard.template.Constraint.UNIQUE
 import com.android.tools.idea.wizard.template.FormFactor
-import com.android.tools.idea.wizard.template.LabelWidget
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
 import com.android.tools.idea.wizard.template.TextFieldWidget
-import com.android.tools.idea.wizard.template.UrlLinkWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
-import com.intellij.icons.AllIcons
 import java.io.File
 
 val xrActivityTemplate
   get() = template {
-    name = "XR Activity"
+    name = "Basic Headset Activity"
     description = "Creates a new basic XR headset activity"
     minApi = 21
     constraints =
@@ -49,7 +46,7 @@ val xrActivityTemplate
       )
 
     category = Category.Activity
-    formFactor = FormFactor.Mobile
+    formFactor = FormFactor.XR
     screens = listOf(WizardUiContext.NewProject)
 
     val activityClass = stringParameter {
@@ -63,18 +60,11 @@ val xrActivityTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(activityClass),
-      PackageNameWidget(packageName),
-    )
+    widgets(TextFieldWidget(activityClass), PackageNameWidget(packageName))
 
     thumb { File("xr-activity").resolve("template_xr_activity.png") }
 
     recipe = { data: TemplateData ->
-      xrActivityRecipe(
-        data as ModuleTemplateData,
-        activityClass.value,
-        packageName.value,
-      )
+      xrActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value)
     }
   }
