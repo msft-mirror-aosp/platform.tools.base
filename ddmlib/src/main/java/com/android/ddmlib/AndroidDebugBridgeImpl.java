@@ -15,6 +15,9 @@
  */
 package com.android.ddmlib;
 
+import static com.android.ddmlib.AdbHelper.formAdbRequest;
+import static com.android.ddmlib.AdbHelper.readAdbResponse;
+import static com.android.ddmlib.AdbHelper.write;
 import static com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION;
 
 import com.android.SdkConstants;
@@ -1290,6 +1293,26 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
         return sUserManagedAdbMode;
     }
 
+    @Override
+    public String queryFeatures(String adbFeaturesRequest)
+            throws TimeoutException, AdbCommandRejectedException, IOException {
+        try (SocketChannel adbChan = AndroidDebugBridge.openConnection()) {
+            adbChan.configureBlocking(false);
+
+            byte[] request = formAdbRequest(adbFeaturesRequest);
+
+            write(adbChan, request);
+
+            AdbHelper.AdbResponse resp = readAdbResponse(adbChan, true /* readDiagString */);
+            if (!resp.okay) {
+                Log.w("features", "Error querying features: " + resp.message);
+                throw new AdbCommandRejectedException(resp.message);
+            }
+
+            return resp.message;
+        }
+    }
+
     /**
      * Starts the adb host side server. This method should not be used when using user managed ADB
      * server as the server lifecycle should be managed by the user, not ddmlib.
@@ -1386,7 +1409,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
      *
      * @return true if success
      */
-    private synchronized boolean stopAdb(long timeout, @NonNull TimeUnit unit) {
+    public synchronized boolean stopAdb(long timeout, @NonNull TimeUnit unit) {
         if (sUserManagedAdbMode) {
             Log.e(ADB, "stopADB should never be called when using user managed ADB server.");
             return false;

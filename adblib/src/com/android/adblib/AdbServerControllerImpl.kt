@@ -66,7 +66,7 @@ internal class AdbServerControllerImpl(
      * Note: If ADB server is killed manually, e.g. by running adb `kill-server` this value still
      * returns `true`
      */
-    val isStarted: Boolean
+    override val isStarted: Boolean
         get() = currentState.isStarted
 
     override val channelProvider: AdbServerChannelProvider = AdbServerControllerProvider()
@@ -187,6 +187,7 @@ internal class AdbServerControllerImpl(
 
                 val exitCode = process.waitFor()
                 if (exitCode != 0) {
+                    logger.debug { "${command.joinToString(" ")} failed. Output: $output" }
                     throw IOException("adb ${command.joinToString(" ")} failed. Exit code: $exitCode")
                 }
             }

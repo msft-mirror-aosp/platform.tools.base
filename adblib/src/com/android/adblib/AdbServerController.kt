@@ -33,6 +33,13 @@ interface AdbServerController : AutoCloseable {
      */
     val channelProvider: AdbServerChannelProvider
 
+    /**
+     * Returns `true` if `start` has been called and was successful. Returns
+     * `false` if `start` has not been called or `stop` has been called and was
+     * successful.
+     */
+    val isStarted: Boolean
+
     /** Start if not started, no-op otherwise */
     suspend fun start()
 
@@ -43,7 +50,7 @@ interface AdbServerController : AutoCloseable {
 
         fun createServerController(
             host: AdbSessionHost,
-            configurationFlow: StateFlow<AdbServerConfiguration>
+            configurationFlow: StateFlow<AdbServerConfiguration>,
         ): AdbServerController {
             return AdbServerControllerImpl(host, configurationFlow)
         }
@@ -55,7 +62,7 @@ data class AdbServerConfiguration(
     val serverPort: Int?,
     val isUserManaged: Boolean,
     val isUnitTest: Boolean,
-    val envVars: Map<String, String>
+    val envVars: Map<String, String>,
 ) {
 
     init {
