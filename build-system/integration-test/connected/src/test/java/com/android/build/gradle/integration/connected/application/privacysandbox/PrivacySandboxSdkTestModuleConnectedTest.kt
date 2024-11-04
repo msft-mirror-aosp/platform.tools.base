@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.connected.application.privacysandbox
 
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkAppLargeSampleProjectWithTestModule
-import com.android.build.gradle.integration.connected.application.privacysandbox.PrivacySandboxSdkTestBase.Companion.setupDevice
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
@@ -25,8 +24,8 @@ import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
-class PrivacySandboxSdkTestModuleConnectedTest: PrivacySandboxSdkTestBase {
-    @get:Rule override var project = privacySandboxSdkAppLargeSampleProjectWithTestModule()
+class PrivacySandboxSdkTestModuleConnectedTest {
+    @get:Rule var project = privacySandboxSdkAppLargeSampleProjectWithTestModule()
     @Before
     fun setUp() {
         // fail fast if no response
@@ -36,7 +35,7 @@ class PrivacySandboxSdkTestModuleConnectedTest: PrivacySandboxSdkTestBase {
 
     @Test
     fun `connectedAndroidTest task for application using test-only module`() {
-        executor()
+        executor(project)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT, true)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)

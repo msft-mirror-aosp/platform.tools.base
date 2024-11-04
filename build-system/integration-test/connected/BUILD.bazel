@@ -162,7 +162,7 @@ single_gradle_connected_test_per_source(
         "//tools/base/build-system/integration-test:ksp_gradle_plugin",
     ],
     non_target_srcs = [
-        "src/test/java/com/android/build/gradle/integration/connected/application/privacysandbox/PrivacySandboxSdkTestBase.kt",
+        "src/test/java/com/android/build/gradle/integration/connected/application/privacysandbox/PrivacySandboxSdkTestHelper.kt",
     ],
     tags = [
         "noci:studio-win",

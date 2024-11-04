@@ -17,8 +17,6 @@
 package com.android.build.gradle.integration.connected.application.privacysandbox
 
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkAppLargeSampleProject
-import com.android.build.gradle.integration.connected.application.privacysandbox.PrivacySandboxSdkTestBase.Companion.packageExists
-import com.android.build.gradle.integration.connected.application.privacysandbox.PrivacySandboxSdkTestBase.Companion.setupDevice
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
@@ -28,9 +26,9 @@ import org.junit.Rule
 import org.junit.Test
 
 
-class PrivacySandboxSdkAppConnectedTest: PrivacySandboxSdkTestBase {
+class PrivacySandboxSdkAppConnectedTest {
 
-    @get:Rule override var project = privacySandboxSdkAppLargeSampleProject()
+    @get:Rule var project = privacySandboxSdkAppLargeSampleProject()
 
     @Before
     fun setUp() {
@@ -41,14 +39,14 @@ class PrivacySandboxSdkAppConnectedTest: PrivacySandboxSdkTestBase {
 
     @Test
     fun `connectedAndroidTest task for application`() {
-        executor()
+        executor(project)
                 .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
                 .run(":client-app:connectedAndroidTest")
     }
 
     @Test
     fun `install and uninstall works for both SDK and APK for application`() {
-        executor()
+        executor(project)
                 .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
                 .run(":client-app:installDebug")
         Truth.assertThat(packageExists(APP_PACKAGE_NAME)).isTrue()

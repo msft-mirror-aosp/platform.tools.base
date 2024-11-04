@@ -43,7 +43,7 @@ class BazelTargetTest {
                 "prebuilts"
             ),
             ignoreTestSourceFiles = listOf(
-                "PrivacySandboxSdkTestBase",
+                "PrivacySandboxSdkTestHelper",
                 "PrivacySandboxSdkAppConnectedTest",
                 "PrivacySandboxSdkDynamicFeatureConnectedTest",
                 "PrivacySandboxSdkTestModuleConnectedTest"
