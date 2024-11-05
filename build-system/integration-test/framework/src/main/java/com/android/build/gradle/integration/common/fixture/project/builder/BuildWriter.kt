@@ -24,16 +24,8 @@ package com.android.build.gradle.integration.common.fixture.project.builder
  * The API is not meant to write arbitrary strings into the file.
  */
 interface BuildWriter {
-    /** Affectation: a = b */
-    fun set(name: String, value: String): BuildWriter
-    /** Affectation: a = b */
-    fun set(name: String, value: Boolean): BuildWriter
-    /** Affectation: a = b */
-    fun set(name: String, value: Int): BuildWriter
-    /** Affectation: a = b */
-    fun set(name: String, value: RawString): BuildWriter
-    /** Affectation: a = null */
-    fun setNull(name: String): BuildWriter
+    /** Assignment: a = b */
+    fun set(name: String, value: Any?): BuildWriter
 
     /** Calls a method with the given parameters */
     fun method(name: String, vararg params: Any)
@@ -41,6 +33,9 @@ interface BuildWriter {
     fun method(name: String, params: List<Pair<String, Any>>)
     fun pluginId(id: String, version: String?, apply: Boolean = true)
     fun dependency(scope: String, value:Any)
+
+    fun writeListAddAll(name: String, items: Collection<*>)
+    fun writeListAdd(name:String, value: Any?)
 
     /** Build a [RawString] from a string. */
     fun rawString(value: String): RawString
@@ -128,28 +123,15 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
 
-    override fun set(name: String, value: String): BuildWriter {
-        indent().put(name).put(" = ").put(quoteString(value)).endLine()
-        return this
+    private fun Any?.toFormattedString() = when (this) {
+        null -> "null"
+        is String -> quoteString(this)
+        is BuildWriter.RawString -> value
+        else -> toString()
     }
 
-    override fun set(name: String, value: Boolean): BuildWriter {
-        indent().put(name).put(" = ").put(value).endLine()
-        return this
-    }
-
-    override fun set(name: String, value: Int): BuildWriter {
-        indent().put(name).put(" = ").put(value).endLine()
-        return this
-    }
-
-    override fun set(name: String, value: BuildWriter.RawString): BuildWriter {
-        indent().put(name).put(" = ").put(value.value).endLine()
-        return this
-    }
-
-    override fun setNull(name: String): BuildWriter {
-        indent().put(name).put(" = null").endLine()
+    override fun set(name: String, value: Any?): BuildWriter {
+        indent().put(name).put(" = ").put(value.toFormattedString()).endLine()
         return this
     }
 
@@ -189,6 +171,36 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         method(scope, value)
     }
 
+    abstract fun listOf(value: String): String
+    abstract fun setOf(value: String): String
+
+    override fun writeListAdd(name: String, value: Any?) {
+        indent().put(name).put(" += ").put(value.toFormattedString()).endLine()
+    }
+
+    override fun writeListAddAll(name: String, items: Collection<*>) {
+        val writer = indent().put(name).put(" += ")
+        val itemStr = items.joinToString(separator = ", ") { it ->
+            it.toFormattedString()
+        }
+        when (items) {
+            is List<*> -> {
+                writer.put(listOf(itemStr))
+            }
+            is Set<*> -> {
+                writer.put(setOf(itemStr))
+            }
+            is Map<*,*> -> {
+                throw RuntimeException("writeListAddAll does not support map yet")
+            }
+            else -> {
+                throw RuntimeException("Unexpected collection type (${items.javaClass}) in writeListAddAll")
+            }
+        }
+
+        writer.endLine()
+    }
+
     override fun rawString(value: String) = BuildWriter.RawString(value)
 
     override fun rawMethod(name: String, vararg params: Any): BuildWriter.RawString {
@@ -205,23 +217,16 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         return BuildWriter.RawString(sb.toString())
     }
 
-    private fun concatMethodParams(vararg params: Any): String {
-        return params.joinToString(separator = ", ") { it ->
-            handleParam(it)
+    private fun concatMethodParams(vararg params: Any): String =
+        params.joinToString(separator = ", ") { it ->
+            it.toFormattedString()
         }
-    }
-
-    private fun handleParam(it: Any) = when (it) {
-        is String -> quoteString(it)
-        is BuildWriter.RawString -> it.value
-        else -> it.toString()
-    }
 
     abstract fun namedParam(name: String): String
 
     private fun toNamedParams(params: List<Pair<String, Any>>): List<String> {
         return params.map { it ->
-            namedParam(it.first) + handleParam(it.second)
+            namedParam(it.first) + it.second.toFormattedString()
         }
     }
 
@@ -264,6 +269,14 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
 
     override fun namedParam(name: String): String = "$name = "
 
+    override fun listOf(value: String): String {
+        return "listOf($value)"
+    }
+
+    override fun setOf(value: String): String {
+        return "setOf($value)"
+    }
+
     override val buildFileName: String
         get() = "build.gradle.kts"
     override val settingsFileName: String
@@ -282,6 +295,15 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
      * in dependencies where it's a named param in KTS and a map in groovy.
      */
     override fun namedParam(name: String): String = "$name: "
+
+    override fun listOf(value: String): String {
+        return "[$value]"
+    }
+
+    override fun setOf(value: String): String {
+        // FIXME?
+        return "[$value]"
+    }
 
     override val buildFileName: String
         get() = "build.gradle"
