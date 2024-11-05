@@ -44,7 +44,7 @@ fun createTestCase(
         val className: String = packageName.split(".").last()
         testClass = className
         testPackage = packageName.dropLast(className.length + 1)
-        testMethod = testCaseName
+        testMethod = testCaseName.substringAfter("${packageName}.")
         startTime = createTimestampFromMillis(testStartTime)
         Timestamp.newBuilder().nanos
         endTime = createTimestampFromMillis(testEndTime)
@@ -75,7 +75,7 @@ fun createError(message: String): Error {
  *
  * Refactored from com.google.protobuf.util.Timestamps.fromMillis
  */
-private fun createTimestampFromMillis(milliseconds: Long): Timestamp {
+fun createTimestampFromMillis(milliseconds: Long): Timestamp {
     var seconds = milliseconds / MILLIS_PER_SECOND
     var nanos = (milliseconds % MILLIS_PER_SECOND * NANOS_PER_MILLISECOND).toInt()
     // This only checks seconds, because nanos can intentionally overflow to increment the seconds

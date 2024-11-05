@@ -18,7 +18,6 @@ package com.android.tools.screenshot
 
 import org.junit.Test
 import com.android.tools.render.compose.ComposeScreenshotResult
-import com.google.protobuf.util.Timestamps
 import kotlin.test.assertEquals
 
 class UtpProtoUtilTest {
@@ -35,7 +34,7 @@ class UtpProtoUtilTest {
                 "${packageName}.${className}.$displayName",
                 "${packageName}.${className}.myTestMethod",
                 "imagePath", null),
-            displayName,
+            "${packageName}.${className}.$displayName",
             start,
             end
         )
@@ -43,8 +42,8 @@ class UtpProtoUtilTest {
         assertEquals(testCase.testPackage, packageName)
         assertEquals(testCase.testClass, className)
         assertEquals(testCase.testMethod, displayName)
-        assertEquals(testCase.startTime, Timestamps.fromMillis(start))
-        assertEquals(testCase.endTime, Timestamps.fromMillis(end))
+        assertEquals(testCase.startTime, createTimestampFromMillis(start))
+        assertEquals(testCase.endTime, createTimestampFromMillis(end))
     }
 
     @Test
