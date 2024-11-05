@@ -34,11 +34,12 @@ class DexDumper {
       dex.classes.values.forEach { clazz ->
         logger.debug("${prefix}${clazz.name}")
         clazz.methods.values.forEach { m ->
-          logger.debug("$prefix   ${m.name}(${m.shorty}) returnType=${m.returnType}")
-
+          logger.debug("$prefix   ${m.name}(${m.shorty}))")
+          logger.debug("$prefix        returnType=${m.returnType}")
+          logger.debug("$prefix        paramInter=${m.params}")
           val bc = m.byteCode
           logger.debug("$prefix        Instructions:(${bc.instructions.size})")
-          bc.instructions.forEach { i ->
+          m.byteCode.instructions.forEach { i ->
             logger.debug(
               "$prefix        ${i.opcode.name} ${i.opcode.toHex()} ${i.payload.joinToString( ",", "[", "]") { i -> "0x%02x".format(i) }}"
             )

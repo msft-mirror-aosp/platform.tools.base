@@ -48,6 +48,9 @@ private fun ByteArray.getUShortAt(index: UInt): UShort {
 
 // https://source.android.com/docs/core/runtime/dex-format#leb128
 class DexReader(private val bytes: ByteArray, var position: UInt = 0u) {
+
+  fun copy(): DexReader = DexReader(bytes, position)
+
   fun uLeb128(): UInt {
     val mask = 0x7Fu
     var result = ubyte().toUInt()

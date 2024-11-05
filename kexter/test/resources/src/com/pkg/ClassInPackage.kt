@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.pkg
 
-package kexter.core
+class ClassInPackage {
+  fun i(a: Int): Int {
+    return 0
+  }
 
-internal class TypeIds {
-  companion object {
-    private val cache: MutableMap<UInt, String> = mutableMapOf()
+  fun l(a: Long): Long {
+    return a
+  }
 
-    fun get(dex: DexImpl, index: UInt): String {
-      return cache.computeIfAbsent(index) {
-        if (index > dex.header.typeIds.count) {
-          dex.logger.error("Bad typeId index $index (max = ${dex.header.typeIds.count})")
-        }
-        dex.reader.position = dex.header.typeIds.offset + index * 4u
-        val descriptorIndex = dex.reader.uint()
-        dex.stringIds.get(descriptorIndex)
-      }
-    }
+  fun f(f: Float): Float {
+    return f
+  }
+
+  fun d(d: Double): Double {
+    return d
+  }
+
+  fun o(o1: Object, o2: String, o3: ClassInPackage): Object {
+    return Object()
   }
 }

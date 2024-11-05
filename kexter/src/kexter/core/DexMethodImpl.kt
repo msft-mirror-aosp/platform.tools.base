@@ -74,6 +74,8 @@ internal class DexMethodImpl(
   override val shorty: String
     get() = dex.stringIds.get(protoId.shortyIndex)
 
+  override val params: List<String> by lazy(LazyThreadSafetyMode.NONE) { retrieveParams() }
+
   override val returnType: String
     get() = TypeIds.get(dex, protoId.returnTypeIndex)
 
@@ -110,5 +112,21 @@ internal class DexMethodImpl(
     val codeItem = CodeItem.from(dex.reader)
     dex.reader.position = codeItem.debugInfoOffset
     return kexter.core.DexMethodDebugInfo.fromReader(dex.reader, dex.logger)
+  }
+
+  private fun retrieveParams(): List<String> {
+    if (protoId.parameterOffset == 0u) {
+      return emptyList()
+    }
+
+    val params = mutableListOf<String>()
+    val reader = dex.reader.copy()
+    reader.position = protoId.parameterOffset
+    val size = reader.uint()
+    repeat(size.toInt()) {
+      val typeIdx = reader.ushort()
+      params.add(TypeIds.get(dex, typeIdx.toUInt()))
+    }
+    return params
   }
 }

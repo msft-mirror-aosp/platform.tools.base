@@ -19,7 +19,7 @@ package kexter
 /** A representation of a class Method */
 interface DexMethod {
 
-  /** The name of them method (does not include the short descriptor) */
+  /** The name of the method (does not include the short descriptor) */
   val name: String
 
   /**
@@ -33,6 +33,9 @@ interface DexMethod {
    * like the JVM descriptor (e.g.: An object is just L). The exact name of the return type is here.
    */
   val returnType: String
+
+  /** The internal name of the parameters types. e.g: I for primitive type or Ljava/lang/Object; */
+  val params: List<String>
 
   /**
    * A direct method is invoked without walking the inheritance chain of an object. DEX separate

@@ -19,47 +19,61 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kexter.Dex
 import kexter.DexBytecode
+import kexter.DexClass
 import kexter.DexDumper
 import kexter.Logger
 
-class DexUtils {
-  companion object {
+object DexUtils {
 
-    private val dex = getTestResourceDex()
+  private val dex = getTestResourceDex()
+  private const val testResourceJar = "tools/base/kexter/dex_kexter_test_resources.jar"
 
-    private fun getTestResourceDex(): Dex {
-      val testResourceJar = "tools/base/kexter/dex_kexter_test_resources.jar"
-      var resourcesPath = Paths.get(testResourceJar)
-      if (!Files.exists(resourcesPath)) {
-        resourcesPath = Paths.get("bazel-bin/$testResourceJar")
-      }
-      val repo = ZipRepo(resourcesPath)
-      repo.use {
-        val logger = Logger()
-        val dex = Dex.fromBytes(repo.getContent("classes.dex").array(), logger)
-        DexDumper.dump(dex, logger)
-        return dex
-      }
+  private fun getTestResourceDex(): Dex {
+    var resourcesPath = Paths.get(testResourceJar)
+    if (!Files.exists(resourcesPath)) {
+      resourcesPath = Paths.get("bazel-bin/$testResourceJar")
     }
-
-    internal fun getRawBytecode(className: String, methodName: String): ByteArray {
-      return getByteCode(className, methodName).bytes
+    val repo = ZipRepo(resourcesPath)
+    repo.use {
+      val logger = Logger()
+      val dex = Dex.fromBytes(repo.getContent("classes.dex").array(), logger)
+      DexDumper.dump(dex, logger)
+      return dex
     }
+  }
 
-    internal fun getByteCode(className: String, methodName: String): DexBytecode {
-      if (!dex.classes.containsKey(className)) {
-        throw IllegalStateException(
-          "Unable to find class $className, found:${dex.classes.keys.joinToString(",\n")}"
-        )
-      }
-      val clazz = dex.classes[className]!!
-      if (!clazz.methods.containsKey(methodName)) {
-        throw IllegalStateException(
-          "Unable to find method $methodName in class $className. Found:\n ${clazz.methods.keys.joinToString(",\n" )}"
-        )
-      }
-      val method = clazz.methods[methodName]!!
-      return method.byteCode
+  internal fun getRawBytecode(className: String, methodName: String): ByteArray {
+    return getByteCode(className, methodName).bytes
+  }
+
+  internal fun getByteCode(className: String, methodName: String): DexBytecode {
+    if (!dex.classes.containsKey(className)) {
+      throw IllegalStateException(
+        "Unable to find class $className, found:${dex.classes.keys.joinToString(",\n")}"
+      )
     }
+    val clazz = dex.classes[className]!!
+    if (!clazz.methods.containsKey(methodName)) {
+      throw IllegalStateException(
+        "Unable to find method $methodName in class $className. Found:\n ${clazz.methods.keys.joinToString(",\n" )}"
+      )
+    }
+    val method = clazz.methods[methodName]!!
+    return method.byteCode
+  }
+
+  internal fun allClasses() = dex.classes
+
+  internal fun retrieveClass(internalClassName: String): DexClass {
+    if (!dex.classes.containsKey(internalClassName)) {
+      throw IllegalStateException(
+        "No class $internalClassName in dex $testResourceJar. Only found:\n${
+                    dex.classes.keys.joinToString(
+                        "\n"
+                    )
+                }"
+      )
+    }
+    return dex.classes[internalClassName]!!
   }
 }
