@@ -405,7 +405,6 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-core:agp_gradle_build_files",
-    "//tools/base/build-system/gradle-dcl-ecosystem:agp_gradle_build_files",
     "//tools/base/build-system/gradle-kotlin:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings-api:agp_gradle_build_files",
@@ -426,6 +425,25 @@ gradle_build(
     data = ["//prebuilts/studio/jdk:jdk11"] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "android_gradle_plugin.zip",
+    output_file_source = "dist/repo.zip",
+    repos = [
+        "//tools/base:agp_dependencies",
+        "//tools/base:agp_artifacts",
+    ],
+    tasks = [":zipPlugin"],
+    visibility = ["//visibility:public"],
+)
+
+DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES = ANDROID_GRADLE_PLUGIN_SOURCE_FILES + [
+    "//tools/base/build-system/gradle-dcl-ecosystem:agp_gradle_build_files",
+]
+
+gradle_build(
+    name = "declarative_android_gradle_plugin",
+    build_file = "//tools:agp_gradle_build_root_build_file",
+    data = ["//prebuilts/studio/jdk:jdk11"] + DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
+    gradle_properties = GRADLE_PROPERTIES,
+    output_file = "declarative_android_gradle_plugin.zip",
     output_file_source = "dist/repo.zip",
     repos = [
         "//tools/base:agp_dependencies",

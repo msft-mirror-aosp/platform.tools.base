@@ -6,16 +6,16 @@ plugins {
     id 'license-report'
 }
 
-if (!findProperty('release')?.toBoolean()) {
-    gradlePlugin {
-        plugins {
-            comAndroidEcosystem {
-                id = "com.android.ecosystem"
-                implementationClass = "com.android.build.gradle.AndroidEcosystemPlugin"
-            }
+
+gradlePlugin {
+    plugins {
+        comAndroidEcosystem {
+            id = "com.android.ecosystem"
+            implementationClass = "com.android.build.gradle.AndroidEcosystemPlugin"
         }
     }
 }
+
 
 validatePlugins {
     // Enable strict mode so we can see more warnings
@@ -28,12 +28,6 @@ validatePlugins {
 project.tasks.register("apiJar", org.gradle.jvm.tasks.Jar) {
     from(file('NOTICE'))
     archiveClassifier.set("api")
-}
-
-tasks.withType(PublishToMavenRepository) {
-    onlyIf {
-        !findProperty('release')?.toBoolean()
-    }
 }
 
 // replace the api publication with the empty jar
