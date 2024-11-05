@@ -333,7 +333,7 @@ class SdkParsingUtilsTest {
             """
             We recommend using a newer Android Gradle plugin to use compileSdk = 31
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30 (and compileSdkPreview = "S").
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30.
 
             You are strongly encouraged to update your project to use a newer
             Android Gradle plugin that has been tested with compileSdk = 31.

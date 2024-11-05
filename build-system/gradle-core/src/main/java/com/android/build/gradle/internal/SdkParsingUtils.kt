@@ -161,7 +161,7 @@ internal fun warnIfCompileSdkTooNew(
     if (suppressSet.contains(suppressName)) return
 
     val currentCompileSdk = version.asDsl()
-    val maxCompileSdk = AndroidVersion(maxVersion.apiLevel).asDsl() + (if (maxVersion.isPreview) " (and ${maxVersion.asDsl()})" else "")
+    val maxCompileSdk = AndroidVersion(maxVersion.apiLevel).asDsl()
     val preview = (if (version.isPreview) "preview " else "")
     val headline = if (version.isPreview) {
         "$currentCompileSdk has not been tested with this version of the Android Gradle plugin."
