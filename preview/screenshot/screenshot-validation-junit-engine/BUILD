@@ -14,6 +14,8 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
+        "@maven//:com.google.protobuf.protobuf-java-util",
+        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.junit.platform.junit-platform-engine",

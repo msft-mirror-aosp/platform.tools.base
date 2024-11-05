@@ -18,6 +18,7 @@ package com.android.tools.screenshot
 
 import com.android.tools.render.compose.ImagePathOrMessage
 import com.android.tools.render.compose.ScreenshotError
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.kxml2.io.KXmlSerializer
 import java.io.BufferedOutputStream
 import java.io.File
@@ -42,6 +43,8 @@ const val PROPERTIES = "properties"
 const val PROPERTY = "property"
 const val SKIPPED = "skipped"
 const val SUCCESS = "success"
+const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
+const val TEST_RESULT_XML_FILE_NAME = "TEST-results.xml"
 const val TESTCASE = "testcase"
 const val TESTS = "tests"
 const val TESTSUITE = "testsuite"
@@ -82,6 +85,23 @@ fun saveResults(
     )
     printTestResults(serializer, previewResults, xmlProperties)
     serializer.endDocument()
+}
+
+/*
+ * Save test results as {@link TestSuiteResult}s
+ *
+ * This is temporary for reading test results to the test matrix in Studio.
+ */
+fun saveTestSuiteResults(
+    testSuiteResults: List<TestSuiteResult>,
+    filePath: String,
+) {
+    val pbFile = File(filePath)
+    pbFile.outputStream().use {
+        for (testSuiteResult in testSuiteResults) {
+            testSuiteResult.writeTo(it)
+        }
+    }
 }
 
 @Throws(IOException::class)

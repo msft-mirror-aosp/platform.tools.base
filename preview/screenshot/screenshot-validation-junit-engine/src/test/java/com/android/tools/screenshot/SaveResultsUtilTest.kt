@@ -21,6 +21,11 @@ import com.android.tools.render.compose.ImagePathOrMessage
 import com.android.tools.render.compose.RenderProblem
 import com.android.tools.render.compose.ScreenshotError
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.ErrorProto
+import com.google.testing.platform.proto.api.core.TestCaseProto
+import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
+import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import java.io.File
 import kotlin.test.assertTrue
 import org.junit.Rule
@@ -38,12 +43,12 @@ class SaveResultsUtilTest {
     private lateinit var previewResults: List<PreviewResult>
 
     private fun createPreviewResultSuccess(): PreviewResult {
-        return PreviewResult(0, "package.previewTest1", 2F,"Images match!", ImagePathOrMessage.ImagePath(referenceImagePath), ImagePathOrMessage.ImagePath(actualPath), ImagePathOrMessage.ErrorMessage("Images match!"))
+        return PreviewResult(0, "package.previewTest1", 2F,"Images match!", ImagePathOrMessage.ImagePath(referenceImagePath), ImagePathOrMessage.ImagePath(actualPath), ImagePathOrMessage.ErrorMessage("Images match!"), TestResult.newBuilder().build())
     }
 
     private fun createPreviewResultFailed(): PreviewResult {
         return PreviewResult(1, "package.previewTest2", 2F, "Images don't match", ImagePathOrMessage.ImagePath(referenceImagePath),
-            ImagePathOrMessage.ImagePath(actualPath), ImagePathOrMessage.ImagePath(diffPath))
+            ImagePathOrMessage.ImagePath(actualPath), ImagePathOrMessage.ImagePath(diffPath), TestResult.newBuilder().build())
     }
 
     private fun createPreviewResultError(): PreviewResult {
@@ -54,7 +59,8 @@ class SaveResultsUtilTest {
             "Missing class XYZ",
             ImagePathOrMessage.ImagePath(referenceImagePath),
             ImagePathOrMessage.ErrorMessage("Render error: Class XYZ not found"),
-            ImagePathOrMessage.ErrorMessage("No diff available")
+            ImagePathOrMessage.ErrorMessage("No diff available"),
+            TestResult.newBuilder().build()
         )
     }
 
@@ -82,7 +88,73 @@ class SaveResultsUtilTest {
         assertEquals("Rendering failed", getFirstError(ScreenshotError("STATUS", "", "", emptyList(), emptyList(), emptyList())))
     }
 
+    @Test
+    fun testSaveUtpResults() {
+        val testSuiteResults = listOf(
+            createTestSuiteResult()
+        )
+        val outputFilePath = tempDirRule.newFile().absolutePath
+        saveTestSuiteResults(testSuiteResults, outputFilePath)
+        val file = File(outputFilePath)
 
+        assertTrue(file.exists())
+        val testResult = file.inputStream().use { input ->
+            TestSuiteResult.parseFrom(input)
+        }
+
+        assertThat(testResult.testResultCount).isEqualTo(3)
+        assertThat(testResult.testStatus).isEqualTo(TestStatus.FAILED)
+        assertThat(testResult.testResultList.single { it.testCase.testMethod == "errorTest" }.testStatus).isEqualTo(
+            TestStatus.ERROR)
+        assertThat(testResult.testResultList.single { it.testCase.testMethod == "failingTest" }.testStatus).isEqualTo(
+            TestStatus.FAILED)
+        assertThat(testResult.testResultList.single { it.testCase.testMethod == "passingTest" }.testStatus).isEqualTo(
+            TestStatus.PASSED)
+    }
+
+    private fun createTestSuiteResult(): TestSuiteResult {
+        return TestSuiteResult.newBuilder().apply {
+            addTestResult(createPassedTestResult())
+            addTestResult(createFailedTestResult())
+            addTestResult(createErrorTestResult())
+            testStatus = TestStatus.FAILED
+        }.build()
+    }
+
+    private fun createErrorTestResult(): TestResult {
+        return TestResult.newBuilder().apply {
+            testCase = TestCaseProto.TestCase.newBuilder().apply {
+                testPackage = "package"
+                testClass = "class"
+                testMethod = "errorTest"
+            }.build()
+            testStatus = TestStatus.ERROR
+            error = ErrorProto.Error.newBuilder().apply { errorMessage = "Error: Test Failed" }.build()
+        }.build()
+    }
+
+    private fun createFailedTestResult(): TestResult {
+        return TestResult.newBuilder().apply {
+            testCase = TestCaseProto.TestCase.newBuilder().apply {
+                testPackage = "package"
+                testClass = "class"
+                testMethod = "failingTest"
+            }.build()
+            testStatus = TestStatus.FAILED
+            error = ErrorProto.Error.newBuilder().apply { errorMessage = "Test Failed" }.build()
+        }.build()
+    }
+
+    private fun createPassedTestResult(): TestResult {
+        return TestResult.newBuilder().apply {
+            testCase = TestCaseProto.TestCase.newBuilder().apply {
+                testPackage = "package"
+                testClass = "class"
+                testMethod = "passingTest"
+            }.build()
+            testStatus = TestStatus.PASSED
+        }.build()
+    }
 }
 
 

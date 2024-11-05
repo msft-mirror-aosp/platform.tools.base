@@ -35,6 +35,10 @@ import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolve
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.io.path.Path
+import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
+import com.google.testing.platform.proto.api.core.TestStatusProto
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+
 
 class PreviewScreenshotTestEngine : TestEngine {
 
@@ -119,38 +123,58 @@ class PreviewScreenshotTestEngine : TestEngine {
         val composeScreenshots: List<ComposeScreenshot> = readComposeScreenshotsJson(File(parameters.previewsDiscovered).reader())
         val listener = request.engineExecutionListener
         val resultsToSave = mutableListOf<PreviewResult>()
+        val testSuiteResultsToSave = mutableListOf<TestSuiteResult>()
 
         for (classDescriptor in request.rootTestDescriptor.children) {
+            val testSuiteResult = TestSuiteResult.newBuilder()
+            var testCaseCount = 0
+
             listener.executionStarted(classDescriptor)
             for (methodDescriptor in classDescriptor.children) {
                 if (methodDescriptor is TestMethodTestDescriptor) {
-                    resultsToSave.add(
-                        runTestMethodThatGeneratesASingleScreenshotTest(
-                            methodDescriptor,
-                            listener,
-                            screenshotResults))
+                    val previewResult = runTestMethodThatGeneratesASingleScreenshotTest(
+                        methodDescriptor,
+                        listener,
+                        screenshotResults)
+                    resultsToSave.add(previewResult)
+                    testSuiteResult.apply {
+                        addTestResult(previewResult.testResult)
+                    }
+                    testCaseCount++
                 } else if (methodDescriptor is TestMethodDescriptor) {
-                    resultsToSave.addAll(
-                        runTestMethodThatGeneratesMultipleScreenshotTests(
-                            methodDescriptor,
-                            listener,
-                            composeScreenshots,
-                            screenshotResults
-                        )
+                    val previewResults = runTestMethodThatGeneratesMultipleScreenshotTests(
+                        methodDescriptor,
+                        listener,
+                        composeScreenshots,
+                        screenshotResults
                     )
+                    resultsToSave.addAll(previewResults)
+                    previewResults.forEach {
+                        testSuiteResult.apply {
+                            addTestResult(it.testResult)
+                        }
+                    }
+                    testCaseCount += previewResults.size
                 }
             }
+            testSuiteResult.apply {
+                testSuiteMetaData = createTestSuiteMetadata((classDescriptor as TestClassDescriptor).className, testCaseCount)
+                testStatus = if (testResultList.any { it.testStatus != TestStatusProto.TestStatus.PASSED}) TestStatusProto.TestStatus.FAILED else TestStatusProto.TestStatus.PASSED
+            }
+
             listener.executionFinished(classDescriptor, TestExecutionResult.successful())
+            testSuiteResultsToSave.add(testSuiteResult.build())
         }
         if (resultsToSave.isNotEmpty()) {
-            saveResults(resultsToSave, "${parameters.resultsDirPath}/TEST-results.xml")
+            saveResults(resultsToSave, "${parameters.resultsDirPath}/${TEST_RESULT_XML_FILE_NAME}")
+            saveTestSuiteResults(testSuiteResultsToSave, "${parameters.resultsDirPath}/${TEST_RESULT_PB_FILE_NAME}")
         }
     }
 
     private fun compareImages(
         composeScreenshot: ComposeScreenshotResult,
         testDisplayName: String,
-        startTime: Long
+        testStartTime: Long
     ): PreviewResult {
         val referencePath = Path(parameters.referenceImageDirPath).resolve(composeScreenshot.imagePath)
         val actualPath = Path("${parameters.renderTaskOutputDir}").resolve(composeScreenshot.imagePath)
@@ -161,17 +185,26 @@ class PreviewScreenshotTestEngine : TestEngine {
         val diffImage = ImagePathOrMessage.ImagePath(diffPath.toString())
 
         Files.createDirectories(diffPath.parent)
+        val testEndTime = System.currentTimeMillis()
+        val duration = getDurationInSeconds(testStartTime, testEndTime)
+
+        val testResult = TestResult.newBuilder().apply {
+            testCase = createTestCase(composeScreenshot, testDisplayName, testStartTime, testEndTime)
+        }
 
         //renderer failed to generate images
         if (!actualPath.toFile().exists()) {
             val errorMessage = getFirstError(composeScreenshot.error)
+            testResult.setTestStatus(TestStatusProto.TestStatus.ERROR)
+            testResult.setError(createError(errorMessage))
             return PreviewResult(2,
                 composeScreenshot.previewId,
-                getDurationInSeconds(startTime),
+                duration,
                 errorMessage,
                 referenceImage = if (referencePath.toFile().exists()) referenceImage else ImagePathOrMessage.ErrorMessage("Reference image missing"),
                 actualImage = ImagePathOrMessage.ErrorMessage(errorMessage),
-                diffImage = ImagePathOrMessage.ErrorMessage("No diff available"))
+                diffImage = ImagePathOrMessage.ErrorMessage("No diff available"),
+                testResult.build())
         }
 
         //Image comparison
@@ -181,40 +214,51 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         return when (val result = verifier.assertMatchReference(referencePath, ImageIO.read(actualPath.toFile()))) {
             is Verify.AnalysisResult.Failed -> {
+                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
                 result.toPreviewResponse(1,
                     testDisplayName,
-                    getDurationInSeconds(startTime),
+                    duration,
                     referenceImage,
                     actualImage,
-                    diffImage)
+                    diffImage,
+                    testResult.build())
             }
 
             is Verify.AnalysisResult.Passed -> {
                 val diff = if (result.imageDiff.highlights == null) ImagePathOrMessage.ErrorMessage("Images match!") else diffImage
+                testResult.setTestStatus(TestStatusProto.TestStatus.PASSED)
                 result.toPreviewResponse(0,
                     testDisplayName,
-                    getDurationInSeconds(startTime),
+                    duration,
                     referenceImage,
                     actualImage,
-                    diff)
+                    diff,
+                    testResult.build())
             }
 
             is Verify.AnalysisResult.MissingReference -> {
+                val errorMessage = "Reference image missing"
+                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
+                testResult.setError(createError(errorMessage))
                 result.toPreviewResponse(1,
                     testDisplayName,
-                    getDurationInSeconds(startTime),
-                    ImagePathOrMessage.ErrorMessage("Reference image missing"),
+                    duration,
+                    ImagePathOrMessage.ErrorMessage(errorMessage),
                     actualImage,
-                    ImagePathOrMessage.ErrorMessage("No diff available"))
+                    ImagePathOrMessage.ErrorMessage("No diff available"),
+                    testResult.build())
             }
 
             is Verify.AnalysisResult.SizeMismatch -> {
+                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
+                testResult.setError(createError(result.message))
                 result.toPreviewResponse(1,
                     testDisplayName,
-                    getDurationInSeconds(startTime),
+                    duration,
                     referenceImage,
                     actualImage,
-                    ImagePathOrMessage.ErrorMessage(result.message))
+                    ImagePathOrMessage.ErrorMessage(result.message),
+                    testResult.build())
             }
         }
     }
@@ -223,8 +267,8 @@ class PreviewScreenshotTestEngine : TestEngine {
         return System.getProperty("com.android.tools.preview.screenshot.junit.engine.${key}")
     }
 
-    private fun getDurationInSeconds(startTimeMillis: Long): Float {
-        return (System.currentTimeMillis() - startTimeMillis) / 1000F
+    private fun getDurationInSeconds(startTimeMillis: Long, endTimeMillis: Long): Float {
+        return (endTimeMillis - startTimeMillis) / 1000F
     }
 
     private fun reportResult(

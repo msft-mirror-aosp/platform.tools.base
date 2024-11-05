@@ -35,6 +35,8 @@ dependencies {
     implementation 'org.junit.platform:junit-platform-engine:1.10.1'
     implementation("com.android.tools.compose:compose-preview-renderer-model:$version")
     implementation libs.kxml
+    implementation libs.protobuf
+    implementation libs.unified_test_platform
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.kotlin_test

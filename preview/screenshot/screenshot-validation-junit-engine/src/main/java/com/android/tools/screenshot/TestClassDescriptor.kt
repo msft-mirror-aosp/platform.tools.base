@@ -21,7 +21,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.TestDescriptor.Type
 
-internal class TestClassDescriptor(uniqueId: UniqueId, className: String) :
+internal class TestClassDescriptor(uniqueId: UniqueId, val className: String) :
     AbstractTestDescriptor(uniqueId, className, ClassSource.from(className)) {
 
     override fun getType(): Type = Type.CONTAINER

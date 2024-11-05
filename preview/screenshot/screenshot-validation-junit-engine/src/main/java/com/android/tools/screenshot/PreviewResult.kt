@@ -17,6 +17,7 @@
 package com.android.tools.screenshot
 
 import com.android.tools.render.compose.ImagePathOrMessage
+import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 
 /*
 * Result of a rendered preview that indicates if the preview was rendered successfully
@@ -28,13 +29,14 @@ data class PreviewResult(
     val message: String? = null,
     val referenceImage: ImagePathOrMessage,
     val actualImage: ImagePathOrMessage,
-    val diffImage: ImagePathOrMessage
-
+    val diffImage: ImagePathOrMessage,
+    val testResult: TestResult
 ) {
 }
 
 fun Verify.AnalysisResult.toPreviewResponse(code: Int, name: String, durationInSeconds: Float, reference: ImagePathOrMessage,
                                             actual: ImagePathOrMessage,
-                                            diff: ImagePathOrMessage): PreviewResult {
-    return PreviewResult(code, name, durationInSeconds, message, reference, actual, diff)
+                                            diff: ImagePathOrMessage,
+                                            testResult: TestResult): PreviewResult {
+    return PreviewResult(code, name, durationInSeconds, message, reference, actual, diff, testResult)
 }
