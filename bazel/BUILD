@@ -565,7 +565,6 @@ java_binary(
 java_proto_library(
     name = "grpc-common-java_proto",
     srcs = ["@grpc-common-protos//:files"],
-    strip_prefix = "external/grpc-common-protos",
     visibility = ["//visibility:public"],
 )
 
@@ -574,6 +573,6 @@ java_proto_library(
     name = "common-java_proto",
     srcs = ["@com_google_protobuf//:well_known_protos"],
     skip_default_includes = True,
-    strip_prefix = "external/com_google_protobuf/src",
+    strip_prefix = "src",
     visibility = ["//visibility:public"],
 )

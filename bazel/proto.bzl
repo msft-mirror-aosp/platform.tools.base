@@ -26,10 +26,8 @@ def _gen_proto_impl(ctx):
     args = []
     needs_label_path = False
     proto_paths = []
-    if ctx.attr.extra_proto_path:
-        proto_paths.append(ctx.attr.extra_proto_path)
-
     for src_target in ctx.attr.srcs:
+        proto_paths.append(src_target.label.workspace_root + "/" + ctx.attr.strip_prefix)
         if ProtoPackageInfo in src_target:
             for path in src_target[ProtoPackageInfo].proto_paths:
                 proto_paths.append(path)
@@ -137,7 +135,7 @@ _gen_proto_rule = rule(
             allow_single_file = True,
         ),
         "target_language": attr.int(),
-        "extra_proto_path": attr.string(default = ""),
+        "strip_prefix": attr.string(default = ""),
         "outs": attr.output_list(),
     },
     output_to_genfiles = True,
@@ -174,6 +172,8 @@ def java_proto_library(
       proto_java_runtime_library: A label of java_library to be loaded at runtime.
       strip_prefix: A directory prefix to remove from source files when compiling protos,
                     so they can be properly found when included from other protos.
+                    If source files are in an external repository, the repository root is already
+                    stripped, so it should not be included.
                     E.g. if the proto you want to include is build at my/target/path/foo.proto,
                     but it's included as just "path/foo.proto", you can specify
                     strip_prefix="my/target". (In terms of the protoc command run, this means that
@@ -201,7 +201,7 @@ def java_proto_library(
             "@//prebuilts/tools/common/m2:io.grpc.protoc-gen-grpc-java." + protoc_grpc_version + "_exe" if grpc_support else None,
         target_language = proto_languages.JAVA,
         visibility = visibility,
-        extra_proto_path = strip_prefix,
+        strip_prefix = strip_prefix,
     )
 
     grpc_extra_deps = ["@//prebuilts/tools/common/m2:javax.annotation.javax.annotation-api.1.3.2"]

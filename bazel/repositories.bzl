@@ -85,28 +85,12 @@ _archives = [
         },
     },
     {
-        "name": "grpc-common-protos",
-        "build_file_content": """
-filegroup(
-    name = "files",
-    srcs = glob(["**/*.proto"]),
-    visibility = ["//visibility:public"],
-)
-""",
-        "archive": "//prebuilts/tools/common/m2:repository/com/google/api/grpc/proto-google-common-protos/2.17.0/proto-google-common-protos-2.17.0.jar",
-    },
-    {
         "name": "com_google_absl",
         "archive": "//prebuilts/tools/common/external-src-archives/google_absl/LTS_2021_11_02:20211102.0.zip",
         "strip_prefix": "abseil-cpp-20211102.0",
         "repo_mapping": {
             "@upb_lib": "@upb",
         },
-    },
-    {
-        "name": "upb",
-        "archive": "//prebuilts/tools/common/external-src-archives/upb/1.0.0:upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
-        "strip_prefix": "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
     },
     # Perfetto Dependencies:
     # These are external dependencies to build Perfetto (from external/perfetto)
