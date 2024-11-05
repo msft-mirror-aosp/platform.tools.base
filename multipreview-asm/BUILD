@@ -6,8 +6,8 @@ load("//tools/base/common:version.bzl", "BASE_VERSION")
 kotlin_library(
     name = "tools.compose-preview-detector",
     srcs = glob([
-        "src/**/*.java",
-        "src/**/*.kt",
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
     ]),
     visibility = ["//visibility:public"],
     deps = [
@@ -20,14 +20,14 @@ kotlin_library(
 kotlin_test(
     name = "tools.compose-preview-detector.tests",
     srcs = glob([
-        "testSrc/**/*.kt",
-        "testSrc/**/*.java",
+        "src/test/java/**/*.kt",
+        "src/test/java/**/*.java",
     ]),
     friends = ["//tools/base/multipreview-asm:tools.compose-preview-detector"],
     javacopts = ["-source 17"],
     jvm_flags = ["-Dtest.suite.jar=tools.compose-preview-detector.tests.jar"],
-    resource_strip_prefix = "tools/base/multipreview-asm/testSrc/resources",
-    resources = glob(["testSrc/resources/**"]),
+    resource_strip_prefix = "tools/base/multipreview-asm/src/test/resources",
+    resources = glob(["src/test/resources/**"]),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.compose-preview-detector",
@@ -40,7 +40,10 @@ kotlin_test(
 # Performance tests for compose-preview-detector
 kotlin_test(
     name = "perfgate-compose-preview-detector-tests",
-    srcs = glob(["perf/testSrc/**/*.kt"]),
+    srcs = glob([
+        "src/perfTest/java/**/*.kt",
+        "src/perfTest/java/**/*.java",
+    ]),
     tags = [
         "ci:perfgate-linux",
         "noci:studio-linux",
@@ -59,8 +62,8 @@ kotlin_test(
 maven_library(
     name = "compose-preview-detector",
     srcs = glob([
-        "src/**/*.java",
-        "src/**/*.kt",
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
     ]),
     coordinates = "com.android.tools.compose:compose-preview-detector",
     description = "Library to search for compose previews in the Java binary code.",

@@ -1,0 +1,56 @@
+/*
+ * Copyright (C) 2020 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'com.android.tools.java-library'
+apply plugin: 'com.android.tools.kotlin'
+apply plugin: 'com.android.tools.publish'
+
+group = 'com.android.tools.compose'
+version = rootProject.ext.baseVersion
+
+project.ext.pomName = 'ComposePreviewDetector'
+project.ext.pomDesc = 'Library to search for compose previews in the Java binary code.'
+
+sourceSets {
+    perfTest {
+        java {
+            srcDir 'src/perfTest/java'
+        }
+        resources {
+            srcDir 'src/perfTest/resources'
+        }
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+tasks.register('perfTest', Test) {
+    description = 'Runs the performance tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.perfTest.output.classesDirs
+    classpath = sourceSets.perfTest.runtimeClasspath
+}
+
+dependencies {
+    implementation libs.asm
+    implementation libs.asm_tree
+    testImplementation libs.truth
+    perfTestImplementation project(':base:perf-logger')
+    perfTestImplementation "com.android.tools:testutils:${rootProject.ext.baseVersion}"
+    perfTestRuntimeOnly libs.asm
+    perfTestRuntimeOnly libs.asm_tree
+}
