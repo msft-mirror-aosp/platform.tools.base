@@ -113,8 +113,10 @@ internal class FusedLibraryClassesRewriteTaskTest {
                 classLoader.loadClass("com.example.fusedLib1.R\$string")
             val fusedLibraryRClassStringFieldNames =
                 (fusedLibraryRStringsClass.declaredFields).map { it.name }
+                    // Ignore Jacoco instrumentation injected by studio-coverage.
+                    .minus("\$jacocoData")
             assertThat(fusedLibraryRClassStringFieldNames)
-                .containsExactly("androidlib2_str", "androidlib1_str")
+                .containsExactly("androidlib1_str", "androidlib2_str")
 
             // Check that R class references use the fused library R Class
             try {
