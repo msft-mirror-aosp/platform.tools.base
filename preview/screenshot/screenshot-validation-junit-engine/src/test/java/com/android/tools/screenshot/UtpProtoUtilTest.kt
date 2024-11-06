@@ -61,4 +61,14 @@ class UtpProtoUtilTest {
 
         assertEquals(error.errorMessage, errorMessage)
     }
+
+    @Test
+    fun testCreateTestDetailsEntry() {
+        val key = "detailKey"
+        val value = "detailValue"
+        val detail = createTestDetailsEntry(key, value)
+
+        assertEquals(detail.key, key)
+        assertEquals(detail.value, value)
+    }
 }

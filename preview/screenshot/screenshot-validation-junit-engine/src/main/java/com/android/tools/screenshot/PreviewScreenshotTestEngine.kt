@@ -38,7 +38,7 @@ import kotlin.io.path.Path
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-
+import kotlin.math.roundToInt
 
 class PreviewScreenshotTestEngine : TestEngine {
 
@@ -209,6 +209,8 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         //Image comparison
         val threshold = parameters.threshold?.toFloat()
+        val testResultThreshold: Int = ((1 - (threshold ?: 0f)) * 100).roundToInt()
+        testResult.addDetails(createTestDetailsEntry("threshold", "${testResultThreshold}%"))
         val imageDiffer = if (threshold != null) ImageDiffer.PixelPerfect(threshold) else ImageDiffer.PixelPerfect()
         val verifier = Verify(imageDiffer, diffPath)
 

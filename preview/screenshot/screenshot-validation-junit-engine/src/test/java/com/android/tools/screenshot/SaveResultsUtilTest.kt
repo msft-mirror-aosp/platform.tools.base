@@ -108,8 +108,11 @@ class SaveResultsUtilTest {
             TestStatus.ERROR)
         assertThat(testResult.testResultList.single { it.testCase.testMethod == "failingTest" }.testStatus).isEqualTo(
             TestStatus.FAILED)
-        assertThat(testResult.testResultList.single { it.testCase.testMethod == "passingTest" }.testStatus).isEqualTo(
-            TestStatus.PASSED)
+        val passingTest = testResult.testResultList.single { it.testCase.testMethod == "passingTest" }
+        assertThat(passingTest.testStatus).isEqualTo(TestStatus.PASSED)
+        val thresholdDetailsEntry = passingTest.detailsList.single()
+        assertThat(thresholdDetailsEntry.key).isEqualTo("threshold")
+        assertThat(thresholdDetailsEntry.value).isEqualTo("100%")
     }
 
     private fun createTestSuiteResult(): TestSuiteResult {
@@ -153,6 +156,7 @@ class SaveResultsUtilTest {
                 testMethod = "passingTest"
             }.build()
             testStatus = TestStatus.PASSED
+            addDetails(createTestDetailsEntry("threshold", "100%"))
         }.build()
     }
 }

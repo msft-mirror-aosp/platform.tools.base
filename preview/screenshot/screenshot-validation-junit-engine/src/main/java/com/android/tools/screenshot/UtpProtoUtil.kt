@@ -20,6 +20,7 @@ import com.android.tools.render.compose.ComposeScreenshotResult
 import com.google.protobuf.Timestamp
 import com.google.testing.platform.proto.api.core.ErrorProto.Error
 import com.google.testing.platform.proto.api.core.TestCaseProto.TestCase
+import com.google.testing.platform.proto.api.core.TestResultProto.TestResult.TestDetailsEntry
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteMetaData
 
 private const val MILLIS_PER_SECOND = 1000
@@ -67,6 +68,16 @@ fun createTestSuiteMetadata(className: String, testCount: Int): TestSuiteMetaDat
 fun createError(message: String): Error {
     return Error.newBuilder().apply {
         errorMessage = message
+    }.build()
+}
+
+/**
+ * Creates TestDetailsEntry with the provided key and value.
+ */
+fun createTestDetailsEntry(entryKey: String, entryValue: String): TestDetailsEntry {
+    return TestDetailsEntry.newBuilder().apply {
+        key = entryKey
+        value = entryValue
     }.build()
 }
 
