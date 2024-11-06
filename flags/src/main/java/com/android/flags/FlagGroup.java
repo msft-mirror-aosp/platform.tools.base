@@ -41,7 +41,7 @@ public final class FlagGroup {
     }
 
     @NonNull
-    String getName() {
+    public String getName() {
         return name;
     }
 
