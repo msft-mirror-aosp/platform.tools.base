@@ -23,7 +23,10 @@ import com.android.repository.io.FileOpUtils
 import org.mockito.kotlin.mock
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
+import org.junit.Assume.assumeTrue
 import java.io.ByteArrayInputStream
+import java.lang.RuntimeException
 import java.nio.file.Path
 import org.junit.Before
 import org.junit.Rule
@@ -62,7 +65,10 @@ class AdbHelperTest {
         rootDir = tmpFolder.newFolder().toPath()
 
         adbExecutable = rootDir.resolve("adb")
-        adbFilePath = FileOpUtils.toFile(adbExecutable).absolutePath
+        adbFilePath = FileOpUtils.toFile(adbExecutable).also {
+            it.writeText("")
+            it.setExecutable(true)
+        }.absolutePath
 
         whenever(versionedSdkLoader.adbExecutableProvider)
             .thenReturn(
@@ -191,6 +197,17 @@ class AdbHelperTest {
         assertThat(processCalls[0]).isEqualTo(
             listOf(adbFilePath, "-s", "testSerial", "emu", "kill")
         )
+    }
+
+    @Test
+    fun adbHelper_checksAdbExecutable() {
+        createAdbHelper()
+        // If we can't disable executabilty, ignore this test
+        assumeTrue(FileOpUtils.toFile(adbExecutable).setExecutable(false))
+        val exception = assertThrows(RuntimeException::class.java) {
+            adbHelper.findDeviceSerialWithId("foo")
+        }
+        assertThat(exception.message).contains("Cannot execute adb executable:")
     }
 
     private fun createAdbHelper(processOutput: String = "") {
