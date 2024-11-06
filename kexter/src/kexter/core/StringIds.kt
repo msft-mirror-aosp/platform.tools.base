@@ -22,12 +22,12 @@ internal class StringIds(private val span: Span, private val dex: DexImpl) {
 
   fun get(index: UInt): String {
     return cache.computeIfAbsent(index) {
-      dex.reader.position = span.offset + (index * ENTRY_SIZE)
-      val dataOffset = dex.reader.uint()
-      dex.reader.position = dataOffset
+      val reader = dex.reader(span.offset + (index * ENTRY_SIZE))
+      val dataOffset = reader.uint()
+      reader.position = dataOffset
 
-      val size = dex.reader.uLeb128()
-      val bytes = dex.reader.bytes(size)
+      val size = reader.uLeb128()
+      val bytes = reader.bytes(size)
       bytes.toString(Charsets.UTF_8)
     }
   }

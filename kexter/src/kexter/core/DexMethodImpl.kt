@@ -92,8 +92,8 @@ internal class DexMethodImpl(
         // Native method don't have bytecode
         ByteArray(0)
       } else {
-        dex.reader.position = method.codeOffset
-        val codeItem = CodeItem.from(dex.reader)
+        val reader = dex.reader(method.codeOffset)
+        val codeItem = CodeItem.from(reader)
         codeItem.instructions
       }
 
@@ -108,10 +108,10 @@ internal class DexMethodImpl(
   }
 
   private fun retrieveDebugInfo(): DexMethodDebugInfo {
-    dex.reader.position = method.codeOffset
-    val codeItem = CodeItem.from(dex.reader)
-    dex.reader.position = codeItem.debugInfoOffset
-    return kexter.core.DexMethodDebugInfo.fromReader(dex.reader, dex.logger)
+    val reader = dex.reader(method.codeOffset)
+    val codeItem = CodeItem.from(reader)
+    reader.position = codeItem.debugInfoOffset
+    return kexter.core.DexMethodDebugInfo.fromReader(reader, dex.logger)
   }
 
   private fun retrieveParams(): List<String> {
@@ -120,8 +120,7 @@ internal class DexMethodImpl(
     }
 
     val params = mutableListOf<String>()
-    val reader = dex.reader.copy()
-    reader.position = protoId.parameterOffset
+    val reader = dex.reader(protoId.parameterOffset)
     val size = reader.uint()
     repeat(size.toInt()) {
       val typeIdx = reader.ushort()

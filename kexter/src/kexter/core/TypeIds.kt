@@ -25,8 +25,8 @@ internal class TypeIds {
         if (index > dex.header.typeIds.count) {
           dex.logger.error("Bad typeId index $index (max = ${dex.header.typeIds.count})")
         }
-        dex.reader.position = dex.header.typeIds.offset + index * 4u
-        val descriptorIndex = dex.reader.uint()
+        val reader = dex.reader(dex.header.typeIds.offset + index * 4u)
+        val descriptorIndex = reader.uint()
         dex.stringIds.get(descriptorIndex)
       }
     }

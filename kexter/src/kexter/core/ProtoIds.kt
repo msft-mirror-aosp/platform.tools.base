@@ -27,8 +27,8 @@ internal class ProtoIds(private val span: Span, private val dex: DexImpl) {
       if (index > span.count) {
         throw IllegalStateException("Unable to retrieve protoId $index (max=${span.count - 1u}")
       }
-      dex.reader.position = span.offset + (index * ENTRY_SIZE)
-      ProtoId(dex.reader.uint(), dex.reader.uint(), dex.reader.uint())
+      val reader = dex.reader(span.offset + (index * ENTRY_SIZE))
+      ProtoId(reader.uint(), reader.uint(), reader.uint())
     }
   }
 

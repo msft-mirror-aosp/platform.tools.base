@@ -31,8 +31,8 @@ internal class MethodIds(private val span: Span, private val dex: DexImpl) {
       if (index > span.count) {
         throw IllegalStateException("Invalid methodId index ($index), max=${span.count-1u}")
       }
-      dex.reader.position = span.offset + index * ENTRY_SIZE
-      MethodId(dex.reader)
+      val reader = dex.reader(span.offset + index * ENTRY_SIZE)
+      MethodId(reader)
     }
   }
 

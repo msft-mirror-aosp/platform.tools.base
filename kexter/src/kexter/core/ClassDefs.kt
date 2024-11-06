@@ -32,8 +32,8 @@ internal class ClassDefs(private val span: Span, private val dex: DexImpl) {
   fun numElements() = span.count
 
   fun getClassDef(index: UInt): ClassDef {
-    dex.reader.position = span.offset + ENTRY_SIZE * index
-    with(dex.reader) {
+    val reader = dex.reader(span.offset + ENTRY_SIZE * index)
+    with(reader) {
       return ClassDef(uint(), uint(), uint(), uint(), uint(), uint(), uint(), uint())
     }
   }

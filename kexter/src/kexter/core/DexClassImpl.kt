@@ -28,7 +28,7 @@ internal class DexClassImpl(private val classDef: ClassDef, private val dex: Dex
     lazy(LazyThreadSafetyMode.NONE) { retrieveMethods() }
 
   private fun retrieveName(): String {
-    return TypeIds.get(dex, (classDef.classIndex))
+    return TypeIds.get(dex, classDef.classIndex)
   }
 
   private fun retrieveFields(): Map<String, DexField> {
@@ -46,8 +46,8 @@ internal class DexClassImpl(private val classDef: ClassDef, private val dex: Dex
       return emptyMap()
     }
 
-    dex.reader.position = classDef.classDataOffset
-    val classData = ClassData.fromReader(dex.reader)
+    val reader = dex.reader(classDef.classDataOffset)
+    val classData = ClassData.fromReader(reader)
     classData.directMethods.forEach {
       val method = getMethod(it, true)
       methods["${method.name}(${method.shorty})"] = method
