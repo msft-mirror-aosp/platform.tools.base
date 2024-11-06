@@ -79,6 +79,9 @@ internal class DexMethodImpl(
   override val returnType: String
     get() = TypeIds.get(dex, protoId.returnTypeIndex)
 
+  override val index: UInt
+    get() = method.methodIndex
+
   private val methodId by lazy(LazyThreadSafetyMode.NONE) { dex.methodIds.get(method.methodIndex) }
   private val protoId by lazy(LazyThreadSafetyMode.NONE) { dex.protoIds.get(methodId.protoIndex) }
 

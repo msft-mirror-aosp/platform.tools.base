@@ -54,4 +54,7 @@ interface DexMethod {
    * instructions.
    */
   val isNative: Boolean
+
+  /** Index in method_ids (see https://source.android.com/docs/core/runtime/dex-format#encoded-method). */
+  val index: UInt
 }
