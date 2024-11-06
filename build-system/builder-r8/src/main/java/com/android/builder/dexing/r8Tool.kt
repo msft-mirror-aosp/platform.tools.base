@@ -88,6 +88,18 @@ fun isToolsConfigurationFile(name: String): Boolean {
             || lowerCaseName.startsWith("/$TOOLS_CONFIGURATION_FOLDER/")
 }
 
+data class PartialShrinkingConfig(
+    val includedPatterns: String? = null,
+    val excludedPatterns: String? = null
+) : java.io.Serializable { // Serializable so it can be used in Gradle workers
+
+    companion object {
+
+        @Suppress("ConstPropertyName")
+        private const val serialVersionUID = 0L
+    }
+}
+
 /**
  * Converts the specified inputs, according to the configuration, and writes dex or classes to
  * output path.
@@ -114,6 +126,7 @@ fun runR8(
     outputArtProfile: Path? = null,
     inputProfileForDexStartupOptimization: Path? = null,
     r8Metadata: Path? = null,
+    partialShrinkingConfig: PartialShrinkingConfig? = null,
 ) {
     val logger: Logger = Logger.getLogger("R8")
     if (logger.isLoggable(Level.FINE)) {
@@ -135,6 +148,13 @@ fun runR8(
                 "R8"
             )
         )
+
+    if (partialShrinkingConfig != null) {
+        r8CommandBuilder.enableExperimentalPartialShrinking(
+            partialShrinkingConfig.includedPatterns,
+            partialShrinkingConfig.excludedPatterns
+        )
+    }
 
     if (!useFullR8) {
         r8CommandBuilder.setProguardCompatibility(true);

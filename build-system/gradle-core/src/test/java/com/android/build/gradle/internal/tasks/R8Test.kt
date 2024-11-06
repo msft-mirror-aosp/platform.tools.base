@@ -706,7 +706,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
             outputArtProfile = null,
             inputProfileForDexStartupOptimization = null,
             r8Metadata = null,
-            resourceShrinkingConfig = null
+            resourceShrinkingConfig = null,
+            partialShrinkingConfig = null
         )
     }
 }

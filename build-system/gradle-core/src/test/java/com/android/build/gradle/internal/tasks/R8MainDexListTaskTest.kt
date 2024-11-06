@@ -37,7 +37,6 @@ import org.mockito.kotlin.mock
 import org.objectweb.asm.Type
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.createFile
 
 /**
  * Testing scenarios for R8 task processing class files which outputs DEX.
@@ -197,6 +196,7 @@ fun runR8(
         outputArtProfile = null,
         inputProfileForDexStartupOptimization = null,
         r8Metadata = null,
-        resourceShrinkingConfig = null
+        resourceShrinkingConfig = null,
+        partialShrinkingConfig = null
     )
 }

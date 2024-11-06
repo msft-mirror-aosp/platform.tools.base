@@ -46,6 +46,7 @@ import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.MainDexListConfig
+import com.android.builder.dexing.PartialShrinkingConfig
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.ProguardOutputFiles
 import com.android.builder.dexing.R8OutputType
@@ -243,6 +244,10 @@ abstract class R8Task @Inject constructor(
 
     @get:Nested
     abstract val resourceShrinkingParams: R8ResourceShrinkingParameters
+
+    @get:Input
+    @get:Optional
+    abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
 
     class PrivacySandboxSdkCreationAction(
         val creationConfig: PrivacySandboxSdkVariantScope,
@@ -541,6 +546,8 @@ abstract class R8Task @Inject constructor(
             } else {
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)
             }
+
+            task.partialShrinkingConfig.setDisallowChanges(creationConfig.getPartialShrinkingConfig())
         }
 
         override fun keep(keep: String) {
@@ -703,6 +710,7 @@ abstract class R8Task @Inject constructor(
             it.inputProfileForDexStartupOptimization.set(inputProfileForDexStartupOptimization)
             it.r8Metadata.set(r8Metadata)
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
+            it.partialShrinkingConfig.set(partialShrinkingConfig.orNull)
         }
         if (executionOptions.get().runInSeparateProcess) {
             workerExecutor.processIsolation { spec ->
@@ -753,6 +761,7 @@ abstract class R8Task @Inject constructor(
             inputProfileForDexStartupOptimization: File?,
             r8Metadata: File?,
             resourceShrinkingConfig: ResourceShrinkingConfig?,
+            partialShrinkingConfig: PartialShrinkingConfig?
         ) {
             val logger = LoggerWrapper.getLogger(R8Task::class.java)
 
@@ -830,6 +839,7 @@ abstract class R8Task @Inject constructor(
                 outputArtProfile?.toPath(),
                 inputProfileForDexStartupOptimization?.toPath(),
                 r8Metadata?.toPath(),
+                partialShrinkingConfig
             )
         }
 
@@ -883,6 +893,7 @@ abstract class R8Task @Inject constructor(
             abstract val inputProfileForDexStartupOptimization: RegularFileProperty
             abstract val r8Metadata: RegularFileProperty
             abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
+            abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
         }
 
         override fun execute() {
@@ -923,7 +934,23 @@ abstract class R8Task @Inject constructor(
                 parameters.inputProfileForDexStartupOptimization.orNull?.asFile,
                 parameters.r8Metadata.orNull?.asFile,
                 parameters.resourceShrinkingConfig.orNull,
+                parameters.partialShrinkingConfig.orNull
             )
         }
     }
+}
+
+fun ConsumableCreationConfig.getPartialShrinkingConfig(): PartialShrinkingConfig? {
+    if (this !is VariantCreationConfig) return null
+    val properties = experimentalProperties.get()
+    ModulePropertyKey.OptionalBoolean.R8_EXPERIMENTAL_PARTIAL_SHRINKING_ENABLED.getValue(properties)
+        ?: return null
+    return PartialShrinkingConfig(
+        includedPatterns = ModulePropertyKey.OptionalString.R8_EXPERIMENTAL_PARTIAL_SHRINKING_INCLUDE_PATTERNS.getValue(
+            properties
+        ),
+        excludedPatterns = ModulePropertyKey.OptionalString.R8_EXPERIMENTAL_PARTIAL_SHRINKING_EXCLUDE_PATTERNS.getValue(
+            properties
+        )
+    )
 }
