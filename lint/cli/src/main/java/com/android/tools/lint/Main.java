@@ -1743,8 +1743,10 @@ public class Main {
             lintRequest.setProjects(roots);
 
             if (isReporting) {
-                EnumSet<Platform> platforms =
-                        roots.get(0).isAndroidProject() ? Platform.ANDROID_SET : Platform.JDK_SET;
+                EnumSet<Platform> platforms = Platform.JDK_SET;
+                if (!roots.isEmpty() && roots.get(0).isAndroidProject()) {
+                    platforms = Platform.ANDROID_SET;
+                }
                 lintRequest.setPlatform(platforms);
             }
 
