@@ -21,7 +21,7 @@ import org.junit.Test
 class ByteCodeTest {
   @Test
   fun testSimpleBytecode() {
-    val bytecode = DexUtils.getByteCode("LByteCodeClass;", "invokeMath(II)")
+    val bytecode = DexArchive.getByteCode("LByteCodeClass;", "invokeMath(II)")
     Assert.assertNotEquals(0, bytecode.instructions.size)
 
     var instr = bytecode.instructionsForLineNumber(20)
@@ -34,7 +34,7 @@ class ByteCodeTest {
 
   @Test
   fun testMultiInstructionPerLine() {
-    val bytecode = DexUtils.getByteCode("LByteCodeClass;", "multiInstructionPerLine(II)")
+    val bytecode = DexArchive.getByteCode("LByteCodeClass;", "multiInstructionPerLine(II)")
     Assert.assertNotEquals(0, bytecode.instructions.size)
 
     var instr = bytecode.instructionsForLineNumber(30)

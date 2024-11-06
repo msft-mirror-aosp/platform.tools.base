@@ -23,15 +23,15 @@ import kexter.DexClass
 import kexter.DexDumper
 import kexter.Logger
 
-object DexUtils {
+open class DexArchiveBase(private val archiveName: String) {
 
-  private val dex = getTestResourceDex()
-  private const val testResourceJar = "tools/base/kexter/dex_kexter_test_resources.jar"
+  val dex = getTestResourceDex(archiveName)
 
-  private fun getTestResourceDex(): Dex {
-    var resourcesPath = Paths.get(testResourceJar)
+  private fun getTestResourceDex(filename: String): Dex {
+    val path = "tools/base/kexter/$filename"
+    var resourcesPath = Paths.get(path)
     if (!Files.exists(resourcesPath)) {
-      resourcesPath = Paths.get("bazel-bin/$testResourceJar")
+      resourcesPath = Paths.get("bazel-bin/$path")
     }
     val repo = ZipRepo(resourcesPath)
     repo.use {
@@ -67,7 +67,7 @@ object DexUtils {
   internal fun retrieveClass(internalClassName: String): DexClass {
     if (!dex.classes.containsKey(internalClassName)) {
       throw IllegalStateException(
-        "No class $internalClassName in dex $testResourceJar. Only found:\n${
+        "No class $internalClassName in dex $archiveName. Only found:\n${
                     dex.classes.keys.joinToString(
                         "\n"
                     )

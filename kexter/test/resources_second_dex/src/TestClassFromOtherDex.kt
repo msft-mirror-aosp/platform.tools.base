@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import kexter.DexDebuggerHelper
-import org.junit.Assert
-import org.junit.Test
-
-class DebuggerHelperTest {
-
-  @Test
-  fun isSimpleGetter() {
-    val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
-    Assert.assertEquals("", true, debugHelper.isSimpleGetter())
-  }
-
-  @Test
-  fun hasStaticInvocations() {
-    val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
-    Assert.assertEquals("", true, debugHelper.hasStaticInvocations())
+class TestClassFromOtherDex {
+  fun method(param1: Object): Object {
+    return Object()
   }
 }

@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-import kexter.DexDebuggerHelper
+import kexter.Logger
 import org.junit.Assert
 import org.junit.Test
 
-class DebuggerHelperTest {
+class MultiDexTest {
 
+  // Issue can arise if anything remains cache between dexes
   @Test
-  fun isSimpleGetter() {
-    val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
-    Assert.assertEquals("", true, debugHelper.isSimpleGetter())
-  }
-
-  @Test
-  fun hasStaticInvocations() {
-    val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
-    Assert.assertEquals("", true, debugHelper.hasStaticInvocations())
+  fun testClasses() {
+    val logger = Logger()
+    val dex = OtherDexArchive.dex
+    val expectedClasses = listOf("LTestClassFromOtherDex;")
+    logger.info("Classes: ${dex.classes.keys.joinToString()}")
+    for (clazz in expectedClasses) {
+      Assert.assertTrue("$clazz is not present", clazz in dex.classes)
+    }
   }
 }

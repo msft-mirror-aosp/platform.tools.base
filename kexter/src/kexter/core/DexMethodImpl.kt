@@ -66,7 +66,7 @@ internal class DexMethodImpl(
   override val byteCode by lazy(LazyThreadSafetyMode.NONE) { retrieveByteCode() }
 
   override val type: String by
-    lazy(LazyThreadSafetyMode.NONE) { TypeIds.get(dex, methodId.classIndex.toUInt()) }
+    lazy(LazyThreadSafetyMode.NONE) { dex.typeIds.get(methodId.classIndex.toUInt()) }
 
   override val isNative: Boolean
     get() = byteCode.instructions.size == 0
@@ -77,7 +77,7 @@ internal class DexMethodImpl(
   override val params: List<String> by lazy(LazyThreadSafetyMode.NONE) { retrieveParams() }
 
   override val returnType: String
-    get() = TypeIds.get(dex, protoId.returnTypeIndex)
+    get() = dex.typeIds.get(protoId.returnTypeIndex)
 
   override val index: UInt
     get() = method.methodIndex
@@ -127,7 +127,7 @@ internal class DexMethodImpl(
     val size = reader.uint()
     repeat(size.toInt()) {
       val typeIdx = reader.ushort()
-      params.add(TypeIds.get(dex, typeIdx.toUInt()))
+      params.add(dex.typeIds.get(typeIdx.toUInt()))
     }
     return params
   }

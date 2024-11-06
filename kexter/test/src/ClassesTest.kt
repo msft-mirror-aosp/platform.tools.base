@@ -20,25 +20,25 @@ class ClassesTest {
 
   @Test
   fun testClassesRetrievalNonExistent() {
-    Assert.assertFalse(DexUtils.allClasses().isEmpty())
+    Assert.assertFalse(DexArchive.allClasses().isEmpty())
     Assert.assertThrows(java.lang.IllegalStateException::class.java) {
-      DexUtils.retrieveClass("Foo")
+      DexArchive.retrieveClass("Foo")
     }
   }
 
   @Test
   fun testClassRetrievalByName() {
-    DexUtils.retrieveClass("LAddClass;")
+    DexArchive.retrieveClass("LAddClass;")
   }
 
   @Test
   fun testClassRetrievalByNameWithPackage() {
-    DexUtils.retrieveClass("Lcom/pkg/ClassInPackage;")
+    DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
   }
 
   @Test
   fun testMethodsRetrieval() {
-    val clazz = DexUtils.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     val expected = listOf("<init>(V)", "f(FF)", "i(II)", "l(JJ)", "d(DD)", "o(LLLL)").sorted()
     val actual = clazz.methods.keys.sorted()
@@ -47,7 +47,7 @@ class ClassesTest {
 
   @Test
   fun testMethodParamsComplexTypes() {
-    val clazz = DexUtils.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     Assert.assertTrue(clazz.methods.keys.contains("o(LLLL)"))
 
@@ -64,7 +64,7 @@ class ClassesTest {
 
   @Test
   fun testMethodParamsPrimitiveTypes() {
-    val clazz = DexUtils.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     Assert.assertTrue(clazz.methods.keys.contains("i(II)"))
 

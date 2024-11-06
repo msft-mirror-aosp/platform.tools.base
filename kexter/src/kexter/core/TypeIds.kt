@@ -16,19 +16,17 @@
 
 package kexter.core
 
-internal class TypeIds {
-  companion object {
-    private val cache: MutableMap<UInt, String> = mutableMapOf()
+internal class TypeIds(private val dex: DexImpl) {
+  private val cache: MutableMap<UInt, String> = mutableMapOf()
 
-    fun get(dex: DexImpl, index: UInt): String {
-      return cache.computeIfAbsent(index) {
-        if (index > dex.header.typeIds.count) {
-          dex.logger.error("Bad typeId index $index (max = ${dex.header.typeIds.count})")
-        }
-        val reader = dex.reader(dex.header.typeIds.offset + index * 4u)
-        val descriptorIndex = reader.uint()
-        dex.stringIds.get(descriptorIndex)
+  fun get(index: UInt): String {
+    return cache.computeIfAbsent(index) {
+      if (index > dex.header.typeIds.count) {
+        dex.logger.error("Bad typeId index $index (max = ${dex.header.typeIds.count})")
       }
+      val reader = dex.reader(dex.header.typeIds.offset + index * 4u)
+      val descriptorIndex = reader.uint()
+      dex.stringIds.get(descriptorIndex)
     }
   }
 }

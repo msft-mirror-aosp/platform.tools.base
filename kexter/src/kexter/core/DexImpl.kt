@@ -28,6 +28,7 @@ internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex()
   val classDefs: ClassDefs = ClassDefs(header.classDefs, this)
   val methodIds: MethodIds = MethodIds(header.methodsIds, this)
   val protoIds: ProtoIds = ProtoIds(header.protoIds, this)
+  val typeIds: TypeIds = TypeIds(this)
 
   override val classes by lazy(LazyThreadSafetyMode.NONE) { retrieveClasses() }
 

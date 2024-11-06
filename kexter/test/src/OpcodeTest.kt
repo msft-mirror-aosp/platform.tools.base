@@ -21,7 +21,7 @@ import org.junit.Test
 class OpcodeTest {
 
   private fun checkClassesHasOpcode(className: String, methodName: String, opcode: Opcode) {
-    val instructions = DexUtils.getByteCode(className, methodName).instructions
+    val instructions = DexArchive.getByteCode(className, methodName).instructions
     instructions.forEach {
       if (it.opcode == opcode) {
         return
