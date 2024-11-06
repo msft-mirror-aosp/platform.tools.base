@@ -25,7 +25,7 @@ class UtpProtoUtilTest {
     fun testCreateTestCase() {
         val packageName = "packageName"
         val className = "className"
-        val displayName = "myTestMethod_myPreviewName"
+        val displayName = "myTestMethod_myPreviewName_{showBackground=true}"
         val start = 2000L
         val end = 4000L
 
@@ -41,7 +41,7 @@ class UtpProtoUtilTest {
 
         assertEquals(testCase.testPackage, packageName)
         assertEquals(testCase.testClass, className)
-        assertEquals(testCase.testMethod, displayName)
+        assertEquals(testCase.testMethod, "myTestMethod_myPreviewName_[showBackground=true]")
         assertEquals(testCase.startTime, createTimestampFromMillis(start))
         assertEquals(testCase.endTime, createTimestampFromMillis(end))
     }

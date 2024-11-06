@@ -44,7 +44,7 @@ fun createTestCase(
         val className: String = packageName.split(".").last()
         testClass = className
         testPackage = packageName.dropLast(className.length + 1)
-        testMethod = testCaseName.substringAfter("${packageName}.")
+        testMethod = testCaseName.substringAfter("${packageName}.").replace("{", "[").replace("}", "]")
         startTime = createTimestampFromMillis(testStartTime)
         Timestamp.newBuilder().nanos
         endTime = createTimestampFromMillis(testEndTime)
