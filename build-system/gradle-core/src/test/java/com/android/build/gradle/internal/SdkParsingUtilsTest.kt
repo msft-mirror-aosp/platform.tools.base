@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal
 
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.ide.common.repository.AgpVersion
 import com.android.repository.Revision
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
@@ -315,7 +316,7 @@ class SdkParsingUtilsTest {
             version = AndroidVersion(30),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30),
-            androidGradlePluginVersion = "7.0.0-beta01"
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01")
         )
         assertThat(issueReporter.messages).isEmpty()
     }
@@ -327,7 +328,7 @@ class SdkParsingUtilsTest {
             version = AndroidVersion(31),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30, "S"),
-            androidGradlePluginVersion = "7.0.0-beta01"
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01")
         )
         assertThat(issueReporter.messages).containsExactly(
             """
@@ -352,13 +353,13 @@ class SdkParsingUtilsTest {
     }
 
     @Test
-    fun `warn when using a newer preview version`() {
+    fun `warn when using a newer preview version with beta AGP`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
             version = AndroidVersion(30, "S"),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30),
-            androidGradlePluginVersion = "7.0.0-beta01"
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01")
         )
         assertThat(issueReporter.messages).containsExactly(
             """
@@ -381,13 +382,55 @@ class SdkParsingUtilsTest {
     }
 
     @Test
+    fun `don't warn when using a newer preview version in alpha AGP where max supported is stable`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(30, "S"),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(30),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-alpha01")
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
+    }
+
+    @Test
+    fun `warn when using a newer preview version with alpha AGP where mex supported is a preview`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(30, "S2"),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(30, "S"),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01")
+        )
+        assertThat(issueReporter.messages).containsExactly(
+            """
+            compileSdkPreview = "S2" has not been tested with this version of the Android Gradle plugin.
+
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30 (and compileSdkPreview = "S").
+
+            If you are already using the latest preview version of the Android Gradle plugin,
+            you may need to wait until a newer version with support for compileSdkPreview = "S2" is available.
+
+            For more information refer to the compatibility table:
+            https://d.android.com/r/tools/api-level-support
+
+            To suppress this warning, add/update
+                android.suppressUnsupportedCompileSdk=S2
+            to this project's gradle.properties.
+            """.trimIndent()
+        )
+        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S2")
+    }
+
+    @Test
     fun `suppress warning`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
             version = AndroidVersion(31),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30),
-            androidGradlePluginVersion = "7.0.0-beta01",
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
             suppressWarningIfTooNewForVersions = ",,,S,31,",
         )
         assertThat(issueReporter.messages).isEmpty()
@@ -401,7 +444,7 @@ class SdkParsingUtilsTest {
             version = AndroidVersion(32),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30),
-            androidGradlePluginVersion = "7.0.0-beta01",
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
             suppressWarningIfTooNewForVersions = "S , 31 , ,",
         )
         assertThat(issueReporter.messages).containsExactly(
@@ -435,7 +478,7 @@ class SdkParsingUtilsTest {
             version = AndroidVersion(33, null, 5, false),
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(33),
-            androidGradlePluginVersion = "8.1.0-alpha11",
+            androidGradlePluginVersion = AgpVersion.parse("8.1.0-alpha11"),
         )
         assertThat(issueReporter.messages).isEmpty()
         assertThat(issueReporter.syncIssues).isEmpty()

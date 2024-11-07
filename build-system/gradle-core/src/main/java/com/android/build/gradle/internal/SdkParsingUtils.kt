@@ -19,6 +19,7 @@ package com.android.build.gradle.internal
 import com.android.Version
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.errors.IssueReporter
+import com.android.ide.common.repository.AgpVersion
 import com.android.io.CancellableFileIo
 import com.android.repository.Revision
 import com.android.repository.api.ConsoleProgressIndicator
@@ -34,6 +35,7 @@ import com.android.sdklib.repository.meta.DetailsTypes
 import com.android.sdklib.repository.targets.PlatformTarget
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
+import org.jetbrains.kotlin.gradle.utils.`is`
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -138,7 +140,7 @@ fun warnIfCompileSdkTooNew(version: AndroidVersion, issueReporter: IssueReporter
         version = version,
         issueReporter = issueReporter,
         maxVersion = ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION,
-        androidGradlePluginVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+        androidGradlePluginVersion = AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION),
         suppressWarningIfTooNewForVersions = suppressWarningIfTooNewForVersions,
     )
 }
@@ -148,10 +150,13 @@ internal fun warnIfCompileSdkTooNew(
     version: AndroidVersion,
     issueReporter: IssueReporter,
     maxVersion: AndroidVersion,
-    androidGradlePluginVersion: String,
+    androidGradlePluginVersion: AgpVersion,
     suppressWarningIfTooNewForVersions: String? = null,
     ) {
     if (version.compareTo(maxVersion.apiLevel, maxVersion.codename) <= 0) return
+    // Don't warn about the next preview version when AGP is in dev/alpha
+    if (version.isPreview && version.apiLevel == maxVersion.apiLevel && !maxVersion.isPreview &&
+        (androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.ALPHA || androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.DEV)) return
     val suppressName = version.apiStringWithoutExtension
     val suppressSet = suppressWarningIfTooNewForVersions
         ?.splitToSequence(",")
@@ -161,7 +166,7 @@ internal fun warnIfCompileSdkTooNew(
     if (suppressSet.contains(suppressName)) return
 
     val currentCompileSdk = version.asDsl()
-    val maxCompileSdk = AndroidVersion(maxVersion.apiLevel).asDsl()
+    val maxCompileSdk = AndroidVersion(maxVersion.apiLevel).asDsl() + (if (maxVersion.isPreview && version.isPreview) " (and ${maxVersion.asDsl()})" else "")
     val preview = (if (version.isPreview) "preview " else "")
     val headline = if (version.isPreview) {
         "$currentCompileSdk has not been tested with this version of the Android Gradle plugin."
