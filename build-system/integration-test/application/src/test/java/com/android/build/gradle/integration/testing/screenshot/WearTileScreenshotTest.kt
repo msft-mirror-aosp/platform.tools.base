@@ -73,14 +73,6 @@ class WearTileScreenshotTest {
                         minSdk = 26
                         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                     }
-
-                    buildFeatures {
-                        compose = true
-                    }
-                    composeOptions {
-                        useLiveLiterals = false
-                        kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
-                    }
                     experimentalProperties["android.experimental.enableScreenshotTest"] = true
                 }
                 dependencies {
@@ -90,9 +82,6 @@ class WearTileScreenshotTest {
                     implementation("androidx.wear.tiles:tiles-tooling:$TILES_VERSION")
                     implementation("androidx.wear.tiles:tiles-tooling-preview:$TILES_VERSION")
                     implementation("androidx.wear.protolayout:protolayout-material:$PROTOLAYOUT_VERSION")
-
-                    // This is required by the plugin even if we don't define any compose previews
-                    implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
                 }
                 kotlin {
                     jvmToolchain(17)
@@ -379,6 +368,37 @@ class WearTileScreenshotTest {
         simpleTileTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleTilePreview_simple tile"}
         // Verify three test artifacts - actual, diff, and reference images
         assertThat(simpleTileTestMethodResult.outputArtifactCount).isEqualTo(3)
+    }
+
+    @Test
+    fun runPreviewScreenshotTestsWithMissingTilesToolingDep() {
+        val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    // Verify that no exception is thrown when tiles-tooling is added as an screenshotTestImplementation dependency
+                    remove("implementation", tilesToolingDep)
+                    screenshotTestImplementation(tilesToolingDep)
+                    // TODO(b/388773416): remove this when no longer needed
+                    // This is currently required when using screenshotTestImplementation
+                    // as the transitive dependencies don't seem to be taken into account in
+                    // screenshot dependencies
+                    implementation("androidx.wear.tiles:tiles-renderer:$TILES_VERSION")
+                }
+            }
+        }
+
+        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+
+        // Verify that exception is thrown when tiles-tooling dep is missing
+        build.androidApplication().reconfigure {
+            dependencies {
+                remove("screenshotTestImplementation", tilesToolingDep)
+            }
+        }
+
+        val result = build.sstExecutor().expectFailure().run(":app:updateDebugScreenshotTest")
+        result.assertErrorContains("Missing required runtime dependency. Please add androidx.wear.tiles:tiles-tooling as a screenshotTestImplementation dependency.")
     }
 
 }

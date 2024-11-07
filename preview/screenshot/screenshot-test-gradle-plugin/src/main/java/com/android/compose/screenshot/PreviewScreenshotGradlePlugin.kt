@@ -23,6 +23,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.HasHostTests
+import com.android.build.api.variant.HostTest
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.Variant
@@ -299,17 +300,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         task.usesService(analyticsServiceProvider)
                     }
 
-                    // Rendering requires androidx.compose.ui:ui-tooling as a runtime dependency
-                    variant.runtimeConfiguration.checkUiToolingPresent { isPresent ->
-                        if (!isPresent) {
-                            val errorMessage = "Missing required runtime dependency. Please add androidx.compose.ui:ui-tooling as a screenshotTestImplementation dependency."
-                            screenshotTestComponent.runtimeConfiguration.checkUiToolingPresent { isPresentInScreenshotTests ->
-                                if (!isPresentInScreenshotTests) {
-                                    throw RuntimeException(errorMessage)
-                                }
-                            }
-                        }
-                    }
+                    variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
 
                     variant.artifacts
                         .forScope(ScopedArtifacts.Scope.ALL)
@@ -507,15 +498,57 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         return builder.toString()
     }
 
-    private fun Configuration.checkUiToolingPresent(callback: (Boolean) -> Unit) {
+    /**
+     * Rendering previews requires the presence of a "tooling" library. This method checks for the
+     * presence of the tooling library based on the type of previews being used. This method
+     * assumes that a preview type is in use by the presence of its "tooling preview" library.
+     *
+     * For example, in the case of compose, a user must include
+     * androidx.compose.ui:ui-tooling-preview in order to declare previews in their code. They
+     * must also include androidx.compose.ui:ui-tooling in order to render the previews.
+     */
+    private fun Configuration.checkToolingPresent(screenshotTestComponent: HostTest) {
         incoming.afterResolve {
-            val isPresent = it.resolutionResult.allDependencies
+            val allDependencies = it.resolutionResult.allDependencies
                 .filterIsInstance<ResolvedDependencyResult>()
                 .map { result -> result.selected.id }
                 .filterIsInstance<ModuleComponentIdentifier>()
-                .any { identifier -> identifier.group == "androidx.compose.ui" && identifier.module == "ui-tooling"
+
+            for (previewDependency in PREVIEW_DEPENDENCIES) {
+                val isPreviewPresent = allDependencies.any { identifier ->
+                    identifier.group == previewDependency.group && identifier.module == previewDependency.previewModule
                 }
-            callback(isPresent)
+
+                if (!isPreviewPresent) {
+                    // if the preview library is not present, they cannot declare any
+                    // previews, so no need to check for the presence of the tooling library
+                    continue
+                }
+
+                val isToolingPresent = allDependencies.any { identifier ->
+                    identifier.group == previewDependency.group && identifier.module == previewDependency.toolingModule
+                }
+                if (isToolingPresent) {
+                    continue
+                }
+
+                screenshotTestComponent.runtimeConfiguration.incoming.afterResolve { resolvedScreenshotTestComponent ->
+                    val screenshotTestDependencies = resolvedScreenshotTestComponent.resolutionResult.allDependencies
+                        .filterIsInstance<ResolvedDependencyResult>()
+                        .map { result -> result.selected.id }
+                        .filterIsInstance<ModuleComponentIdentifier>()
+
+                    val isPresentInScreenshotTests = screenshotTestDependencies.any { identifier ->
+                        identifier.group == previewDependency.group && identifier.module == previewDependency.toolingModule
+                    }
+
+                    if (!isPresentInScreenshotTests) {
+                        val errorMessage = "Missing required runtime dependency. Please add ${previewDependency.group}:${previewDependency.toolingModule} as a screenshotTestImplementation dependency."
+                        throw IllegalStateException(errorMessage)
+                    }
+                }
+
+            }
         }
     }
 
@@ -537,3 +570,23 @@ private const val INTERNAL_ARTIFACT_TYPE = "com.android.build.gradle.internal.sc
 private const val PREVIEW_OUTPUT = "outputs/screenshotTest-results/preview"
 private const val PREVIEW_INTERMEDIATES = "intermediates/preview"
 private const val PREVIEW_REPORTS = "reports/screenshotTest/preview"
+
+private data class PreviewDependency(
+    val group: String,
+    val toolingModule: String,
+    val previewModule: String
+)
+
+private val COMPOSE_PREVIEW_DEPENDENCY = PreviewDependency(
+    group = "androidx.compose.ui",
+    toolingModule = "ui-tooling",
+    previewModule = "ui-tooling-preview",
+)
+
+private val WEAR_TILE_PREVIEW_DEPENDENCY = PreviewDependency(
+    group = "androidx.wear.tiles",
+    toolingModule = "tiles-tooling",
+    previewModule = "tiles-tooling-preview",
+)
+
+private val PREVIEW_DEPENDENCIES = listOf(COMPOSE_PREVIEW_DEPENDENCY, WEAR_TILE_PREVIEW_DEPENDENCY)
