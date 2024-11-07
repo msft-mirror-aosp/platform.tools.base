@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.plugins.LINT_PLUGIN_ID
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.res.GenerateApiPublicTxtTask
 import com.android.build.gradle.internal.res.GenerateEmptyResourceFilesTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.res.ParseLibraryResourcesTask
@@ -127,6 +128,11 @@ class KmpTaskManager(
             )
             registerParseLibraryResourcesTask(variant)
             taskFactory.register(GenerateLibraryRFileTask.CreationAction(variant))
+
+            // Task to generate the public.txt for the API that always exists
+            // Unlike the internal one which is packaged in the AAR which only exists if the
+            // developer has explicitly marked resources as public.
+            taskFactory.register(GenerateApiPublicTxtTask.CreationAction(variant))
 
             // tasks to package assets in the library aar
             variant
