@@ -54,10 +54,13 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       'ci:studio-mac-arm',
   )
   targets = [
-      '//tools/base/bazel/...',
+      '//tools/...',
+      '-//tools/idea/...',
+      '-//tools/vendor/google/aswb/...',
+      '-//tools/vendor/google3/aswb/...',
+      '-//tools/adt/idea/aswb/...',
       '//tools/vendor/google/skia:skiaparser',
       '//tools/vendor/google/skia:skia_test_support',
-      '//tools/adt/idea/android/src/com/android/tools/idea/diagnostics/heap/native/...',
       '//tools/base/profiler/native/trace_processor_daemon',
   ]
   result = studio.run_bazel_test(build_env, flags, targets)
