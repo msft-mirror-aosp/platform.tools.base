@@ -84,14 +84,6 @@ _archives = [
             "@zlib": "@zlib_repo",
         },
     },
-    {
-        "name": "com_google_absl",
-        "archive": "//prebuilts/tools/common/external-src-archives/google_absl/LTS_2021_11_02:20211102.0.zip",
-        "strip_prefix": "abseil-cpp-20211102.0",
-        "repo_mapping": {
-            "@upb_lib": "@upb",
-        },
-    },
     # Perfetto Dependencies:
     # These are external dependencies to build Perfetto (from external/perfetto)
     {

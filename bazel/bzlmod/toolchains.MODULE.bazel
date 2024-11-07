@@ -1,0 +1,50 @@
+macos_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "macos_sdk_repository")
+
+msvc_tools_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "msvc_tools_repository")
+
+windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "windows_sdk_repository")
+
+macos_sdk_repository(
+    name = "macos_sdk",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
+)
+
+msvc_tools_repository(
+    name = "vctools",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
+)
+
+windows_sdk_repository(
+    name = "windows_sdk",
+    build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
+    sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
+)
+
+# CC toolchains
+register_toolchains(
+    "@native_toolchain//:cc-toolchain-x64_linux",
+    "@native_toolchain//:cc-toolchain-darwin",
+    "@native_toolchain//:cc-toolchain-x64_windows-clang-cl",
+    "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
+    "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
+)
+
+# Python toolchains
+register_toolchains(
+    "//tools/base/bazel/toolchains/darwin:python_toolchain",
+    "//prebuilts/python/linux-x86:python_toolchain",
+)
+
+# Java toolchains
+register_toolchains(
+    "//prebuilts/studio/jdk/jdk11:runtime_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:java_runtime_toolchain",
+    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_type",
+    "//prebuilts/studio/jdk/jdk17:java8_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:java11_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jbr-next:jetbrains_java_runtime_toolchain",
+    "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_type",
+)

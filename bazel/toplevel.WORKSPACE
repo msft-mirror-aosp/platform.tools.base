@@ -5,6 +5,7 @@ load("//tools/base/bazel:repositories.bzl", "setup_external_repositories", "vend
 setup_external_repositories()
 
 # BEGIN Cc toolchain dependencies
+# TODO(b/340640065): Symlinks fail due to existing file when moved to bzlmod.
 new_local_repository(
     name = "clang_linux_x64",
     build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
@@ -28,30 +29,6 @@ new_local_repository(
     build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
     path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
-
-load(
-    "//build/bazel/toolchains/cc:repository_rules.bzl",
-    "macos_sdk_repository",
-    "msvc_tools_repository",
-    "windows_sdk_repository",
-)
-
-macos_sdk_repository(
-    name = "macos_sdk",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
-)
-
-msvc_tools_repository(
-    name = "vctools",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
-)
-
-windows_sdk_repository(
-    name = "windows_sdk",
-    build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
-    sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
-)
-
 # END Cc toolchain dependencies
 
 new_local_repository(

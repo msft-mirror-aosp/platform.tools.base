@@ -1,0 +1,71 @@
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+local_archive = use_repo_rule("//tools/base/bazel:repositories.bzl", "local_archive")
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "googletest",
+    path = "external/googletest",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "nanopb_repo",
+    path = "external/nanopb-c",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "grpc_repo",
+    path = "external/grpc-grpc",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "gflags_repo",
+    path = "external/gflags",
+)
+
+new_local_repository(
+    name = "native_toolchain",
+    build_file = "//tools/base/bazel/toolchains:clang.BUILD",
+    path = "prebuilts/clang",
+)
+
+new_local_repository(
+    name = "slicer",
+    build_file = "//tools/base/profiler:native/external/slicer.BUILD",
+    path = "external/dexter/slicer",
+)
+
+new_local_repository(
+    name = "zlib_repo",
+    build_file = "//tools/base/bazel:external/zlib.BUILD",
+    path = "external/zlib",
+)
+
+local_archive(
+    name = "com_google_absl",
+    archive = "//prebuilts/tools/common/external-src-archives/google_absl/LTS_2021_11_02:20211102.0.zip",
+    strip_prefix = "abseil-cpp-20211102.0",
+)
+
+local_archive(
+    name = "grpc-common-protos",
+    archive = "//prebuilts/tools/common/m2:repository/com/google/api/grpc/proto-google-common-protos/2.17.0/proto-google-common-protos-2.17.0.jar",
+    build_file_content = """
+filegroup(
+    name = "files",
+    srcs = glob(["**/*.proto"]),
+    visibility = ["//visibility:public"],
+)
+    """,
+)
+
+local_archive(
+    name = "upb",
+    archive = "//prebuilts/tools/common/external-src-archives/upb/1.0.0:upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
+    strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
+)
