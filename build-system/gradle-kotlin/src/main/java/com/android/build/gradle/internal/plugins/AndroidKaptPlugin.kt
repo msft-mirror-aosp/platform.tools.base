@@ -46,7 +46,8 @@ class AndroidKaptPlugin : Plugin<Project> {
                 )
             }
         }
-        project.plugins.apply(KotlinBaseApiPlugin::class.java)
+        val kotlinJvmFactory = project.plugins.apply(KotlinBaseApiPlugin::class.java)
+        project.extensions.add("kapt", kotlinJvmFactory.kaptExtension)
     }
 }
 

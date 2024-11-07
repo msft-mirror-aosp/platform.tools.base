@@ -313,6 +313,8 @@ private fun KotlinVersion?.isVersionAtLeast(major: Int, minor: Int, patch: Int? 
 fun syncAgpAndKgpSources(
     project: Project, sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 ) {
+    val builtInKotlinSupportEnabled =
+        project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
     val hasMpp = KOTLIN_MPP_PLUGIN_IDS.any { project.pluginManager.hasPlugin(it) }
     // TODO(b/246910305): Remove once it is gone from Gradle
     val hasConventionSupport = try {
@@ -323,6 +325,10 @@ fun syncAgpAndKgpSources(
     }
 
     val kotlinSourceSets by lazy {
+        // TODO("https://youtrack.jetbrains.com/issue/KT-72467"): Support for AGP's built-in Kotlin
+        if (builtInKotlinSupportEnabled) {
+            return@lazy null
+        }
         val kotlinExtension = project.extensions.findByName("kotlin") ?: return@lazy null
 
         kotlinExtension::class.java.getMethod("getSourceSets")

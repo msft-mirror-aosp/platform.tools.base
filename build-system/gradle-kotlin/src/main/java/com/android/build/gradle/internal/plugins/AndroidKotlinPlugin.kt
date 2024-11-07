@@ -34,7 +34,9 @@ class AndroidKotlinPlugin : Plugin<Project> {
                    """.trimMargin()
             )
         }
-        project.plugins.apply(KotlinBaseApiPlugin::class.java)
+        val kotlinJvmFactory = project.plugins.apply(KotlinBaseApiPlugin::class.java)
+        val kotlinExtension = kotlinJvmFactory.createKotlinAndroidExtension()
+        project.extensions.add("kotlin", kotlinExtension)
     }
 }
 

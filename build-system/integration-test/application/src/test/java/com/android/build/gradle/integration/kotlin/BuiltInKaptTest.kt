@@ -339,4 +339,39 @@ class BuiltInKaptTest {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.USE_ANDROID_X, true).run("app:assembleDebug")
     }
+
+    @Test
+    fun testKaptDsl() {
+        val app = project.getSubproject(":app")
+        // Enable caching of kapt task
+        TestFileUtils.appendToFile(
+            app.buildFile,
+            // language=groovy
+            """
+                kapt {
+                    useBuildCache = true
+                }
+                """.trimIndent()
+        )
+        TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
+
+        val executor =
+            project.executor()
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        // test for caching when useBuildCache = true
+        executor.run("app:kaptDebugKotlin")
+        assertThat(project.buildResult.didWorkTasks).contains(":app:kaptDebugKotlin")
+        executor.run("clean", "app:kaptDebugKotlin")
+        assertThat(project.buildResult.fromCacheTasks).contains(":app:kaptDebugKotlin")
+
+        // test no caching when useBuildCache = false
+        TestFileUtils.searchAndReplace(
+            app.buildFile,
+            "useBuildCache = true",
+            "useBuildCache = false"
+        )
+        executor.run("app:kaptDebugKotlin")
+        executor.run("clean", "app:kaptDebugKotlin")
+        assertThat(project.buildResult.fromCacheTasks).doesNotContain(":app:kaptDebugKotlin")
+    }
 }

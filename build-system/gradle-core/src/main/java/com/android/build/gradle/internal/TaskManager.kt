@@ -73,6 +73,7 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
+import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.KotlinServices
 import com.android.build.gradle.internal.services.R8ParallelBuildService
 import com.android.build.gradle.internal.services.getBuildService
@@ -137,6 +138,7 @@ import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
+import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.checkKotlinStdLibIsInDependencies
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
@@ -942,12 +944,29 @@ abstract class TaskManager(
                 )
         } else {
             checkKotlinStdLibIsInDependencies(project, creationConfig)
+            val kotlinCompileTaskProvider =
+                KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
             if (creationConfig.useBuiltInKaptSupport) {
-                copyKaptExtensionProperties(kotlinServices)
-                KaptStubGenerationCreationAction(creationConfig, kotlinServices).registerTask()
-                KaptCreationAction(creationConfig, project, kotlinServices).registerTask()
+                if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+                    copyKaptExtensionProperties(kotlinServices)
+                }
+                val kaptStubGenerationCreationAction =
+                    KaptStubGenerationCreationAction(
+                        creationConfig,
+                        kotlinServices,
+                        kotlinCompileTaskProvider,
+                        creationConfig.global.kaptExtension
+                    )
+                kaptStubGenerationCreationAction.registerTask()
+                val kaptCreationAction =
+                    KaptCreationAction(
+                        creationConfig,
+                        project,
+                        kotlinServices,
+                        creationConfig.global.kaptExtension
+                    )
+                kaptCreationAction.registerTask()
             }
-            KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
         }
     }
 
@@ -955,8 +974,9 @@ abstract class TaskManager(
      * If the Jetbrains KAPT plugin is applied, copy the properties from its kapt extension to the
      * kotlinServices.factory.kaptExtension.
      *
-     * TODO(b/341765853) - request a proper API for this from Jetbrains
-     * TODO(b/341765853) - remove this after AGP stops supporting the [KOTLIN_KAPT_PLUGIN_ID] plugin
+     * TODO(b/341765853) - remove this after [MINIMUM_BUILT_IN_KOTLIN_VERSION] >= 2.1.0-Beta2
+     *  because the kapt extension is passed to the task registration functions starting with Kotlin
+     *  2.1.0-Beta2
      */
     private fun copyKaptExtensionProperties(kotlinServices: KotlinServices) {
         project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
