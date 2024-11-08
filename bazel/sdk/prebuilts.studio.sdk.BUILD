@@ -363,6 +363,7 @@ filegroup(
     srcs = sdk_glob(
         include = ["ndk/27.0.12077973/**"],
         exclude = [
+            "ndk/27.0.12077973/**/*.pyc",
             # Bazel can't handle paths with spaces in them.
             "ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/command/launcher manifest.xml",
             "ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/script (dev).tmpl",
@@ -378,6 +379,7 @@ filegroup(
     name = "ndk-20",
     srcs = sdk_glob(
         include = ["ndk/20.1.5948944/**"],
+        exclude = ["ndk/20.1.5948944/**/*.pyc"],
     ),
     visibility = ["//visibility:public"],
 )
