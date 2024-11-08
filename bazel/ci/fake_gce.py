@@ -111,6 +111,7 @@ class FakeGCE:
         change_id=f'changeid{index}',
         change_number=str(index),
         patchset=index,
+        file_infos=[],
         owner=f'{owner}@google.com',
         message=f'{message}\n\n' + '\n'.join(f'{k}: {v}' for k, v in tags),
         topic='',

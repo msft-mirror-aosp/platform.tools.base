@@ -1,6 +1,8 @@
 import dataclasses
 import functools
 import json
+import logging
+import os
 import re
 import subprocess
 from typing import List, Tuple
@@ -9,11 +11,19 @@ import urllib.request
 
 
 @dataclasses.dataclass
+class FileInfo:
+  """Represents a file modified in a Gerrit change."""
+  path: str
+  status: str
+
+
+@dataclasses.dataclass
 class GerritChange:
   """Gerrit change data for a build."""
   change_id: str
   change_number: str
   patchset: str
+  file_infos: List[FileInfo]
   owner: str
   message: str
   topic: str
@@ -89,18 +99,32 @@ def get_reference_build_id(bid: str, target: str) -> str:
 @functools.cache
 def get_gerrit_changes(bid: str) -> List[GerritChange]:
   """Returns the Gerrit change data for the current build."""
-  result = _curl(
-      'GET',
-      get_auth_header(),
-      f'https://androidbuildinternal.googleapis.com/android/internal/build/v3/changes/{bid}',
-  )
-  data = json.loads(result)
+  change_info_path = os.environ.get('CHANGE_INFO')
+  if change_info_path:
+    logging.info('Reading gerrit changes from %s', change_info_path)
+    with open(change_info_path) as f:
+      data = json.load(f)
+  else:
+    logging.info('Fetching gerrit changes from GCE')
+    result = _curl(
+        'GET',
+        get_auth_header(),
+        f'https://androidbuildinternal.googleapis.com/android/internal/build/v3/changes/{bid}',
+    )
+    data = json.loads(result)
 
   changes = []
   for change in data['changes']:
     # Strip @google.com from the owner email.
     owner = change['owner']['email'].removesuffix('@google.com')
-
+    file_infos = []
+    for file in change['revisions'][0].get('fileInfos', []):
+      file_infos.append(
+          FileInfo(
+              path=file['path'],
+              status=file['status'],
+          )
+      )
     # Extract tags from the commit message.
     revision = change['revisions'][0]
     message = revision['commit']['commitMessage']
@@ -115,6 +139,7 @@ def get_gerrit_changes(bid: str) -> List[GerritChange]:
         change_id=change['changeId'],
         change_number=change['changeNumber'],
         patchset=change['revisions'][0]['patchSet'],
+        file_infos=file_infos,
         owner=owner,
         message=message,
         topic=change.get('topic', ''),

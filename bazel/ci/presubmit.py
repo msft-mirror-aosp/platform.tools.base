@@ -82,7 +82,7 @@ def _find_impacted_targets(build_env: bazel.BuildEnv) -> List[str] | None:
       logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
       return None
 
-    impacted_targets = temp_path / 'impacted-targets.txt'
+    impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
     bazel_diff.get_impacted_targets(
         build_env,
         base_hashes,

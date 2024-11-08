@@ -69,6 +69,7 @@ class PresubmitTest(parameterized.TestCase):
             change_id='',
             change_number='123',
             patchset='2',
+            file_infos=[],
             owner='owner',
             message='message',
             topic='topic',
