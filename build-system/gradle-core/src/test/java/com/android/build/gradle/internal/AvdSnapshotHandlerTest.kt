@@ -85,7 +85,9 @@ class AvdSnapshotHandlerTest {
 
     private fun createMockProcessBuilder(
             stdout: String = "",
-            env: MutableMap<String, String> = mutableMapOf()): ProcessBuilder {
+            env: MutableMap<String, String> = mutableMapOf(),
+            returnDeadProcess: Boolean = false
+        ): ProcessBuilder {
         val mockProcessBuilder = mock<ProcessBuilder>()
         val mockProcess = mock<Process>()
         whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
@@ -93,7 +95,7 @@ class AvdSnapshotHandlerTest {
         whenever(mockProcess.inputStream).thenReturn(stdout.byteInputStream())
         whenever(mockProcess.errorStream).thenReturn(InputStream.nullInputStream())
         whenever(mockProcess.waitFor(any(), any())).thenReturn(true)
-        whenever(mockProcess.isAlive).thenReturn(true)
+        whenever(mockProcess.isAlive).thenReturn(!returnDeadProcess)
         return mockProcessBuilder
     }
 
@@ -101,7 +103,7 @@ class AvdSnapshotHandlerTest {
     fun generateSnapshot() {
         val env = mutableMapOf<String, String>()
         val handler = AvdSnapshotHandler(
-                showEmulatorKernelLogging = true,
+                showFullEmulatorKernelLogging = true,
                 deviceBootAndSnapshotCheckTimeoutSec = 1234,
                 mockAdbHelper,
                 emulatorDirectoryProvider,
@@ -128,9 +130,9 @@ class AvdSnapshotHandlerTest {
     }
 
     @Test
-    fun generateSnapshotFailed() {
+    fun generateSnapshot_failedWhenInvalidSnapshotCreation() {
         val handler = AvdSnapshotHandler(
-                showEmulatorKernelLogging = true,
+                showFullEmulatorKernelLogging = true,
                 deviceBootAndSnapshotCheckTimeoutSec = 1234,
                 mockAdbHelper,
                 emulatorDirectoryProvider,
@@ -152,6 +154,8 @@ class AvdSnapshotHandlerTest {
         assertThat(e).hasMessageThat().contains(
             "Snapshot setup for myTestAvdName ran successfully, " +
             "but the snapshot failed to be created.")
+
+        // Ensure that snapshot that was created was deleted and logged appropriately.
         verify(mockLogger)
             .warning(contains("Deleting unbootable snapshot for device: myTestAvdName"))
         verify(qemuExecutor).deleteSnapshot(
@@ -160,6 +164,96 @@ class AvdSnapshotHandlerTest {
             eq("default_boot"),
             any()
         )
+    }
 
+    @Test
+    fun generateSnapshot_failedWhenEmulatorUnexpectedlyCloses() {
+        // have boot not be complete when emulator is closed
+        whenever(mockAdbHelper.isBootCompleted(any(), any())).thenReturn(false)
+        whenever(mockAdbHelper.isPackageManagerStarted(any(), any())).thenReturn(false)
+
+        val emulatorError = "ERROR   | Not enough space to create userdata partition. " +
+                "Available: 7177.093750 MB at /path/to/myTestAvdName.avd, need 7372.800000 MB."
+
+        val handler = AvdSnapshotHandler(
+            showFullEmulatorKernelLogging = true,
+            deviceBootAndSnapshotCheckTimeoutSec = 1234,
+            mockAdbHelper,
+            emulatorDirectoryProvider,
+            qemuExecutor,
+            extraWaitAfterBootCompleteMs = 0L,
+            MoreExecutors.directExecutor(),
+            { _ -> EmulatorVersionMetadata(true) }
+        ) { commands ->
+            assertThat(commands).contains("-verbose")
+            assertThat(commands).contains("-show-kernel")
+            if (commands.contains("-check-snapshot-loadable")) {
+                // Shouldn't hit this mock as the snapshot creation will fail
+                createMockProcessBuilder(stdout = "Loadable")
+            } else {
+                createMockProcessBuilder(
+                    stdout = emulatorError,
+                    // have emulator be closed immediately when snapshot is created.
+                    returnDeadProcess = true)
+            }
+        }
+
+        val e = assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
+            handler.generateSnapshot(
+                "myTestAvdName",
+                avdDirectory,
+                emulatorGpuFlag = "",
+                mockAvdManager,
+                mockLogger
+            )
+        }
+
+        assertThat(e).hasMessageThat().contains(
+            "The emulator failed to open the managed device to generate the snapshot.")
+        assertThat(e).hasMessageThat().contains(
+            emulatorError
+        )
+
+        // Should work when full kernel logging is disabled as well.
+        val handlerNoKernel = AvdSnapshotHandler(
+            showFullEmulatorKernelLogging = false,
+            deviceBootAndSnapshotCheckTimeoutSec = 1234,
+            mockAdbHelper,
+            emulatorDirectoryProvider,
+            qemuExecutor,
+            extraWaitAfterBootCompleteMs = 0L,
+            MoreExecutors.directExecutor(),
+            { _ -> EmulatorVersionMetadata(true) }
+        ) { commands ->
+            // disabling full kernel logging should disable verbose logging in setup actions.
+            assertThat(commands).doesNotContain("-verbose")
+            // still show error kernel messages
+            assertThat(commands).contains("-show-kernel")
+            if (commands.contains("-check-snapshot-loadable")) {
+                // Shouldn't hit this mock as the snapshot creation will fail
+                createMockProcessBuilder(stdout = "Loadable")
+            } else {
+                createMockProcessBuilder(
+                    stdout = emulatorError,
+                    // have emulator be closed immediately when snapshot is created.
+                    returnDeadProcess = true)
+            }
+        }
+
+        val eNoKernel = assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
+            handlerNoKernel.generateSnapshot(
+                "myTestAvdName",
+                avdDirectory,
+                emulatorGpuFlag = "",
+                mockAvdManager,
+                mockLogger
+            )
+        }
+
+        assertThat(eNoKernel).hasMessageThat().contains(
+            "The emulator failed to open the managed device to generate the snapshot.")
+        assertThat(eNoKernel).hasMessageThat().contains(
+            emulatorError
+        )
     }
 }
