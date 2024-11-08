@@ -41,12 +41,17 @@ gradlePlugin {
 }
 
 dependencies {
+    compileOnly project(':base:gradle-api')
+    compileOnly project(':base:builder-test-api')
     implementation libs.gson
     implementation libs.google_testing_client
     implementation libs.google_toolresults_client
     implementation libs.google_storage_client
-    compileOnly project(':base:gradle-api')
-    compileOnly project(':base:builder-test-api')
+    implementation libs.unified_test_platform
+    implementation libs.com.android.tools.utp.androidTestPluginHostDeviceInfoProto
+    implementation libs.protobuf_util
+    testImplementation project(':base:gradle-api')
+    testImplementation project(':base:builder-test-api')
     testImplementation libs.equalsverifier
     testImplementation libs.junit
     testImplementation libs.truth
@@ -55,12 +60,6 @@ dependencies {
     testImplementation libs.mockito_core
     testImplementation libs.mockito_kotlin
     testImplementation libs.guava
-    testImplementation project(':base:gradle-api')
-    testImplementation project(':base:builder-test-api')
-    implementation libs.unified_test_platform_device_provider
-    implementation libs.unified_test_platform
-    implementation libs.protobuf_util
-    implementation libs.com.android.tools.utp.androidTestPluginHostDeviceInfoProto
 }
 
 sourceSets {
