@@ -1015,7 +1015,7 @@ coverage_report(
         "//tools/adt/idea/android/ui.designer.overlays:intellij.android.core.ui.designer.overlays_tests",
         "//tools/adt/idea/android/ui:intellij.android.core.ui_tests",
         "//tools/adt/idea/android/ui.resourcemanager:intellij.android.core.ui.resourcemanager_tests",
-        "//tools/adt/idea/apkanalyzer:intellij.android.apkanalyzer_tests",
+        "//tools/adt/idea/apkanalyzer:intellij.android.apkanalyzer.tests_tests",
         "//tools/adt/idea/app-inspection/api:app-inspection.api_tests",
         "//tools/adt/idea/app-inspection/ide:app-inspection.ide.tests_tests",
         "//tools/adt/idea/app-inspection/inspectors/backgroundtask/model:app-inspection.inspectors.backgroundtask.model_tests",
