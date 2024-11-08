@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectLayout
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.testutils.apk.Apk
 import java.io.File
 
@@ -31,7 +31,7 @@ internal open class ReversibleGradleProject(
     private val parentProject: GradleProject,
     private val projectModification: TemporaryProjectModification,
 ): GradleProject {
-    override val layout: GradleProjectLayout = ReversibleProjectLayout(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 
     override fun file(path: String): File? {
         return parentProject.file(path)
@@ -50,18 +50,18 @@ internal open class ReversibleGradleProject(
         get() = parentProject.intermediatesDir
 }
 
-internal open class ReversibleProjectLayout(
+internal open class ReversibleProjectFiles(
     private val projectModification: TemporaryProjectModification,
-): GradleProjectLayout {
-    override fun addFile(relativePath: String, content: String) {
+): GradleProjectFiles {
+    override fun add(relativePath: String, content: String) {
         projectModification.addFile(relativePath, content)
     }
 
-    override fun changeFile(relativePath: String, action: (String) -> String) {
+    override fun update(relativePath: String, action: (String) -> String) {
         projectModification.modifyFile(relativePath, action)
     }
 
-    override fun removeFile(relativePath: String) {
+    override fun remove(relativePath: String) {
         projectModification.removeFile(relativePath)
     }
 }

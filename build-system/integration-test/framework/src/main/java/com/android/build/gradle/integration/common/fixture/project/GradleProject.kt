@@ -20,10 +20,10 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectLayout
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectLayoutImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectLayoutImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectLayout
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import java.io.File
@@ -34,7 +34,7 @@ import java.nio.file.Path
  */
 interface GradleProject: TemporaryProjectModification.FileProvider {
 
-    val layout: GradleProjectLayout
+    val files: GradleProjectFiles
 
     fun getApk(
         apk: ApkType,
@@ -53,7 +53,7 @@ interface GradleProject: TemporaryProjectModification.FileProvider {
  */
 interface AndroidProject: GradleProject {
     val namespace: String
-    override val layout: AndroidProjectLayout
+    override val files: AndroidProjectFiles
 }
 
 /**
@@ -63,7 +63,7 @@ internal open class GradleProjectImpl(
     private val projectDir: Path,
 ): GradleProject {
 
-    override val layout: GradleProjectLayout = DirectGradleProjectLayoutImpl(projectDir)
+    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(projectDir)
 
     override fun getApk(
         apk: GradleTestProject.ApkType,
@@ -92,7 +92,7 @@ internal class AndroidProjectImpl(
     override val namespace: String
 ): GradleProjectImpl(location), AndroidProject {
 
-    override val layout: AndroidProjectLayout = DirectAndroidProjectLayoutImpl(location, namespace)
+    override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
 }
 
 

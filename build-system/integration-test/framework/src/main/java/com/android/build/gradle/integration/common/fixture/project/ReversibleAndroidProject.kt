@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectLayout
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 
 /**
  * a version of [AndroidProject] that can reverses the changes made during a test.
@@ -32,13 +32,15 @@ internal class ReversibleAndroidProject(
     projectModification,
 ), AndroidProject {
     override val namespace: String = parentProject.namespace
-    override val layout: AndroidProjectLayout = ReversibleAndroidProjectLayout(parentProject.namespace, projectModification)
+
+    override val files: AndroidProjectFiles =
+        ReversibleAndroidProjectFiles(parentProject.namespace, projectModification)
 }
 
-internal class ReversibleAndroidProjectLayout(
+internal class ReversibleAndroidProjectFiles(
     override val namespace: String,
     projectModification: TemporaryProjectModification
-): ReversibleProjectLayout(projectModification), AndroidProjectLayout {
+): ReversibleProjectFiles(projectModification), AndroidProjectFiles {
     override val namespaceAsPath: String
         get() = namespaceAsPath.replace('.', '/')
 }

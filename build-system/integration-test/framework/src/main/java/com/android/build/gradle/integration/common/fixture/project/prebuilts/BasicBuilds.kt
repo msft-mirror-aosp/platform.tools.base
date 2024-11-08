@@ -25,13 +25,13 @@ class BasicBuilds {
     companion object {
         val HELLO_WORLD_APP: GradleBuildDefinition.() -> Unit = {
             androidApplication(":app") {
-                HelloWorldAndroid.setupJava(layout)
+                HelloWorldAndroid.setupJava(files)
             }
         }
 
         val HELLO_WORLD_LIBRARY: GradleBuildDefinition.() -> Unit = {
             androidLibrary(":library") {
-                HelloWorldAndroid.setupJava(layout)
+                HelloWorldAndroid.setupJava(files)
             }
         }
 

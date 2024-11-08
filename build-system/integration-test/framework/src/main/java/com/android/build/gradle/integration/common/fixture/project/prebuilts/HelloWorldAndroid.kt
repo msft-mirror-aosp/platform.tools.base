@@ -16,16 +16,16 @@
 
 package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectLayout
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 
 /**
  * Utility methods to create basic Android project content into existing [GradleProject] instances.
  */
 class HelloWorldAndroid {
     companion object {
-        fun setupJava(project: AndroidProjectLayout) {
+        fun setupJava(project: AndroidProjectFiles) {
             project.apply {
-                addFile(
+                add(
                     "src/main/java/$namespaceAsPath/HelloWorld.java",
                     // language=java
                     """
@@ -45,7 +45,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                addFile(
+                add(
                     "src/main/res/values/strings.xml",
                     // language=xml
                     """
@@ -56,7 +56,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                addFile(
+                add(
                     "src/main/res/layout/main.xml",
                     // language=xml
                     """
@@ -76,7 +76,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                addFile(
+                add(
                     "src/main/AndroidManifest.xml",
                     // language=xml
                     """
@@ -100,7 +100,7 @@ class HelloWorldAndroid {
             }
         }
 
-        fun setupKotlin(project: AndroidProjectLayout) {
+        fun setupKotlin(project: AndroidProjectFiles) {
             // TODO
         }
     }

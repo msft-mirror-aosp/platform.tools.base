@@ -36,7 +36,7 @@ class GradleProjectDefinitionTest {
     fun testAddFile() {
         val project = GradleProjectDefinitionImpl("name")
 
-        project.layout.addFile("foo.txt", "some content")
+        project.files.add("foo.txt", "some content")
 
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
@@ -55,9 +55,9 @@ class GradleProjectDefinitionTest {
     fun testRemoveFile() {
         val project = GradleProjectDefinitionImpl("name")
 
-        project.layout {
-            addFile("foo.txt", "some content")
-            removeFile("foo.txt")
+        project.files {
+            add("foo.txt", "some content")
+            remove("foo.txt")
         }
 
         val location = temporaryFolder.newFolder().toPath()
@@ -76,9 +76,9 @@ class GradleProjectDefinitionTest {
     fun testChangeFile() {
         val project = GradleProjectDefinitionImpl("name")
 
-        project.layout {
-            addFile("foo.txt", "some content")
-            changeFile("foo.txt") {
+        project.files {
+            add("foo.txt", "some content")
+            update("foo.txt") {
                 it.replace("some", "more")
             }
         }
@@ -101,7 +101,7 @@ class GradleProjectDefinitionTest {
         val project = GradleProjectDefinitionImpl("name")
 
         expected.expect(RuntimeException::class.java)
-        project.layout.removeFile("foo.txt")
+        project.files.remove("foo.txt")
     }
 
     @Test
@@ -109,7 +109,7 @@ class GradleProjectDefinitionTest {
         val project = GradleProjectDefinitionImpl("name")
 
         expected.expect(RuntimeException::class.java)
-        project.layout.changeFile("foo.txt") {
+        project.files.update("foo.txt") {
             "new content"
         }
     }

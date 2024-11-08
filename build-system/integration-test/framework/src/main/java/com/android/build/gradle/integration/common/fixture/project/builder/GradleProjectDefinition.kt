@@ -27,7 +27,7 @@ import kotlin.io.path.writeText
  * Represents a Gradle Project that can be configured before being written on disk
  */
 interface GradleProjectDefinition: BaseGradleProjectDefinition {
-    fun layout(action: GradleProjectLayout.() -> Unit)
+    fun files(action: GradleProjectFiles.() -> Unit)
 }
 
 /**
@@ -41,7 +41,7 @@ interface BaseGradleProjectDefinition {
     var group: String?
     var version: String?
 
-    val layout: GradleProjectLayout
+    val files: GradleProjectFiles
 
     /**
      * Configures dependencies of the project
@@ -60,10 +60,10 @@ interface BaseGradleProjectDefinition {
 internal class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
     GradleProjectDefinition {
 
-    override val layout: GradleProjectLayout = GradleProjectLayoutImpl()
+    override val files: GradleProjectFiles = GradleProjectFilesImpl()
 
-    override fun layout (action: GradleProjectLayout.() -> Unit) {
-        action(layout)
+    override fun files (action: GradleProjectFiles.() -> Unit) {
+        action(files)
     }
 }
 
@@ -154,6 +154,6 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         }
 
         // write the rest of the content.
-        (layout as GradleProjectLayoutImpl).write(location)
+        (files as GradleProjectFilesImpl).write(location)
     }
 }

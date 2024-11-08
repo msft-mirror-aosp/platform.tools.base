@@ -23,8 +23,6 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.AndroidProject
-import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 
 /**
@@ -34,8 +32,8 @@ interface AndroidProjectDefinition<T: CommonExtension<*,*,*,*,*,*>>: BaseGradleP
     val android: T
     fun android(action: T.() -> Unit)
 
-    override val layout: AndroidProjectLayout
-    fun layout(action: AndroidProjectLayout.() -> Unit)
+    override val files: AndroidProjectFiles
+    fun files(action: AndroidProjectFiles.() -> Unit)
 }
 
 /**
@@ -45,10 +43,10 @@ internal abstract class AndroidProjectDefinitionImpl<T : CommonExtension<*, *, *
     path: String
 ): BaseGradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
-    override val layout: AndroidProjectLayout = AndroidProjectLayoutImpl(this::namespace)
+    override val files: AndroidProjectFiles = AndroidProjectFilesImpl(this::namespace)
 
-    override fun layout(action: AndroidProjectLayout.() -> Unit) {
-        action(layout)
+    override fun files(action: AndroidProjectFiles.() -> Unit) {
+        action(files)
     }
 
     internal val namespace: String
@@ -146,7 +144,7 @@ internal class AndroidProjectDefinitionWrapper(
     private val androidProject: AndroidProjectDefinition<*>
 ): BaseGradleProjectDefinition by androidProject, GradleProjectDefinition {
 
-    override fun layout(action: GradleProjectLayout.() -> Unit) {
-        androidProject.layout(action)
+    override fun files(action: GradleProjectFiles.() -> Unit) {
+        androidProject.files(action)
     }
 }

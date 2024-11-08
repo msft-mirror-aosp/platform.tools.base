@@ -25,22 +25,22 @@ import kotlin.io.path.writeText
 /**
  * Allows manipulating files of a [GradleProjectDefinition]
  */
-interface GradleProjectLayout {
+interface GradleProjectFiles {
 
     /**
      * Adds a file to the given location with the given content.
      */
-    fun addFile(relativePath: String, content: String)
+    fun add(relativePath: String, content: String)
 
     /**
-     * Change the content of a file
+     * Update the content of a file
      */
-    fun changeFile(relativePath: String, action: (String) -> String)
+    fun update(relativePath: String, action: (String) -> String)
 
     /**
      * Removes the file at the given location
      */
-    fun removeFile(relativePath: String)
+    fun remove(relativePath: String)
 }
 
 /**
@@ -48,16 +48,16 @@ interface GradleProjectLayout {
  *
  * The main goal is to give access to the namespace to create files in the right location.
  */
-interface AndroidProjectLayout: GradleProjectLayout {
+interface AndroidProjectFiles: GradleProjectFiles {
     val namespace: String
     val namespaceAsPath: String
 }
 
-internal open class GradleProjectLayoutImpl: GradleProjectLayout {
+internal open class GradleProjectFilesImpl: GradleProjectFiles {
     // map from relative path to file content
     private val sourceFiles = mutableMapOf<String, String>()
 
-    override fun addFile(relativePath: String, content: String) {
+    override fun add(relativePath: String, content: String) {
         val existingContent = sourceFiles[relativePath]
         if (existingContent != null) {
             throw RuntimeException("A file already exist at $relativePath")
@@ -66,14 +66,14 @@ internal open class GradleProjectLayoutImpl: GradleProjectLayout {
         sourceFiles[relativePath] = content
     }
 
-    override fun changeFile(relativePath: String, action: (String) -> String) {
+    override fun update(relativePath: String, action: (String) -> String) {
         val existingContent = sourceFiles[relativePath]
             ?: throw RuntimeException("No file exists at $relativePath")
 
         sourceFiles[relativePath] = action(existingContent)
     }
 
-    override fun removeFile(relativePath: String) {
+    override fun remove(relativePath: String) {
         sourceFiles[relativePath]
             ?: throw RuntimeException("No file exists at $relativePath")
 
@@ -91,39 +91,39 @@ internal open class GradleProjectLayoutImpl: GradleProjectLayout {
     }
 }
 
-internal open class DirectGradleProjectLayoutImpl(
+internal open class DirectGradleProjectFilesImpl(
     private val location: Path
-): GradleProjectLayout {
+): GradleProjectFiles {
 
-    override fun addFile(relativePath: String, content: String) {
+    override fun add(relativePath: String, content: String) {
         location.resolve(relativePath).writeText(content)
     }
 
-    override fun changeFile(relativePath: String, action: (String) -> String) {
+    override fun update(relativePath: String, action: (String) -> String) {
         val file = location.resolve(relativePath)
         val originalContent = file.readText()
         val newContent = action(originalContent)
         file.writeText(newContent)
     }
 
-    override fun removeFile(relativePath: String) {
+    override fun remove(relativePath: String) {
         location.resolve(relativePath).deleteExisting()
     }
 }
 
-internal class AndroidProjectLayoutImpl(
+internal class AndroidProjectFilesImpl(
     private val namespaceProvider: () -> String
-): GradleProjectLayoutImpl(), AndroidProjectLayout {
+): GradleProjectFilesImpl(), AndroidProjectFiles {
     override val namespace: String
         get() = namespaceProvider()
     override val namespaceAsPath: String
         get() = namespace.replace('.', '/')
 }
 
-internal class DirectAndroidProjectLayoutImpl(
+internal class DirectAndroidProjectFilesImpl(
     location: Path,
     override val namespace: String
-): DirectGradleProjectLayoutImpl(location), AndroidProjectLayout {
+): DirectGradleProjectFilesImpl(location), AndroidProjectFiles {
     override val namespaceAsPath: String
-        get() = namespace.replace('.', '/')
+        get() = namespaceAsPath.replace('.', '/')
 }
