@@ -85,6 +85,7 @@ fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true
     }
     addFile(
         "src/main/java/${namespace.replace('.','/')}/HelloWorld.java",
+        // language=java
         """
                 package $namespace;
 
@@ -104,6 +105,7 @@ fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true
 
     addFile(
         "src/main/res/values/strings.xml",
+        // language=xml
         """
                 <?xml version="1.0" encoding="utf-8"?>
                 <resources>
@@ -114,6 +116,7 @@ fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true
 
     addFile(
         "src/main/res/layout/main.xml",
+        // language=xml
         """
                 <?xml version="1.0" encoding="utf-8"?>
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -133,6 +136,7 @@ fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true
 
     addFile(
         "src/main/AndroidManifest.xml",
+        // language=xml
         """
                 <?xml version="1.0" encoding="utf-8"?>
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"

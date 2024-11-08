@@ -17,6 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /**
  * Allows manipulating files of a [GradleProjectDefinition]
@@ -37,4 +41,89 @@ interface GradleProjectLayout {
      * Removes the file at the given location
      */
     fun removeFile(relativePath: String)
+}
+
+/**
+ * Allows manipulating files of a [GradleProject] that is an Android project
+ *
+ * The main goal is to give access to the namespace to create files in the right location.
+ */
+interface AndroidProjectLayout: GradleProjectLayout {
+    val namespace: String
+    val namespaceAsPath: String
+}
+
+internal open class GradleProjectLayoutImpl: GradleProjectLayout {
+    // map from relative path to file content
+    private val sourceFiles = mutableMapOf<String, String>()
+
+    override fun addFile(relativePath: String, content: String) {
+        val existingContent = sourceFiles[relativePath]
+        if (existingContent != null) {
+            throw RuntimeException("A file already exist at $relativePath")
+        }
+
+        sourceFiles[relativePath] = content
+    }
+
+    override fun changeFile(relativePath: String, action: (String) -> String) {
+        val existingContent = sourceFiles[relativePath]
+            ?: throw RuntimeException("No file exists at $relativePath")
+
+        sourceFiles[relativePath] = action(existingContent)
+    }
+
+    override fun removeFile(relativePath: String) {
+        sourceFiles[relativePath]
+            ?: throw RuntimeException("No file exists at $relativePath")
+
+        sourceFiles.remove(relativePath)
+    }
+
+    internal fun write(location: Path) {
+        // write the content of the project
+        for ((path, content) in sourceFiles) {
+
+            val fileLocation = location.resolve(path)
+            fileLocation.parent.createDirectories()
+            fileLocation.writeText(content)
+        }
+    }
+}
+
+internal open class DirectGradleProjectLayoutImpl(
+    private val location: Path
+): GradleProjectLayout {
+
+    override fun addFile(relativePath: String, content: String) {
+        location.resolve(relativePath).writeText(content)
+    }
+
+    override fun changeFile(relativePath: String, action: (String) -> String) {
+        val file = location.resolve(relativePath)
+        val originalContent = file.readText()
+        val newContent = action(originalContent)
+        file.writeText(newContent)
+    }
+
+    override fun removeFile(relativePath: String) {
+        location.resolve(relativePath).deleteExisting()
+    }
+}
+
+internal class AndroidProjectLayoutImpl(
+    private val namespaceProvider: () -> String
+): GradleProjectLayoutImpl(), AndroidProjectLayout {
+    override val namespace: String
+        get() = namespaceProvider()
+    override val namespaceAsPath: String
+        get() = namespace.replace('.', '/')
+}
+
+internal class DirectAndroidProjectLayoutImpl(
+    location: Path,
+    override val namespace: String
+): DirectGradleProjectLayoutImpl(location), AndroidProjectLayout {
+    override val namespaceAsPath: String
+        get() = namespace.replace('.', '/')
 }

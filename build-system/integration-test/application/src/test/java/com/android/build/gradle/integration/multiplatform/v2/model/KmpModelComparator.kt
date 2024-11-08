@@ -52,8 +52,8 @@ class KmpModelComparator(
 
         val normalizer = FileNormalizerImpl(
             buildMap = buildMap,
-            gradleUserHome = executor.gradleTestInfo.location.testLocation.gradleUserHome.toFile(),
-            gradleCacheDir = executor.gradleTestInfo.location.testLocation.gradleCacheDir,
+            gradleUserHome = executor.location.testLocation.gradleUserHome.toFile(),
+            gradleCacheDir = executor.location.testLocation.gradleCacheDir,
             androidSdkDir = project.androidSdkDir,
             androidPrefsDir = executor.preferencesRootDir,
             androidNdkSxSRoot = project.androidNdkSxSRootSymlink,

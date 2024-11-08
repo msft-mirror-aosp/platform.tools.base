@@ -18,6 +18,7 @@
 package com.android.build.gradle.integration.common.fixture
 
 import com.android.SdkConstants
+import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.utils.JacocoAgent
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -64,6 +65,7 @@ import kotlin.streams.asSequence
  * @param T The concrete implementing class.
  */
 abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructor(
+    val location: ProjectLocation,
     @JvmField val gradleTestInfo: GradleTestInfo,
     @JvmField val projectConnection: ProjectConnection,
     @JvmField val lastBuildResultConsumer: Consumer<GradleBuildResult>,
@@ -268,9 +270,9 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
 
         if (!localPrefsRoot) {
             val preferencesRootDir = if (perTestPrefsRoot) {
-                File(gradleTestInfo.location.projectDir.parentFile, "android_prefs_root")
+                File(location.projectDir.parentFile, "android_prefs_root")
             } else {
-                File(gradleTestInfo.location.testLocation.buildDir, "android_prefs_root")
+                File(location.testLocation.buildDir, "android_prefs_root")
             }
 
             FileUtils.mkdirs(preferencesRootDir)
@@ -323,7 +325,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
         }
 
         if (JacocoAgent.isJacocoEnabled()) {
-            jvmArguments.add(JacocoAgent.getJvmArg(gradleTestInfo.location.testLocation.buildDir))
+            jvmArguments.add(JacocoAgent.getJvmArg(location.testLocation.buildDir))
         }
 
         jvmArguments.add("-XX:ErrorFile=$jvmErrorLog")
@@ -342,7 +344,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
             return
         }
 
-        val projectDirectory: Path = gradleTestInfo.location.projectDir.toPath()
+        val projectDirectory: Path = location.projectDir.toPath()
         val outputs: Path = if (TestUtils.runningFromBazel()) {
             // Put in test undeclared output directory.
             TestUtils.getTestOutputDir()

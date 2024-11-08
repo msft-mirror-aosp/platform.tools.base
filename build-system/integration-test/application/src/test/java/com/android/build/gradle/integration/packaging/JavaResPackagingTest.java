@@ -27,7 +27,6 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;

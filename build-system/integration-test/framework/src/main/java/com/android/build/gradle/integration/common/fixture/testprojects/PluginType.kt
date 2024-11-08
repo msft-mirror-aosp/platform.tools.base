@@ -32,7 +32,7 @@ sealed class PluginType(
     val isJava: Boolean = false,
     val useNewDsl: Boolean = true,
     val last: Boolean = false,
-    val version: String? = if (isAndroid) Version.ANDROID_GRADLE_PLUGIN_VERSION else null
+    val version: String? = null
 ) {
     object JAVA_LIBRARY: PluginType(
         id = "java-library",
@@ -48,26 +48,29 @@ sealed class PluginType(
     )
     object APPLICATION: PluginType(
         id = "application",
-        isJava = true
+        isJava = true,
     )
     object KOTLIN_JVM: PluginType(
         id = "org.jetbrains.kotlin.jvm",
         oldId = "kotlin",
         kotlinId = "jvm",
-        isKotlin = true
+        isKotlin = true,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KOTLIN_ANDROID: PluginType(
         id = "kotlin-android",
         isAndroid = true,
         isKotlin = true,
         useNewDsl = false,
-        last = true
+        last = true,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KAPT: PluginType(
         id = "kotlin-kapt",
         isKotlin = true,
         useNewDsl = false,
-        last = true
+        last = true,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KSP: PluginType(
             id = "com.google.devtools.ksp",
@@ -85,32 +88,38 @@ sealed class PluginType(
     object ANDROID_APP: PluginType(
         id = "com.android.application",
         isAndroid = true,
-        useNewDsl = false
+        useNewDsl = false,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object ANDROID_LIB: PluginType(
         id = "com.android.library",
         isAndroid = true,
-        useNewDsl = false
+        useNewDsl = false,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object ANDROID_TEST: PluginType(
         id = "com.android.test",
         isAndroid = true,
-        useNewDsl = false
+        useNewDsl = false,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object ANDROID_DYNAMIC_FEATURE: PluginType(
         id = "com.android.dynamic-feature",
         isAndroid = true,
-        useNewDsl = false
+        useNewDsl = false,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object FUSED_LIBRARY: PluginType(
         id = "com.android.fused-library",
         isAndroid = true,
         useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object PRIVACY_SANDBOX_SDK: PluginType(
         id = "com.android.privacy-sandbox-sdk",
         isAndroid = true,
         useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object ANDROIDX_PRIVACY_SANDBOX_LIBRARY: PluginType(
         id = "androidx.privacysandbox.library",
@@ -121,7 +130,8 @@ sealed class PluginType(
     object ANDROID_SETTINGS: PluginType(
         id = "com.android.settings",
         isAndroid = true,
-        useNewDsl = true
+        useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object JAVA_TEST_FIXTURES: PluginType(
         id = "java-test-fixtures",

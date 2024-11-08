@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2.ModelInfo
+import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.model.FileNormalizer
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
 import com.android.build.gradle.options.BooleanOption
@@ -51,11 +52,13 @@ import java.util.function.Consumer
  * This returns the v2 model as a [FetchResult]
  */
 class ModelBuilderV2 internal constructor(
+    location: ProjectLocation,
     gradleTestInfo: GradleTestInfo,
     gradleOptions: GradleOptions,
     projectConnection: ProjectConnection,
     lastBuildResultConsumer: Consumer<GradleBuildResult>
 ) : BaseGradleExecutor<ModelBuilderV2>(
+    location,
     gradleTestInfo,
     projectConnection,
     lastBuildResultConsumer,
@@ -159,8 +162,8 @@ class ModelBuilderV2 internal constructor(
     private fun getFileNormalizer(container: ModelContainerV2): FileNormalizerImpl {
         return FileNormalizerImpl(
             buildMap = container.buildMap,
-            gradleUserHome = gradleTestInfo.location.testLocation.gradleUserHome.toFile(),
-            gradleCacheDir = gradleTestInfo.location.testLocation.gradleCacheDir,
+            gradleUserHome = location.testLocation.gradleUserHome.toFile(),
+            gradleCacheDir = location.testLocation.gradleCacheDir,
             androidSdkDir = gradleTestInfo.androidSdkDir,
             androidPrefsDir = preferencesRootDir,
             androidNdkSxSRoot = gradleTestInfo.androidNdkSxSRootSymlink,

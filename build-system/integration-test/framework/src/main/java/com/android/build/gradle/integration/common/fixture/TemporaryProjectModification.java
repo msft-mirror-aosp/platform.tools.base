@@ -30,6 +30,7 @@ import com.google.common.io.Files;
 
 import org.junit.runners.model.InitializationError;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -39,7 +40,7 @@ import java.util.function.Function;
  * Allows project files to be modified, but stores their original content, so it can be restored for
  * the next test.
  */
-public class TemporaryProjectModification {
+public class TemporaryProjectModification implements Closeable {
 
     /**
      * The type of file change event.
@@ -110,7 +111,7 @@ public class TemporaryProjectModification {
     /** Map of file change event. Key is relative path, value is the change event data */
     private final Map<String, FileEvent> mFileEvents;
 
-    private TemporaryProjectModification(@Nullable FileProvider fileProvider) {
+    public TemporaryProjectModification(@Nullable FileProvider fileProvider) {
         this.fileProvider = fileProvider;
         mFileEvents = Maps.newHashMap();
     }
@@ -122,7 +123,7 @@ public class TemporaryProjectModification {
     }
 
     /** Creates a delegate with a new file provider that uses the same map as the parent. */
-    public TemporaryProjectModification delegate(@NonNull FileProvider fileProvider) {
+    public TemporaryProjectModification delegate(@Nullable FileProvider fileProvider) {
         return new TemporaryProjectModification(fileProvider, mFileEvents);
     }
 
@@ -237,7 +238,8 @@ public class TemporaryProjectModification {
     }
 
     /** Returns the project back to its original state. */
-    private void close() throws IOException, InterruptedException {
+    @Override
+    public void close() throws IOException {
         for (Map.Entry<String, FileEvent> entry : mFileEvents.entrySet()) {
             FileEvent fileEvent = entry.getValue();
             switch (fileEvent.getType()) {
@@ -253,7 +255,11 @@ public class TemporaryProjectModification {
         }
 
         mFileEvents.clear();
-        TestUtils.waitForFileSystemTick();
+        try {
+            TestUtils.waitForFileSystemTick();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private File getFile(@NonNull String relativePath) {

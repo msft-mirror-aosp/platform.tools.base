@@ -364,7 +364,7 @@ open class GradleTestProject @JvmOverloads constructor(
     override val androidNdkSxSRootSymlink: File?
         get() = ndkSymlinkPath?.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE)
 
-    override val location: ProjectLocation
+    val location: ProjectLocation
         get() = mutableProjectLocation ?: error("Project location has not been initialized yet")
 
     val buildFile: File
@@ -1373,14 +1373,14 @@ allprojects { proj ->
 
     /** Fluent method to run a build.  */
     fun executor(): GradleTaskExecutor {
-        return applyOptions(GradleTaskExecutor(this, gradleOptions, projectConnection) { it ->
+        return applyOptions(GradleTaskExecutor(location,this, gradleOptions, projectConnection) { it ->
             setLastBuildResult(it)
         })
     }
 
     /** Fluent method to get the model.  */
     fun modelV2(): ModelBuilderV2 {
-        return applyOptions(ModelBuilderV2(this, gradleOptions, projectConnection) {
+        return applyOptions(ModelBuilderV2(location, this, gradleOptions, projectConnection) {
             setLastBuildResult(it)
         }).withPerTestPrefsRoot(true)
     }
@@ -1722,7 +1722,7 @@ buildCache {
  * Collects some info to debug [GradleConnectionException]/[NoUsableDaemonFoundException]
  * (b/353867542), then rethrows the exception.
  */
-private fun debugGradleConnectionExceptionThenRethrow(
+internal fun debugGradleConnectionExceptionThenRethrow(
     gradleConnectionException: GradleConnectionException,
     testOutputDir: File
 ): Nothing {

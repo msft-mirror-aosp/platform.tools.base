@@ -19,12 +19,21 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.SourceFile
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-interface GradleProjectDefinition {
+/**
+ * Represents a Gradle Project that can be configured before being written on disk
+ */
+interface GradleProjectDefinition: BaseGradleProjectDefinition {
+    fun layout(action: GradleProjectLayout.() -> Unit)
+}
+
+/**
+ * Base interface for [GradleProjectDefinition] and [AndroidProjectDefinition]
+ */
+interface BaseGradleProjectDefinition {
     val path: String
 
     val plugins: MutableList<PluginType>
@@ -32,7 +41,7 @@ interface GradleProjectDefinition {
     var group: String?
     var version: String?
 
-    fun layout(action: GradleProjectLayout.() -> Unit)
+    val layout: GradleProjectLayout
 
     /**
      * Configures dependencies of the project
@@ -45,7 +54,25 @@ interface GradleProjectDefinition {
     fun wrap(library: ByteArray, fileName: String)
 }
 
-internal open class GradleProjectDefinitionImpl(override val path: String): GradleProjectDefinition {
+/**
+ * Default implementation for [GradleProjectDefinition]
+ */
+internal class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
+    GradleProjectDefinition {
+
+    override val layout: GradleProjectLayout = GradleProjectLayoutImpl()
+
+    override fun layout (action: GradleProjectLayout.() -> Unit) {
+        action(layout)
+    }
+}
+
+/**
+ * Implementation shared between [GradleProjectDefinition] and [AndroidProjectDefinition]
+ */
+internal abstract class BaseGradleProjectDefinitionImpl(
+    override val path: String
+): BaseGradleProjectDefinition {
 
     override val plugins = mutableListOf<PluginType>()
     override var group: String? = null
@@ -58,10 +85,6 @@ internal open class GradleProjectDefinitionImpl(override val path: String): Grad
     }
 
     override fun wrap(library: ByteArray, fileName: String) {
-        throw RuntimeException("todo")
-    }
-
-    override fun layout(action: GradleProjectLayout.() -> Unit) {
         throw RuntimeException("todo")
     }
 
@@ -78,6 +101,10 @@ internal open class GradleProjectDefinitionImpl(override val path: String): Grad
         writerProvider: WriterProvider
     ) {
         write(location, rootPlugins, isRoot = true, writerProvider)
+    }
+
+    protected open fun writeAndroid(writer: BuildWriter) {
+        // nothing to do here
     }
 
     private fun write(
@@ -110,6 +137,16 @@ internal open class GradleProjectDefinitionImpl(override val path: String): Grad
                 }
             }
 
+            group?.let {
+                set("group", it)
+            }
+            version?.let {
+                set("version", it)
+            }
+
+            // write the Android extension if it exist
+            writeAndroid(this)
+
             dependencies.write(this, location)
         }.also {
             val file = location.resolve(it.buildFileName)
@@ -117,6 +154,6 @@ internal open class GradleProjectDefinitionImpl(override val path: String): Grad
         }
 
         // write the rest of the content.
-        // FIXME
+        (layout as GradleProjectLayoutImpl).write(location)
     }
 }

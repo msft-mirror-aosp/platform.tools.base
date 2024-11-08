@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.integration.common.fixture
 
-import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import org.junit.rules.TestRule
 import java.io.File
 import java.nio.file.Path
@@ -27,7 +26,6 @@ interface GradleTestInfo {
     val androidSdkDir: File?
     val androidNdkSxSRootSymlink: File?
     val additionalMavenRepoDir: Path?
-    val location: ProjectLocation
     val profileDirectory: Path?
 }
 

@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+/**
+ * Provider a [BuildWriter] instance of the right type
+ */
 interface WriterProvider {
 
     fun getBuildWriter(): BuildWriter
-
-
 }

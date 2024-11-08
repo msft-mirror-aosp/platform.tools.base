@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.testprojects.GradlePr
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
-import kotlin.math.exp
 
 /**
  * Represents a Gradle Build that can be configured before being written on disk
@@ -34,7 +33,7 @@ interface GradleBuildDefinition {
 
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
-    fun includedBuild(name: String, action: GradleBuildDefinition.() -> Unit)
+    fun includedBuild(name: String, action: GradleBuildDefinition.() -> Unit): GradleBuildDefinition
 
     /**
      * Configures the root project. This cannot be an Android Project.
@@ -44,22 +43,28 @@ interface GradleBuildDefinition {
     /**
      * Configures a subProject, creating it if needed.
      */
-    fun subProject(path: String, action: GradleProjectDefinition.() -> Unit)
+    fun subProject(path: String, action: GradleProjectDefinition.() -> Unit): GradleProjectDefinition
 
     /**
      * Configures a subProject with the Android Application plugin, creating it if needed.
      */
-    fun androidApplication(path: String, action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit)
+    fun androidApplication(
+        path: String,
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension>
 
     /**
      * Configures a subProject with the Android Library plugin, creating it if needed.
      */
-    fun androidLibrary(path: String, action: AndroidProjectDefinition<LibraryExtension>.() -> Unit)
+    fun androidLibrary(
+        path: String,
+        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
+    ): AndroidProjectDefinition<LibraryExtension>
 
     /**
      * Configures a subProject with the Android Dynamic Feature plugin, creating it if needed.
      */
-    fun androidFeature(path: String, action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit)
+    fun androidFeature(path: String, action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit): AndroidProjectDefinition<DynamicFeatureExtension>
 
     fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit)
 
@@ -68,10 +73,10 @@ interface GradleBuildDefinition {
 
 internal class GradleBuildDefinitionImpl(override val name: String): GradleBuildDefinition {
 
-    private val settings = GradleSettingsDefinitionImpl()
-    private val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
-    private val rootProject = GradleProjectDefinitionImpl(":")
-    private val subProjects = mutableMapOf<String, GradleProjectDefinitionImpl>()
+    internal val settings = GradleSettingsDefinitionImpl()
+    internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
+    internal val rootProject = GradleProjectDefinitionImpl(":")
+    internal val subProjects = mutableMapOf<String, BaseGradleProjectDefinitionImpl>()
 
     private val gradlePropertiesBuilder = GradlePropertiesBuilderImpl()
 
@@ -79,25 +84,45 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         action(settings)
     }
 
-    override fun includedBuild(name: String, action: GradleBuildDefinition.() -> Unit) {
+    override fun includedBuild(
+        name: String,
+        action: GradleBuildDefinition.() -> Unit
+    ): GradleBuildDefinition {
         val build = includedBuilds.computeIfAbsent(name) {
             GradleBuildDefinitionImpl(it)
         }
         action(build)
+
+        return build
     }
 
     override fun rootProject(action: GradleProjectDefinition.() -> Unit) {
         action(rootProject)
     }
 
-    override fun subProject(path: String, action: GradleProjectDefinition.() -> Unit) {
+    override fun subProject(
+        path: String,
+        action: GradleProjectDefinition.() -> Unit
+    ): GradleProjectDefinition {
         val project = subProjects.computeIfAbsent(path) {
             GradleProjectDefinitionImpl(it)
         }
-        action(project)
+
+        val configurableProject = when (project) {
+            is AndroidApplicationDefinitionImpl -> project.asGradleProject()
+            is GradleProjectDefinitionImpl -> project
+            else -> throw RuntimeException("Unexpected type of BaseGradleProjectDefinitionIpl: ${project.javaClass.name}")
+        }
+
+        action(configurableProject)
+
+        return configurableProject
     }
 
-    override fun androidApplication(path: String, action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit) {
+    override fun androidApplication(
+        path: String,
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension> {
         val project = subProjects.computeIfAbsent(path) {
             AndroidApplicationDefinitionImpl(it)
         }
@@ -108,9 +133,14 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         project as? AndroidProjectDefinition<ApplicationExtension>
             ?: errorOnWrongType(project, path, "Android Application")
         action(project)
+
+        return project
     }
 
-    override fun androidLibrary(path: String, action: AndroidProjectDefinition<LibraryExtension>.() -> Unit) {
+    override fun androidLibrary(
+        path: String,
+        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
+    ): AndroidProjectDefinition<LibraryExtension> {
         val project = subProjects.computeIfAbsent(path) {
             AndroidLibraryDefinitionImpl(it)
         }
@@ -120,9 +150,14 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             ?: errorOnWrongType(project, path, "Android Library")
 
         action(project)
+
+        return project
     }
 
-    override fun androidFeature(path: String, action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit) {
+    override fun androidFeature(
+        path: String,
+        action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
+    ): AndroidProjectDefinition<DynamicFeatureExtension> {
         val project = subProjects.computeIfAbsent(path) {
             AndroidDynamicFeatureDefinitionImpl(it)
         }
@@ -132,10 +167,12 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             ?: errorOnWrongType(project, path, "Android Dynamic Feature")
 
         action(project)
+
+        return project
     }
 
     private fun errorOnWrongType(
-        project: GradleProjectDefinition,
+        project: BaseGradleProjectDefinition,
         path: String,
         expectedType: String
     ): Nothing {

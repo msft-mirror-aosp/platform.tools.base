@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.integration.common.fixture
 
+import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.testutils.TestUtils
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableMap
@@ -31,12 +32,14 @@ import java.util.function.Consumer
 
 /** A Gradle tooling api build builder. */
 class GradleTaskExecutor(
+    location: ProjectLocation,
     gradleTestInfo: GradleTestInfo,
     gradleOptions: GradleOptions,
     projectConnection: ProjectConnection,
     lastBuildResultConsumer: Consumer<GradleBuildResult>
 ) :
     BaseGradleExecutor<GradleTaskExecutor>(
+        location,
         gradleTestInfo,
         projectConnection,
         lastBuildResultConsumer,
@@ -111,7 +114,7 @@ class GradleTaskExecutor(
             BufferedOutputStream(FileOutputStream(tmpStdOut)).use { stdout ->
                 BufferedOutputStream(FileOutputStream(tmpStdErr)).use { stderr ->
                     val message =
-                        ("""[GradleTestProject ${gradleTestInfo.location.projectDir}] Executing tasks:
+                        ("""[GradleTestProject ${location.projectDir}] Executing tasks:
 gradle ${Joiner.on(' ').join(args)} ${Joiner.on(' ').join(tasksList)}
 
 """)

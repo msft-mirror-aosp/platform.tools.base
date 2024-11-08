@@ -25,7 +25,9 @@ import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.utils.SdkUtils;
+
 import com.google.common.io.Closeables;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -50,7 +52,7 @@ import java.util.regex.Pattern;
  *
  * <p>To get access to an instance, use {@link #create(String, PropertyType)}.
  */
-class ProjectPropertiesWorkingCopy extends ProjectProperties {
+public class ProjectPropertiesWorkingCopy extends ProjectProperties {
 
     private static final Map<String, String> COMMENT_MAP = new HashMap<>();
 

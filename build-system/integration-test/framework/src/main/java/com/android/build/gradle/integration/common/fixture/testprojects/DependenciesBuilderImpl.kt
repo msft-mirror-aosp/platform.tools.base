@@ -30,7 +30,7 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
     val externalLibraries: List<MavenRepoGenerator.Library>
         get() = dependencies
             .map { it.second }
-            .filterIsInstance(MavenRepoGenerator.Library::class.java)
+            .filterIsInstance<MavenRepoGenerator.Library>()
 
     override fun clear() {
         dependencies.clear()
