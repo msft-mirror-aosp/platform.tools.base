@@ -16,8 +16,6 @@
 
 package com.android.tools.firebase.testlab.gradle.services.testrunner
 
-import java.io.File
-
 data class ProjectSettings(
   val name: String,
   val storageBucket: String,
@@ -33,5 +31,4 @@ data class ProjectSettings(
   val failFast: Boolean,
   val numUniformShards: Int,
   val targetedShardDurationSeconds: Int,
-  val stubAppApk: File,
 )

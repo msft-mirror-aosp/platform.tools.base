@@ -150,19 +150,19 @@ class TestRunner(
 
     // If tested apk is null, this is a self-instrument test (e.g. library module).
     val testedApkFile = testData.testedApkFinder(configProvider).firstOrNull()
-
-    // If the test apk is a stub, then it can be shared between gradle projects.
-    val (testedApkName, storageModule) =
-      testedApkFile?.run { Pair("$variantName-${testedApkFile.name}", projectPath) }
-        ?: Pair("stub", "shared")
-
     val appApkStorageObject =
-      storageManager.retrieveOrUploadSharedFile(
-        testedApkFile ?: projectSettings.stubAppApk,
-        projectSettings.storageBucket,
-        storageModule,
-        uploadFileName = testedApkName,
-      )
+      if (testedApkFile != null) {
+        storageManager.retrieveOrUploadSharedFile(
+          testedApkFile,
+          projectSettings.storageBucket,
+          projectPath,
+          uploadFileName = "$variantName-${testedApkFile.name}",
+        )
+      } else {
+        // Test APK and tested APK fields are required field despite it is unnecessary.
+        // To satisfy FTL test matrices API, we set the same APK for both fields.
+        testApkStorageObject
+      }
 
     val testMatrix =
       testingManager.createTestMatrixRun(
@@ -173,7 +173,6 @@ class TestRunner(
           testRunStorage,
           testApkStorageObject,
           appApkStorageObject,
-          testedApkFile == null,
         ),
         runRequestId,
       )

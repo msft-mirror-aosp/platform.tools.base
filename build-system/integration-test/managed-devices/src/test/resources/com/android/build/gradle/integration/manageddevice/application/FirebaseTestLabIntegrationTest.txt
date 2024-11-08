@@ -413,9 +413,7 @@ afterEvaluate {
             TestLabBuildService::class.java, project
         ), TestLabBuildService::class.java
     ) {
-        TestLabBuildService.RegistrationAction(project).apply {
-            createConfigIfAbsent()
-        }.configure(this.parameters, FakeHttpHandler())
+        TestLabBuildService.RegistrationAction(project).configure(this.parameters, FakeHttpHandler())
         this.parameters.offlineMode.set(false)
     }
 }

@@ -66,11 +66,6 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
     const val CLIENT_APPLICATION_NAME: String = "Firebase TestLab Gradle Plugin"
     const val xGoogUserProjectHeaderKey: String = "X-Goog-User-Project"
 
-    const val CHECK_TEST_STATE_WAIT_MS = 10 * 1000L
-
-    private const val STUB_APP_CONFIG_NAME: String =
-      "_internal-test-lab-gradle-plugin-configuration-stub-app"
-
     val oauthScope =
       listOf(
         // Scope for Cloud Tool Results API and Cloud Testing API.
@@ -106,7 +101,6 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
     val directoriesToPull: ListProperty<String>
     val recordVideo: Property<Boolean>
     val performanceMetrics: Property<Boolean>
-    val stubAppApk: RegularFileProperty
     val useOrchestrator: Property<Boolean>
     val httpHandler: Property<HttpHandler>
   }
@@ -212,7 +206,6 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
           failFast = parameters.failFast.get(),
           numUniformShards = parameters.numUniformShards.get(),
           targetedShardDurationSeconds = parameters.targetedShardDurationMinutes.get() * 60,
-          stubAppApk = parameters.stubAppApk.asFile.get(),
         ),
         toolResultsManager,
         testingManager,
@@ -381,29 +374,11 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
 
     /** Register [TestLabBuildService] to a registry if absent. */
     fun registerIfAbsent(): Provider<TestLabBuildService> {
-      createConfigIfAbsent()
       return project.gradle.sharedServices.registerIfAbsent(
         getBuildServiceName(TestLabBuildService::class.java, project),
         TestLabBuildService::class.java,
       ) { buildServiceSpec ->
         configure(buildServiceSpec.parameters)
-      }
-    }
-
-    @VisibleForTesting
-    fun createConfigIfAbsent() {
-      if (configurationContainer.findByName(STUB_APP_CONFIG_NAME) == null) {
-        configurationContainer.create(STUB_APP_CONFIG_NAME).apply {
-          isVisible = false
-          isTransitive = true
-          isCanBeConsumed = false
-          description =
-            "A configuration to resolve the stub app dependencies for " + "Firebase Test Plugin."
-        }
-        project.dependencies.add(
-          STUB_APP_CONFIG_NAME,
-          "androidx.test.services:test-services:1.5.0-alpha02",
-        )
       }
     }
 
@@ -455,11 +430,6 @@ abstract class TestLabBuildService : BuildService<TestLabBuildService.Parameters
       )
       params.performanceMetrics.set(
         providerFactory.provider { testLabExtension.testOptions.results.performanceMetrics }
-      )
-      params.stubAppApk.fileProvider(
-        providerFactory.provider {
-          configurationContainer.getByName(STUB_APP_CONFIG_NAME).singleFile
-        }
       )
       params.useOrchestrator.set(
         providerFactory.provider {

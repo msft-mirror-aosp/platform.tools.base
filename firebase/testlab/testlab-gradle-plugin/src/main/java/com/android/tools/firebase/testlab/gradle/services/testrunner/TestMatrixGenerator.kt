@@ -42,8 +42,6 @@ import com.google.api.services.testing.model.ToolResultsHistory
 class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
 
   companion object {
-    private const val STUB_APP_NAME: String = "androidx.test.services"
-
     const val INSTRUMENTATION_TEST_SHARD_FIELD = "shardingOption"
     const val TEST_MATRIX_FLAKY_TEST_ATTEMPTS_FIELD = "flakyTestAttempts"
     const val TEST_MATRIX_FAIL_FAST_FIELD = "failFast"
@@ -69,7 +67,6 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
     testRunStorage: TestRunStorage,
     testApkObject: StorageObject,
     testedApkObject: StorageObject,
-    usingStubApkId: Boolean,
   ): TestMatrix =
     TestMatrix().apply {
       projectId = projectSettings.name
@@ -121,12 +118,7 @@ class TestMatrixGenerator(private val projectSettings: ProjectSettings) {
                 com.google.api.services.testing.model.FileReference().apply {
                   gcsPath = testedApkObject.toUrl()
                 }
-              appPackageId =
-                if (usingStubApkId) {
-                  STUB_APP_NAME
-                } else {
-                  testData.testedApplicationId
-                }
+              appPackageId = testData.testedApplicationId
               testPackageId = testData.applicationId
               testRunnerClass = testData.instrumentationRunner
 

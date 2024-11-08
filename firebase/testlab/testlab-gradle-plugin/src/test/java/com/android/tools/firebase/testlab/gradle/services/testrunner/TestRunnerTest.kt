@@ -103,7 +103,6 @@ class TestRunnerTest {
   // Storage objects
   @Mock lateinit var mockTestApkStorage: StorageObject
   @Mock lateinit var mockTestedApkStorage: StorageObject
-  @Mock lateinit var mockStubApk: StorageObject
 
   // Test Execution results
   @Mock lateinit var mockTestExecution: TestExecution
@@ -131,7 +130,6 @@ class TestRunnerTest {
       `when`(testHistoryName).thenReturn("test_history")
       `when`(name).thenReturn("my_project")
       `when`(storageBucket).thenReturn("bucket_name")
-      `when`(stubAppApk).thenReturn(stubApk)
     }
 
     device.apply {
@@ -150,7 +148,6 @@ class TestRunnerTest {
         .thenReturn(mockTestApkStorage)
       `when`(retrieveOrUploadSharedFile(eq(testedApk), any(), any(), any()))
         .thenReturn(mockTestedApkStorage)
-      `when`(retrieveOrUploadSharedFile(eq(stubApk), any(), any(), any())).thenReturn(mockStubApk)
       `when`(testRunStorage(any(), any(), any())).thenReturn(mockTestRunStorage)
     }
 
@@ -158,7 +155,7 @@ class TestRunnerTest {
 
     // Test Matrices
     `when`(mockResultsMatrix.testExecutions).thenReturn(listOf(mockTestExecution))
-    `when`(testMatrixGenerator.createTestMatrix(any(), any(), any(), any(), any(), any()))
+    `when`(testMatrixGenerator.createTestMatrix(any(), any(), any(), any(), any()))
       .thenReturn(mockGeneratedMatrix)
 
     `when`(testing.createTestMatrixRun(any(), any(), any())).thenReturn(mockUpdatedMatrix)
@@ -238,7 +235,6 @@ class TestRunnerTest {
     basicVerifySuiteOverview: Boolean = true,
     // Allows for different testedApk, such as the stub apk
     expectedAppApkStorageObject: StorageObject = mockTestedApkStorage,
-    expectedIsStub: Boolean = false,
   ) {
 
     if (basicVerifyToolResults) {
@@ -277,7 +273,6 @@ class TestRunnerTest {
         mockTestRunStorage,
         mockTestApkStorage,
         expectedAppApkStorageObject,
-        expectedIsStub,
       )
     verifyNoMoreInteractions(testMatrixGenerator)
 
@@ -341,19 +336,15 @@ class TestRunnerTest {
   }
 
   @Test
-  fun test_runTests_stubApk() {
-    // When we don't supply a tested apk, a stub should be supplied.
+  fun test_runTests_self_instrumented_test() {
+    // When we don't supply a tested apk, a test apk should be used for the tested apk.
     `when`(staticTestData.testedApkFinder).thenReturn { listOf() }
 
     val runner = getTestRunner()
 
     val result = runner.runTests(device, staticTestData, resultsOutDir, "project", "variant")
 
-    verifyTestRun(
-      basicVerifyStorage = false,
-      expectedAppApkStorageObject = mockStubApk,
-      expectedIsStub = true,
-    )
+    verifyTestRun(basicVerifyStorage = false, expectedAppApkStorageObject = mockTestApkStorage)
 
     // verify storage manually:
     inOrder(storage).also {
@@ -361,7 +352,6 @@ class TestRunnerTest {
       it
         .verify(storage)
         .retrieveOrUploadSharedFile(testApkFile, "bucket_name", "project", "variant-test_apk")
-      it.verify(storage).retrieveOrUploadSharedFile(stubApk, "bucket_name", "shared", "stub")
       verifyNoMoreInteractions(storage)
     }
 

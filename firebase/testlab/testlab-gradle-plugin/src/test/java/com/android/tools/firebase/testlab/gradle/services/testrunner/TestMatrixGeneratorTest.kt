@@ -31,7 +31,6 @@ import com.google.api.services.testing.model.FileReference
 import com.google.api.services.testing.model.RegularFile
 import com.google.api.services.testing.model.TestMatrix
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import java.lang.IllegalStateException
 import java.util.Locale
 import org.junit.Assert.assertThrows
@@ -60,12 +59,8 @@ class TestMatrixGeneratorTest {
 
   @Mock lateinit var testedApk: StorageObject
 
-  lateinit var stubFile: File
-
   @Before
   fun setup() {
-    stubFile = temporaryFolderRule.newFile("stub")
-
     testData.apply {
       `when`(testedApplicationId).thenReturn("app_under_test")
       `when`(applicationId).thenReturn("testing_apk")
@@ -138,7 +133,6 @@ class TestMatrixGeneratorTest {
       failFast = failFast,
       numUniformShards = numUniformShards,
       targetedShardDurationSeconds = targetedShardDurationSeconds,
-      stubAppApk = stubFile,
     )
 
   @Test
@@ -146,7 +140,7 @@ class TestMatrixGeneratorTest {
 
     val matrix =
       TestMatrixGenerator(getProjectSettings())
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(matrix)
   }
@@ -155,7 +149,7 @@ class TestMatrixGeneratorTest {
   fun test_createTestMatrix_addNumUniformShards() {
     val matrix =
       TestMatrixGenerator(getProjectSettings(numUniformShards = 5))
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(
       matrix,
@@ -168,7 +162,7 @@ class TestMatrixGeneratorTest {
   fun test_createTestMatrix_addSmartSharding() {
     val matrix =
       TestMatrixGenerator(getProjectSettings(targetedShardDurationSeconds = 600))
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(
       matrix,
@@ -186,7 +180,7 @@ class TestMatrixGeneratorTest {
         TestMatrixGenerator(
             getProjectSettings(targetedShardDurationSeconds = 600, numUniformShards = 5)
           )
-          .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+          .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
       }
 
     assertThat(error.message)
@@ -200,32 +194,10 @@ class TestMatrixGeneratorTest {
   }
 
   @Test
-  fun test_createTestMatrix_useStubApk() {
-    testedApk.apply {
-      `when`(name).thenReturn("stub")
-      `when`(bucket).thenReturn("stub_bucket")
-    }
-    testData.apply {
-      // when the apk is stubbed, it means there is no apk under test.
-      `when`(testedApplicationId).thenReturn(null)
-    }
-
-    val matrix =
-      TestMatrixGenerator(getProjectSettings())
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, true)
-
-    verifyMatrix(
-      matrix,
-      testSpecInstrumentationAppApk = "gs://stub_bucket/stub",
-      testSpecInstrumentationAppPackageId = "androidx.test.services",
-    )
-  }
-
-  @Test
   fun test_createTestMatrix_networkProfile() {
     val matrix =
       TestMatrixGenerator(getProjectSettings(networkProfile = "LTE"))
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(matrix, testSpecSetupNetworkProfile = "LTE")
   }
@@ -234,7 +206,7 @@ class TestMatrixGeneratorTest {
   fun test_createTestMatrix_useOrchestrator() {
     val matrix =
       TestMatrixGenerator(getProjectSettings(useOrchestrator = true))
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk, false)
+        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(matrix, testSpecInstrumentationOrchestrator = "USE_ORCHESTRATOR")
   }
@@ -254,7 +226,6 @@ class TestMatrixGeneratorTest {
           testRunStorage,
           testApk,
           testedApk,
-          false,
         )
 
       verifyMatrix(
@@ -282,7 +253,6 @@ class TestMatrixGeneratorTest {
           testRunStorage,
           testApk,
           testedApk,
-          false,
         )
 
       verifyMatrix(
@@ -317,7 +287,6 @@ class TestMatrixGeneratorTest {
           testRunStorage,
           testApk,
           testedApk,
-          false,
         )
 
     verifyMatrix(
