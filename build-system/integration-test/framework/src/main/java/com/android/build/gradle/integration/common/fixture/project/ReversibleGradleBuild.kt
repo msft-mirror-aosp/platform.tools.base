@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 
 /**
@@ -60,6 +61,9 @@ internal class ReversibleGradleBuild(
 
     override val executor: GradleTaskExecutor
         get() = parentBuild.executor
+
+    override val modelBuilder: ModelBuilderV2
+        get() = parentBuild.modelBuilder
 
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
         throw RuntimeException("Cannot nest withReversibleModifications")

@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleOptions
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestInfo
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.GRADLE_DEAMON_IDLE_TIME_IN_SECONDS
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ProjectPropertiesWorkingCopy
 import com.android.build.gradle.integration.common.fixture.debugGradleConnectionExceptionThenRethrow
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
@@ -180,7 +181,8 @@ class GradleRule internal constructor(
             buildDir,
             subProjects = subProjects,
             includedBuilds = includedBuilds,
-            executorProvider = this::instantiateExecutor)
+            executorProvider = this::instantiateExecutor,
+            modelBuilderProvider = this::instantiateModelBuilder)
     }
 
     /**
@@ -194,21 +196,25 @@ class GradleRule internal constructor(
         return rootDir.resolve(newPath.replace(':', '/'))
     }
 
-    private fun instantiateExecutor(): GradleTaskExecutor {
-        val testInfo = object : GradleTestInfo {
-            override val androidSdkDir: File?
-                get() = sdkConfiguration.sdkDir
-            override val androidNdkSxSRootSymlink: File?
-                get() = location.testLocation.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
-            override val additionalMavenRepoDir: Path?
-                get() = null
-            override val profileDirectory: Path?
-                get() = null
-        }
-
-        return GradleTaskExecutor(location, testInfo, gradleOptions, projectConnection) {
+    private fun instantiateExecutor(): GradleTaskExecutor =
+        GradleTaskExecutor(location, getTestInfo(), gradleOptions, projectConnection) {
             // handle build result or not?
         }
+
+    private fun instantiateModelBuilder(): ModelBuilderV2 =
+        ModelBuilderV2(location, getTestInfo(), gradleOptions, projectConnection) {
+            // handle build result.
+        }.withPerTestPrefsRoot(true)
+
+    private fun getTestInfo(): GradleTestInfo = object : GradleTestInfo {
+        override val androidSdkDir: File?
+            get() = sdkConfiguration.sdkDir
+        override val androidNdkSxSRootSymlink: File?
+            get() = location.testLocation.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
+        override val additionalMavenRepoDir: Path?
+            get() = null
+        override val profileDirectory: Path?
+            get() = null
     }
 
     private fun createLocalProp() {

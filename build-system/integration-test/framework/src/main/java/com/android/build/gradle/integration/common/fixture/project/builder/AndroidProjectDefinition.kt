@@ -92,7 +92,11 @@ internal class AndroidApplicationDefinitionImpl(path: String): AndroidProjectDef
     }
 
     override val android: ApplicationExtension =
-        DslProxy.createProxy(ApplicationExtension::class.java, contentHolder).also {
+        DslProxy.createProxy(
+            ApplicationExtension::class.java,
+            contentHolder,
+            rootExtensionProxy = true
+        ).also {
             initDefaultValues(it)
         }
 }
@@ -106,7 +110,11 @@ internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinit
     }
 
     override val android: LibraryExtension =
-        DslProxy.createProxy(LibraryExtension::class.java, contentHolder).also {
+        DslProxy.createProxy(
+            LibraryExtension::class.java,
+            contentHolder,
+            rootExtensionProxy = true
+        ).also {
             initDefaultValues(it)
         }
 }
@@ -120,7 +128,11 @@ internal class AndroidDynamicFeatureDefinitionImpl(path: String): AndroidProject
     }
 
     override val android: DynamicFeatureExtension =
-        DslProxy.createProxy(DynamicFeatureExtension::class.java, contentHolder).also {
+        DslProxy.createProxy(
+            DynamicFeatureExtension::class.java,
+            contentHolder,
+            rootExtensionProxy = true
+        ).also {
             initDefaultValues(it)
         }
 }

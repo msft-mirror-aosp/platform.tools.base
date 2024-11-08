@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import java.nio.file.Path
 
@@ -32,6 +33,7 @@ interface GradleBuild {
     fun includedBuild(name: String): GradleBuild
 
     val executor: GradleTaskExecutor
+    val modelBuilder: ModelBuilderV2
 
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
 }
@@ -43,7 +45,8 @@ internal class GradleBuildImpl(
     val directory: Path,
     private val subProjects: Map<String, GradleProject> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
-    private val executorProvider: () -> GradleTaskExecutor
+    private val executorProvider: () -> GradleTaskExecutor,
+    private val modelBuilderProvider: () -> ModelBuilderV2,
 ) : GradleBuild {
 
     override fun subProject(name: String): GradleProject {
@@ -69,4 +72,7 @@ internal class GradleBuildImpl(
 
     override val executor: GradleTaskExecutor
         get() = executorProvider()
+
+    override val modelBuilder: ModelBuilderV2
+        get() = modelBuilderProvider()
 }

@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.model
 
 import com.android.Version
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
@@ -29,12 +31,9 @@ import org.junit.Test
 class MissingDependencyModelTest {
 
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            HelloWorldAndroid.setupJava(layout)
             dependencies {
                 implementation("foo:bar:1.1")
             }
@@ -43,7 +42,7 @@ class MissingDependencyModelTest {
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
