@@ -202,6 +202,7 @@ def _intellij_remote_platform_impl(ctx):
     ctx.download_and_extract(
         url = ctx.attr.url,
         sha256 = ctx.attr.sha256,
+        stripPrefix = ctx.attr.top_level_dir,
     )
     ctx.file("WORKSPACE", "workspace(name = \"{name}\")\n".format(name = ctx.name))
 
@@ -220,6 +221,7 @@ intellij_remote_platform = repository_rule(
         "url": attr.string(),
         "cmd": attr.label(),
         "srcs": attr.label_list(),
+        "top_level_dir": attr.string(),
     },
     implementation = _intellij_remote_platform_impl,
 )
@@ -249,11 +251,17 @@ def local_platform(name, target, spec):
 #       name: The name of this platform, to be used in the platforms attribute of intellij_plugin
 #       url: Where to download this platform from
 #       sha256: The file's sha256.
-def remote_platform(name, sha256, url):
+#       top_level_dir: Optional in case the archive contains a top-level directory that contains all files in the archive.
+#       export_plugins: If true, all plugins in the IDE archive will be available through @intellij//:PLUGIN_NAME.
+#                      (Note that setting this to true will always download the IDE.)
+#
+def remote_platform(name, sha256, url, top_level_dir = None, export_plugins = False):
     return struct(
         name = name,
         sha256 = sha256,
         url = url,
+        top_level_dir = top_level_dir,
+        export_plugins = export_plugins,
     )
 
 def setup_platforms(repos):
@@ -270,8 +278,13 @@ def setup_platforms(repos):
                 ],
                 sha256 = repo.sha256,
                 url = repo.url,
+                top_level_dir = repo.top_level_dir,
             )
-            targets.append((repo.name, "@" + repo.name + "//:" + repo.name, "[]"))
+            if repo.export_plugins:
+                content += "load('" + "@" + repo.name + "//:spec.bzl" + "', " + _normalize(repo.name) + " = 'SPEC')\n"
+                targets.append((repo.name, "@" + repo.name + "//:" + repo.name, _normalize(repo.name) + ".plugin_jars.keys()"))
+            else:
+                targets.append((repo.name, "@" + repo.name + "//:" + repo.name, "[]"))
         elif hasattr(repo, "target"):
             content += "load('" + repo.spec + "', " + _normalize(repo.name) + " = 'SPEC')\n"
             targets.append((repo.name, repo.target, _normalize(repo.name) + ".plugin_jars.keys()"))
