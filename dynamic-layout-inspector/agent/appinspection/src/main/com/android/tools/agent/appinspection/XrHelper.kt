@@ -24,10 +24,14 @@ import androidx.annotation.RequiresApi
 import androidx.inspection.InspectorEnvironment
 import java.lang.reflect.Field
 import java.lang.reflect.Method
-import com.google.vr.androidx.xr.core.Session
 
 private const val PANEL_ENTITY_CLASS = "com.google.vr.androidx.xr.core.PanelEntity"
 private const val PANEL_ENTITY_IMPL_CLASS = "com.google.vr.realitycore.runtime.androidxr.PanelEntityImpl"
+
+// The com.google.vr classes will be migrated to androidx.xr in the future.
+// Once the migration happens we can remove the com.google.vr names.
+private const val PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntity"
+private const val PANEL_ENTITY_IMPL_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntityImpl"
 
 private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"
 private const val IS_HIDDEN_METHOD = "isHidden"
@@ -45,14 +49,35 @@ class XrHelper(private val environment: InspectorEnvironment) {
     }
 
     try {
-        val xrSessions = environment.artTooling().findInstances(Session::class.java)
-        return xrSessions
-          .mapNotNull { session -> runCatching { doGetXrViews(session) }.getOrNull() }
-          .flatten()
+      val xrSessions = getXrSessions()
+      return xrSessions
+        .mapNotNull { session -> runCatching { doGetXrViews(session) }.getOrNull() }
+        .flatten()
     }
     catch (t: Throwable) {
         return emptyList()
     }
+  }
+
+  private fun getXrSessions(): List<Any> {
+    val xrSessionsAndroix = try {
+      // Try to load the AndroidX class first.
+      environment.artTooling().findInstances(androidx.xr.scenecore.Session::class.java)
+    } catch (t: Throwable) {
+      emptyList()
+    }
+
+    if (xrSessionsAndroix.isNotEmpty()) {
+      return xrSessionsAndroix
+    }
+
+    val xrSessions = try {
+      // As a fallback try to load the class from com.google.vr.
+      environment.artTooling().findInstances(com.google.vr.androidx.xr.core.Session::class.java)
+    } catch (t: Throwable) {
+      emptyList()
+    }
+    return xrSessions
   }
 
   /**
@@ -60,8 +85,13 @@ class XrHelper(private val environment: InspectorEnvironment) {
    * This method will be replaced by calling an API in the XR extensions library that will give
    * access to all views.
    */
-  private fun doGetXrViews(session: Session): List<View> {
-    val panelEntityClass = loadClass(PANEL_ENTITY_CLASS)
+  private fun doGetXrViews(session: Any): List<View> {
+    val panelEntityClass = try {
+      loadClass(PANEL_ENTITY_CLASS)
+    } catch (t: Throwable) {
+      // As a fallback try to load the class from AndroidX.
+      loadClass(PANEL_ENTITY_CLASS_ANDROIDX)
+    }
     val getEntitiesOfTypeMethod = loadMethod(session.javaClass, GET_ENTITIES_OF_TYPE_METHOD, Class::class.java)
     val panelEntities = getEntitiesOfTypeMethod.invoke(session, panelEntityClass) as List<*>
     val views = panelEntities.mapNotNull { entity -> entity?.let { getView(it) } }
@@ -76,7 +106,10 @@ class XrHelper(private val environment: InspectorEnvironment) {
     return entity.mapAllFields { field ->
         if (field.name == RT_PANEL_ENTITY_FIELD) {
           val fieldInstance = field.get(entity)!!
-          if (fieldInstance.javaClass.name == PANEL_ENTITY_IMPL_CLASS) {
+          if (
+            fieldInstance.javaClass.name == PANEL_ENTITY_IMPL_CLASS ||
+            fieldInstance.javaClass.name == PANEL_ENTITY_IMPL_CLASS_ANDROIDX
+          ) {
             getRuntimeEntityView(fieldInstance)
           }
           else {
