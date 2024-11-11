@@ -1307,12 +1307,15 @@ class PermissionDetectorTest : AbstractCheckTest() {
                 Data for src/test/pkg/TestClass.java line 13:   lastApi : 2147483647
                   message : Missing permissions required by TestClass.inClassBluetoothAnnotation: %1＄s
                   missing : android.permission.BLUETOOTH
+                  operator : &
                 Data for src/test/pkg/TestClass.java line 14:   lastApi : 2147483647
                   message : Missing permissions required by AnnotationsClass.testBluetoothPermissionAnnotation: %1＄s
                   missing : android.permission.BLUETOOTH
+                  operator : &
                 Data for src/test/pkg/TestClass.java line 15:   lastApi : 2147483647
                   message : Missing permissions required by AnnotationsClass.testAnyOfLocationPermissionAnnotation: %1＄s
                   missing : android.permission.ACCESS_FINE_LOCATION, android.permission.ACCESS_COARSE_LOCATION
+                  operator : |
                 """
       )
   }

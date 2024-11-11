@@ -53,6 +53,7 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.targetSdkAtLeast
 import com.android.utils.XmlUtils
 import com.google.common.collect.Sets
+import com.intellij.psi.JavaTokenType
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiMethod
@@ -250,6 +251,14 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
 
         var messageFormat = "Missing permissions required ${operation.prefix()} $name: %1\$s"
+        val operator =
+          when (val op = requirement.operator) {
+            null,
+            JavaTokenType.ANDAND -> "&"
+            JavaTokenType.OROR -> "|"
+            JavaTokenType.XOR -> "^"
+            else -> throw IllegalArgumentException("Unsupported operator type: $op")
+          }
         val incident =
           Incident(
             MISSING_PERMISSION,
@@ -265,6 +274,8 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
                 missingPermissions.toList(),
                 KEY_LAST_API,
                 requirement.lastApplicableApi,
+                KEY_OPERATOR,
+                operator,
               ),
           )
 
@@ -636,6 +647,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     const val KEY_REQUIREMENT = "requirement"
     const val KEY_LOCAL_PERMISSION = "local"
     const val KEY_MESSAGE = "message"
+    const val KEY_OPERATOR = "operator"
 
     private val IMPLEMENTATION =
       Implementation(PermissionDetector::class.java, Scope.JAVA_FILE_SCOPE)
