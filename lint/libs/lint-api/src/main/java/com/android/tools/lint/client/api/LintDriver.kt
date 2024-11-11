@@ -2586,7 +2586,12 @@ class LintDriver(
       ) {
         val filtered = baseline.findAndMark(incident)
         if (filtered) {
-          if (!allowBaselineSuppress && !allowSuppress && issue.suppressNames != null) {
+          if (
+            !allowBaselineSuppress &&
+              !allowSuppress &&
+              issue.suppressNames != null &&
+              !issue.suppressNames.contains(issue.id)
+          ) {
             flagInvalidSuppress(
               context,
               issue,
@@ -2996,6 +3001,15 @@ class LintDriver(
     }
   }
 
+  /**
+   * Returns true if the given [issue] requires an exact issue id (or alias match), and can **not**
+   * be suppressed with for example `all` or an issue category.
+   */
+  private fun requiresExactMatch(issue: Issue?): Boolean {
+    val customSuppressNames = if (!allowSuppress) issue?.suppressNames else null
+    return customSuppressNames != null
+  }
+
   // Unfortunately, ASMs nodes do not extend a common DOM node type with parent
   // pointers, so we have to have multiple methods which pass in each type
   // of node (class, method, field) to be checked.
@@ -3017,7 +3031,7 @@ class LintDriver(
   ): Boolean {
     if (method.invisibleAnnotations != null) {
       val annotations = method.invisibleAnnotations as List<AnnotationNode>
-      return isSuppressed(issue, annotations)
+      return isSuppressed(issue, annotations, requiresExactMatch(issue))
     }
 
     // Initializations of fields end up placed in generated methods (<init>
@@ -3096,7 +3110,7 @@ class LintDriver(
   fun isSuppressed(issue: Issue?, field: FieldNode): Boolean {
     if (field.invisibleAnnotations != null) {
       val annotations = field.invisibleAnnotations as List<AnnotationNode>
-      return isSuppressed(issue, annotations)
+      return isSuppressed(issue, annotations, requiresExactMatch(issue))
     }
 
     return false
@@ -3112,7 +3126,7 @@ class LintDriver(
   fun isSuppressed(issue: Issue?, classNode: ClassNode): Boolean {
     if (classNode.invisibleAnnotations != null) {
       val annotations = classNode.invisibleAnnotations as List<AnnotationNode>
-      return isSuppressed(issue, annotations)
+      return isSuppressed(issue, annotations, requiresExactMatch(issue))
     }
 
     if (
@@ -3144,7 +3158,11 @@ class LintDriver(
     return false
   }
 
-  private fun isSuppressed(issue: Issue?, annotations: List<AnnotationNode>): Boolean {
+  private fun isSuppressed(
+    issue: Issue?,
+    annotations: List<AnnotationNode>,
+    requireExactMatch: Boolean,
+  ): Boolean {
     for (annotation in annotations) {
       val desc = annotation.desc
 
@@ -3160,13 +3178,13 @@ class LintDriver(
             if (key == "value") {
               val value = annotation.values[i + 1]
               if (value is String) {
-                if (matches(issue, value)) {
+                if (matches(issue, value, requireExactMatch)) {
                   return true
                 }
               } else if (value is List<*>) {
                 for (v in value) {
                   if (v is String) {
-                    if (matches(issue, v)) {
+                    if (matches(issue, v, requireExactMatch)) {
                       return true
                     }
                   }
@@ -3200,13 +3218,18 @@ class LintDriver(
       return false
     }
 
+    val requireExactMatch = customSuppressNames != null
     var currentScope = scope
     val checkComments =
       client.checkForSuppressComments() && context != null && context.containsCommentSuppress()
     while (currentScope != null) {
       if (currentScope is UAnnotated) {
-        if (isSuppressed(issue, currentScope)) {
-          if (customSuppressNames != null && context != null) {
+        if (isSuppressed(issue, currentScope, requireExactMatch)) {
+          if (
+            customSuppressNames != null &&
+              context != null &&
+              !customSuppressNames.contains(issue.id)
+          ) {
             flagInvalidSuppress(
               context,
               issue,
@@ -3227,7 +3250,7 @@ class LintDriver(
       if (
         checkComments && context != null && context.isSuppressedWithComment(currentScope, issue)
       ) {
-        if (customSuppressNames != null) {
+        if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
           flagInvalidSuppress(
             context,
             issue,
@@ -3266,7 +3289,9 @@ class LintDriver(
       if ((sourcePsi is KtProperty || sourcePsi is KtPropertyAccessor) && currentScope is UMethod) {
         val property =
           if (sourcePsi is KtPropertyAccessor) sourcePsi.property else sourcePsi as KtProperty
-        if (isSuppressedKt(issue, property.annotationEntries)) {
+        if (
+          isSuppressedKt(issue, property.annotationEntries, requireExactMatch = requireExactMatch)
+        ) {
           return true
         }
       }
@@ -3280,7 +3305,13 @@ class LintDriver(
           ((sourcePsi.parent as? KtObjectDeclaration)
             ?: (sourcePsi.parent as? KtClassBody)?.parent as? KtObjectDeclaration)
         if (objectParent?.isCompanion() == true) {
-          if (isSuppressedKt(issue, objectParent.annotationEntries)) {
+          if (
+            isSuppressedKt(
+              issue,
+              objectParent.annotationEntries,
+              requireExactMatch = requireExactMatch,
+            )
+          ) {
             return true
           }
         }
@@ -3311,6 +3342,7 @@ class LintDriver(
       } else {
         null
       }
+    val requireExactMatch = customSuppressNames != null
 
     if (scope is PsiCompiledElement) {
       return false
@@ -3322,8 +3354,12 @@ class LintDriver(
     while (currentScope != null) {
       // Java PSI
       if (currentScope is PsiModifierListOwner) {
-        if (isAnnotatedWithSuppress(context, issue, currentScope)) {
-          if (customSuppressNames != null && context != null) {
+        if (isAnnotatedWithSuppress(context, issue, currentScope, requireExactMatch)) {
+          if (
+            customSuppressNames != null &&
+              context != null &&
+              !customSuppressNames.contains(issue.id)
+          ) {
             flagInvalidSuppress(
               context,
               issue,
@@ -3346,8 +3382,12 @@ class LintDriver(
       // Kotlin PSI
       if (currentScope is KtAnnotated) {
         val annotations = currentScope.annotationEntries
-        if (isSuppressedKt(issue, annotations)) {
-          if (customSuppressNames != null && context != null) {
+        if (isSuppressedKt(issue, annotations, requireExactMatch = requireExactMatch)) {
+          if (
+            customSuppressNames != null &&
+              context != null &&
+              !customSuppressNames.contains(issue.id)
+          ) {
             flagInvalidSuppress(
               context,
               issue,
@@ -3361,14 +3401,15 @@ class LintDriver(
         }
 
         if (
-          customSuppressNames != null && isSuppressedKt(issue, annotations, customSuppressNames)
+          customSuppressNames != null &&
+            isSuppressedKt(issue, annotations, customSuppressNames, requireExactMatch)
         ) {
           return true
         }
       }
 
       if (checkComments && context!!.isSuppressedWithComment(currentScope, issue)) {
-        if (customSuppressNames != null) {
+        if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
           flagInvalidSuppress(
             context,
             issue,
@@ -3470,6 +3511,7 @@ class LintDriver(
         null
       }
 
+    val requireExactMatch = customSuppressNames != null
     var currentNode = node
     if (currentNode is Attr) {
       currentNode = currentNode.ownerElement
@@ -3491,8 +3533,12 @@ class LintDriver(
         val element = currentNode as Element
         if (element.hasAttributeNS(TOOLS_URI, ATTR_IGNORE)) {
           val ignore = element.getAttributeNS(TOOLS_URI, ATTR_IGNORE)
-          if (isSuppressed(issue, ignore)) {
-            if (customSuppressNames != null && context != null) {
+          if (isSuppressed(issue, ignore, requireExactMatch)) {
+            if (
+              customSuppressNames != null &&
+                context != null &&
+                !customSuppressNames.contains(issue.id)
+            ) {
               flagInvalidSuppress(
                 context,
                 issue,
@@ -3504,7 +3550,10 @@ class LintDriver(
             }
             return true
           }
-          if (customSuppressNames != null && isSuppressed(customSuppressNames, ignore)) {
+          if (
+            customSuppressNames != null &&
+              isSuppressed(customSuppressNames, ignore, requireExactMatch)
+          ) {
             return true
           }
         }
@@ -3512,7 +3561,7 @@ class LintDriver(
         if (
           checkComments && context != null && context.isSuppressedWithComment(currentNode, issue)
         ) {
-          if (customSuppressNames != null) {
+          if (customSuppressNames != null && !customSuppressNames.contains(issue.id)) {
             flagInvalidSuppress(
               context,
               issue,
@@ -3923,27 +3972,27 @@ class LintDriver(
       return null
     }
 
-    private fun matches(issue: Issue?, id: String): Boolean {
+    private fun matches(issue: Issue?, id: String, requireExactMatch: Boolean): Boolean {
       if (issue != null) {
         val issueId = issue.id
-        if (matches(issueId, id)) {
+        if (matches(issueId, id, requireExactMatch)) {
           return true
         }
 
-        if (issue.getAliases().any { matches(it, id) }) {
+        if (issue.getAliases().any { matches(it, id, requireExactMatch) }) {
           return true
         }
 
         // Also allow suppressing by category or sub category
-        if (matchesCategory(issue.category, id)) {
+        if (!requireExactMatch && matchesCategory(issue.category, id)) {
           return true
         }
       }
       return false
     }
 
-    private fun matches(issueId: String, id: String): Boolean {
-      if (id.equals(SUPPRESS_ALL, ignoreCase = true)) {
+    private fun matches(issueId: String, id: String, requireExactMatch: Boolean): Boolean {
+      if (id.equals(SUPPRESS_ALL, ignoreCase = true) && !requireExactMatch) {
         return true
       }
 
@@ -3982,18 +4031,18 @@ class LintDriver(
      *   ids
      * @return true if the issue is suppressed by the given string
      */
-    private fun isSuppressed(issue: Issue, string: String): Boolean {
+    private fun isSuppressed(issue: Issue, string: String, requireExactMatch: Boolean): Boolean {
       if (string.isEmpty()) {
         return false
       }
 
       if (string.indexOf(',') == -1) {
-        if (matches(issue, string)) {
+        if (matches(issue, string, requireExactMatch)) {
           return true
         }
       } else {
         for (id in Splitter.on(',').trimResults().split(string)) {
-          if (matches(issue, id)) {
+          if (matches(issue, id, requireExactMatch)) {
             return true
           }
         }
@@ -4002,22 +4051,26 @@ class LintDriver(
       return false
     }
 
-    private fun isSuppressed(issueIds: Collection<String>, string: String): Boolean {
-      return issueIds.any { isSuppressed(it, string) }
+    private fun isSuppressed(
+      issueIds: Collection<String>,
+      string: String,
+      requireExactMatch: Boolean,
+    ): Boolean {
+      return issueIds.any { isSuppressed(it, string, requireExactMatch) }
     }
 
-    private fun isSuppressed(issueId: String, string: String): Boolean {
+    private fun isSuppressed(issueId: String, string: String, requireExactMatch: Boolean): Boolean {
       if (string.isEmpty()) {
         return false
       }
 
       if (string.indexOf(',') == -1) {
-        if (matches(issueId, string)) {
+        if (matches(issueId, string, requireExactMatch)) {
           return true
         }
       } else {
         for (id in Splitter.on(',').trimResults().split(string)) {
-          if (matches(issueId, id)) {
+          if (matches(issueId, id, requireExactMatch)) {
             return true
           }
         }
@@ -4033,27 +4086,33 @@ class LintDriver(
      * @param context [JavaContext] for checking external annotations
      * @param issue the issue to be checked
      * @param modifierListOwner the annotated element to check
+     * @param requireExactMatch whether the issue id must match exactly
      * @return true if the issue or all issues should be suppressed for this modifier
      */
     @JvmStatic
-    fun isAnnotatedWithSuppress(
+    private fun isAnnotatedWithSuppress(
       context: JavaContext?,
       issue: Issue,
       modifierListOwner: PsiModifierListOwner?,
+      requireExactMatch: Boolean,
     ): Boolean {
       if (modifierListOwner == null) {
         return false
       }
 
       val annotations = getAnnotations(context, modifierListOwner)
-      if (isAnnotatedWithSuppress(issue, annotations)) {
+      if (isAnnotatedWithSuppress(issue, annotations, requireExactMatch)) {
         return true
       }
       val defaultAnnotations = getDefaultUseSiteAnnotations(modifierListOwner) ?: return false
-      return isAnnotatedWithSuppress(issue, defaultAnnotations)
+      return isAnnotatedWithSuppress(issue, defaultAnnotations, requireExactMatch)
     }
 
-    private fun isAnnotatedWithSuppress(issue: Issue, annotations: List<UAnnotation>): Boolean {
+    private fun isAnnotatedWithSuppress(
+      issue: Issue,
+      annotations: List<UAnnotation>,
+      requireExactMatch: Boolean,
+    ): Boolean {
       for (annotation in annotations) {
         val fqcn = annotation.qualifiedName
         if (
@@ -4065,7 +4124,7 @@ class LintDriver(
               fqcn == SUPPRESS_LINT)
         ) {
           for (pair in annotation.attributeValues) {
-            if (isSuppressedExpression(issue, pair.expression)) {
+            if (isSuppressedExpression(issue, pair.expression, requireExactMatch)) {
               return true
             }
           }
@@ -4118,8 +4177,29 @@ class LintDriver(
      * @param annotated the annotated element
      * @return true if the issue or all issues should be suppressed for this modifier
      */
+    @Deprecated(
+      "Supply requireExactMatch as well",
+      ReplaceWith(
+        "isSuppressed(issue, annotated, false)",
+        "com.android.tools.lint.client.api.LintDriver.Companion.isSuppressed",
+      ),
+    )
     @JvmStatic
     fun isSuppressed(issue: Issue, annotated: UAnnotated): Boolean {
+      return isSuppressed(issue, annotated, false)
+    }
+
+    /**
+     * Returns true if the given AST modifier has a suppress annotation for the given issue (which
+     * can be null to check for the "all" annotation)
+     *
+     * @param issue the issue to be checked
+     * @param annotated the annotated element
+     * @param requireExactMatch whether the issue id must match exactly
+     * @return true if the issue or all issues should be suppressed for this modifier
+     */
+    @JvmStatic
+    fun isSuppressed(issue: Issue, annotated: UAnnotated, requireExactMatch: Boolean): Boolean {
       //noinspection ExternalAnnotations
       val annotations = annotated.uAnnotations
 
@@ -4135,7 +4215,7 @@ class LintDriver(
         ) {
           val attributeList = annotation.attributeValues
           for (attribute in attributeList) {
-            if (isSuppressedExpression(issue, attribute.expression)) {
+            if (isSuppressedExpression(issue, attribute.expression, requireExactMatch)) {
               return true
             }
           }
@@ -4170,7 +4250,7 @@ class LintDriver(
               //
               value = value.replace(Regex("[\"{}]"), "")
 
-              if (isSuppressed(issue, value)) {
+              if (isSuppressed(issue, value, requireExactMatch)) {
                 return true
               }
             }
@@ -4179,14 +4259,15 @@ class LintDriver(
       }
 
       val defaultAnnotations = getDefaultUseSiteAnnotations(annotated) ?: return false
-      return isAnnotatedWithSuppress(issue, defaultAnnotations)
+      return isAnnotatedWithSuppress(issue, defaultAnnotations, requireExactMatch)
     }
 
     @JvmStatic
-    fun isSuppressedKt(
+    private fun isSuppressedKt(
       issue: Issue,
       annotations: List<KtAnnotationEntry>,
       customNames: Set<String>? = null,
+      requireExactMatch: Boolean,
     ): Boolean {
       if (annotations.isEmpty()) {
         return false
@@ -4208,7 +4289,9 @@ class LintDriver(
         if (isSuppressionAnnotation) {
           val attributeList = annotation.valueArgumentList ?: continue
           for (attribute in attributeList.arguments) {
-            if (isSuppressedExpression(issue, attribute.getArgumentExpression())) {
+            if (
+              isSuppressedExpression(issue, attribute.getArgumentExpression(), requireExactMatch)
+            ) {
               return true
             }
           }
@@ -4244,25 +4327,29 @@ class LintDriver(
      * @return true if the issue or all issues should be suppressed for this modifier
      */
     @JvmStatic
-    fun isSuppressed(issue: Issue, value: PsiAnnotationMemberValue?): Boolean {
+    private fun isSuppressed(
+      issue: Issue,
+      value: PsiAnnotationMemberValue?,
+      requireExactMatch: Boolean,
+    ): Boolean {
       when (value) {
         is PsiLiteral -> {
           val literalValue = value.value
           if (literalValue is String) {
-            if (isSuppressed(issue, literalValue)) {
+            if (isSuppressed(issue, literalValue, requireExactMatch)) {
               return true
             }
           } else if (literalValue == null) {
             // Kotlin UAST workaround
             val v = value.text.removeSurrounding("\"")
-            if (v.isNotEmpty() && isSuppressed(issue, v)) {
+            if (v.isNotEmpty() && isSuppressed(issue, v, requireExactMatch)) {
               return true
             }
           }
         }
         is PsiArrayInitializerMemberValue -> {
           for (mmv in value.initializers) {
-            if (isSuppressed(issue, mmv)) {
+            if (isSuppressed(issue, mmv, requireExactMatch)) {
               return true
             }
           }
@@ -4270,13 +4357,13 @@ class LintDriver(
         is PsiArrayInitializerExpression -> {
           val initializers = value.initializers
           for (e in initializers) {
-            if (isSuppressed(issue, e)) {
+            if (isSuppressed(issue, e, requireExactMatch)) {
               return true
             }
           }
         }
         is PsiParenthesizedExpression -> {
-          return isSuppressed(issue, value.expression)
+          return isSuppressed(issue, value.expression, requireExactMatch)
         }
       }
 
@@ -4292,19 +4379,23 @@ class LintDriver(
      * @return true if the issue or all issues should be suppressed for this modifier
      */
     @JvmStatic
-    private fun isSuppressedExpression(issue: Issue, value: UExpression?): Boolean {
+    private fun isSuppressedExpression(
+      issue: Issue,
+      value: UExpression?,
+      requireExactMatch: Boolean,
+    ): Boolean {
       when (value) {
         is ULiteralExpression -> {
           val literalValue = value.value
           if (literalValue is String) {
-            if (isSuppressed(issue, literalValue)) {
+            if (isSuppressed(issue, literalValue, requireExactMatch)) {
               return true
             }
           }
         }
         is UCallExpression -> {
           for (mmv in value.valueArguments) {
-            if (isSuppressedExpression(issue, mmv)) {
+            if (isSuppressedExpression(issue, mmv, requireExactMatch)) {
               return true
             }
           }
@@ -4312,13 +4403,13 @@ class LintDriver(
         is UInjectionHost -> {
           val literalValue = value.evaluateToString()
           if (literalValue is String) {
-            if (isSuppressed(issue, literalValue)) {
+            if (isSuppressed(issue, literalValue, requireExactMatch)) {
               return true
             }
           }
         }
         is UParenthesizedExpression -> {
-          return isSuppressedExpression(issue, value.expression)
+          return isSuppressedExpression(issue, value.expression, requireExactMatch)
         }
       }
 
@@ -4326,18 +4417,22 @@ class LintDriver(
     }
 
     @JvmStatic
-    private fun isSuppressedExpression(issue: Issue, value: KtExpression?): Boolean {
+    private fun isSuppressedExpression(
+      issue: Issue,
+      value: KtExpression?,
+      requireExactMatch: Boolean,
+    ): Boolean {
       when (value) {
         is KtStringTemplateExpression -> {
           val literalValue =
             ConstantEvaluator.evaluateString(null, value, false)
               ?: value.text.removeSurrounding("\"\"\"").removeSurrounding("\"")
-          if (isSuppressed(issue, literalValue)) {
+          if (isSuppressed(issue, literalValue, requireExactMatch)) {
             return true
           }
         }
         is KtParenthesizedExpression -> {
-          return isSuppressedExpression(issue, value.expression)
+          return isSuppressedExpression(issue, value.expression, requireExactMatch)
         }
       }
 

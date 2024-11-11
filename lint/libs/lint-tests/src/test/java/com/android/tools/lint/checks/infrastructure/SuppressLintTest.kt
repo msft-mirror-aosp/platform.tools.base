@@ -38,6 +38,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UField
 import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.evaluateString
 import org.junit.Test
 import org.w3c.dom.Attr
 
@@ -134,10 +135,11 @@ class SuppressLintTest {
       .files(
         kotlin(
             """
-                    fun forbidden() {
-                        //noinspection AndroidLint_SecureIssue
-                        forbidden()
-                    }"""
+            fun forbidden() {
+                //noinspection AndroidLint_SecureIssue
+                forbidden()
+            }
+            """
           )
           .indented()
       )
@@ -146,14 +148,42 @@ class SuppressLintTest {
       .run()
       .expect(
         """
-                src/test.kt:3: Error: Issue _SecureIssue is not allowed to be suppressed (but can be with @foo.bar.MyOwnAnnotation) [LintError]
-                    forbidden()
-                    ~~~~~~~~~~~
-                src/test.kt:3: Warning: Some error message here [_SecureIssue]
-                    forbidden()
-                    ~~~~~~~~~~~
-                1 errors, 1 warnings
-                """
+        src/test.kt:3: Error: Issue _SecureIssue is not allowed to be suppressed (but can be with @foo.bar.MyOwnAnnotation) [LintError]
+            forbidden()
+            ~~~~~~~~~~~
+        src/test.kt:3: Warning: Some error message here [_SecureIssue]
+            forbidden()
+            ~~~~~~~~~~~
+        1 errors, 1 warnings
+        """
+      )
+  }
+
+  @Test
+  fun checkForbiddenRequiresExactMatch() {
+    lint()
+      .allowCompilationErrors()
+      .files(
+        kotlin(
+            """
+            @Suppress("all")
+            fun forbidden() {
+                forbidden()
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(MySecurityDetector.TEST_ISSUE)
+      .sdkHome(TestUtils.getSdk().toFile())
+      .run()
+      .expect(
+        """
+        src/test.kt:3: Warning: Some error message here [_SecureIssue]
+            forbidden()
+            ~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
       )
   }
 
@@ -313,6 +343,118 @@ class SuppressLintTest {
                     ~~~~~~~~~~~
                 0 errors, 1 warnings
                 """
+      )
+  }
+
+  @Test
+  fun check258705120() {
+    // Verify that if we have an issue where the suppression annotation is set to the same value
+    // as the issue id, we allow using that.
+    lint()
+      .allowCompilationErrors()
+      .files(
+        xml(
+            "res/values/strings.xml",
+            """
+            <resources xmlns:tools="http://schemas.android.com/tools">
+                <!-- Make sure detector flags this attribute when not suppressed -->
+                <string name="test1" forbidden="_SecureIssue3">Test</string> <!-- ERROR 1 -->
+                <!-- Make sure suppression using something other than the specific issue id does not work: -->
+                <string name="test2" tools:ignore="all" forbidden="_SecureIssue3">Test</string> <!-- ERROR 2 -->
+                <!-- Valid suppression: -->
+                <string name="test3" tools:ignore="_SecureIssue3" forbidden="_SecureIssue3">Test</string> <!-- OK 1 -->
+            </resources>
+            """,
+          )
+          .indented(),
+        kotlin(
+            "src/suppressions.kt",
+            """
+            fun notSuppressed() {
+                // No suppressions -- make sure the detector is actually flagging these calls
+                println("_SecureIssue3") // ERROR 3
+            }
+
+            @Suppress("all")
+            fun notSuppressedWithAll() {
+                // Make sure that @Suppress("all") doesn't have any effect on these
+                println("_SecureIssue3") // ERROR 4
+            }
+
+            @Suppress("Security")
+            fun notSuppressedWithCategory() {
+                // Make sure that @Suppress("Security") -- the issue category -- doesn't have any effect on these
+                println("_SecureIssue3") // ERROR 5
+            }
+
+            @Suppress("_SecureIssue3") // OK 2
+            fun suppressed() {
+                println("_SecureIssue3") // OK 3
+            }
+
+            @Suppress("_SecureIssue3") // OK 4
+            fun suppressedWithComment() {
+                // noinspection _SecureIssue3
+                println("_SecureIssue3") // OK 5
+            }
+            """,
+          )
+          .indented(),
+        kotlin(
+            """
+            fun baselineSuppressed() {
+                println("_SecureIssue3") // OK 6
+            }
+            """
+          )
+          .indented(),
+      )
+      .baseline(
+        xml(
+          "baseline.xml",
+          """
+          <issues format="5" by="lint 8.7.2">
+              <issue
+                  id="_SecureIssue3"
+                  severity="Warning"
+                  message="Some error message here"
+                  category="Security"
+                  priority="10"
+                  summary="Some important security issue"
+                  explanation="Blahdiblah"
+                  errorLine1="    println(&quot;_SecureIssue3&quot;) // OK 6"
+                  errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+                  <location
+                      file="src/test.kt"
+                      line="2"
+                      column="5"/>
+              </issue>
+          </issues>
+          """,
+        )
+      )
+      .issues(MySecurityDetector.TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID)
+      .sdkHome(TestUtils.getSdk().toFile())
+      .run()
+      .expect(
+        """
+        res/values/strings.xml:3: Warning: Some error message here [_SecureIssue3]
+            <string name="test1" forbidden="_SecureIssue3">Test</string> <!-- ERROR 1 -->
+                                 ~~~~~~~~~~~~~~~~~~~~~~~~~
+        res/values/strings.xml:5: Warning: Some error message here [_SecureIssue3]
+            <string name="test2" tools:ignore="all" forbidden="_SecureIssue3">Test</string> <!-- ERROR 2 -->
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/suppressions.kt:3: Warning: Some error message here [_SecureIssue3]
+            println("_SecureIssue3") // ERROR 3
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/suppressions.kt:9: Warning: Some error message here [_SecureIssue3]
+            println("_SecureIssue3") // ERROR 4
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+        src/suppressions.kt:15: Warning: Some error message here [_SecureIssue3]
+            println("_SecureIssue3") // ERROR 5
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 5 warnings
+        """
       )
   }
 
@@ -606,12 +748,20 @@ class SuppressLintTest {
     override fun getApplicableUastTypes() = listOf(UImportStatement::class.java)
 
     override fun getApplicableMethodNames(): List<String> {
-      return listOf("forbidden")
+      return listOf("forbidden", "println")
     }
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
       val message = "Some error message here"
+
       val location = context.getLocation(node)
+      if (
+        node.valueArguments.firstOrNull()?.evaluateString() ==
+          TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID.id
+      ) {
+        context.report(TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID, node, location, message)
+        return
+      }
       context.report(TEST_ISSUE, node, location, message)
       context.report(TEST_ISSUE_NEVER_SUPPRESSIBLE, node, location, message)
     }
@@ -635,6 +785,10 @@ class SuppressLintTest {
     override fun visitAttribute(context: XmlContext, attribute: Attr) {
       val message = "Some error message here"
       val location = context.getLocation(attribute)
+      if (attribute.value == TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID.id) {
+        context.report(TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID, attribute, location, message)
+        return
+      }
       context.report(TEST_ISSUE, attribute, location, message)
       context.report(TEST_ISSUE_NEVER_SUPPRESSIBLE, attribute, location, message)
     }
@@ -666,6 +820,21 @@ class SuppressLintTest {
           priority = 10,
           severity = Severity.WARNING,
           suppressAnnotations = emptyList(),
+          implementation =
+            Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
+        )
+
+      @Suppress("SpellCheckingInspection")
+      @JvmField
+      val TEST_ISSUE_SUPPRESS_ANNOTATION_SAME_AS_ID =
+        Issue.create(
+          id = "_SecureIssue3",
+          briefDescription = "Some important security issue",
+          explanation = "Blahdiblah",
+          category = Category.SECURITY,
+          priority = 10,
+          severity = Severity.WARNING,
+          suppressAnnotations = listOf("_SecureIssue3"),
           implementation =
             Implementation(MySecurityDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES),
         )
