@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.SdkConstants
+import com.android.SdkConstants.EXT_AAR
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -54,20 +55,17 @@ class FusedLibraryClassesVerificationTest {
         listOf(
             MavenRepoGenerator.Library(
                 "com.externaldep:externalaar:1",
-                "aar",
-                generateAarWithContent(
-                    "com.externaldep.externalaar",
-                    // language=xml
-                    manifest = """
-                     <manifest package="com.externaldex.externalaar" xmlns:android="http://schemas.android.com/apk/res/android">
-                         <uses-sdk android:targetSdkVersion="34" android:minSdkVersion="21" />
-                         <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-                     </manifest>
-                                    """.trimIndent(),
-                    mainJar = TestInputsGenerator.jarWithEmptyClasses(
-                        ImmutableList.of("com/externaldep/externaljar/ExternalClass")
-                    )
-                )
+                EXT_AAR,
+                generateExternalAarContent()
+            ),
+            MavenRepoGenerator.Library(
+                "com.externaldep:externalaar:2",
+                EXT_AAR,
+                generateExternalAarContent()
+            ),
+            MavenRepoGenerator.Library(
+                "com.externaldep:depwithdep:1",
+                "com.externaldep:externalaar:1"
             )
         )
     )
@@ -104,6 +102,12 @@ class FusedLibraryClassesVerificationTest {
                 """.trimIndent()
             )
         }
+        /*
+                androidLib1
+                    ▲
+                    │
+                androidLib2
+         */
         subProject(":androidLib2") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
@@ -137,13 +141,22 @@ class FusedLibraryClassesVerificationTest {
                 implementation(project(":androidLib1"))
             }
         }
-        subProject(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY") {
+        /*
+                androidLib1
+                     ▲
+                     │
+                 androidLib2
+                     ▲
+                     │
+         androidLibWithManyTransitiveDeps
+         */
+        subProject(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
             plugins.add(PluginType.KOTLIN_ANDROID)
             android {
                 defaultCompileSdk()
-                namespace = "com.example.androidLib3"
+                namespace = "com.example.$ANDROID_LIB_MANY_TRANSITIVE_DEPS"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
@@ -153,13 +166,48 @@ class FusedLibraryClassesVerificationTest {
                 }
             }
             addFile(
-                "src/main/java/com/example/androidLib2/ClassFromAndroidLib3.kt",
-                // language=kotlin
-
+                "src/main/java/com/example/$ANDROID_LIB_MANY_TRANSITIVE_DEPS/ClassFrom$ANDROID_LIB_MANY_TRANSITIVE_DEPS.kt",
                 """
-                package com.example.androidLib3
+                package com.example.$ANDROID_LIB_MANY_TRANSITIVE_DEPS
 
-                class ClassFromAndroidLib3 {
+                class ClassFrom$ANDROID_LIB_MANY_TRANSITIVE_DEPS {
+
+                    fun baz(): String {
+                        return "baz"
+                    }
+                }"""
+            )
+            dependencies {
+                implementation(project(":androidLib2"))
+            }
+        }
+        /*
+          com.externaldep:externalaar:1
+                       ▲
+                       │
+         androidLibWithExternalLibDependency
+         */
+        subProject(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY") {
+            useNewPluginsDsl = true
+            plugins.add(PluginType.ANDROID_LIB)
+            plugins.add(PluginType.KOTLIN_ANDROID)
+            android {
+                defaultCompileSdk()
+                namespace = "com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_1_8
+                    targetCompatibility = JavaVersion.VERSION_1_8
+                }
+                kotlinOptions {
+                    jvmTarget = "1.8"
+                }
+            }
+            addFile(
+                "src/main/java/com/example/$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY/ClassFrom$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY.kt",
+                """
+                package com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY
+
+                class ClassFrom$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY {
 
                     fun foo(): String {
                         return "foo"
@@ -170,12 +218,52 @@ class FusedLibraryClassesVerificationTest {
                 implementation("com.externaldep:externalaar:1")
             }
         }
+        /*
+                com.externaldep:externalaar:1
+                             ▲
+                             │
+                com.externaldep:depwithdep:1
+                             ▲
+                             │
+           androidLibWithExternalLibWithCircularDep
+         */
+        subProject(":$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP") {
+            useNewPluginsDsl = true
+            plugins.add(PluginType.ANDROID_LIB)
+            plugins.add(PluginType.KOTLIN_ANDROID)
+            android {
+                defaultCompileSdk()
+                namespace = "com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP"
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_1_8
+                    targetCompatibility = JavaVersion.VERSION_1_8
+                }
+                kotlinOptions {
+                    jvmTarget = "1.8"
+                }
+            }
+            addFile(
+                "src/main/java/com/example/$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP/ClassFrom$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP.kt",
+                """
+                package com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP
+
+                class ClassFrom$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP {
+
+                    fun fob(): String {
+                        return "fob"
+                    }
+                }"""
+            )
+            dependencies {
+                implementation("com.externaldep:depwithdep:1")
+            }
+        }
         subProject(":$ANDROID_LIB_WITH_DATABINDING") {
             plugins.add(PluginType.ANDROID_LIB)
             plugins.add(PluginType.KOTLIN_ANDROID)
             android {
                 defaultCompileSdk()
-                namespace = "com.example.androidLibWithDatabinding"
+                namespace = "com.example.$ANDROID_LIB_WITH_DATABINDING"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
@@ -188,6 +276,15 @@ class FusedLibraryClassesVerificationTest {
                     viewBinding = true
                 }
             }
+            appendToBuildFile {
+                """
+                    android {
+                        dataBinding {
+                            enabled = true
+                        }
+                    }
+                """.trimIndent()
+            }
         }
         subProject(":$FUSED_LIBRARY_PROJECT_NAME") {
             plugins.add(PluginType.FUSED_LIBRARY)
@@ -199,6 +296,12 @@ class FusedLibraryClassesVerificationTest {
             // Use addDependenciesToFusedLibProject() for setting dependencies.
             dependencies {}
         }
+        /*
+          fusedLib1
+             ▲
+             │
+            app
+         */
         subProject(":app") {
             plugins.add(PluginType.ANDROID_APP)
             plugins.add(PluginType.KOTLIN_ANDROID)
@@ -252,18 +355,46 @@ class FusedLibraryClassesVerificationTest {
         addDependenciesToFusedLibProject(dependenciesBlock)
 
         val classesFromDirectDependencies = listOf(
-            "com/example/androidLib2/ClassFromAndroidLib2.class", // From :androidLib2
-            "com/example/androidLib3/ClassFromAndroidLib3.class", // From :androidLib3
-            "com/example/androidLib1/ClassFromAndroidLib1.class" // From :androidLib1
+            // From :androidLib2
+            "com/example/androidLib2/ClassFromAndroidLib2.class",
+            // From :androidLib1
+            "com/example/androidLib1/ClassFromAndroidLib1.class",
+            // From :androidLibWithExternalLibDependency
+            "com/example/androidLibWithExternalLibDependency/ClassFromandroidLibWithExternalLibDependency.class"
         )
 
         assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
         checkFusedLibReportContents(
-            listOf("project :androidLib1", "project :androidLib2", "project :androidLib3"),
+            listOf(
+                "project :androidLib1",
+                "project :androidLib2",
+                "project :androidLibWithExternalLibDependency"
+            ),
             listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
                 "org.jetbrains:annotations:<version>",
                 "com.externaldep:externalaar:1"
+            )
+        )
+    }
+
+    @Test
+    fun checkNotIncludedProjectDependenciesAddedAsDependencies() {
+        val dependenciesBlock = """
+            include(project(":androidLib2"))
+        """.trimIndent()
+        addDependenciesToFusedLibProject(dependenciesBlock)
+
+        val classesFromDirectDependencies = listOf(
+            "com/example/androidLib2/ClassFromAndroidLib2.class", // From :androidLib2
+        )
+        assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
+        checkFusedLibReportContents(
+            listOf("project :androidLib2"),
+            listOf(
+                "org.jetbrains.kotlin:kotlin-stdlib:<version>",
+                "org.jetbrains:annotations:<version>",
+                "project.:androidLib1:unspecified"
             )
         )
     }
@@ -344,15 +475,70 @@ class FusedLibraryClassesVerificationTest {
 
         addDependenciesToFusedLibProject(dependenciesBlock)
         for (enableAndroidx in listOf(true, false)) {
-            val failure =
+            val failureExecutor =
                 project.executor()
                     .with(BooleanOption.USE_ANDROID_X, enableAndroidx)
-                    .expectFailure()
-                    .run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
 
-            failure.assertErrorContains(
-                "Fused Library plugin does not allow dependencies with databinding.")
+            val expectedFailure = "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
+                    "   [Databinding is not supported by Fused Library modules]:\n" +
+                    "    * androidx.databinding:viewbinding is not a permitted dependency.\n" +
+                    "    * androidx.databinding:databinding-common is not a permitted dependency.\n" +
+                    "    * androidx.databinding:databinding-runtime is not a permitted dependency.\n" +
+                    "    * androidx.databinding:databinding-adapters is not a permitted dependency.\n" +
+                    "    * androidx.databinding:databinding-ktx is not a permitted dependency."
+
+            listOf(
+                "generatePomFileForMavenPublication",
+                "publish",
+                "publishToMavenLocal"
+            ).forEach {
+                val publicationFailure =
+                    failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
+                publicationFailure.assertErrorContains(expectedFailure)
+            }
+
+            val buildFailure = failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:bundle")
+            buildFailure.assertErrorContains(expectedFailure)
         }
+    }
+
+    @Test
+    fun `validationFailsForDependencyIncludedButParentNotIncluded-ProjectDependency`() {
+        val dependenciesBlock = """
+            include(project(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS"))
+
+            // :androidLib1 is also a transitive dependency from $ANDROID_LIB_MANY_TRANSITIVE_DEPS via :androidLib2
+            include(project(":androidLib1"))
+        """.trimIndent()
+
+        addDependenciesToFusedLibProject(dependenciesBlock)
+
+        val failure = project.executor().expectFailure()
+            .run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        failure.assertErrorContains(
+            "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
+                    "   [Require transitive dependency inclusion]:\n" +
+                    "    * project :androidLib1 is included in the fused library .aar, " +
+                    "however its parent dependency project :androidLib2 was not.")
+    }
+
+    @Test
+    fun `validationFailsForDependencyIncludedButParentNotIncluded-ExternalDependency`() {
+        val dependenciesBlock = """
+            include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"))
+            include(project(":$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP"))
+            include("com.externaldep:externalaar:1")
+        """.trimIndent()
+
+        addDependenciesToFusedLibProject(dependenciesBlock)
+
+        val failure = project.executor().expectFailure()
+            .run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        failure.assertErrorContains(
+            "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
+                    "   [Require transitive dependency inclusion]:\n" +
+                    "    * com.externaldep:externalaar:1 is included in the fused library .aar, " +
+                    "however its parent dependency com.externaldep:depwithdep:1 was not.")
     }
 
     private fun checkFusedLibReportContents(
@@ -415,9 +601,25 @@ class FusedLibraryClassesVerificationTest {
         return classesJar
     }
 
+    private fun generateExternalAarContent() = generateAarWithContent(
+        "com.externaldep.externalaar",
+        // language=xml
+        manifest = """
+                         <manifest package="com.externaldep.externalaar" xmlns:android="http://schemas.android.com/apk/res/android">
+                             <uses-sdk android:targetSdkVersion="34" android:minSdkVersion="21" />
+                             <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+                         </manifest>
+                                        """.trimIndent(),
+        mainJar = TestInputsGenerator.jarWithEmptyClasses(
+            ImmutableList.of("com/externaldep/externaljar/ExternalClass")
+        )
+    )
+
     companion object {
         const val FUSED_LIBRARY_PROJECT_NAME = "fusedLib1"
-        const val ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY = "androidLib3"
+        const val ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY = "androidLibWithExternalLibDependency"
+        const val ANDROID_LIB_MANY_TRANSITIVE_DEPS = "androidLibManyTransitiveDeps"
+        const val ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP = "androidLibWithExternalLibWithCircularDep"
         const val ANDROID_LIB_WITH_DATABINDING = "androidLibWithDatabinding"
         const val FUSED_LIBRARY_R_CLASS = "com/example/fusedLib1/R.class"
     }

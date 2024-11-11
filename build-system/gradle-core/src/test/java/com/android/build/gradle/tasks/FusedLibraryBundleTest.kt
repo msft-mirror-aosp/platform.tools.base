@@ -20,14 +20,18 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.SingleInitialProviderRequestImpl
 import com.android.build.gradle.internal.dependency.PluginConfigurations
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
+import com.android.build.gradle.internal.fixtures.FakeGradleDirectoryProperty
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScopeImpl
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.google.common.truth.Truth
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.artifacts.FileCollectionDependency
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
@@ -72,13 +76,19 @@ internal class FusedLibraryBundleTest {
             AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH)).thenReturn(configuration)
 
         whenever(configuration.allDependencies).thenReturn(dependencySet)
-        whenever(fileCollectionDependency.files).thenReturn(FakeConfigurableFileCollection(File("someJar.jar")))
-        whenever(dependencySet.iterator()).thenReturn(mutableSetOf(fileCollectionDependency).iterator())
+        whenever(fileCollectionDependency.files).thenReturn(
+            FakeConfigurableFileCollection(File("someJar.jar")))
+        whenever(dependencySet.iterator())
+            .thenReturn(mutableSetOf(fileCollectionDependency).iterator())
 
         val request = mock<SingleInitialProviderRequestImpl<T, RegularFile>>()
 
         whenever(artifacts.setInitialProvider(taskProvider, FusedLibraryBundle::outputFile))
                 .thenReturn(request)
+        whenever(artifacts.get(FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION))
+            .thenReturn(project.layout.buildDirectory.dir(
+                FusedLibraryInternalArtifactType.DEPENDENCY_VALIDATION.getFolderName()
+            ))
 
         val creationAction = U::class.java.getDeclaredConstructor(FusedLibraryGlobalScope::class.java)
             .newInstance(variantScope)

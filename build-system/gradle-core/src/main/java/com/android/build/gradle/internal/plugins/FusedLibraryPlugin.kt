@@ -42,6 +42,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryBundleAar
 import com.android.build.gradle.tasks.FusedLibraryBundleClasses
 import com.android.build.gradle.tasks.FusedLibraryClassesRewriteTask
+import com.android.build.gradle.tasks.FusedLibraryDependencyValidationTask
 import com.android.build.gradle.tasks.FusedLibraryManifestMergerTask
 import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
 import com.android.build.gradle.tasks.FusedLibraryMergeClasses
@@ -67,6 +68,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.specs.Spec
 import org.gradle.build.event.BuildEventsListenerRegistry
 import javax.inject.Inject
 
@@ -188,11 +190,22 @@ class FusedLibraryPlugin @Inject constructor(
             project.extensions.findByType(PublishingExtension::class.java)?.also {
                 component(
                     it.publications.create("maven", MavenPublication::class.java)
-                            .also { mavenPublication ->
-                                mavenPublication.from(adhocComponent)
-                            },
+                        .also { mavenPublication ->
+                            mavenPublication.from(adhocComponent)
+                        },
                     fusedAarRuntimeDependenciesComponentIdProvider,
                 )
+                val publishPlugin = "maven-publish"
+                project.pluginManager.withPlugin(publishPlugin) {
+                    val publicationTasks = setOf(
+                        "publish",
+                        "generatePomFileForMavenPublication",
+                        "generateMetadataFileForMavenPublication"
+                    )
+                    project.tasks.named { it in publicationTasks }.forEach {
+                        it.dependsOn(FusedLibraryConstants.VALIDATE_DEPENDENCIES_TASK_NAME)
+                    }
+                }
             }
         }
     }
@@ -236,7 +249,8 @@ class FusedLibraryPlugin @Inject constructor(
                         FusedLibraryBundleAar.CreationAction(variantScope),
                         MergeJavaResourceTask.FusedLibraryCreationAction(variantScope),
                         FusedLibraryMergeResourceCompileSymbolsTask.CreationAction(variantScope),
-                        FusedLibraryReportTask.CreationAction(variantScope)
+                        FusedLibraryReportTask.CreationAction(variantScope),
+                        FusedLibraryDependencyValidationTask.CreationAction(variantScope)
                 ) + FusedLibraryMergeArtifactTask.getCreationActions(variantScope),
         )
     }
@@ -336,8 +350,7 @@ class FusedLibraryPlugin @Inject constructor(
         variantScope.incomingConfigurations.addAll(configurationsToAdd)
 
         val dependenciesModuleVersionIds =
-            getFusedLibraryDependencyModuleVersionIdentifiers(
-                include, variantScope.services.issueReporter)
+            getFusedLibraryDependencyModuleVersionIdentifiers(include)
         val dependenciesProvider = dependenciesModuleVersionIds.toDependenciesProvider(project)
 
         maybePublishToMaven(
