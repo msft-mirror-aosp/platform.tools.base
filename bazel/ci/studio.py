@@ -120,6 +120,39 @@ def run_bazel_test(
   )
 
 
+def run_tests(
+    build_env: bazel.BuildEnv,
+    flags: Sequence[str],
+    targets: Sequence[str],
+  ) -> BazelTestResult:
+  """Runs the bazel test invocation."""
+  result = run_bazel_test(build_env, flags, targets)
+
+  # If an uncommon exit code happens, copy extra worker logs.
+  if result.exit_code not in {
+      bazel.EXITCODE_SUCCESS,
+      bazel.EXITCODE_TEST_FAILURES,
+  }:
+    copy_bazel_logs(build_env)
+
+  collect_logs(build_env, result.bes_path)
+
+  return result
+
+
+def copy_bazel_logs(build_env: bazel.BuildEnv) -> None:
+  """Copies bazel internal logs into output."""
+  dest_path = pathlib.Path(build_env.dist_dir) / 'bazel_logs'
+  dest_path.mkdir(parents=True, exist_ok=True)
+  server_log = build_env.bazel_info('server_log').stdout.decode('utf-8').strip()
+  shutil.copy2(server_log, dest_path / 'java.log')
+  result = build_env.bazel_info('output_base')
+  output_base = pathlib.Path(result.stdout.decode('utf-8').strip())
+  worker_logs = output_base / 'bazel-workers'
+  for path in worker_logs.glob('*.log'):
+    shutil.copy2(path, dest_path / path.name)
+
+
 def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
   """Runs the log collector."""
   build_type = BuildType.from_build_number(build_env.build_number)

@@ -59,7 +59,7 @@ def studio_win(build_env: bazel.BuildEnv):
     flags.extend(result.flags)
     flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
-  test_result = studio.run_bazel_test(build_env, flags, targets)
+  test_result = studio.run_tests(build_env, flags, targets)
 
   studio.copy_artifacts(
       build_env,
@@ -70,7 +70,6 @@ def studio_win(build_env: bazel.BuildEnv):
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )
-  studio.collect_logs(build_env, test_result.bes_path)
 
   build_env.bazel_shutdown()
 

@@ -120,7 +120,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     flags.extend(result.flags)
     flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
-  result = run_tests(build_env, flags, targets)
+  result = studio.run_tests(build_env, flags, targets)
   copy_agp_supported_versions(build_env)
   if studio.is_build_successful(result):
     copy_artifacts(
@@ -140,7 +140,7 @@ def studio_linux_large(build_env: bazel.BuildEnv) -> None:
       build_env,
       test_tag_filters='ci:studio-linux-large',
   )
-  result = run_tests(build_env, flags, _BASE_TARGETS)
+  result = studio.run_tests(build_env, flags, _BASE_TARGETS)
   if studio.is_build_successful(result):
     return
 
@@ -156,7 +156,7 @@ def studio_linux_very_flaky(build_env: bazel.BuildEnv) -> None:
   )
   flags.append('--build_tests_only')
 
-  result = run_tests(build_env, flags, _BASE_TARGETS + _EXTRA_TARGETS)
+  result = studio.run_tests(build_env, flags, _BASE_TARGETS + _EXTRA_TARGETS)
   if studio.is_build_successful(result):
     return
 
@@ -175,7 +175,7 @@ def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
       '--jvmopt=-Didea.kotlin.plugin.use.k2=true',
       '--jvmopt=-Dlint.use.fir.uast=true',
   ])
-  result = run_tests(build_env, flags, _BASE_TARGETS)
+  result = studio.run_tests(build_env, flags, _BASE_TARGETS)
   copy_agp_supported_versions(build_env)
   if studio.is_build_successful(result) and result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:
     return
@@ -220,33 +220,6 @@ def build_flags(
 
       '--jobs=500',
   ]
-
-
-def run_tests(
-    build_env: bazel.BuildEnv,
-    flags: Sequence[str],
-    targets: Sequence[str],
-  ) -> studio.BazelTestResult:
-  """Runs the bazel test invocation."""
-  result = studio.run_bazel_test(build_env, flags, targets)
-
-  # If an uncommon exit code happens, copy extra worker logs.
-  if result.exit_code > 9:
-    copy_worker_logs(build_env)
-
-  studio.collect_logs(build_env, result.bes_path)
-
-  return result
-
-
-def copy_worker_logs(build_env: bazel.BuildEnv) -> None:
-  """Copies worker logs into output."""
-  result = build_env.bazel_info('output_base')
-  src_path = pathlib.Path(result.stdout.decode('utf-8').strip())
-  dest_path = pathlib.Path(build_env.dist_dir) / 'bazel_logs'
-  dest_path.mkdir(parents=True, exist_ok=True)
-  for path in src_path.glob('*.log'):
-    shutil.copy2(path, dest_path / path.name)
 
 
 def copy_agp_supported_versions(build_env: bazel.BuildEnv) -> None:
