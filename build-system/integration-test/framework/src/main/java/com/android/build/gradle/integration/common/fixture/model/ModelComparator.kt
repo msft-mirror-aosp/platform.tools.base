@@ -96,7 +96,7 @@ abstract class BasicComparator(
 
             Truth.assertWithMessage("Dumped $name (full version in stdout)")
                 .that(actualText)
-                .isEqualTo(expectedText)
+                .isEqualTo(expectedText.trimEnd())
 
         } else {
             val file = findGoldenFileLocation(goldenFile)
