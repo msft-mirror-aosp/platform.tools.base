@@ -48,7 +48,7 @@ gradle_build(
         ":maven_dependencies",
         "//tools/base/build-system/previous-versions:8.7.0",
     ],
-    tasks = [":base:journeys:zipPlugin"],
+    tasks = [":base:journeys:journeys-gradle-plugin:zipPlugin"],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
     ],
