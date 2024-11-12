@@ -123,7 +123,7 @@ maven_repository(
     visibility = ["//visibility:public"],
 )
 
-LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.1.0-dev-9026"
+LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.1.20-dev-2943"
 
 maven_repository(
     name = "latest_kotlin_gradle_plugin_prebuilts_for_sync_benchmarks",
@@ -134,6 +134,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_" + LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS,
     ],
