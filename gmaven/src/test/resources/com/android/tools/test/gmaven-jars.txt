@@ -916,6 +916,7 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/com.android.tools/r8/kotlinx-serialization-common.pro
   META-INF/com.android.tools/r8/kotlinx-serialization-r8.pro
   META-INF/intellij.java.frontback.psi.impl.kotlin_module
+  META-INF/intellij.java.psi.kotlin_module
   META-INF/intellij.platform.backend.workspace.kotlin_module
   META-INF/intellij.platform.concurrency.kotlin_module
   META-INF/intellij.platform.core.impl.kotlin_module
@@ -942,14 +943,13 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/licenses/
   META-INF/licenses/ASM
   META-INF/maven/
-  META-INF/maven/com.esotericsoftware.kryo/
-  META-INF/maven/com.esotericsoftware.kryo/kryo5/
-  META-INF/maven/com.esotericsoftware.kryo/kryo5/pom.properties
-  META-INF/maven/com.esotericsoftware.kryo/kryo5/pom.xml
   META-INF/maven/com.esotericsoftware/
   META-INF/maven/com.esotericsoftware/kryo/
   META-INF/maven/com.esotericsoftware/kryo/pom.properties
   META-INF/maven/com.esotericsoftware/kryo/pom.xml
+  META-INF/maven/com.esotericsoftware/kryo5/
+  META-INF/maven/com.esotericsoftware/kryo5/pom.properties
+  META-INF/maven/com.esotericsoftware/kryo5/pom.xml
   META-INF/maven/com.esotericsoftware/minlog/
   META-INF/maven/com.esotericsoftware/minlog/pom.properties
   META-INF/maven/com.esotericsoftware/minlog/pom.xml
@@ -1013,6 +1013,7 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/proguard/kotlinx-serialization-common.pro
   META-INF/services/
   META-INF/services/com.intellij.platform.jps.model.resolver.JpsDependencyResolverConfigurationService
+  META-INF/services/com.intellij.platform.workspace.jps.bridge.JpsModuleExtensionBridge
   META-INF/services/javax.xml.stream.XMLEventFactory
   META-INF/services/javax.xml.stream.XMLInputFactory
   META-INF/services/javax.xml.stream.XMLOutputFactory
@@ -1021,6 +1022,7 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/services/org.jetbrains.jps.model.artifact.JpsArtifactService
   META-INF/services/org.jetbrains.jps.model.artifact.elements.JpsPackagingElementFactory
   META-INF/services/org.jetbrains.jps.model.ex.JpsExElementFactory
+  META-INF/services/org.jetbrains.jps.model.ex.JpsReferenceCustomFactory
   META-INF/services/org.jetbrains.jps.model.fileTypes.FileNameMatcherFactory
   META-INF/services/org.jetbrains.jps.model.jarRepository.JpsRemoteRepositoryService
   META-INF/services/org.jetbrains.jps.model.java.JdkVersionDetector
@@ -1105,7 +1107,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/configurationStore/
   com/intellij/core/
   com/intellij/diagnostic/
-  com/intellij/diagnostic/tracing/
   com/intellij/diff/
   com/intellij/diff/comparison/
   com/intellij/diff/comparison/iterables/
@@ -1127,6 +1128,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/formatting/
   com/intellij/ide/
   com/intellij/ide/bootstrap/
+  com/intellij/ide/debug/
   com/intellij/ide/fileTemplates/
   com/intellij/ide/highlighter/
   com/intellij/ide/highlighter/custom/
@@ -1238,11 +1240,13 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/vfs/impl/
   com/intellij/openapi/vfs/impl/http/
   com/intellij/openapi/vfs/impl/jar/
+  com/intellij/openapi/vfs/limits/
   com/intellij/openapi/vfs/local/
   com/intellij/openapi/vfs/newvfs/
   com/intellij/openapi/vfs/newvfs/events/
   com/intellij/openapi/vfs/newvfs/persistent/
   com/intellij/openapi/vfs/pointers/
+  com/intellij/openapi/vfs/transformer/
   com/intellij/openapi/wm/
   com/intellij/openapi/wm/ex/
   com/intellij/patterns/
@@ -1587,6 +1591,7 @@ com/android/tools/external/com-intellij/intellij-core
   io/opentelemetry/internal/shaded/jctools/maps/
   io/opentelemetry/internal/shaded/jctools/queues/
   io/opentelemetry/internal/shaded/jctools/queues/atomic/
+  io/opentelemetry/internal/shaded/jctools/queues/atomic/unpadded/
   io/opentelemetry/internal/shaded/jctools/queues/unpadded/
   io/opentelemetry/internal/shaded/jctools/util/
   io/opentelemetry/sdk/
@@ -2051,6 +2056,7 @@ com/android/tools/external/com-intellij/intellij-core
   org/jetbrains/org/objectweb/asm/tree/analysis/
   org/jetbrains/org/objectweb/asm/util/
   org/picocontainer/
+  pluginsCompatibleWithK2Mode.txt
   win32-x86-64/
   win32-x86-64/attach_hotspot_windows.dll
   win32-x86/
@@ -3159,7 +3165,6 @@ com/android/tools/external/org-jetbrains/uast
   org/jetbrains/uast/analysis/
   org/jetbrains/uast/evaluation/
   org/jetbrains/uast/expressions/
-  org/jetbrains/uast/generate/
   org/jetbrains/uast/internal/
   org/jetbrains/uast/java/
   org/jetbrains/uast/java/declarations/
@@ -3168,7 +3173,6 @@ com/android/tools/external/org-jetbrains/uast
   org/jetbrains/uast/java/kinds/
   org/jetbrains/uast/kotlin/
   org/jetbrains/uast/kotlin/evaluation/
-  org/jetbrains/uast/kotlin/generate/
   org/jetbrains/uast/kotlin/internal/
   org/jetbrains/uast/kotlin/kinds/
   org/jetbrains/uast/kotlin/psi/
