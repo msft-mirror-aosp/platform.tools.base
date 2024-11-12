@@ -46,10 +46,17 @@ import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
-import com.intellij.psi.PsiPrimitiveType
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
+import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtSafeQualifiedExpression
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UBlockExpression
@@ -131,6 +138,34 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       INT_RANGE_ANNOTATION.newName() -> {} // deliberate no-op
     }
   }
+
+  private fun KaSession.isPrimitiveTypeMethod(
+    functionSymbol: KaFunctionSymbol?,
+    paramCount: Int,
+    nameFilter: (String) -> Boolean,
+  ): Boolean {
+    if (functionSymbol == null) return false
+    with(this) {
+      if (!functionSymbol.returnType.isPrimitive) return false
+      if (functionSymbol.valueParameters.size > paramCount) return false
+      return nameFilter.invoke(
+        functionSymbol.callableId?.callableName?.asString() ?: "<no name provided>"
+      )
+    }
+  }
+
+  private fun KaSession.isPrimitiveTypeConvertingMethod(
+    functionSymbol: KaFunctionSymbol?
+  ): Boolean =
+    isPrimitiveTypeMethod(functionSymbol, 0) { name ->
+      name.substring(0, 2) == "to" &&
+        PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
+    }
+
+  private fun KaSession.isPrimitiveTypeReturningMethod(functionSymbol: KaFunctionSymbol?): Boolean =
+    isPrimitiveTypeMethod(functionSymbol, 1) { name ->
+      name == "inv" || name == "and" || name == "or" || name == "xor"
+    }
 
   private fun checkTypeDefConstant(
     context: JavaContext,
@@ -300,6 +335,55 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           resolved,
           usageInfo,
         )
+      } else if (resolved == null) {
+        val sourcePsi =
+          when (val psi = argument.sourcePsi) {
+            is KtDotQualifiedExpression -> {
+              // nonNull.flags.and(...)
+              psi.selectorExpression
+            }
+            is KtSafeQualifiedExpression -> {
+              // nullable?.flags?.or(...)
+              psi.selectorExpression
+            }
+            is KtElement -> psi
+            else -> null
+          }
+        if (sourcePsi != null) {
+          analyze(sourcePsi) {
+            val calleeSymbol = sourcePsi.resolveToCall()?.singleFunctionCallOrNull()?.symbol
+            if (
+              isPrimitiveTypeConvertingMethod(calleeSymbol) ||
+                isPrimitiveTypeReturningMethod(calleeSymbol)
+            ) {
+              val receiver =
+                (argument as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
+              if (receiver != null) {
+                // e.g., RECEIVER.toLong(), we should check if RECEIVER is allowed instead.
+                checkTypeDefConstant(context, annotation, receiver, receiver, flag, usageInfo)
+                val parameterCount = calleeSymbol?.valueParameters?.size ?: -1
+                // e.g., RECEIVER.xor(ARGUMENT)
+                if (parameterCount == 1) {
+                  val callExpression =
+                    argument.selector.skipParenthesizedExprDown() as? UCallExpression
+                  val callArgument =
+                    callExpression?.valueArguments?.firstOrNull()?.skipParenthesizedExprDown()
+                  checkTypeDefConstant(
+                    context,
+                    annotation,
+                    callArgument,
+                    callArgument,
+                    flag,
+                    usageInfo,
+                  )
+                }
+              }
+              // TODO: how to handle implicit receiver in general?
+              // NB: we bail out early to avoid any further false positives.
+              return
+            }
+          }
+        }
       }
     } else if (argument is UCallExpression) {
       if (argument.isNewArrayWithInitializer() || argument.isArrayInitializer()) {
@@ -351,24 +435,6 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     val allowed = getAnnotationValue(annotation)?.skipParenthesizedExprDown() ?: return
-
-    fun PsiMethod.isPrimitiveTypeMethod(paramCount: Int, nameFilter: (String) -> Boolean): Boolean {
-      // TODO(jsjeon): no longer allow `null` return type after 243
-      if (returnType != null && returnType !is PsiPrimitiveType) return false
-      if (parameterList.parametersCount > paramCount) return false
-      return nameFilter.invoke(name)
-    }
-
-    fun PsiMethod.isPrimitiveTypeConvertingMethod(): Boolean =
-      isPrimitiveTypeMethod(0) { name ->
-        name.substring(0, 2) == "to" &&
-          PsiJavaParserFacadeImpl.getPrimitiveType(name.substring(2).lowercase()) != null
-      }
-
-    fun PsiMethod.isPrimitiveTypeReturningMethod(): Boolean =
-      isPrimitiveTypeMethod(1) { name ->
-        name == "inv" || name == "and" || name == "or" || name == "xor"
-      }
 
     if (allowed.isArrayInitializer()) {
       // See if we're passing in a variable which itself has been annotated with
@@ -469,37 +535,6 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
 
         if (!hadTypeDef && resolvedArgument is PsiMethod) {
-          if (
-            resolvedArgument.isPrimitiveTypeConvertingMethod() ||
-              resolvedArgument.isPrimitiveTypeReturningMethod()
-          ) {
-            val receiver =
-              (argument as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
-            if (receiver != null) {
-              // e.g., RECEIVER.toLong(), we should check if RECEIVER is allowed instead.
-              checkTypeDefConstant(context, annotation, receiver, receiver, flag, usageInfo)
-              val parameterCount = resolvedArgument.parameterList.parametersCount
-              // e.g., RECEIVER.xor(ARGUMENT)
-              if (parameterCount == 1) {
-                val callExpression =
-                  argument.selector.skipParenthesizedExprDown() as? UCallExpression
-                val callArgument =
-                  callExpression?.valueArguments?.firstOrNull()?.skipParenthesizedExprDown()
-                checkTypeDefConstant(
-                  context,
-                  annotation,
-                  callArgument,
-                  callArgument,
-                  flag,
-                  usageInfo,
-                )
-              }
-            }
-            // TODO: how to handle implicit receiver in general?
-            // NB: we bail out early to avoid any further false positives.
-            return
-          }
-
           // Called some random method which has not been annotated.
           // Let's peek inside to see if we can figure out more about it; if not,
           // we don't want to flag it since it could get noisy with false
@@ -575,19 +610,23 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           if (resolved != null && resolved.isEquivalentTo(psiValue)) {
             return
           }
-          if (resolved is PsiMethod) {
-            // e.g., CONST.toLong(), we should compare with CONST, not the entire expression.
-            if (
-              resolved.isPrimitiveTypeConvertingMethod() ||
-                resolved.isPrimitiveTypeReturningMethod()
-            ) {
-              val receiver =
-                (expression as? UQualifiedReferenceExpression)
-                  ?.receiver
-                  ?.skipParenthesizedExprDown()
-              val resolvedReceiver = (receiver as? UResolvable)?.resolve()
-              if (resolvedReceiver != null && resolvedReceiver.isEquivalentTo(psiValue)) {
-                return
+          val sourcePsi = expression.sourcePsi as? KtElement
+          if (resolved == null && sourcePsi != null) {
+            analyze(sourcePsi) {
+              val calleeSymbol = sourcePsi.resolveToCall()?.singleFunctionCallOrNull()?.symbol
+              // e.g., CONST.toLong(), we should compare with CONST, not the entire expression.
+              if (
+                isPrimitiveTypeConvertingMethod(calleeSymbol) ||
+                  isPrimitiveTypeReturningMethod(calleeSymbol)
+              ) {
+                val receiver =
+                  (expression as? UQualifiedReferenceExpression)
+                    ?.receiver
+                    ?.skipParenthesizedExprDown()
+                val resolvedReceiver = (receiver as? UResolvable)?.resolve()
+                if (resolvedReceiver != null && resolvedReceiver.isEquivalentTo(psiValue)) {
+                  return
+                }
               }
             }
           }

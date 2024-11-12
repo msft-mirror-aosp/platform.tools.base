@@ -21,6 +21,7 @@ import com.android.tools.lint.client.api.AndroidPlatformAnnotations
 import com.android.tools.lint.client.api.AndroidPlatformAnnotations.Companion.fromPlatformAnnotation
 import com.android.tools.lint.client.api.ResourceReference
 import com.android.tools.lint.detector.api.ConstantEvaluatorImpl.LastAssignmentFinder.LastAssignmentValueUnknown
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.LambdaUtil
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
@@ -48,10 +49,13 @@ import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.asJava.elements.FakeFileForLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMember
+import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightParameter
+import org.jetbrains.kotlin.asJava.elements.isAccessor
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.idea.references.mainReference
+import org.jetbrains.kotlin.load.kotlin.NON_EXISTENT_CLASS_NAME
 import org.jetbrains.kotlin.name.JvmStandardClassIds.JVM_MULTIFILE_CLASS_SHORT
 import org.jetbrains.kotlin.name.JvmStandardClassIds.JVM_OVERLOADS_FQ_NAME
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
@@ -59,15 +63,19 @@ import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
 import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
@@ -101,6 +109,7 @@ import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UUnaryExpression
 import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.UYieldExpression
+import org.jetbrains.uast.UastErrorType
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.getContainingUMethod
@@ -109,6 +118,7 @@ import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.getQualifiedName
 import org.jetbrains.uast.getUCallExpression
 import org.jetbrains.uast.internal.acceptList
+import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
 import org.jetbrains.uast.kotlin.kinds.KotlinSpecialExpressionKinds
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.skipParenthesizedExprUp
@@ -894,6 +904,35 @@ fun PsiMember.getReceiver(): PsiClass? {
     } ?: return null
   val typeReference = callable.receiverTypeReference?.toUElement() as? UTypeReferenceExpression
   return (typeReference?.type as? PsiClassType)?.resolve()
+}
+
+/** Returns `true` if [this] element is a property accessor from source. */
+fun PsiMethod.isAccessor(): Boolean {
+  val lightMethod = this as? KtLightMethod ?: return false
+  return lightMethod.isAccessor(getter = true) || lightMethod.isAccessor(getter = false)
+}
+
+/** Returns `true` if [this] element is a synthetic property accessor (from Java). */
+fun PsiMethod.isSyntheticAccessor(sourcePsi: KtElement): Boolean {
+  val uastResolveService =
+    ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java)
+      ?: return false
+  val simpleNameExpression = sourcePsi.findSimpleNameExpression() ?: return false
+  return uastResolveService.resolveSyntheticJavaPropertyAccessorCall(simpleNameExpression) == this
+}
+
+private tailrec fun KtElement.findSimpleNameExpression(): KtSimpleNameExpression? {
+  return when (this) {
+    is KtQualifiedExpression -> this.selectorExpression?.findSimpleNameExpression()
+    is KtParenthesizedExpression -> this.expression?.findSimpleNameExpression()
+    is KtSimpleNameExpression -> this
+    else -> null
+  }
+}
+
+/** Returns `true` if [this] represents an erroneous type. */
+fun PsiType.isErroneous(): Boolean {
+  return this is UastErrorType || canonicalText.replace(".", "/") == NON_EXISTENT_CLASS_NAME
 }
 
 /** Returns true if this if-expression is a UAST-generated if modeling an elvis (?:) expression. */

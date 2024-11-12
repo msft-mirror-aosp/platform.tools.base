@@ -61,6 +61,7 @@ import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.hasImplicitDefaultConstructor
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.resolveOperator
+import com.android.tools.lint.detector.api.resolveOverloadedOperator
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiAnonymousClass
@@ -269,7 +270,7 @@ internal class AnnotationHandler(
     }
 
     // Overloaded operators
-    val method = node.resolveOperator()
+    val method = node.resolveOverloadedOperator()
     if (method != null) {
       if (
         (node.operator == UastBinaryOperator.EQUALS ||
@@ -961,7 +962,7 @@ internal class AnnotationHandler(
         prev = parent
         parent = parent.uastParent ?: break
       } else if (parent is UBinaryExpression && parent.leftOperand === prev) {
-        val operatorMethod = parent.resolveOperator()
+        val operatorMethod = parent.resolveOverloadedOperator()
         if (operatorMethod != null && parent.operator is UastBinaryOperator.AssignOperator) {
           // The call is just the left hand side expression of an overloaded operator
           // so we won't actually call it (the overloaded operator will instead

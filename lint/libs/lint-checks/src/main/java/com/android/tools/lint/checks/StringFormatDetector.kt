@@ -56,6 +56,7 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.getFileNameWithParent
 import com.android.tools.lint.detector.api.isEnglishResource
+import com.android.tools.lint.detector.api.isErroneous
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.utils.CharSequences
 import com.google.common.annotations.VisibleForTesting
@@ -77,7 +78,6 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULiteralExpression
 import org.jetbrains.uast.UReferenceExpression
-import org.jetbrains.uast.UastErrorType
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.util.isArrayInitializer
@@ -465,7 +465,7 @@ class StringFormatDetector : ResourceXmlDetector(), SourceCodeScanner {
             if (isInStringExpression(call, expression)) {
               type = getStringType(context, expression)
             }
-            if (type != null && type !is UastErrorType) {
+            if (type != null && !type.isErroneous()) {
               var valid = true
               val formatType = getFormatArgumentType(s, i) ?: continue
               val last = formatType[formatType.length - 1]

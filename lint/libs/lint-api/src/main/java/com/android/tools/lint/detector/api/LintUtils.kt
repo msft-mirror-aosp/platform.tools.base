@@ -602,6 +602,21 @@ fun UArrayAccessExpression.resolveOperator(skipOverloadedSetter: Boolean = true)
 }
 
 /**
+ * Resolve overloaded binary expression operator.
+ *
+ * If this is an assignment to a field, you may want to skip this to avoid duplicate reports. The
+ * corresponding (synthetic) accessor call will be visited anyway.
+ */
+fun UBinaryExpression.resolveOverloadedOperator(): PsiMethod? {
+  val operator = resolveOperator() ?: return null
+  val lhsPsi = leftOperand.sourcePsi as? KtElement
+  if ((lhsPsi != null && operator.isSyntheticAccessor(lhsPsi)) || operator.isAccessor()) {
+    return null
+  }
+  return operator
+}
+
+/**
  * Splits the given path into its individual parts, attempting to be tolerant about path separators
  * (: or ;). It can handle possibly ambiguous paths, such as `c:\foo\bar:\other`, though of course
  * these are to be avoided if possible.
