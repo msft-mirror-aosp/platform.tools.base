@@ -37,6 +37,8 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.pom.java.LanguageFeatureProvider
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiNameHelper
+import com.intellij.psi.impl.PsiNameHelperImpl
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
@@ -128,6 +130,9 @@ internal fun configureProjectEnvironment(
   if (javaLanguageLevel != null) {
     LanguageLevelProjectExtension.getInstance(project).languageLevel = javaLanguageLevel
   }
+
+  // PsiNameHelper is used by Kotlin UAST.
+  project.registerService(PsiNameHelper::class.java, PsiNameHelperImpl::class.java)
 
   // TODO(b/283351708): Migrate to using UastFacade/UastLanguagePlugin instead,
   //  even including lint checks shipped in a binary form?!

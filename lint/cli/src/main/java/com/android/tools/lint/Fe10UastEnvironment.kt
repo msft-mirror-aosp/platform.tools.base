@@ -27,10 +27,8 @@ import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.psi.ClassTypePointerFactory
 import com.intellij.psi.PsiManager
-import com.intellij.psi.PsiNameHelper
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartTypePointerManager
-import com.intellij.psi.impl.PsiNameHelperImpl
 import com.intellij.psi.impl.smartPointers.PsiClassReferenceTypePointerFactory
 import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl
 import com.intellij.psi.impl.smartPointers.SmartTypePointerManagerImpl
@@ -281,9 +279,6 @@ private fun configureFe10ProjectEnvironment(
     KotlinUastResolveProviderService::class.java,
     CliKotlinUastResolveProviderService::class.java,
   )
-
-  // PsiNameHelper is used by Kotlin UAST.
-  project.registerService(PsiNameHelper::class.java, PsiNameHelperImpl::class.java)
 
   configureProjectEnvironment(project, config)
 
