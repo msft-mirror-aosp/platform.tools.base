@@ -2382,6 +2382,78 @@ public class StringFormatDetectorTest extends AbstractCheckTest {
                 .expectClean();
     }
 
+    public void testComposeStringResource() {
+        // Regression test for https://issuetracker.google.com/370343337
+        String message =
+                "src/test/pkg/test.kt:6: Error: Format string 'invalid_format' is not a valid"
+                    + " format string so it should not be passed to String.format"
+                    + " [StringFormatInvalid]\n"
+                    + "    stringResource(R.string.invalid_format, \"something\") // ERROR 1\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "    res/values/formatstrings.xml:2: This definition does not require"
+                    + " arguments\n"
+                    + "    <string name=\"invalid_format\">This illustrates a broken specifier"
+                    + " (%).</string>\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "src/test/pkg/test.kt:7: Error: Format string 'no_args' is not a valid format"
+                    + " string so it should not be passed to String.format [StringFormatInvalid]\n"
+                    + "    stringResource(R.string.no_args, 0) // ERROR 2\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "    res/values/formatstrings.xml:4: This definition does not require"
+                    + " arguments\n"
+                    + "    <string name=\"no_args\">Hello</string>\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "src/test/pkg/test.kt:8: Error: Wrong argument type for formatting argument"
+                    + " '#1' in score: conversion is 'd', received boolean (argument #2 in method"
+                    + " call) (Did you mean formatting character b?) [StringFormatMatches]\n"
+                    + "    stringResource(R.string.score, true) // ERROR 3\n"
+                    + "                                   ~~~~\n"
+                    + "    res/values/formatstrings.xml:3: Conflicting argument declaration here\n"
+                    + "    <string name=\"score\">Score: %1＄d</string>\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "3 errors, 0 warnings";
+        lint().files(
+                        xml(
+                                "res/values/formatstrings.xml",
+                                "<resources>\n"
+                                    + "    <string name=\"invalid_format\">This illustrates a"
+                                    + " broken specifier (%).</string>\n"
+                                    + "    <string name=\"score\">Score: %1$d</string>\n"
+                                    + "    <string name=\"no_args\">Hello</string>\n"
+                                    + "</resources>\n"),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
+                                    + "import androidx.compose.ui.res.stringResource\n"
+                                    + "\n"
+                                    + "fun testPrint() {\n"
+                                    + "    stringResource(R.string.invalid_format, \"something\")"
+                                    + " // ERROR 1\n"
+                                    + "    stringResource(R.string.no_args, 0) // ERROR 2\n"
+                                    + "    stringResource(R.string.score, true) // ERROR 3\n"
+                                    + "    stringResource(R.string.score, 100) // OK 1\n"
+                                    + "}"),
+                        kotlin(
+                                "src/StringResources.android.kt",
+                                "/*HIDE-FROM-DOCUMENTATION*/\n"
+                                    + "package androidx.compose.ui.res\n"
+                                    + "fun stringResource(id: Int): String = \"\"\n"
+                                    + "fun stringResource(id: Int, vararg formatArgs: Any): String"
+                                    + " = formatArgs.toString()\n"),
+                        java(
+                                ""
+                                        + "/*HIDE-FROM-DOCUMENTATION*/\n"
+                                        + "public class R {\n"
+                                        + "    public static class string {\n"
+                                        + "        public static final int invalid_format = 1;\n"
+                                        + "        public static final int score = 2;\n"
+                                        + "        public static final int no_args = 3;\n"
+                                        + "    }\n"
+                                        + "}\n"))
+                .run()
+                .expect(message);
+    }
+
     @SuppressWarnings("all") // Sample code
     private TestFile mFormatstrings =
             xml(

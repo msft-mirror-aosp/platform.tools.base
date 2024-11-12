@@ -181,7 +181,11 @@ class StringFormatDetector : ResourceXmlDetector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames(): List<String> {
-    return listOf(SdkConstants.FORMAT_METHOD, SdkConstants.GET_STRING_METHOD)
+    return listOf(
+      SdkConstants.FORMAT_METHOD,
+      SdkConstants.GET_STRING_METHOD,
+      STRING_RESOURCE_METHOD,
+    )
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -219,6 +223,13 @@ class StringFormatDetector : ResourceXmlDetector(), SourceCodeScanner {
 
         // TODO: Consider also enforcing
         // java.util.Formatter#format(String string, Object... formatArgs)
+      }
+    } else if (methodName == STRING_RESOURCE_METHOD) {
+      if (method.parameterList.parametersCount == 2) {
+        val name = method.containingClass?.qualifiedName
+        if (name == "androidx.compose.ui.res.StringResources_androidKt") {
+          checkStringFormatCall(context, method, node, 0)
+        }
       }
     } else {
       // Look up any of these string formatting methods:
@@ -955,6 +966,8 @@ This will ensure that in other languages the right set of translations are provi
         .addMoreInfo(
           "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals"
         )
+
+    private const val STRING_RESOURCE_METHOD = "stringResource"
 
     /**
      * Removes all the unescaped quotes. See
