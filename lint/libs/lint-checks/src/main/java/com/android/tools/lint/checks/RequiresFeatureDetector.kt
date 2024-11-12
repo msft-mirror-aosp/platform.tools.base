@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotationStringValue
 import com.android.tools.lint.detector.api.getMethodName
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
@@ -58,7 +59,6 @@ import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.UastPrefixOperator
 import org.jetbrains.uast.getParentOfType
-import org.jetbrains.uast.getValueIfStringLiteral
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.skipParenthesizedExprUp
 import org.jetbrains.uast.toUElementOfType
@@ -86,10 +86,8 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
     }
 
     val annotation = annotationInfo.annotation
-    val nameAttribute = annotation.findAttributeValue(ATTR_NAME)
-    val name = nameAttribute?.getValueIfStringLiteral() ?: return
-    val enforcementAttribute = annotation.findAttributeValue(ATTR_ENFORCEMENT)
-    val reference = enforcementAttribute?.getValueIfStringLiteral() ?: return
+    val name = getAnnotationStringValue(annotation, ATTR_NAME) ?: return
+    val reference = getAnnotationStringValue(annotation, ATTR_ENFORCEMENT) ?: return
 
     val checker = EnforcementChecker(name, reference)
     if (
@@ -115,7 +113,7 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
           if (parameterList != null) {
             val index = parameterList.getParameterIndex(resolved)
             if (index != -1 && index < arguments.size) {
-              return arguments[index].getValueIfStringLiteral()
+              return ConstantEvaluator.evaluateString(null, arguments[index], false)
             }
           }
         }

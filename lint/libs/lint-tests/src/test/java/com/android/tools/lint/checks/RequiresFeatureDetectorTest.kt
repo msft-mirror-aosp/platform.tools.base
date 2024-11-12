@@ -238,4 +238,72 @@ class RequiresFeatureDetectorTest : AbstractCheckTest() {
       .run()
       .expect(expected)
   }
+
+  fun test374896332() {
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import androidx.annotation.RequiresFeature;
+            import static test.pkg.Kotlin.kotlinFeature;
+
+            public class Java {
+                @RequiresFeature(name = "some.name", enforcement = "com.test.FeatureManager#checkFeature")
+                public static void javaFeature() {
+                }
+
+                void testFeature() {
+                    javaFeature();   // ERROR 1
+                    kotlinFeature(); // ERROR 2
+                }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import androidx.annotation.RequiresFeature
+            import test.pkg.Java.javaFeature
+
+            class Kotlin {
+              companion object {
+                @JvmStatic
+                @RequiresFeature("some.name","com.test.FeatureManager#checkFeature")
+                fun kotlinFeature() {
+                }
+              }
+
+              fun testFeature() {
+                  javaFeature()   // ERROR 3
+                  kotlinFeature() // ERROR 4
+              }
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Java.java:12: Warning: javaFeature should only be called if the feature some.name is present; to check call com.test.FeatureManager#checkFeature [RequiresFeature]
+                javaFeature();   // ERROR 1
+                ~~~~~~~~~~~~~
+        src/test/pkg/Java.java:13: Warning: kotlinFeature should only be called if the feature some.name is present; to check call com.test.FeatureManager#checkFeature [RequiresFeature]
+                kotlinFeature(); // ERROR 2
+                ~~~~~~~~~~~~~~~
+        src/test/pkg/Kotlin.kt:15: Warning: javaFeature should only be called if the feature some.name is present; to check call com.test.FeatureManager#checkFeature [RequiresFeature]
+              javaFeature()   // ERROR 3
+              ~~~~~~~~~~~~~
+        src/test/pkg/Kotlin.kt:16: Warning: kotlinFeature should only be called if the feature some.name is present; to check call com.test.FeatureManager#checkFeature [RequiresFeature]
+              kotlinFeature() // ERROR 4
+              ~~~~~~~~~~~~~~~
+        0 errors, 4 warnings
+        """
+      )
+  }
 }
