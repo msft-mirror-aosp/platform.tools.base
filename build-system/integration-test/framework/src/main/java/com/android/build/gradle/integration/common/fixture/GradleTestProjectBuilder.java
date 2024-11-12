@@ -83,6 +83,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
     @Nullable
     private String withExtraPluginClasspath;
     private boolean withKotlinGradlePlugin = false;
+    private boolean withKspGradlePlugin = false;
 
     private boolean withAndroidxPrivacySandboxLibraryPlugin = false;
     private boolean withBuiltInKotlinSupport = false;
@@ -170,6 +171,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
                 withSdk,
                 withAndroidGradlePlugin,
                 withKotlinGradlePlugin,
+                withKspGradlePlugin,
                 withAndroidxPrivacySandboxLibraryPlugin,
                 withExtraPluginClasspath,
                 withBuiltInKotlinSupport,
@@ -284,6 +286,11 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
 
     public GradleTestProjectBuilder withKotlinGradlePlugin(boolean withKotlinGradlePlugin) {
         this.withKotlinGradlePlugin = withKotlinGradlePlugin;
+        return this;
+    }
+
+    public GradleTestProjectBuilder withKspGradlePlugin(boolean withKspGradlePlugin) {
+        this.withKspGradlePlugin = withKspGradlePlugin;
         return this;
     }
 

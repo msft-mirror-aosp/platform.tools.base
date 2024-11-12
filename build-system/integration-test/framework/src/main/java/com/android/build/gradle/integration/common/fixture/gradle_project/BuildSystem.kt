@@ -52,6 +52,7 @@ internal enum class BuildSystem {
     fun getCommonBuildScriptContent(
         withAndroidGradlePlugin: Boolean,
         withKotlinGradlePlugin: Boolean,
+        withKspGradlePlugin: Boolean,
         withAndroidxPrivacySandboxLibraryPlugin: Boolean,
         withDeviceProvider: Boolean,
         withExtraPluginClasspath: String?,
@@ -63,8 +64,8 @@ internal enum class BuildSystem {
         script.append(
             "    apply from: \"\$commonScriptFolder/commonLocalRepo.gradle\", to:buildscript\n"
         )
-        if (withKotlinGradlePlugin) {
-            // To get the Kotlin version
+        if (withKotlinGradlePlugin || withKspGradlePlugin) {
+            // To get the Kotlin and/or KSP version
             script.append("    apply from: \"\$commonScriptFolder/commonHeader.gradle\"\n")
         }
         script.append("    dependencies {\n")
@@ -76,6 +77,11 @@ internal enum class BuildSystem {
         if (withKotlinGradlePlugin) {
             script.append(
                 "        classpath \"org.jetbrains.kotlin:kotlin-gradle-plugin:\${libs.versions.kotlinVersion.get()}\"\n"
+            )
+        }
+        if (withKspGradlePlugin) {
+            script.append(
+                "        classpath \"com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:\${libs.versions.kspVersion.get()}\"\n"
             )
         }
         if (withAndroidxPrivacySandboxLibraryPlugin) {
