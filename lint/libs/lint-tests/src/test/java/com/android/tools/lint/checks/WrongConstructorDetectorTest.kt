@@ -168,4 +168,56 @@ class WrongConstructorDetectorTest : AbstractCheckTest() {
             """
       )
   }
+
+  fun testJavaRecord() {
+    lint()
+      .files(
+        java(
+            """
+            package my.pkg;
+
+            import java.nio.file.Path;
+            import androidx.annotation.NonNull;
+
+            public interface Skin {
+              @NonNull
+              Skin merge(@NonNull Skin skin);
+
+              @NonNull
+              Path path();
+            }
+          """
+          )
+          .indented(),
+        java(
+            """
+            package my.pkg;
+
+            import java.nio.file.Path;
+            import androidx.annotation.NonNull;
+
+            @SuppressWarnings("unused")
+            public record DefaultSkin(@NonNull Path path) implements Skin {
+              @NonNull
+              @Override
+              public Skin merge(Skin skin) {
+                assert skin.path().equals(path) : skin;
+                return skin;
+              }
+
+              @NonNull
+              @Override
+              public String toString() {
+                return path.getFileName().toString();
+              }
+            }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .javaLanguageLevel("16")
+      .run()
+      .expectClean()
+  }
 }

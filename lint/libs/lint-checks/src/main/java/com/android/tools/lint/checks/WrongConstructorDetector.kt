@@ -64,6 +64,10 @@ class WrongConstructorDetector : Detector(), SourceCodeScanner {
           // KtConstructor<*> check is workaround for b/206982645
           return
         }
+        // Synthetic constructor for Java record
+        if (node.returnType?.canonicalText == "record") {
+          return
+        }
         val methodName = node.name
         if (!methodName[0].isUpperCase() || context.evaluator.isStatic(node.javaPsi)) {
           return
