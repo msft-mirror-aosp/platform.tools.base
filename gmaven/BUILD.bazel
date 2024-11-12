@@ -100,6 +100,18 @@ filegroup(
     ],
 )
 
+# A subset of the artifacts that includes declarative plugin that can be built without our vendor
+# repositories.
+filegroup(
+    name = "zips_with_declarative_without_vendor",
+    srcs = [
+        ":other_gmaven_artifacts.zip",
+        "//tools/base:agp_artifacts.zip",
+        "//tools/base/build-system:declarative_android_gradle_plugin.zip",
+        "//tools/base/utp:utp.zip",
+    ],
+)
+
 # The Gmaven repository as built with the hybrid gradle/bazel build.
 merged_zip(
     name = "gmaven",
@@ -116,7 +128,7 @@ merged_zip(
 merged_zip(
     name = "gmaven_without_vendor",
     srcs = [
-        ":zips_without_vendor",
+        ":zips_with_declarative_without_vendor",
     ],
 )
 
