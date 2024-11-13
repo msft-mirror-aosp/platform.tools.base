@@ -21,6 +21,8 @@ dependencies {
     testImplementation libs.truth
     testImplementation libs.mockito_core
     testImplementation libs.com.android.tools.testutils
+    testImplementation libs.mockito_kotlin
+    testImplementation libs.aapt2_proto
 }
 
 sourceSets {
