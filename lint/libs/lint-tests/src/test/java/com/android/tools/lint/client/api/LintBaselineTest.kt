@@ -2672,6 +2672,28 @@ class LintBaselineTest {
   }
 
   @Test
+  fun testUnknownApi() {
+    val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
+    assertTrue(
+      baseline.sameMessage(
+        IssueRegistry.UNKNOWN_ISSUE_ID,
+        "Unknown issue id \"HardcodedTxt\". Did you mean 'HardcodedText' (Hardcoded text) ?",
+        "Unknown issue id \"HardcodedTxt\"",
+      )
+    )
+
+    // 377642757: Lint fails with InstantiationException without exception message in lint
+    // stacktrace
+    assertFalse(
+      baseline.sameMessage(
+        IssueRegistry.UNKNOWN_ISSUE_ID,
+        "Unknown issue id \"HardcodedTxt\"",
+        "For minSdkVersion=27 only app: attributes should be used",
+      )
+    )
+  }
+
+  @Test
   fun testTokenPrecededBy() {
     // Throws when target string is empty.
     run {

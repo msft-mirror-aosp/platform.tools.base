@@ -500,15 +500,40 @@ class LintBaseline(
       }
       "RtlCompat" ->
         stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("project specifies ", i) }
+      "LintError",
+      "LintWarning",
+      "UnknownIssueId",
+      "ParserError",
+      "CannotEnableHidden",
+      "LintBaseline",
+      "LintBaselineFixed",
+      "ObsoleteLintCustomCheck" -> {
+        // These issues correspond to IssueRegistry meta-issues that use an
+        // empty implementation; don't try to use reflection to call sameMessage
+        // on the detectors as is done for all other (real) issues.
+        stringsEquivalent(old, new)
+      }
 
       // Sometimes we just append (or remove trailing period in error messages, now
       // flagged by lint)
       else -> {
         stringsEquivalent(old, new) ||
-          issue.implementation.detectorClass
-            .getDeclaredConstructor()
-            .newInstance()
-            .sameMessage(issue, new, old)
+          // try/catch: All real detectors should correctly instantiate using the
+          // below mechanism (since it's how issues are already instantiated when
+          // lint runs (see IssueRegistry.createDetectors)). However, there are some
+          // built-in issues (like IssueRegistry.LINT_ERROR) which use an empty (invalid)
+          // detector implementation; safeguard against these here (see b/377642757).
+          // (These are all also handled in the switch statement above to not get this
+          // far, but keep the try/catch just in case there are additional cases
+          // added in the future which runs into this.)
+          try {
+            issue.implementation.detectorClass
+              .getDeclaredConstructor()
+              .newInstance()
+              .sameMessage(issue, new, old)
+          } catch (ignore: Throwable) {
+            false
+          }
       }
     }
   }
