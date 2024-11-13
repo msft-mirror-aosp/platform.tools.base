@@ -406,21 +406,25 @@ internal fun checkKotlinStdLibIsInDependencies(
     // TODO(b/259523353): add DSL flag to ignore this check
     fun Configuration.checkKotlinStdlibPresent() {
         incoming.afterResolve {
-            val hasKotlinStdLib = it.resolutionResult.allDependencies
-                .filterIsInstance<ResolvedDependencyResult>()
-                .map { it.selected.id }
-                .filterIsInstance<ModuleComponentIdentifier>()
-                .any {
-                    it.group == KOTLIN_GROUP && (it.module == "kotlin-stdlib" || it.module == "kotlin-stdlib-jdk8")
-                }
-            if (!hasKotlinStdLib) {
-                creationConfig.services.issueReporter.reportError(
-                    IssueReporter.Type.GENERIC,
-                    """
+            // This check will filter out configurations that have been copied from existing configuration
+            // like the one we do in ModelBuilder.buildProjectGraphModel()
+            if (this.name == it.name) {
+                val hasKotlinStdLib = it.resolutionResult.allDependencies
+                    .filterIsInstance<ResolvedDependencyResult>()
+                    .map { it.selected.id }
+                    .filterIsInstance<ModuleComponentIdentifier>()
+                    .any {
+                        it.group == KOTLIN_GROUP && (it.module == "kotlin-stdlib" || it.module == "kotlin-stdlib-jdk8")
+                    }
+                if (!hasKotlinStdLib) {
+                    creationConfig.services.issueReporter.reportError(
+                        IssueReporter.Type.GENERIC,
+                        """
 Kotlin standard library is missing from ${this.name}. Please add a dependency on
 "$KOTLIN_GROUP:kotlin-stdlib:$defaultVersion" to your build file: `${project.buildFile.toURI()}`
                 """.trimIndent()
-                )
+                    )
+                }
             }
         }
     }
