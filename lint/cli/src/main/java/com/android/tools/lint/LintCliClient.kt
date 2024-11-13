@@ -1240,18 +1240,20 @@ open class LintCliClient : LintClient {
       }
       validatedIds = true
 
+      val allowed = flags.allowSuppressIds ?: emptySet()
+
       // Only check the override configuration once, during reporting;
       // it gets injected into every module during the analysis there
       // and it would get reported repeatedly, once for each module.
       if (driver.mode != LintDriver.DriverMode.ANALYSIS_ONLY) {
         val override = configurations.overrides
-        override?.validateIssueIds(this, driver, project, registry)
+        override?.validateIssueIds(this, driver, project, registry, allowed)
       }
 
       if (project != null) {
         if (driver.mode != LintDriver.DriverMode.MERGE) {
           val configuration: Configuration = project.getConfiguration(driver)
-          configuration.validateIssueIds(this, driver, project, registry)
+          configuration.validateIssueIds(this, driver, project, registry, allowed)
         }
       }
     }

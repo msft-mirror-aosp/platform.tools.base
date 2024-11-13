@@ -640,7 +640,7 @@ protected constructor(
     source: Configuration,
     visibleDefault: Severity,
   ): Severity? {
-    if (issue.suppressNames != null) {
+    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
       // Not allowed to suppress this issue via lint.xml.
       // Consider reporting this as well (not easy here since we don't have
       // a context.)
@@ -1469,8 +1469,9 @@ protected constructor(
     driver: LintDriver,
     project: Project?,
     registry: IssueRegistry,
+    allowed: Set<String>,
   ) {
-    parent?.validateIssueIds(client, driver, project, registry)
+    parent?.validateIssueIds(client, driver, project, registry, allowed)
     if (validated) {
       return
     }
@@ -1478,7 +1479,7 @@ protected constructor(
     for (map in getIssueMaps()) {
       if (map.isNotEmpty()) {
         map as? MutableMap<String, IssueData> ?: continue
-        validateIssueIds(client, driver, project, registry, map)
+        validateIssueIds(client, driver, project, registry, map, allowed)
       }
     }
   }
@@ -1489,6 +1490,7 @@ protected constructor(
     project: Project?,
     registry: IssueRegistry,
     map: MutableMap<String, IssueData>,
+    allowed: Set<String>,
   ) {
     for (id in map.keys.toList()) {
       if (id == SUPPRESS_ALL) {
@@ -1511,6 +1513,10 @@ protected constructor(
           continue
         }
 
+        if (allowed.contains(id)) {
+          continue
+        }
+
         reportNonExistingIssueId(client, driver, registry, project, id)
       } else if (issue.id != id) {
         // We're using an alias here in the configuration; map it over
@@ -1524,7 +1530,7 @@ protected constructor(
         }
       }
     }
-    parent?.validateIssueIds(client, driver, project, registry)
+    parent?.validateIssueIds(client, driver, project, registry, allowed)
   }
 
   // For debugging only

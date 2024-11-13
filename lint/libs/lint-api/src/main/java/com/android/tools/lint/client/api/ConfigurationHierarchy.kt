@@ -611,8 +611,9 @@ open class ConfigurationHierarchy(
       driver: LintDriver,
       project: Project?,
       registry: IssueRegistry,
+      allowed: Set<String>,
     ) {
-      parent?.validateIssueIds(client, driver, project, registry)
+      parent?.validateIssueIds(client, driver, project, registry, allowed)
     }
 
     override fun addConfiguredIssues(

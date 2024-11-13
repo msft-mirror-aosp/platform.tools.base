@@ -143,8 +143,8 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
   }
 
   /**
-   * The default severity of an issue; should be ignore for disabled issues, not its severity when
-   * it's enabled.
+   * The default severity of an issue; should be [Severity.IGNORE] for disabled issues, not its
+   * severity when it's enabled.
    */
   protected open fun getDefaultSeverity(
     issue: Issue,
@@ -281,15 +281,17 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    * @param driver the active lint driver
    * @param project the project relevant to the configuration, if known
    * @param registry the fully initialized registry (might include custom lint checks from libraries
-   *   etc)
+   *   etc.)
+   * @param allowed issue ids specifically allowed (don't warn)
    */
   open fun validateIssueIds(
     client: LintClient,
     driver: LintDriver,
     project: Project?,
     registry: IssueRegistry,
+    allowed: Set<String>,
   ) {
-    parent?.validateIssueIds(client, driver, project, registry)
+    parent?.validateIssueIds(client, driver, project, registry, allowed)
   }
 
   /** Returns a list of lint jar files to include in the analysis. */

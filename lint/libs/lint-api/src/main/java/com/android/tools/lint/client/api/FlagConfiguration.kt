@@ -23,6 +23,8 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.formatList
+import com.android.tools.lint.detector.api.guessGradleLocation
 import com.android.tools.lint.detector.api.guessGradleLocationForFile
 import java.io.File
 
@@ -65,7 +67,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     source: Configuration,
     visibleDefault: Severity,
   ): Severity? {
-    if (issue.suppressNames != null) {
+    if (issue.suppressNames != null && !issue.suppressNames.contains(issue.id)) {
       return getDefaultSeverity(issue, visibleDefault)
     }
     var severity = computeSeverity(issue, source, visibleDefault)
@@ -161,7 +163,9 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     source: Configuration,
     visibleDefault: Severity,
   ): Severity? {
-    if (issue.suppressNames != null && !allowSuppress()) {
+    if (
+      issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()
+    ) {
       return getDefaultSeverity(issue, visibleDefault)
     }
 
@@ -279,17 +283,74 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     driver: LintDriver,
     project: Project?,
     registry: IssueRegistry,
+    allowed: Set<String>,
   ) {
-    parent?.validateIssueIds(client, driver, project, registry)
+    parent?.validateIssueIds(client, driver, project, registry, allowed)
     if (validated) {
       return
     }
     validated = true
 
-    validateIssueIds(client, driver, project, registry, disabledIds())
-    validateIssueIds(client, driver, project, registry, enabledIds())
-    validateIssueIds(client, driver, project, registry, severityOverrides())
-    exactCheckedIds()?.let { validateIssueIds(client, driver, project, registry, it) }
+    val disabledIds = disabledIds()
+    if (disabledIds.isNotEmpty()) {
+      validateIssueIds(client, driver, project, registry, disabledIds, allowed)
+      validateDisablingAllowed(client, driver, project, disabledIds, registry, allowed)
+    }
+    validateIssueIds(client, driver, project, registry, enabledIds(), allowed)
+    validateIssueIds(client, driver, project, registry, severityOverrides(), allowed)
+    exactCheckedIds()?.let { validateIssueIds(client, driver, project, registry, it, allowed) }
+  }
+
+  private fun validateDisablingAllowed(
+    client: LintClient,
+    driver: LintDriver,
+    project: Project?,
+    disabledIds: Set<String>,
+    registry: IssueRegistry,
+    allowed: Set<String>,
+  ) {
+    for (id in disabledIds) {
+      val issue = registry.getIssue(id)
+      val names = issue?.suppressNames
+      if (names != null && !names.contains(id)) {
+        if (allowed.contains(id)) {
+          // All the suppress-machinery will refuse to honor a suppression annotation
+          // if the suppressNames attribute of an Issue is non-null (unless it contains
+          // the actual id). Since we're specifically opting in suppression for this
+          // issue, add it here. We've guaranteed in Issue.register that this list
+          // will actually be mutable.
+          (names as MutableList<String>).add(id)
+          continue
+        }
+        var message = "Issue `${issue.id}` is not allowed to be suppressed"
+        if (names.isNotEmpty()) {
+          message +=
+            " (but can be with ${
+              formatList(
+                names.map { "`@$it`" }.toList(),
+                sort = false,
+                useConjunction = true,
+              )
+            })"
+        }
+
+        val location =
+          getIssueConfigLocation(id, specificOnly = true, severityOnly = false)
+            ?: if (project != null) {
+              guessGradleLocation(project)
+            } else {
+              Location.create(File("(unknown location; supplied by command line flags)"))
+            }
+        LintClient.report(
+          client = client,
+          issue = IssueRegistry.LINT_ERROR,
+          message = message,
+          driver = driver,
+          project = project,
+          location = location,
+        )
+      }
+    }
   }
 
   protected fun validateIssueIds(
@@ -298,6 +359,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     project: Project?,
     registry: IssueRegistry,
     ids: Collection<String>,
+    allowed: Set<String>,
   ) {
     for (id in ids) {
       if (id == SdkConstants.SUPPRESS_ALL) {
@@ -309,10 +371,13 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
         if (registry.isCategoryName(id)) {
           continue
         }
+        if (allowed.contains(id)) {
+          return
+        }
         reportNonExistingIssueId(client, driver, registry, project, id)
       }
     }
-    parent?.validateIssueIds(client, driver, project, registry)
+    parent?.validateIssueIds(client, driver, project, registry, allowed)
   }
 
   override fun addConfiguredIssues(
@@ -330,7 +395,9 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     val exactCategories = exactCategories()
 
     for (issue in registry.issues) {
-      if (issue.suppressNames != null && !allowSuppress()) {
+      if (
+        issue.suppressNames != null && !issue.suppressNames.contains(issue.id) && !allowSuppress()
+      ) {
         continue
       }
 

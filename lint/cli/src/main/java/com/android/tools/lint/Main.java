@@ -1099,6 +1099,16 @@ public class Main {
                 IssueRegistry registry = getGlobalRegistry(client);
                 String idString = args[++index];
                 setSeverity(flags, registry, idString, flags.getSuppressedIds(), null);
+            } else if (arg.equals("--Xdisable")) {
+                // Allow hiding issues with suppressAnnotations set. Unlike --disable, only a single issue id is
+                // allowed per flag; repeat the flag if necessary.
+                if (index == args.length - 1) {
+                    System.err.println("Missing id to disable");
+                    return ERRNO_INVALID_ARGS;
+                }
+                String id = args[++index];
+                flags.addAllowedSuppressId(id);
+                setSeverity(flags, id, flags.getSuppressedIds(), null);
             } else if (arg.equals(ARG_ENABLE)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing categories or id's to enable");

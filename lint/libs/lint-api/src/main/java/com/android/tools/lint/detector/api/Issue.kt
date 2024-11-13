@@ -391,7 +391,10 @@ private constructor(
           platforms
             ?: androidSpecific?.let(::platformsFromAndroidSpecificFlag)
             ?: platformsFromImplementation(implementation),
-          suppressAnnotations,
+          // Use a mutable list here such that we can add id's to it if we allow
+          // suppressing with the specific id using special -Xdisable flags; see
+          // FlagConfiguration.validateDisablingAllowed
+          suppressAnnotations?.toMutableList(),
           implementation,
         )
         .apply {

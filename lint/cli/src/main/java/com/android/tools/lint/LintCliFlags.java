@@ -25,7 +25,9 @@ import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.model.LintModelSeverity;
+
 import com.google.common.collect.Lists;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.Set;
 public class LintCliFlags {
     private final Set<String> suppress = new HashSet<>();
     private final Set<String> enabled = new HashSet<>();
+    private Set<String> allowSuppressIds = null;
     private Set<String> check = null;
     private Set<Category> disabledCategories = null;
     private Set<Category> enabledCategories = null;
@@ -912,5 +915,23 @@ public class LintCliFlags {
      */
     public void setUseK2Uast(boolean useK2Uast) {
         this.useK2Uast = useK2Uast;
+    }
+
+    /**
+     * Returns the set of id's that have been allowed to be suppressed. This only applies to issues
+     * normally marked as not supressible using {@link Issue#getSuppressNames()}. Returns null if
+     * there are no such issue ids.
+     */
+    @Nullable
+    public Set<String> getAllowSuppressIds() {
+        return allowSuppressIds;
+    }
+
+    /** Marks the given issue id as allowed to be suppressed. See {@link #getAllowSuppressIds()}. */
+    public void addAllowedSuppressId(@NonNull String id) {
+        if (allowSuppressIds == null) {
+            allowSuppressIds = new HashSet<>();
+        }
+        allowSuppressIds.add(id);
     }
 }

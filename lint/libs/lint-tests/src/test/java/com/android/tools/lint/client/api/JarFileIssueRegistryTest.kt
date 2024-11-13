@@ -3784,166 +3784,184 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         kotlin(
           "src/detector_stubs.kt",
           """
-                @file:Suppress("unused", "UNUSED_PARAMETER", "PackageDirectoryMismatch")
-                package com.android.tools.lint.detector.api
-                import com.android.tools.lint.client.api.*
-                import java.io.File
-                import java.util.*
-                enum class Severity { FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE }
-                data class Category  constructor(
-                    val parent: Category?,
-                    val name: String,
-                    private val priority: Int
-                ) {
-                    companion object {
-                        @JvmStatic fun create(name: String, priority: Int): Category =
-                            Category(null, name, priority)
-                        @JvmField val LINT = create("Lint", 110)
-                    }
-                }
-                class LintFix
-                open class Location protected constructor(
-                    val file: File,
-                    val start: Position?,
-                    val end: Position?
-                ) {
-                    var message: String? = null
-                    var clientData: Any? = null
-                    open var visible = true
-                    open var secondary: Location? = null
-                    var source: Any? = null
-                    fun isSelfExplanatory(): Boolean = false
-                    fun isSingleLine(): Boolean = false
-                    companion object {
-                        @JvmStatic
-                        fun create(file: File): Location = Location(file, null, null)
-                    }
-                }
-                open class Context(
-                    @JvmField val file: File,
-                    private var contents: CharSequence? = null
-                ) {
-                    fun report(incident: Incident): Unit = error("Stub")
-                    @JvmOverloads
-                    open fun report(
-                        issue: Issue,
-                        location: Location,
-                        message: String,
-                        quickfixData: LintFix? = null
-                    ) {
-                        error("stub")
-                    }
-                }
-                abstract class Detector : FileScanner {
-                    open fun run(context: Context) {}
-                    override fun beforeCheckFile(context: Context) { }
-                    override fun afterCheckFile(context: Context) { }
-                    open fun sameMessage(issue: Issue, new: String, old: String): Boolean = false
-                }
-                interface FileScanner {
-                    fun beforeCheckFile(context: Context)
-                    fun afterCheckFile(context: Context)
-                }
-                class Implementation @SafeVarargs constructor(
-                    detectorClass: Class<out Detector?>?,
-                    scope: EnumSet<Scope>?,
-                    vararg analysisScopes: EnumSet<Scope>?
-                ) {
-                    constructor(detectorClass: Class<out Detector?>?, scope: EnumSet<Scope>?) : this(
-                        detectorClass,
-                        scope,
-                        Scope.EMPTY
-                    )
-                }
-                class Incident(val issue: Issue, location: Location, message: String)
-                class Issue(val id: String) {
-                    companion object {
-                        @JvmStatic
-                        fun create(
-                            id: String,
-                            briefDescription: String,
-                            explanation: String,
-                            category: Category,
-                            priority: Int,
-                            severity: Severity,
-                            implementation: Implementation
-                        ): Issue {
-                            error("Stub")
-                        }
+          @file:Suppress("unused", "UNUSED_PARAMETER", "PackageDirectoryMismatch")
+          package com.android.tools.lint.detector.api
+          import com.android.tools.lint.client.api.*
+          import com.intellij.psi.*
+          import org.jetbrains.uast.*
+          import java.io.File
+          import java.util.*
+          enum class Severity { FATAL, ERROR, WARNING, INFORMATIONAL, IGNORE }
+          data class Category  constructor(
+              val parent: Category?,
+              val name: String,
+              private val priority: Int
+          ) {
+              companion object {
+                  @JvmStatic fun create(name: String, priority: Int): Category =
+                      Category(null, name, priority)
+                  @JvmField val LINT = create("Lint", 110)
+              }
+          }
+          class LintFix
+          open class Location protected constructor(
+              val file: File,
+              val start: Position?,
+              val end: Position?
+          ) {
+              var message: String? = null
+              var clientData: Any? = null
+              open var visible = true
+              open var secondary: Location? = null
+              var source: Any? = null
+              fun isSelfExplanatory(): Boolean = false
+              fun isSingleLine(): Boolean = false
+              companion object {
+                  @JvmStatic
+                  fun create(file: File): Location = Location(file, null, null)
+              }
+          }
+          open class Context(
+              @JvmField val file: File,
+              private var contents: CharSequence? = null
+          ) {
+              fun report(incident: Incident): Unit = error("Stub")
+              @JvmOverloads
+              open fun report(
+                  issue: Issue,
+                  location: Location,
+                  message: String,
+                  quickfixData: LintFix? = null
+              ) {
+                  error("stub")
+              }
+          }
+          abstract class Detector : FileScanner {
+              open fun run(context: Context) {}
+              override fun beforeCheckFile(context: Context) { }
+              override fun afterCheckFile(context: Context) { }
+              open fun sameMessage(issue: Issue, new: String, old: String): Boolean = false
+          }
+          interface FileScanner {
+              fun beforeCheckFile(context: Context)
+              fun afterCheckFile(context: Context)
+          }
+          class Implementation @SafeVarargs constructor(
+              detectorClass: Class<out Detector?>?,
+              scope: EnumSet<Scope>?,
+              vararg analysisScopes: EnumSet<Scope>?
+          ) {
+              constructor(detectorClass: Class<out Detector?>?, scope: EnumSet<Scope>?) : this(
+                  detectorClass,
+                  scope,
+                  Scope.EMPTY
+              )
+          }
+          class Incident(val issue: Issue, location: Location, message: String)
+          class Issue(val id: String) {
+              companion object {
+                  @JvmStatic
+                  fun create(
+                      id: String,
+                      briefDescription: String,
+                      explanation: String,
+                      category: Category,
+                      priority: Int,
+                      severity: Severity,
+                      implementation: Implementation
+                  ): Issue {
+                      error("Stub")
+                  }
 
-                        fun create(
-                            id: String,
-                            briefDescription: String,
-                            explanation: String,
-                            implementation: Implementation,
-                            moreInfo: String? = null,
-                            category: Category = Category.LINT,
-                            priority: Int = 5,
-                            severity: Severity = Severity.WARNING,
-                            enabledByDefault: Boolean = true,
-                            androidSpecific: Boolean? = null,
-                            platforms: EnumSet<Platform>? = null,
-                            suppressAnnotations: Collection<String>? = null
-                        ): Issue {
-                            error("Stub")
-                        }
-                    }
+                  fun create(
+                      id: String,
+                      briefDescription: String,
+                      explanation: String,
+                      implementation: Implementation,
+                      moreInfo: String? = null,
+                      category: Category = Category.LINT,
+                      priority: Int = 5,
+                      severity: Severity = Severity.WARNING,
+                      enabledByDefault: Boolean = true,
+                      androidSpecific: Boolean? = null,
+                      platforms: EnumSet<Platform>? = null,
+                      suppressAnnotations: Collection<String>? = null
+                  ): Issue {
+                      error("Stub")
+                  }
+              }
+          }
+          interface OtherFileScanner : FileScanner {
+              fun getApplicableFiles(): EnumSet<Scope>
+          }
+          enum class Platform {
+              ANDROID;
+              companion object {
+                  @JvmField
+                  val ANDROID_SET: EnumSet<Platform> = EnumSet.of(ANDROID)
+                  @JvmField
+                  val UNSPECIFIED: EnumSet<Platform> = EnumSet.noneOf(Platform::class.java)
+              }
+          }
+          abstract class Position {
+              abstract val line: Int
+              abstract val offset: Int
+              abstract val column: Int
+          }
+          enum class Scope {
+              RESOURCE_FILE, RESOURCE_FOLDER, ALL_RESOURCE_FILES, JAVA_FILE, CLASS_FILE,
+              MANIFEST, JAVA_LIBRARIES, OTHER;
+              companion object {
+                  @JvmField val ALL: EnumSet<Scope> = EnumSet.allOf(Scope::class.java)
+                  @JvmField val RESOURCE_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(RESOURCE_FILE)
+                  @JvmField val JAVA_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(JAVA_FILE)
+                  @JvmField val CLASS_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(CLASS_FILE)
+                  @JvmField val EMPTY: EnumSet<Scope> = EnumSet.noneOf(Scope::class.java)
+              }
+          }
+          abstract class JavaContext(file: File, contents: CharSequence? = null) : Context(file, contents) {
+              @JvmOverloads
+                fun report(
+                  issue: Issue,
+                  scope: UElement?,
+                  location: Location,
+                  message: String,
+                  quickfixData: LintFix? = null,
+                ) {
                 }
-                interface OtherFileScanner : FileScanner {
-                    fun getApplicableFiles(): EnumSet<Scope>
-                }
-                enum class Platform {
-                    ANDROID;
-                    companion object {
-                        @JvmField
-                        val ANDROID_SET: EnumSet<Platform> = EnumSet.of(ANDROID)
-                        @JvmField
-                        val UNSPECIFIED: EnumSet<Platform> = EnumSet.noneOf(Platform::class.java)
-                    }
-                }
-                abstract class Position {
-                    abstract val line: Int
-                    abstract val offset: Int
-                    abstract val column: Int
-                }
-                enum class Scope {
-                    RESOURCE_FILE, RESOURCE_FOLDER, ALL_RESOURCE_FILES, JAVA_FILE, CLASS_FILE,
-                    MANIFEST, JAVA_LIBRARIES, OTHER;
-                    companion object {
-                        @JvmField val ALL: EnumSet<Scope> = EnumSet.allOf(Scope::class.java)
-                        @JvmField val RESOURCE_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(RESOURCE_FILE)
-                        @JvmField val JAVA_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(JAVA_FILE)
-                        @JvmField val CLASS_FILE_SCOPE: EnumSet<Scope> = EnumSet.of(CLASS_FILE)
-                        @JvmField val EMPTY: EnumSet<Scope> = EnumSet.noneOf(Scope::class.java)
-                    }
-                }
-                """,
+                abstract fun getLocation(element: UElement): Location
+          }
+          interface SourceCodeScanner {
+              fun getApplicableMethodNames(): List<String>?
+              fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod)
+          }
+          """,
         ),
         kotlin(
             "src/client_stubs.kt",
             """
-                    @file:Suppress("unused")
-                    package com.android.tools.lint.client.api
-                    import com.android.tools.lint.detector.api.*
-                    const val CURRENT_API = 11
-                    data class Vendor
-                    @JvmOverloads
-                    constructor(
-                        val vendorName: String? = null, val identifier: String? = null,
-                        val feedbackUrl: String? = null, val contact: String? = null
-                    )
-                    abstract class IssueRegistry
-                    protected constructor() {
-                        open val api: Int = -1
-                        open val minApi: Int
-                            get() {
-                                return api
-                            }
-                        abstract val issues: List<Issue>
-                        open val vendor: Vendor? = null
-                        open fun sameMessage(issue: Issue, new: String, old: String): Boolean = false
+            @file:Suppress("unused")
+            package com.android.tools.lint.client.api
+            import com.android.tools.lint.detector.api.*
+            const val CURRENT_API = 11
+            data class Vendor
+            @JvmOverloads
+            constructor(
+                val vendorName: String? = null, val identifier: String? = null,
+                val feedbackUrl: String? = null, val contact: String? = null
+            )
+            abstract class IssueRegistry
+            protected constructor() {
+                open val api: Int = -1
+                open val minApi: Int
+                    get() {
+                        return api
                     }
-                """,
+                abstract val issues: List<Issue>
+                open val vendor: Vendor? = null
+                open fun sameMessage(issue: Issue, new: String, old: String): Boolean = false
+            }
+            """,
           )
           .indented(),
         // The following classes are classes or methods or fields which don't
@@ -3951,14 +3969,29 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         // that look like lint APIs but aren't found by the verifier
         kotlin(
             """
-                package com.android.tools.lint.detector.api
-                interface DeletedInterface
-                enum class TextFormat {
-                    RAW, TEXT;
-                    fun deleted() { }
-                    @JvmField val deleted = 42
-                }
-                """
+            package com.android.tools.lint.detector.api
+            interface DeletedInterface
+            enum class TextFormat {
+                RAW, TEXT;
+                fun deleted() { }
+                @JvmField val deleted = 42
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package org.jetbrains.uast
+            open class UElement
+            class UCallExpression : UElement()
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package com.intellij.psi
+            class PsiMethod
+            """
           )
           .indented(),
       )
