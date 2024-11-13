@@ -18,57 +18,61 @@ package com.android.build.gradle.integration.bundle
 
 import com.android.SdkConstants.ANDROID_MANIFEST_XML
 import com.android.SdkConstants.ATTR_PACKAGE
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
-import com.google.common.io.Files
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import java.nio.charset.StandardCharsets
+import kotlin.io.path.readText
 
 class DynamicFeatureNamespaceTest {
 
-    @JvmField
-    @Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication(":app") {
             android {
-                setUpHelloWorld()
-                applicationId = "com.example.test"
+                defaultConfig {
+                    applicationId = "com.example.test"
+                }
                 dynamicFeatures.add(":feature")
             }
+
+            HelloWorldAndroid.setupJava(files)
         }
-        subProject(":feature") {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
+        androidFeature(":feature") {
             android {
-                defaultCompileSdk()
-                applicationId = "com.example.test"
                 namespace = "com.example.test.feature"
             }
-            dependencies { implementation(project(":app")) }
+
+            HelloWorldAndroid.setupJava(files)
+
+            dependencies {
+                implementation(project(":app"))
+            }
         }
     }
 
     @Test
     fun `intermediate feature manifest should have feature's namespace as package`() {
-        project.executor().run(":feature:processManifestDebugForFeature")
+        val build = rule.build
+
+        build.executor.run(":feature:processManifestDebugForFeature")
 
         val manifestFile =
-            project.getSubproject("feature")
-                .getIntermediateFile("metadata_feature_manifest", "debug", "processManifestDebugForFeature", ANDROID_MANIFEST_XML)
+            build.androidProject(":feature")
+                .getIntermediateFile(
+                    "metadata_feature_manifest",
+                    "debug",
+                    "processManifestDebugForFeature",
+                    ANDROID_MANIFEST_XML
+                )
 
         val document =
-            XmlUtils.parseDocument(
-                Files.asCharSource(manifestFile, StandardCharsets.UTF_8).read(),
-                false
-            )
+            XmlUtils.parseDocument(manifestFile.readText(), false)
         Truth.assertThat(document.documentElement.hasAttribute(ATTR_PACKAGE)).isTrue()
         Truth.assertThat(document.documentElement.getAttribute(ATTR_PACKAGE))
             .isEqualTo("com.example.test.feature")
@@ -76,10 +80,14 @@ class DynamicFeatureNamespaceTest {
 
     @Test
     fun `app manifest should have applicationId as package`() {
-        project.executor().with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true).run(":app:build")
+        val build = rule.build
 
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-        ApkSubject.assertThat(apk).hasApplicationId("com.example.test")
+        build.executor
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true)
+            .run(":app:assembleDebug")
+
+        build.androidProject(":app").assertApk(ApkSelector.DEBUG) {
+            hasApplicationId("com.example.test")
+        }
     }
-
 }

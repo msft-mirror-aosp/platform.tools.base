@@ -90,9 +90,10 @@ internal abstract class BaseGradleProjectDefinitionImpl(
 
     internal fun writeSubProject(
         location: Path,
+        buildFileOnly: Boolean = false,
         writerProvider: WriterProvider
     ) {
-        write(location, listOf(), isRoot = false, writerProvider)
+        write(location, listOf(), isRoot = false, buildFileOnly = buildFileOnly, writerProvider)
     }
 
     internal fun writeRoot(
@@ -100,7 +101,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         rootPlugins: Collection<PluginType>,
         writerProvider: WriterProvider
     ) {
-        write(location, rootPlugins, isRoot = true, writerProvider)
+        write(location, rootPlugins, isRoot = true, buildFileOnly = false, writerProvider)
     }
 
     protected open fun writeAndroid(writer: BuildWriter) {
@@ -111,6 +112,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         location: Path,
         rootPlugins: Collection<PluginType>,
         isRoot: Boolean,
+        buildFileOnly: Boolean,
         writerProvider: WriterProvider
     ) {
         location.createDirectories()
@@ -154,6 +156,8 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         }
 
         // write the rest of the content.
-        (files as GradleProjectFilesImpl).write(location)
+        if (!buildFileOnly) {
+            (files as GradleProjectFilesImpl).write(location)
+        }
     }
 }

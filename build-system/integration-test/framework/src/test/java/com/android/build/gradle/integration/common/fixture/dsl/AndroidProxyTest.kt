@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
+import com.google.common.truth.Truth
 import org.junit.Test
 
 /**
@@ -39,6 +41,35 @@ class AndroidProxyTest {
             compileOptions {
                 isCoreLibraryDesugaringEnabled = true
             }
+
+            splits {
+                abi {
+                    reset()
+                    include("x86", "armeabi")
+                }
+            }
         }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            android {
+              namespace = 'foo'
+              androidResources {
+                generateLocaleConfig = true
+              }
+              compileOptions {
+                coreLibraryDesugaringEnabled = true
+              }
+              splits {
+                abi {
+                  reset()
+                  include('x86', 'armeabi')
+                }
+              }
+            }
+
+        """.trimIndent())
+
     }
 }

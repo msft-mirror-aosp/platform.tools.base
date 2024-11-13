@@ -26,6 +26,12 @@ interface Person {
 
     val address: Address
     fun address(action: Address.() -> Unit)
+
+    fun sendMessage(message: String)
+    fun something(vararg value: String)
+    fun something(someInt: Int, vararg value: String)
+
+    fun voteFor(candidate: Person)
 }
 
 interface Address {

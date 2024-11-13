@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import org.gradle.internal.extensions.stdlib.capitalized
+
 /**
  * An object that can write a Gradle build file.
  *
@@ -27,8 +29,10 @@ interface BuildWriter {
     /** Assignment: a = b */
     fun set(name: String, value: Any?): BuildWriter
 
-    /** Calls a method with the given parameters */
-    fun method(name: String, vararg params: Any)
+    /** Single argument method */
+    fun method(name: String, singleParam: Any)
+    /** Calls a method with the given parameters. */
+    fun method(name: String, params: List<Any?>, isVarArg: Boolean)
     /** Calls a method with named parameters */
     fun method(name: String, params: List<Pair<String, Any>>)
     fun pluginId(id: String, version: String?, apply: Boolean = true)
@@ -47,6 +51,11 @@ interface BuildWriter {
     /** Writes a block with a sub item */
     fun <T> block(name: String, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
     fun block(name: String, action: BuildWriter.() -> Unit): BuildWriter
+
+    /**
+     * Converts a property name to a boolean property name as needed
+     */
+    fun toIsBooleanName(name: String): String
 
     /** Returns the file name of the build file for this writer */
     val buildFileName: String
@@ -123,10 +132,23 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
 
-    private fun Any?.toFormattedString() = when (this) {
+    private fun Any?.toFormattedString(isVarArg: Boolean = false): String = when (this) {
         null -> "null"
         is String -> quoteString(this)
         is BuildWriter.RawString -> value
+        is Array<*> -> {
+            val allItems = joinToString(separator = ", ") { it ->
+                it.toFormattedString()
+            }
+
+            // var args, we're going to expect these to be at the end, and all we'll do
+            // is add all of them
+            if (!isVarArg) {
+                arrayOf(allItems)
+            } else {
+                allItems
+            }
+        }
         else -> toString()
     }
 
@@ -135,10 +157,21 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         return this
     }
 
-    override fun method(name: String, vararg params: Any) {
+    override fun method(name: String, singleParam: Any) {
         indent()
             .put(name)
-            .put('(').put(concatMethodParams(*params)).put(')')
+            .put('(')
+            .put(singleParam.toFormattedString(false))
+            .put(')')
+            .endLine()
+    }
+
+    override fun method(name: String, params: List<Any?>, isVarArg: Boolean) {
+        indent()
+            .put(name)
+            .put('(')
+            .put(params.joinToString(separator = ", ") { it.toFormattedString(isVarArg) })
+            .put(')')
             .endLine()
     }
 
@@ -173,6 +206,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
 
     abstract fun listOf(value: String): String
     abstract fun setOf(value: String): String
+    abstract fun arrayOf(value: String): String
 
     override fun writeListAdd(name: String, value: Any?) {
         indent().put(name).put(" += ").put(value.toFormattedString()).endLine()
@@ -277,6 +311,13 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         return "setOf($value)"
     }
 
+    override fun arrayOf(value: String): String {
+        return "arrayOf($value)"
+    }
+
+    override fun toIsBooleanName(name: String): String = "is${name.capitalized()}"
+
+
     override val buildFileName: String
         get() = "build.gradle.kts"
     override val settingsFileName: String
@@ -304,6 +345,12 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
         // FIXME?
         return "[$value]"
     }
+
+    override fun arrayOf(value: String): String {
+        return "[$value]"
+    }
+
+    override fun toIsBooleanName(name: String): String = name
 
     override val buildFileName: String
         get() = "build.gradle"

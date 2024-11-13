@@ -68,4 +68,13 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject, Aar> {
             throw new UncheckedIOException(e);
         }
     }
+
+    @NonNull
+    public StringSubject manifestFile() {
+        try {
+            return Truth.assertThat(actual().getAndroidManifestContentsAsString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }

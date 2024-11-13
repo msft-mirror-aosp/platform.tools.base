@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-import org.gradle.internal.extensions.stdlib.toDefaultLowerCase
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -87,6 +86,9 @@ class DslProxy private constructor(
             if (r.validResult) return r.value
         }
 
+        // if we land here, it means it's just a method call. let's record it
+        if (handleMethodCall(method, args)) return null
+
         throw Error("$method not supported")
     }
 
@@ -97,25 +99,29 @@ class DslProxy private constructor(
         val matcher = regex.matchEntire(method.name) ?: return false
         val matchedName = matcher.groups[1]?.value ?: throw Error("Expected prop name but null")
 
+        val propName = matchedName.replaceFirstChar { c -> c.lowercaseChar() }
+
         val param = method.parameters.first()
-        val propName = (if (param.type == Boolean::class.java) {
+        val isNotation = if (param.type == Boolean::class.java) {
             // we have to check whether the prop is
             //    foo: Boolean
             // or
             //    isFoo: Boolean
             // So we search for the getter
-            theInterface.methods.firstOrNull { it.name == "is$matchedName" }?.name
-        } else null) ?: matchedName.replaceFirstChar { c -> c.lowercaseChar() }
+            theInterface.methods.any { it.name == "is$matchedName" }
+        } else false
 
         val value = args.first()
 
         // nullable primitive types are showing up as java types, not Kotlin types, so need to check
         // for both
         when (param.type) {
-            java.lang.Integer::class.java,
-            Int::class.java,
-            java.lang.Boolean::class.java,
-            Boolean::class.java -> contentHolder.set(propName, value)
+            java.lang.Integer::class.java, Int::class.java -> {
+                contentHolder.set(propName, value)
+            }
+            java.lang.Boolean::class.java, Boolean::class.java -> {
+                contentHolder.setBoolean(propName, value, isNotation)
+            }
             String::class.java -> {
                 contentHolder.set(propName, value)
                 if (rootExtensionProxy && propName == "namespace") {
@@ -214,6 +220,11 @@ class DslProxy private constructor(
             (args[0] as Function1<Any,*>).invoke(this)
         }
 
+        return true
+    }
+
+    private fun handleMethodCall(method: Method, args: Array<out Any?>?): Boolean {
+        contentHolder.call(method.name, args?.toList() ?: listOf(), method.isVarArgs)
         return true
     }
 

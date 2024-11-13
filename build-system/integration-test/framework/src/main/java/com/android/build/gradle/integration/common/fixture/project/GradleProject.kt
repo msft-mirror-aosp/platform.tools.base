@@ -16,16 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.testutils.apk.Apk
-import com.android.utils.FileUtils
 import java.io.File
 import java.nio.file.Path
 
@@ -33,66 +26,21 @@ import java.nio.file.Path
  * a subproject part of a [GradleBuild]
  */
 interface GradleProject: TemporaryProjectModification.FileProvider {
-
+    val location: Path
     val files: GradleProjectFiles
-
-    fun getApk(
-        apk: ApkType,
-        vararg dimensions: String,
-    ): Apk
-
-    /** Return a File under the intermediates directory from Android plugins.  */
-    fun getIntermediateFile(vararg paths: String?): File
-
-    /** Return the output directory from Android plugins.  */
-    val intermediatesDir: File
-}
-
-/**
- * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
- */
-interface AndroidProject: GradleProject {
-    val namespace: String
-    override val files: AndroidProjectFiles
 }
 
 /**
  * Default implementation of [GradleProject]
  */
 internal open class GradleProjectImpl(
-    private val projectDir: Path,
+    final override val location: Path,
 ): GradleProject {
 
-    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(projectDir)
-
-    override fun getApk(
-        apk: GradleTestProject.ApkType,
-        vararg dimensions: String
-    ): Apk {
-        throw RuntimeException("TODO")
-    }
+    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
 
     override fun file(path: String): File? {
-        return projectDir.resolve(path).toFile()
+        return location.resolve(path).toFile()
     }
-
-    override fun getIntermediateFile(vararg paths: String?): File {
-        return FileUtils.join(intermediatesDir, *paths)
-    }
-
-    override val intermediatesDir: File
-        get() = projectDir.resolve("build/${SdkConstants.FD_INTERMEDIATES}").toFile()
 }
-
-/**
- * Default implementation of [AndroidProject]
- */
-internal class AndroidProjectImpl(
-    location: Path,
-    override val namespace: String
-): GradleProjectImpl(location), AndroidProject {
-
-    override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
-}
-
 

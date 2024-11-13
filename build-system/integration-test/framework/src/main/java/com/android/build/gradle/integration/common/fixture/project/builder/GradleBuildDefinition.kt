@@ -216,7 +216,11 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         // write all the projects
         rootProject.writeRoot(location, allPlugins, writerProvider)
         subProjects.values.forEach {
-            it.writeSubProject(location.resolveGradlePath(it.path), writerProvider)
+            it.writeSubProject(
+                location.resolveGradlePath(it.path),
+                buildFileOnly = false,
+                writerProvider
+            )
         }
 
         // and the included builds

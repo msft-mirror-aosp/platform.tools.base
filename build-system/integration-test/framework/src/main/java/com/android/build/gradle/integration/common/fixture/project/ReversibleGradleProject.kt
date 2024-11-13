@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.testutils.apk.Apk
 import java.io.File
+import java.nio.file.Path
 
 /**
  * a version of [GradleProject] that can reverses the changes made during a test.
@@ -28,26 +27,18 @@ import java.io.File
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
 internal open class ReversibleGradleProject(
-    private val parentProject: GradleProject,
-    private val projectModification: TemporaryProjectModification,
+    protected open val parentProject: GradleProject,
+    projectModification: TemporaryProjectModification,
 ): GradleProject {
+
+    override val location: Path
+        get() = parentProject.location
+
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 
     override fun file(path: String): File? {
         return parentProject.file(path)
     }
-
-    override fun getApk(
-        apk: GradleTestProject.ApkType,
-        vararg dimensions: String
-    ): Apk = parentProject.getApk(apk, *dimensions)
-
-    override fun getIntermediateFile(vararg paths: String?): File {
-        return parentProject.getIntermediateFile(*paths)
-    }
-
-    override val intermediatesDir: File
-        get() = parentProject.intermediatesDir
 }
 
 internal open class ReversibleProjectFiles(

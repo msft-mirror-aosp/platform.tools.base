@@ -29,6 +29,9 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.Projec
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.configure
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.from
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidApplicationDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidDynamicFeatureDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -114,6 +117,20 @@ class GradleRule internal constructor(
         )
     }
 
+    private val writerProvider by lazy {
+        val buildWriterProvider = if (true) {
+            object: WriterProvider {
+                override fun getBuildWriter() = GroovyBuildWriter()
+            }
+        } else {
+            object: WriterProvider {
+                override fun getBuildWriter() = KtsBuildWriter()
+            }
+        }
+
+        buildWriterProvider
+    }
+
     /**
      * Configures the build with one final action and returns the [GradleBuild]
      *
@@ -142,21 +159,7 @@ class GradleRule internal constructor(
 
         val localRepositories = BuildSystem.get().localRepositories
 
-        val buildWriterProvider = if (true) {
-            object: WriterProvider {
-                override fun getBuildWriter() = GroovyBuildWriter()
-            }
-        } else {
-            object: WriterProvider {
-                override fun getBuildWriter() = KtsBuildWriter()
-            }
-        }
-
-        gradleBuild.write(
-            location = projectDir.toPath(),
-            localRepositories,
-            buildWriterProvider
-        )
+        gradleBuild.write(projectDir.toPath(), localRepositories, writerProvider)
 
         createLocalProp()
         createGradleProp()
@@ -169,11 +172,30 @@ class GradleRule internal constructor(
             it.name to computeGradleBuild(it, buildDir.resolve(it.name))
         }
 
-        val subProjects = build.subProjects.values.associate { it ->
-            if (it is AndroidProjectDefinitionImpl<*>) {
-                it.path to AndroidProjectImpl(computeSubProjectPath(buildDir, it.path), it.namespace)
-            } else {
-                it.path to GradleProjectImpl(computeSubProjectPath(buildDir, it.path))
+        val subProjects = build.subProjects.values.associate { definition ->
+            when (definition) {
+                is AndroidApplicationDefinitionImpl -> definition.path to AndroidApplicationImpl(
+                    computeSubProjectPath(buildDir, definition.path),
+                    definition,
+                    definition.namespace,
+                    writerProvider
+                )
+
+                is AndroidLibraryDefinitionImpl -> definition.path to AndroidLibraryImpl(
+                    computeSubProjectPath(buildDir, definition.path),
+                    definition,
+                    definition.namespace,
+                    writerProvider
+                )
+
+                is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
+                    computeSubProjectPath(buildDir, definition.path),
+                    definition,
+                    definition.namespace,
+                    writerProvider
+                )
+
+                else -> definition.path to GradleProjectImpl(computeSubProjectPath(buildDir, definition.path))
             }
         }
 
@@ -182,7 +204,8 @@ class GradleRule internal constructor(
             subProjects = subProjects,
             includedBuilds = includedBuilds,
             executorProvider = this::instantiateExecutor,
-            modelBuilderProvider = this::instantiateModelBuilder)
+            modelBuilderProvider = this::instantiateModelBuilder,
+        )
     }
 
     /**
@@ -299,6 +322,7 @@ class GradleRule internal constructor(
                         throw e
                     }
                 } finally {
+
 
                     openConnections.forEach(ProjectConnection::close)
 

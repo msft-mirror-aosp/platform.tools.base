@@ -16,33 +16,39 @@
 
 package com.android.build.gradle.integration.library
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
+private const val LIBRARY_PATH = ":library"
+
 /** Tests for library module with navigation. */
 class LibWithNavigationTest {
 
-    private val library =
-        MinimalSubProject.lib("com.example.library")
-            .withFile(
-                "src/main/AndroidManifest.xml",
-                // language=XML
-                """<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application android:name="library">
-                        <activity android:name=".MainActivity">
-                            <nav-graph android:value="@navigation/nav1" />
-                        </activity>
-                     </application>
-                </manifest>""".trimIndent())
+    @get:Rule
+    val rule = GradleRule.from {
+        androidLibrary(LIBRARY_PATH) {
 
-    private val testApp = MultiModuleTestProject.builder().subproject(":library", library).build()
+            files {
+                HelloWorldAndroid.setupJava(this)
+                update("src/main/AndroidManifest.xml") {
+                    """
+                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                            <application android:name="library">
+                                <activity android:name=".MainActivity">
+                                    <nav-graph android:value="@navigation/nav1" />
+                                </activity>
+                             </application>
+                        </manifest>""".trimIndent()
+                }
+            }
 
-    @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
+        }
+    }
 
     /**
      * Test that we can build a release AAR when there are <nav-graph> tags in the library manifest.
@@ -50,10 +56,12 @@ class LibWithNavigationTest {
      */
     @Test
     fun testAssembleReleaseWithNavGraphTagInManifest() {
-        project.execute("clean", ":library:assembleRelease")
-        project.getSubproject("library").withAar("release") {
-            assertThat(androidManifestContentsAsString)
-                .contains("<nav-graph android:value=\"@navigation/nav1\" />")
+        val build = rule.build
+        val library = build.androidLibrary(LIBRARY_PATH)
+
+        build.executor.run("clean", "$LIBRARY_PATH:assembleRelease")
+        library.assertAar(AarSelector.RELEASE) {
+            manifestFile().contains("<nav-graph android:value=\"@navigation/nav1\" />")
         }
     }
 
@@ -62,25 +70,32 @@ class LibWithNavigationTest {
      */
     @Test
     fun testDisablingAndroidResourcesDisablesExtractDeepLinksTask() {
-        val subprojectPath = ":library"
-        val taskName = "extractDeepLinksDebug"
-        val fullTaskName = "$subprojectPath:$taskName"
+        val build = rule.build
+        val library = build.androidLibrary(LIBRARY_PATH)
 
-        project.executor().run(fullTaskName).apply {
+        val taskName = "extractDeepLinksDebug"
+        val fullTaskName = "$LIBRARY_PATH:$taskName"
+
+
+        build.executor.run(fullTaskName).apply {
             assertThat(getTask(fullTaskName)).didWork()
         }
 
-        project
-            .getSubproject(subprojectPath)
-            .buildFile
-            .appendText("\n\n android.buildFeatures.androidResources=false\n\n")
-        project.executeExpectingFailure(fullTaskName).let { gradleException ->
+        library.reconfigure(buildFileOnly = true) {
+            android {
+                buildFeatures {
+                    androidResources = false
+                }
+            }
+        }
+
+        build.executor.expectFailure().run(fullTaskName).exception.apply {
             // The outermost GradleConnectionException does not contain the needed info, but the
             // message of the next exception down the stack contains a complete stacktrace
-            assertThat(gradleException)
+            assertThat(this)
                 .hasCauseThat()
                 .hasMessageThat()
-                .contains("Cannot locate tasks that match '$subprojectPath:$taskName'")
+                .contains("Cannot locate tasks that match '$LIBRARY_PATH:$taskName'")
         }
     }
 }

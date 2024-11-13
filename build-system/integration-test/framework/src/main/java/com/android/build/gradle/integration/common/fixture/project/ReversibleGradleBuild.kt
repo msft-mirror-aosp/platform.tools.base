@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.DynamicFeatureExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -33,11 +37,11 @@ internal class ReversibleGradleBuild(
     private val modifiableSubProject = mutableMapOf<String, ReversibleGradleProject>()
     private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
 
-    override fun subProject(name: String): GradleProject {
-        val project = parentBuild.subProject(name)
+    override fun subProject(path: String): GradleProject {
+        val project = parentBuild.subProject(path)
 
-        return modifiableSubProject.computeIfAbsent(name) {
-            if (project is AndroidProject) {
+        return modifiableSubProject.computeIfAbsent(path) {
+            if (project is AndroidProject<*>) {
                 ReversibleAndroidProject(project, projectModification.delegate(project))
             } else {
                 ReversibleGradleProject(project, projectModification.delegate(project))
@@ -45,11 +49,26 @@ internal class ReversibleGradleBuild(
         }
     }
 
-    override fun subProjectAsAndroid(name: String): AndroidProject {
-        val project = subProject(name)
-        if (project is AndroidProject) return project
+    override fun androidProject(path: String): AndroidProject<CommonExtension<*, *, *, *, *, *>> {
+        val project = subProject(path)
 
-        throw RuntimeException("Project with path '$name' is not an Android project.")
+        // cannot check for exact type due to type erasure, so check for simpler type and cast
+        @Suppress("UNCHECKED_CAST")
+        if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
+
+        throw RuntimeException("Project with path '$path' is not an Android project.")
+    }
+
+    override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
+        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
+    }
+
+    override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
+        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
+    }
+
+    override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
+        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
     }
 
     override fun includedBuild(name: String): GradleBuild {

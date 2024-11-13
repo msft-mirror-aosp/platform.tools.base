@@ -25,9 +25,26 @@ interface DslContentHolder {
     val name: String
 
     /**
-     * Records a = b
+     * Records a = b.
+     *
+     * For boolean, see [setBoolean]
      */
     fun set(name: String, value: Any?, parentChain: List<String> = listOf())
+
+    /**
+     * Records a = (boolean)
+     *
+     * This handles the case where the boolean is call `isName` because this is written
+     * differently in kts and groovy file.
+     */
+    fun setBoolean(
+        name: String,
+        value: Any?,
+        usingIsNotation: Boolean,
+        parentChain: List<String> = listOf()
+    )
+
+    fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String> = listOf())
 
     /**
      * Records Collection.addAll
@@ -92,6 +109,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
     enum class EventType {
         ASSIGNMENT,
+        CALL,
         NESTED_BLOCK,
         COLLECTION_ADD_ALL,
         COLLECTION_ADD,
@@ -108,10 +126,35 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         val value: Any? = null
    )
 
+    data class MethodInfo(
+        val name: String,
+        val args: List<Any?>,
+        val isVarArgs: Boolean
+    )
+
+    data class BooleanData(
+        val name: String,
+        val value: Any?,
+        val usingIsNotation: Boolean
+    )
+
     private val eventList = mutableListOf<Event>()
 
     override fun set(name: String, value: Any?, parentChain: List<String>) {
         eventList += Event(EventType.ASSIGNMENT, NamedData(name, value), parentChain)
+    }
+
+    override fun setBoolean(
+        name: String,
+        value: Any?,
+        usingIsNotation: Boolean,
+        parentChain: List<String>
+    ) {
+        eventList += Event(EventType.ASSIGNMENT, BooleanData(name, value, usingIsNotation), parentChain)
+    }
+
+    override fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String>) {
+        eventList += Event(EventType.CALL, MethodInfo(name, args, isVarArgs), parentChain)
     }
 
     override fun getList(name: String): MutableList<*> {
@@ -174,13 +217,27 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         for (event in eventList) {
             when (event.type) {
                 EventType.ASSIGNMENT -> {
-                    val info = event.payload as NamedData
-                    writer.set(computeParentChain(info.name, event.parentChain), info.value)
+                    val payload = event.payload
+                    when (payload) {
+                        is NamedData -> {
+                            writer.set(computeParentChain(payload.name, event.parentChain), payload.value)
+                        }
+                        is BooleanData -> {
+                            // need to convert the name with isX as needed
+                            val propName =
+                                if (payload.usingIsNotation) writer.toIsBooleanName(payload.name) else payload.name
+                            writer.set(computeParentChain(propName, event.parentChain), payload.value)
+                        }
+                    }
+                }
+                EventType.CALL -> {
+                    val info = event.payload as MethodInfo
+                    writer.method(computeParentChain(info.name, event.parentChain), info.args, info.isVarArgs)
                 }
                 EventType.NESTED_BLOCK -> {
                     val holder = event.payload as DslContentHolder
                     writer.block(computeParentChain(holder.name, event.parentChain), holder) {
-                        holder.writeContent(this)
+                        it.writeContent(this)
                     }
                 }
                 EventType.COLLECTION_ADD -> {
@@ -202,7 +259,6 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         } else {
             parents.joinToString(separator = ".") + "." + name
         }
-
 }
 
 /**
@@ -230,6 +286,19 @@ internal class ChainedDslContentHolder(
 
     override fun set(name: String, value: Any?, parentChain: List<String>) {
         parent.set(name, value, parentChain + this.name)
+    }
+
+    override fun setBoolean(
+        name: String,
+        value: Any?,
+        isNotation: Boolean,
+        parentChain: List<String>
+    ) {
+        parent.setBoolean(name, value, isNotation, parentChain + this.name)
+    }
+
+    override fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String>) {
+        parent.call(name, args, isVarArgs, parentChain + this.name)
     }
 
     override fun collectionAddAll(name: String, value: Collection<Any?>?, parentChain: List<String>) {

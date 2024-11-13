@@ -167,6 +167,28 @@ class DslContentHolderTest {
 
         """.trimIndent())
     }
+
+    @Test
+    fun methodCall() {
+        val contentHolder = DefaultDslContentHolder()
+        contentHolder.runNestedBlock(
+            "person",
+            instanceProvider = { PersonImpl(it) }
+        ) {
+            name = "bob"
+            sendMessage("Hello!")
+        }
+
+        val writer = GroovyBuildWriter()
+        contentHolder.writeContent(writer)
+        Truth.assertThat(writer.toString()).isEqualTo("""
+            person {
+              name = 'bob'
+              sendMessage('Hello!')
+            }
+
+        """.trimIndent())
+    }
 }
 
 /**
@@ -196,7 +218,7 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
     override var isRobot: Boolean
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("isRobot", value)
+            dslContentHolder.setBoolean("robot", value, usingIsNotation = false)
         }
 
     // normally here we'd ask the dslContentHolder to instantiate the class,
@@ -215,6 +237,22 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
         ) {
             action()
         }
+    }
+
+    override fun sendMessage(message: String) {
+        dslContentHolder.call("sendMessage", listOf(message),false)
+    }
+
+    override fun something(vararg value: String) {
+        dslContentHolder.call("something", listOf(value), true)
+    }
+
+    override fun something(someInt: Int, vararg value: String) {
+        dslContentHolder.call("something", listOf(someInt, value), true)
+    }
+
+    override fun voteFor(candidate: Person) {
+        dslContentHolder.call("voteFor", listOf(candidate), false)
     }
 }
 

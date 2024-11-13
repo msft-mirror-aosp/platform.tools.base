@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.DynamicFeatureExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -28,8 +32,11 @@ import java.nio.file.Path
  * and query for the content of their output folder
  */
 interface GradleBuild {
-    fun subProject(name: String): GradleProject
-    fun subProjectAsAndroid(name: String): AndroidProject
+    fun subProject(path: String): GradleProject
+    fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>>
+    fun androidApplication(path: String): AndroidProject<ApplicationExtension>
+    fun androidLibrary(path: String): AndroidProject<LibraryExtension>
+    fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension>
     fun includedBuild(name: String): GradleBuild
 
     val executor: GradleTaskExecutor
@@ -49,15 +56,39 @@ internal class GradleBuildImpl(
     private val modelBuilderProvider: () -> ModelBuilderV2,
 ) : GradleBuild {
 
-    override fun subProject(name: String): GradleProject {
-        return subProjects[name] ?: throw RuntimeException("Unable to find subproject '$name'")
+    override fun subProject(path: String): GradleProject {
+        return subProjects[path] ?: throw RuntimeException("Unable to find subproject '$path'")
     }
 
-    override fun subProjectAsAndroid(name: String): AndroidProject {
-        val project = subProjects[name]
-        if (project is AndroidProjectImpl) return project
+    override fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>> {
+        val project = subProjects[path]
 
-        throw RuntimeException("Project with path '$name' is not an Android project.")
+        // cannot check for exact type due to type erasure, so check for simpler type and cast
+        @Suppress("UNCHECKED_CAST")
+        if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
+
+        throw RuntimeException("Project with path '$path' is not an Android project.")
+    }
+
+    override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
+        val project = subProjects[path]
+        if (project is AndroidApplicationImpl) return project
+
+        throw RuntimeException("Project with path '$path' is not an Android Application project.")
+    }
+
+    override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
+        val project = subProjects[path]
+        if (project is AndroidLibraryImpl) return project
+
+        throw RuntimeException("Project with path '$path' is not an Android Library project.")
+    }
+
+    override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
+        val project = subProjects[path]
+        if (project is AndroidFeatureImpl) return project
+
+        throw RuntimeException("Project with path '$path' is not an Android Dynamic Feature project.")
     }
 
     override fun includedBuild(name: String): GradleBuild {

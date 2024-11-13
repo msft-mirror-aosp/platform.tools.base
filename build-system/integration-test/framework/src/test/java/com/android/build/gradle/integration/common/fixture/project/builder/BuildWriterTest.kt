@@ -105,7 +105,7 @@ class BuildWriterTest {
 
         """.trimIndent()) {
             method("foo", "bar")
-            method("foo", "bar", 12, false)
+            method("foo", listOf("bar", 12, false), isVarArg = false)
             method("foo", rawMethod("bar", 12, false))
         }
     }

@@ -104,8 +104,8 @@ private fun BuildWriter.mavenSnippet(repo: Path) {
     block("maven") {
         set("url", rawMethod("uri", repo.toUri().toString()))
         block("metadataSources") {
-            method("mavenPom")
-            method("artifact")
+            method("mavenPom", listOf(), false)
+            method("artifact", listOf(), false)
         }
     }
 }

@@ -20,6 +20,7 @@ import com.android.build.api.dsl.Address
 import com.android.build.api.dsl.California
 import com.android.build.api.dsl.Person
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.google.common.truth.Truth
 import org.junit.Test
 
@@ -64,14 +65,14 @@ class BasicDslProxyTest {
             }
         }
 
-        val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
-        Truth.assertThat(writer.toString()).isEqualTo("""
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'
               surname = null
               age = 17
-              isRobot = true
+              robot = true
               address {
                 street = '1600 Amphitheatre Parkway'
                 city = 'Mountain View'
@@ -80,6 +81,24 @@ class BasicDslProxyTest {
             }
 
         """.trimIndent())
+
+        val kts = KtsBuildWriter()
+        contentHolder.writeContent(kts)
+        Truth.assertThat(kts.toString()).named("KTS version").isEqualTo("""
+            person {
+              name = "BugDroid"
+              surname = null
+              age = 17
+              isRobot = true
+              address {
+                street = "1600 Amphitheatre Parkway"
+                city = "Mountain View"
+                zipCode = 94043
+              }
+            }
+
+        """.trimIndent())
+
     }
 
     @Test
@@ -100,6 +119,29 @@ class BasicDslProxyTest {
                 name = 'bob'
                 address.street = '1600 Amphitheatre Parkway'
               }
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
+    fun methodCall() {
+        val contentHolder = DefaultDslContentHolder()
+        contentHolder.runNestedBlock("person", Person::class.java) {
+            name = "bob"
+            sendMessage("Hello!")
+            something("one", "two")
+            something(12, "one", "two")
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            person {
+              name = 'bob'
+              sendMessage('Hello!')
+              something('one', 'two')
+              something(12, 'one', 'two')
             }
 
         """.trimIndent())
