@@ -53,7 +53,7 @@ class PresubmitTest(parameterized.TestCase):
     downloaded = self.build_env.tmp_path / 'downloaded'
     gce.download_from_gcs(
         'adt-byob',
-        'bazel-diff-hashes/P123-studio-test.json',
+        'bazel-diff-hashes/v8/P123-studio-test.json',
         downloaded,
     )
     self.assertEqual(downloaded.read_text(), 'hash-file')
@@ -140,7 +140,7 @@ class PresubmitTest(parameterized.TestCase):
     gce.upload_to_gcs(
         parent_hash_path,
         'adt-byob',
-        'bazel-diff-hashes/789-studio-test.json',
+        'bazel-diff-hashes/v8/789-studio-test.json',
     )
     self.gce.add_change('owner', 'message', tags)
     self.gce.changes[0].topic = 'topic'

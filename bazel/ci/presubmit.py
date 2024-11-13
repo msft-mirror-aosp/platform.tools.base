@@ -15,7 +15,7 @@ from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import gce
 
 _HASH_FILE_BUCKET = 'adt-byob'
-_HASH_FILE_NAME = 'bazel-diff-hashes/{bid}-{target}.json'
+_HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _MAX_RUNS_PER_TEST = 200
 _LOCAL_REPOSITORIES = [
     'intellij',

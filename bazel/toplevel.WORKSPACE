@@ -272,9 +272,9 @@ aswb_test_deps_dependencies()
 
 http_jar(
     name = "bazel_diff",
-    sha256 = "ed5410288bd7ec5b49b556103f561fb15e4c82f13f12cb41be128d447ecc2d46",
+    sha256 = "725e4012d8f68ecbe967138bc973bf0bca22b2b219a34cafbd3e392fb451b2e6",
     urls = [
-        "https://github.com/Tinder/bazel-diff/releases/download/7.1.1/bazel-diff_deploy.jar",
+        "https://github.com/Tinder/bazel-diff/releases/download/8.1.4/bazel-diff_deploy.jar",
     ],
 )
 
