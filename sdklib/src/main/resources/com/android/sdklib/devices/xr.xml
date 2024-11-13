@@ -6,6 +6,7 @@
         <d:name>XR Device</d:name>
         <d:id>xr_device</d:id>
         <d:manufacturer>Google</d:manufacturer>
+        <d:playstore-enabled>true</d:playstore-enabled>
         <d:hardware>
             <d:screen>
                 <d:screen-size>normal</d:screen-size>
