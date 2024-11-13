@@ -349,6 +349,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     fun getExpectedType(value: String?): String? {
       value ?: return null
 
+      // See ServiceCastDataGenerator for helper code to update this database
       return when (value) {
         "ACCESSIBILITY_SERVICE" -> "android.view.accessibility.AccessibilityManager"
         "ACCOUNT_SERVICE" -> "android.accounts.AccountManager"
@@ -371,6 +372,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
         "CONNECTIVITY_DIAGNOSTICS_SERVICE" -> "android.net.ConnectivityDiagnosticsManager"
         "CONNECTIVITY_SERVICE" -> "android.net.ConnectivityManager"
         "CONSUMER_IR_SERVICE" -> "android.hardware.ConsumerIrManager"
+        "CONTACT_KEYS_SERVICE" -> "android.provider.E2eeContactKeysManager"
         "CREDENTIAL_SERVICE" -> "android.credentials.CredentialManager"
         "CROSS_PROFILE_APPS_SERVICE" -> "android.content.pm.CrossProfileApps"
         "DEVICE_LOCK_SERVICE" -> "android.devicelock.DeviceLockManager"
@@ -410,11 +412,15 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
         "OVERLAY_SERVICE" -> "android.content.om.OverlayManager"
         "PEOPLE_SERVICE" -> "android.app.people.PeopleManager"
         "PERFORMANCE_HINT_SERVICE" -> "android.os.PerformanceHintManager"
+        "PERSISTENT_DATA_BLOCK_SERVICE" ->
+          "android.service.persistentdata.PersistentDataBlockManager"
         "POWER_SERVICE" -> "android.os.PowerManager"
         "PRINT_SERVICE" -> "android.print.PrintManager"
+        "PROFILING_SERVICE" -> "android.os.ProfilingManager"
         "RESTRICTIONS_SERVICE" -> "android.content.RestrictionsManager"
         "ROLE_SERVICE" -> "android.app.role.RoleManager"
         "SEARCH_SERVICE" -> "android.app.SearchManager"
+        "SECURITY_STATE_SERVICE" -> "android.os.SecurityStateManager"
         "SENSOR_SERVICE" -> "android.hardware.SensorManager"
         "SHORTCUT_SERVICE" -> "android.content.pm.ShortcutManager"
         "STATUS_BAR_SERVICE" -> "android.app.StatusBarManager"
@@ -427,6 +433,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
         "TELEPHONY_SUBSCRIPTION_SERVICE" -> "android.telephony.SubscriptionManager"
         "TEXT_CLASSIFICATION_SERVICE" -> "android.view.textclassifier.TextClassificationManager"
         "TEXT_SERVICES_MANAGER_SERVICE" -> "android.view.textservice.TextServicesManager"
+        "TV_AD_SERVICE" -> "android.media.tv.ad.TvAdManager"
         "TV_INPUT_SERVICE" -> "android.media.tv.TvInputManager"
         "TV_INTERACTIVE_APP_SERVICE" -> "android.media.tv.interactive.TvInteractiveAppManager"
         "UI_MODE_SERVICE" -> "android.app.UiModeManager"

@@ -220,18 +220,16 @@ object BroadcastReceiverUtils {
   val BROADCAST_RECEIVER_METHOD_NAMES =
     listOf("registerReceiver", "registerReceiverAsUser", "registerReceiverForAllUsers")
 
-  /* List of protected broadcast strings.
-   * Protected broadcast strings are defined by <protected-broadcast> entries in the
-   * manifest of system-level components or applications.
-   * The below list is copied from frameworks/base/core/res/AndroidManifest.xml
-   * and packages/services/Telephony/AndroidManifest.xml .
-   * It should be periodically updated. This list will likely not be complete, since
-   * protected-broadcast entries can be defined elsewhere, but should address
-   * most situations.
+  /**
+   * Returns whether the given [actionName] corresponds to a protected broadcast. Protected
+   * broadcast strings are defined by <protected-broadcast> entries in the manifest of system-level
+   * components or applications. The below list is copied from
+   * frameworks/base/core/res/AndroidManifest.xml and
+   * packages/services/Telephony/AndroidManifest.xml . It should be periodically updated. This list
+   * will likely not be complete, since protected-broadcast entries can be defined elsewhere, but
+   * should address most situations.
    *
-   * Note: helper to update this list from AOSP:
-   * cat frameworks/base/core/res/AndroidManifest.xml | tr '\n' ' ' | tr '<' '\n' | grep protected-broadcast | sed -E 's/^.*android:name="([^"]+)".*$/\1/' | sort | uniq | xargs -L 1 -I {} printf "            \"{}\",\n"
-   *
+   * To update this, run BroadcastReceiverUtilsTest.testDbUpToDate (with update in place enabled)
    */
   @SuppressWarnings("WrongTerminology") // external constants: can't rename
   @JvmStatic
@@ -260,6 +258,7 @@ object BroadcastReceiverUtils {
       "android.app.action.CHOOSE_PRIVATE_KEY_ALIAS",
       "android.app.action.CLOSE_NOTIFICATION_HANDLER_PANEL",
       "android.app.action.COMPLIANCE_ACKNOWLEDGEMENT_REQUIRED",
+      "android.app.action.CONSOLIDATED_NOTIFICATION_POLICY_CHANGED",
       "android.app.action.DEVICE_ADMIN_DISABLED",
       "android.app.action.DEVICE_ADMIN_DISABLE_REQUESTED",
       "android.app.action.DEVICE_ADMIN_ENABLED",
@@ -275,6 +274,7 @@ object BroadcastReceiverUtils {
       "android.app.action.EXIT_DESK_MODE",
       "android.app.action.INTERRUPTION_FILTER_CHANGED",
       "android.app.action.INTERRUPTION_FILTER_CHANGED_INTERNAL",
+      "android.app.action.KEYGUARD_PRIVATE_NOTIFICATIONS_CHANGED",
       "android.app.action.LOCK_TASK_ENTERING",
       "android.app.action.LOCK_TASK_EXITING",
       "android.app.action.LOST_MODE_LOCATION_UPDATE",
@@ -322,6 +322,7 @@ object BroadcastReceiverUtils {
       "android.bluetooth.a2dp.profile.action.CODEC_CONFIG_CHANGED",
       "android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED",
       "android.bluetooth.a2dp.profile.action.PLAYING_STATE_CHANGED",
+      "android.bluetooth.action.AUTO_ON_STATE_CHANGED",
       "android.bluetooth.action.CSIS_CONNECTION_STATE_CHANGED",
       "android.bluetooth.action.CSIS_DEVICE_AVAILABLE",
       "android.bluetooth.action.CSIS_SET_MEMBER_AVAILABLE",
@@ -357,6 +358,7 @@ object BroadcastReceiverUtils {
       "android.bluetooth.device.action.CONNECTION_ACCESS_REPLY",
       "android.bluetooth.device.action.CONNECTION_ACCESS_REQUEST",
       "android.bluetooth.device.action.FOUND",
+      "android.bluetooth.device.action.KEY_MISSING",
       "android.bluetooth.device.action.MAS_INSTANCE",
       "android.bluetooth.device.action.NAME_CHANGED",
       "android.bluetooth.device.action.NAME_FAILED",
@@ -426,6 +428,8 @@ object BroadcastReceiverUtils {
       "android.content.pm.action.SESSION_UPDATED",
       "android.content.syncmanager.SYNC_ALARM",
       "android.hardware.display.action.WIFI_DISPLAY_STATUS_CHANGED",
+      "android.hardware.hdmi.action.ON_ACTIVE_SOURCE_RECOVERED_DISMISS_UI",
+      "android.hardware.hdmi.action.OSD_MESSAGE",
       "android.hardware.usb.action.USB_ACCESSORY_ATTACHED",
       "android.hardware.usb.action.USB_ACCESSORY_DETACHED",
       "android.hardware.usb.action.USB_ACCESSORY_HANDSHAKE",
@@ -496,6 +500,7 @@ object BroadcastReceiverUtils {
       "android.intent.action.INTENT_FILTER_NEEDS_VERIFICATION",
       "android.intent.action.LOCALE_CHANGED",
       "android.intent.action.LOCKED_BOOT_COMPLETED",
+      "android.intent.action.MAIN_USER_LOCKSCREEN_KNOWLEDGE_FACTOR_CHANGED",
       "android.intent.action.MANAGED_PROFILE_ADDED",
       "android.intent.action.MANAGED_PROFILE_AVAILABLE",
       "android.intent.action.MANAGED_PROFILE_REMOVED",
@@ -538,6 +543,7 @@ object BroadcastReceiverUtils {
       "android.intent.action.PACKAGE_REMOVED_INTERNAL",
       "android.intent.action.PACKAGE_REPLACED",
       "android.intent.action.PACKAGE_RESTARTED",
+      "android.intent.action.PACKAGE_UNSTOPPED",
       "android.intent.action.PACKAGE_UNSUSPENDED_MANUALLY",
       "android.intent.action.PACKAGE_VERIFIED",
       "android.intent.action.PENDING_INCIDENT_REPORTS_CHANGED",
@@ -546,8 +552,10 @@ object BroadcastReceiverUtils {
       "android.intent.action.PRE_BOOT_COMPLETED",
       "android.intent.action.PROFILE_ACCESSIBLE",
       "android.intent.action.PROFILE_ADDED",
+      "android.intent.action.PROFILE_AVAILABLE",
       "android.intent.action.PROFILE_INACCESSIBLE",
       "android.intent.action.PROFILE_REMOVED",
+      "android.intent.action.PROFILE_UNAVAILABLE",
       "android.intent.action.PROXY_CHANGE",
       "android.intent.action.QUERY_PACKAGE_RESTART",
       "android.intent.action.RADIO_TECHNOLOGY",
@@ -569,6 +577,7 @@ object BroadcastReceiverUtils {
       "android.intent.action.TIME_TICK",
       "android.intent.action.TWILIGHT_CHANGED",
       "android.intent.action.UID_REMOVED",
+      "android.intent.action.UNARCHIVE_PACKAGE",
       "android.intent.action.USER_ACTIVITY_NOTIFICATION",
       "android.intent.action.USER_ADDED",
       "android.intent.action.USER_BACKGROUND",
@@ -862,6 +871,7 @@ object BroadcastReceiverUtils {
       "com.android.server.net.action.SNOOZE_RAPID",
       "com.android.server.net.action.SNOOZE_WARNING",
       "com.android.server.notification.CountdownConditionProvider",
+      "com.android.server.notification.TimeToLiveHelper",
       "com.android.server.pm.DISABLE_QUIET_MODE_AFTER_UNLOCK",
       "com.android.server.retaildemo.ACTION_RESET_DEMO",
       "com.android.server.stats.action.TRIGGER_COLLECTION",

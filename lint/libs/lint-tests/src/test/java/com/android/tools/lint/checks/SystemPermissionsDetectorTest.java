@@ -509,6 +509,26 @@ public class SystemPermissionsDetectorTest extends AbstractCheckTest {
                                 + "1 errors, 0 warnings");
     }
 
+    public void testMaxNoLongerNeeded() {
+        // MOUNT_UNMOUNT_FILESYSTEMS is only protected up until (and including) API level 16. Don't
+        // need
+        // to set maxSdkVersion if minSdkVersion is higher.
+        lint().files(
+                        manifest(
+                                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                    + "<manifest"
+                                    + " xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                    + "    package=\"com.example.lintbugs\">\n"
+                                    + "    <uses-sdk android:minSdkVersion=\"17\""
+                                    + " android:targetSdkVersion=\"35\" />\n"
+                                    + "    <uses-permission"
+                                    + " android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/><!--"
+                                    + " OK -->\n"
+                                    + "</manifest>"))
+                .run()
+                .expectClean();
+    }
+
     public void testRequestInstallPackages() {
         // Regression test for 73857733
         lint().files(

@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.ApiConstraint
 import com.android.utils.XmlUtils
 import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.android.utils.XmlUtils.getNextTagByName
+import com.android.utils.iterator
 import com.google.common.base.Joiner
 import com.google.common.io.ByteStreams
 import java.io.File
@@ -47,6 +48,7 @@ data class Permission(
   /** API level this permission was introduced in. */
   val introducedIn: Int,
 ) {
+  private val protectedBroadcasts = mutableListOf<String>()
 
   /** Bit mask for API levels where this permission was marked dangerous. */
   private var dangerous: Long = 0
@@ -154,6 +156,7 @@ data class Permission(
  * [com.android.tools.lint.checks.PermissionDetector]
  */
 class PermissionDataGenerator {
+  private val protectedBroadcasts: MutableSet<String> = mutableSetOf()
   val permissions = computePermissions(skipHidden = false)
   var maxApiLevel: Int = 0
 
@@ -341,12 +344,14 @@ class PermissionDataGenerator {
 
     val nameToPermission = HashMap<String, Permission>()
 
+    var mostRecentManifest: Document? = null
     var apiLevel = 1
     while (true) {
       val jar = findSdkJar(top, apiLevel) ?: break
       val loader = URLClassLoader(arrayOf(jar.toURI().toURL()))
       val valueToFieldName = computeFieldToPermissionNameMap(loader)
       val document = getManifestDocument(loader)
+      mostRecentManifest = document
       if (document != null) {
         var element = getFirstSubTagByName(document.documentElement, TAG_PERMISSION)
         while (element != null) {
@@ -364,9 +369,20 @@ class PermissionDataGenerator {
       apiLevel++
     }
 
+    if (mostRecentManifest != null) {
+      for (child in mostRecentManifest.documentElement) {
+        if (child.tagName == "protected-broadcast") {
+          val name = child.getAttributeNS(ANDROID_URI, ATTR_NAME) ?: continue
+          protectedBroadcasts.add(name)
+        }
+      }
+    }
+
     maxApiLevel = apiLevel - 1
     return nameToPermission.values.sortedBy { it.name }.toList()
   }
+
+  fun getProtectedBroadcasts(): Collection<String> = protectedBroadcasts
 
   private fun isDangerousPermission(
     protectionLevels: List<String>,
@@ -382,9 +398,9 @@ class PermissionDataGenerator {
   }
 
   private fun isSignaturePermission(protectionLevels: List<String>): Boolean =
-    protectionLevels.contains("signature") ||
+    (protectionLevels.contains("signature") ||
       protectionLevels.contains("privileged") ||
-      protectionLevels.contains("signatureOrSystem")
+      protectionLevels.contains("signatureOrSystem")) && !protectionLevels.contains("appop")
 
   private fun processPermissionTag(
     element: Element,
@@ -491,6 +507,13 @@ class PermissionDataGenerator {
 
   /** Returns the android.jar file for the given API level, or null if not found/valid. */
   private fun findSdkJar(top: String, apiLevel: Int): File? {
+    // Supplement with local platforms
+    val localPath =
+      File("${System.getenv("ANDROID_BUILD_TOP")}/platforms/android-$apiLevel/android.jar")
+    if (localPath.exists()) {
+      return localPath
+    }
+
     var jar = File(top, "prebuilts/sdk/$apiLevel/public/android.jar")
     if (!jar.exists()) {
       jar =
