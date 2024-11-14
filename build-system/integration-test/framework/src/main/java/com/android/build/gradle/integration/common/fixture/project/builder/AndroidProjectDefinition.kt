@@ -93,7 +93,6 @@ internal class AndroidApplicationDefinitionImpl(path: String): AndroidProjectDef
         DslProxy.createProxy(
             ApplicationExtension::class.java,
             contentHolder,
-            rootExtensionProxy = true
         ).also {
             initDefaultValues(it)
         }
@@ -111,7 +110,6 @@ internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinit
         DslProxy.createProxy(
             LibraryExtension::class.java,
             contentHolder,
-            rootExtensionProxy = true
         ).also {
             initDefaultValues(it)
         }
@@ -129,7 +127,6 @@ internal class AndroidDynamicFeatureDefinitionImpl(path: String): AndroidProject
         DslProxy.createProxy(
             DynamicFeatureExtension::class.java,
             contentHolder,
-            rootExtensionProxy = true
         ).also {
             initDefaultValues(it)
         }

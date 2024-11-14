@@ -24,8 +24,8 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.WriterProvider
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aar
@@ -140,7 +140,7 @@ internal class AndroidApplicationImpl(
     location: Path,
     override val projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
     namespace: String,
-    private val writerProvider: WriterProvider,
+    private val buildWriter: () -> BuildWriter,
 ): AndroidProjectImpl<ApplicationExtension>(location, namespace) {
 
     override fun reconfigure(
@@ -150,7 +150,7 @@ internal class AndroidApplicationImpl(
         action(projectDefinition)
 
         projectDefinition as AndroidProjectDefinitionImpl<ApplicationExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, writerProvider)
+        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
     }
 
     override fun <T> withAar(aarSelector: AarSelector, action: Aar.() -> T): T {
@@ -170,7 +170,7 @@ internal class AndroidLibraryImpl(
     location: Path,
     override val projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
-    private val writerProvider: WriterProvider,
+    private val buildWriter: () -> BuildWriter,
 ): AndroidProjectImpl<LibraryExtension>(location, namespace) {
 
     override fun reconfigure(
@@ -180,7 +180,7 @@ internal class AndroidLibraryImpl(
         action(projectDefinition)
 
         projectDefinition as AndroidProjectDefinitionImpl<LibraryExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, writerProvider)
+        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
     }
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
@@ -231,7 +231,7 @@ internal class AndroidFeatureImpl(
     location: Path,
     override val projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
     namespace: String,
-    private val writerProvider: WriterProvider,
+    private val buildWriter: () -> BuildWriter,
 ): AndroidProjectImpl<DynamicFeatureExtension>(location, namespace) {
 
     override fun reconfigure(
@@ -241,7 +241,7 @@ internal class AndroidFeatureImpl(
         action(projectDefinition)
 
         projectDefinition as AndroidProjectDefinitionImpl<DynamicFeatureExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, writerProvider)
+        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
     }
 
     override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {

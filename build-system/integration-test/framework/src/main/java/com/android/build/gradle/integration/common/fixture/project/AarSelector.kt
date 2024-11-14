@@ -34,6 +34,8 @@ interface AarSelector: OutputSelector {
         get() = "aar"
     override val hasDimensionInPath: Boolean
         get() = false
+    override val fromIntermediates: Boolean
+        get() = false
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): AarSelector
@@ -43,9 +45,6 @@ interface AarSelector: OutputSelector {
 
     /** returns a new instance with the added suffix. If a suffix already exist, it is replaced */
     fun withSuffix(newSuffix: String): AarSelector
-
-    /** returns a new instance setup to represent an AAR in the intermediate folder */
-    fun fromIntermediates(): AarSelector
 
     companion object {
         @JvmField
@@ -71,22 +70,18 @@ internal data class AarSelectorImp(
     override val flavors: List<String>,
     override val filter: String? = null,
     override val suffix: String? = null,
-    override val fromIntermediates: Boolean = false,
 ): AarSelector {
 
+
     override fun withFlavor(name: String): AarSelector =
-        AarSelectorImp(buildType, flavors + name, filter, suffix, fromIntermediates)
+        AarSelectorImp(buildType, flavors + name, filter, suffix)
 
     override fun withFilter(newFilter: String): AarSelector =
-        AarSelectorImp(buildType, flavors, newFilter, suffix, fromIntermediates)
+        AarSelectorImp(buildType, flavors, newFilter, suffix)
 
     override fun withSuffix(newSuffix: String): AarSelector =
-        AarSelectorImp(buildType, flavors, filter, newSuffix, fromIntermediates)
+        AarSelectorImp(buildType, flavors, filter, newSuffix)
 
-    override fun fromIntermediates(): AarSelector = AarSelectorImp(
-        buildType, flavors, filter, suffix,
-        fromIntermediates = true
-    )
 
     override fun getFileName(projectName: String): String {
         val segments = mutableListOf<String>()

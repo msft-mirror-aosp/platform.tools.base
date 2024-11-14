@@ -197,7 +197,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     internal fun write(
         location: Path,
         repositories: Collection<Path>,
-        writerProvider: WriterProvider
+        buildWriter: () -> BuildWriter,
     ) {
         location.createDirectories()
 
@@ -210,22 +210,22 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             repositories = repositories,
             includedBuildNames = includedBuilds.values.map { it.name},
             subProjectPaths = subProjects.values.map { it.path },
-            writerProvider = writerProvider
+            buildWriter = buildWriter,
         )
 
         // write all the projects
-        rootProject.writeRoot(location, allPlugins, writerProvider)
+        rootProject.writeRoot(location, allPlugins, buildWriter)
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
-                writerProvider
+                buildWriter
             )
         }
 
         // and the included builds
         includedBuilds.values.forEach {
-            it.write(location.resolve(it.name), repositories, writerProvider)
+            it.write(location.resolve(it.name), repositories, buildWriter)
         }
     }
 }

@@ -91,17 +91,17 @@ internal abstract class BaseGradleProjectDefinitionImpl(
     internal fun writeSubProject(
         location: Path,
         buildFileOnly: Boolean = false,
-        writerProvider: WriterProvider
+        buildWriter: () -> BuildWriter,
     ) {
-        write(location, listOf(), isRoot = false, buildFileOnly = buildFileOnly, writerProvider)
+        write(location, listOf(), isRoot = false, buildFileOnly = buildFileOnly, buildWriter)
     }
 
     internal fun writeRoot(
         location: Path,
         rootPlugins: Collection<PluginType>,
-        writerProvider: WriterProvider
+        buildWriter: () -> BuildWriter,
     ) {
-        write(location, rootPlugins, isRoot = true, buildFileOnly = false, writerProvider)
+        write(location, rootPlugins, isRoot = true, buildFileOnly = false, buildWriter)
     }
 
     protected open fun writeAndroid(writer: BuildWriter) {
@@ -113,11 +113,11 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         rootPlugins: Collection<PluginType>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
-        writerProvider: WriterProvider
+        buildWriter: () -> BuildWriter,
     ) {
         location.createDirectories()
 
-        writerProvider.getBuildWriter().apply {
+        buildWriter().apply {
             block("plugins") {
                 // write the plugins used by this project
                 for (plugin in plugins.toSet()) {

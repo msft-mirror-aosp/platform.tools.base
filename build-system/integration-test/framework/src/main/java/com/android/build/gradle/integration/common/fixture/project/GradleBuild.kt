@@ -23,6 +23,7 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.nio.file.Path
 
 /**
@@ -57,7 +58,13 @@ internal class GradleBuildImpl(
 ) : GradleBuild {
 
     override fun subProject(path: String): GradleProject {
-        return subProjects[path] ?: throw RuntimeException("Unable to find subproject '$path'")
+        return subProjects[path]
+            ?: throw RuntimeException(
+                """
+                    Unable to find subproject '$path'.
+                    Possible subProjects are ${subProjects.keys.joinToString()}
+                """.trimIndent()
+            )
     }
 
     override fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>> {
@@ -67,34 +74,64 @@ internal class GradleBuildImpl(
         @Suppress("UNCHECKED_CAST")
         if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
 
-        throw RuntimeException("Project with path '$path' is not an Android project.")
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible androidProjects are ${getProjectListByType<AndroidProject<*>>()}
+            """.trimIndent()
+        )
     }
 
     override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
         val project = subProjects[path]
         if (project is AndroidApplicationImpl) return project
 
-        throw RuntimeException("Project with path '$path' is not an Android Application project.")
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible androidApplications are ${getProjectListByType<AndroidApplicationImpl>()}
+            """.trimIndent()
+        )
     }
 
     override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
         val project = subProjects[path]
         if (project is AndroidLibraryImpl) return project
 
-        throw RuntimeException("Project with path '$path' is not an Android Library project.")
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible androidLibraries are ${getProjectListByType<AndroidLibraryImpl>()}
+            """.trimIndent()
+        )
     }
 
     override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
         val project = subProjects[path]
         if (project is AndroidFeatureImpl) return project
 
-        throw RuntimeException("Project with path '$path' is not an Android Dynamic Feature project.")
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible androidFeatures are ${getProjectListByType<AndroidFeatureImpl>()}
+            """.trimIndent()
+        )
     }
 
     override fun includedBuild(name: String): GradleBuild {
-        return includedBuilds[name] ?: throw RuntimeException("Unable to find includedBuild '$name'")
+        return includedBuilds[name]
+            ?: throw RuntimeException(
+                """
+                    Unable to find includedBuild '$name'.
+                    Possible includedBuilds are: ${includedBuilds.keys.joinToString()}
+                """.trimIndent()
+            )
     }
 
+    /**
+     * Runs the provided action with this build. At the end of the action, all file changes made
+     * via [GradleProjectFiles] are reversed so that the build is the same as before this method
+     */
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
         TemporaryProjectModification(null).use {
             action(ReversibleGradleBuild(this, it))
@@ -106,4 +143,8 @@ internal class GradleBuildImpl(
 
     override val modelBuilder: ModelBuilderV2
         get() = modelBuilderProvider()
+
+    internal inline fun <reified T> getProjectListByType(): String {
+        return subProjects.filter { it.key.javaClass == T::class.java }.map { it.key }.joinToString()
+    }
 }

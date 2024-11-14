@@ -219,9 +219,7 @@ class GradleBuildDefinitionTest {
         build.write(
             location = folder,
             repositories = repositories,
-            writerProvider = object : WriterProvider {
-                override fun getBuildWriter() = GroovyBuildWriter()
-            }
+            buildWriter = { GroovyBuildWriter() }
         )
 
         return folder

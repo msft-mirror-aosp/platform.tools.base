@@ -54,9 +54,9 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         repositories: Collection<Path>,
         includedBuildNames: Collection<String>,
         subProjectPaths: Collection<String>,
-        writerProvider: WriterProvider
+        buildWriter: () -> BuildWriter,
     ) {
-        writerProvider.getBuildWriter().apply {
+        buildWriter().apply {
             block("pluginManagement") {
                 block("repositories") {
                     for (repository in repositories) {

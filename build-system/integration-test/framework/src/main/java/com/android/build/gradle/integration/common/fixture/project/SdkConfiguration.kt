@@ -23,12 +23,15 @@ import com.android.testutils.TestUtils
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.isDirectory
 
 /**
  * Android SDK configuration for [GradleBuild] via [GradleRuleBuilder]
  */
 interface SdkConfigurationBuilder {
-    fun sdkDir(value: File): SdkConfigurationBuilder
+    fun sdkDir(value: Path): SdkConfigurationBuilder
     fun removeSdk(): SdkConfigurationBuilder
 
     fun ndkVersion(value: String): SdkConfigurationBuilder
@@ -36,20 +39,20 @@ interface SdkConfigurationBuilder {
 
 data class SdkConfiguration(
     /** if null, sdk should not be setup */
-    val sdkDir: File?,
+    val sdkDir: Path?,
     /** path for the NDK to be use as `ndkPath` in the DSL */
-    val ndkPath: File?,
+    val ndkPath: Path?,
 )
 
 class SdkConfigurationDelegate: SdkConfigurationBuilder {
-    private var sdkDir: File? = null
+    private var sdkDir: Path? = null
     private var useSdk = true
 
-    private var ndkPath: File? = null
+    private var ndkPath: Path? = null
     private var ndkVersion: String? = null
 
 
-    override fun sdkDir(value: File): SdkConfigurationBuilder {
+    override fun sdkDir(value: Path): SdkConfigurationBuilder {
         sdkDir = value
         return this
     }
@@ -69,7 +72,7 @@ class SdkConfigurationDelegate: SdkConfigurationBuilder {
             val sdk = if (!useSdk) {
                 null
             } else {
-                sdkDir ?: SdkHelper.findSdkDir()
+                sdkDir ?: SdkHelper.findSdkDir().toPath()
             }
 
             return SdkConfiguration(
@@ -78,36 +81,20 @@ class SdkConfigurationDelegate: SdkConfigurationBuilder {
             )
         }
 
-    private fun computeNdkPath(sdkDir: File?): File? {
+    private fun computeNdkPath(sdkDir: Path?): Path? {
         val envCustomAndroidNdkHome = Strings.emptyToNull(System.getenv()["CUSTOM_ANDROID_NDK_ROOT"]);
 
         return if (envCustomAndroidNdkHome != null) {
-            File(envCustomAndroidNdkHome).also {
+            Paths.get(envCustomAndroidNdkHome).also {
                 Preconditions.checkState(
                     it.isDirectory(),
                     "CUSTOM_ANDROID_NDK_ROOT must point to a directory, %s is not a directory",
-                    it.absolutePath
+                    it.toString()
                 );
             }
         } else {
             val version = ndkVersion
-            if (version != null) {
-                if (TestUtils.runningFromBazel()) {
-                    File(BazelIntegrationTestsSuite.NDK_SIDE_BY_SIDE_ROOT.toFile(), version)
-                } else if (sdkDir != null) {
-                    File(File(sdkDir, SdkConstants.FD_NDK_SIDE_BY_SIDE), version)
-                } else {
-                    null
-                }
-            } else {
-                if (TestUtils.runningFromBazel()) {
-                    BazelIntegrationTestsSuite.NDK_IN_TMP.toFile()
-                } else if (sdkDir != null) {
-                    File(sdkDir, SdkConstants.FD_NDK);
-                } else {
-                    null
-                }
-            }
+            TestEnvironment.getNdkPath(sdkDir, version)
         }
     }
 }

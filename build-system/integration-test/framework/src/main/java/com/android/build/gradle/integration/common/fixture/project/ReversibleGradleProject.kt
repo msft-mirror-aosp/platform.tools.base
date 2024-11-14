@@ -25,6 +25,9 @@ import java.nio.file.Path
  * a version of [GradleProject] that can reverses the changes made during a test.
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
+ *
+ * The is simply a wrapper on a normal [GradleProject] object, that replaces the [GradleProjectFiles]
+ * with [ReversibleProjectFiles]
  */
 internal open class ReversibleGradleProject(
     protected open val parentProject: GradleProject,

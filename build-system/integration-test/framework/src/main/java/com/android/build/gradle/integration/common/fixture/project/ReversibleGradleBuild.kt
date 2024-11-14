@@ -23,14 +23,20 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 
 /**
  * A version of [GradleBuild] that can reverse the changes made during a test.
  *
- * Use with [GradleBuild.withReversibleModifications]
+ * when [GradleBuild.withReversibleModifications] is called, the current [GradleBuild] is wrapped
+ * with this class and the action interacts with the wrapped version.
+ *
+ * The implementation of the wrapper simply replaces the implementation of [GradleProjectFiles] with
+ * one that records the changes so that they can be reverted.
+ *
  */
 internal class ReversibleGradleBuild(
-    private val parentBuild: GradleBuild,
+    private val parentBuild: GradleBuildImpl,
     private val projectModification: TemporaryProjectModification,
 ): GradleBuild {
 
@@ -56,7 +62,12 @@ internal class ReversibleGradleBuild(
         @Suppress("UNCHECKED_CAST")
         if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
 
-        throw RuntimeException("Project with path '$path' is not an Android project.")
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible androidProjects are ${parentBuild.getProjectListByType<AndroidProject<*>>()}
+            """.trimIndent()
+        )
     }
 
     override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
@@ -72,7 +83,7 @@ internal class ReversibleGradleBuild(
     }
 
     override fun includedBuild(name: String): GradleBuild {
-        val b = includedBuild(name)
+        val b = parentBuild.includedBuild(name) as GradleBuildImpl
         return wrappedIncludedBuild.computeIfAbsent(name) {
             ReversibleGradleBuild(b, projectModification.delegate(null))
         }

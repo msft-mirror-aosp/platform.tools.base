@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.api.dsl.CommonExtension
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -33,9 +34,9 @@ import java.lang.reflect.WildcardType
 class DslProxy private constructor(
     private val theInterface: Class<*>,
     private val contentHolder: DslContentHolder,
-    /** whether the proxy represents one of the root extension (CommonExtension and its extensions */
-    private val rootExtensionProxy: Boolean = false,
 ): InvocationHandler {
+
+    private val rootExtensionProxy = CommonExtension::class.java.isAssignableFrom(theInterface)
 
     companion object {
 
@@ -45,13 +46,12 @@ class DslProxy private constructor(
         fun <T> createProxy(
             theClass: Class<T>,
             contentHolder: DslContentHolder,
-            rootExtensionProxy: Boolean = false
         ): T {
             @Suppress("UNCHECKED_CAST")
             return Proxy.newProxyInstance(
                 DslProxy::class.java.classLoader,
                 arrayOf(theClass),
-                DslProxy(theClass, contentHolder, rootExtensionProxy)
+                DslProxy(theClass, contentHolder)
             ) as T
         }
     }
