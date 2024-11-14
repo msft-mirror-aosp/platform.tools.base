@@ -190,6 +190,12 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         val testResult = TestResult.newBuilder().apply {
             testCase = createTestCase(composeScreenshot, testDisplayName, testStartTime, testEndTime)
+            if (referencePath.toFile().exists()) {
+                addOutputArtifact(createTestArtifact("screenshotReferenceImage", referenceImage.path))
+            }
+            if (actualPath.toFile().exists()) {
+                addOutputArtifact(createTestArtifact("screenshotActualImage", actualImage.path))
+            }
         }
 
         //renderer failed to generate images
@@ -217,6 +223,9 @@ class PreviewScreenshotTestEngine : TestEngine {
         return when (val result = verifier.assertMatchReference(referencePath, ImageIO.read(actualPath.toFile()))) {
             is Verify.AnalysisResult.Failed -> {
                 testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
+                testResult.apply {
+                    addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
+                }
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
@@ -227,7 +236,14 @@ class PreviewScreenshotTestEngine : TestEngine {
             }
 
             is Verify.AnalysisResult.Passed -> {
-                val diff = if (result.imageDiff.highlights == null) ImagePathOrMessage.ErrorMessage("Images match!") else diffImage
+                val diff = if (result.imageDiff.highlights == null) {
+                    ImagePathOrMessage.ErrorMessage("Images match!")
+                } else {
+                    testResult.apply {
+                        addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
+                    }
+                    diffImage
+                }
                 testResult.setTestStatus(TestStatusProto.TestStatus.PASSED)
                 result.toPreviewResponse(0,
                     testDisplayName,

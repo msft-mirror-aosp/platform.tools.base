@@ -18,6 +18,7 @@ package com.android.tools.screenshot
 
 import org.junit.Test
 import com.android.tools.render.compose.ComposeScreenshotResult
+import com.google.testing.platform.proto.api.core.TestArtifactProto
 import kotlin.test.assertEquals
 
 class UtpProtoUtilTest {
@@ -70,5 +71,16 @@ class UtpProtoUtilTest {
 
         assertEquals(detail.key, key)
         assertEquals(detail.value, value)
+    }
+
+    @Test
+    fun testCreateTestArtifact() {
+        val label = "screenshotDiff"
+        val sourcePath = "/path/to/diff/img.png"
+        val artifact = createTestArtifact(label, sourcePath)
+
+        assertEquals(artifact.label.label, label)
+        assertEquals(artifact.sourcePath.path, sourcePath)
+        assertEquals(artifact.type, TestArtifactProto.ArtifactType.TEST_DATA)
     }
 }

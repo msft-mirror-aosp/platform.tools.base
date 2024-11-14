@@ -19,9 +19,13 @@ package com.android.tools.screenshot
 import com.android.tools.render.compose.ComposeScreenshotResult
 import com.google.protobuf.Timestamp
 import com.google.testing.platform.proto.api.core.ErrorProto.Error
+import com.google.testing.platform.proto.api.core.LabelProto
 import com.google.testing.platform.proto.api.core.TestCaseProto.TestCase
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult.TestDetailsEntry
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteMetaData
+import com.google.testing.platform.proto.api.core.PathProto.Path
+import com.google.testing.platform.proto.api.core.TestArtifactProto
+import com.google.testing.platform.proto.api.core.TestArtifactProto.Artifact
 
 private const val MILLIS_PER_SECOND = 1000
 private const val NANOS_PER_MILLISECOND = 1000000
@@ -68,6 +72,17 @@ fun createTestSuiteMetadata(className: String, testCount: Int): TestSuiteMetaDat
 fun createError(message: String): Error {
     return Error.newBuilder().apply {
         errorMessage = message
+    }.build()
+}
+
+/**
+ * Creates Artifact for screenshot test output.
+ */
+fun createTestArtifact(artifactLabel: String, source: String): Artifact {
+    return Artifact.newBuilder().apply {
+        label = LabelProto.Label.newBuilder().setLabel(artifactLabel).build()
+        sourcePath = Path.newBuilder().setPath(source).build()
+        type = TestArtifactProto.ArtifactType.TEST_DATA
     }.build()
 }
 

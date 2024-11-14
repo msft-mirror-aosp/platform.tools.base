@@ -35,6 +35,8 @@ import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan.ExecutionType
 import org.junit.Before
 import org.junit.Rule
@@ -454,6 +456,18 @@ class ScreenshotTest {
         assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
         assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
 
+        // Verify test result protos
+        val pbFile = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results/test-result.pb")
+        assertThat(pbFile).exists()
+        var testSuiteResult = pbFile.inputStream().use { input ->
+            TestSuiteResult.parseFrom(input)
+        }
+        assertThat(testSuiteResult.testResultCount).isEqualTo(8)
+        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.PASSED)
+        var simpleComposableTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleComposableTest_simpleComposable"}
+        // Verify two test artifacts - actual and reference images
+        assertThat(simpleComposableTestMethodResult.outputArtifactCount).isEqualTo(2)
+
         // Update previews to be different from the references
         val testFile = appProject.projectDir.resolve("src/main/java/com/Example.kt")
         TestFileUtils.searchAndReplace(testFile, "Hello World", "HelloWorld ")
@@ -493,6 +507,14 @@ class ScreenshotTest {
         assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_3_748aa731_0.png"
         )
+
+        testSuiteResult = pbFile.inputStream().use { input ->
+            TestSuiteResult.parseFrom(input)
+        }
+        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.FAILED)
+        simpleComposableTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleComposableTest_simpleComposable"}
+        // Verify three test artifacts - actual, diff, and reference images
+        assertThat(simpleComposableTestMethodResult.outputArtifactCount).isEqualTo(3)
     }
 
     @Test
