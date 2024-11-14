@@ -23,6 +23,9 @@ import com.android.build.gradle.integration.common.fixture.testprojects.createGr
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.testutils.truth.PathSubject
+import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
@@ -144,5 +147,117 @@ class BuiltInKotlinForAppTest2 {
         )
         val result = project.executor().run(":app:compileDebugKotlin")
         assertThat(result.didWorkTasks).contains(":app:compileDebugKotlin")
+    }
+
+    @Test
+    fun testKotlinSourceSets() {
+        val app = project.getSubproject(":app")
+        // Add some custom source directories.
+        val fooMainSourceDir = FileUtils.join(app.projectDir, "src", "fooMain", "kotlin")
+        fooMainSourceDir.resolve("FooMain.kt")
+            .let {
+                it.parentFile.mkdirs()
+                it.writeText(
+                    """
+                        package com.foo.application
+
+                        class FooMain {}
+                        """.trimIndent()
+                )
+            }
+        val fooDebugSourceDir = FileUtils.join(app.projectDir, "src", "fooDebug", "kotlin")
+        fooDebugSourceDir.resolve("FooDebug.kt")
+            .let {
+                it.parentFile.mkdirs()
+                it.writeText(
+                    """
+                        package com.foo.application
+
+                        class FooDebug {}
+                        """.trimIndent()
+                )
+            }
+        val fooAndroidTestSourceDir =
+            FileUtils.join(app.projectDir, "src", "fooAndroidTest", "kotlin")
+        fooAndroidTestSourceDir.resolve("FooAndroidTest.kt")
+            .let {
+                it.parentFile.mkdirs()
+                it.writeText(
+                    """
+                        package com.foo.application
+
+                        class FooAndroidTest {}
+                        """.trimIndent()
+                )
+            }
+
+        // Add the custom source directories to the source sets.
+        TestFileUtils.appendToFile(
+            app.buildFile,
+            // language=groovy
+            """
+                kotlin {
+                    sourceSets {
+                        main {
+                            kotlin.srcDir 'src/fooMain/kotlin'
+                        }
+                        debug {
+                            kotlin.srcDir 'src/fooDebug/kotlin'
+                        }
+                        androidTest {
+                            kotlin.srcDir 'src/fooAndroidTest/kotlin'
+                        }
+                    }
+                }
+                """.trimIndent()
+        )
+
+        // Run Kotlin compilation tasks and check that the expected class files are created.
+        project.executor().run(":app:compileDebugKotlin", ":app:compileDebugAndroidTestKotlin")
+        val kotlincOutputDir =
+            FileUtils.join(
+                app.intermediatesDir,
+                InternalArtifactType.BUILT_IN_KOTLINC.getFolderName()
+            )
+        PathSubject.assertThat(kotlincOutputDir).exists()
+
+        val fooMainClassFile =
+            FileUtils.join(
+                kotlincOutputDir,
+                "debug",
+                "compileDebugKotlin",
+                "classes",
+                "com",
+                "foo",
+                "application",
+                "FooMain.class"
+            )
+        PathSubject.assertThat(fooMainClassFile).exists()
+
+        val fooDebugClassFile =
+            FileUtils.join(
+                kotlincOutputDir,
+                "debug",
+                "compileDebugKotlin",
+                "classes",
+                "com",
+                "foo",
+                "application",
+                "FooDebug.class"
+            )
+        PathSubject.assertThat(fooDebugClassFile).exists()
+
+        val fooAndroidTestClassFile =
+            FileUtils.join(
+                kotlincOutputDir,
+                "debugAndroidTest",
+                "compileDebugAndroidTestKotlin",
+                "classes",
+                "com",
+                "foo",
+                "application",
+                "FooAndroidTest.class"
+            )
+        PathSubject.assertThat(fooAndroidTestClassFile).exists()
     }
 }
