@@ -22,20 +22,15 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.generateAarWithContent
-import com.android.tools.build.libraries.metadata.Library
 import com.google.common.truth.Truth
 import org.gradle.internal.impldep.org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import java.io.File
 import java.nio.charset.Charset
-import java.util.zip.ZipFile
 
 class FusedLibraryTest {
 
@@ -113,6 +108,24 @@ class FusedLibraryTest {
                 androidFusedLibrary {
                     minSdk = $DEFAULT_MIN_SDK_VERSION
                 }
+
+
+                publishing {
+                    publications {
+                        release(MavenPublication) {
+                            groupId = "$FUSED_LIBRARY_GROUP"
+                            artifactId = "$FUSED_LIBRARY_ARTIFACT_NAME"
+                            version = "$FUSED_LIBRARY_VERSION"
+                            from(components["fusedLibraryComponent"])
+                        }
+                    }
+                    repositories {
+                        maven {
+                            name = "myrepo"
+                            url = uri(layout.buildDirectory.dir('$FUSED_LIBRARY_REPO_NAME'))
+                        }
+                    }
+                }
                 """.trimIndent()
         )
     }
@@ -146,29 +159,59 @@ class FusedLibraryTest {
         val fusedLibProject = project.getSubproject(":fusedLib1")
 
         executor()
-            .run("generatePomFileForMavenPublication", "generateMetadataFileForMavenPublication")
+            .run(
+                "generatePomFileForMavenPublication",
+                "generateMetadataFileForMavenPublication",
+                "publishReleasePublicationToMyrepoRepository"
+            )
         fusedLibProject.buildDir.resolve("publications/maven")
             .also { publicationDir ->
-            val pom = File(publicationDir, "pom-default.xml")
-            Truth.assertThat(pom.exists()).isTrue()
-            val xmlMavenPomReader = MavenXpp3Reader()
-            pom.inputStream().use { inStream ->
-                val parsedPom = xmlMavenPomReader.read(inStream)
-                assertThat(parsedPom.dependencies.map {
-                    "${it.groupId}:${it.artifactId}:${it.version} scope:${it.scope}"
-                })
-                    .containsExactly(
-                        "junit:junit:4.12 scope:runtime",
-                        "org.hamcrest:hamcrest-core:1.3 scope:runtime",
-                        "fusedlib:androidLib3:1.0.0 scope:runtime",
-                        "com.remotedep:remoteaar-b:1 scope:runtime"
-                    )
+                val pom = File(publicationDir, "pom-default.xml")
+                assertExpectedPomDependencies(pom)
+                Truth.assertThat(File(publicationDir, "module.json").exists()).isTrue()
             }
-            Truth.assertThat(File(publicationDir, "module.json").exists()).isTrue()
+        fusedLibProject.buildDir.resolve(FUSED_LIBRARY_REPO_NAME).also { repoPath ->
+            val publishedLibRepoDir = repoPath.resolve(
+                "$FUSED_LIBRARY_GROUP/${FUSED_LIBRARY_ARTIFACT_NAME}/$FUSED_LIBRARY_VERSION"
+            )
+            assertThat(
+                publishedLibRepoDir.resolve(
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.aar")
+                    .exists()
+            ).isTrue()
+
+            assertExpectedPomDependencies(
+                publishedLibRepoDir.resolve(
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom")
+            )
+        }
+    }
+
+    private fun assertExpectedPomDependencies(pom: File) {
+        Truth.assertThat(pom.exists()).isTrue()
+        val xmlMavenPomReader = MavenXpp3Reader()
+        pom.inputStream().use { inStream ->
+            val parsedPom = xmlMavenPomReader.read(inStream)
+            assertThat(parsedPom.dependencies.map {
+                "${it.groupId}:${it.artifactId}:${it.version} scope:${it.scope}"
+            })
+                .containsExactly(
+                    "junit:junit:4.12 scope:runtime",
+                    "org.hamcrest:hamcrest-core:1.3 scope:runtime",
+                    "fusedlib:androidLib3:1.0.0 scope:runtime",
+                    "com.remotedep:remoteaar-b:1 scope:runtime"
+                )
         }
     }
 
     private fun executor(): GradleTaskExecutor {
         return project.executor()
+    }
+
+    companion object {
+        private const val FUSED_LIBRARY_GROUP = "my-company"
+        private const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
+        private const val FUSED_LIBRARY_VERSION = "1.0"
+        private const val FUSED_LIBRARY_REPO_NAME = "repo"
     }
 }

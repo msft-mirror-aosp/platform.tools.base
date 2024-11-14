@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.plugins
 
+import com.android.SdkConstants
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
@@ -175,6 +176,7 @@ class FusedLibraryPlugin @Inject constructor(
             it.dependencies.addAllLater(fusedAarRuntimeDependenciesProvider)
             it.outgoing.artifact(bundleTaskProvider) { artifact ->
                 artifact.type = AndroidArtifacts.ArtifactType.AAR.type
+                artifact.extension = SdkConstants.EXT_AAR
             }
         }
 
