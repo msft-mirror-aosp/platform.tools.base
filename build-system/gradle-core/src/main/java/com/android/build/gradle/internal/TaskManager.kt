@@ -139,8 +139,10 @@ import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
+import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
@@ -189,6 +191,7 @@ import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
@@ -202,6 +205,12 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
+import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions
+import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.Callable
@@ -962,26 +971,47 @@ abstract class TaskManager(
             maybeAddKotlinStdlibDependency(project, creationConfig)
             val kotlinCompileTaskProvider =
                 KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
-            if (creationConfig.useBuiltInKaptSupport) {
-                if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
-                    copyKaptExtensionProperties(kotlinServices)
+            val kaptGenerateStubsProvider =
+                if (creationConfig.useBuiltInKaptSupport) {
+                    if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+                        copyKaptExtensionProperties(kotlinServices)
+                    }
+                    val kaptCreationAction =
+                        KaptCreationAction(
+                            creationConfig,
+                            project,
+                            kotlinServices,
+                            creationConfig.global.kaptExtension
+                        )
+                    kaptCreationAction.registerTask()
+                    val kaptStubGenerationCreationAction =
+                        KaptStubGenerationCreationAction(
+                            creationConfig,
+                            kotlinServices,
+                            kotlinCompileTaskProvider,
+                            creationConfig.global.kaptExtension
+                        )
+                    kaptStubGenerationCreationAction.registerTask()
+                } else {
+                    null
                 }
-                val kaptStubGenerationCreationAction =
-                    KaptStubGenerationCreationAction(
-                        creationConfig,
-                        kotlinServices,
-                        kotlinCompileTaskProvider,
-                        creationConfig.global.kaptExtension
+
+            val androidTarget = creationConfig.global.kotlinAndroidProjectExtension?.target
+            val kotlinCompilation =
+                androidTarget?.let {
+                    BuiltInKotlinJvmAndroidCompilation(
+                        creationConfig.name,
+                        it,
+                        kotlinCompileTaskProvider
                     )
-                kaptStubGenerationCreationAction.registerTask()
-                val kaptCreationAction =
-                    KaptCreationAction(
-                        creationConfig,
-                        project,
-                        kotlinServices,
-                        creationConfig.global.kaptExtension
-                    )
-                kaptCreationAction.registerTask()
+                }
+            if (kotlinCompilation != null) {
+                if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
+                    // Ensure "kotlin-extension" configuration exists here, because the Compose
+                    // Compiler Gradle plugin assumes it will have been created already.
+                    maybeCreateKotlinExtensionConfiguration()
+                }
+                addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
             }
         }
     }
@@ -1017,6 +1047,106 @@ abstract class TaskManager(
                 }
             }
         }
+    }
+
+    // Allowlist for Kotlin compiler plugins supported by AGP's built-in Kotlin support. We need an
+    // allowlist until BuiltInKotlinJvmAndroidCompilation has been fully implemented.
+    private val builtInKotlinCompilerPluginIdAllowlist =
+        listOf("androidx.compose.compiler.plugins.kotlin")
+
+    // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
+    private fun addSubpluginOptionsForBuiltInKotlin(
+        kotlinCompilation: BuiltInKotlinJvmAndroidCompilation,
+        kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
+    ) {
+        val appliedSubplugins =
+            project.plugins
+                .filterIsInstance<KotlinCompilerPluginSupportPlugin>()
+                .filter { it.isApplicable(kotlinCompilation) }
+                .filter { it.getCompilerPluginId() in builtInKotlinCompilerPluginIdAllowlist }
+
+        // Similar to addMavenDependency function in SubpluginEnvironment in KGP
+        fun Project.addMavenDependency(configuration: String, artifact: SubpluginArtifact) {
+            val artifactVersion = artifact.version ?: getKotlinAndroidPluginVersion(this)
+            val mavenCoordinate =
+                "${artifact.groupId}:${artifact.artifactId}${artifactVersion?.let { ":$it" }.orEmpty()}"
+            project.logger.debug("Adding $mavenCoordinate to $configuration configuration")
+            this.dependencies.add(configuration, mavenCoordinate)
+        }
+
+        // Use the same pluginConfigurationName as
+        // KotlinCompilationDependencyConfigurationsContainer in KGP
+        val targetId =
+            kotlinCompilation.target.disambiguationClassifier?.replaceFirstChar { it.uppercase() } ?: ""
+        val compilationName = kotlinCompilation.compilationName.replaceFirstChar { it.uppercase() }
+        val pluginConfigurationName = "kotlinCompilerPluginClasspath${targetId}${compilationName}"
+
+        if (appliedSubplugins.isNotEmpty()) {
+            val pluginConfiguration =
+                project.configurations
+                    .maybeCreate(pluginConfigurationName)
+                    .also {
+                        it.isCanBeResolved = true
+                        it.isCanBeConsumed = false
+                    }
+            kotlinCompilation.compileTaskProvider.configure {
+                (it as? AbstractKotlinCompile<*>)?.pluginClasspath?.from(pluginConfiguration)
+            }
+            kaptGenerateStubsTaskProvider?.configure { it.pluginClasspath.from(pluginConfiguration) }
+        }
+
+        for (subplugin in appliedSubplugins) {
+            val subpluginId = subplugin.getCompilerPluginId()
+            project.logger.debug("Loading subplugin $subpluginId")
+
+            project.addMavenDependency(pluginConfigurationName, subplugin.getPluginArtifact())
+
+            val subpluginOptionsProvider = subplugin.applyToCompilation(kotlinCompilation)
+            val compilerOptions = subpluginOptionsProvider.map { subpluginOptions ->
+                val options = CompilerPluginOptions()
+                subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }
+                options
+            }
+
+            val configureKotlinTask: (KotlinCompilationTask<*>) -> Unit = {
+                when (it) {
+                    is AbstractKotlinCompile<*> -> it.pluginOptions.add(compilerOptions)
+                    else -> error("Unexpected task ${it.name}, class: ${it.javaClass}")
+                }
+            }
+
+            kotlinCompilation.compileTaskProvider.configure(configureKotlinTask)
+
+            kaptGenerateStubsTaskProvider?.configure { it.pluginOptions.add(compilerOptions) }
+
+            project.logger.debug("Subplugin $subpluginId loaded")
+        }
+    }
+
+    /**
+     * Create a "kotlin-extension" configuration that holds the androidx compose kotlin compiler
+     * extension, if the configuration doesn't already exist.
+     *
+     * Returns the "kotlin-extension" configuration.
+     */
+    protected fun maybeCreateKotlinExtensionConfiguration(): Configuration {
+        project.configurations.findByName("kotlin-extension")?.also { return it }
+        val kotlinExtension =
+            project.configurations
+                .create("kotlin-extension") {
+                    it.isTransitive = false
+                    it.description = "Configuration for Compose related kotlin compiler extension"
+                }
+        // use the version from the DSL, if specified.
+        val kotlinCompilerExtensionVersion =
+            globalConfig.composeOptions.kotlinCompilerExtensionVersion
+                ?: COMPOSE_KOTLIN_COMPILER_EXTENSION_VERSION
+        project.dependencies
+            .add(
+                kotlinExtension.name,
+                "androidx.compose.compiler:compiler:$kotlinCompilerExtensionVersion"
+            )
+        return kotlinExtension
     }
 
     /**
@@ -2117,7 +2247,7 @@ abstract class TaskManager(
 
 
         // Temporary static variables for Kotlin+Compose configuration
-        const val COMPOSE_KOTLIN_COMPILER_EXTENSION_VERSION = "1.3.2"
+        private const val COMPOSE_KOTLIN_COMPILER_EXTENSION_VERSION = "1.3.2"
         const val COMPOSE_UI_VERSION = "1.3.0"
 
         /**
