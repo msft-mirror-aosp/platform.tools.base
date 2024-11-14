@@ -138,13 +138,19 @@ open class TestVariantImpl @Inject constructor(
         getTestedModuleDirectoryArtifact(AndroidArtifacts.ArtifactType.APK)
     }
 
-    override val privacySandboxCompatApks: Provider<Directory> by lazy {
-        getTestedModuleDirectoryArtifact(
+    override val privacySandboxCompatApks: Provider<Directory>? by lazy {
+        if (!privacySandboxEnabled) {
+            return@lazy null
+        }
+        return@lazy getTestedModuleDirectoryArtifact(
             AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS)
     }
 
-    override val usesSdkLibrarySplitForLocalDeployment: Provider<Directory> by lazy {
-        getTestedModuleDirectoryArtifact(
+    override val usesSdkLibrarySplitForLocalDeployment: Provider<Directory>? by lazy {
+        if (!privacySandboxEnabled) {
+            return@lazy null
+        }
+        return@lazy getTestedModuleDirectoryArtifact(
             AndroidArtifacts.ArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT)
     }
 

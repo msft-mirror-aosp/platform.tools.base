@@ -38,7 +38,16 @@ class PrivacySandboxTestOnlyModuleApkOutputTest {
 
     @Test
     fun getTestOnlyModuleApkOutput() {
-        project.getSubproject("example-app-test").buildFile.appendText("""
+        project.getSubproject("example-app-test").buildFile.appendText(
+            getBuildFileContentWithFetchTask(verificationString)
+        )
+
+        executor().run(":example-app-test:fetchApks")
+    }
+
+    companion object {
+        fun getBuildFileContentWithFetchTask(verificationString: String) =
+            """
             import com.android.build.api.variant.ApkInstallGroup
             import com.android.build.api.variant.ApkOutput
             import com.android.build.api.variant.TestVariant
@@ -53,7 +62,25 @@ class PrivacySandboxTestOnlyModuleApkOutputTest {
 
                 @TaskAction
                 void execute() {
-                   def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
+                    $verificationString
+                }
+            }
+
+            def taskProvider = tasks.register("fetchApks", FetchApkTask)
+
+            androidComponents {
+                onVariants(selector().withName("debug")) { variant ->
+                    if (variant instanceof TestVariant) {
+                        TestVariant testVariant = (TestVariant) variant
+                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxEnabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(true).build())
+                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxDisabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(false).build())
+                    }
+                }
+            }
+        """.trimIndent()
+    }
+    private val verificationString = """
+                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
                     if (apkInstall.size() != 4 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1 || apkInstall[2].apks.size() != 2 || apkInstall[3].apks.size() != 1) {
                         throw new GradleException("Unexpected number of apks")
                     }
@@ -79,24 +106,5 @@ class PrivacySandboxTestOnlyModuleApkOutputTest {
                     assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("splits" + File.separator + "example-app-debug-injected-privacy-sandbox-compat.apk") }
                     assert apkInstall[1].apks.any { it.getAsFile().name.contains("example-app-test-debug.apk") }
                     assert apkInstall[1].description.contains("Testing Apk")
-                }
-            }
-
-            def taskProvider = tasks.register("fetchApks", FetchApkTask)
-
-            androidComponents {
-                onVariants(selector().withName("debug")) { variant ->
-                    if (variant instanceof TestVariant) {
-                        TestVariant testVariant = (TestVariant) variant
-                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxEnabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(true).build())
-                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxDisabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(false).build())
-                    }
-                }
-            }
-        """.trimIndent()
-        )
-
-        executor().run(":example-app-test:fetchApks")
-    }
-
+    """.trimIndent()
 }
