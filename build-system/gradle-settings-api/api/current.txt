@@ -31,8 +31,8 @@ package com.android.build.api.dsl {
     method public String? getMinSdkPreview();
     method public String? getNdkPath();
     method public String getNdkVersion();
-    method public Integer? getTargetSdk();
-    method public String? getTargetSdkPreview();
+    method @org.gradle.api.Incubating public Integer? getTargetSdk();
+    method @org.gradle.api.Incubating public String? getTargetSdkPreview();
     method public void setBuildToolsVersion(String);
     method public void setCompileSdk(Integer?);
     method public void setCompileSdkExtension(Integer?);
@@ -41,8 +41,8 @@ package com.android.build.api.dsl {
     method public void setMinSdkPreview(String?);
     method public void setNdkPath(String?);
     method public void setNdkVersion(String);
-    method public void setTargetSdk(Integer?);
-    method public void setTargetSdkPreview(String?);
+    method @org.gradle.api.Incubating public void setTargetSdk(Integer?);
+    method @org.gradle.api.Incubating public void setTargetSdkPreview(String?);
     property @org.gradle.api.Incubating public abstract String? addOnName;
     property @org.gradle.api.Incubating public abstract String? addOnVendor;
     property @org.gradle.api.Incubating public abstract Integer? addOnVersion;
@@ -55,8 +55,8 @@ package com.android.build.api.dsl {
     property public abstract String? minSdkPreview;
     property public abstract String? ndkPath;
     property public abstract String ndkVersion;
-    property public abstract Integer? targetSdk;
-    property public abstract String? targetSdkPreview;
+    property @org.gradle.api.Incubating public abstract Integer? targetSdk;
+    property @org.gradle.api.Incubating public abstract String? targetSdkPreview;
   }
 
   public interface ToolOptions {
