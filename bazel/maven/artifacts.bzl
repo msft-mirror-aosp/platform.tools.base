@@ -952,7 +952,7 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.9.24",
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20-Beta1-28",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.0",
@@ -995,7 +995,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.22",
     "org.jetbrains.kotlin:kotlin-build-common:2.1.0",
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
@@ -1007,7 +1007,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72",
@@ -1043,10 +1043,15 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle76:1.8.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle76:1.8.10",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:1.8.21",
+    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.0.21",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.1.0",
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.0.21",
     "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.1.0",
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.0.21",
     "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.1.0",
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.0.21",
     "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.1.0",
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.0.21",
     "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.1.0",
     "org.jetbrains.kotlin:kotlin-parcelize-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20",
@@ -1078,14 +1083,14 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.20",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.24",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.1.0",
-    "org.jetbrains.kotlin:kotlin-stdlib:2.0.20",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-Beta1-28",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.24",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.20-Beta1-28",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
@@ -1105,11 +1110,13 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta1-28",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
+    "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:1.7.10",
     "org.jetbrains.kotlin:kotlin-test-junit:1.9.24",
+    "org.jetbrains.kotlin:kotlin-test-junit:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:2.1.0",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.8.21",
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.20-Beta1-28",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.1.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
