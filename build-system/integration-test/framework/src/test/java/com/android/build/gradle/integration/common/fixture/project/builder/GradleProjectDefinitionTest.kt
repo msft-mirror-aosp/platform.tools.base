@@ -44,6 +44,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -66,6 +67,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -89,6 +91,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")

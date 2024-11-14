@@ -86,19 +86,6 @@ internal class AndroidPrivacySandboxSdkImpl(
     parentBuild
 ), AndroidPrivacySandboxSdkProject {
 
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
-    ) {
-        action(projectDefinition)
-
-        // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
-
-        projectDefinition as AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
-    }
-
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidPrivacySandboxSdkProject =
         ReversibleAndroidPrivacySandboxSdkProject(this, projectModification)
 }

@@ -35,7 +35,13 @@ interface BuildWriter: BooleanNameHandler {
     fun method(name: String, params: List<Any?>, isVarArg: Boolean)
     /** Calls a method with named parameters */
     fun method(name: String, params: List<Pair<String, Any>>)
+
+    /** Applies a plugin by id. This is to be used inside the `plugins {}` block */
     fun pluginId(id: String, version: String?, apply: Boolean = true)
+    /** Applies a plugin by its class */
+    fun applyPluginFromClass(pluginClass: String)
+
+    /** Adds a dependency */
     fun dependency(scope: String, value:Any)
 
     fun writeCollectionAddAll(name: String, items: Collection<*>)
@@ -351,6 +357,10 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
 
     override fun namedParam(name: String): String = "$name = "
 
+    override fun applyPluginFromClass(pluginClass: String) {
+        indent().put("apply plugin: ").put(pluginClass).endLine()
+    }
+
     override fun listOf(value: String): String {
         return "listOf($value)"
     }
@@ -391,6 +401,10 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
      * in dependencies where it's a named param in KTS and a map in groovy.
      */
     override fun namedParam(name: String): String = "$name: "
+
+    override fun applyPluginFromClass(pluginClass: String) {
+        indent().put("apply plugin: ").put(pluginClass).endLine()
+    }
 
     override fun listOf(value: String): String {
         return "[$value]"

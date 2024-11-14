@@ -1,0 +1,277 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.build.gradle.integration.common.fixture.project.builder
+
+import com.android.build.gradle.integration.common.fixture.project.builder.bytecode.ReferenceFinderVisitor
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassReader.SKIP_DEBUG
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.Opcodes.ACC_PUBLIC
+import org.objectweb.asm.Opcodes.ACC_SUPER
+import org.objectweb.asm.Opcodes.ALOAD
+import org.objectweb.asm.Opcodes.DUP
+import org.objectweb.asm.Opcodes.INVOKESPECIAL
+import org.objectweb.asm.Opcodes.INVOKEVIRTUAL
+import org.objectweb.asm.Opcodes.NEW
+import org.objectweb.asm.Opcodes.RETURN
+import java.io.BufferedOutputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
+/**
+ * Handles custom build logic for [GradleRule] projects.
+ *
+ * This will create a single `builg-logic.jar` with all the necessary classes to run
+ * the callbacks set in the projects.
+ */
+class CustomBuildLogicHandler(path: Path): AutoCloseable {
+
+    private val zipOutputStream: ZipOutputStream =
+        ZipOutputStream(BufferedOutputStream(Files.newOutputStream(path)))
+
+    private val writtenClasses = mutableSetOf<String>()
+    private val basePluginClasses = mutableSetOf<Class<*>>()
+
+    /**
+     * adds a new callback to the jar
+     */
+    fun addCallback(callbackClass: Class<out AndroidComponentCallback>): String {
+        // write this class
+        zipOutputStream.writeWithReferences(callbackClass)
+
+        val pluginClass = getPluginClass(callbackClass)
+
+        val callbackBinaryName = callbackClass.binaryName
+        val basePluginBinaryName = pluginClass.binaryName
+
+        // then create a custom plugin for this callback
+        val newPluginBinaryName = "${callbackBinaryName}_Plugin"
+        val newPluginClassName = "${callbackClass.typeName}_Plugin"
+
+        val newPluginClass = writePluginClass(
+            newPluginBinaryName,
+            basePluginBinaryName,
+            callbackBinaryName,
+            "ApplicationAndroidComponentsExtension"
+        )
+
+        zipOutputStream.write(newPluginBinaryName, newPluginClass)
+
+        // need to record the plugin class as the custom plugin is written manually
+        // and we don't inspect its references.
+        basePluginClasses += pluginClass
+
+        return newPluginClassName
+    }
+
+    override fun close() {
+        // also include the base plugin classes
+        for (pluginClass in basePluginClasses) {
+            zipOutputStream.writeWithReferences(pluginClass)
+        }
+        zipOutputStream.close()
+    }
+
+    /**
+     * Returns the matching base plugin class for a given callback interface.
+     */
+    private fun getPluginClass(callbackClass: Class<out AndroidComponentCallback>): Class<*> =
+        if (ApplicationComponentCallback::class.java.isAssignableFrom(callbackClass)) {
+            ApplicationCallbackPlugin::class.java
+        } else if (LibraryComponentCallback::class.java.isAssignableFrom(callbackClass)) {
+            LibraryCallbackPlugin::class.java
+        } else {
+            throw RuntimeException("Unsupported PluginCallback: ${callbackClass.typeName}")
+        }
+
+    /**
+     * Writes the custom plugin task from scratch using ASM.
+     *
+     * The class will extend a base case based on the type of the android component extension.
+     * It will only implement the `handleComponents` method.
+     *
+     * @param className the (binary) name of the class to generate
+     * @param baseClassName the (binary) name of the plugin class to extend
+     * @param callbackName the (binary) name of the callback to call in `handleComponents`
+     * @param extensionType the class name (w/o package) of the extension handled in the callback
+     */
+    private fun writePluginClass(
+        className: String,
+        baseClassName: String,
+        callbackName: String,
+        extensionType: String
+    ): ByteArray {
+        val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+        writer.visit(
+            Opcodes.V11,
+            ACC_PUBLIC + ACC_SUPER,
+            className,
+            null,
+            baseClassName,
+            arrayOf()
+        )
+        val constructor = writer.visitMethod(
+            ACC_PUBLIC,
+            "<init>",
+            "()V",
+            null,
+            null
+        )
+        constructor.visitCode();
+        constructor.visitVarInsn(ALOAD, 0)
+        constructor.visitMethodInsn(
+            INVOKESPECIAL,
+            baseClassName,
+            "<init>",
+            "()V",
+            false
+        )
+        constructor.visitInsn(RETURN)
+        constructor.visitEnd()
+
+        val method = writer.visitMethod(
+            ACC_PUBLIC,
+            "handleComponents",
+            "(Lorg/gradle/api/Project;Lcom/android/build/api/variant/${extensionType};)V",
+            null,
+            null
+        )
+        method.visitCode()
+        method.visitTypeInsn(NEW, callbackName)
+        method.visitInsn(DUP)
+        method.visitMethodInsn(
+            INVOKESPECIAL,
+            callbackName,
+            "<init>",
+            "()V",
+            false
+        )
+        method.visitVarInsn(ALOAD, 1)
+        method.visitVarInsn(ALOAD, 2)
+        method.visitMethodInsn(
+            INVOKEVIRTUAL,
+            callbackName,
+            "handleComponents",
+            "(Lorg/gradle/api/Project;Lcom/android/build/api/variant/${extensionType};)V",
+            false
+        )
+        method.visitInsn(RETURN)
+        method.visitEnd()
+
+        writer.visitEnd()
+        return writer.toByteArray()
+    }
+
+    /**
+     * Writes a class to the jar, including all the other classes references by its bytecode
+     *
+     * This will use ASM to look at the class byte code and record any references to other
+     * classes. These references are them written to the jar too, recursively searching for their
+     * own references.
+     *
+     * The references are only classes in the com.android.build.gradle.integration.* package
+     * in order to exclude java/kotlin/gradle/AGP classes
+     */
+    private fun ZipOutputStream.writeWithReferences(theClass: Class<*>) {
+        if (writtenClasses.contains(theClass.binaryName)) {
+            return
+        }
+
+        val content = theClass.toBytes()
+        content?.let {
+            val entry = ZipEntry(theClass.typeName.replace('.', '/') + ".class")
+            putNextEntry(entry)
+            write(content)
+            closeEntry()
+        }
+
+        writtenClasses += theClass.typeName.replace('.','/')
+
+        writeReferences(theClass)
+
+        // write nested classes as well
+        for (nestedClass in theClass.nestMembers) {
+            if (nestedClass == theClass) continue
+            writeWithReferences(nestedClass)
+        }
+    }
+
+    /**
+     * Writes a single class to the jar file.
+     */
+    private fun ZipOutputStream.write(classBinaryName: String, content: ByteArray) {
+        val entry = ZipEntry("$classBinaryName.class")
+        putNextEntry(entry)
+        write(content)
+        closeEntry()
+
+        writtenClasses += classBinaryName
+    }
+
+    /**
+     * Search the provided class for references to other classes and write those to the jar.
+     */
+    private fun writeReferences(theClass: Class<*>) {
+        // search for the references inside this class
+        val references = findReferences(theClass)
+
+        // write each of these classes and their references
+        for (ref in references) {
+            // written is updated recursively so we need to keep checking it on each iteration
+            if (!writtenClasses.contains(ref)) {
+                zipOutputStream.writeWithReferences(
+                    theClass.classLoader.loadClass(ref.replace('/', '.'))
+                )
+            }
+        }
+    }
+
+    /**
+     * Searches the class bytecode and returns a list of classes referenced in the bytecode.
+     *
+     * The references are only classes in the com.android.build.gradle.integration.* package
+     * in order to exclude java/kotlin/gradle/AGP classes
+     */
+    private fun findReferences(theClass: Class<*>): Set<String> {
+        val reader = ClassReader(theClass.toBytes())
+        val visitor = ReferenceFinderVisitor()
+
+        reader.accept(visitor, SKIP_DEBUG)
+
+        return visitor.references.toSet()
+    }
+
+    /**
+     * Loads the class content from disk and returns it as a ByteArray
+     */
+    private fun Class<*>.toBytes(): ByteArray? {
+        val resPath = typeName.replace('.', '/') + ".class"
+        val resources = classLoader.getResource(resPath)
+        return resources?.readBytes()
+    }
+
+    private val Class<*>.binaryName: String
+        get() = typeName.replace('.', '/')
+}

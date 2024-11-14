@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidApplic
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.io.File
 import java.nio.file.Path
@@ -261,6 +262,10 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     ) {
         location.createDirectories()
 
+        // gather all the custom binary plugin callbacks, and return whether we need to
+        // include build logic in the settings file
+        val customPluginMap = handleCustomBuildLogic(location)
+
         // gather all the plugins and all their versions so that the settings file can declare them as needed.
         val allPlugins = computeAllPluginMap()
 
@@ -274,12 +279,13 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         )
 
         // write all the projects
-        rootProject.writeRoot(location, allPlugins, buildWriter)
+        rootProject.writeRoot(location, allPlugins, customPluginMap, buildWriter)
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
                 allPlugins,
+                customPluginMap,
                 buildWriter
             )
         }
@@ -302,6 +308,47 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             }
         }
         return allPlugins
+    }
+
+    /**
+     * This method handles project with custom plugins applied to them via [AndroidComponentCallback]
+     */
+    private fun handleCustomBuildLogic(location: Path): Map<String, String> {
+        // gather all the custom callbacks. This returns a map from each callback class
+        // to a list of all projects using this callback.
+        val callbackMap = subProjects.asSequence()
+            .map { it.value }
+            .filterIsInstance(AndroidProjectDefinition::class.java)
+            .filter { it.componentCallback != null }
+            .map { definition ->
+                definition.componentCallback?.let {
+                    it to definition.path
+                }
+            }
+            .filterNotNull()
+            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+
+        if (callbackMap.isEmpty()) return mapOf()
+
+        // result to be used by the projects to apply their plugins.
+        // The map is from the project path to the plugin class name.
+        val pluginClassMap = mutableMapOf<String, String>()
+
+        val handler = CustomBuildLogicHandler(location.resolve("build-logic.jar"))
+        handler.use {
+            // include all the plugin callbacks
+            for ((callbackClass, paths) in callbackMap) {
+                val pluginClassName = it.addCallback(callbackClass)
+
+                // record this association, using the paths as keys since it'll be used
+                // by each subproject
+                paths.forEach { path ->
+                    pluginClassMap[path] = pluginClassName
+                }
+            }
+        }
+
+        return pluginClassMap
     }
 }
 

@@ -143,17 +143,33 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         location: Path,
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         buildWriter: () -> BuildWriter,
     ) {
-        write(location, allPlugins, isRoot = false, buildFileOnly = buildFileOnly, buildWriter)
+        write(
+            location,
+            allPlugins,
+            customPluginMap,
+            isRoot = false,
+            buildFileOnly = buildFileOnly,
+            buildWriter
+        )
     }
 
     internal fun writeRoot(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         buildWriter: () -> BuildWriter,
     ) {
-        write(location, allPlugins, isRoot = true, buildFileOnly = false, buildWriter)
+        write(
+            location,
+            allPlugins,
+            customPluginMap,
+            isRoot = true,
+            buildFileOnly = false,
+            buildWriter
+        )
     }
 
     protected open fun writExtension(writer: BuildWriter) {
@@ -163,6 +179,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
     private fun write(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
         buildWriter: () -> BuildWriter,
@@ -170,6 +187,14 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         location.createDirectories()
 
         buildWriter().apply {
+            if (isRoot && customPluginMap.isNotEmpty()) {
+                block("buildscript") {
+                    block("dependencies") {
+                        method("classpath", rawMethod("files", "build-logic.jar"))
+                    }
+                }
+            }
+
             block("plugins") {
                 // write the plugins used by this project
                 for ((plugin, version) in plugins) {
@@ -201,6 +226,11 @@ internal abstract class BaseGradleProjectDefinitionImpl(
                         pluginId(plugin.id, plugin.version, apply = false)
                     }
                 }
+            }
+
+            customPluginMap[path]?.let {
+                // If there is a plugin class, apply it.
+                applyPluginFromClass(it)
             }
 
             group?.let {

@@ -108,7 +108,7 @@ internal abstract class BaseGradleProjectImpl<ProjectDefinitionT : BaseGradlePro
         val allPlugins = parentBuild.computeAllPluginMap()
 
         (projectDefinition as BaseGradleProjectDefinitionImpl)
-            .writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
+            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), buildWriter)
     }
 
     abstract fun getReversibleInstance(projectModification: TemporaryProjectModification): BaseGradleProject<ProjectDefinitionT>

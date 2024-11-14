@@ -71,19 +71,6 @@ internal class AndroidFeatureImpl(
     parentBuild
 ), AndroidDynamicFeatureProject {
 
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
-    ) {
-        action(projectDefinition)
-
-        // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
-
-        projectDefinition as AndroidProjectDefinitionImpl<DynamicFeatureExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
-    }
-
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidDynamicFeatureProject =
         ReversibleAndroidDynamicFeatureProject(this, projectModification)
 }

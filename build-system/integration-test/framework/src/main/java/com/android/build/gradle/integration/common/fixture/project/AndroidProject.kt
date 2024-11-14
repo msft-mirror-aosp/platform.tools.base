@@ -130,6 +130,13 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjec
     override val outputsDir: Path
         get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 
+    override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
+        if ((projectDefinition as AndroidProjectDefinition<*>).componentCallback != null) {
+            throw RuntimeException("reconfigure with callbacks not yet supported")
+        }
+
+        super.reconfigure(buildFileOnly, action)
+    }
 
     protected fun computeOutputPath(outputSelector: OutputSelector): Path {
         val root = if (outputSelector.fromIntermediates) {
