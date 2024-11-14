@@ -227,6 +227,7 @@ class ModelBuilder<
                 // dependencies with a self dependency. This makes sure Gradle skips any resolution
                 // for external libraries.
                 it.copyRecursive().apply {
+                    isCanBeConsumed = false
                     resolutionStrategy.dependencySubstitution.all {
                         if (it.requested !is ProjectComponentSelector) {
                             it.useTarget(project)
