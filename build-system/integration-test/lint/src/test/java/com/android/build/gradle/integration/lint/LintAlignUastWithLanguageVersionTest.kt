@@ -27,9 +27,18 @@ import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.TestUtils
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Integration test checking for alignment of language version and UAST used by lint. */
-class LintAlignUastWithLanguageVersionTest {
+@RunWith(Parameterized::class)
+class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: Boolean) {
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters(name = "useBuiltInKotlinSupport_{0}")
+        fun parameters() = listOf(true, false)
+    }
 
     @get:Rule
     val project: GradleTestProject = createGradleTestProject()
@@ -324,12 +333,19 @@ class LintAlignUastWithLanguageVersionTest {
      */
     private fun createGradleTestProject(): GradleTestProject {
 
+        val kotlinPluginId =
+            if (useBuiltInKotlinSupport) {
+                "com.android.experimental.built-in-kotlin"
+            } else {
+                "kotlin-android"
+            }
+
         val app =
             MinimalSubProject.app()
                 .appendToBuild(
                     // language=groovy
                     """
-                        apply plugin: "kotlin-android"
+                        apply plugin: "$kotlinPluginId"
 
                         android {
                             dynamicFeatures = [":feature"]
@@ -343,6 +359,11 @@ class LintAlignUastWithLanguageVersionTest {
 
                         kotlin {
                             jvmToolchain(17)
+                        }
+
+                        dependencies {
+                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                         }
                     """.trimIndent()
                 )
@@ -361,13 +382,18 @@ class LintAlignUastWithLanguageVersionTest {
                 .appendToBuild(
                     // language=groovy
                     """
-                        apply plugin: "kotlin-android"
+                        apply plugin: "$kotlinPluginId"
 
                         android {
                             lint {
                                 checkAllWarnings = true
                                 checkTestSources = true
                             }
+                        }
+
+                        dependencies {
+                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                         }
                     """.trimIndent()
                 )
@@ -377,13 +403,18 @@ class LintAlignUastWithLanguageVersionTest {
                 .appendToBuild(
                     // language=groovy
                     """
-                        apply plugin: "kotlin-android"
+                        apply plugin: "$kotlinPluginId"
 
                         android {
                             lint {
                                 checkAllWarnings = true
                                 checkTestSources = true
                             }
+                        }
+
+                        dependencies {
+                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                         }
                     """.trimIndent()
                 )
@@ -459,7 +490,8 @@ class LintAlignUastWithLanguageVersionTest {
                     .dependency(app, kmpJvmLib)
                     .build()
             )
-            .withKotlinGradlePlugin(true)
+            .withBuiltInKotlinSupport(useBuiltInKotlinSupport)
+            .withKotlinGradlePlugin(!useBuiltInKotlinSupport)
             .create()
     }
 
@@ -499,6 +531,20 @@ class LintAlignUastWithLanguageVersionTest {
                         }
                     """.trimIndent()
                 )
+                // TODO(b/341765853): Support setting language version via source sets with built-in
+                //  Kotlin support.
+                if (useBuiltInKotlinSupport) {
+                    TestFileUtils.appendToFile(
+                        project.getSubproject(subprojectName).buildFile,
+                        """
+                            tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                                kotlinOptions {
+                                    languageVersion = "$it"
+                                }
+                            }
+                        """.trimIndent()
+                    )
+                }
             }
         }
 
