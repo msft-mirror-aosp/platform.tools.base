@@ -440,12 +440,8 @@ class VariantDependencies internal constructor(
             sourcesPublication: Configuration?,
         ): VariantDependencies {
             val incomingConfigurations = listOf(compileClasspath, runtimeClasspath)
-            val outgoingConfigurations = listOfNotNull(
-                apiElements, runtimeElements, sourcesElements, apiPublication, runtimePublication, sourcesPublication
-            )
-            val publicationConfigurations = listOfNotNull(
-                apiPublication, runtimePublication, sourcesPublication
-            )
+            val outgoingConfigurations = listOfNotNull(apiElements, runtimeElements, sourcesElements)
+            val publicationConfigurations = listOfNotNull(apiPublication, runtimePublication, sourcesPublication)
 
             // This is set to be able to consume artifacts published with the library plugin.
             // For the artifacts of the new android multiplatform plugin, kotlin plugin has a compatibility rules that
@@ -467,10 +463,7 @@ class VariantDependencies internal constructor(
                 TargetJvmEnvironment::class.java,
                 TargetJvmEnvironment.ANDROID
             ).let { androidTarget ->
-                // TODO(b/289214845): Figure out with JB which attribute to add to disambiguate
-                //  android from jvm for publication as the kotlin plugin doesn't publish with
-                //  target jvm environment attribute.
-                (incomingConfigurations + outgoingConfigurations).forEach {
+                (incomingConfigurations + outgoingConfigurations + publicationConfigurations).forEach {
                     it.attributes.attribute(
                         TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
                         androidTarget
@@ -483,7 +476,7 @@ class VariantDependencies internal constructor(
                 Version.ANDROID_GRADLE_PLUGIN_VERSION
             ).let { agpVersion ->
                 // Add the agp version attribute to all configurations but the publication
-                (incomingConfigurations + outgoingConfigurations - publicationConfigurations.toSet()).forEach {
+                (incomingConfigurations + outgoingConfigurations).forEach {
                     it.attributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion)
                 }
             }
