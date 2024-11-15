@@ -41,7 +41,6 @@ import com.android.tools.lint.LintCliClient.Companion.printWriter
 import com.android.tools.lint.LintCliFlags.ERRNO_ERRORS
 import com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS
 import com.android.tools.lint.LintCliFlags.ERRNO_USAGE
-import com.android.tools.lint.UastEnvironment.Companion.create
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.client.api.GradleVisitor
 import com.android.tools.lint.client.api.IssueRegistry
@@ -77,6 +76,7 @@ import com.android.utils.SdkUtils.hasImageExtension
 import com.android.utils.SdkUtils.wrap
 import com.android.utils.XmlUtils
 import com.android.utils.iterator
+import com.google.common.hash.Hashing
 import com.google.common.io.ByteStreams
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.psi.PsiManager
@@ -334,7 +334,7 @@ class LintIssueDocGenerator(
   }
 
   private fun wrap(text: String): String {
-    return wrap(text, format)
+    return wrap(text, format).lines().joinToString("\n") { it.trimEnd() }
   }
 
   private fun writeIssuePage(issue: Issue) {
@@ -679,7 +679,7 @@ class LintIssueDocGenerator(
         for (issue in categoryIssues) {
           val id = issue.id
           val summary = issue.getDescription()
-          sb.append("  - [$id: $summary]($id${format.extension})\n")
+          sb.append("  - [$id: $summary](${getFileName(issue, format)})\n")
         }
       }
     } else if (type == IndexType.ALPHABETICAL) {
@@ -687,7 +687,7 @@ class LintIssueDocGenerator(
       for (issue in issues.sortedBy { it.id }) {
         val id = issue.id
         val summary = issue.getDescription()
-        sb.append("  - [$id: $summary]($id${format.extension})")
+        sb.append("  - [$id: $summary](${getFileName(issue, format)})")
         val registries = issueToRegistry[id]
         val artifact = issue.registry?.let { registryMap[it] }
         if (artifact != null && registries != null && registries.size > 1) {
@@ -703,7 +703,7 @@ class LintIssueDocGenerator(
           for (issue in applicable.sorted()) {
             val id = issue.id
             val summary = issue.getDescription()
-            sb.append("  - [$id: $summary]($id${format.extension})\n")
+            sb.append("  - [$id: $summary](${getFileName(issue, format)})\n")
           }
         }
       }
@@ -735,7 +735,7 @@ class LintIssueDocGenerator(
         for (issue in vendorIssues) {
           val id = issue.id
           val summary = issue.getDescription()
-          sb.append("  - [$id: $summary]($id${format.extension})\n")
+          sb.append("  - [$id: $summary](${getFileName(issue, format)})\n")
         }
       }
     } else if (type == IndexType.YEAR) {
@@ -752,7 +752,7 @@ class LintIssueDocGenerator(
         for (issue in issuesFromYear) {
           val id = issue.id
           val summary = issue.getDescription()
-          sb.append("  - [$id: $summary]($id${format.extension})\n")
+          sb.append("  - [$id: $summary](${getFileName(issue, format)})\n")
         }
       }
     } else if (type == IndexType.ARTIFACTS) {
@@ -1191,6 +1191,21 @@ class LintIssueDocGenerator(
       """
         .trimIndent()
     )
+
+    val twinArtifacts = library?.twinArtifacts ?: emptyList()
+    if (twinArtifacts.isNotEmpty()) {
+      sb.append(
+        "\n\nNOTE: These lint checks are **also** made available separate from the main library.\n"
+      )
+      if (twinArtifacts.size == 1) {
+        sb.append("You can also use `${twinArtifacts.first()}`.\n")
+      } else {
+        sb.append("Use one of the following artifacts:\n")
+        for (id in twinArtifacts.sorted()) {
+          sb.append("* `$id`\n")
+        }
+      }
+    }
   }
 
   private fun getArtifactPageName(artifactName: String): String {
@@ -3260,7 +3275,7 @@ class LintIssueDocGenerator(
         }
 
         getRegistry(client, jarFile)?.let { registry ->
-          val wrapped = DocIssueRegistry(registry, library)
+          val wrapped = DocIssueRegistry(registry, library, jarFile)
           result[wrapped] = "${library.group}:${library.artifact}"
         }
       }
@@ -3273,12 +3288,130 @@ class LintIssueDocGenerator(
     ): Map<IssueRegistry, String?> {
       val cacheDir = File(getGmavenCache(), "m2repository")
       populateGmavenOfflineRepo(client, cacheDir, verbose)
-      return findLintIssueRegistries(
-        client,
-        cacheDir.path,
-        { id, lintLibrary -> createGmavenLibrary(id, lintLibrary) },
-        searchWithinArchives = false,
-      )
+      val registries: Map<IssueRegistry, String?> =
+        findLintIssueRegistries(
+          client,
+          cacheDir.path,
+          { id, lintLibrary -> createGmavenLibrary(id, lintLibrary) },
+          searchWithinArchives = false,
+        )
+
+      return joinDuplicateRegistries(registries)
+    }
+
+    private fun joinDuplicateRegistries(
+      registries: Map<IssueRegistry, String?>
+    ): Map<IssueRegistry, String?> {
+      val artifactToRegistry =
+        registries.map { (registry, artifactId) -> artifactId to registry }.toMap().toMutableMap()
+
+      val duplicateRegistries = mutableListOf<IssueRegistry>()
+
+      // Next, remove any remaining registries that have identical file contents. This isn't common,
+      // but there are a few libraries that bundle their lint checks in multiple artifacts
+      val artifactsPerVersion =
+        artifactToRegistry.keys.filterNotNull().groupBy {
+          // Group by version (such that we don't combine registries unchanged across
+          // versions) as well as group id
+          it.groupId() + it.substringAfterLast(":")
+        }
+      for ((_, artifacts) in artifactsPerVersion) {
+        if (artifacts.size <= 1) {
+          continue
+        }
+        val pairs: List<Pair<String, DocIssueRegistry>> =
+          artifacts.mapNotNull {
+            val registry = artifactToRegistry[it]
+            if (registry is DocIssueRegistry && registry.issues.isNotEmpty()) it to registry
+            else null
+          }
+        val fileToId = pairs.associate { it.second.jarFile to it.first }
+        val grouped = mutableMapOf<String, MutableList<File>>()
+        for (file in fileToId.keys.toList()) {
+          grouped.getOrPut(file.fileHash()) { mutableListOf() }.add(file)
+        }
+        for ((_, list) in grouped) {
+          if (list.size > 1) {
+            val ids = list.map { fileToId[it]!! }.sorted()
+            val primary = pickPrimaryArtifact(ids)
+            val primaryRegistry = artifactToRegistry[primary] as DocIssueRegistry
+            val twinArtifacts = primaryRegistry.library.twinArtifacts
+            for (id in ids) {
+              if (id != primary) {
+                val twin = artifactToRegistry[id]!!
+                twinArtifacts.add(id)
+                artifactToRegistry.remove(id)
+                duplicateRegistries.add(twin)
+              }
+            }
+          }
+        }
+      }
+
+      val filtered: MutableMap<IssueRegistry, String?> = registries.toMutableMap()
+      for (registry in duplicateRegistries) {
+        filtered.remove(registry)
+      }
+
+      return filtered
+    }
+
+    private fun pickPrimaryArtifact(ids: List<String>): String {
+      // We have multiple jars all pointing to the same file. Make one primary.
+      // Example:
+      // * androidx.wear.protolayout:protolayout-expression:1.3.0-alpha04
+      // * androidx.wear.protolayout:protolayout-material3:1.3.0-alpha04
+      // * androidx.wear.protolayout:protolayout-material:1.3.0-alpha04
+      // * androidx.wear.protolayout:protolayout:1.3.0-alpha04
+      //
+      // Here's we'll want to pick protolayout. We might want to look at the
+      // dependency graph and prioritize root dependencies.
+      //
+      // As another example, many libraries are also released as standalone
+      // using a -lint suffix; these should never be picked as the primary.
+
+      fun rank(coordinate: String): Int {
+        val artifact = coordinate.artifactId()
+        val suffix = artifact.substringAfterLast("-", "")
+        return when (suffix) {
+          "" -> 0
+          "android" -> 1
+          "core" -> 2
+          "lint" -> 200
+          else -> 3
+        }
+      }
+
+      val sorted =
+        ids.sortedWith { o1, o2 ->
+          val delta = rank(o1) - rank(o2)
+          if (delta != 0) {
+            delta
+          } else {
+            val lengthDelta = o1.length - o2.length
+            if (lengthDelta != 0) {
+              lengthDelta
+            } else {
+              o1.compareTo(o2)
+            }
+          }
+        }
+
+      return sorted[0]
+    }
+
+    @Suppress("UnstableApiUsage")
+    private fun File.fileHash(): String {
+      val hashFunction = Hashing.farmHashFingerprint64()
+      return hashFunction.newHasher().putBytes(this.readBytes()).hash().toString()
+    }
+
+    private fun String.groupId(): String {
+      return substringBefore(":")
+    }
+
+    private fun String.artifactId(): String {
+      return substringBeforeLast(":").substringAfter(":")
     }
 
     private fun createGmavenLibrary(id: String, lintLibrary: Boolean): Library {
@@ -3596,7 +3729,7 @@ class LintIssueDocGenerator(
           getRegistry(client, file)
             // Some non-lint jar file
             ?: continue
-        val wrapped = DocIssueRegistry(registry, library)
+        val wrapped = DocIssueRegistry(registry, library, file)
         result[wrapped] = "$key:$latest"
       }
       return result
@@ -3616,6 +3749,11 @@ class LintIssueDocGenerator(
         -o1.compareTo(o2)
       }
       var registry: IssueRegistry? = null
+      /**
+       * Some libraries are released both as part of another library and as a standalone AAR. This
+       * points from the main library to the standalone artifact name.
+       */
+      val twinArtifacts = mutableListOf<String>()
 
       fun addVersion(entry: LibraryVersionEntry) {
         versions[entry.version] = entry
@@ -4156,8 +4294,11 @@ class LintIssueDocGenerator(
       return null
     }
 
-    private class DocIssueRegistry(original: IssueRegistry, val library: Library) :
-      IssueRegistry() {
+    private class DocIssueRegistry(
+      original: IssueRegistry,
+      val library: Library,
+      val jarFile: File,
+    ) : IssueRegistry() {
       override val issues: List<Issue> = original.issues
       override val api: Int = original.api
       override val minApi: Int = original.minApi
