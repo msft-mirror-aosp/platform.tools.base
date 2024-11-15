@@ -49,6 +49,11 @@ _vendor_git = [
         "api_level": 34,
     },
     {
+        "name": "freetype_repo",
+        "build_file": "//tools/vendor/google/skia:external/freetype.BUILD",
+        "path": "external/freetype",
+    },
+    {
         "name": "skia_repo",
         "path": "external/skia",
         "repo_mapping": {
@@ -59,6 +64,11 @@ _vendor_git = [
     {
         "name": "skia_user_config",
         "path": "tools/vendor/google/skia/external/skia-user-config",
+    },
+    {
+        "name": "libpng_repo",
+        "build_file": "//tools/vendor/google/skia:external/libpng.BUILD",
+        "path": "external/libpng",
     },
 ]
 
