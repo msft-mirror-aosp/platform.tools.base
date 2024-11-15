@@ -1,106 +1,45 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("//tools/base/bazel:utils.bzl", "replace_manifest")
-load(":aar_lint.bzl", "aar_lint")
 
-ANDROIDX__VERSION = "1.8.0-alpha03"
-
-# AndroidX lint check composed from
+# AndroidX lint check from
 # https://cs.android.com/search?q=lintPublish%20file:compose%2F%20file:build.gradle&ss=androidx%2Fplatform%2Fframeworks%2Fsupport&start=1
+#
+# and published at https://maven.google.com/web/index.html?q=-lint
 
-aar_lint(
-    name = "compose_runtime_lint",
-    dep = "@maven//:androidx.compose.runtime.runtime-android_" + ANDROIDX__VERSION,
-)
+COMPOSE_LINT = [
+    "@maven//:androidx.compose.animation.animation-core-lint",
+    "@maven//:androidx.compose.animation.animation-lint",
+    "@maven//:androidx.compose.foundation.foundation-lint",
+    "@maven//:androidx.compose.material.material-lint",
+    "@maven//:androidx.compose.material3.material3-lint",
+    "@maven//:androidx.compose.runtime.runtime-lint",
+    "@maven//:androidx.compose.runtime.runtime-saveable-lint",
+    "@maven//:androidx.compose.ui.ui-graphics-lint",
+    "@maven//:androidx.compose.ui.ui-lint",
+    "@maven//:androidx.compose.ui.ui-test-manifest-lint",
+    "@maven//:androidx.compose.ui.ui-text-lint",
+]
 
-aar_lint(
-    name = "compose_ui_lint",
-    dep = "@maven//:androidx.compose.ui.ui-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_ui_graphics_lint",
-    dep = "@maven//:androidx.compose.ui.ui-graphics-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_ui_text_lint",
-    dep = "@maven//:androidx.compose.ui.ui-text-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_ui_test_manifest_lint",
-    dep = "@maven//:androidx.compose.ui.ui-test-manifest_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_runtime_saveable_lint",
-    dep = "@maven//:androidx.compose.runtime.runtime-saveable-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_material_lint",
-    dep = "@maven//:androidx.compose.material.material-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_animation_lint",
-    dep = "@maven//:androidx.compose.animation.animation-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_animation_core_lint",
-    dep = "@maven//:androidx.compose.animation.animation-core-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_foundation_lint",
-    dep = "@maven//:androidx.compose.foundation.foundation-android_" + ANDROIDX__VERSION,
-)
-
-aar_lint(
-    name = "compose_material3_lint",
-    dep = "@maven//:androidx.compose.material3.material3-android_1.3.0",
+java_binary(
+    name = "print_compose_lint_issues",
+    main_class = "com.android.tools.lint.checks.androidx.ComposeDesktopIssueRegistryKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":compose-desktop-registry"],
 )
 
 kotlin_library(
     name = "compose-desktop-registry",
     srcs = ["ComposeDesktopIssueRegistry.kt"],
     lint_enabled = False,
-    deps = [
-        ":compose_animation_core_lint",
-        ":compose_animation_lint",
-        ":compose_foundation_lint",
-        ":compose_material3_lint",
-        ":compose_material_lint",
-        ":compose_runtime_lint",
-        ":compose_runtime_saveable_lint",
-        ":compose_ui_graphics_lint",
-        ":compose_ui_lint",
-        ":compose_ui_test_manifest_lint",
-        ":compose_ui_text_lint",
-        "//tools/base/lint:tools.lint-api",
-    ],
+    deps = COMPOSE_LINT + ["//tools/base/lint:tools.lint-api"],
 )
 
 merge_jars(
     name = "androidx-checks-merged",
     out = "androidx-checks-merged.jar",
     allow_duplicates = True,
-    jars = [
-        ":compose_animation_core_lint",
-        ":compose_animation_lint",
-        ":compose_foundation_lint",
-        ":compose_material_lint",
-        ":compose_material3_lint",
-        ":compose_runtime_lint",
-        ":compose_runtime_saveable_lint",
-        ":compose_ui_graphics_lint",
-        ":compose_ui_lint",
-        ":compose_ui_test_manifest_lint",
-        ":compose_ui_text_lint",
-        ":compose-desktop-registry",
-    ],
+    jars = COMPOSE_LINT + [":compose-desktop-registry"],
 )
 
 replace_manifest(

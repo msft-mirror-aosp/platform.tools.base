@@ -1,5 +1,7 @@
 """ Rule to extract Lint checks from .aar file, to be used outside of Android projects """
 
+# TODO(2025-03-01) delete 'aar_lint' rule and this file
+# it was initially used for compose descktop lint check, and become obsolete when we start publishing standalone *-lint.jar artifacts
 def _aar_lint_impl(ctx):
     aar = None
     for f in ctx.files.dep:

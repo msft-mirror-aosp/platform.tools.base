@@ -17,26 +17,36 @@
 package com.android.tools.lint.checks.androidx
 
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Issue
 
 class ComposeDesktopIssueRegistry : IssueRegistry() {
 
   override val api: Int = com.android.tools.lint.detector.api.CURRENT_API
 
-  private val isK2: Boolean = System.getProperty("lint.use.fir.uast", "false").toBoolean()
-
   override val issues: List<Issue> =
     buildList {
-        addAll(androidx.compose.runtime.lint.RuntimeIssueRegistry().issues)
         addAll(androidx.compose.animation.core.lint.AnimationCoreIssueRegistry().issues)
         addAll(androidx.compose.animation.lint.AnimationIssueRegistry().issues)
         addAll(androidx.compose.foundation.lint.FoundationIssueRegistry().issues)
         addAll(androidx.compose.material.lint.MaterialIssueRegistry().issues)
         addAll(androidx.compose.material3.lint.Material3IssueRegistry().issues)
+        addAll(androidx.compose.runtime.lint.RuntimeIssueRegistry().issues)
         addAll(androidx.compose.runtime.saveable.lint.RuntimeSaveableIssueRegistry().issues)
         addAll(androidx.compose.ui.graphics.lint.UiGraphicsIssueRegistry().issues)
         addAll(androidx.compose.ui.lint.UiIssueRegistry().issues)
         addAll(androidx.compose.ui.test.manifest.lint.TestManifestIssueRegistry().issues)
+        addAll(androidx.compose.ui.text.lint.UiTextIssueRegistry().issues)
       }
       .filter { !it.isAndroidSpecific() }
+}
+
+fun main() {
+  LintClient.clientName = "ComposeDesktopIssueRegistry"
+  val maxIdLen = ComposeDesktopIssueRegistry().issues.map { it.id.length }.max()
+  ComposeDesktopIssueRegistry().issues.forEach {
+    println(
+      "${it.id.padEnd(maxIdLen)} AndroidSpecific=${it.isAndroidSpecific()} EnabledByDefault=${it.isEnabledByDefault()}"
+    )
+  }
 }
