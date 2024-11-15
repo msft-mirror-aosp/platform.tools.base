@@ -63,7 +63,7 @@ class FakeAdbSession : AdbSession {
             return field
         }
 
-    override val host = FakeAdbSessionHost()
+    override val host: FakeAdbSessionHost = FakeAdbSessionHost()
 
     override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
         get() {

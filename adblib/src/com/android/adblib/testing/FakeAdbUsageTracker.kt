@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,20 @@
  */
 package com.android.adblib.testing
 
-import com.android.adblib.AdbSessionHost
+import com.android.adblib.AdbUsageTracker
+import java.util.Collections
 
-class FakeAdbSessionHost : AdbSessionHost() {
+class FakeAdbUsageTracker: AdbUsageTracker {
+  private val loggedAdbUsageEvents: MutableList<AdbUsageTracker.Event> =
+        Collections.synchronizedList(mutableListOf<AdbUsageTracker.Event>())
 
-    override val loggerFactory = FakeAdbLoggerFactory()
+  override fun logUsage(event: AdbUsageTracker.Event) {
+    loggedAdbUsageEvents.add(event)
+  }
 
-    override val timeProvider: FakeNanoTimeProvider = FakeNanoTimeProvider()
-
-    override val usageTracker: FakeAdbUsageTracker = FakeAdbUsageTracker()
-
-    override fun close() {
+  fun getLoggedEvents(): List<AdbUsageTracker.Event> {
+    synchronized(loggedAdbUsageEvents) {
+      return loggedAdbUsageEvents.toList()
     }
+  }
 }
