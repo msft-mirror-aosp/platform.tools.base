@@ -39,7 +39,13 @@ import kotlin.io.path.name
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
  */
 interface AndroidProject<T: CommonExtension<*, *, *, *, *, *>>: GradleProject {
+
+    /**
+     * The namespace of the project.
+     */
     val namespace: String
+
+    /** the object that allows to add/update/remove files from the project */
     override val files: AndroidProjectFiles
 
     /**
@@ -49,15 +55,58 @@ interface AndroidProject<T: CommonExtension<*, *, *, *, *, *>>: GradleProject {
      *
      * This can also be used to update [AndroidProjectFiles], but when only touching project files
      * (and not the build files) consider using [AndroidProject.files] instead
+     *
+     * @param buildFileOnly whether to only update the build files, or do a full reset, including files added via [AndroidProjectFiles]
+     * @param action the action to configure the [AndroidProjectDefinition]
+     *
      */
     fun reconfigure(buildFileOnly: Boolean = false, action: AndroidProjectDefinition<T>.() -> Unit)
 
+    /**
+     * Runs the action with a provided instance of [Apk].
+     *
+     * It is possible to return a value from the action, but it should not be [Apk] as this
+     * may not be safe. [Apk] is a [AutoCloseable] and should be treated as such.
+     */
     fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R
+    /**
+     * Runs the action with a provided [ApkSubject]
+     */
     fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit)
+
+    /**
+     * Returns whether or not the APK exists.
+     *
+     * To assert validity, prefer using
+     * ```
+     * project.assertApk(ApkSelector.DEBUG) {
+     *   exists()
+     * }
+     * ```
+     */
     fun hasApk(apkSelector: ApkSelector): Boolean
 
+    /**
+     * Runs the action with a provided instance of [Aar].
+     *
+     * It is possible to return a value from the action, but it should not be [Aar] as this
+     * may not be safe. [Aar] is a [AutoCloseable] and should be treated as such.
+     */
     fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R
+    /**
+     * Runs the action with a provided [AarSubject]
+     */
     fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
+    /**
+     * Returns whether or not the AAR exists.
+     *
+     * To assert validity, prefer using
+     * ```
+     * project.assertAar(ApkSelector.DEBUG) {
+     *   exists()
+     * }
+     * ```
+     */
     fun hasAar(aarSelector: AarSelector): Boolean
 
 

@@ -26,7 +26,9 @@ import java.nio.file.Path
  * a subproject part of a [GradleBuild]
  */
 interface GradleProject: TemporaryProjectModification.FileProvider {
+    /** the location on disk of the project */
     val location: Path
+    /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
 

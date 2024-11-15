@@ -33,16 +33,44 @@ import java.nio.file.Path
  * and query for the content of their output folder
  */
 interface GradleBuild {
+
+    /** Queries for a project via its gradle path. The project must exist. */
     fun subProject(path: String): GradleProject
+    /**
+     * Queries for an android project via its gradle path.
+     * The project must exist and be an Android project
+     */
     fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>>
+    /**
+     * Queries for an application project via its gradle path.
+     * The project must exist and be an Android Application project
+     */
     fun androidApplication(path: String): AndroidProject<ApplicationExtension>
+    /**
+     * Queries for a library project via its gradle path.
+     * The project must exist and be an Android Library project
+     */
     fun androidLibrary(path: String): AndroidProject<LibraryExtension>
+    /**
+     * Queries for a feature project via its gradle path.
+     * The project must exist and be an Android Dynamic Feature project
+     */
     fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension>
+
+    /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
 
+    /** The [GradleTaskExecutor] that can be used to run tasks */
     val executor: GradleTaskExecutor
+    /** The [ModelBuilderV2] that can be used to query for models */
     val modelBuilder: ModelBuilderV2
 
+    /**
+     * Allows making modifications that are reverted.
+     *
+     * Any modifications to the project (using [GradleProject.files]) made from within the action,
+     * using the provided instance of [GradleBuild], will be reverted after the action is run.
+     */
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
 }
 
