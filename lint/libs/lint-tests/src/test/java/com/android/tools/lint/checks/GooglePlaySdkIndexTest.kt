@@ -43,7 +43,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      LibraryIdentifier.MavenIdentifier.newBuilder()
+                      MavenIdentifier.newBuilder()
                         .setGroupId("log4j")
                         .setArtifactId("log4j")
                         .build()
@@ -112,7 +112,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      LibraryIdentifier.MavenIdentifier.newBuilder()
+                      MavenIdentifier.newBuilder()
                         .setGroupId("com.example.ads.third.party")
                         .setArtifactId("example")
                         .build()
@@ -744,7 +744,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      LibraryIdentifier.MavenIdentifier.newBuilder()
+                      MavenIdentifier.newBuilder()
                         .setGroupId("no.url.group")
                         .setArtifactId("no.url.artifact")
                         .build()
@@ -816,7 +816,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      LibraryIdentifier.MavenIdentifier.newBuilder()
+                      MavenIdentifier.newBuilder()
                         .setGroupId("not.in.sdk.index.url")
                         .setArtifactId("not.in.sdk")
                         .build()
@@ -863,7 +863,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      LibraryIdentifier.MavenIdentifier.newBuilder()
+                      MavenIdentifier.newBuilder()
                         .setGroupId("android.arch.core")
                         .setArtifactId("common")
                         .build()

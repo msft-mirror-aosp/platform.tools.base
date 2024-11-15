@@ -91,6 +91,10 @@ message Library {
   // This version list is not exhaustive, versions that don't have relevant
   // data will be skipped.
   repeated LibraryVersion versions = 2;
+
+  // Information about the deprecation of the library.
+  // Set iff the library is deprecated.
+  LibraryDeprecation library_deprecation = 3;
 }
 
 // Uniquely identifies a library in the index.
@@ -98,17 +102,6 @@ message LibraryIdentifier {
   // Maven Identifier of this library.
   // Required.
   MavenIdentifier maven_id = 1;
-
-  // Represents a Maven identifier.
-  message MavenIdentifier {
-    // Group ID.
-    // Required.
-    string group_id = 1;
-
-    // Artifact ID.
-    // Required.
-    string artifact_id = 2;
-  }
 }
 
 // Represents a Library version.
@@ -229,4 +222,40 @@ message LibraryVersionRange {
   // Can be the same as lower_bound if no other library versions are allowed.
   // Can be empty. If missing this range should be interpreted as open range.
   string upper_bound = 2;
+}
+
+// Information about the deprecation of an library.
+message LibraryDeprecation {
+  // Number of seconds from the Unix epoch (January 1, 1970 at 00:00:00 UTC)
+  // until the SDK was deprecated.
+  int64 deprecation_timestamp_seconds = 1;
+
+  // List of alternative SDKs provided by the SDK developer.
+  // May be empty.
+  repeated AlternativeLibrary alternative_libraries = 2;
+}
+
+// Information about a deprecated library's alternative.
+message AlternativeLibrary {
+  // Library name set by the SDK developer.
+  // If the library is not registered on SDK Console, maven ID will be used.
+  string sdk_name = 1;
+
+  // FIFE URL of the icon of this library.
+  // May be empty.
+  string icon_fife_url = 2;
+
+  // Maven identifier of the alternative library.
+  MavenIdentifier maven_sdk_id = 3;
+}
+
+// Represents a Maven identifier.
+message MavenIdentifier {
+  // Group ID.
+  // Required.
+  string group_id = 1;
+
+  // Artifact ID.
+  // Required.
+  string artifact_id = 2;
 }

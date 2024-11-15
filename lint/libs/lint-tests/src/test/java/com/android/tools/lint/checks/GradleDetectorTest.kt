@@ -8630,7 +8630,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("log4j")
                           .setArtifactId("log4j")
                           .build()
@@ -8720,7 +8720,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("com.example.ads.third.party")
                           .setArtifactId("example")
                           .build()
@@ -9082,7 +9082,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("com.google.android.gms")
                           .setArtifactId("play-services-maps")
                           .build()
@@ -9118,7 +9118,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("androidx.slidingpanelayout")
                           .setArtifactId("slidingpanelayout")
                           .build()
@@ -9158,7 +9158,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("com.example.issues")
                           .setArtifactId("issues-on-latest")
                           .build()
@@ -9213,7 +9213,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        LibraryIdentifier.MavenIdentifier.newBuilder()
+                        MavenIdentifier.newBuilder()
                           .setGroupId("com.example.issues")
                           .setArtifactId("latest-is-preview")
                           .build()
