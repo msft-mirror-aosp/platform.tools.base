@@ -1,18 +1,22 @@
 """Implements shared functions for selective presubmit."""
 
+import collections
 import dataclasses
 import hashlib
+import json
 import logging
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import tempfile
-from typing import Iterator, List, Sequence
+from typing import Iterator, List, Sequence, Set
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import gce
+
 
 _HASH_FILE_BUCKET = 'adt-byob'
 _HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
@@ -21,6 +25,41 @@ _LOCAL_REPOSITORIES = [
     'intellij',
     'native_toolchain',
 ]
+
+
+class SelectivePresubmitError(Exception):
+  """Represents an error obtaining selective presubmit targets."""
+  pass
+
+
+@dataclasses.dataclass
+class ImpactedTarget:
+  """Represents a target from bazel-diff get-impacted-targets."""
+
+  label: str
+  target_distance: int
+  package_distance: int
+
+
+@dataclasses.dataclass
+class TargetsResult:
+  """Represents targets detected as impacted from a Bazel Diff run."""
+
+  targets: List[ImpactedTarget]
+  # baseline_targets is the set of all targets for a CI target, and
+  # has gone through target and tag filtering.
+  baseline_targets: Set[str]
+
+  def all_targets(self) -> List[ImpactedTarget]:
+    """Returns all targets, filtered by baseline targets.
+
+    This is important as it filters out noci:$AB_TARGET_NAME tags, etc.
+    """
+    all_targets = []
+    for target in self.targets:
+      if target.label in self.baseline_targets:
+        all_targets.append(target)
+    return all_targets
 
 
 @dataclasses.dataclass
@@ -32,18 +71,24 @@ class SelectivePresubmitResult:
   flags: List[str]
 
 
-def _generate_hash_file(build_env: bazel.BuildEnv) -> str:
+def _generate_hash_file(
+    build_env: bazel.BuildEnv,
+    deps_output_path: pathlib.Path | None = None,
+) -> str:
   """Generates the hash file for the current build."""
   hash_file_path = os.path.join(build_env.dist_dir, 'bazel-diff-hashes.json')
   bazel_diff.generate_hash_file(
       build_env,
       _LOCAL_REPOSITORIES,
       hash_file_path,
+      deps_output_path=deps_output_path,
   )
   return hash_file_path
 
 
-def _find_impacted_targets(build_env: bazel.BuildEnv) -> List[str] | None:
+def _find_impacted_targets(
+    build_env: bazel.BuildEnv,
+) -> List[ImpactedTarget]:
   """Finds the targets impacted by the current change.
 
   Args:
@@ -52,6 +97,10 @@ def _find_impacted_targets(build_env: bazel.BuildEnv) -> List[str] | None:
   Returns:
     The list of impacted targets if the base hash file was found, or None
     otherwise.
+
+  Raises:
+    SelectivePresubmitError: If there was a problem obtaining the impacted
+    targets.
   """
   with tempfile.TemporaryDirectory() as temp_dir:
     temp_path = pathlib.Path(temp_dir)
@@ -72,35 +121,41 @@ def _find_impacted_targets(build_env: bazel.BuildEnv) -> List[str] | None:
         str(base_hashes),
     )
     if not exists:
-      logging.info('Base hash file %s not found', object_name)
-      return None
+      raise SelectivePresubmitError(f'Base hash file {object_name} not found')
     logging.info('Base hash file %s found', object_name)
 
+    dep_edges = temp_path / 'dep-edges.json'
     try:
-      current_hashes = _generate_hash_file(build_env)
+      current_hashes = _generate_hash_file(build_env, dep_edges)
     except subprocess.TimeoutExpired as e:
-      logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
-      return None
+      raise SelectivePresubmitError(
+          f'generate-hashes timed out after {e.timeout} seconds'
+      )
 
     impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
     bazel_diff.get_impacted_targets(
         build_env,
         base_hashes,
         current_hashes,
+        dep_edges,
         impacted_targets,
     )
-    return impacted_targets.read_text().splitlines()
+    data = json.loads(impacted_targets.read_text())
+    return [
+        ImpactedTarget(
+            label=target['label'], target_distance=target['targetDistance'],
+            package_distance=target['packageDistance'],
+        )
+        for target in data
+    ]
 
 
-def _find_impacted_test_targets(
+def _query_baseline_targets(
     build_env: bazel.BuildEnv,
     base_targets: Sequence[str],
     test_flag_filters: str,
 ) -> List[str]:
-  """Finds the test targets impacted by the current change.
-
-  The comprehensive list of impacted targets found by bazel-diff is filtered
-  using the test flag filters and the base targets.
+  """Queries the targets that match the given filters.
 
   Args:
     build_env: The build environment.
@@ -108,14 +163,8 @@ def _find_impacted_test_targets(
     test_flag_filters: The test flag filters used for filtering.
 
   Returns:
-    A list of targets that should be tested.
+    A list of target labels.
   """
-  targets = _find_impacted_targets(build_env)
-  if targets is None:
-    # If impacted targets could not be generated, use the base targets.
-    logging.info('Using base targets')
-    return base_targets
-
   filters = test_flag_filters.split(',') if test_flag_filters else []
   filters.append('-manual')
 
@@ -143,9 +192,46 @@ def _find_impacted_test_targets(
       + ' except '
       + ' except '.join(exclude_query)
   )
-  result = build_env.bazel_query(query)
+  return build_env.bazel_query(query).stdout.decode('utf-8').splitlines()
 
-  return list(set(targets) & set(result.stdout.decode('utf-8').splitlines()))
+
+def _find_impacted_test_targets(
+    build_env: bazel.BuildEnv,
+    base_targets: Sequence[str],
+    test_flag_filters: str,
+) -> TargetsResult:
+  """Finds the test targets impacted by the current change.
+
+  The comprehensive list of impacted targets found by bazel-diff is filtered
+  using the test flag filters and the base targets.
+
+  Args:
+    build_env: The build environment.
+    base_targets: The base set of targets used for filtering.
+    test_flag_filters: The test flag filters used for filtering.
+
+  Returns:
+    A list of targets that should be tested.
+
+  Raises:
+    SelectivePresubmitError: If there was a problem obtaining the impacted
+    targets.
+  """
+  targets = _find_impacted_targets(build_env)
+  direct_targets = [t for t in targets if t.target_distance == 0]
+  direct_impacted_targets_path = (
+      pathlib.Path(build_env.dist_dir) / 'direct-impacted-targets.txt'
+  )
+  direct_impacted_targets_path.write_text(
+      '\n'.join([t.label for t in direct_targets])
+  )
+  baseline_targets = _query_baseline_targets(
+      build_env, base_targets, test_flag_filters
+  )
+  return TargetsResult(
+      targets=targets,
+      baseline_targets=set(baseline_targets),
+  )
 
 
 def _parse_gerrit_tags(
@@ -238,18 +324,27 @@ def find_test_targets(
     # Add any targets that are explicitly requested.
     explicit_targets.append(value)
 
+  targets_result = None
+  impacted_targets = None
   if use_base_targets:
-    impacted_targets = base_targets
+    target_labels = base_targets
   else:
-    impacted_targets = _find_impacted_test_targets(
-        build_env,
-        base_targets,
-        test_flag_filters,
-    )
+    try:
+      targets_result = _find_impacted_test_targets(
+          build_env,
+          base_targets,
+          test_flag_filters,
+      )
+      impacted_targets = targets_result.all_targets()
+      target_labels = [t.label for t in impacted_targets]
+    except SelectivePresubmitError as e:
+      logging.warning('Failed to find impacted test targets: %s', e)
+      logging.warning('Falling back to testing default targets')
+      target_labels = base_targets
 
-  found = impacted_targets != base_targets
-  impacted_target_count = len(impacted_targets) if found else 0
-  targets = impacted_targets + explicit_targets
+  found = target_labels != base_targets
+  impacted_target_count = len(target_labels) if found else 0
+  targets = target_labels + explicit_targets
   gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
   change = gerrit_changes[0]
   changes_hash = change_set_hash(gerrit_changes)
@@ -268,6 +363,21 @@ def find_test_targets(
       f'--build_metadata=gerrit_change_number={change.change_number}',
       f'--build_metadata=gerrit_change_patchset={change.patchset}',
   ]
+  if targets_result and impacted_targets:
+    target_distances = collections.defaultdict(int)
+    pkg_distances = collections.defaultdict(int)
+    for target in impacted_targets:
+      target_distances[target.target_distance] += 1
+      pkg_distances[target.package_distance] += 1
+    flags.extend([
+          f'--build_metadata=selective_presubmit_target_distance=' + ','.join(
+            [f'({distance}:{count})' for distance, count in target_distances.items()]
+        ),
+          f'--build_metadata=selective_presubmit_package_distance=' + ','.join(
+            [f'({distance}:{count})' for distance, count in pkg_distances.items()]
+        ),
+      ])
+
   if change.topic:
     flags.append(f'--build_metadata=gerrit_topic={change.topic}')
   return SelectivePresubmitResult(

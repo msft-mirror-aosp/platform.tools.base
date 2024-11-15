@@ -12,10 +12,11 @@ def generate_hash_file(
     build_env: bazel.BuildEnv,
     external_repos: Sequence[str],
     output_path: pathlib.Path,
+    deps_output_path: pathlib.Path | None = None,
 ):
   """Generates the hash file for the current build."""
   start = time.time()
-  build_env.bazel_run(
+  args = [
       '//tools/base/bazel:bazel-diff',
       '--',
       '--verbose',
@@ -26,7 +27,12 @@ def generate_hash_file(
       build_env.workspace_dir,
       '--fineGrainedHashExternalRepos',
       ','.join(external_repos),
-      str(output_path),
+  ]
+  if deps_output_path:
+    args.extend(['--depEdgesFile', deps_output_path])
+  args.append(str(output_path))
+  build_env.bazel_run(
+      *args,
       timeout=600,
   )
   end = time.time()
@@ -37,6 +43,7 @@ def get_impacted_targets(
     build_env: bazel.BuildEnv,
     starting_hashes_path: str,
     final_hashes_path: str,
+    dep_edges_path: pathlib.Path,
     output_path: pathlib.Path,
 ) -> None:
   """Generates the list of impacted targets given base and current hash file paths."""
@@ -50,6 +57,8 @@ def get_impacted_targets(
       starting_hashes_path,
       '--finalHashes',
       final_hashes_path,
+      '--depEdgesFile',
+      str(dep_edges_path),
       '--output',
       str(output_path),
       timeout=300,

@@ -1,13 +1,12 @@
 """Tests for presubmit."""
 
+import json
 import pathlib
-import subprocess
 from typing import Iterable, List
 from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
-
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import fake_build_env
@@ -24,23 +23,30 @@ class PresubmitTest(parameterized.TestCase):
         build_env: bazel.BuildEnv,
         external_repos: Iterable[str],
         path: str,
+        deps_output_path: pathlib.Path | None = None,
     ) -> None:
       del build_env, external_repos
       pathlib.Path(path).write_text(contents)
+
     return self.enter_context(
-        mock.patch.object(bazel_diff, 'generate_hash_file', side_effect=func))
+        mock.patch.object(bazel_diff, 'generate_hash_file', side_effect=func)
+    )
 
   def _mock_get_impacted_targets(self, targets: List[str]) -> mock.Mock:
     def func(
         build_env: bazel.BuildEnv,
         starting_hashes_path: str,
         final_hashes_path: str,
+        dep_edges_path: pathlib.Path,
         output_path: pathlib.Path,
     ) -> None:
       del build_env, starting_hashes_path, final_hashes_path
-      output_path.write_text('\n'.join(targets))
+      out = [{'label': target, 'targetDistance': 0, 'packageDistance': 0} for target in targets]
+      output_path.write_text(json.dumps(out))
+
     return self.enter_context(
-        mock.patch.object(bazel_diff, 'get_impacted_targets', side_effect=func))
+        mock.patch.object(bazel_diff, 'get_impacted_targets', side_effect=func)
+    )
 
   def setUp(self):
     super().setUp()
@@ -61,6 +67,7 @@ class PresubmitTest(parameterized.TestCase):
         self.build_env,
         presubmit._LOCAL_REPOSITORIES,
         mock.ANY,
+        deps_output_path=None,
     )
 
   def test_change_set_hash(self):
@@ -74,7 +81,7 @@ class PresubmitTest(parameterized.TestCase):
             message='message',
             topic='topic',
             tags=[],
-      ),
+        ),
     ]
     self.assertEqual(
         presubmit.change_set_hash(changes),
@@ -133,7 +140,9 @@ class PresubmitTest(parameterized.TestCase):
   ):
     self._mock_generate_hash_file('hash-file')
     self._mock_get_impacted_targets(impacted_targets)
-    self.build_env.bazel_query.return_value.stdout = '\n'.join(query_targets).encode('utf-8')
+    self.build_env.bazel_query.return_value.stdout = '\n'.join(
+        query_targets
+    ).encode('utf-8')
 
     parent_hash_path = self.build_env.tmp_path / 'parent.json'
     parent_hash_path.write_text('parent-hash-file')
@@ -152,7 +161,7 @@ class PresubmitTest(parameterized.TestCase):
     )
     self.assertEqual(targets.found, expected_found)
     self.assertEqual(set(targets.targets), set(expected_targets))
-    self.assertEqual(targets.flags, [
+    expected_flags = [
         f'--build_metadata=selective_presubmit_found={expected_found}',
         f'--build_metadata=selective_presubmit_impacted_target_count={expected_selected_target_count}',
         '--build_metadata=gerrit_change_set_hash=15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b',
@@ -161,27 +170,38 @@ class PresubmitTest(parameterized.TestCase):
         '--build_metadata=gerrit_change_number=0',
         '--build_metadata=gerrit_change_patchset=0',
         '--build_metadata=gerrit_topic=topic',
-    ])
+    ]
     if expected_found:
-      self.build_env.bazel_query.assert_called_once_with(
-          'base_target1 union '
-          'attr(tags, "includefilter", base_target1) union '
-          'base_target2 union '
-          'attr(tags, "includefilter", base_target2) except '
-          'attr(tags, "excludefilter", base_target1) except '
-          'attr(tags, "manual", base_target1) except '
-          'attr(target_compatible_with, "@platforms//:incompatible", base_target1) except '
-          'attr(tags, "excludefilter", base_target2) except '
-          'attr(tags, "manual", base_target2) except '
-          'attr(target_compatible_with, "@platforms//:incompatible", base_target2)',
+      expected_flags.extend([
+          f'--build_metadata=selective_presubmit_target_distance=(0:{expected_selected_target_count})',
+          f'--build_metadata=selective_presubmit_package_distance=(0:{expected_selected_target_count})',
+      ])
+    self.assertSameElements(
+        targets.flags,
+        expected_flags,
+    )
+    if expected_found:
+      self.build_env.bazel_query.assert_called_with(
+          'base_target1 union attr(tags, "includefilter", base_target1) union'
+          ' base_target2 union attr(tags, "includefilter", base_target2) except'
+          ' attr(tags, "excludefilter", base_target1) except attr(tags,'
+          ' "manual", base_target1) except attr(target_compatible_with,'
+          ' "@platforms//:incompatible", base_target1) except attr(tags,'
+          ' "excludefilter", base_target2) except attr(tags, "manual",'
+          ' base_target2) except attr(target_compatible_with,'
+          ' "@platforms//:incompatible", base_target2)',
       )
 
   def test_generate_runs_per_test_flags(self):
-    self.gce.add_change('owner', 'message', [
-        ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
-        ('Presubmit-Runs-Per-Test', 'target2@20'),
-        ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
-    ])
+    self.gce.add_change(
+        'owner',
+        'message',
+        [
+            ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
+            ('Presubmit-Runs-Per-Test', 'target2@20'),
+            ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
+        ],
+    )
     self.assertEqual(
         presubmit.generate_runs_per_test_flags(self.build_env),
         ['--runs_per_test=target1@10', '--runs_per_test=target2@20'],
