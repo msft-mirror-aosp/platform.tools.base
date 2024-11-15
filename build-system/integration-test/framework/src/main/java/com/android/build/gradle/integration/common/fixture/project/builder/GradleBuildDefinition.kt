@@ -104,6 +104,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         path: String,
         action: GradleProjectDefinition.() -> Unit
     ): GradleProjectDefinition {
+        if (path == ":") return rootProject
+
         val project = subProjects.computeIfAbsent(path) {
             GradleProjectDefinitionImpl(it)
         }
@@ -123,6 +125,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         path: String,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be an android project")
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidApplicationDefinitionImpl(it)
         }
@@ -141,6 +145,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         path: String,
         action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
     ): AndroidProjectDefinition<LibraryExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be an android project")
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidLibraryDefinitionImpl(it)
         }
@@ -158,6 +164,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         path: String,
         action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
     ): AndroidProjectDefinition<DynamicFeatureExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be an android project")
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidDynamicFeatureDefinitionImpl(it)
         }

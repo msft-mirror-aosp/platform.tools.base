@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
@@ -32,45 +33,41 @@ import org.junit.Test
 class FlavouredDependencyModelTest: ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-
-        subProject(":lib1") {
-            plugins.add(PluginType.ANDROID_LIB)
+    val rule = GradleRule.from {
+        androidLibrary(":lib1") {
             android {
-                defaultCompileSdk()
+                flavorDimensions += listOf("model", "market")
                 productFlavors {
-                    named("basic") { dimension = "model" }
-                    named("pro") { dimension = "model" }
-                    named("play") { dimension = "market" }
-                    named("other") { dimension = "market" }
+                    create("basic") { it.dimension = "model" }
+                    create("pro") { it.dimension = "model" }
+                    create("play") { it.dimension = "market" }
+                    create("other") { it.dimension = "market" }
                 }
             }
             dependencies {
                 implementation(project(":lib2"))
             }
         }
-        subProject("lib2") {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(":lib2") {
             android {
-                defaultCompileSdk()
+                flavorDimensions += listOf("model", "market")
                 productFlavors {
-                    named("basic") { dimension = "model" }
-                    named("pro") { dimension = "model" }
-                    named("play") { dimension = "market" }
-                    named("other") { dimension = "market" }
+                    create("basic") { it.dimension = "model" }
+                    create("pro") { it.dimension = "model" }
+                    create("play") { it.dimension = "market" }
+                    create("other") { it.dimension = "market" }
                 }
             }
             dependencies {
                 implementation(project(":lib3"))
             }
         }
-        subProject("lib3") {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(":lib3") {
             android {
-                defaultCompileSdk()
+                flavorDimensions += listOf("market")
                 productFlavors {
-                    named("play") { dimension = "market" }
-                    named("other") { dimension = "market" }
+                    create("play") { it.dimension = "market" }
+                    create("other") { it.dimension = "market" }
                 }
             }
         }
@@ -78,7 +75,7 @@ class FlavouredDependencyModelTest: ModelComparator() {
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "basicPlayDebug")
 

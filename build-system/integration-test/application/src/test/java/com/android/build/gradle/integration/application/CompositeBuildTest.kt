@@ -16,16 +16,12 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.TestUtils
-import com.android.testutils.truth.ZipFileSubject
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,14 +29,13 @@ import org.junit.Test
 class CompositeBuildTest {
 
     @get:Rule
-    val app = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            HelloWorldAndroid.setupJava(files)
             android {
-                setUpHelloWorld()
                 buildTypes {
                     named("debug") {
-                        testCoverageEnabled = true
+                        it.isTestCoverageEnabled = true
                     }
                 }
             }
@@ -55,29 +50,21 @@ class CompositeBuildTest {
                 group = "com.example"
                 version = "1.0"
                 plugins.add(PluginType.JAVA_LIBRARY)
-                addFile("gradle.properties",
+                files.add("gradle.properties",
                     """
                         org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}
                     """.trimIndent())
             }
         }
         includedBuild("androidLib") {
-            subProject(":androidLib1") {
-                plugins.add(PluginType.ANDROID_LIB)
+            androidLibrary(":androidLib1") {
                 group = "com.example"
                 version = "1.0"
-                android {
-                    defaultCompileSdk()
-                }
             }
 
-            subProject(":androidLib2") {
-                plugins.add(PluginType.ANDROID_LIB)
+            androidLibrary(":androidLib2") {
                 group = "com.example"
                 version = "1.0"
-                android {
-                    defaultCompileSdk()
-                }
             }
         }
     }
@@ -88,20 +75,25 @@ class CompositeBuildTest {
 
     @Test
     fun assembleDebug() {
-        app.executor()
+        val build = rule.build
+        build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":assembleDebug")
-        ZipFileSubject.assertThat(
-            app.getApkAsFile(GradleTestProject.ApkType.DEBUG)
-        ) { it.exists() }
+            .run(":app:assembleDebug")
+
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            exists()
+        }
     }
 
     @Test
     fun assembleDebugWithConfigureOnDemand() {
-        app.executor().withArgument("--configure-on-demand").run(":assembleDebug")
-        ZipFileSubject.assertThat(
-            app.getApkAsFile(GradleTestProject.ApkType.DEBUG)
-        ) { it.exists() }
+        val build = rule.build
+
+        build.executor.withArgument("--configure-on-demand").run(":app:assembleDebug")
+
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            exists()
+        }
     }
 
     /**
@@ -109,8 +101,8 @@ class CompositeBuildTest {
      */
     @Test
     fun lintDebug() {
-        app.executor()
+        rule.build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":lintDebug")
+            .run(":app:lintDebug")
     }
 }

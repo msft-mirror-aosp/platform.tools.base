@@ -32,7 +32,7 @@ class BasicDslProxyTest {
     @Test
     fun basicTest() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("address", Address::class.java) {
+        contentHolder.runNestedBlock("address", listOf(), Address::class.java) {
             street = "1600 Amphitheatre Parkway"
             city = "Mountain View"
             zipCode = 94043
@@ -53,7 +53,7 @@ class BasicDslProxyTest {
     @Test
     fun nestedTest() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("person", Person::class.java) {
+        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             surname = null
             age = 17
@@ -104,7 +104,7 @@ class BasicDslProxyTest {
     @Test
     fun chainedBlockUsage() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("california", California::class.java) {
+        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.mayor {
                 name = "bob"
                 address.street = "1600 Amphitheatre Parkway"
@@ -127,7 +127,7 @@ class BasicDslProxyTest {
     @Test
     fun methodCall() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("person", Person::class.java) {
+        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"
             sendMessage("Hello!")
             something("one", "two")

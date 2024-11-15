@@ -28,7 +28,7 @@ class CollectionDslProxyTest {
     @Test
     fun listAdd() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("town", Town::class.java) {
+        contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
             places += "Post Office"
         }
 
@@ -45,7 +45,7 @@ class CollectionDslProxyTest {
     @Test
     fun listAddAll() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("town", Town::class.java) {
+        contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
             places += listOf("Post Office", "City Hall")
         }
 
@@ -72,7 +72,7 @@ class CollectionDslProxyTest {
     @Test
     fun chainedListUsage() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("california", California::class.java) {
+        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.places += listOf("Post Office", "City Hall")
         }
 

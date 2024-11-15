@@ -173,7 +173,10 @@ class GradleRule internal constructor(
      * For included builds, the location is the modified [location] so that `projectDir` is updated to be
      * the included directory.
      */
-    private fun computeGradleBuild(build: GradleBuildDefinitionImpl, location: ProjectLocation): GradleBuild {
+    private fun computeGradleBuild(
+        build: GradleBuildDefinitionImpl,
+        location: ProjectLocation
+    ): GradleBuild {
         val rootFolder = location.projectDir.toPath()
 
         val includedBuilds = build.includedBuilds.values.associate {

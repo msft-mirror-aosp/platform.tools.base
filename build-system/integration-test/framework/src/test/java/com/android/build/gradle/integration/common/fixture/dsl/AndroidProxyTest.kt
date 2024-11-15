@@ -31,7 +31,7 @@ class AndroidProxyTest {
     @Test
     fun testApplication() {
         val contentHolder = DefaultDslContentHolder()
-        contentHolder.runNestedBlock("android", ApplicationExtension::class.java) {
+        contentHolder.runNestedBlock("android", listOf(), ApplicationExtension::class.java) {
             namespace = "foo"
 
             androidResources {
@@ -46,6 +46,12 @@ class AndroidProxyTest {
                 abi {
                     reset()
                     include("x86", "armeabi")
+                }
+            }
+
+            buildTypes {
+                named("debug") {
+                    it.isDebuggable = false
                 }
             }
         }
@@ -65,6 +71,11 @@ class AndroidProxyTest {
                 abi {
                   reset()
                   include('x86', 'armeabi')
+                }
+              }
+              buildTypes {
+                named('debug') {
+                  debuggable = false
                 }
               }
             }

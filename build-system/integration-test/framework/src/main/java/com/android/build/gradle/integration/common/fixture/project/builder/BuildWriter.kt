@@ -49,7 +49,10 @@ interface BuildWriter {
     fun rawMethod(name: String, params: List<Pair<String, Any>>): RawString
 
     /** Writes a block with a sub item */
+    fun <T> block(name: String, parameters: List<Any>, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
+    /** Writes a block with a sub item, and parameters passed to the block */
     fun <T> block(name: String, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
+    /** Writes a block without an item or parameters */
     fun block(name: String, action: BuildWriter.() -> Unit): BuildWriter
 
     /**
@@ -266,17 +269,36 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
 
     override fun <T> block(
         name: String,
+        parameters: List<Any>,
         item: T,
         action: BuildWriter.(T) -> Unit
     ): BuildWriter {
         val blockBuilder = newBuilder(indentLevel + 2)
 
-        indent().put(name).put(" {").endLine()
+        val writer = indent().put(name)
+
+        if (parameters.isNotEmpty()) {
+            writer
+                .put('(')
+                .put(parameters.joinToString(separator = ", ") { it.toFormattedString(false) })
+                .put(')')
+        }
+
+        writer.put(" {").endLine()
+
         action(blockBuilder, item)
         flatten(blockBuilder)
 
         indent().put('}').endLine()
         return this
+    }
+
+    override fun <T> block(
+        name: String,
+        item: T,
+        action: BuildWriter.(T) -> Unit
+    ): BuildWriter {
+        return block(name, listOf(), item, action)
     }
 
     override fun block(

@@ -28,7 +28,8 @@ class DslContentHolderTest {
     fun simple() {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
-            "address",
+            name = "address",
+            parameters = listOf(),
             instanceProvider = { AddressImpl(it) }
         ) {
             street = "foo"
@@ -53,6 +54,7 @@ class DslContentHolderTest {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
+            parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
         ) {
             name = "bob"
@@ -87,6 +89,7 @@ class DslContentHolderTest {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
+            parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
         ) {
             name = "bob"
@@ -107,6 +110,7 @@ class DslContentHolderTest {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
+            parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
         ) {
             name = "bo"
@@ -147,6 +151,7 @@ class DslContentHolderTest {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
+            parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
         ) {
             name = "bob"
@@ -173,6 +178,7 @@ class DslContentHolderTest {
         val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
+            parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
         ) {
             name = "bob"
@@ -233,6 +239,7 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
     override fun address(action: Address.() -> Unit) {
         (dslContentHolder as DefaultDslContentHolder).runNestedBlock(
             "address",
+            parameters = listOf(),
             { AddressImpl(it) }
         ) {
             action()

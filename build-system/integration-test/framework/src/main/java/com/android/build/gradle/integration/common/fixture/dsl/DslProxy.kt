@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.ProductFlavor
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -47,6 +49,13 @@ class DslProxy private constructor(
             theClass: Class<T>,
             contentHolder: DslContentHolder,
         ): T {
+            if (ProductFlavor::class.java.isAssignableFrom(theClass)) {
+                return ManualProxy.createManualProxy(
+                    theInterface = theClass,
+                    DslProxy(theClass, contentHolder)
+                )
+            }
+
             @Suppress("UNCHECKED_CAST")
             return Proxy.newProxyInstance(
                 DslProxy::class.java.classLoader,
@@ -210,15 +219,76 @@ class DslProxy private constructor(
             val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
 
             ownerClass.classLoader.loadClass(resolvedType.typeName)
+        } else if (blockTypeValue is ParameterizedType) {
+            // handle the container case. In this case, we need not the type of the container
+            // but the type that the container handles.
+            if (blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
+                // there should be a single type param for a container.
+                val containerTypeParam = blockTypeValue.actualTypeArguments.first()
+
+                // right now our type params in container are type variables. This
+                // may change in the future.
+                if (containerTypeParam is TypeVariable<*>) {
+                    // search in the class that defined the method for the index of the type param for
+                    // the type used in the function.
+                    val ownerClass = method.declaringClass
+                    val index = findTypeParameterIndex(ownerClass, containerTypeParam.name)
+
+                    // get the same info on the proxied interface to get the final type, and find the
+                    // type from the same index.
+                    val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
+
+                    ownerClass.classLoader.loadClass(resolvedType.typeName)
+                } else {
+                    method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
+                }
+            } else {
+                throw RuntimeException("Unsupported ParameterizedType in block function")
+            }
         } else {
             method.declaringClass.classLoader.loadClass(blockTypeValue.typeName)
         }
 
-        // run the nested block
-        contentHolder.runNestedBlock(method.name, blockTypeClass) {
-            @Suppress("UNCHECKED_CAST")
-            (args[0] as Function1<Any,*>).invoke(this)
+        // Now that we have resolved all the types, we can call into the nested block.
+        // Build Type and Product Flavor handle their block differently as the
+        // inner type is a specific container that has to create the build type or flavor
+        // themselves, so there's 2 layers inside this method really.
+        when (method.name) {
+            "buildTypes" -> {
+                // content holder has a special API for build type container.
+                // The provided type is not the type of the container but the type handled
+                // by the container.
+                @Suppress("UNCHECKED_CAST")
+                contentHolder.buildTypes(blockTypeClass as Class<BuildType>) {
+                    // calls into the function configuring the container.
+                    // `this` here is the nested block (container)
+                    @Suppress("UNCHECKED_CAST")
+                    (args[0] as Function1<Any,*>).invoke(this)
+                }
+            }
+            "productFlavors" -> {
+                // content holder has a special API for flavor container.
+                // The provided type is not the type of the container but the type handled
+                // by the container.
+                @Suppress("UNCHECKED_CAST")
+                contentHolder.productFlavors(blockTypeClass as Class<ProductFlavor>) {
+                    // calls into the function configuring the container.
+                    // `this` here is the nested block (container)
+                    @Suppress("UNCHECKED_CAST")
+                    (args[0] as Function1<Any,*>).invoke(this)
+                }
+            }
+            else -> {
+                // Normal nested block. the provided type is the direct nested block type.
+                contentHolder.runNestedBlock(method.name, listOf(), blockTypeClass) {
+                    // calls into the function configuring the nested block
+                    // `this` here is the nested block
+                    @Suppress("UNCHECKED_CAST")
+                    (args[0] as Function1<Any,*>).invoke(this)
+                }
+            }
         }
+
 
         return true
     }
