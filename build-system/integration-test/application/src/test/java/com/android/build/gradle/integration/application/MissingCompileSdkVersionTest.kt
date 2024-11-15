@@ -77,9 +77,12 @@ class MissingCompileSdkVersionTest {
             syncIssues.filter { it.type == SyncIssue.TYPE_COMPILE_SDK_VERSION_NOT_SET }
         assertThat(compileSdkNotSetSyncIssues).hasSize(1)
         val compileSdkIssue = compileSdkNotSetSyncIssues.elementAt(0)
-        assertThat(compileSdkIssue.message).isEqualTo(
-            "compileSdkVersion is not specified. Please add it to build.gradle"
-        )
+        val issueMessage = compileSdkIssue.message.replace(project.projectDir.path, "<PATH>")
+        assertThat(issueMessage).isEqualTo("""
+            Android Gradle Plugin has been applied at the root build file. Please consider not applying in the root (use `apply false`). Read more https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl
+
+            To continue with the plugin in the resolved and applied state, specify `compileSdk` in build.gradle (<PATH>${File.separator}build.gradle).
+        """.trimIndent())
 
         val missingSdkPackageSyncIssues =
             syncIssues.filter { it.type == SyncIssue.TYPE_MISSING_SDK_PACKAGE }

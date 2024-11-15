@@ -619,11 +619,22 @@ abstract class BasePlugin<
                     ?: ("android-" + SdkVersionInfo.HIGHEST_KNOWN_STABLE_API)
                 extension.compileSdkVersion = newCompileSdkVersion
             }
+            val message = if (project.parent == null) {
+                """
+                    Android Gradle Plugin has been applied at the root build file. Please consider not applying in the root (use `apply false`). Read more https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl
+
+                    To continue with the plugin in the resolved and applied state, specify `compileSdk` in ${project.buildFile.name} (${project.buildFile.path}).
+                """.trimIndent()
+            } else {
+                """
+                    Android Gradle Plugin: ${project.displayName} does not specify `compileSdk` in ${project.buildFile.name} (${project.buildFile.path}).
+                """.trimIndent()
+            }
             dslServices
                 .issueReporter
                 .reportError(
                     Type.COMPILE_SDK_VERSION_NOT_SET,
-                    "compileSdkVersion is not specified. Please add it to build.gradle"
+                    message
                 )
         }
 
