@@ -41,6 +41,8 @@ class GradleProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
+            buildFileOnly = false,
+            allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
         )
 
@@ -61,6 +63,8 @@ class GradleProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
+            buildFileOnly = false,
+            allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
         )
 
@@ -82,6 +86,8 @@ class GradleProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
+            buildFileOnly = false,
+            allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
         )
 

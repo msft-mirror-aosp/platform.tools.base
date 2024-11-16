@@ -51,6 +51,7 @@ kotlin_library(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     ],
 )
 

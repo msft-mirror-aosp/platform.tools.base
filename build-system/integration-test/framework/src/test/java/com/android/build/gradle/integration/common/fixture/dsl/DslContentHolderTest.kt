@@ -246,7 +246,7 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
         }
     }
 
-    override fun sendMessage(message: String) {
+    override fun sendMessage(message: String?) {
         dslContentHolder.call("sendMessage", listOf(message),false)
     }
 

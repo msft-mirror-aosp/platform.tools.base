@@ -49,7 +49,7 @@ class CompositeBuildTest {
             rootProject {
                 group = "com.example"
                 version = "1.0"
-                plugins.add(PluginType.JAVA_LIBRARY)
+                applyPlugin(PluginType.JAVA_LIBRARY)
                 files.add("gradle.properties",
                     """
                         org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}

@@ -65,6 +65,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class AppFoo
@@ -76,6 +77,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class KotlinAppFoo
@@ -96,6 +98,7 @@ class BuiltInKotlinForAppTest {
         app.file("src/androidTest/java/AppFooTest.kt")
             .let {
                 it.parentFile.mkdirs()
+                //language=kotlin
                 it.writeText(
                     """
                         package com.foo.application
@@ -107,6 +110,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class KotlinAppFooTest
@@ -136,6 +140,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application.test
 
@@ -181,6 +186,7 @@ class BuiltInKotlinForAppTest {
         app.file("src/screenshotTest/kotlin/AppScreenshotTestFoo.kt").let {
             it.parentFile.mkdirs()
             it.writeText(
+                //language=kotlin
                 """
                     package com.foo.application
                     class AppScreenshotTestFoo
@@ -190,6 +196,7 @@ class BuiltInKotlinForAppTest {
         app.getMainSrcDir("java").resolve("AppFoo.kt").let {
             it.parentFile.mkdirs()
             it.writeText(
+                //language=kotlin
                 """
                     package com.foo.application
                     class AppFoo
@@ -208,6 +215,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class AppFoo {
@@ -220,6 +228,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class AppFooTest {
@@ -239,6 +248,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.library
                         open class LibFoo
@@ -251,6 +261,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class AppFoo: com.foo.library.LibFoo()
@@ -272,6 +283,7 @@ class BuiltInKotlinForAppTest {
                 it.mkdirs()
                 it.resolve("AppJavaFoo.java")
                     .writeText(
+                        //language=java
                         """
                             package com.foo.application;
                             public class AppJavaFoo {
@@ -281,6 +293,7 @@ class BuiltInKotlinForAppTest {
                     )
                 it.resolve("AppKotlinFoo.kt")
                     .writeText(
+                        //language=kotlin
                         """
                             package com.foo.application
                             class AppKotlinFoo: AppJavaFoo()
@@ -288,6 +301,7 @@ class BuiltInKotlinForAppTest {
                     )
                 it.resolve("AppKotlinBar.kt")
                     .writeText(
+                        //language=kotlin
                         """
                             package com.foo.application
                             class AppKotlinBar {
@@ -323,6 +337,7 @@ class BuiltInKotlinForAppTest {
             .let {
                 it.parentFile.mkdirs()
                 it.writeText(
+                    //language=kotlin
                     """
                         package com.foo.application
                         class AppFoo

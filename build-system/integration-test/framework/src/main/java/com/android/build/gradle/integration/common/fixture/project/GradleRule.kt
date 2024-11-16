@@ -70,7 +70,6 @@ class GradleRule internal constructor(
     private val sdkConfiguration: SdkConfiguration,
     private val gradleOptions: GradleOptions,
     private val gradleProperties: List<String>,
-
 ): TestRule {
     private var status = Status.PENDING
 
@@ -192,30 +191,44 @@ class GradleRule internal constructor(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     definition.namespace,
-                    buildWriter
+                    buildWriter,
+                    build
                 )
 
                 is AndroidLibraryDefinitionImpl -> definition.path to AndroidLibraryImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     definition.namespace,
-                    buildWriter
+                    buildWriter,
+                    build
                 )
 
                 is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     definition.namespace,
-                    buildWriter
+                    buildWriter,
+                    build
                 )
 
-                else -> definition.path to GradleProjectImpl(computeSubProjectPath(rootFolder, definition.path))
+                else -> definition.path to GradleProjectImpl(
+                    computeSubProjectPath(rootFolder, definition.path),
+                    definition,
+                    build
+                )
             }
         }
 
         return GradleBuildImpl(
             rootFolder,
-            subProjects = subProjects + mapOf(":" to GradleProjectImpl(computeSubProjectPath(rootFolder, ":"))),
+            subProjects = subProjects + mapOf(
+                ":" to GradleProjectImpl(
+                    computeSubProjectPath(
+                        rootFolder,
+                        ":"
+                    ), build.rootProject, build
+                )
+            ),
             includedBuilds = includedBuilds,
             executorProvider = { instantiateExecutor(location) },
             modelBuilderProvider = { instantiateModelBuilder(location) },

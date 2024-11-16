@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.ProductFlavor
+import org.gradle.api.provider.Property
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -163,6 +164,7 @@ class DslProxy private constructor(
         val returnValue = when (method.returnType) {
             MutableList::class.java -> contentHolder.getList(propName)
             MutableSet::class.java -> contentHolder.getSet(propName)
+            Property::class.java -> contentHolder.getProperty(propName)
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
                     return GetterResult(true, namespace)

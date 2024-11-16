@@ -17,7 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
@@ -37,6 +39,8 @@ interface GradleProject: TemporaryProjectModification.FileProvider {
  */
 internal open class GradleProjectImpl(
     final override val location: Path,
+    open protected val projectDefinition: BaseGradleProjectDefinition,
+    protected val parentBuild: GradleBuildDefinitionImpl,
 ): GradleProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)

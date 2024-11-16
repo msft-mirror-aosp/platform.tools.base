@@ -21,6 +21,7 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilderImpl
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -209,8 +210,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     ) {
         location.createDirectories()
 
-        // gather all the plugins so that the settings file can declare them as needed.
-        val allPlugins = (subProjects.values.flatMap { it.plugins } + rootProject.plugins).toSet()
+        // gather all the plugins and all their versions so that the settings file can declare them as needed.
+        val allPlugins = computeAllPluginMap()
 
         // write settings with the list of plugins
         settings.write(
@@ -227,6 +228,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
+                allPlugins,
                 buildWriter
             )
         }
@@ -235,6 +237,20 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         includedBuilds.values.forEach {
             it.write(location.resolve(it.name), repositories, buildWriter)
         }
+    }
+
+    internal fun computeAllPluginMap(): Map<PluginType, Set<String>> {
+        val allPlugins = mutableMapOf<PluginType, Set<String>>()
+        (subProjects.values + rootProject).forEach { project ->
+            project.plugins.entries.forEach { entry ->
+                val set = allPlugins.computeIfAbsent(entry.key) {
+                    mutableSetOf()
+                } as MutableSet<String>
+
+                set.add(entry.value)
+            }
+        }
+        return allPlugins
     }
 }
 

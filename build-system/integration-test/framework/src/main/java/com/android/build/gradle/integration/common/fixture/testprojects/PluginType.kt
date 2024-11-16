@@ -73,17 +73,18 @@ sealed class PluginType(
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KSP: PluginType(
-            id = "com.google.devtools.ksp",
-            isKotlin = true,
-            useNewDsl = true,
-            last = true,
-            version = TestUtils.KSP_VERSION_FOR_TESTS
+        id = "com.google.devtools.ksp",
+        isKotlin = true,
+        useNewDsl = true,
+        last = true,
+        version = TestUtils.KSP_VERSION_FOR_TESTS
     )
     object KOTLIN_MPP: PluginType(
         id = "org.jetbrains.kotlin.multiplatform",
         oldId = "kotlin-multiplatform",
         isKotlin = true,
-        last = true
+        last = true,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object ANDROID_APP: PluginType(
         id = "com.android.application",
@@ -147,6 +148,7 @@ sealed class PluginType(
         id = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
         isAndroid = true,
         useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object JETBRAINS_KOTLIN_ANDROID: PluginType(
         id = KOTLIN_ANDROID_PLUGIN_ID,

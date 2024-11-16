@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aar
@@ -124,10 +125,12 @@ interface AndroidProject<T: CommonExtension<*, *, *, *, *, *>>: GradleProject {
  */
 internal abstract class AndroidProjectImpl<T: CommonExtension<*, *, *, *, *, *>>(
     location: Path,
+    localProjectDefinition: AndroidProjectDefinition<T>,
     final override val namespace: String,
-): GradleProjectImpl(location), AndroidProject<T> {
+    parentBuild: GradleBuildDefinitionImpl,
+): GradleProjectImpl(location, localProjectDefinition, parentBuild), AndroidProject<T> {
 
-    protected abstract val projectDefinition: AndroidProjectDefinition<T>
+    override abstract val projectDefinition: AndroidProjectDefinition<T>
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
 
@@ -190,7 +193,8 @@ internal class AndroidApplicationImpl(
     override val projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
-): AndroidProjectImpl<ApplicationExtension>(location, namespace) {
+    parentBuild: GradleBuildDefinitionImpl,
+): AndroidProjectImpl<ApplicationExtension>(location, projectDefinition, namespace, parentBuild) {
 
     override fun reconfigure(
         buildFileOnly: Boolean,
@@ -198,8 +202,11 @@ internal class AndroidApplicationImpl(
     ) {
         action(projectDefinition)
 
+        // we need to query the other projects for their plugins
+        val allPlugins = parentBuild.computeAllPluginMap()
+
         projectDefinition as AndroidProjectDefinitionImpl<ApplicationExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
+        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
     }
 
     override fun <T> withAar(aarSelector: AarSelector, action: Aar.() -> T): T {
@@ -220,7 +227,8 @@ internal class AndroidLibraryImpl(
     override val projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
-): AndroidProjectImpl<LibraryExtension>(location, namespace) {
+    parentBuild: GradleBuildDefinitionImpl,
+): AndroidProjectImpl<LibraryExtension>(location, projectDefinition, namespace, parentBuild) {
 
     override fun reconfigure(
         buildFileOnly: Boolean,
@@ -228,8 +236,11 @@ internal class AndroidLibraryImpl(
     ) {
         action(projectDefinition)
 
+        // we need to query the other projects for their plugins
+        val allPlugins = parentBuild.computeAllPluginMap()
+
         projectDefinition as AndroidProjectDefinitionImpl<LibraryExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
+        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
     }
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
@@ -281,7 +292,8 @@ internal class AndroidFeatureImpl(
     override val projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
-): AndroidProjectImpl<DynamicFeatureExtension>(location, namespace) {
+    parentBuild: GradleBuildDefinitionImpl,
+): AndroidProjectImpl<DynamicFeatureExtension>(location, projectDefinition, namespace, parentBuild) {
 
     override fun reconfigure(
         buildFileOnly: Boolean,
@@ -289,8 +301,11 @@ internal class AndroidFeatureImpl(
     ) {
         action(projectDefinition)
 
+        // we need to query the other projects for their plugins
+        val allPlugins = parentBuild.computeAllPluginMap()
+
         projectDefinition as AndroidProjectDefinitionImpl<DynamicFeatureExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, buildWriter)
+        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
     }
 
     override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {

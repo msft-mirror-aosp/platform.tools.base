@@ -135,24 +135,35 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
 
-    private fun Any?.toFormattedString(isVarArg: Boolean = false): String = when (this) {
-        null -> "null"
-        is String -> quoteString(this)
-        is BuildWriter.RawString -> value
-        is Array<*> -> {
-            val allItems = joinToString(separator = ", ") { it ->
-                it.toFormattedString()
-            }
+    private fun Any?.toFormattedString(isVarArg: Boolean = false): String {
 
-            // var args, we're going to expect these to be at the end, and all we'll do
-            // is add all of them
-            if (!isVarArg) {
-                arrayOf(allItems)
-            } else {
-                allItems
-            }
+        // have to check this outside of when due to scope conflict between the
+        // this for this method and the this of the builder.
+        val enum = this?.javaClass?.isEnum ?: false
+        if (enum) {
+            return "${this?.javaClass?.typeName}.$this"
         }
-        else -> toString()
+
+        return when (this) {
+            null -> "null"
+            is String -> quoteString(this)
+            is BuildWriter.RawString -> value
+            is Array<*> -> {
+                val allItems = joinToString(separator = ", ") { it ->
+                    it.toFormattedString()
+                }
+
+                // var args, we're going to expect these to be at the end, and all we'll do
+                // is add all of them
+                if (!isVarArg) {
+                    arrayOf(allItems)
+                } else {
+                    allItems
+                }
+            }
+            else -> toString()
+
+        }
     }
 
     override fun set(name: String, value: Any?): BuildWriter {

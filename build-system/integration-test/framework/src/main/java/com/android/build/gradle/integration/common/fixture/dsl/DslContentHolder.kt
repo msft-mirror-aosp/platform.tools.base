@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import org.gradle.api.provider.Property
 
 /**
  * Class that contains the actual content of a DSL class that's generated on the fly.
@@ -65,6 +66,8 @@ interface DslContentHolder {
      * Returns a proxied [MutableList]
      */
     fun getList(name: String): MutableList<*>
+
+    fun getProperty(name: String): Property<Any>
 
     /**
      * Returns a proxied [MutableSet]
@@ -179,6 +182,10 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
     override fun getList(name: String): MutableList<*> {
         return ListProxy<Any>(name, this)
+    }
+
+    override fun getProperty(name: String): Property<Any> {
+        return PropertyProxy<Any>(name, this)
     }
 
     override fun getSet(name: String): MutableSet<*> {
@@ -378,6 +385,10 @@ internal class ChainedDslContentHolder(
 
     override fun getSet(name: String): MutableSet<*> {
         return SetProxy<Any>(name, this)
+    }
+
+    override fun getProperty(name: String): Property<Any> {
+        return PropertyProxy(name, this)
     }
 
     override fun <T : BuildType> buildTypes(

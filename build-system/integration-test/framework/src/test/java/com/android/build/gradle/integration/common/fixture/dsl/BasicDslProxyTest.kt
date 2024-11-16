@@ -130,6 +130,7 @@ class BasicDslProxyTest {
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"
             sendMessage("Hello!")
+            sendMessage(null)
             something("one", "two")
             something(12, "one", "two")
         }
@@ -140,6 +141,7 @@ class BasicDslProxyTest {
             person {
               name = 'bob'
               sendMessage('Hello!')
+              sendMessage(null)
               something('one', 'two')
               something(12, 'one', 'two')
             }

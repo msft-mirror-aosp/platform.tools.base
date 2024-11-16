@@ -30,6 +30,7 @@ TEST_DEPS = [
     "@maven//:com.android.tools.build.bundletool",
     "@maven//:com.android.tools.smali.smali-dexlib2",
     "@maven//:org.jetbrains.dokka.dokka-core",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     "@maven//:org.ow2.asm.asm",
     "@maven//:org.ow2.asm.asm-tree",
 ]
