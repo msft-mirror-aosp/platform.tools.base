@@ -311,4 +311,158 @@ class SamDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testPostRemove() {
+    // Regression test for
+    // 376498180: kotlin android.os.Handler removeCallbacks Runnable
+    lint()
+      .files(
+        kotlin(
+            """
+            @file:Suppress("unused", "RedundantExplicitType")
+
+            package test.pkg
+
+            import android.os.Handler
+
+            class Test {
+                private lateinit var handler: Handler
+                private lateinit var connectRunnable: () -> Unit
+
+                private lateinit var connectRunnable2: Runnable
+
+                fun testError_referencedFieldLambda() {
+                    handler.postDelayed(connectRunnable, 100) // ERROR 1
+                    handler.removeCallbacks(connectRunnable) // ERROR 1
+                }
+
+                fun testError_referencedParameterLambda(handler: Handler, connectRunnable: () -> Unit) {
+                    handler.postDelayed(connectRunnable, 100) // ERROR 2
+                    handler.removeCallbacks(connectRunnable) // ERROR 2
+                }
+
+                fun testError_referencedLocalVariableLambda(handler: Handler, connectRunnable: () -> Unit) {
+                    val same = connectRunnable
+                    handler.postDelayed(same, 100) // ERROR 3
+                    handler.removeCallbacks(same) // ERROR 3
+                }
+
+                fun testError_referencedLocalVariableLambda(handler: Handler, connectRunnable: () -> Unit) {
+                    val same = connectRunnable
+                    handler.postDelayed(same, 100) // ERROR 4
+                    handler.removeCallbacks(same) // ERROR 4
+                }
+
+                fun testError_onlyRemoval(connectRunnable: () -> Unit) {
+                    handler.removeCallbacks(connectRunnable) // ERROR 5
+                }
+
+                fun testError_multiplePosts(type: Int, connectRunnable: () -> Unit, unrelated: () -> Unit) {
+                    if (type == 1) {
+                        handler.post(connectRunnable) // ERROR 6
+                    } else if (type == 2) {
+                        handler.postAtTime(connectRunnable, 0L) // ERROR 6
+                    } else if (type == 3) {
+                        handler.postAtFrontOfQueue(connectRunnable) // ERROR 6
+                    } else {
+                        handler.postAtFrontOfQueue(unrelated) // OK
+                    }
+                    handler.removeCallbacks(connectRunnable) // ERROR 6
+                }
+
+                fun testError_inlinedLambda(connectRunnable: () -> Unit) {
+                    handler.removeCallbacks(Runnable { connectRunnable() }) // ERROR 7
+                }
+
+                class DifferentMethods(val handler: Handler, var lambdaField: () -> Unit) {
+                  fun postMethod() {
+                      handler.post(lambdaField) // ERROR 8
+                  }
+
+                  fun removeMethod() {
+                    handler.removeCallbacks(lambdaField) // ERROR 8
+                  }
+                }
+
+                fun testOk1() {
+                    handler.postDelayed(connectRunnable2, 100) // OK
+                    handler.removeCallbacks(connectRunnable2) // OK 1
+                }
+
+                fun testOk2(handler: Handler, runnable: Runnable) {
+                    handler.postDelayed(runnable, 100) // OK
+                    handler.removeCallbacks(runnable) // OK 2
+                }
+
+                fun testOk3(handler: Handler, connectRunnable: () -> Unit) {
+                    val same: Runnable = Runnable { connectRunnable() }
+                    handler.postDelayed(same, 100) // OK
+                    handler.removeCallbacks(same) // OK 3
+                }
+
+                fun testOk4(handler: Handler, connectRunnable: () -> Unit, unrelated: Runnable) {
+                    val same: Runnable = Runnable { connectRunnable() }
+                    handler.postDelayed(same, 100) // OK
+                    handler.removeCallbacks(unrelated) // OK 3
+                }
+            }
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.kt:15: Warning: connectRunnable is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { connectRunnable() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(connectRunnable) // ERROR 1
+                                        ~~~~~~~~~~~~~~~
+            src/test/pkg/Test.kt:14: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                handler.postDelayed(connectRunnable, 100) // ERROR 1
+                                    ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:20: Warning: connectRunnable is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { connectRunnable() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(connectRunnable) // ERROR 2
+                                        ~~~~~~~~~~~~~~~
+            src/test/pkg/Test.kt:19: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                handler.postDelayed(connectRunnable, 100) // ERROR 2
+                                    ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:26: Warning: same is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { same() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(same) // ERROR 3
+                                        ~~~~
+            src/test/pkg/Test.kt:25: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                handler.postDelayed(same, 100) // ERROR 3
+                                    ~~~~
+        src/test/pkg/Test.kt:32: Warning: same is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { same() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(same) // ERROR 4
+                                        ~~~~
+            src/test/pkg/Test.kt:31: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                handler.postDelayed(same, 100) // ERROR 4
+                                    ~~~~
+        src/test/pkg/Test.kt:36: Warning: connectRunnable is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { connectRunnable() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(connectRunnable) // ERROR 5
+                                        ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:49: Warning: connectRunnable is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { connectRunnable() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(connectRunnable) // ERROR 6
+                                        ~~~~~~~~~~~~~~~
+            src/test/pkg/Test.kt:41: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                    handler.post(connectRunnable) // ERROR 6
+                                 ~~~~~~~~~~~~~~~
+            src/test/pkg/Test.kt:43: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                    handler.postAtTime(connectRunnable, 0L) // ERROR 6
+                                       ~~~~~~~~~~~~~~~
+            src/test/pkg/Test.kt:45: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                    handler.postAtFrontOfQueue(connectRunnable) // ERROR 6
+                                               ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:53: Warning: This argument a new instance so removeCallbacks will not remove anything [ImplicitSamInstance]
+                handler.removeCallbacks(Runnable { connectRunnable() }) // ERROR 7
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.kt:62: Warning: lambdaField is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. To fix this, use for example val runnable = Runnable { lambdaField() } and post and remove the runnable val instead. [ImplicitSamInstance]
+                handler.removeCallbacks(lambdaField) // ERROR 8
+                                        ~~~~~~~~~~~
+            src/test/pkg/Test.kt:58: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
+                  handler.post(lambdaField) // ERROR 8
+                               ~~~~~~~~~~~
+        0 errors, 8 warnings
+        """
+      )
+  }
 }

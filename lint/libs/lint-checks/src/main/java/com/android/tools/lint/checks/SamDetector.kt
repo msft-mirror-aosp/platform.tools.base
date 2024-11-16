@@ -26,14 +26,17 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.findSelector
 import com.android.tools.lint.detector.api.isJava
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLocalVariable
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
+import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
@@ -43,10 +46,13 @@ import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.getContainingUMethod
+import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.isNullLiteral
+import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.util.isAssignment
+import org.jetbrains.uast.util.isConstructorCall
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /** Looks for bugs around implicit SAM conversions. */
@@ -81,6 +87,85 @@ class SamDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableUastTypes(): List<Class<out UElement>>? =
     listOf(ULambdaExpression::class.java, UCallableReferenceExpression::class.java)
+
+  override fun getApplicableMethodNames(): List<String> {
+    return listOf("removeCallbacks")
+  }
+
+  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+    val argument = node.valueArguments.firstOrNull()?.skipParenthesizedExprDown() ?: return
+    if (argument is UCallableReferenceExpression) {
+      // Already handled in the UElement handler below
+      return
+    }
+    val argumentType = argument.getExpressionType() ?: return
+    if (
+      argumentType.canonicalText.startsWith("kotlin.jvm.functions.Function0") &&
+        method.containingClass?.qualifiedName == HANDLER_CLASS
+    ) {
+      val location = context.getLocation(argument)
+
+      val container = node.getParentOfType<UClass>()
+      if (container?.sourcePsi != null) {
+        val posts = findPosts(argument, container)
+        var last = location
+        for (post in posts) {
+          val secondary = context.getLocation(post)
+          last.withSecondary(
+            secondary,
+            "Different instance than the one for `removeCallbacks()` due to SAM conversion; wrap with a shared `Runnable`",
+          )
+          last = secondary
+        }
+      }
+
+      val name = argument.sourcePsi?.text
+      context.report(
+        ISSUE,
+        argument,
+        location,
+        "`$name` is an implicit SAM conversion, so the instance you are removing here will not match anything you posted. " +
+          "To fix this, use for example `val runnable = Runnable { $name() }` and post and remove the `runnable` val instead.",
+      )
+    } else {
+      val selector = argument.findSelector()
+      if (selector is UCallExpression && selector.isConstructorCall()) {
+        val location = context.getLocation(selector)
+        context.report(
+          ISSUE,
+          selector,
+          location,
+          "This argument a new instance so `removeCallbacks` will not remove anything",
+        )
+      }
+    }
+  }
+
+  private fun findPosts(postArgument: UExpression, container: UClass): List<UExpression> {
+    val variable = postArgument.tryResolve() ?: return emptyList()
+    val matches = mutableListOf<UExpression>()
+    container.accept(
+      object : AbstractUastVisitor() {
+        override fun visitCallExpression(node: UCallExpression): Boolean {
+          val resolved = node.resolve() ?: return super.visitCallExpression(node)
+          if (
+            resolved.name.startsWith("post") &&
+              resolved.containingClass?.qualifiedName == HANDLER_CLASS
+          ) {
+            val posted = node.valueArguments.firstOrNull()?.skipParenthesizedExprDown()
+            val postedVariable = posted?.tryResolve()
+            @Suppress("LintImplPsiEquals")
+            if (postedVariable == variable) {
+              matches.add(posted)
+            }
+          }
+          return super.visitCallExpression(node)
+        }
+      }
+    )
+
+    return matches
+  }
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
     val psi = context.uastFile?.sourcePsi ?: return null
