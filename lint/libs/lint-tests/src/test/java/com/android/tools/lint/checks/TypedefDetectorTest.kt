@@ -828,9 +828,9 @@ class TypedefDetectorTest : AbstractCheckTest() {
             "        Object error1 = context.bindService(intent,\n" +
             "                Context.BIND_ABOVE_CLIENT | /*Must be one or more of: Context.BIND_AUTO_CREATE, Context.BIND_DEBUG_UNBIND, Context.BIND_NOT_FOREGROUND, Context.BIND_ABOVE_CLIENT, Context.BIND_ALLOW_OOM_MANAGEMENT, Context.BIND_WAIVE_PRIORITY, Context.BIND_IMPORTANT, Context.BIND_ADJUST_WITH_ACTIVITY, Context.BIND_NOT_PERCEPTIBLE, Context.BIND_ALLOW_ACTIVITY_STARTS, Context.BIND_INCLUDE_CAPABILITIES, Context.BIND_SHARED_ISOLATED_PROCESS, Context.BIND_EXTERNAL_SERVICE*/Context.CONTEXT_IGNORE_SECURITY/**/,\n" +
             "                executor, connection);\n" +
-            "        int flags2 = Context.BIND_ABOVE_CLIENT | /*Must be one or more of: Context.BIND_AUTO_CREATE, Context.BIND_DEBUG_UNBIND, Context.BIND_NOT_FOREGROUND, Context.BIND_ABOVE_CLIENT, Context.BIND_ALLOW_OOM_MANAGEMENT, Context.BIND_WAIVE_PRIORITY, Context.BIND_IMPORTANT, Context.BIND_ADJUST_WITH_ACTIVITY, Context.BIND_NOT_PERCEPTIBLE, Context.BIND_ALLOW_ACTIVITY_STARTS, Context.BIND_INCLUDE_CAPABILITIES, Context.BIND_SHARED_ISOLATED_PROCESS, Context.BIND_EXTERNAL_SERVICE*/Context.CONTEXT_IGNORE_SECURITY/**/;\n" +
+            "        int flags2 = Context.BIND_ABOVE_CLIENT | Context.CONTEXT_IGNORE_SECURITY;\n" +
             "        Object error2 = context.bindService(intent,\n" +
-            "                flags2,\n" +
+            "                /*Must be one or more of: Context.BIND_AUTO_CREATE, Context.BIND_DEBUG_UNBIND, Context.BIND_NOT_FOREGROUND, Context.BIND_ABOVE_CLIENT, Context.BIND_ALLOW_OOM_MANAGEMENT, Context.BIND_WAIVE_PRIORITY, Context.BIND_IMPORTANT, Context.BIND_ADJUST_WITH_ACTIVITY, Context.BIND_NOT_PERCEPTIBLE, Context.BIND_ALLOW_ACTIVITY_STARTS, Context.BIND_INCLUDE_CAPABILITIES, Context.BIND_SHARED_ISOLATED_PROCESS, Context.BIND_EXTERNAL_SERVICE*/flags2/**/,\n" +
             "                executor, connection);\n" +
             "    }\n" +
             "}\n"
@@ -2810,11 +2810,52 @@ src/DetailInfoTab.kt:17: Error: Must be one of: CONST_1.toLong(), CONST_2.toLong
                                                       ~~~~~~~~~~~~~~~~~~
         src/test.kt:18: Error: Must be one or more of: MyIntent.FLAG_1, FLAG_2 [WrongConstant]
                       j?.flags = j?.flags?.or(MyIntent.UNRELATED or MyIntent.UNRELATED) // ERROR 8
-                                              ~~~~~~~~~~~~~~~~~~
-        src/test.kt:18: Error: Must be one or more of: MyIntent.FLAG_1, FLAG_2 [WrongConstant]
-                      j?.flags = j?.flags?.or(MyIntent.UNRELATED or MyIntent.UNRELATED) // ERROR 8
-                                                                    ~~~~~~~~~~~~~~~~~~
-        11 errors, 0 warnings
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        10 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testDoubleUseSitesAndDoubleDeclarationSiteViolations() {
+    // Only 0 is allowed, so both 1s in 1 << 1 are violations.
+    // Then there are intentionally two use-sites that refer to
+    // an operation with those two violations.
+    // b/370778975: If we report that at the use-site,
+    //  two violation reports collide in that use-site.
+    // b/378128668: If we report that at the declaration-site,
+    //  double use-sites trigger duplicate errors.
+    lint()
+      .files(
+        java(
+            """
+            import androidx.annotation.IntDef;
+
+            public class TestFlags {
+                // declaration-site?
+                public static final int SHIFT_FLAG = 1 << 1;
+
+                @IntDef(flag = true, value = { 0 })
+                public @interface FlagDef {}
+
+                // use-site?
+                @FlagDef int flags1 = SHIFT_FLAG;
+                @FlagDef int flags2 = SHIFT_FLAG;
+            }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+src/TestFlags.java:11: Error: Must be one or more of: 0 [WrongConstant]
+    @FlagDef int flags1 = SHIFT_FLAG;
+                          ~~~~~~~~~~
+src/TestFlags.java:12: Error: Must be one or more of: 0 [WrongConstant]
+    @FlagDef int flags2 = SHIFT_FLAG;
+                          ~~~~~~~~~~
+2 errors, 0 warnings
         """
       )
   }

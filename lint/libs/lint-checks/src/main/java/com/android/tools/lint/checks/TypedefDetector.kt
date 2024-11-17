@@ -27,10 +27,12 @@ import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.LintFix
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
@@ -113,6 +115,38 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     type != AnnotationUsageType.BINARY &&
       type != AnnotationUsageType.DEFINITION &&
       type != AnnotationUsageType.ASSIGNMENT_LHS
+
+  /** Keeps track of which UAST nodes have already been reported by [checkDuplicateAndReport]. */
+  private val visitedAnnotationUsages = mutableSetOf<PsiElement>()
+
+  override fun afterCheckFile(context: Context) {
+    visitedAnnotationUsages.clear()
+  }
+
+  private fun checkDuplicateAndReport(
+    context: JavaContext,
+    issue: Issue,
+    scope: UElement?,
+    location: Location,
+    message: String,
+    quickfixData: LintFix? = null,
+  ) {
+    // If there are multiple violations at declarations-site, e.g.,
+    //
+    //   int SHIFT_FLAG = NOT_ALLOWED << NOT_ALLOWED;
+    //
+    // as well as multiple use-sites, e.g.,
+    //
+    //   @FlagDef int flags1 = SHIFT_FLAG;
+    //   @FlagDef int flags2 = SHIFT_FLAG;
+    //
+    // either choice---reporting errors on use-site or declaration-site
+    // will eventually encounter duplicate reports.
+    // Here, make sure we're only checking the same underlying source element once.
+    val usagePsi = scope?.sourcePsi ?: return
+    if (!visitedAnnotationUsages.add(usagePsi)) return
+    report(context, issue, scope, location, message, quickfixData)
+  }
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -205,7 +239,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       } else {
         val operator = argument.operator
         if (operator === UastPrefixOperator.BITWISE_NOT) {
-          report(
+          checkDuplicateAndReport(
             context,
             TYPE_DEF,
             argument,
@@ -222,15 +256,15 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     } else if (argument is UExpressionList) {
       // If it's ?: then check both the if and else clauses
       for (exp in argument.expressions) {
-        checkTypeDefConstant(context, annotation, exp, exp, flag, usageInfo)
+        checkTypeDefConstant(context, annotation, exp, errorNode, flag, usageInfo)
       }
     } else if (argument is UIfExpression) {
       // Check both the if and else clauses
       argument.thenExpression?.let { thenExpression ->
-        checkTypeDefConstant(context, annotation, thenExpression, thenExpression, flag, usageInfo)
+        checkTypeDefConstant(context, annotation, thenExpression, errorNode, flag, usageInfo)
       }
       argument.elseExpression?.let { elseExpression ->
-        checkTypeDefConstant(context, annotation, elseExpression, elseExpression, flag, usageInfo)
+        checkTypeDefConstant(context, annotation, elseExpression, errorNode, flag, usageInfo)
       }
     } else if (argument is UPolyadicExpression) {
       if (flag) {
@@ -247,7 +281,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
 
         for (operand in argument.operands) {
-          checkTypeDefConstant(context, annotation, operand, operand, true, usageInfo)
+          checkTypeDefConstant(context, annotation, operand, errorNode, true, usageInfo)
         }
       } else {
         val operator = argument.operator
@@ -256,7 +290,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             operator === UastBinaryOperator.BITWISE_OR ||
             operator === UastBinaryOperator.BITWISE_XOR
         ) {
-          report(
+          checkDuplicateAndReport(
             context,
             TYPE_DEF,
             argument,
@@ -855,7 +889,14 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     val locationNode = errorNode ?: node
     val fix: LintFix? = createQuickFix(locationNode, allowedValues, node)
-    report(context, TYPE_DEF, locationNode, context.getLocation(locationNode), message, fix)
+    checkDuplicateAndReport(
+      context,
+      TYPE_DEF,
+      locationNode,
+      context.getLocation(locationNode),
+      message,
+      fix,
+    )
   }
 
   private fun createQuickFix(
