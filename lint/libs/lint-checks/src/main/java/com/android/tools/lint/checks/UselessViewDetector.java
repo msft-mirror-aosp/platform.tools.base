@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ABSOLUTE_LAYOUT;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_BACKGROUND;
+import static com.android.SdkConstants.ATTR_FITS_SYSTEM_WINDOWS;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_PADDING;
 import static com.android.SdkConstants.ATTR_PADDING_BOTTOM;
@@ -39,6 +40,7 @@ import static com.android.SdkConstants.RELATIVE_LAYOUT;
 import static com.android.SdkConstants.SCROLL_VIEW;
 import static com.android.SdkConstants.TABLE_LAYOUT;
 import static com.android.SdkConstants.TABLE_ROW;
+import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.SdkConstants.VIEW_MERGE;
 
 import com.android.annotations.NonNull;
@@ -51,12 +53,14 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /** Checks whether the current node can be removed without affecting the layout. */
 public class UselessViewDetector extends LayoutDetector {
@@ -69,10 +73,10 @@ public class UselessViewDetector extends LayoutDetector {
             Issue.create(
                     "UselessParent",
                     "Unnecessary parent layout",
-                    "A layout with children that has no siblings, is not a scrollview or "
-                            + "a root layout, and does not have a background, can be removed and have "
-                            + "its children moved directly into the parent for a flatter and more "
-                            + "efficient layout hierarchy.",
+                    "A layout with children that has no siblings, is not a scrollview or a root"
+                            + " layout, and does not have a background, can be removed and have its"
+                            + " children moved directly into the parent for a flatter and more"
+                            + " efficient layout hierarchy.",
                     Category.PERFORMANCE,
                     2,
                     Severity.WARNING,
@@ -217,6 +221,10 @@ public class UselessViewDetector extends LayoutDetector {
             return;
         }
 
+        if (VALUE_TRUE.equals(parent.getAttributeNS(ANDROID_URI, ATTR_FITS_SYSTEM_WINDOWS))) {
+            return;
+        }
+
         boolean hasId = element.hasAttributeNS(ANDROID_URI, ATTR_ID);
         Location location = context.getNameLocation(element);
         String tag = element.getTagName();
@@ -293,7 +301,8 @@ public class UselessViewDetector extends LayoutDetector {
         String tag = element.getTagName();
         String message =
                 String.format(
-                        "This `%1$s` view is unnecessary (no children, no `background`, no `id`, no `style`)",
+                        "This `%1$s` view is unnecessary (no children, no `background`, no `id`, no"
+                                + " `style`)",
                         tag);
         context.report(USELESS_LEAF, element, location, message);
     }
