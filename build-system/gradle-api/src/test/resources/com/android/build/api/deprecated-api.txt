@@ -247,6 +247,7 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
+  * com.android.build.api.dsl.ManagedDevices.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
   * com.android.build.api.dsl.PostProcessing.getCodeShrinker: java.lang.String ()
   * com.android.build.api.dsl.PostProcessing.setCodeShrinker: void (java.lang.String)
   * com.android.build.api.dsl.ProductFlavor.setDimension: java.lang.Void (java.lang.String)
