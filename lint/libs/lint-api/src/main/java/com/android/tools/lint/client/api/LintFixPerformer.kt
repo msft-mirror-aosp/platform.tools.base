@@ -58,6 +58,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.utils.XmlUtils
 import com.intellij.openapi.util.TextRange
 import java.io.File
+import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
 import org.w3c.dom.Attr
@@ -799,7 +800,7 @@ abstract class LintFixPerformer(
         found = true
       } else {
         assert(oldPattern != null)
-        val pattern = oldPattern!!.toPattern()
+        val pattern = createFixPattern(oldPattern!!, replaceFix.patternFlags)
         val matcher = pattern.matcher(locationRange)
         if (!matcher.find()) {
           if (replaceFix.optional || replaceFix.globally && found) break@next
@@ -879,7 +880,7 @@ abstract class LintFixPerformer(
     optional: Boolean,
   ): Pair<Int, Int> {
     if (selectPattern != null) {
-      val pattern = selectPattern.toPattern()
+      val pattern = createFixPattern(selectPattern)
       val matcher = pattern.matcher(source)
       if (matcher.find(0)) {
         if (matcher.groupCount() > 0) {
@@ -918,6 +919,11 @@ abstract class LintFixPerformer(
   }
 
   companion object {
+    /** Creates a [Pattern] corresponding to a [ReplaceString.oldPattern] */
+    fun createFixPattern(pattern: String, flags: Int = 0): Pattern {
+      return pattern.toPattern(flags)
+    }
+
     fun getLocation(incident: Incident, fix: LintFix? = incident.fix): Location {
       return fix?.range ?: incident.location
     }

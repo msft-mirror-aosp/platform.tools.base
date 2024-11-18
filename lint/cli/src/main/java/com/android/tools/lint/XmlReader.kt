@@ -461,6 +461,7 @@ class XmlReader(
   private fun readFixReplace(): LintFix {
     var oldString: String? = null
     var oldPattern: String? = null
+    var patternFlags = 0
     var selectPattern: String? = null
     var replacement: String? = null
     var shortenNames = false
@@ -481,6 +482,7 @@ class XmlReader(
       when (name) {
         ATTR_OLD_STRING -> oldString = value
         ATTR_OLD_PATTERN -> oldPattern = value
+        ATTR_FLAGS -> patternFlags = value.toInt()
         ATTR_SELECT_PATTERN -> selectPattern = value
         ATTR_REPLACEMENT -> replacement = value
         ATTR_SHORTEN_NAMES -> shortenNames = true
@@ -506,7 +508,7 @@ class XmlReader(
       .name(displayName)
       .sharedName(familyName)
       .text(oldString)
-      .pattern(oldPattern)
+      .pattern(oldPattern, patternFlags)
       .select(selectPattern)
       .with(replacement ?: "")
       .shortenNames(shortenNames)

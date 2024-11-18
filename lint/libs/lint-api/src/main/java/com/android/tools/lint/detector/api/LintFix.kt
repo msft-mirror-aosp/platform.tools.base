@@ -33,6 +33,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.util.text.nullize
 import java.io.File
 import java.util.regex.Matcher
+import java.util.regex.Pattern
 import kotlin.math.max
 import kotlin.math.min
 import org.intellij.lang.annotations.RegExp
@@ -805,6 +806,7 @@ protected constructor(
     private var sortPriority = 0
 
     @RegExp private var oldPattern: String? = null
+    private var patternFlags = 0
     private var range: Location? = null
 
     /**
@@ -847,6 +849,14 @@ protected constructor(
 
     /** Replaces the given pattern match (or the first group within it, if any) */
     fun pattern(@RegExp oldPattern: String?): ReplaceStringBuilder {
+      return pattern(oldPattern, 0)
+    }
+
+    /**
+     * Replaces the given pattern match (or the first group within it, if any), along with the given
+     * [Pattern] flags.
+     */
+    fun pattern(@RegExp oldPattern: String?, flags: Int): ReplaceStringBuilder {
       if (oldPattern == null) {
         this.oldPattern = null
         return this
@@ -858,6 +868,7 @@ protected constructor(
       } else {
         this.oldPattern = oldPattern
       }
+      this.patternFlags = flags
       return this
     }
 
@@ -1073,6 +1084,7 @@ protected constructor(
         familyName,
         oldText,
         oldPattern,
+        patternFlags,
         selectPattern,
         newText ?: "",
         shortenNames,
@@ -1885,6 +1897,8 @@ protected constructor(
      * range.
      */
     @RegExp val oldPattern: String?,
+    /** [java.util.regex.Pattern] flags to use with [oldPattern], or 0 */
+    val patternFlags: Int,
     /** Pattern to select; if it contains parentheses, group(1) will be selected */
     val selectPattern: String?,
     /** The replacement string. */

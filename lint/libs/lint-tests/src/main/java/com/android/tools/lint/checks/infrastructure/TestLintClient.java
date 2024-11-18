@@ -70,6 +70,7 @@ import com.android.tools.lint.client.api.ConfigurationHierarchy;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
+import com.android.tools.lint.client.api.LintFixPerformer;
 import com.android.tools.lint.client.api.LintListener;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.client.api.LintXmlConfiguration;
@@ -1341,7 +1342,7 @@ public class TestLintClient extends LintCliClient {
                     }
                 }
             } else if (oldPattern != null) {
-                Pattern pattern = Pattern.compile(oldPattern);
+                Pattern pattern = LintFixPerformer.Companion.createFixPattern(oldPattern, replaceFix.getPatternFlags());
                 if (!pattern.matcher(locationRange).find()) {
                     fail(
                             testModePrefix()

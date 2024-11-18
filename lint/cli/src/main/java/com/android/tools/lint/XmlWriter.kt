@@ -525,6 +525,9 @@ open class XmlWriter(
         emitFixSharedAttributes(lintFix, indented)
         lintFix.oldString?.let { writeAttribute(writer, indented, ATTR_OLD_STRING, it) }
         lintFix.oldPattern?.let { writeAttribute(writer, indented, ATTR_OLD_PATTERN, it) }
+        if (lintFix.patternFlags != 0) {
+          writeAttribute(writer, indented, ATTR_FLAGS, lintFix.patternFlags.toString())
+        }
         lintFix.selectPattern?.let { writeAttribute(writer, indented, ATTR_SELECT_PATTERN, it) }
         writeAttribute(writer, indented, ATTR_REPLACEMENT, lintFix.replacement)
         if (lintFix.shortenNames) {
@@ -819,6 +822,7 @@ const val ATTR_INDEPENDENT = "independent"
 const val ATTR_ROBOT = "robot"
 const val ATTR_OLD_STRING = "oldString"
 const val ATTR_OLD_PATTERN = "oldPattern"
+const val ATTR_FLAGS = "flags"
 const val ATTR_SELECT_PATTERN = "selectPattern"
 const val ATTR_REPLACEMENT = "replacement"
 const val ATTR_BINARY = "binary"

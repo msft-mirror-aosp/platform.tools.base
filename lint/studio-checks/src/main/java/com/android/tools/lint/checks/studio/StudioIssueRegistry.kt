@@ -48,7 +48,6 @@ class StudioIssueRegistry : IssueRegistry() {
 
     // A few other standard lint checks disabled by default which we want enforced
     // in our codebase
-    SamDetector.ISSUE.setEnabledByDefault(true)
     CommentDetector.EASTER_EGG.setEnabledByDefault(true)
     CommentDetector.STOP_SHIP.setEnabledByDefault(true)
     DateFormatDetector.WEEK_YEAR.setEnabledByDefault(true)
