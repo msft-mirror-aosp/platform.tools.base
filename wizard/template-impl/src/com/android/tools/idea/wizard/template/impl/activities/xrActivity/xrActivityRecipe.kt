@@ -37,6 +37,7 @@ fun RecipeExecutor.xrActivityRecipe(
   addAllKotlinDependencies(moduleData)
 
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-ktx:+")
+  addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose:+")
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-viewmodel-compose:+")
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
@@ -46,8 +47,10 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
   addFileDependency("./libs/androidx.xr.extensions-release.aar")
-  addFileDependency("./libs/jetpack_xr_compose.aar")
-  addFileDependency("./libs/jetpack_xr_core.aar")
+  addFileDependency("./libs/compose-release.aar")
+  addFileDependency("./libs/impress_aar.aar")
+  addFileDependency("./libs/runtime-release.aar")
+  addFileDependency("./libs/scenecore-release.aar")
 
   generateManifest(
     moduleData = moduleData,
