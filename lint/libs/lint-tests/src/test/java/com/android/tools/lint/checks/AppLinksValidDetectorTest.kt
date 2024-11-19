@@ -644,6 +644,38 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expect(expected)
   }
 
+  fun testValidation_fileImplicitScheme() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher" >
+                  <activity android:name=".MainActivity">
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:mimeType="application/pdf" />
+                      </intent-filter>
+                      <tools:validation testUrl="file://example.pdf" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testValidPortNumber() {
     // Port numbers must be in the valid range
     val expected =
