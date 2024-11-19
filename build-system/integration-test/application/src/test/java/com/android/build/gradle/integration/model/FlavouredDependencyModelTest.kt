@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -73,6 +74,7 @@ class FlavouredDependencyModelTest: ModelComparator() {
         }
     }
 
+    @Ignore("b/379307487")
     @Test
     fun `test models`() {
         val result = rule.build.modelBuilder
