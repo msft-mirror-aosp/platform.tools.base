@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 
 internal class AdbServerControllerImpl(
   private val host: AdbSessionHost,
@@ -45,11 +44,11 @@ internal class AdbServerControllerImpl(
 
   private val startStopMutex = Mutex()
 
-  private var startJob: Deferred<Unit>? = null
+  @Volatile private var startJob: Deferred<Unit>? = null
 
-  private var stopJob: Deferred<Unit>? = null
+  @Volatile private var stopJob: Deferred<Unit>? = null
 
-  private val retryConnectMutex = Mutex()
+  @Volatile private var restartJob: Deferred<Unit>? = null
 
   @Volatile private var lastUsedConfig: AdbServerConfiguration? = null
 
@@ -63,52 +62,60 @@ internal class AdbServerControllerImpl(
     private set(value) {
       isStartedFlow.value = value
     }
-  private var isStartedFlow = MutableStateFlow(false)
 
+  private var isStartedFlow = MutableStateFlow(false)
 
   override val channelProvider: AdbServerChannelProvider = AdbServerControllerProvider()
 
   override suspend fun start() {
-    val startJob = startStopMutex.withLock {
-      stopJob?.cancelAndJoin()
-      stopJob = null
+    val startJob =
+      startStopMutex.withLock {
+        stopJob?.cancelAndJoin()
+        stopJob = null
+        restartJob?.cancelAndJoin()
+        restartJob = null
 
-      startJob ?: scope.async {
-        val config = waitForServerConfigurationAvailable()
-        val path = config.adbFile?.path
-        val port = config.serverPort
-        val isUserManaged = config.isUserManaged
-        val isUnitTest = config.isUnitTest
-        if (!isUserManaged && !isUnitTest) {
-          if (path != null && port != null) {
-            runStartServerProcess(path, port, config.envVars)
-          }
-        }
-        lastUsedConfig = config
-        isStarted = true
-      }.also {
-        startJob = it
+        startJob
+          ?: scope
+            .async {
+              val config = waitForServerConfigurationAvailable()
+              val path = config.adbFile?.path
+              val port = config.serverPort
+              val isUserManaged = config.isUserManaged
+              val isUnitTest = config.isUnitTest
+              if (!isUserManaged && !isUnitTest) {
+                if (path != null && port != null) {
+                  runStartServerProcess(path, port, config.envVars)
+                }
+              }
+              lastUsedConfig = config
+              isStarted = true
+            }
+            .also { startJob = it }
       }
-    }
     startJob.await()
   }
 
   override suspend fun stop() {
-    val stopJob = startStopMutex.withLock {
-      startJob?.cancelAndJoin()
-      startJob = null
+    val stopJob =
+      startStopMutex.withLock {
+        startJob?.cancelAndJoin()
+        startJob = null
+        restartJob?.cancelAndJoin()
+        restartJob = null
 
-      stopJob ?: scope.async {
-        val config = waitForServerConfigurationAvailable()
-        val adbFilePath = config.adbFile?.path
-        if (!config.isUserManaged && adbFilePath != null && config.serverPort != null) {
-          runKillServerProcess(adbFilePath, config.envVars)
-        }
-        isStarted = false
-      }.also {
-        startJob = it
+        stopJob
+          ?: scope
+            .async {
+              val config = waitForServerConfigurationAvailable()
+              val adbFilePath = config.adbFile?.path
+              if (!config.isUserManaged && adbFilePath != null && config.serverPort != null) {
+                runKillServerProcess(adbFilePath, config.envVars)
+              }
+              isStarted = false
+            }
+            .also { stopJob = it }
       }
-    }
     stopJob.await()
   }
 
@@ -116,38 +123,53 @@ internal class AdbServerControllerImpl(
     scope.cancel("${this::class.simpleName} has been closed")
   }
 
-  /**
-   * This will attempt to restart adb server if we previously detected a dropped connection.
-   *
-   * Returns `true` if channel could be immediately retried because we've updated server state in
-   * this method, e.g. we restarted adb server, or updated the port at which it should be accessed.
-   */
-  private suspend fun restart(): Boolean {
-    if (!isStarted) {
-      return false
-    }
-    startStopMutex.withLock {
-      val config = waitForServerConfigurationAvailable()
-      val path = config.adbFile?.path
-      val port = config.serverPort!!
-      if (path == null) {
-        // This is a non-restartable channel, but still try using `port` from the config the next
-        // time we try to create a channel
-        if (lastUsedConfig != config) {
-          lastUsedConfig = config
-          return true
+  /** This will attempt to restart adb server if we previously detected a dropped connection. */
+  internal suspend fun restart() {
+
+    val restartJob =
+      startStopMutex.withLock {
+        // Do not restart if server start or stop is in progress. Just wait for these jobs
+        // to complete, so that retrying `openChannel` would reflect the correct server state.
+        if (startJob?.isActive == true || stopJob?.isActive == true) {
+          startJob?.join()
+          stopJob?.join()
+          return
         }
-        return false
+
+        restartJob
+          ?: scope
+            .async {
+              if (!isStarted) {
+                return@async
+              }
+
+              val config = waitForServerConfigurationAvailable()
+              val path = config.adbFile?.path
+              val port = config.serverPort!!
+              if (path == null) {
+                // This is a non-restartable channel, but still try using `port` from the
+                // config the next time we try to create a channel
+                if (lastUsedConfig != config) {
+                  lastUsedConfig = config
+                  return@async
+                }
+                return@async
+              }
+
+              // TODO: Revisit the code below to match `AndroidDebugBridgeImpl` behavior. E.g.
+              //  should we be updating `isStarted` value if `server-kill` succeeds and
+              //  `server-start` fails
+              runKillServerProcess(path, config.envVars)
+              runStartServerProcess(path, port, config.envVars)
+
+              lastUsedConfig = config
+            }
+            .also {
+              restartJob = it
+              it.invokeOnCompletion { restartJob = null }
+            }
       }
-
-      // TODO: Revisit the code below to match `AndroidDebugBridgeImpl` behavior. E.g. should we
-      //  be updating `isStarted` value if `server-kill` succeeds and `server-start` fails
-      runKillServerProcess(path, config.envVars)
-      runStartServerProcess(path, port, config.envVars)
-
-      lastUsedConfig = config
-      return true
-    }
+    return restartJob.await()
   }
 
   /**
@@ -198,26 +220,24 @@ internal class AdbServerControllerImpl(
     timeout: Long,
     unit: TimeUnit,
   ): AdbChannel {
-    val tracker = TimeoutTracker.fromTimeout(unit, timeout)
-    isStartedFlow.first { it }
+    val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
+    host.timeProvider.withErrorTimeout(tracker.remainingMills) { isStartedFlow.first { it } }
 
     return try {
       connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
     } catch (e: IOException) {
       logger.debug(e) { "Failed `createChannel` on port $lastUsedConfig" }
       // Failed to create channel. Try to restart adb server / update configuration and try again.
-      withTimeout(tracker.remainingMills) {
-        retryConnectMutex.withLock { restart() }
-      }
+      host.timeProvider.withErrorTimeout(tracker.remainingMills) { restart() }
       connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
     }
   }
 
   /**
    * This channel provider relies on the `AdbServerControllerImpl` to start the ADB server.
-   * Essentially, some other part of the system needs to call `AdbServerControllerImpl.start`.
-   * Once that happens, the ADB server should be running, allowing this provider
-   * to establish connections (channels) to it.
+   * Essentially, some other part of the system needs to call `AdbServerControllerImpl.start`. Once
+   * that happens, the ADB server should be running, allowing this provider to establish connections
+   * (channels) to it.
    *
    * This server provider can also restart the adb server if the server process dies.
    */

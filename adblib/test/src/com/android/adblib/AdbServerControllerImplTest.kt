@@ -21,6 +21,9 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.TestingAdbSessionHost
 import java.io.File
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -29,13 +32,17 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 
 class AdbServerControllerImplTest {
 
   @JvmField @Rule val closeables = CloseablesRule()
+
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
   private val configFlow =
     MutableStateFlow(
@@ -76,6 +83,38 @@ class AdbServerControllerImplTest {
     registerCloseable(controller.channelProvider.createChannel())
     assertTrue(controller.isStarted)
   }
+
+  @Test
+  fun testCreateChannelThrowsTimeoutException_whenTimeoutOutWaitingForControllerIsStarted(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val controller = registerCloseable(AdbServerControllerImpl(host, configFlow))
+      exceptionRule.expect(TimeoutException::class.java)
+
+      // Act
+      // createChannel call will timeout, because the controller has not been started
+      registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
+    }
+
+  @Test
+  fun testCreateChannelThrowsTimeoutException_whenTimesOutOnRestart(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val processRunner = FakeProcessRunner(100)
+      val controller =
+        registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+      configFlow.update {
+        it.copy(File(ADB_FILE_PATH), serverPort = fakeAdb.port, isUnitTest = false)
+      }
+      controller.start()
+      // Close fakeAdb server to force `restart()` call to be triggered
+      fakeAdb.close()
+      exceptionRule.expect(TimeoutException::class.java)
+
+      // Act
+      // createChannel call will timeout, because the `restart()` takes 100ms
+      registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
+    }
 
   @Test
   fun testStartWaitsForAdbServerConfiguration(): Unit = runBlockingWithTimeout {
@@ -139,33 +178,138 @@ class AdbServerControllerImplTest {
     val processRunner = FakeProcessRunner()
     val controller =
       registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
-    val adbFilePath = "adb"
-    val adbFile = File(adbFilePath)
-    val port = 12345
-    configFlow.update { it.copy(adbFile = adbFile, serverPort = port, isUnitTest = false) }
+    configFlow.update { it.copy(File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false) }
 
     // Act
     controller.start()
 
     // Assert
     assertTrue(controller.isStarted)
-    assertEquals(
-      listOf(adbFilePath, "-P", port.toString(), "start-server"),
-      processRunner.lastCommand,
-    )
+    assertEquals(START_COMMAND, processRunner.lastCommand)
 
     // Act
     controller.stop()
     assertFalse(controller.isStarted)
-    assertEquals(listOf(adbFilePath, "kill-server"), processRunner.lastCommand)
+    assertEquals(STOP_COMMAND, processRunner.lastCommand)
   }
 
-  private class FakeProcessRunner : AdbServerControllerImpl.ProcessRunner {
+  @Test
+  fun testRestartIsNoop_whenStartIsInProgress(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val processRunner = FakeProcessRunner(50)
+    val controller =
+      registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+    configFlow.update { it.copy(File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false) }
+
+    // Act
+    val startJob = launch { controller.start() }
+    val restartJob = launch {
+      // delay a little to make sure start job is in progress when we trigger restart
+      delay(10)
+      controller.restart()
+    }
+    startJob.join()
+    restartJob.join()
+
+    // Assert
+    assertTrue(controller.isStarted)
+    assertContentEquals(listOf(START_COMMAND), processRunner.allCommands)
+  }
+
+  @Test
+  fun testRestartIsNoop_whenStopIsInProgress(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val processRunner = FakeProcessRunner(50)
+    val controller =
+      registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+    configFlow.update { it.copy(File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false) }
+    controller.start()
+    processRunner.reset()
+
+    // Act
+    val stopJob = launch { controller.stop() }
+    val restartJob = launch {
+      // delay a little to make sure stop job is in progress when we trigger restart
+      delay(10)
+      controller.restart()
+    }
+    stopJob.join()
+    restartJob.join()
+
+    // Assert
+    assertFalse(controller.isStarted)
+    assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+  }
+
+  @Test
+  fun testOnlyOneAdbServerRestartIsTriggered_whenConcurrentRestarts(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val processRunner = FakeProcessRunner(50)
+      val controller =
+        registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+      configFlow.update {
+        it.copy(adbFile = File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+      }
+      controller.start()
+      processRunner.reset()
+
+      // Act: queue up multiple restarts at the same time
+      val restartJobs = List(5) { launch { controller.restart() } }
+      restartJobs.joinAll()
+
+      // Assert
+      assertTrue(controller.isStarted)
+      assertContentEquals(listOf(STOP_COMMAND, START_COMMAND), processRunner.allCommands)
+    }
+
+  @Test
+  fun testCallingRestartAfterAnotherRestartCompleted_shouldRestartAgain(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val processRunner = FakeProcessRunner()
+      val controller =
+        registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+      configFlow.update {
+        it.copy(adbFile = File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+      }
+      controller.start()
+      processRunner.reset()
+
+      // Act
+      controller.restart()
+      controller.restart()
+
+      // Assert
+      assertTrue(controller.isStarted)
+      assertContentEquals(
+        listOf(STOP_COMMAND, START_COMMAND, STOP_COMMAND, START_COMMAND),
+        processRunner.allCommands,
+      )
+    }
+
+  private class FakeProcessRunner(private val delayByMs: Long = 0) :
+    AdbServerControllerImpl.ProcessRunner {
 
     var lastCommand: List<String>? = null
+    val allCommands: MutableList<List<String>> = mutableListOf()
 
     override suspend fun runProcess(command: List<String>, envVars: Map<String, String>) {
-      this.lastCommand = command
+      delay(delayByMs)
+      lastCommand = command
+      allCommands.add(command)
     }
+
+    fun reset() {
+      lastCommand = null
+      allCommands.clear()
+    }
+  }
+
+  companion object {
+    private const val ADB_FILE_PATH = "adb"
+    private const val PORT = 12345
+    private val START_COMMAND = listOf(ADB_FILE_PATH, "-P", 12345.toString(), "start-server")
+    private val STOP_COMMAND = listOf(ADB_FILE_PATH, "kill-server")
   }
 }
