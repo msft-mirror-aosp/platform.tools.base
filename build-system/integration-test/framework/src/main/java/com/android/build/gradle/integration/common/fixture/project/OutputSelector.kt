@@ -26,12 +26,15 @@ interface OutputSelector {
     val buildType: String
     val flavors: List<String>
     val fromIntermediates: Boolean
-
-    val outputType: String
-    val hasDimensionInPath: Boolean
+        get() = false
 
     /**
      * Returns the filename of the output file for the given selection.
      */
     fun getFileName(projectName: String): String
+
+    /**
+     * Returns the path segments between the output folder and the filename
+     */
+    fun getPath(): String
 }

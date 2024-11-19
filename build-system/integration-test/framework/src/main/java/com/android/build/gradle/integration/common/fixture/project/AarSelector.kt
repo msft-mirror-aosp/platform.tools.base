@@ -30,12 +30,6 @@ interface AarSelector: OutputSelector {
 
     val filter: String?
     val suffix: String?
-    override val outputType: String
-        get() = "aar"
-    override val hasDimensionInPath: Boolean
-        get() = false
-    override val fromIntermediates: Boolean
-        get() = false
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): AarSelector
@@ -93,5 +87,10 @@ internal data class AarSelectorImp(
         suffix?.let { segments.add(it) }
 
         return segments.joinToString(separator = "-") + DOT_AAR
+    }
+
+    override fun getPath(): String {
+        // there are no dimension-related segments in the AAR path (unlike APK)
+        return "aar/"
     }
 }

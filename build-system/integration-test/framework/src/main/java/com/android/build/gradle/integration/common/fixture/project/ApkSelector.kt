@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants.DOT_ANDROID_PACKAGE
+import com.android.utils.combineAsCamelCase
 
 /**
  * Represents an APK location, based on parameters like build type, flavors, whether this is a test,
@@ -33,10 +34,6 @@ interface ApkSelector: OutputSelector {
     val isSigned: Boolean
     val filter: String?
     val suffix: String?
-    override val outputType: String
-        get() = "apk"
-    override val hasDimensionInPath: Boolean
-        get() = true
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): ApkSelector
@@ -46,6 +43,8 @@ interface ApkSelector: OutputSelector {
 
     /** returns a new instance with the added suffix. If a suffix already exist, it is replaced */
     fun withSuffix(newSuffix: String): ApkSelector
+
+    fun forTestSuite(name: String): ApkSelector
 
     /** returns a new instance setup to represent APK in the intermediate folder */
     fun fromIntermediates(): ApkSelector
@@ -111,6 +110,9 @@ internal data class ApkSelectorImp(
     override fun withSuffix(newSuffix: String): ApkSelector =
         ApkSelectorImp(buildType, testName, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
+    override fun forTestSuite(name: String): ApkSelector =
+        ApkSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
+
     override fun fromIntermediates(): ApkSelector = ApkSelectorImp(
         buildType, testName, flavors, isSigned, filter, suffix,
         fromIntermediates = true
@@ -128,5 +130,21 @@ internal data class ApkSelectorImp(
         if (!isSigned) { segments.add("unsigned") }
 
         return segments.joinToString(separator = "-") + DOT_ANDROID_PACKAGE
+    }
+
+    override fun getPath(): String {
+        val pathBuilder = StringBuilder()
+
+        // path always starts with this
+        pathBuilder.append("apk/")
+        testName?.let {
+            pathBuilder.append(it).append('/')
+        }
+        if (flavors.isNotEmpty()) {
+            pathBuilder.append(flavors.combineAsCamelCase()).append('/')
+        }
+
+        pathBuilder.append(buildType).append('/')
+        return pathBuilder.toString()
     }
 }

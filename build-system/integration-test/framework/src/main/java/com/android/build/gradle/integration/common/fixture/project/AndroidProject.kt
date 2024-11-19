@@ -172,19 +172,7 @@ internal abstract class AndroidProjectImpl<T: CommonExtension<*, *, *, *, *, *>>
             outputsDir
         }
 
-        val path = if (outputSelector.hasDimensionInPath) {
-            // path is apk/flavors/buildType/
-            // where flavors is flavor1Flavor2Flavor3, etc...
-            if (outputSelector.flavors.isEmpty()) {
-                "${outputSelector.outputType}/${outputSelector.buildType}"
-            } else {
-                "${outputSelector.outputType}/${outputSelector.flavors.combineAsCamelCase()}/${outputSelector.buildType}"
-            }
-        } else {
-            outputSelector.outputType
-        }
-
-        return root.resolve(path).resolve(outputSelector.getFileName(location.name))
+        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
     }
 }
 
