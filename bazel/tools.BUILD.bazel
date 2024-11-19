@@ -26,3 +26,6 @@ filegroup(
         "//tools/base/utp:__pkg__",
     ],
 )
+
+# MODULE.bazel file for //tools/vendor dependencies.
+exports_files(["vendor.MODULE.bazel"])

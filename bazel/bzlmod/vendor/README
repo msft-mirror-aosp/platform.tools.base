@@ -1,0 +1,6 @@
+These are files that are linked to //tools for bzlmod to load.
+
+If vendor dependencies are loaded, then vendor.MODULE.bazel is linked to
+//tools/vendor.MODULE.bazel.
+If vendor dependencies are not loaded, then empty.MODULE.bazel is linked to
+//tools/vendor.MODULE.bazel.
