@@ -37,7 +37,6 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiVariable
-import com.intellij.psi.util.TypeConversionUtil
 import java.util.Locale
 import java.util.regex.Pattern
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -45,7 +44,6 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
@@ -111,85 +109,98 @@ class SamDetector : Detector(), SourceCodeScanner {
       UCallExpression::class.java,
     )
 
-  private fun String?.isRemoveMethodName(): Boolean {
-    return this != null && (this.startsWith("remove") || this.startsWith("unregister"))
-  }
-
   private fun checkRemoveMethod(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    val argument = node.valueArguments.firstOrNull() ?: return
-    if (argument is UCallableReferenceExpression) {
-      // Already handled in the UElement handler below
-      return
-    }
-    if (!isSamConversion(node, argument)) {
-      return
-    }
-
-    val argumentType = argument.getExpressionType() ?: return
-    val parameter = node.getParameterForArgument(argument) ?: return
-
-    if (argumentType.canonicalText.startsWith("kotlin.jvm.functions.Function")) {
-      if (!isInstanceRemoval(method, parameter)) {
-        return
+    val arguments = node.valueArguments
+    for (argument in arguments) {
+      if (argument is UCallableReferenceExpression) {
+        // Already handled in the UElement handler below
+        continue
       }
 
-      val location = context.getLocation(argument)
-      val variable = argument.tryResolve()
-
-      val container = node.getParentOfType<UClass>()
-      val qualifiedName = method.containingClass?.qualifiedName
-      val isHandler = (qualifiedName == HANDLER_CLASS || qualifiedName == CLASS_VIEW)
-      if (variable != null && container?.sourcePsi != null) {
-        val posts =
-          if (isHandler) findPostCalls(container, qualifiedName!!, variable) else emptyList()
-        var last = location
-        for (post in posts) {
-          val secondary = context.getLocation(post)
-          last.withSecondary(
-            secondary,
-            "Different instance than the one for `${method.name}()` due to SAM conversion; wrap with a shared `Runnable`",
-          )
-          last = secondary
-        }
-      }
-
-      val argumentName = argument.sourcePsi?.text
-      val samType = parameter.type
-      val samTypeString = samType.presentableText
-      val samTypeVar =
-        samTypeString.substringBefore("<").replaceFirstChar { it.lowercase(Locale.ROOT) }
-
-      var fix: LintFix? = null
-      if (variable is PsiVariable && variable.containingFile === node.sourcePsi?.containingFile) {
-        val declaration = variable.toUElement() as? UVariable
-        fix = createLambdaVariableFix(context, declaration, samTypeString)
-      }
-
-      val addVerb = if (isHandler) "post" else "add"
-      val example =
-        if (argument is ULambdaExpression) "val $samTypeVar = $samTypeString $argumentName"
-        else "val $samTypeVar = $samTypeString { $argumentName() }"
-      val message =
-        "`$argumentName` is an implicit SAM conversion, so the instance you are removing here will not match anything. " +
-          "To fix this, use for example `$example` and $addVerb and " +
-          "remove the `$samTypeVar` val instead."
-      context.report(ISSUE, argument, location, message, fix)
-    } else {
-      val selector = argument.findSelector()
-      if (selector is UCallExpression && selector.isConstructorCall()) {
-        if (!isInstanceRemoval(method, parameter)) {
+      if (argument.getExpressionType().hasLambdaType()) {
+        if (checkRemoveLambda(context, node, method, argument)) {
           return
         }
-        val methodName = method.name
-        val location = context.getLocation(selector)
-        context.report(
-          ISSUE,
-          selector,
-          location,
-          "This argument a new instance so `$methodName` will not remove anything",
-        )
+      } else if (arguments.size == 1) {
+        val selector = argument.findSelector()
+        if (selector is UCallExpression && selector.isConstructorCall()) {
+          val parameter = node.getParameterForArgument(argument) ?: return
+          if (!isInstanceRemoval(method, parameter)) {
+            return
+          }
+          val methodName = method.name
+          val location = context.getLocation(selector)
+          context.report(
+            ISSUE,
+            selector,
+            location,
+            "This argument is a new instance so `$methodName` will not remove anything",
+          )
+        }
       }
     }
+  }
+
+  private fun PsiType?.hasLambdaType() =
+    this is PsiClassType && canonicalText.startsWith("kotlin.jvm.functions.Function")
+
+  private fun checkRemoveLambda(
+    context: JavaContext,
+    node: UCallExpression,
+    method: PsiMethod,
+    argument: UExpression,
+  ): Boolean {
+    if (!isSamConversion(node, argument)) {
+      return false
+    }
+
+    val parameter = node.getParameterForArgument(argument) ?: return false
+    if (!isInstanceRemoval(method, parameter)) {
+      return false
+    }
+
+    val location = context.getLocation(argument)
+    val variable = argument.tryResolve()
+
+    val container = node.getParentOfType<UClass>()
+    val qualifiedName = method.containingClass?.qualifiedName
+    val isHandler = (qualifiedName == HANDLER_CLASS || qualifiedName == CLASS_VIEW)
+    if (variable != null && container?.sourcePsi != null) {
+      val posts =
+        if (isHandler) findPostCalls(container, qualifiedName!!, variable) else emptyList()
+      var last = location
+      for (post in posts) {
+        val secondary = context.getLocation(post)
+        last.withSecondary(
+          secondary,
+          "Different instance than the one for `${method.name}()` due to SAM conversion; wrap with a shared `Runnable`",
+        )
+        last = secondary
+      }
+    }
+
+    val argumentName = argument.sourcePsi?.text
+    val samType = parameter.type
+    val samTypeString = samType.presentableText
+    val samTypeVar =
+      samTypeString.substringBefore("<").replaceFirstChar { it.lowercase(Locale.ROOT) }
+
+    var fix: LintFix? = null
+    if (variable is PsiVariable && variable.containingFile === node.sourcePsi?.containingFile) {
+      val declaration = variable.toUElement() as? UVariable
+      fix = createLambdaVariableFix(context, declaration, samTypeString)
+    }
+
+    val addVerb = if (isHandler) "post" else "add"
+    val example =
+      if (argument is ULambdaExpression) "val $samTypeVar = $samTypeString $argumentName"
+      else "val $samTypeVar = $samTypeString { $argumentName() }"
+    val message =
+      "`$argumentName` is an implicit SAM conversion, so the instance you are removing here will not match anything. " +
+        "To fix this, use for example `$example` and $addVerb and " +
+        "remove the `$samTypeVar` val instead."
+    context.report(ISSUE, argument, location, message, fix)
+    return true
   }
 
   private fun isSamConversion(call: UCallExpression, argument: UExpression): Boolean {
@@ -226,63 +237,80 @@ class SamDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Returns true if the given [method] looks like it's removing the passed in parameter. It does
-   * this by looking to see if there is a corresponding "add" method with the same type at the same
-   * argument index.
+   * Returns true if this string starts with the given [prefix] as a word (meaning that the next
+   * character is upper case), so `hasWordPrefix("remove")` would return true for `remove` and
+   * `removeListener` but not `removedNotify`.
    */
-  private fun isInstanceRemoval(method: PsiMethod, parameter: PsiParameter): Boolean {
+  private fun String.hasWordPrefix(prefix: String): Boolean {
+    if (startsWith(prefix)) {
+      val length = prefix.length
+      return this.length == length || this[length].isUpperCase()
+    }
+    return false
+  }
+
+  /** Does this string represent a likely lambda-removal method name? */
+  private fun String?.isRemoveMethodName(): Boolean {
+    this ?: return false
+    return hasWordPrefix("remove") || hasWordPrefix("unregister") || hasWordPrefix("stop")
+  }
+
+  /**
+   * Given a removal method name, returns the expected name of the corresponding addition method.
+   */
+  private fun getPairedName(methodName: String): String {
     val pairedName =
-      when (val methodName = method.name) {
+      when (methodName) {
         "remove",
         "removeAll" -> "add"
         "removeCallbacks" -> "postDelayed"
         "unregister" -> "register"
         else -> {
           if (methodName.startsWith("remove")) "add" + methodName.removePrefix("remove")
-          else if (methodName.startsWith("unregister")) methodName.substring(2) else ""
+          else if (methodName.startsWith("unregister")) methodName.substring(2)
+          else if (methodName.startsWith("stop")) "start" + methodName.removePrefix("stop") else ""
         }
       }
+    return pairedName
+  }
+
+  /**
+   * Returns true if the given [method] looks like it's removing the passed in parameter. It does
+   * this by looking to see if there is a corresponding "add" method with the same type as one of
+   * the parameters.
+   */
+  private fun isInstanceRemoval(method: PsiMethod, parameter: PsiParameter): Boolean {
+    val methodName = method.name
+    val pairedName = getPairedName(methodName)
 
     // Make sure this method is really something which adds and removes instances.
     // That means we want to make sure there is a paired "add" method on the API
     // that also takes the same SAM interface; otherwise, we may be looking at
     // something which for example takes a filter (such as removeIf(Predicate));
     // here it would be fine to pass in a new instance.
+    if (methodName.endsWith("Listener")) {
+      // Common pattern, very likely to be instance removal
+      return true
+    }
     val methods = method.containingClass?.findMethodsByName(pairedName, false)
     if (methods.isNullOrEmpty()) {
       return false
     }
-    val parameterIndex = parameter.parameterIndex()
     val samType = parameter.type
     if (samType !is PsiClassType) {
       return false
     }
-    if (
-      methods.none {
-        methodParameterMatches(TypeConversionUtil.erasure(samType), parameterIndex, it)
+    val samTypeErasure = samType
+    return methods.any {
+      method.parameterList.parameters.any { parameter ->
+        methodParameterMatches(samTypeErasure, parameter)
       }
-    ) {
-      return false
     }
-
-    return true
   }
 
-  private fun methodParameterMatches(
-    samType: PsiType,
-    parameterIndex: Int,
-    method: PsiMethod,
-  ): Boolean {
-    val parameters = method.parameterList.parameters
-    // Use the same parameter index as in the add method;
-    // it's normally 0, but 1 for extension functions
-    // for example
-    if (parameters.size > parameterIndex) {
-      val parameterType = TypeConversionUtil.erasure(parameters[parameterIndex]?.type)
-      return parameterType == samType
-    }
-
-    return false
+  private fun methodParameterMatches(samType: PsiType, parameter: PsiParameter): Boolean {
+    val parameterType = parameter.type
+    return parameterType == samType
   }
 
   private fun createLambdaVariableFix(

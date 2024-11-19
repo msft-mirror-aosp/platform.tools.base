@@ -479,7 +479,7 @@ class SamDetectorTest : AbstractCheckTest() {
             src/test/pkg/Test.kt:45: Different instance than the one for removeCallbacks() due to SAM conversion; wrap with a shared Runnable
                     handler.postAtFrontOfQueue(connectRunnable) // ERROR 6
                                                ~~~~~~~~~~~~~~~
-        src/test/pkg/Test.kt:53: Warning: This argument a new instance so removeCallbacks will not remove anything [ImplicitSamInstance]
+        src/test/pkg/Test.kt:53: Warning: This argument is a new instance so removeCallbacks will not remove anything [ImplicitSamInstance]
                 handler.removeCallbacks(Runnable { connectRunnable() }) // ERROR 7
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/Test.kt:62: Warning: lambdaField is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val runnable = Runnable { lambdaField() } and post and remove the runnable val instead. [ImplicitSamInstance]
@@ -777,5 +777,92 @@ class SamDetectorTest : AbstractCheckTest() {
       )
       .run()
       .expectClean()
+  }
+
+  fun testRemoveSecondArg() {
+    // Make sure the lambda parameter doesn't have to be the first argument
+    lint()
+      .files(
+        kotlin(
+            """
+            @file:Suppress("unused", "RedundantExplicitType")
+
+            package test.pkg
+
+            import java.util.function.Predicate
+
+            class Handler {
+                fun removePredicate(taskId: Int, predicate: Predicate<Boolean>) {
+                }
+                fun addPredicate(taskId: Int, save: Boolean, predicate: Predicate<Boolean>) {
+                }
+            }
+
+            fun handlerTest(predicate1: (Boolean) -> Boolean, data: List<Boolean>) {
+                val handler = Handler()
+                handler.addPredicate(0, true) { predicate1(it) }
+                handler.removePredicate(0, predicate1) // ERROR 1
+            }
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Handler.kt:17: Warning: predicate1 is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val predicate = Predicate<Boolean> { predicate1() } and add and remove the predicate val instead. [ImplicitSamInstance]
+            handler.removePredicate(0, predicate1) // ERROR 1
+                                       ~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  fun testUnregisterTerminology() {
+    // Make sure we also handle register/unregister terminology and start/stop
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            import android.app.AppOpsManager
+
+            class Test {
+              private val list = mutableListOf<Runnable>()
+              fun registerAntennaInfoListener(runnable: Runnable) { list.add(runnable) }
+              fun unregisterAntennaInfoListener(runnable: Runnable) { list.remove(runnable) }
+              fun test(lambda: ()->Unit) {
+                registerAntennaInfoListener(lambda)
+                unregisterAntennaInfoListener(lambda) // ERROR 1
+              }
+            }
+
+            fun testStartStop(manager: AppOpsManager,  ) {
+                val lambda: (String, String)->Unit = { _,_ -> }
+                manager.startWatchingMode("", "", lambda)
+                manager.stopWatchingMode(lambda) // ERROR 2
+                val lambda2: (String, Int, String, Boolean)->Unit = { _, _, _, _ -> }
+                manager.stopWatchingActive(lambda2) // ERROR 3
+            }
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.kt:11: Warning: lambda is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val runnable = Runnable { lambda() } and add and remove the runnable val instead. [ImplicitSamInstance]
+            unregisterAntennaInfoListener(lambda) // ERROR 1
+                                          ~~~~~~
+        src/test/pkg/Test.kt:18: Warning: lambda is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val onOpChangedListener = OnOpChangedListener { lambda() } and add and remove the onOpChangedListener val instead. [ImplicitSamInstance]
+            manager.stopWatchingMode(lambda) // ERROR 2
+                                     ~~~~~~
+        src/test/pkg/Test.kt:20: Warning: lambda2 is an implicit SAM conversion, so the instance you are removing here will not match anything. To fix this, use for example val onOpActiveChangedListener = OnOpActiveChangedListener { lambda2() } and add and remove the onOpActiveChangedListener val instead. [ImplicitSamInstance]
+            manager.stopWatchingActive(lambda2) // ERROR 3
+                                       ~~~~~~~
+        0 errors, 3 warnings
+        """
+      )
   }
 }
