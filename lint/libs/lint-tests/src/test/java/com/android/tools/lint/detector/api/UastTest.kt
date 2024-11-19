@@ -2615,10 +2615,15 @@ class UastTest : TestCase() {
             if (node.methodName != "remember") return super.visitCallExpression(node)
 
             // Due to coercion-to-Unit (in FE1.0), a type error is hidden, and Unit is returned.
-            // In contrast, we can see that type error in K2.
+            // In contrast, in K2, we can see the unsubstituted type parameter.
+            // The point is that `RememberDetector` should not rely on `Unit` as the call type,
+            // and should rather manually investigate the last expression of the lambda argument.
             val callExpressionType = node.getExpressionType()
-            val coerced = if (useFirUast()) "<ErrorType>" else "kotlin.Unit"
-            assertTrue(callExpressionType?.canonicalText in listOf(coerced, "int"))
+            val coerced = if (useFirUast()) "T" else "kotlin.Unit"
+            assertTrue(
+              node.sourcePsi?.text + " returns " + callExpressionType?.canonicalText,
+              callExpressionType?.canonicalText in listOf(coerced, "int"),
+            )
 
             // We can go deeper into the last expression of the lambda argument.
             val sourcePsi = node.sourcePsi
@@ -3005,6 +3010,10 @@ class UastTest : TestCase() {
               assertEquals("MockingKt", resolved.containingClass?.name)
               assertTrue(resolved.hasModifier(JvmModifier.STATIC))
             }
+
+            assertEquals(1, resolved.typeParameters.size)
+            val typeParam = resolved.typeParameters.single()
+            assertEquals("T", typeParam.name)
 
             return super.visitCallExpression(node)
           }
