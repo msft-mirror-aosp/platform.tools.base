@@ -27,6 +27,7 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.mock
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream

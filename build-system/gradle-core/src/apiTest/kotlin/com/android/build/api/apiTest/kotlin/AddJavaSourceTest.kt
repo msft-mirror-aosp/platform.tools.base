@@ -41,6 +41,7 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.VariantPropertiesAccess
 import org.junit.Test
 import org.mockito.Mockito
+import org.mockito.kotlin.mock
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
