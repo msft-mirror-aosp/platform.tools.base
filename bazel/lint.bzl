@@ -6,11 +6,11 @@ script_template = """\
 GOTO :CMDSCRIPT
 ::CMDLITERAL
 
-{binary} {xml} {baseline} {extraArgs}
+{binary} {xml} {baseline} {extraArgs} $@
 exit $?
 :CMDSCRIPT
 
-{win_binary} {win_xml} {win_baseline} {extraArgs}
+{win_binary} {win_xml} {win_baseline} {extraArgs} %*
 EXIT /B %ERRORLEVEL%
 """
 
