@@ -59623,6 +59623,7 @@ maven_artifact(
         "com.google.code.findbugs.jsr305_3.0.2",
         "org.checkerframework.checker-qual_3.42.0",
         "com.google.errorprone.error_prone_annotations_2.26.1",
+        "com.google.j2objc.j2objc-annotations_3.0.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -61507,6 +61508,11 @@ maven_artifact(
     pom = "repository/io/grpc/grpc-api/1.66.0/grpc-api-1.66.0.pom",
     repo_root_path = "repository",
     repo_path = "io/grpc/grpc-api/1.66.0",
+    deps = [
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.guava.guava_33.2.1-android",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -61700,6 +61706,51 @@ maven_artifact(
         "com.google.guava.guava_32.0.1-android",
         "io.perfmark.perfmark-api_0.26.0",
         "io.grpc.grpc-context_1.57.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.grpc-core_1.66.0",
+    pom = "repository/io/grpc/grpc-core/1.66.0/grpc-core-1.66.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-core/1.66.0",
+    deps = [
+        "io.grpc.grpc-api_1.66.0",
+        "com.google.code.gson.gson_2.11.0",
+        "com.google.android.annotations_4.1.1.4",
+        "org.codehaus.mojo.animal-sniffer-annotations_1.24",
+        "com.google.errorprone.error_prone_annotations_2.28.0",
+        "com.google.guava.guava_33.2.1-android",
+        "io.perfmark.perfmark-api_0.27.0",
+        "io.grpc.grpc-context_1.66.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.grpc-inprocess_1.66.0",
+    pom = "repository/io/grpc/grpc-inprocess/1.66.0/grpc-inprocess-1.66.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-inprocess/1.66.0",
+    deps = [
+        "io.grpc.grpc-api_1.66.0",
+        "io.grpc.grpc-core_1.66.0",
+        "com.google.guava.guava_33.2.1-android",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.grpc-kotlin-stub_1.4.1",
+    pom = "repository/io/grpc/grpc-kotlin-stub/1.4.1/grpc-kotlin-stub-1.4.1.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/grpc-kotlin-stub/1.4.1",
+    deps = [
+        "io.grpc.grpc-stub_1.57.2",
+        "javax.annotation.javax.annotation-api_1.3.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -62040,6 +62091,22 @@ maven_artifact(
         "com.google.guava.guava_32.0.1-android",
         "com.google.errorprone.error_prone_annotations_2.18.0",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.protoc-gen-grpc-java_1.66.0",
+    pom = "repository/io/grpc/protoc-gen-grpc-java/1.66.0/protoc-gen-grpc-java-1.66.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/protoc-gen-grpc-java/1.66.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.grpc.protoc-gen-grpc-kotlin_1.4.1",
+    pom = "repository/io/grpc/protoc-gen-grpc-kotlin/1.4.1/protoc-gen-grpc-kotlin-1.4.1.pom",
+    repo_root_path = "repository",
+    repo_path = "io/grpc/protoc-gen-grpc-kotlin/1.4.1",
     visibility = ["//visibility:public"],
 )
 
