@@ -63,7 +63,9 @@ class KotlinMultiplatformAndroidVariantApiTest {
             // language=kotlin
             """
                 kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+                    androidResources {
+                        enable = true
+                    }
                 }
 
                 abstract class CreateAssets: DefaultTask() {
@@ -202,7 +204,9 @@ class KotlinMultiplatformAndroidVariantApiTest {
             // language=kotlin
             """
                 kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+                    androidResources {
+                        enable = true
+                    }
                 }
 
                 androidComponents {

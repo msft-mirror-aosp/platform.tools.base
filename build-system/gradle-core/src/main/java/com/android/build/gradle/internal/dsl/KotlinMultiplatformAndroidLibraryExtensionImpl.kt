@@ -22,6 +22,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
+import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
@@ -61,6 +62,16 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
 
     override fun dependencyVariantSelection(action: DependencyVariantSelection.() -> Unit) {
         action.invoke(dependencyVariantSelection)
+    }
+
+    override val androidResources: LibraryAndroidResources = dslServices.newDecoratedInstance(
+        LibraryAndroidResourcesImpl::class.java,
+        dslServices,
+        false
+    )
+
+    override fun androidResources(action: LibraryAndroidResources.() -> Unit) {
+        action.invoke(androidResources)
     }
 
     abstract val libraryRequests: MutableList<LibraryRequest>

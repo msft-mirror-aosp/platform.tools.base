@@ -218,6 +218,24 @@ class DisableLibraryResourcesTest {
     }
 
     @Test
+    fun testEnablingLibraryResourcesUsingAndroidResourcesDsl() {
+        // instead of using buildFeatures, use androidResources.enable = true to enable resource processing
+        project.getSubproject("localLib").buildFile
+            .appendText("android.androidResources.enable = true")
+        project.getSubproject("leafLib").buildFile
+            .appendText("${System.lineSeparator()}android.androidResources.enable = true")
+
+        val result = project.executor()
+            .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
+            .run(":app:assembleDebug")
+
+        assertThat(result.didWorkTasks).doesNotContain(":localLib:generateDebugEmptyResourceFiles")
+        assertThat(result.didWorkTasks).doesNotContain(":leafLib:generateDebugEmptyResourceFiles")
+        assertThat(result.didWorkTasks).contains(":localLib:parseDebugLocalResources")
+        assertThat(result.didWorkTasks).contains(":leafLib:parseDebugLocalResources")
+    }
+
+    @Test
     fun testAndroidAndUnitTests() {
         project.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
             .run(":leaflib:assembleDebugAndroidTest", ":leaflib:test")

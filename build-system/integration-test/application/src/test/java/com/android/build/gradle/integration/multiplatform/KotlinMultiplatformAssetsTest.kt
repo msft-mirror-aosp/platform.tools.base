@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.multiplatform
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -40,7 +39,9 @@ class KotlinMultiplatformAssetsTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+                    androidResources {
+                        enable = true
+                    }
                 }
             """.trimIndent()
         )
@@ -63,7 +64,9 @@ class KotlinMultiplatformAssetsTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = false
+                    androidResources {
+                        enable = false
+                    }
                 }
             """.trimIndent()
         )
@@ -78,6 +81,40 @@ class KotlinMultiplatformAssetsTest {
 
     @Test
     fun testKmpLibraryAssetPackageTasksExecuted() {
+        val result = project.executor().run(":kmpFirstLib:assemble")
+        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
+            listOf(
+                ":kmpFirstLib:mergeAndroidMainAssets"
+            )
+        )
+
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+            assets().resourceAsText("something.json").isEqualTo(
+                """
+                   {
+                     "id": 123,
+                     "name": "Example Item",
+                     "value": 42.5
+                   }
+                """.trimIndent()
+            )
+        }
+    }
+
+    @Test
+    fun testKmpLibraryAssetPackageTasksExecuted_enabledInLegacyWay() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                kotlin.androidLibrary {
+                    androidResources {
+                        enable = false
+                    }
+                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+                }
+            """.trimIndent()
+        )
+
         val result = project.executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(

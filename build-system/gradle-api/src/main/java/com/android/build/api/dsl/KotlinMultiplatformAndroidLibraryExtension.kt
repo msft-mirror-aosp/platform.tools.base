@@ -213,6 +213,18 @@ interface KotlinMultiplatformAndroidLibraryExtension {
     fun packaging(action: Packaging.() -> Unit)
 
     /**
+     * Specifies options for configuring android resources and assets for KMP
+     */
+    @get:Incubating
+    val androidResources: LibraryAndroidResources
+
+    /**
+     * Specifies options for configuring android resources and assets for KMP
+     */
+    @Incubating
+    fun androidResources(action: LibraryAndroidResources.() -> Unit)
+
+    /**
      * Specifies options for the R8/D8 optimization tool.
      *
      * For more information about the properties you can configure in this block, see [KmpOptimization].

@@ -1363,8 +1363,10 @@ package com.android.build.api.dsl {
 
   public interface KotlinMultiplatformAndroidLibraryExtension {
     method public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void dependencyVariantSelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection,kotlin.Unit> action);
     method public com.android.build.api.dsl.AarMetadata getAarMetadata();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.LibraryAndroidResources getAndroidResources();
     method public String getBuildToolsVersion();
     method public Integer? getCompileSdk();
     method public Integer? getCompileSdkExtension();
@@ -1403,6 +1405,7 @@ package com.android.build.api.dsl {
     method public void withHostTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest,kotlin.Unit> action);
     method public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> withHostTestBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.LibraryAndroidResources androidResources;
     property public abstract String buildToolsVersion;
     property public abstract Integer? compileSdk;
     property public abstract Integer? compileSdkExtension;
@@ -1443,6 +1446,9 @@ package com.android.build.api.dsl {
   }
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
+    method @org.gradle.api.Incubating public boolean getEnable();
+    method @org.gradle.api.Incubating public void setEnable(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enable;
   }
 
   public interface LibraryBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.LibraryVariantDimension {
