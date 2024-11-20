@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
@@ -43,13 +44,19 @@ import org.gradle.api.tasks.VerificationTask
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION, secondaryTaskCategories = [TaskCategory.FUSING])
-abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask(), VerificationTask {
+abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask() {
 
     /**
      * Contains the resolved dependencies specified in the 'include' configuration.
      */
     @get:Input
     abstract val resolvedIncludeDependencies: Property<ResolvedComponentResult>
+
+    /**
+     * Controls whether this task causes a build failure if there is a check failure.
+     */
+    @get:Input
+    abstract val ignoreFailures: Property<Boolean>
 
     /**
      * Output directory to for the task to report up-to-date, contents will always be empty.
@@ -61,7 +68,7 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
     abstract val outputDirectory: DirectoryProperty
 
     override fun doTaskAction() {
-        if (ignoreFailures) return
+        if (ignoreFailures.get()) return
         checkDependencies(resolvedIncludeDependencies.get())
     }
 
@@ -201,8 +208,12 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
             task.resolvedIncludeDependencies.setDisallowChanges(
                 includeConfiguration.incoming.resolutionResult.rootComponent
             )
-            // b/378080572 will add support for disabling validation if required.
-            task.ignoreFailures = false
+            task.ignoreFailures.setDisallowChanges(
+                creationConfig.experimentalProperties.map {
+                    !ModulePropertyKey.BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES
+                        .getValue(creationConfig.experimentalProperties.get())
+                }
+            )
         }
     }
 }

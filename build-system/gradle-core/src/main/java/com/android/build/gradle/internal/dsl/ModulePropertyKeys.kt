@@ -194,6 +194,12 @@ sealed interface ModulePropertyKey<OutputT> {
          * If true - Android resources will be enabled in kmp
          */
         KMP_ANDROID_RESOURCES_ENABLED("android.experimental.kmp.enableAndroidResources", false),
+
+        /**
+         * If false - [FusedLibraryDependencyValidationTask] allows all dependencies included in the fused library
+         * if true - [FusedLibraryDependencyValidationTask] fails build if a dependency doesn't meet validation checks
+         */
+        FUSED_LIBRARY_VALIDATE_DEPENDENCIES("android.experimental.fusedlibrary.validateDependencies", true)
         ;
 
         override fun getValue(properties: Map<String, Any>): Boolean {

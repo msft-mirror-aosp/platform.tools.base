@@ -30,6 +30,10 @@ interface FusedLibraryExtension {
     @set:Incubating
     var namespace: String?
 
+    /** Used to set module-specific experimental property values. */
+    @get:Incubating
+    val experimentalProperties: MutableMap<String, Any>
+
     /**
      * For basic validation that all included libraries in the fused library are at least the minSdk.
      * Eventually (b/229956178) this value should be able to be automatically determined by the plugin.

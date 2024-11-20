@@ -25,9 +25,11 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.TaskCreationServicesImpl
+import com.android.build.gradle.internal.services.VariantServicesImpl
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.provider.MapProperty
 
 class FusedLibraryGlobalScopeImpl(
     project: Project,
@@ -35,15 +37,24 @@ class FusedLibraryGlobalScopeImpl(
     extensionProvider: () -> FusedLibraryExtension
 ) : FusedLibraryGlobalScope {
 
+    private val internalServices = VariantServicesImpl(projectServices)
+
     override val aarMetadata: AarMetadataImpl
         get() = extension.aarMetadata as AarMetadataImpl
     override val artifacts= ArtifactsImpl(project, "single")
     override val dependencies = FusedLibraryDependencies()
     override val incomingConfigurations = dependencies.configurations
-
     override val extension: FusedLibraryExtension by lazy {
         extensionProvider.invoke()
     }
+
+    override val experimentalProperties: MapProperty<String, Any>
+        get() = internalServices.mapPropertyOf(
+            String::class.java,
+            Any::class.java,
+            extension.experimentalProperties,
+            false
+        )
 
     override val projectLayout: ProjectLayout = project.layout
     override val services: TaskCreationServices

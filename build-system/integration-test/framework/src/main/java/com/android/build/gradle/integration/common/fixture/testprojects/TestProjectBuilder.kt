@@ -184,6 +184,7 @@ interface AndroidProjectBuilder {
     var privacySandboxEnabled: Boolean?
     var hasInstrumentationTests: Boolean?
     val dynamicFeatures: MutableSet<String>
+    val experimentalProperties: MutableMap<String, Any>
 
     /**
      * Sets up a default compile Sdk Value

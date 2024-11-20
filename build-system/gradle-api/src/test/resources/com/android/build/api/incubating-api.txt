@@ -729,5 +729,7 @@ https://issuetracker.google.com/369698074
   * com.android.build.api.variant.DeviceTest.getBuildConfigFields: org.gradle.api.provider.MapProperty<java.lang.String, com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> ()
 https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
+https://issuetracker.google.com/380074867
+  * com.android.build.api.dsl.FusedLibraryExtension.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
 https://issuetracker.google.com/383364112
   * com.android.build.api.variant.BuiltArtifact.getOutputFilePath: java.nio.file.Path ()

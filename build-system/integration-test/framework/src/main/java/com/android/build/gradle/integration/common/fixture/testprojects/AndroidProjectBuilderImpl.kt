@@ -42,6 +42,7 @@ internal class AndroidProjectBuilderImpl(
     override var privacySandboxEnabled: Boolean? = null
     override var hasInstrumentationTests: Boolean? = null
     override val dynamicFeatures: MutableSet<String> = mutableSetOf()
+    override val experimentalProperties: MutableMap<String, Any> = mutableMapOf()
 
     private val buildFeatures = BuildFeaturesBuilderImpl()
     private val testFixtures = TestFixturesBuilderImpl()
@@ -150,6 +151,16 @@ internal class AndroidProjectBuilderImpl(
         buildToolsRevision?.let {
             sb.append("  buildToolsVersion = \"$it\"\n")
         }
+
+        if (experimentalProperties.isNotEmpty()) {
+            sb.append(
+                "    experimentalProperties.putAll([${
+                    experimentalProperties.entries.joinToString(
+                        separator = ","
+                    ) { "\"${it.key}\":${it.value}" }
+                }])\n")
+        }
+
         // Fused libraries currently support limited dsl options, so only options common to all
         // plugin android blocks should be added above.
         if (appliedPlugins.contains(PluginType.FUSED_LIBRARY) ||

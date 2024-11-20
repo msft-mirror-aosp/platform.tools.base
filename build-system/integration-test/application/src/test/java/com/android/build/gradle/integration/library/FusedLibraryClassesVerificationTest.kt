@@ -25,6 +25,8 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
+import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryReport
@@ -32,6 +34,7 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.ZipFileSubject
+import com.android.tools.build.gradle.internal.profile.ModulePropertyKeys
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.JavaVersion
@@ -293,6 +296,8 @@ class FusedLibraryClassesVerificationTest {
             androidFusedLibrary {
                 namespace = "com.example.fusedLib1"
                 minSdk = 34
+                experimentalProperties[BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] =
+                    true
             }
             // Use addDependenciesToFusedLibProject() for setting dependencies.
             dependencies {}
@@ -540,6 +545,14 @@ class FusedLibraryClassesVerificationTest {
                     "   [Require transitive dependency inclusion]:\n" +
                     "    * com.externaldep:externalaar:1 is included in the fused library .aar, " +
                     "however its parent dependency com.externaldep:depwithdep:1 was not.")
+
+        // Check validation can be disabled.
+        TestFileUtils.searchAndReplace(
+            project.getSubproject(FUSED_LIBRARY_PROJECT_NAME).buildFile,
+            """"android.experimental.fusedlibrary.validateDependencies":true""",
+            """"android.experimental.fusedlibrary.validateDependencies":false"""
+        )
+        project.executor().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
     }
 
     private fun checkFusedLibReportContents(
