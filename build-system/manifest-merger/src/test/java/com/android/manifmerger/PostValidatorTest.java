@@ -20,14 +20,11 @@ import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
+
 import com.google.common.base.Joiner;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Comment;
@@ -35,6 +32,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /** Tests for the {@link PostValidator} class. */
 public class PostValidatorTest extends TestCase {
@@ -148,23 +153,24 @@ public class PostValidatorTest extends TestCase {
     }
 
     public void testActivityAliasInvalidOrder() throws Exception {
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "\n"
-                + "      <activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
-                + "\n"
-                + "      <activity android:name=\"activityOne\"/>\n"
-                + "\n"
-                + "    </application>\n"
-                + "\n"
-                + "    <uses-sdk minSdkVersion=\"14\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "\n"
+                        + "      <activity-alias android:name=\"aliasOne\""
+                        + " android:targetActivity=\"activityOne\"/>\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityOne\"/>\n"
+                        + "\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
@@ -206,31 +212,34 @@ public class PostValidatorTest extends TestCase {
     }
 
     public void testMultipleActivityAliasInvalidOrder() throws Exception {
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "\n"
-                + "      <activity-alias android:name=\"aliasThree\" android:targetActivity=\"activityThree\"/>\n"
-                + "\n"
-                + "      <activity android:name=\"activityTwo\"/>\n"
-                + "\n"
-                + "      <activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
-                + "\n"
-                + "      <activity android:name=\"activityOne\"/>\n"
-                + "\n"
-                + "      <activity-alias android:name=\"aliasTwo\" android:targetActivity=\"activityTwo\"/>\n"
-                + "\n"
-                + "      <activity android:name=\"activityThree\"/>\n"
-                + "\n"
-                + "    </application>\n"
-                + "\n"
-                + "    <uses-sdk minSdkVersion=\"14\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "\n"
+                        + "      <activity-alias android:name=\"aliasThree\""
+                        + " android:targetActivity=\"activityThree\"/>\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityTwo\"/>\n"
+                        + "\n"
+                        + "      <activity-alias android:name=\"aliasOne\""
+                        + " android:targetActivity=\"activityOne\"/>\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityOne\"/>\n"
+                        + "\n"
+                        + "      <activity-alias android:name=\"aliasTwo\""
+                        + " android:targetActivity=\"activityTwo\"/>\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityThree\"/>\n"
+                        + "\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
@@ -245,24 +254,25 @@ public class PostValidatorTest extends TestCase {
     }
 
     public void testActivityAliasInvalidOrder_withComments() throws Exception {
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "\n"
-                + "      <!-- with comments ! -->\n"
-                + "      <activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
-                + "\n"
-                + "      <activity android:name=\"activityOne\"/>\n"
-                + "\n"
-                + "    </application>\n"
-                + "\n"
-                + "    <uses-sdk minSdkVersion=\"14\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "\n"
+                        + "      <!-- with comments ! -->\n"
+                        + "      <activity-alias android:name=\"aliasOne\""
+                        + " android:targetActivity=\"activityOne\"/>\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityOne\"/>\n"
+                        + "\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
@@ -289,23 +299,24 @@ public class PostValidatorTest extends TestCase {
     }
 
     public void testActivityAliasValidOrder() throws Exception {
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "\n"
-                + "      <activity android:name=\"activityOne\"/>\n"
-                + "\n"
-                + "      <activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
-                + "\n"
-                + "    </application>\n"
-                + "\n"
-                + "    <uses-sdk minSdkVersion=\"14\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "\n"
+                        + "      <activity android:name=\"activityOne\"/>\n"
+                        + "\n"
+                        + "      <activity-alias android:name=\"aliasOne\""
+                        + " android:targetActivity=\"activityOne\"/>\n"
+                        + "\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
@@ -319,16 +330,15 @@ public class PostValidatorTest extends TestCase {
 
     public void testActivityAliasImmediatelyFollowing() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
                         + "    <application android:label=\"@string/lib_name\">\n"
                         + "\n"
-                        + "      <activity android:name=\"activityOne\"/>"
-                        + "<activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
+                        + "      <activity android:name=\"activityOne\"/><activity-alias"
+                        + " android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
                         + "\n"
                         + "    </application>\n"
                         + "\n"
@@ -348,17 +358,16 @@ public class PostValidatorTest extends TestCase {
 
     public void testActivityAliasImmediatelyFollowing_withComments() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
                         + "    <application android:label=\"@string/lib_name\">\n"
                         + "\n"
-                        + "      <activity android:name=\"activityOne\"/>"
-                        + "<!--comment to come before alias-->"
-                        + "<activity-alias android:name=\"aliasOne\" android:targetActivity=\"activityOne\"/>\n"
+                        + "      <activity android:name=\"activityOne\"/><!--comment to come before"
+                        + " alias--><activity-alias android:name=\"aliasOne\""
+                        + " android:targetActivity=\"activityOne\"/>\n"
                         + "\n"
                         + "    </application>\n"
                         + "\n"
@@ -780,20 +789,17 @@ public class PostValidatorTest extends TestCase {
             throws ParserConfigurationException, SAXException, IOException {
 
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
-                        + "    <activity android:name=\"activityOne\"/>"
-                        + "\n"
-                        + "    <application android:label=\"@string/lib_name\" android:theme=\"@style/AppTheme\"\n"
+                        + "    <activity android:name=\"activityOne\"/>\n"
+                        + "    <application android:label=\"@string/lib_name\""
+                        + " android:theme=\"@style/AppTheme\"\n"
                         + "       tools:replace=\"theme\" tools:ignore_warning=\"true\"/>\n"
                         + "\n"
-                        + "    <!-- with comments ! -->"
-                        + "    <uses-sdk minSdkVersion=\"14\"/>"
-                        + "\n"
+                        + "    <!-- with comments ! -->    <uses-sdk minSdkVersion=\"14\"/>\n"
                         + "</manifest>";
 
         XmlDocument xmlDocument =
@@ -812,20 +818,17 @@ public class PostValidatorTest extends TestCase {
             throws ParserConfigurationException, SAXException, IOException {
 
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib3\">\n"
                         + "\n"
-                        + "    <activity android:name=\"activityOne\"/>"
-                        + "\n"
-                        + "    <application android:label=\"@string/lib_name\" android:theme=\"@style/AppTheme\"\n"
+                        + "    <activity android:name=\"activityOne\"/>\n"
+                        + "    <application android:label=\"@string/lib_name\""
+                        + " android:theme=\"@style/AppTheme\"\n"
                         + "       tools:replace=\"theme\" tools:ignore_warning=\"false\"/>\n"
                         + "\n"
-                        + "    <!-- with comments ! -->"
-                        + "    <uses-sdk minSdkVersion=\"14\"/>"
-                        + "\n"
+                        + "    <!-- with comments ! -->    <uses-sdk minSdkVersion=\"14\"/>\n"
                         + "</manifest>";
 
         XmlDocument xmlDocument =
@@ -838,21 +841,19 @@ public class PostValidatorTest extends TestCase {
     public void testIgnoreWarningAttributeWithTwoElements()
             throws ParserConfigurationException, SAXException, IOException {
         String input =
-                ""
-                        + "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                        + "    package=\"com.example.lib3\">\n"
-                        + "\n"
-                        + "    <activity android:name=\"activityOne\" tools:replace=\"android:name\" tools:ignore_warning=\"true\"/>"
-                        + "\n"
-                        + "    <application android:label=\"@string/lib_name\" android:theme=\"@style/AppTheme\"\n"
-                        + "       tools:replace=\"theme\" />\n"
-                        + "\n"
-                        + "    <!-- with comments ! -->"
-                        + "    <uses-sdk minSdkVersion=\"14\"/>"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.lib3\">\n"
+                    + "\n"
+                    + "    <activity android:name=\"activityOne\" tools:replace=\"android:name\""
+                    + " tools:ignore_warning=\"true\"/>\n"
+                    + "    <application android:label=\"@string/lib_name\""
+                    + " android:theme=\"@style/AppTheme\"\n"
+                    + "       tools:replace=\"theme\" />\n"
+                    + "\n"
+                    + "    <!-- with comments ! -->    <uses-sdk minSdkVersion=\"14\"/>\n"
+                    + "</manifest>";
 
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testIgnoreWarningAttribute"), input);
@@ -870,7 +871,7 @@ public class PostValidatorTest extends TestCase {
 
     public void testMultipleUsesSdk()
             throws ParserConfigurationException, SAXException, IOException {
-        String input =
+        assertMultipleUsesSdk(
                 ""
                         + "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -880,18 +881,76 @@ public class PostValidatorTest extends TestCase {
                         + "\n"
                         + "    <uses-sdk minSdkVersion=\"14\"/>"
                         + "\n"
-                        + "</manifest>";
+                        + "</manifest>",
+                true);
+    }
+
+    public void testMultipleUsesSdkWithFeatureFlag()
+            throws ParserConfigurationException, SAXException, IOException {
+        assertMultipleUsesSdk(
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"19\" android:featureFlag=\"flag1\"/>"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\" android:featureFlag=\"flag1\"/>"
+                        + "\n"
+                        + "</manifest>",
+                true);
+    }
+
+    public void testMultipleUsesSdkWithMatchingFeatureFlag()
+            throws ParserConfigurationException, SAXException, IOException {
+        assertMultipleUsesSdk(
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"19\" android:featureFlag=\"flag1\"/>"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\" android:featureFlag=\"!flag1\"/>"
+                        + "\n"
+                        + "</manifest>",
+                false);
+    }
+
+    public void testMultipleUsesSdkWithDifferentFeatureFlag()
+            throws ParserConfigurationException, SAXException, IOException {
+        assertMultipleUsesSdk(
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"19\" android:featureFlag=\"flag1\"/>"
+                        + "\n"
+                        + "    <uses-sdk minSdkVersion=\"14\" android:featureFlag=\"flag2\"/>"
+                        + "\n"
+                        + "</manifest>",
+                false);
+    }
+
+    private void assertMultipleUsesSdk(String input, boolean expectMergeError)
+            throws ParserConfigurationException, SAXException, IOException {
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testMultipleUsesSdk"), input);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         PostValidator.validate(xmlDocument, mergingReportBuilder);
-        assertTrue(mergingReportBuilder.hasErrors());
-        assertTrue(
-                mergingReportBuilder
-                        .build()
-                        .getReportString()
-                        .contains(
-                                "Multiple <uses-sdk>s cannot be present in the merged AndroidManifest.xml. "));
+        if (expectMergeError) {
+            assertTrue(mergingReportBuilder.hasErrors());
+            assertTrue(
+                    mergingReportBuilder
+                            .build()
+                            .getReportString()
+                            .contains(
+                                    "Multiple <uses-sdk>s cannot be present in the merged"
+                                            + " AndroidManifest.xml."));
+        } else {
+            assertFalse(mergingReportBuilder.hasErrors());
+        }
     }
 
     private XmlDocument loadXmlDoc(SourceFile location, String input)

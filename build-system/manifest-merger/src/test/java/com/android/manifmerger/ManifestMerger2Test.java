@@ -164,7 +164,10 @@ public class ManifestMerger2Test {
                 "109_activity_feature_flag_node_addition.xml",
                 "109b_activity_feature_flag_node_matching",
                 "109c_activity_feature_flag_node_single_incoming_match",
-                "109d_activity_feature_flag_node_multiple_incoming_match"
+                "109d_activity_feature_flag_node_multiple_incoming_match",
+                "109e_uses_sdk_feature_flag_node_validation.xml",
+                "109f_dup_uses_sdk_feature_flag_node_validation.xml",
+                "109g_dup_uses_sdk_node_validation.xml"
             };
 
     private static final Multimap<Predicate<String>, ManifestMerger2.Invoker.Feature>
