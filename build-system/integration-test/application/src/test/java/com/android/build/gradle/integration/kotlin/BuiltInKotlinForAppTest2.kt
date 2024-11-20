@@ -42,7 +42,6 @@ class BuiltInKotlinForAppTest2 {
             dependencies {
                 api(project(":lib"))
             }
-            appendToBuildFile { builtInKotlinSupportDependencies }
         }
         subProject(":lib") {
             plugins.add(PluginType.ANDROID_LIB)
@@ -50,7 +49,6 @@ class BuiltInKotlinForAppTest2 {
             android {
                 setUpHelloWorld()
             }
-            appendToBuildFile { builtInKotlinSupportDependencies }
         }
     }.withBuiltInKotlinSupport(true)
         .create()

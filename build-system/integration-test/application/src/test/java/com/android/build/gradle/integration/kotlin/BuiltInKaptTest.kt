@@ -74,7 +74,6 @@ class BuiltInKaptTest {
         )
         app.buildFile.appendText(
             """
-                $builtInKotlinSupportDependencies
                 dependencies {
                     api project(':lib')
                     kapt project(':lib-compiler')

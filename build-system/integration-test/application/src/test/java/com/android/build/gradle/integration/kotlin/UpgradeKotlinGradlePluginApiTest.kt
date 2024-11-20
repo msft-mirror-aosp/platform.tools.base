@@ -34,7 +34,6 @@ class UpgradeKotlinGradlePluginApiTest {
             android {
                 setUpHelloWorld()
             }
-            appendToBuildFile { builtInKotlinSupportDependencies }
         }
     }.withBuiltInKotlinSupport(true)
         .withKotlinGradlePlugin(true)

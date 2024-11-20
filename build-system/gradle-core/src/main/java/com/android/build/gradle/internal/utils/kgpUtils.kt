@@ -26,15 +26,15 @@ import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.getBuildService
-import com.android.builder.errors.IssueReporter
+import com.android.ide.common.gradle.Version
 import com.android.utils.appendCapitalized
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.ClasspathNormalizer
@@ -44,6 +44,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.Locale
 
 const val KOTLIN_ANDROID_PLUGIN_ID = "org.jetbrains.kotlin.android"
 const val ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID = "com.android.experimental.built-in-kotlin"
@@ -385,49 +386,58 @@ fun findKotlinBaseApiPlugin(projectInfo: ProjectInfo): KotlinBaseApiPlugin? =
     }
 
 /**
- * Check that the kotlin stdlib is present in the compile and runtime classpaths
+ * Add the kotlin stdlib to the compile and runtime classpaths, if it's not added by the user.
+ * Similar to https://youtrack.jetbrains.com/issue/KT-38221.
  *
- * KGP automatically adds the kotlin stdlib dependency, which is not desirable behavior. Instead of
- * doing that, AGP checks for the dependency when built-in Kotlin support is enabled and instructs
- * the user to add the dependency if it is missing.
+ * TODO(b/341765853): Request API from Jetbrains to handle this.
  */
-internal fun checkKotlinStdLibIsInDependencies(
+internal fun maybeAddKotlinStdlibDependency(
     project: Project,
     creationConfig: ComponentCreationConfig
 ) {
-    val defaultVersion = creationConfig.services.kotlinServices?.kgpVersion ?: return
+    // Honor "kotlin.stdlib.default.dependency=false"
+    val kotlinStdlibDefaultDependencyProperty =
+        project.providers.gradleProperty("kotlin.stdlib.default.dependency")
+    if (kotlinStdlibDefaultDependencyProperty.orNull?.lowercase(Locale.US) == "false") {
+        return
+    }
 
-    // TODO(b/259523353): add DSL flag to ignore this check
-    fun Configuration.checkKotlinStdlibPresent() {
-        incoming.afterResolve {
-            // This check will filter out configurations that have been copied from existing configuration
-            // like the one we do in ModelBuilder.buildProjectGraphModel()
-            if (this.name == it.name) {
-                val hasKotlinStdLib = it.resolutionResult.allDependencies
-                    .filterIsInstance<ResolvedDependencyResult>()
-                    .map { it.selected.id }
-                    .filterIsInstance<ModuleComponentIdentifier>()
-                    .any {
-                        it.group == KOTLIN_GROUP && (it.module == "kotlin-stdlib" || it.module == "kotlin-stdlib-jdk8")
-                    }
-                if (!hasKotlinStdLib) {
-                    creationConfig.services.issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        """
-Kotlin standard library is missing from ${this.name}. Please add a dependency on
-"$KOTLIN_GROUP:kotlin-stdlib:$defaultVersion" to your build file: `${project.buildFile.toURI()}`
-                """.trimIndent()
-                    )
-                }
-            }
+    val kotlinStdlibVersion =
+        creationConfig.global.kotlinAndroidProjectExtension?.coreLibrariesVersion
+            ?: creationConfig.services.kotlinServices?.kgpVersion
+
+    fun Configuration.hasKotlinStdlibDependency(): Boolean {
+        val externalDependencies = this.allDependencies.matching { it !is ProjectDependency }
+        return externalDependencies.any { dependency ->
+            dependency.group == KOTLIN_GROUP && dependency.name in KOTLIN_STDLIB_MODULES
         }
     }
 
-    creationConfig.variantDependencies.compileClasspath.checkKotlinStdlibPresent()
-    creationConfig.variantDependencies.runtimeClasspath.checkKotlinStdlibPresent()
+    fun Configuration.maybeAddKotlinStdlibDependency() {
+        if (this.hasKotlinStdlibDependency()) {
+            return
+        }
+        // Use kotlin-stdlib-jdk8 if < Kotlin 1.9.20 (Same behavior as KGP)
+        val moduleName =
+            if (kotlinStdlibVersion?.let {Version.parse(it) < Version.parse("1.9.20") } == true) {
+                "kotlin-stdlib-jdk8"
+            } else {
+                "kotlin-stdlib"
+            }
+        this.dependencies
+            .add(project.dependencies.kotlinDependency(moduleName, kotlinStdlibVersion))
+    }
+
+    creationConfig.variantDependencies.compileClasspath.maybeAddKotlinStdlibDependency()
+    creationConfig.variantDependencies.runtimeClasspath.maybeAddKotlinStdlibDependency()
 }
 
+private fun DependencyHandler.kotlinDependency(moduleName: String, versionOrNull: String?) =
+    create("$KOTLIN_GROUP:$moduleName${versionOrNull?.let { ":$it" }.orEmpty()}")
+
 private const val KOTLIN_GROUP = "org.jetbrains.kotlin"
+private val KOTLIN_STDLIB_MODULES =
+    setOf("kotlin-stdlib", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8")
 // The minimum version of KGP required to be on the buildscript classpath for built-in kotlin
 // support in AGP
 const val MINIMUM_BUILT_IN_KOTLIN_VERSION = "1.9.20"

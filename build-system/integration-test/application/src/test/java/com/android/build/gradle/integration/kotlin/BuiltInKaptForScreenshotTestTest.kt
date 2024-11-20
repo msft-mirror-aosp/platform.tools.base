@@ -29,7 +29,6 @@ import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
 import org.junit.Before
 import org.junit.Rule
@@ -63,9 +62,7 @@ class BuiltInKaptForScreenshotTestTest {
             """
                 android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
 
-                $builtInKotlinSupportDependencies
                 dependencies {
-                    screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                     screenshotTestImplementation project(':lib')
                     kaptScreenshotTest project(':lib-compiler')
                 }
