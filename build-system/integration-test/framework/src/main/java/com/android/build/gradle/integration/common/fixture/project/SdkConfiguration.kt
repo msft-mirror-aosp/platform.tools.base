@@ -16,13 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants
-import com.android.build.gradle.integration.BazelIntegrationTestsSuite
 import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.testutils.TestUtils
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
-import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.isDirectory
@@ -44,7 +40,7 @@ data class SdkConfiguration(
     val ndkPath: Path?,
 )
 
-class SdkConfigurationDelegate: SdkConfigurationBuilder {
+internal class SdkConfigurationDelegate: SdkConfigurationBuilder {
     private var sdkDir: Path? = null
     private var useSdk = true
 
@@ -67,7 +63,7 @@ class SdkConfigurationDelegate: SdkConfigurationBuilder {
         return this
     }
 
-    val asSdkConfiguration: SdkConfiguration
+    internal val asSdkConfiguration: SdkConfiguration
         get()  {
             val sdk = if (!useSdk) {
                 null
@@ -80,6 +76,20 @@ class SdkConfigurationDelegate: SdkConfigurationBuilder {
                 ndkPath ?: computeNdkPath(sdk),
             )
         }
+
+    internal fun mergeWith(other: SdkConfigurationDelegate) {
+        if (!other.useSdk) {
+            removeSdk()
+        } else {
+            other.sdkDir?.let {
+                sdkDir = it
+            }
+        }
+
+        other.ndkVersion?.let {
+            ndkVersion = it
+        }
+    }
 
     private fun computeNdkPath(sdkDir: Path?): Path? {
         val envCustomAndroidNdkHome = Strings.emptyToNull(System.getenv()["CUSTOM_ANDROID_NDK_ROOT"]);

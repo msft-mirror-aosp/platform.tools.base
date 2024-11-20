@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.GradleOptionBuilderDelegate
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_TEST_PROJECT_NAME
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -31,14 +30,11 @@ import org.junit.runners.model.Statement
  *
  * Don't use directly, use [GradleRule.configure].
  */
-class GradleRuleBuilder internal constructor(): TestRule {
+class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
 
     private val name: String = DEFAULT_TEST_PROJECT_NAME
 
-    private val gradleLocation = GradleLocationDelegate()
-    private val sdkConfiguration = SdkConfigurationDelegate()
-
-    private val gradleOptionsDelegate = GradleOptionBuilderDelegate(null)
+    private val ruleOptionBuilder = DefaultRuleOptionBuilder()
 
     /**
      * Returns the [GradleRule], for a project initialized with the [TestProjectBuilder]
@@ -50,21 +46,25 @@ class GradleRuleBuilder internal constructor(): TestRule {
         return create(builder)
     }
 
-    fun withGradle(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {
-        action(gradleLocation)
+    override fun withGradle(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {
+        ruleOptionBuilder.withGradle(action)
         return this
     }
 
-    fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder {
-        action(gradleOptionsDelegate)
+    override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder {
+        ruleOptionBuilder.withGradleOptions(action)
         return this
     }
 
-    fun withSdk(action: SdkConfigurationBuilder.() -> Unit): GradleRuleBuilder {
-        action(sdkConfiguration)
+    override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): GradleRuleBuilder {
+        ruleOptionBuilder.withSdk(action)
         return this
     }
 
+    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): GradleRuleBuilder {
+        ruleOptionBuilder.withProperties(action)
+        return this
+    }
 
     // -------------------------
 
@@ -74,11 +74,7 @@ class GradleRuleBuilder internal constructor(): TestRule {
         return GradleRule(
             name = name,
             gradleBuild = gradleBuild,
-
-            gradleLocation = gradleLocation.asGradleLocation,
-            sdkConfiguration = sdkConfiguration.asSdkConfiguration,
-            gradleOptions = gradleOptionsDelegate.asGradleOptions,
-            gradleProperties = listOf(), // FIXME
+            ruleOptionBuilder = ruleOptionBuilder,
         )
     }
 

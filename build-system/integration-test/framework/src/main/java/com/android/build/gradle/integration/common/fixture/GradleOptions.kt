@@ -26,7 +26,7 @@ data class GradleOptions(
     val memoryRequirement: MemoryRequirement,
     val configurationCaching: ConfigurationCaching,
 ) {
-    fun mutate(action: GradleOptionBuilderDelegate.() -> Unit): GradleOptions {
+    internal fun mutate(action: GradleOptionBuilderDelegate.() -> Unit): GradleOptions {
         val delegate = GradleOptionBuilderDelegate(this)
         action(delegate)
         return delegate.asGradleOptions
@@ -92,16 +92,18 @@ interface GradleOptionBuilder<T> {
     fun withConfigurationCaching(configurationCaching: ConfigurationCaching): T
 }
 
+private val DEFAULT_CONFIG_CACHING_LEVEL = ConfigurationCaching.PROJECT_ISOLATION
+
 /**
  * Self-contained implementation of [GradleOptionBuilder]
  */
-class GradleOptionBuilderDelegate(
+internal class GradleOptionBuilderDelegate(
     defaultValues: GradleOptions? = null
 ): GradleOptionBuilder<GradleOptionBuilderDelegate> {
 
     private var heap: String? = defaultValues?.memoryRequirement?.heap
     private var metaspace: String? = defaultValues?.memoryRequirement?.metaspace
-    private var configCaching: ConfigurationCaching = defaultValues?.configurationCaching ?: ConfigurationCaching.PROJECT_ISOLATION
+    private var configurationCaching: ConfigurationCaching = defaultValues?.configurationCaching ?: DEFAULT_CONFIG_CACHING_LEVEL
 
     override fun withHeap(heapSize: String?): GradleOptionBuilderDelegate {
         heap = heapSize
@@ -114,13 +116,27 @@ class GradleOptionBuilderDelegate(
     }
 
     override fun withConfigurationCaching(configurationCaching: ConfigurationCaching): GradleOptionBuilderDelegate {
-        configCaching = configurationCaching
+        this.configurationCaching = configurationCaching
         return this
     }
 
     val asGradleOptions: GradleOptions
         get() = GradleOptions(
             MemoryRequirement.use(heap, metaspace),
-            configCaching
+            configurationCaching
         )
+
+    internal fun mergeWith(other: GradleOptionBuilderDelegate) {
+        other.heap?.let {
+            heap = it
+        }
+
+        other.metaspace?.let {
+            metaspace = it
+        }
+
+        if (other.configurationCaching != DEFAULT_CONFIG_CACHING_LEVEL) {
+            configurationCaching = other.configurationCaching
+        }
+    }
 }
