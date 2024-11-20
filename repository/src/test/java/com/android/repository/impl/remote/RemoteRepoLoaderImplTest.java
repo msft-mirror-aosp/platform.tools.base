@@ -40,8 +40,14 @@ import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeRepositorySourceProvider;
 import com.android.repository.testframework.FakeSettingsController;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import junit.framework.TestCase;
+
+import org.mockito.Mockito;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -54,11 +60,34 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
-import junit.framework.TestCase;
-import org.mockito.Mockito;
 
 /** Tests for {@link RemoteRepoLoaderImpl} */
 public class RemoteRepoLoaderImplTest extends TestCase {
+
+    public void testEmptyRemoteRepo() throws Exception {
+        RepositorySource source =
+                new SimpleRepositorySource(
+                        "http://www.example.com",
+                        "Source UI Name",
+                        true,
+                        ImmutableSet.of(RepoManager.getGenericModule()),
+                        null);
+        FakeDownloader downloader = new FakeDownloader(createInMemoryFileSystemAndFolder("tmp"));
+        downloader.registerUrl(
+                new URL("http://www.example.com"),
+                getClass().getResourceAsStream("/testEmptyRepo.xml"));
+        FakeProgressIndicator progress = new FakeProgressIndicator(true);
+        RemoteRepoLoader loader =
+                new RemoteRepoLoaderImpl(
+                        ImmutableList.of(
+                                new FakeRepositorySourceProvider(ImmutableList.of(source))),
+                        null);
+        Map<String, RemotePackage> pkgs =
+                loader.fetchPackages(progress, downloader, new FakeSettingsController(false));
+        assertEquals(0, pkgs.size());
+        progress.assertNoErrorsOrWarnings();
+        assertNull(source.getFetchError());
+    }
 
     public void testRemoteRepo() throws Exception {
         RepositorySource source = new SimpleRepositorySource("http://www.example.com",
