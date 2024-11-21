@@ -67,12 +67,20 @@ interface DslContentHolder {
      */
     fun getList(name: String): MutableList<*>
 
-    fun getProperty(name: String): Property<Any>
-
     /**
      * Returns a proxied [MutableSet]
      */
     fun getSet(name: String): MutableSet<*>
+
+    /**
+     * Returns a proxied [MutableMap]
+     */
+    fun getMap(name: String): MutableMap<*,*>
+
+    /**
+     * Returns a proxied Gradle Property
+     */
+    fun getProperty(name: String): Property<Any>
 
     fun <T : BuildType> buildTypes(
         theInterface: Class<T>,
@@ -184,12 +192,16 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         return ListProxy<Any>(name, this)
     }
 
-    override fun getProperty(name: String): Property<Any> {
-        return PropertyProxy<Any>(name, this)
-    }
-
     override fun getSet(name: String): MutableSet<*> {
         return SetProxy<Any>(name, this)
+    }
+
+    override fun getMap(name: String): MutableMap<*, *> {
+        return MapProxy<Any,Any>(name, this)
+    }
+
+    override fun getProperty(name: String): Property<Any> {
+        return PropertyProxy<Any>(name, this)
     }
 
     override fun collectionAddAll(
@@ -385,6 +397,10 @@ internal class ChainedDslContentHolder(
 
     override fun getSet(name: String): MutableSet<*> {
         return SetProxy<Any>(name, this)
+    }
+
+    override fun getMap(name: String): MutableMap<*, *> {
+        return MapProxy<Any,Any>(name, this)
     }
 
     override fun getProperty(name: String): Property<Any> {

@@ -164,6 +164,7 @@ class DslProxy private constructor(
         val returnValue = when (method.returnType) {
             MutableList::class.java -> contentHolder.getList(propName)
             MutableSet::class.java -> contentHolder.getSet(propName)
+            MutableMap::class.java -> contentHolder.getMap(propName)
             Property::class.java -> contentHolder.getProperty(propName)
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {

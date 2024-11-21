@@ -38,6 +38,7 @@ interface Address {
     var street: String
     var city: String
     var zipCode: Int
+    val properties: MutableMap<String, String>
 }
 
 interface Town {
