@@ -18,6 +18,7 @@ package com.android.build.api.variant
 
 import com.android.build.api.artifact.Artifacts
 import org.gradle.api.Incubating
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 
 /**
@@ -57,6 +58,15 @@ interface KotlinMultiplatformAndroidVariant: HasDeviceTests, HasAndroidTest, Has
      */
     @get:Incubating
     val compileClasspath: FileCollection
+
+    /**
+     * Access to the variant's compile [Configuration]; androidMainCompileClasspath
+     * [Configuration] for the main variant.
+     *
+     * The returned [Configuration] should not be resolved until execution time.
+     */
+    @get:Incubating
+    val compileConfiguration: Configuration
 
     /**
      * List of the components nested in the main variant, the returned list may contain:

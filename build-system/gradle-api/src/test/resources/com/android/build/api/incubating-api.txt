@@ -330,6 +330,7 @@ https://issuetracker.google.com/328748877
 https://issuetracker.google.com/328748878
   * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getArtifacts: com.android.build.api.artifact.Artifacts ()
   * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getCompileClasspath: org.gradle.api.file.FileCollection ()
+  * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getCompileConfiguration: org.gradle.api.artifacts.Configuration ()
   * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getInstrumentation: com.android.build.api.variant.Instrumentation ()
   * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getLifecycleTasks: com.android.build.api.variant.LifecycleTasks ()
   * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getName: java.lang.String ()
