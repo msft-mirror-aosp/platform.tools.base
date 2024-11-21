@@ -23,18 +23,22 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.TestUtils;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.PrintStream;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 @SuppressWarnings("javadoc")
 public class XmlPrettyPrinterTest {
@@ -1277,7 +1281,7 @@ public class XmlPrettyPrinterTest {
                 + "<notclosed>\n"
                 + "</view>";
         File temp = File.createTempFile("mylayout", ".xml");
-        Files.asCharSink(temp, Charsets.UTF_8).write(brokenXml);
+        Files.asCharSink(temp, StandardCharsets.UTF_8).write(brokenXml);
         checkDriver(
                 "",
                 "[Fatal Error] :3:3: The element type \"notclosed\" must be terminated by "
@@ -1303,7 +1307,7 @@ public class XmlPrettyPrinterTest {
                 + "        <!-- Comment -->\n"
                 + "</LinearLayout>";
         File temp = File.createTempFile("mylayout", ".xml");
-        Files.asCharSink(temp, Charsets.UTF_8).write(xml);
+        Files.asCharSink(temp, StandardCharsets.UTF_8).write(xml);
         checkDriver(
                 "",
                 "",
@@ -1324,7 +1328,7 @@ public class XmlPrettyPrinterTest {
                 + "    <!-- Comment -->\n"
                 + "\n"
                 + "</LinearLayout>",
-                Files.toString(temp, Charsets.UTF_8));
+                Files.toString(temp, StandardCharsets.UTF_8));
         //noinspection ResultOfMethodCallIgnored
         temp.delete();
     }
@@ -1343,11 +1347,11 @@ public class XmlPrettyPrinterTest {
                 + "        <!-- Comment -->\n"
                 + "</LinearLayout>";
         File file1 = new File(root, "layout1.xml");
-        Files.asCharSink(file1, Charsets.UTF_8).write(xml);
+        Files.asCharSink(file1, StandardCharsets.UTF_8).write(xml);
         File dir1 = new File(root, "layout");
         dir1.mkdirs();
         File file2 = new File(dir1, "layout2.xml");
-        Files.asCharSink(file2, Charsets.UTF_8).write(xml);
+        Files.asCharSink(file2, StandardCharsets.UTF_8).write(xml);
 
         checkDriver(
                 "",
@@ -1370,8 +1374,8 @@ public class XmlPrettyPrinterTest {
                 + "\n"
                 + "</LinearLayout>";
 
-        assertEquals(formatted, Files.toString(file1, Charsets.UTF_8));
-        assertEquals(formatted, Files.toString(file2, Charsets.UTF_8));
+        assertEquals(formatted, Files.toString(file1, StandardCharsets.UTF_8));
+        assertEquals(formatted, Files.toString(file2, StandardCharsets.UTF_8));
 
         file1.delete();
         file2.delete();
@@ -1388,7 +1392,7 @@ public class XmlPrettyPrinterTest {
                 + "<Button/>"
                 + "</LinearLayout>";
         File temp = File.createTempFile("mylayout", ".xml");
-        Files.asCharSink(temp, Charsets.UTF_8).write(xml);
+        Files.asCharSink(temp, StandardCharsets.UTF_8).write(xml);
         checkDriver(
                 "",
                 "",
@@ -1409,7 +1413,7 @@ public class XmlPrettyPrinterTest {
                 + "    <Button />\n"
                 + "\n"
                 + "</LinearLayout>",
-                Files.toString(temp, Charsets.UTF_8));
+                Files.toString(temp, StandardCharsets.UTF_8));
         //noinspection ResultOfMethodCallIgnored
         temp.delete();
     }

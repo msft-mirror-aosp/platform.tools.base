@@ -19,13 +19,15 @@ package com.android.manifmerger;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
+
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -122,7 +124,7 @@ public class TestUtils {
             throws IOException {
         File tmpFile = File.createTempFile(testName, ".xml");
         tmpFile.deleteOnExit();
-        Files.asCharSink(tmpFile, Charsets.UTF_8).write(input);
+        Files.asCharSink(tmpFile, StandardCharsets.UTF_8).write(input);
         return tmpFile;
     }
 

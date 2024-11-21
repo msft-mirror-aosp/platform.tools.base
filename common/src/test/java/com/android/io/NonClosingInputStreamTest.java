@@ -18,7 +18,8 @@ package com.android.io;
 
 import com.android.annotations.NonNull;
 import com.android.io.NonClosingInputStream.CloseBehavior;
-import com.google.common.base.Charsets;
+
+import junit.framework.TestCase;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -27,13 +28,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-import junit.framework.TestCase;
-
-/**
- *
- */
+/** */
 public class NonClosingInputStreamTest extends TestCase {
 
     private File mFile;
@@ -43,7 +41,7 @@ public class NonClosingInputStreamTest extends TestCase {
         super.setUp();
         mFile = File.createTempFile("test", "txt");
         FileWrapper fw = new FileWrapper(mFile);
-        fw.setContents(new ByteArrayInputStream("1234".getBytes(Charsets.UTF_8)));
+        fw.setContents(new ByteArrayInputStream("1234".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Override

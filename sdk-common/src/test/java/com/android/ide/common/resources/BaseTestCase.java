@@ -22,14 +22,17 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.TestUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
+
 import javax.imageio.ImageIO;
 
 public abstract class BaseTestCase {
@@ -126,7 +129,7 @@ public abstract class BaseTestCase {
     protected static File getMergedBlobFolder(@NonNull File folder, @NonNull File mergerFile)
             throws IOException {
 
-        String content = Files.toString(mergerFile, Charsets.UTF_8);
+        String content = Files.toString(mergerFile, StandardCharsets.UTF_8);
 
         // search and replace $TOP$ with the root and $SEP$ with the platform separator.
         content = content.replaceAll(
@@ -134,7 +137,7 @@ public abstract class BaseTestCase {
                 replaceAll("\\$SEP\\$", Matcher.quoteReplacement(File.separator));
 
         File tempFolder = TestUtils.createTempDirDeletedOnExit().toFile();
-        Files.asCharSink(new File(tempFolder, DataMerger.FN_MERGER_XML), Charsets.UTF_8)
+        Files.asCharSink(new File(tempFolder, DataMerger.FN_MERGER_XML), StandardCharsets.UTF_8)
                 .write(content);
 
         return tempFolder;

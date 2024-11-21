@@ -15,22 +15,24 @@
  */
 package com.android.ide.common.repository;
 
+import static com.android.SdkConstants.FN_PUBLIC_TXT;
+import static com.android.SdkConstants.FN_RESOURCE_TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceType;
 import com.android.resources.ResourceUrl;
 import com.android.testutils.TestUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
+
 import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static com.android.SdkConstants.FN_PUBLIC_TXT;
-import static com.android.SdkConstants.FN_RESOURCE_TEXT;
 
 public class ResourceVisibilityLookupTest extends TestCase {
 
@@ -333,10 +335,10 @@ public class ResourceVisibilityLookupTest extends TestCase {
         final File tempDir = TestUtils.createTempDirDeletedOnExit().toFile();
 
         File rFile = new File(tempDir, FN_RESOURCE_TEXT);
-        Files.asCharSink(rFile, Charsets.UTF_8).write(allResources);
+        Files.asCharSink(rFile, StandardCharsets.UTF_8).write(allResources);
         File publicTxtFile = new File(tempDir, FN_PUBLIC_TXT);
         if (publicResources != null) {
-            Files.asCharSink(publicTxtFile, Charsets.UTF_8).write(publicResources);
+            Files.asCharSink(publicTxtFile, StandardCharsets.UTF_8).write(publicResources);
         }
         GradleCoordinate c = GradleCoordinate.parseCoordinateString(name);
         assertNotNull(c);

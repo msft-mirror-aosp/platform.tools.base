@@ -16,6 +16,7 @@
 package com.android.utils;
 
 import static com.android.SdkConstants.XMLNS;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.SdkConstants;
@@ -23,8 +24,17 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Maps;
+
+import junit.framework.TestCase;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,17 +42,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import junit.framework.TestCase;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 @SuppressWarnings("javadoc")
 public class XmlUtilsTest extends TestCase {
@@ -409,7 +415,7 @@ public class XmlUtilsTest extends TestCase {
         File file = File.createTempFile(getName(), SdkConstants.DOT_XML);
 
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-        try (OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8)) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
             stream.write(0xef);
             stream.write(0xbb);
             stream.write(0xbf);
@@ -506,7 +512,7 @@ public class XmlUtilsTest extends TestCase {
                 "</LinearLayout>\n";
 
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-        try (OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8)) {
+        try (OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8)) {
             stream.write(0xef);
             stream.write(0xbb);
             stream.write(0xbf);

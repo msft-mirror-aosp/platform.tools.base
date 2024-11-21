@@ -55,7 +55,6 @@ import com.android.utils.ILogger;
 import com.android.utils.PathUtils;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
 
@@ -70,6 +69,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -1438,7 +1438,7 @@ public class AvdManager {
     private void writeIniFile(Path iniFile, Map<String, String> values, boolean addEncoding)
             throws IOException {
 
-        Charset charset = Charsets.UTF_8;
+        Charset charset = StandardCharsets.UTF_8;
         try (OutputStreamWriter writer =
                 new OutputStreamWriter(Files.newOutputStream(iniFile), charset)) {
             if (addEncoding) {
@@ -1504,7 +1504,7 @@ public class AvdManager {
             boolean canChangeCharset = false;
             if (charset == null) {
                 canChangeCharset = true;
-                charset = Charsets.ISO_8859_1;
+                charset = StandardCharsets.ISO_8859_1;
             }
             reader = new BufferedReader(new InputStreamReader(propFile.getContents(), charset));
 

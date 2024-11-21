@@ -21,8 +21,11 @@ import static com.android.SdkConstants.DIST_URI;
 import static com.android.SdkConstants.MANIFEST_ATTR_TITLE;
 import static com.android.SdkConstants.TAG_MODULE;
 import static com.android.manifmerger.ManifestMerger2.Invoker.Feature;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static junit.framework.TestCase.assertFalse;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -41,19 +44,12 @@ import com.android.manifmerger.MergingReport.MergedManifestKind;
 import com.android.testutils.MockLog;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.logging.Logger;
-import javax.xml.parsers.ParserConfigurationException;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -67,9 +63,18 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-/**
- * Tests for the {@link ManifestMergerTestUtil} class
- */
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+/** Tests for the {@link ManifestMergerTestUtil} class */
 public class ManifestMerger2SmallTest {
     private final ManifestModel mModel = new ManifestModel();
 
@@ -776,7 +781,7 @@ public class ManifestMerger2SmallTest {
                     @Override
                     protected InputStream getInputStream(@NonNull File file)
                             throws FileNotFoundException {
-                        return new ByteArrayInputStream(xml.getBytes(Charsets.UTF_8));
+                        return new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
                     }
                 })
                 .merge();

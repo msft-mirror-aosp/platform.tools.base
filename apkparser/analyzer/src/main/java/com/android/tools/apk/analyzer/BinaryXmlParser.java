@@ -19,7 +19,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.xml.XmlBuilder;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Lists;
 import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
@@ -32,6 +32,8 @@ import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceEndChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceStartChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlResourceMapChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
+
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +66,7 @@ public class BinaryXmlParser {
 
         String reconstructedXml =
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + printer.getReconstructedXml();
-        return reconstructedXml.getBytes(Charsets.UTF_8);
+        return reconstructedXml.getBytes(StandardCharsets.UTF_8);
     }
 
     @NonNull

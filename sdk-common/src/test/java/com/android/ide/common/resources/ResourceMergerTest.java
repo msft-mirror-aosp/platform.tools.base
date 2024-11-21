@@ -18,7 +18,9 @@ package com.android.ide.common.resources;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.TAG_ATTR;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -42,7 +44,7 @@ import com.android.testutils.TestResources;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
@@ -50,16 +52,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,6 +63,19 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class ResourceMergerTest extends BaseTestCase {
 
@@ -1058,7 +1064,7 @@ public class ResourceMergerTest extends BaseTestCase {
                         new SourceFilePosition(destFile, new SourcePosition(2,5,-1)));
 
         // check for \r presence to adapt the source position calculation.
-        int extraOffset =  Files.toString(original.getFile().getSourceFile(), Charsets.UTF_8)
+        int extraOffset =  Files.toString(original.getFile().getSourceFile(), StandardCharsets.UTF_8)
                 .contains("\r") ? 2 : 0;
         assertEquals(new SourcePosition(2, 4, 55 + extraOffset, 2, 51, 102 + extraOffset),
                 original.getPosition());
@@ -1239,7 +1245,7 @@ public class ResourceMergerTest extends BaseTestCase {
         // quick load of the values file
         File valuesFile = new File(resFolder, "values" + File.separator + "values.xml");
         assertTrue(valuesFile.isFile());
-        String content = Files.toString(valuesFile, Charsets.UTF_8);
+        String content = Files.toString(valuesFile, StandardCharsets.UTF_8);
         assertTrue(content.contains("name=\"file_replaced_by_alias\""));
         assertFalse(content.contains("name=\"alias_replaced_by_file\""));
     }

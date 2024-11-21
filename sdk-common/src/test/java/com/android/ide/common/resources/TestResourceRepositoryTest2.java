@@ -30,14 +30,17 @@ import com.android.resources.ScreenOrientation;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
+
+import junit.framework.TestCase;
+
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class TestResourceRepositoryTest2 extends TestCase {
@@ -79,7 +82,7 @@ public class TestResourceRepositoryTest2 extends TestCase {
         new File(layout, "layout2.xml").createNewFile();
         new File(drawable, "graphic.9.png").createNewFile();
         File strings = new File(values, "strings.xml");
-        Files.asCharSink(strings, Charsets.UTF_8)
+        Files.asCharSink(strings, StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
@@ -93,25 +96,25 @@ public class TestResourceRepositoryTest2 extends TestCase {
                                 + "    <string name=\"placeholder\" translatable=\"false\">Ignore Me</string>\n"
                                 + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
                                 + "</resources>\n");
-        Files.asCharSink(new File(valuesEs, "strings.xml"), Charsets.UTF_8)
+        Files.asCharSink(new File(valuesEs, "strings.xml"), StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
                                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                                 + "</resources>\n");
-        Files.asCharSink(new File(valuesEsUs, "strings.xml"), Charsets.UTF_8)
+        Files.asCharSink(new File(valuesEsUs, "strings.xml"), StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
                                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                                 + "</resources>\n");
-        Files.asCharSink(new File(valuesKok, "strings.xml"), Charsets.UTF_8)
+        Files.asCharSink(new File(valuesKok, "strings.xml"), StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
                                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                                 + "</resources>\n");
-        Files.asCharSink(new File(valuesKokIn, "strings.xml"), Charsets.UTF_8)
+        Files.asCharSink(new File(valuesKokIn, "strings.xml"), StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
@@ -119,7 +122,7 @@ public class TestResourceRepositoryTest2 extends TestCase {
                                 + "</resources>\n");
 
         if ("testGetMatchingFileAliases".equals(getName())) {
-            Files.asCharSink(new File(valuesEsUs, "refs.xml"), Charsets.UTF_8)
+            Files.asCharSink(new File(valuesEsUs, "refs.xml"), StandardCharsets.UTF_8)
                     .write(
                             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                     + "<resources>\n"
@@ -297,10 +300,10 @@ public class TestResourceRepositoryTest2 extends TestCase {
         ResourceFile stringResFile = ((ResourceMergerItem) itemList.get(0)).getSourceFile();
         File stringFile = stringResFile.getFile();
         assertTrue(stringFile.exists());
-        String strings = Files.toString(stringFile, Charsets.UTF_8);
+        String strings = Files.toString(stringFile, StandardCharsets.UTF_8);
         assertNotNull(strings);
         strings = strings.replace("name=\"placeholder\"", "name=\"myPlaceholder\"");
-        Files.asCharSink(stringFile, Charsets.UTF_8).write(strings);
+        Files.asCharSink(stringFile, StandardCharsets.UTF_8).write(strings);
 
         resourceSet.updateWith(mRes, stringFile, FileStatus.CHANGED, mLogger);
         mRepository.update(mResourceMerger);

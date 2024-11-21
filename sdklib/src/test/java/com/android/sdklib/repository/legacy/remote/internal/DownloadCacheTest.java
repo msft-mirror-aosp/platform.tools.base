@@ -17,6 +17,7 @@
 package com.android.sdklib.repository.legacy.remote.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
@@ -26,7 +27,13 @@ import com.android.repository.testframework.FakeSettingsController;
 import com.android.sdklib.repository.legacy.FileOp;
 import com.android.sdklib.repository.legacy.MockFileOp;
 import com.android.utils.Pair;
-import com.google.common.base.Charsets;
+
+import org.apache.http.Header;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -38,15 +45,11 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import org.apache.http.Header;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class DownloadCacheTest {
@@ -139,7 +142,7 @@ public class DownloadCacheTest {
         public void registerResponse(@NonNull String url, int httpCode, @Nullable String content) {
             InputStream is = null;
             if (content != null) {
-                is = new ByteArrayInputStream(content.getBytes(Charsets.UTF_8));
+                is = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
             }
 
             Pair<InputStream, Integer> reply = Pair.of(is, httpCode);
@@ -219,7 +222,9 @@ public class DownloadCacheTest {
         d2.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is2 = d2.openCachedUrl("http://www.example.com/download1.xml");
         assertThat(is2).isNotNull();
-        assertThat(new BufferedReader(new InputStreamReader(is2, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is2, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("Blah blah blah");
         assertThat(mFileOp.getWrittenFiles()).isEmpty();
 
@@ -228,7 +233,9 @@ public class DownloadCacheTest {
         d3.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is3 = d3.openCachedUrl("http://www.example.com/download1.xml");
         assertThat(is3).isNotNull();
-        assertThat(new BufferedReader(new InputStreamReader(is3, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is3, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("Blah blah blah");
         assertThat(sanitize(d3, mFileOp.getWrittenFiles()))
                 .isAnyOf(
@@ -259,7 +266,9 @@ public class DownloadCacheTest {
         d4.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is4 = d4.openCachedUrl("http://www.example.com/download1.xml");
         assertThat(is4).isNotNull();
-        assertThat(new BufferedReader(new InputStreamReader(is4, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is4, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("Blah blah blah");
         assertThat(sanitize(d4, mFileOp.getWrittenFiles()))
                 .isAnyOf(
@@ -302,7 +311,9 @@ public class DownloadCacheTest {
                 "URL=http\\://www.example.com/download1.xml\n" + "Status-Code=200\n");
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml");
         // Only-cache strategy returns the value from the cache, not the actual resource.
-        assertThat(new BufferedReader(new InputStreamReader(is1, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is1, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("This is the cached content");
         assertThat(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot())).isTrue();
         // The cache hasn't been modified, only read
@@ -327,7 +338,9 @@ public class DownloadCacheTest {
                 "URL=http\\://www.example.com/download1.xml\n" + "Status-Code=200\n");
         InputStream is2 = d2.openCachedUrl("http://www.example.com/download1.xml");
         // Direct strategy ignores the cache.
-        assertThat(new BufferedReader(new InputStreamReader(is2, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is2, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("This is the new content");
         assertThat(mFileOp.hasRecordedExistingFolder(d2.getCacheRoot())).isTrue();
         // Direct strategy doesn't update the cache.
@@ -353,7 +366,9 @@ public class DownloadCacheTest {
                 "URL=http\\://www.example.com/download1.xml\n" + "Status-Code=200\n");
         InputStream is3 = d3.openCachedUrl("http://www.example.com/download1.xml");
         // We get content from the cache.
-        assertThat(new BufferedReader(new InputStreamReader(is3, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is3, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("This is the cached content");
         assertThat(mFileOp.hasRecordedExistingFolder(d3.getCacheRoot())).isTrue();
         // Cache isn't updated since nothing fresh was read.
@@ -380,7 +395,9 @@ public class DownloadCacheTest {
                 "URL=http\\://www.example.com/download1.xml\n" + "Status-Code=200\n");
         InputStream is4 = d4.openCachedUrl("http://www.example.com/download1.xml");
         // Cache is discarded, actual resource is returned.
-        assertThat(new BufferedReader(new InputStreamReader(is4, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is4, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("This is the new content");
         assertThat(mFileOp.hasRecordedExistingFolder(d4.getCacheRoot())).isTrue();
         // Cache isn updated since something fresh was read.
@@ -427,7 +444,9 @@ public class DownloadCacheTest {
                 "URL=http\\://www.example.com/download1.xml\n" + "Status-Code=200\n");
         InputStream is5 = d5.openCachedUrl("http://www.example.com/download1.xml");
         // Cache is used.
-        assertThat(new BufferedReader(new InputStreamReader(is5, Charsets.UTF_8)).readLine())
+        assertThat(
+                        new BufferedReader(new InputStreamReader(is5, StandardCharsets.UTF_8))
+                                .readLine())
                 .isEqualTo("This is the cached content");
         assertThat(mFileOp.hasRecordedExistingFolder(d5.getCacheRoot())).isTrue();
         // Cache isn't updated since nothing fresh was read.

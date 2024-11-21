@@ -18,9 +18,10 @@ package com.android.sdklib.repository.legacy;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.file.InMemoryFileSystems;
-import com.google.common.base.Charsets;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -114,7 +115,7 @@ public class MockFileOp extends FileOp {
      *     #newFileInputStream(File)}.
      */
     public void recordExistingFile(@NonNull String absFilePath, @NonNull String content) {
-        recordExistingFile(absFilePath, 0, content.getBytes(Charsets.UTF_8));
+        recordExistingFile(absFilePath, 0, content.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -156,7 +157,7 @@ public class MockFileOp extends FileOp {
      */
     public void recordExistingFile(
             @NonNull String absFilePath, long lastModified, @NonNull String content) {
-        recordExistingFile(absFilePath, lastModified, content.getBytes(Charsets.UTF_8));
+        recordExistingFile(absFilePath, lastModified, content.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

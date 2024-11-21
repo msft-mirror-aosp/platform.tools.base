@@ -17,6 +17,7 @@
 package com.android.sdklib.tool.sdkmanager;
 
 import static com.android.repository.testframework.FakePackage.FakeRemotePackage;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,9 +48,13 @@ import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.testutils.file.InMemoryFileSystems;
 import com.android.utils.PathUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -57,6 +62,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Proxy;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -65,8 +71,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import org.junit.Before;
-import org.junit.Test;
 
 /** Tests for {@link SdkManagerCli} */
 @SuppressWarnings("resource")
@@ -156,7 +160,7 @@ public class SdkManagerCliTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             zos.putNextEntry(new ZipEntry("top-level/a"));
-            zos.write("contents1".getBytes(Charsets.UTF_8));
+            zos.write("contents1".getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
         ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());

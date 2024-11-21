@@ -15,12 +15,13 @@
  */
 package com.android.sdklib.internal.build;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 @SuppressWarnings({"javadoc", "deprecation"})
 public class SymbolLoaderTest extends TestCase {
@@ -29,7 +30,7 @@ public class SymbolLoaderTest extends TestCase {
                 "int xml authenticator 0x7f040000\n";
         File file = File.createTempFile(getClass().getSimpleName(), "txt");
         file.deleteOnExit();
-        Files.write(r, file, Charsets.UTF_8);
+        Files.write(r, file, StandardCharsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file);
         loader.load();
         Table<String, String, SymbolLoader.SymbolEntry> symbols = loader.getSymbols();
@@ -47,7 +48,7 @@ public class SymbolLoaderTest extends TestCase {
             "int xml authenticator 0x7f040000\n";
         File file = File.createTempFile(getClass().getSimpleName(), "txt");
         file.deleteOnExit();
-        Files.write(r, file, Charsets.UTF_8);
+        Files.write(r, file, StandardCharsets.UTF_8);
         SymbolLoader loader = new SymbolLoader(file);
         loader.load();
         Table<String, String, SymbolLoader.SymbolEntry> symbols = loader.getSymbols();

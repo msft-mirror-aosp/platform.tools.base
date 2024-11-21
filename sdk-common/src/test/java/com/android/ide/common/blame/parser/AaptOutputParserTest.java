@@ -20,6 +20,7 @@ import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.PLATFORM_WINDOWS;
 import static com.android.SdkConstants.currentPlatform;
 import static com.android.utils.SdkUtils.createPathComment;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -32,9 +33,15 @@ import com.android.testutils.TestResources;
 import com.android.utils.FileUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.StringHelper;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,10 +49,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 /**
  * Tests for {@link ToolOutputParser}.
@@ -497,7 +500,7 @@ public class AaptOutputParserTest {
         sourceFile = new File(tempDir, "values.xml"); // Name matters for position search
         sourceFilePath = sourceFile.getAbsolutePath();
         File source = new File(tempDir, "dimens.xml");
-        Files.asCharSink(source, Charsets.UTF_8)
+        Files.asCharSink(source, StandardCharsets.UTF_8)
                 .write(
                         "<resources>\n"
                                 + "    <!-- Default screen margins, per the Android Design guidelines. -->\n"
@@ -505,7 +508,7 @@ public class AaptOutputParserTest {
                                 + "    <dimen name=\"activity_vertical_margin\">16dp</dimen>\n"
                                 + "    <dimen name=\"new_name\">50</dimen>\n"
                                 + "</resources>");
-        Files.asCharSink(sourceFile, Charsets.UTF_8)
+        Files.asCharSink(sourceFile, StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
@@ -597,7 +600,7 @@ public class AaptOutputParserTest {
         sourceFile = new File(dir, "values.xml"); // Name matters for position search
         sourceFilePath = sourceFile.getAbsolutePath();
         File source = new File(dir, "dimens.xml");
-        Files.asCharSink(source, Charsets.UTF_8)
+        Files.asCharSink(source, StandardCharsets.UTF_8)
                 .write(
                         "<resources>\n"
                                 + "    <!-- Default screen margins, per the Android Design guidelines. -->\n"
@@ -605,7 +608,7 @@ public class AaptOutputParserTest {
                                 + "    <dimen name=\"activity_vertical_margin\">16dp</dimen>\n"
                                 + "    <dimen name=\"new_name\">50</dimen>\n"
                                 + "</resources>");
-        Files.asCharSink(sourceFile, Charsets.UTF_8)
+        Files.asCharSink(sourceFile, StandardCharsets.UTF_8)
                 .write(
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                                 + "<resources>\n"
@@ -665,7 +668,7 @@ public class AaptOutputParserTest {
         sourceFile = new File(tempDir, "layout.xml");
         sourceFilePath = sourceFile.getAbsolutePath();
         File source = new File(tempDir, "real-layout.xml");
-        Files.asCharSink(source, Charsets.UTF_8)
+        Files.asCharSink(source, StandardCharsets.UTF_8)
                 .write(
                         "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                                 + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
@@ -687,7 +690,7 @@ public class AaptOutputParserTest {
                                 + "        android:layout_alignParentLeft=\"true\" />\n"
                                 + "\n"
                                 + "</RelativeLayout>\n");
-        Files.asCharSink(sourceFile, Charsets.UTF_8)
+        Files.asCharSink(sourceFile, StandardCharsets.UTF_8)
                 .write(
                         "<RelativeLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                                 + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"

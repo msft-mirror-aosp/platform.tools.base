@@ -17,11 +17,13 @@
 package com.android.ide.common.resources;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.io.File.separator;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.blame.SourceFilePosition;
@@ -29,12 +31,15 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.rendering.api.ResourceNamespace;
 import com.android.testutils.TestResources;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
+
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.junit.Test;
 
 public class ResourceSetTest extends BaseTestCase {
 
@@ -285,7 +290,7 @@ public class ResourceSetTest extends BaseTestCase {
         assertNotNull(resources);
         assertFalse(resources.isEmpty());
 
-        int extraOffset =  Files.toString(resources.get(0).getSourceFile().getFile(), Charsets.UTF_8)
+        int extraOffset =  Files.toString(resources.get(0).getSourceFile().getFile(), StandardCharsets.UTF_8)
                 .contains("\r") ? 13 : 0;  // Account for \r on Windows
         assertEquals(new SourcePosition(13, 4, 529 + extraOffset, 13, 53, 578 + extraOffset),
                 XmlUtils.getSourceFilePosition(resources.get(0).getValue()).getPosition());

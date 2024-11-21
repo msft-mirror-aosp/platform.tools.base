@@ -18,7 +18,6 @@ package com.android.sdklib.internal.build;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
@@ -28,6 +27,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @SuppressWarnings("deprecation")
@@ -51,7 +51,7 @@ public class SymbolWriterTest {
         // 1. write rText in a temp file
         File file = File.createTempFile(getClass().getSimpleName(), "txt");
         file.deleteOnExit();
-        Files.write(rValues, file, Charsets.UTF_8);
+        Files.write(rValues, file, StandardCharsets.UTF_8);
         // 2. load symbol from temp file.
         SymbolLoader symbolValues = new SymbolLoader(file);
         symbolValues.load();
@@ -65,7 +65,7 @@ public class SymbolWriterTest {
             // 1. write rText in a temp file
             file = File.createTempFile(getClass().getSimpleName(), "txt");
             file.deleteOnExit();
-            Files.write(rText, file, Charsets.UTF_8);
+            Files.write(rText, file, StandardCharsets.UTF_8);
             // 2. load symbol from temp file.
             SymbolLoader loader = new SymbolLoader(file);
             loader.load();
@@ -83,9 +83,14 @@ public class SymbolWriterTest {
         }
         writer.write();
 
-        String contents = Files.toString(new File(outFolder,
-                packageName.replace('.',  File.separatorChar) + File.separator + "R.java"),
-                Charsets.UTF_8);
+        String contents =
+                Files.toString(
+                        new File(
+                                outFolder,
+                                packageName.replace('.', File.separatorChar)
+                                        + File.separator
+                                        + "R.java"),
+                        StandardCharsets.UTF_8);
 
         // Ensure we wrote what was expected
         assertEquals(rJava, contents.replaceAll("\t", "    "));

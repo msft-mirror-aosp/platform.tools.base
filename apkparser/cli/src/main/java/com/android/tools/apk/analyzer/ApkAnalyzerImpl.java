@@ -47,7 +47,6 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
@@ -70,6 +69,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -511,7 +511,7 @@ public class ApkAnalyzerImpl {
             try {
                 proguardMap.readFromReader(
                         new InputStreamReader(
-                                Files.newInputStream(pfm.mappingFile), Charsets.UTF_8));
+                                Files.newInputStream(pfm.mappingFile), StandardCharsets.UTF_8));
                 loaded.add(pfm.mappingFile.getFileName().toString());
             } catch (IOException | ParseException e) {
                 errors.add(pfm.mappingFile.getFileName().toString());
@@ -524,7 +524,8 @@ public class ApkAnalyzerImpl {
                 seeds =
                         ProguardSeedsMap.parse(
                                 new InputStreamReader(
-                                        Files.newInputStream(pfm.seedsFile), Charsets.UTF_8));
+                                        Files.newInputStream(pfm.seedsFile),
+                                        StandardCharsets.UTF_8));
                 loaded.add(pfm.seedsFile.getFileName().toString());
             } catch (IOException e) {
                 errors.add(pfm.seedsFile.getFileName().toString());
@@ -536,7 +537,8 @@ public class ApkAnalyzerImpl {
                 usage =
                         ProguardUsagesMap.parse(
                                 new InputStreamReader(
-                                        Files.newInputStream(pfm.usageFile), Charsets.UTF_8));
+                                        Files.newInputStream(pfm.usageFile),
+                                        StandardCharsets.UTF_8));
                 loaded.add(pfm.usageFile.getFileName().toString());
             } catch (IOException e) {
                 errors.add(pfm.usageFile.getFileName().toString());
@@ -694,7 +696,8 @@ public class ApkAnalyzerImpl {
     private static void loadDescriptorsFromFile(
             @NonNull Path descriptorFilePath, @NonNull List<Descriptor> descriptors) {
         try {
-            BufferedReader reader = Files.newBufferedReader(descriptorFilePath, Charsets.UTF_8);
+            BufferedReader reader =
+                    Files.newBufferedReader(descriptorFilePath, StandardCharsets.UTF_8);
             String line = reader.readLine();
             while (line != null) {
                 descriptors.add(new Descriptor(line));

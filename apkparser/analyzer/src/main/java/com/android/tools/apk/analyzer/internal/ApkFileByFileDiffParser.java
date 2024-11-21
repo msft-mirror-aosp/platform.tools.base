@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.android.tools.apk.analyzer.internal;
+
 /*
  * Copyright (C) 2017 The Android Open Source Project
  *
@@ -38,11 +39,13 @@ import com.android.tools.apk.analyzer.ArchiveEntry;
 import com.android.tools.apk.analyzer.ArchiveNode;
 import com.android.tools.apk.analyzer.ArchiveTreeStructure;
 import com.android.tools.apk.analyzer.PathUtils;
+
 import com.google.archivepatcher.explainer.EntryExplanation;
 import com.google.archivepatcher.explainer.PatchExplainer;
 import com.google.archivepatcher.generator.bsdiff.BsDiffDeltaGenerator;
 import com.google.archivepatcher.shared.DeflateCompressor;
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -51,6 +54,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class ApkFileByFileDiffParser {

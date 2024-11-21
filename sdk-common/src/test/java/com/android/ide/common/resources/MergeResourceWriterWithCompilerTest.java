@@ -22,20 +22,24 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
 import com.android.resources.ResourceType;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.MoreExecutors;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilderFactory;
 
 public class MergeResourceWriterWithCompilerTest {
     @Rule
@@ -98,7 +102,7 @@ public class MergeResourceWriterWithCompilerTest {
         File rawRes = new File(resourceDir, "raw");
         rawRes.mkdir();
         File f1 = new File(rawRes, "f1.txt");
-        Files.asCharSink(f1, Charsets.UTF_8).write("foo");
+        Files.asCharSink(f1, StandardCharsets.UTF_8).write("foo");
 
         ResourceMergerItem f1Item =
                 new ResourceMergerItem("f1.txt", null, ResourceType.RAW, null, null, null);
@@ -106,7 +110,8 @@ public class MergeResourceWriterWithCompilerTest {
         f1Item.setSourceFile(f1File);
 
         File f2 = new File(rawRes, "f2.xml");
-        Files.asCharSink(f2, Charsets.UTF_8).write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        Files.asCharSink(f2, StandardCharsets.UTF_8)
+                .write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
         ResourceMergerItem f2Item =
                 new ResourceMergerItem("f2.xml", null, ResourceType.RAW, null, null, null);

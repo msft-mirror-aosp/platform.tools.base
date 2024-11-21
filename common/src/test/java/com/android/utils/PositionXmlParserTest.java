@@ -16,9 +16,19 @@
 
 package com.android.utils;
 
+import static com.android.SdkConstants.ANDROID_URI;
+
+import static com.google.common.truth.Truth.assertThat;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
+
 import com.android.ide.common.blame.SourcePosition;
-import com.google.common.base.Charsets;
+
 import kotlin.io.FilesKt;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -35,13 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
+import java.nio.charset.StandardCharsets;
 
 public class PositionXmlParserTest {
     @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -69,7 +73,7 @@ public class PositionXmlParserTest {
                 "\n" +
                 "</LinearLayout>\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
 
@@ -139,7 +143,7 @@ public class PositionXmlParserTest {
                 "done\n  " +
                 "</LinearLayout>\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
 
@@ -184,7 +188,7 @@ public class PositionXmlParserTest {
                 "<LinearLayout></LinearLayout>\r\n" +
                 "</LinearLayout>\r\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
     }
@@ -344,7 +348,7 @@ public class PositionXmlParserTest {
                         "\n" +
                         "</LinearLayout>\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
 
@@ -390,7 +394,7 @@ public class PositionXmlParserTest {
                         "\n" +
                         "</LinearLayout>\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
 
@@ -444,7 +448,7 @@ public class PositionXmlParserTest {
                 + "\n";
 
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
 
@@ -493,7 +497,7 @@ public class PositionXmlParserTest {
                         "        ns:text=\"Button\" />\n" +
                         "</ns:SomeTag>\n";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
         Element e = document.getDocumentElement();
@@ -528,7 +532,7 @@ public class PositionXmlParserTest {
                         + "    <string name=\"cdata_string\"><![CDATA[<html>not<br>\nxml]]></string>\n"
                         + "</resources>";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
         Element e = document.getDocumentElement();
@@ -549,7 +553,7 @@ public class PositionXmlParserTest {
           "    </string>\n" +
           "</resources>";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
         Element e = document.getDocumentElement();
@@ -568,7 +572,7 @@ public class PositionXmlParserTest {
                         + "    <string name=\"cdata_string\">XXX<![CDATA[<html>not<br>\nxml]]>YYY<![CDATA[<a href=\"url://web.site\">link</a>]]>ZZZ</string>\n"
                         + "</resources>";
         File file = temporaryFolder.newFile("parsertest.xml");
-        FilesKt.writeText(file, xml, Charsets.UTF_8);
+        FilesKt.writeText(file, xml, StandardCharsets.UTF_8);
         Document document = PositionXmlParser.parse(new FileInputStream(file));
         assertNotNull(document);
         Element e = document.getDocumentElement();
@@ -602,6 +606,6 @@ public class PositionXmlParserTest {
                 + "</resources>";
 
         // Ok (earlier this would throw networking errors attempting to load schemas.android.com)
-        PositionXmlParser.parse(new ByteArrayInputStream(xml.getBytes(Charsets.UTF_8)));
+        PositionXmlParser.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
     }
 }

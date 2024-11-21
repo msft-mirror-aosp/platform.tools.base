@@ -16,6 +16,7 @@
 package com.android.sdklib.repository.installer;
 
 import static com.android.sdklib.IAndroidTarget.SOURCES;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -35,15 +36,18 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.testutils.file.InMemoryFileSystems;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.ImmutableList;
+
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import junit.framework.TestCase;
 
 /**
  * Tests for {@link SourceInstallListener}
@@ -81,7 +85,7 @@ public class SourceInstallListenerTest extends TestCase {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(256);
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             zos.putNextEntry(new ZipEntry("top-level/sources"));
-            zos.write("contents".getBytes(Charsets.UTF_8));
+            zos.write("contents".getBytes(StandardCharsets.UTF_8));
             zos.closeEntry();
         }
         ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());

@@ -17,7 +17,9 @@
 package com.android.ide.common.resources;
 
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,20 +30,23 @@ import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.android.testutils.NoErrorsOrWarningsLogger;
 import com.android.testutils.TestResources;
 import com.android.testutils.TestUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.zip.GZIPOutputStream;
+
 import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.zip.GZIPOutputStream;
 
 public class AssetMergerTest extends BaseTestCase {
 
@@ -105,7 +110,7 @@ public class AssetMergerTest extends BaseTestCase {
         Path gzippedAsset = assetsSourceDirectory.resolve("asset.txt.gz");
         try (GZIPOutputStream out = new GZIPOutputStream(new BufferedOutputStream(
                 java.nio.file.Files.newOutputStream(gzippedAsset)))) {
-            out.write("test.txt file content".getBytes(Charsets.UTF_8));
+            out.write("test.txt file content".getBytes(StandardCharsets.UTF_8));
         }
 
         // Load asset set containing gzipped asset

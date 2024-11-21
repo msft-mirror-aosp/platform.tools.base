@@ -1,6 +1,7 @@
 package com.android.ide.common.resources;
 
 import static com.android.SdkConstants.FD_RES;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -8,11 +9,13 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.rendering.api.ResourceNamespace;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -82,7 +85,7 @@ public class ResourceRepositoryFixture {
             Object fileContents = data[i + 1];
             if (fileContents instanceof String) {
                 String text = (String) fileContents;
-                Files.asCharSink(file, Charsets.UTF_8).write(text);
+                Files.asCharSink(file, StandardCharsets.UTF_8).write(text);
             } else if (fileContents instanceof byte[]) {
                 byte[] bytes = (byte[]) fileContents;
                 Files.write(bytes, file);

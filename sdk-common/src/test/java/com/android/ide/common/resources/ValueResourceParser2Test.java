@@ -24,24 +24,27 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.android.testutils.TestResources;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+
+import org.junit.Test;
+import org.w3c.dom.Document;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-import javax.xml.parsers.DocumentBuilderFactory;
-import org.junit.Test;
-import org.w3c.dom.Document;
 
-/**
- */
+import javax.xml.parsers.DocumentBuilderFactory;
+
+/** */
 public class ValueResourceParser2Test extends BaseTestCase {
 
     private static List<ResourceMergerItem> sResources = null;
@@ -178,7 +181,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
                 "</LinearLayout>\n";
 
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8);
         stream.write(0xef);
         stream.write(0xbb);
         stream.write(0xbf);
@@ -212,7 +215,7 @@ public class ValueResourceParser2Test extends BaseTestCase {
                      "</resources>\n";
 
         BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(file));
-        OutputStreamWriter writer = new OutputStreamWriter(stream, Charsets.UTF_8);
+        OutputStreamWriter writer = new OutputStreamWriter(stream, StandardCharsets.UTF_8);
         stream.write(0xef);
         stream.write(0xbb);
         stream.write(0xbf);

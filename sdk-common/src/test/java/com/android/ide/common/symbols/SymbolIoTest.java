@@ -17,8 +17,10 @@
 package com.android.ide.common.symbols;
 
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,7 +31,7 @@ import com.android.resources.ResourceType;
 import com.android.resources.ResourceVisibility;
 import com.android.testutils.TestResources;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -37,6 +39,12 @@ import com.google.common.collect.UnmodifiableIterator;
 import com.google.common.io.Files;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -49,10 +57,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 public class SymbolIoTest {
 
@@ -70,7 +74,7 @@ public class SymbolIoTest {
     public void testSingleInt() throws Exception {
         String r = "int xml authenticator 0x7f040000\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
 
         SymbolTable table = SymbolIo.readFromAapt(file, null);
 
@@ -91,7 +95,7 @@ public class SymbolIoTest {
                         + "int styleable LimitedSizeLinearLayout_max_width 0\n"
                         + "int xml authenticator 0x7f040000\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
 
         SymbolTable table = SymbolIo.readFromAapt(file, null);
 
@@ -129,7 +133,7 @@ public class SymbolIoTest {
                         + "int styleable LimitedSizeLinearLayout_android_foo 1\n"
                         + "int xml authenticator 0x7f040000\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
 
         SymbolTable table = SymbolIo.readFromAapt(file, null);
 
@@ -157,7 +161,7 @@ public class SymbolIoTest {
                         + "int styleable LimitedSizeLinearLayout_a 1\n"
                         + "int styleable LimitedSizeLinearLayout_b 0\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
 
         SymbolTable table = SymbolIo.readFromAapt(file, null);
 
@@ -181,7 +185,7 @@ public class SymbolIoTest {
                         + "int styleable LimitedSizeLinearLayout_a NOT_AN_INT!\n"
                         + "int styleable LimitedSizeLinearLayout_b 0\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
         try {
             SymbolIo.readFromAapt(file, null);
             fail("Expected IOException");
@@ -194,7 +198,7 @@ public class SymbolIoTest {
     public void testInvalidType() throws Exception {
         String r = "INVALID_TYPE xml LimitedSizeLinearLayout 0x7f010000\n";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(r);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(r);
         try {
             SymbolIo.readFromAapt(file, null);
             fail("Expected IOException");
@@ -247,7 +251,7 @@ public class SymbolIoTest {
             @NonNull String expected, @NonNull FileSupplier generator) throws Exception {
         File result = generator.get();
         assertTrue(result.isFile());
-        String contents = Joiner.on("\n").join(Files.readLines(result, Charsets.UTF_8));
+        String contents = Joiner.on("\n").join(Files.readLines(result, StandardCharsets.UTF_8));
         assertEquals(expected, contents);
     }
 
@@ -522,7 +526,7 @@ public class SymbolIoTest {
     @Test
     public void testDuplicatesStyleables() throws Exception {
         File aaptRTxt = new File(mTemporaryFolder.newFolder(), "R.txt");
-        Files.asCharSink(aaptRTxt, Charsets.UTF_8)
+        Files.asCharSink(aaptRTxt, StandardCharsets.UTF_8)
                 .write("int[] styleable a { 0x7f000000, 0x7f000001 }\n"
                         + "int styleable a_b 1\n"
                         + "int styleable a_c 0\n"
@@ -626,7 +630,7 @@ public class SymbolIoTest {
                         + "int[] styleable LimitedSizeLinearLayout { 0x7f010000, 0x7f010001 } \r\n"
                         + "int styleable LimitedSizeLinearLayout_max_width 0 \r\n"
                         + "int styleable LimitedSizeLinearLayout_max_height 1 \r\n";
-        Files.asCharSink(txt, Charsets.UTF_8).write(content);
+        Files.asCharSink(txt, StandardCharsets.UTF_8).write(content);
         SymbolTable table = SymbolIo.readFromAapt(txt, "com.example.app");
         assertThat(table.getSymbols().values())
                 .containsExactly(
@@ -679,7 +683,7 @@ public class SymbolIoTest {
                         + "int[] styleable LimitedSizeLinearLayout { 0x7f010000, 0x7f010001 } \r\n"
                         + "int styleable LimitedSizeLinearLayout_android_max_width 0 \r\n"
                         + "int styleable LimitedSizeLinearLayout_android_max_height 1 \r\n";
-        Files.asCharSink(txt, Charsets.UTF_8).write(content);
+        Files.asCharSink(txt, StandardCharsets.UTF_8).write(content);
         SymbolTable table = SymbolIo.readFromAapt(txt, "com.example.app");
         assertThat(table.getSymbols().values())
                 .containsExactly(
@@ -766,7 +770,7 @@ public class SymbolIoTest {
                         + "styleable LimitedSizeLinearLayout child_1 child_2\n"
                         + "styleable S2";
         File file = mTemporaryFolder.newFile();
-        Files.asCharSink(file, Charsets.UTF_8).write(content);
+        Files.asCharSink(file, StandardCharsets.UTF_8).write(content);
 
         SymbolTable table = symbolIo.readSymbolListWithPackageName(file.toPath());
 
@@ -922,7 +926,8 @@ public class SymbolIoTest {
     @Test
     public void testMisorderedAarNoChildren() throws Exception {
         File misordered = new File(mTemporaryFolder.newFolder(), "other R.txt");
-        Files.asCharSink(misordered, Charsets.UTF_8).write("int[] styleable myStyleable {732,733}");
+        Files.asCharSink(misordered, StandardCharsets.UTF_8)
+                .write("int[] styleable myStyleable {732,733}");
         try {
             SymbolIo.readFromAapt(misordered, null);
             fail("Expected IOException");
@@ -935,7 +940,7 @@ public class SymbolIoTest {
     @Test
     public void testMisorderedAarMissingChildren() throws Exception {
         File misordered = new File(mTemporaryFolder.newFolder(), "other R.txt");
-        Files.asCharSink(misordered, Charsets.UTF_8)
+        Files.asCharSink(misordered, StandardCharsets.UTF_8)
                 .write(
                         "int[] styleable myStyleable {732,733}\n"
                                 + "int styleable myStylable_one 1\n");
@@ -951,7 +956,7 @@ public class SymbolIoTest {
     @Test
     public void testMisorderedAarExtraChildren() throws Exception {
         File misordered = new File(mTemporaryFolder.newFolder(), "other R.txt");
-        Files.asCharSink(misordered, Charsets.UTF_8)
+        Files.asCharSink(misordered, StandardCharsets.UTF_8)
                 .write(
                         "int[] styleable myStyleable {732, 733}\n"
                                 + "int styleable myStylable_one 1\n"
@@ -1146,7 +1151,7 @@ public class SymbolIoTest {
     @Test
     public void readCorruptedIdAarRTxt() throws Exception {
         File corrupted = new File(mTemporaryFolder.newFolder(), "other R.txt");
-        Files.asCharSink(corrupted, Charsets.UTF_8)
+        Files.asCharSink(corrupted, StandardCharsets.UTF_8)
                 .write(
                         "int styleable myStyleable_rogue 0\n" // rogue child
                                 + "int[] styleable myStyleable {732, 733}\n" // missing child ID
@@ -1228,13 +1233,13 @@ public class SymbolIoTest {
                         + "attr myattr\n"
                         + "styleable LimitedSizeLinearLayout child_1 child_2\n";
         File libFile = mTemporaryFolder.newFile();
-        Files.asCharSink(libFile, Charsets.UTF_8).write(libContent);
+        Files.asCharSink(libFile, StandardCharsets.UTF_8).write(libContent);
         String lib2Content =
                 "com.example.lib2\n"
                         + "drawable foobar\n"
                         + "styleable LimitedSizeLinearLayout child_1 child_2\n";
         File lib2File = mTemporaryFolder.newFile();
-        Files.asCharSink(lib2File, Charsets.UTF_8).write(lib2Content);
+        Files.asCharSink(lib2File, StandardCharsets.UTF_8).write(lib2Content);
 
         // When loading dependency tables symbols should be interned.
         ImmutableList<SymbolTable> symbolTables =

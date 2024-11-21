@@ -38,7 +38,6 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.utils.ILogger;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
@@ -51,6 +50,7 @@ import org.xml.sax.SAXException;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -626,9 +626,9 @@ public class DeviceManager {
         Collections.sort(keys);
         for (String key : keys) {
             if (key != null) {
-                hasher.putString(key, Charsets.UTF_8);
+                hasher.putString(key, StandardCharsets.UTF_8);
                 String value = props.get(key);
-                hasher.putString(value == null ? "null" : value, Charsets.UTF_8);
+                hasher.putString(value == null ? "null" : value, StandardCharsets.UTF_8);
             }
         }
         // store the hash method for potential future compatibility

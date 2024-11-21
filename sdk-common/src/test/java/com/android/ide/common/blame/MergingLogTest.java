@@ -19,17 +19,20 @@ package com.android.ide.common.blame;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.stream.Stream;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.stream.Stream;
 
 public class MergingLogTest {
 
@@ -179,7 +182,7 @@ public class MergingLogTest {
         assertThat(tempDir.listFiles()).isNotEmpty();
         File expectedLogFile = new File(new File(tempDir, "multi-v2"), "values.json");
         assertThat(expectedLogFile.exists()).isTrue();
-        String log = Files.asCharSource(expectedLogFile, Charsets.UTF_8).read();
+        String log = Files.asCharSource(expectedLogFile, StandardCharsets.UTF_8).read();
         assertThat(log).doesNotContain("\"to\"");
         assertThat(log).doesNotContain("endLines");
 
