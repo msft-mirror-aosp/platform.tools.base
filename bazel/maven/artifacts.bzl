@@ -1214,6 +1214,7 @@ DATA = [
     "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:jar:sources:0.8.17",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:jar:sources:0.8.17",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:jar:sources:0.8.17",
+    "org.mockito:mockito-core:4.3.1",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]
