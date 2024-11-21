@@ -37,7 +37,7 @@ def setup_intellij_platforms():
         ),
         remote_platform(
             name = "intellij_ce_2024_3",
-            url = "https://www.jetbrains.com/intellij-repository/snapshots/com/jetbrains/intellij/idea/ideaIC/243.20847-EAP-CANDIDATE-SNAPSHOT/ideaIC-243.20847-EAP-CANDIDATE-SNAPSHOT.zip",
-            sha256 = "4e88b8a3a14ded16edd9f25e86054d1a2300bee75908ab6e3ac5924f0de9981a",
+            url = "https://www.jetbrains.com/intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/2024.3/ideaIC-2024.3.zip",
+            sha256 = "fecd26f2c9b2c23c51edc06f30e1aacd73bfcc614f7bca96aae7eea291a194cd",
         ),
     ])
