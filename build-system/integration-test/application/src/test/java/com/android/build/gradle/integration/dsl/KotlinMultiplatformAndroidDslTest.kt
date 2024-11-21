@@ -89,7 +89,6 @@ class KotlinMultiplatformAndroidDslTest {
 
             // Exposed on the extension-level only. Since this is a single variant, users can wrap
             // the DSL value in a provider to get the final value directly.
-            "public abstract com.android.build.api.variant.AndroidVersion getMinSdk()",
             "public abstract java.lang.Integer getMaxSdk()",
             "public abstract org.gradle.api.provider.Provider getNamespace()",
 

@@ -91,4 +91,10 @@ interface KotlinMultiplatformAndroidVariant: HasDeviceTests, HasAndroidTest, Has
      */
     @get:Incubating
     val lifecycleTasks: LifecycleTasks
+
+    /**
+     * Gets the minimum supported SDK Version for this variant.
+     */
+    @get:Incubating
+    val minSdk: AndroidVersion
 }

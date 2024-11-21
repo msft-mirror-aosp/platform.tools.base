@@ -238,6 +238,7 @@ https://issuetracker.google.com/328748772
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension implements com.android.build.api.variant.DslLifecycle, com.android.build.api.variant.AndroidComponents
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant, kotlin.Unit>)
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant>)
+  * com.android.build.api.variant.KotlinMultiplatformAndroidVariant.getMinSdk: com.android.build.api.variant.AndroidVersion ()
 https://issuetracker.google.com/328748780
   * com.android.build.api.dsl.AssetPackBundleExtension.countrySet: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet, kotlin.Unit>)
   * com.android.build.api.dsl.AssetPackBundleExtension.getCountrySet: com.android.build.api.dsl.BundleCountrySet ()
