@@ -98,7 +98,7 @@ class CollectionDslProxyTest {
         contentHolder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             address {
-              properties.put('foo', 'bar')
+              properties['foo'] = 'bar'
             }
 
         """.trimIndent())

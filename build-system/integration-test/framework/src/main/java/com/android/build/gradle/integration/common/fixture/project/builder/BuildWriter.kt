@@ -25,7 +25,7 @@ import org.gradle.internal.extensions.stdlib.capitalized
  *
  * The API is not meant to write arbitrary strings into the file.
  */
-interface BuildWriter {
+interface BuildWriter: BooleanNameHandler {
     /** Assignment: a = b */
     fun set(name: String, value: Any?): BuildWriter
 
@@ -38,8 +38,10 @@ interface BuildWriter {
     fun pluginId(id: String, version: String?, apply: Boolean = true)
     fun dependency(scope: String, value:Any)
 
-    fun writeListAddAll(name: String, items: Collection<*>)
-    fun writeListAdd(name:String, value: Any?)
+    fun writeCollectionAddAll(name: String, items: Collection<*>)
+    fun writeCollectionAdd(name:String, value: Any?)
+    fun writeMapPutAll(name: String, items: Map<*,*>)
+    fun writeMapPut(name: String, key: Any, value: Any?)
 
     /** Build a [RawString] from a string. */
     fun rawString(value: String): RawString
@@ -55,11 +57,6 @@ interface BuildWriter {
     /** Writes a block without an item or parameters */
     fun block(name: String, action: BuildWriter.() -> Unit): BuildWriter
 
-    /**
-     * Converts a property name to a boolean property name as needed
-     */
-    fun toIsBooleanName(name: String): String
-
     /** Returns the file name of the build file for this writer */
     val buildFileName: String
     /** Returns the file name of the settings file for this writer */
@@ -69,6 +66,13 @@ interface BuildWriter {
      * A String that is not quoted when written into the file
      */
     data class RawString(val value: String)
+}
+
+interface BooleanNameHandler {
+    /**
+     * Converts a property name to a boolean property name as needed
+     */
+    fun toIsBooleanName(name: String): String
 }
 
 /**
@@ -135,7 +139,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
 
-    private fun Any?.toFormattedString(isVarArg: Boolean = false): String {
+    protected fun Any?.toFormattedString(isVarArg: Boolean = false): String {
 
         // have to check this outside of when due to scope conflict between the
         // this for this method and the this of the builder.
@@ -175,7 +179,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         indent()
             .put(name)
             .put('(')
-            .put(singleParam.toFormattedString(false))
+            .put(singleParam.toFormattedString())
             .put(')')
             .endLine()
     }
@@ -221,16 +225,19 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     abstract fun listOf(value: String): String
     abstract fun setOf(value: String): String
     abstract fun arrayOf(value: String): String
+    abstract fun mapOf(value: Map<*, *>): String
 
-    override fun writeListAdd(name: String, value: Any?) {
+    override fun writeCollectionAdd(name: String, value: Any?) {
         indent().put(name).put(" += ").put(value.toFormattedString()).endLine()
     }
 
-    override fun writeListAddAll(name: String, items: Collection<*>) {
+    override fun writeCollectionAddAll(name: String, items: Collection<*>) {
         val writer = indent().put(name).put(" += ")
+
         val itemStr = items.joinToString(separator = ", ") { it ->
             it.toFormattedString()
         }
+
         when (items) {
             is List<*> -> {
                 writer.put(listOf(itemStr))
@@ -238,15 +245,23 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
             is Set<*> -> {
                 writer.put(setOf(itemStr))
             }
-            is Map<*,*> -> {
-                throw RuntimeException("writeListAddAll does not support map yet")
-            }
             else -> {
                 throw RuntimeException("Unexpected collection type (${items.javaClass}) in writeListAddAll")
             }
         }
 
         writer.endLine()
+    }
+
+    override fun writeMapPut(name: String, key: Any, value: Any?) {
+        indent()
+            .put(name)
+            .put("[").put(key.toFormattedString()).put("] = ")
+            .put(value.toFormattedString()).endLine()
+    }
+
+    override fun writeMapPutAll(name: String, items: Map<*, *>) {
+        indent().put(name).put(" += ").put(mapOf(items)).endLine()
     }
 
     override fun rawString(value: String) = BuildWriter.RawString(value)
@@ -348,6 +363,13 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         return "arrayOf($value)"
     }
 
+    override fun mapOf(value: Map<*, *>): String {
+        val mapDeclarationContent = value.entries.joinToString(separator = ", ") { (key, value) ->
+            "${key.toFormattedString()} to ${value.toFormattedString()}"
+        }
+        return "mapOf($mapDeclarationContent)"
+    }
+
     override fun toIsBooleanName(name: String): String = "is${name.capitalized()}"
 
 
@@ -381,6 +403,13 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
 
     override fun arrayOf(value: String): String {
         return "[$value]"
+    }
+
+    override fun mapOf(value: Map<*, *>): String {
+        val mapDeclarationContent = value.entries.joinToString(separator = ", ") { (key, value) ->
+            "${key.toFormattedString()}: ${value.toFormattedString()}"
+        }
+        return "[$mapDeclarationContent]"
     }
 
     override fun toIsBooleanName(name: String): String = name

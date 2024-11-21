@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.ProductFlavor
+import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import org.gradle.api.provider.Property
 
@@ -61,6 +62,20 @@ interface DslContentHolder {
      * Records Collection.add
      */
     fun collectionAdd(name: String, value: Any?, parentChain: List<String> = listOf())
+
+    /**
+     * Records Map.putAll
+     */
+    fun mapPutAll(
+        name: String,
+        value: Map<out Any?, Any?>,
+        parentChain: List<String> = listOf()
+    )
+
+    /**
+     * Records Map.put
+     */
+    fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String> = listOf())
 
     /**
      * Returns a proxied [MutableList]
@@ -139,35 +154,65 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         NESTED_BLOCK,
         COLLECTION_ADD_ALL,
         COLLECTION_ADD,
+        MAP_PUT_ALL,
+        MAP_PUT,
     }
 
     data class Event(
         val type: EventType,
-        val payload: Any,
+        val payload: NamedPayload,
         val parentChain: List<String> = listOf()
     )
 
-    data class NamedData(
-        val name: String,
+    interface NamedPayload {
+        val name: String
+
+        fun nameWithParents(parentChain: List<String>, booleanNameHandler: BooleanNameHandler): String =
+            computeParentChain(name, parentChain)
+    }
+
+    open class NamedData(
+        override val name: String,
         val value: Any? = null
-   )
+   ): NamedPayload {
+        override fun toString(): String {
+            return "NamedData(name='$name', value=$value)"
+        }
+    }
 
     data class MethodInfo(
-        val name: String,
+        override val name: String,
         val args: List<Any?>,
         val isVarArgs: Boolean
-    )
+    ): NamedPayload
 
-    data class BooleanData(
-        val name: String,
-        val value: Any?,
-        val usingIsNotation: Boolean
-    )
+    class BooleanData(
+        name: String,
+        value: Any?,
+        private val usingIsNotation: Boolean
+    ): NamedData(name, value) {
+
+        override fun nameWithParents(
+            parentChain: List<String>,
+            booleanNameHandler: BooleanNameHandler
+        ): String {
+            // need to convert the name with isX as needed
+            val propName =
+                if (usingIsNotation) booleanNameHandler.toIsBooleanName(name) else name
+
+            return computeParentChain(propName, parentChain)
+        }
+
+        override fun toString(): String {
+            return "BooleanData(usingIsNotation=$usingIsNotation) ${super.toString()}"
+        }
+    }
 
     data class NestedBlockData(
+        override val name: String,
         val contentHolder: DslContentHolder,
         val args: List<Any>
-    )
+    ): NamedPayload
 
     private val eventList = mutableListOf<Event>()
 
@@ -214,6 +259,14 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
     override fun collectionAdd(name: String, value: Any?, parentChain: List<String>) {
         eventList += Event(EventType.COLLECTION_ADD, NamedData(name, value), parentChain)
+    }
+
+    override fun mapPutAll(name: String, value: Map<out Any?, Any?>, parentChain: List<String>) {
+        eventList += Event(EventType.MAP_PUT_ALL, NamedData(name, value), parentChain)
+    }
+
+    override fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String>) {
+        eventList += Event(EventType.MAP_PUT, NamedData(name, key to value), parentChain)
     }
 
     override fun <T : BuildType> buildTypes(
@@ -281,7 +334,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
         eventList += Event(
             EventType.NESTED_BLOCK,
-            NestedBlockData(contentHolder, parameters),
+            NestedBlockData(name, contentHolder, parameters),
             parentChain
         )
 
@@ -293,24 +346,15 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
     override fun writeContent(writer: BuildWriter) {
         for (event in eventList) {
+            val nameWithParents = event.payload.nameWithParents(event.parentChain, writer)
             when (event.type) {
                 EventType.ASSIGNMENT -> {
-                    val payload = event.payload
-                    when (payload) {
-                        is NamedData -> {
-                            writer.set(computeParentChain(payload.name, event.parentChain), payload.value)
-                        }
-                        is BooleanData -> {
-                            // need to convert the name with isX as needed
-                            val propName =
-                                if (payload.usingIsNotation) writer.toIsBooleanName(payload.name) else payload.name
-                            writer.set(computeParentChain(propName, event.parentChain), payload.value)
-                        }
-                    }
+                    val payload = event.payload as NamedData
+                    writer.set(nameWithParents, payload.value)
                 }
                 EventType.CALL -> {
                     val info = event.payload as MethodInfo
-                    writer.method(computeParentChain(info.name, event.parentChain), info.args, info.isVarArgs)
+                    writer.method(nameWithParents, info.args, info.isVarArgs)
                 }
                 EventType.NESTED_BLOCK -> {
                     val data = event.payload as NestedBlockData
@@ -324,24 +368,34 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
                 }
                 EventType.COLLECTION_ADD -> {
                     val info = event.payload as NamedData
-                    writer.writeListAdd(computeParentChain(info.name, event.parentChain), info.value)
+                    writer.writeCollectionAdd(nameWithParents, info.value)
                 }
                 EventType.COLLECTION_ADD_ALL -> {
                     val info = event.payload as NamedData
-                    writer.writeListAddAll(computeParentChain(info.name, event.parentChain), info.value as Collection<*>)
+                    writer.writeCollectionAddAll(nameWithParents, info.value as Collection<*>)
+                }
+                EventType.MAP_PUT -> {
+                    val info = event.payload as NamedData
+                    @Suppress("UNCHECKED_CAST")
+                    val pair = info.value as Pair<Any, Any?>
+                    writer.writeMapPut(nameWithParents, pair.first, pair.second)
+                }
+                EventType.MAP_PUT_ALL -> {
+                    val info = event.payload as NamedData
+                    writer.writeMapPutAll(nameWithParents, info.value as Map<*,*>)
                 }
                 else -> throw RuntimeException("Unsupported EventType: ${event.type}")
             }
         }
     }
-
-    private fun computeParentChain(name: String, parents: List<String>): String =
-        if (parents.isEmpty()) {
-            name
-        } else {
-            parents.joinToString(separator = ".") + "." + name
-        }
 }
+
+private fun computeParentChain(name: String, parents: List<String>): String =
+    if (parents.isEmpty()) {
+        name
+    } else {
+        parents.joinToString(separator = ".") + "." + name
+    }
 
 /**
  * A [DslContentHolder] that does not actually hold content. It delegate all the operation
@@ -389,6 +443,14 @@ internal class ChainedDslContentHolder(
 
     override fun collectionAdd(name: String, value: Any?, parentChain: List<String>) {
         parent.collectionAdd(name, value, parentChain + this.name)
+    }
+
+    override fun mapPutAll(name: String, value: Map<out Any?, Any?>, parentChain: List<String>) {
+        parent.mapPutAll(name, value, parentChain + this.name)
+    }
+
+    override fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String>) {
+        parent.mapPut(name, key, value, parentChain + this.name)
     }
 
     override fun getList(name: String): MutableList<*> {

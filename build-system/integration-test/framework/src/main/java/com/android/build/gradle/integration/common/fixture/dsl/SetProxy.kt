@@ -31,18 +31,26 @@ class SetProxy<T>(
         return true
     }
 
-    // ------
-    // below here are all the method not related to adding and are therefore
-    // not supported by the proxy.
-    // We'll adapt as we see usage.
+    override fun clear() {
+        contentHolder.call("$name.clear", listOf(), isVarArgs = false)
+    }
 
+    override fun removeAll(elements: Collection<T>): Boolean {
+        contentHolder.call("$name.removeAll", listOf(elements), isVarArgs = false)
+        return true
+    }
+
+    override fun remove(element: T): Boolean {
+        contentHolder.call("$name.remove", listOf(element), isVarArgs = false)
+        return true
+    }
+
+    // ----------
+    // below here are all the method not related to adding/removing and are therefore
+    // not supported by the proxy.
 
     override val size: Int
         get() = throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
-
-    override fun clear() {
-        throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
-    }
 
     override fun isEmpty(): Boolean {
         throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
@@ -53,14 +61,6 @@ class SetProxy<T>(
     }
 
     override fun retainAll(elements: Collection<T>): Boolean {
-        throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
-    }
-
-    override fun removeAll(elements: Collection<T>): Boolean {
-        throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
-    }
-
-    override fun remove(element: T): Boolean {
         throw UnsupportedOperationException("SetProxy does not support this. Add support if needed")
     }
 

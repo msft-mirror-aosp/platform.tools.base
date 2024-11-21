@@ -22,9 +22,27 @@ internal class MapProxy<K, V>(
 ): MutableMap<K, V> {
 
     override fun put(key: K, value: V): V? {
-        contentHolder.call("$name.put", listOf(key, value), isVarArgs = false)
+        key ?: throw RuntimeException("null key value")
+        contentHolder.mapPut(name, key, value)
         return value
     }
+
+    override fun clear() {
+        contentHolder.call("$name.clear", listOf(), isVarArgs = false)
+    }
+
+    override fun remove(key: K): V? {
+        contentHolder.call("$name.remove", listOf(key), isVarArgs = false)
+        return null // we cannot return the actual value. Don't rely on this!
+    }
+
+    override fun putAll(from: Map<out K, V>) {
+        contentHolder.mapPutAll(name, from)
+    }
+
+    // ----------
+    // below here are all the method not related to adding/removing and are therefore
+    // not supported by the proxy.
 
     override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
         get() = throw RuntimeException("Not yet implemented")
@@ -35,19 +53,7 @@ internal class MapProxy<K, V>(
     override val values: MutableCollection<V>
         get() = throw RuntimeException("Not yet implemented")
 
-    override fun clear() {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun isEmpty(): Boolean {
-        throw RuntimeException("Not yet implemented")
-    }
-
-    override fun remove(key: K): V? {
-        throw RuntimeException("Not yet implemented")
-    }
-
-    override fun putAll(from: Map<out K, V>) {
         throw RuntimeException("Not yet implemented")
     }
 

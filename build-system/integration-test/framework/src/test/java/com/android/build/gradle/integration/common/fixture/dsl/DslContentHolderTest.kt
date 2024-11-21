@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.Address
 import com.android.build.api.dsl.Person
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.google.common.truth.Truth
 import org.junit.Test
 
@@ -208,13 +209,25 @@ class DslContentHolderTest {
             instanceProvider = { AddressImpl(it) }
         ) {
             properties["foo"] = "bar"
+            properties += mapOf("1" to "2", "3" to "4")
         }
 
-        val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
-        Truth.assertThat(writer.toString()).isEqualTo("""
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).isEqualTo("""
             address {
-              properties.put('foo', 'bar')
+              properties['foo'] = 'bar'
+              properties += ['1': '2', '3': '4']
+            }
+
+        """.trimIndent())
+
+        val kts = KtsBuildWriter()
+        contentHolder.writeContent(kts)
+        Truth.assertThat(kts.toString()).isEqualTo("""
+            address {
+              properties["foo"] = "bar"
+              properties += mapOf("1" to "2", "3" to "4")
             }
 
         """.trimIndent())
