@@ -21,8 +21,11 @@ import com.android.testutils.TestUtils;
 import com.android.tools.lint.checks.infrastructure.TestLintClient;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Splitter;
+
+import kotlin.text.Charsets;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;

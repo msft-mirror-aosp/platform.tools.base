@@ -20,9 +20,9 @@ import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestFile.XmlTestFile
 import com.android.tools.lint.checks.infrastructure.TestLintClient
 import com.android.utils.XmlUtils
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import kotlin.text.Charsets
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder

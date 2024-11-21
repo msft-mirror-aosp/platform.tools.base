@@ -62,7 +62,6 @@ import com.android.utils.ILogger
 import com.android.utils.appendCamelCase
 import com.android.utils.appendCapitalized
 import com.google.common.annotations.VisibleForTesting
-import com.google.common.base.Charsets
 import com.google.common.base.Splitter
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.Maps
@@ -82,6 +81,7 @@ import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
+import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 
 /**

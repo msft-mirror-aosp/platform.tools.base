@@ -19,7 +19,6 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.assertionsEnabled
 import com.google.common.annotations.VisibleForTesting
-import com.google.common.base.Charsets
 import com.google.common.base.Splitter
 import com.google.common.io.ByteStreams
 import com.google.common.io.Files
@@ -31,6 +30,7 @@ import java.nio.ByteOrder
 import java.util.Arrays
 import java.util.Random
 import java.util.WeakHashMap
+import kotlin.text.Charsets
 
 /** Database of common typos / misspellings. */
 class TypoLookup

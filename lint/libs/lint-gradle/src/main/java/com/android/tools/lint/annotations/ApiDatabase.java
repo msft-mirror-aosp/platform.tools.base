@@ -17,13 +17,16 @@
 package com.android.tools.lint.annotations;
 
 import com.android.annotations.NonNull;
+
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
+import kotlin.text.Charsets;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -35,9 +38,11 @@ import java.util.regex.Pattern;
 /** Reads a signature file in the format of the new API files in frameworks/base/api */
 public class ApiDatabase {
     @NonNull private final List<String> lines;
+
     /** Map from class name to set of field names */
     @NonNull
     private final Map<String, Set<String>> fieldMap = Maps.newHashMapWithExpectedSize(4000);
+
     /** Map from class name to map of method names whose values are overloaded signatures */
     @NonNull
     private final Map<String, Map<String, List<String>>> methodMap =

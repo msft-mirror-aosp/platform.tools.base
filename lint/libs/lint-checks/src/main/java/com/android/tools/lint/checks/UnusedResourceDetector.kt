@@ -64,7 +64,6 @@ import com.android.tools.lint.model.LintModelResourceField
 import com.android.tools.lint.model.LintModelVariant
 import com.android.utils.SdkUtils
 import com.android.utils.XmlUtils
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
@@ -72,6 +71,7 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import java.io.File
 import java.util.EnumSet
+import kotlin.text.Charsets
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
 import org.jetbrains.uast.UElement

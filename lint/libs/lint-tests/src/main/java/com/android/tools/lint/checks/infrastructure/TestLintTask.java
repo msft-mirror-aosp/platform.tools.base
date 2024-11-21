@@ -19,6 +19,7 @@ package com.android.tools.lint.checks.infrastructure;
 import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.tools.lint.checks.infrastructure.TestFile.createTempDirectory;
 import static com.android.tools.lint.client.api.LintClient.CLIENT_UNIT_TESTS;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -49,10 +50,19 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.intellij.pom.java.LanguageLevel;
+
+import kotlin.text.Charsets;
+
+import org.jetbrains.annotations.CheckReturnValue;
+import org.jetbrains.kotlin.config.ApiVersion;
+import org.jetbrains.kotlin.config.LanguageVersion;
+import org.jetbrains.kotlin.config.LanguageVersionSettings;
+import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -70,18 +80,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.CheckReturnValue;
-import org.jetbrains.kotlin.config.ApiVersion;
-import org.jetbrains.kotlin.config.LanguageVersion;
-import org.jetbrains.kotlin.config.LanguageVersionSettings;
-import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl;
 
 @SuppressWarnings({"SameParameterValue", "ComplexBooleanConstant"})
 public class TestLintTask {
     /** Map from project directory to corresponding Gradle model mocker */
     final Map<File, GradleModelMocker> projectMocks = Maps.newHashMap();
+
     /** Map from project directory to corresponding Gradle model mocker */
     final Map<File, ProjectDescription> dirToProjectDescription = Maps.newHashMap();
+
     /** The test execution */
     final TestLintRunner runner = new TestLintRunner(this);
 
@@ -337,7 +344,7 @@ public class TestLintTask {
         return this;
     }
 
-  /**
+    /**
      * Sets whether the test task should allow lint checks to include absolute paths to local files
      * in error messages. This is normally false.
      *

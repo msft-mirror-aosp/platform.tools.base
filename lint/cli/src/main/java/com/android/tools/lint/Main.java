@@ -76,7 +76,7 @@ import com.android.tools.lint.model.LintModelVariant;
 import com.android.tools.lint.model.PathVariables;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+import kotlin.text.Charsets;
 import com.intellij.pom.java.LanguageLevel;
 import java.io.BufferedWriter;
 import java.io.File;

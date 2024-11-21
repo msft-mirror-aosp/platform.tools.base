@@ -17,11 +17,17 @@ package com.android.tools.lint.checks.infrastructure;
 
 import com.android.SdkConstants;
 import com.android.tools.lint.client.api.LintClient;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
+
+import junit.framework.TestCase;
+
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,8 +35,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
-import junit.framework.TestCase;
-import kotlin.io.FilesKt;
 
 /**
  * Base test case for lint tests.
@@ -42,6 +46,7 @@ import kotlin.io.FilesKt;
 public abstract class BaseLintDetectorTest extends TestCase implements TestResourceProvider {
     /** Update golden files if different from the actual results */
     private static final boolean UPDATE_DIFFERENT_FILES = false;
+
     /** Create golden files if missing */
     private static final boolean UPDATE_MISSING_FILES = true;
 

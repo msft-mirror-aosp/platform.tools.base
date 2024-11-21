@@ -30,7 +30,6 @@ import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.TextFormat
 import com.android.utils.PositionXmlParser
-import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.base.Splitter
 import com.google.common.collect.Lists
@@ -49,6 +48,7 @@ import javax.swing.text.Document
 import javax.swing.text.PlainDocument
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull

@@ -22,9 +22,9 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.checks.infrastructure.dos2unix
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import java.io.File
+import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.junit.After
 import org.junit.ClassRule

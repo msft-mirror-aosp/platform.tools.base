@@ -33,9 +33,8 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.Pair;
 
-import com.google.common.base.Charsets;
-
 import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
 import kotlin.text.StringsKt;
 
 import org.intellij.lang.annotations.Language;

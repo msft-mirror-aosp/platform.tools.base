@@ -32,7 +32,7 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.getLocale
 import com.android.utils.childrenIterator
 import com.android.utils.usLocaleCapitalize
-import com.google.common.base.Charsets
+import kotlin.text.Charsets
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 

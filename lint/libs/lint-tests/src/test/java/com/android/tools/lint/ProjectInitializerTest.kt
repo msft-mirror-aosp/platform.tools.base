@@ -47,13 +47,13 @@ import com.android.tools.lint.client.api.LintListener.EventType.STARTING
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Project
 import com.android.utils.XmlUtils.getFirstSubTagByName
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.streams.toList
+import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.junit.After
 import org.junit.Assert.assertEquals

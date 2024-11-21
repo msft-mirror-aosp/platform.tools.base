@@ -36,10 +36,18 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.gradle.Component;
 import com.android.tools.lint.ClassName;
 import com.android.utils.SdkUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
+
+import junit.framework.TestCase;
+
+import kotlin.text.Charsets;
+
+import org.intellij.lang.annotations.Language;
+import org.objectweb.asm.Opcodes;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -63,10 +71,8 @@ import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+
 import javax.imageio.ImageIO;
-import junit.framework.TestCase;
-import org.intellij.lang.annotations.Language;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Test file description, which can copy from resource directory or from a specified hardcoded

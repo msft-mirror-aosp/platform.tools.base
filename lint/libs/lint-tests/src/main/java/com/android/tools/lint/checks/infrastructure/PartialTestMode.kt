@@ -26,11 +26,11 @@ import com.android.sdklib.SdkVersionInfo.getApiByBuildCode
 import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.LintListener.EventType
 import com.android.utils.XmlUtils
-import com.google.common.base.Charsets
 import java.io.File
 import java.io.IOException
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.text.Charsets
 import org.w3c.dom.Element
 
 internal class PartialTestMode :

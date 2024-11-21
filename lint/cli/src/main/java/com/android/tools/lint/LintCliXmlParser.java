@@ -30,18 +30,22 @@ import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
-import com.google.common.base.Charsets;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import javax.xml.parsers.ParserConfigurationException;
+
 import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
 import kotlin.text.StringsKt;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * A customization of the {@link PositionXmlParser} which creates position objects that directly

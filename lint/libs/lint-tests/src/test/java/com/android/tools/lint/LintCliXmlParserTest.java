@@ -19,6 +19,7 @@ package com.android.tools.lint;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.XMLNS_PREFIX;
 import static com.android.tools.lint.client.api.LintClient.CLIENT_UNIT_TESTS;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
@@ -38,12 +39,11 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.DomExtensions;
-import com.google.common.base.Charsets;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
+
 import kotlin.io.FilesKt;
 import kotlin.jvm.functions.Function1;
+import kotlin.text.Charsets;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +54,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 
 public class LintCliXmlParserTest {
     @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();

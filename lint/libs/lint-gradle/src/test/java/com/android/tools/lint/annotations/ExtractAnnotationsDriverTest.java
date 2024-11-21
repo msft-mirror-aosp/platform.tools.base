@@ -19,10 +19,13 @@ package com.android.tools.lint.annotations;
 import static com.android.testutils.AssumeUtil.assumeNotWindows;
 import static com.android.tools.lint.checks.infrastructure.LintDetectorTest.base64gzip;
 import static com.android.utils.SdkUtils.fileToUrlString;
+
 import static com.google.common.truth.Truth.assertThat;
+
+import static org.junit.Assert.*;
+
 import static java.io.File.pathSeparator;
 import static java.io.File.pathSeparatorChar;
-import static org.junit.Assert.*;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.TestUtils;
@@ -32,11 +35,19 @@ import com.android.tools.lint.checks.infrastructure.KotlinClasspathKt;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestFiles;
 import com.android.utils.PathUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.base.Joiner;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
+
+import kotlin.text.Charsets;
+
+import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -47,10 +58,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 // TODO: Test functions not in classes
 // TODO: Test file-level annotations

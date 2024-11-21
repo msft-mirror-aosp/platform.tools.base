@@ -28,13 +28,15 @@ import static com.android.ide.common.rendering.api.ResourceNamespace.RES_AUTO;
 import static com.android.tools.lint.checks.infrastructure.KotlinClasspathKt.findKotlinStdlibPath;
 import static com.android.tools.lint.checks.infrastructure.LintTestUtils.checkTransitiveComparator;
 import static com.android.tools.lint.detector.api.Lint.getCommonParent;
-import static java.io.File.separatorChar;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import static java.io.File.separatorChar;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -106,7 +108,7 @@ import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -115,6 +117,22 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiModifierListOwner;
+
+import kotlin.Pair;
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
+import kotlin.text.StringsKt;
+
+import org.jetbrains.kotlin.config.LanguageVersionSettings;
+import org.jetbrains.uast.UAnnotated;
+import org.jetbrains.uast.UFile;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -139,23 +157,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import kotlin.Pair;
-import kotlin.io.FilesKt;
-import kotlin.text.StringsKt;
-import org.jetbrains.kotlin.config.LanguageVersionSettings;
-import org.jetbrains.uast.UAnnotated;
-import org.jetbrains.uast.UFile;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /** A {@link LintClient} class for use in lint unit tests. */
 public class TestLintClient extends LintCliClient {
     protected final StringWriter writer = new StringWriter();
     protected File incrementalCheck;
+
     /** Managed by the {@link TestLintTask} */
     @SuppressWarnings({"NotNullFieldNotInitialized"})
     @NonNull

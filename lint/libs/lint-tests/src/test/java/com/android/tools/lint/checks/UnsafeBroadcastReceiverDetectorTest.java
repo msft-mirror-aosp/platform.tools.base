@@ -23,19 +23,23 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.utils.XmlUtils;
-import com.google.common.base.Charsets;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
+import kotlin.text.Charsets;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 @SuppressWarnings({
     "javadoc",

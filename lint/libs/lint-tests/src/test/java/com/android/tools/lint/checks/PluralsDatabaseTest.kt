@@ -17,13 +17,13 @@ package com.android.tools.lint.checks
 
 import com.android.ide.common.resources.LocaleManager
 import com.android.tools.lint.checks.PluralsDatabase.Quantity
-import com.google.common.base.Charsets
 import com.google.common.base.Objects
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import java.util.EnumSet
 import java.util.Locale
 import junit.framework.TestCase
+import kotlin.text.Charsets
 
 class PluralsDatabaseTest : TestCase() {
   fun testGetRelevant() {

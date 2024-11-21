@@ -16,11 +16,17 @@
 
 package com.android.tools.lint.typedefs;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.truth.Truth.assertThat;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +34,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 public class TypedefRemoverTest {
     @Rule public TemporaryFolder testFolder = new TemporaryFolder();
@@ -90,6 +93,7 @@ public class TypedefRemoverTest {
                                     + "ZQAhAAIABAAAAAEAGQAGAAcAAQAPAAAAAgAIAAEAAQAJAAoAAQAQAAAALwAB"
                                     + "AAEAAAAFKrcADLEAAAACABEAAAAGAAEAAAAFABIAAAAMAAEAAAAFAA0ADgAA"
                                     + "AAEAEwAAAAIABQ==");
+
     /** The outer class compiled with -target 11 to include nest member attributes. */
     public static final byte[] OUTER_CLASS_TARGET_11 =
             Base64.getDecoder()

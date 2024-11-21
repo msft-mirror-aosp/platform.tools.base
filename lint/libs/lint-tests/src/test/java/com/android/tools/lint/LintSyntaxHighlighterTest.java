@@ -18,12 +18,17 @@ package com.android.tools.lint;
 
 import com.android.annotations.NonNull;
 import com.android.utils.HtmlBuilder;
-import com.google.common.base.Charsets;
+
 import com.google.common.io.Files;
+
+import junit.framework.TestCase;
+
+import kotlin.text.Charsets;
+
+import org.intellij.lang.annotations.Language;
+
 import java.io.File;
 import java.io.IOException;
-import junit.framework.TestCase;
-import org.intellij.lang.annotations.Language;
 
 public class LintSyntaxHighlighterTest extends TestCase {
     private static final boolean DEBUG = false;
