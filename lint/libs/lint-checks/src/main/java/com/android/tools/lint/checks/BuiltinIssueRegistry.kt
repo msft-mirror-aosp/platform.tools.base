@@ -396,6 +396,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           ResourceTypeDetector.COLOR_USAGE,
           ResourceTypeDetector.HALF_FLOAT,
           ResourceTypeDetector.RESOURCE_TYPE,
+          RestrictedEnvironmentBlockedCallDetector.ISSUE,
           RestrictionsDetector.ISSUE,
           RestrictToDetector.RESTRICTED,
           RestrictToDetector.TEST_VISIBILITY,

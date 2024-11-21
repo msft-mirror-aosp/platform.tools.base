@@ -968,6 +968,12 @@ constructor(
             hasJavaOrJavaLibraryPlugin = false,
             isLibrary = false,
           )
+        "apply plugin: 'com.android.privacy-sandbox-sdk'" ->
+          updateProjectType(
+            LintModelModuleType.PRIVACY_SANDBOX_SDK,
+            hasJavaOrJavaLibraryPlugin = false,
+            isLibrary = false,
+          )
         "java",
         "id('java')",
         "apply plugin: 'java'" ->
