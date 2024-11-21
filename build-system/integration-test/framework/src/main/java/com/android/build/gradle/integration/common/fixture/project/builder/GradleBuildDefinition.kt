@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -65,7 +66,18 @@ interface GradleBuildDefinition {
     /**
      * Configures a subProject with the Android Dynamic Feature plugin, creating it if needed.
      */
-    fun androidFeature(path: String, action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit): AndroidProjectDefinition<DynamicFeatureExtension>
+    fun androidFeature(
+        path: String,
+        action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
+    ): AndroidProjectDefinition<DynamicFeatureExtension>
+
+    /**
+     * Configures a subProject with the Android Privacy Sandbox SDK plugin, creating it if needed.
+     */
+    fun privacySandboxSdk(
+        path: String,
+        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
+    ): AndroidProjectDefinition<PrivacySandboxSdkExtension>
 
     fun mavenRepository(action: MavenRepository.() -> Unit)
 }
@@ -128,10 +140,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             AndroidApplicationDefinitionImpl(it)
         }
 
-        // Attempting to create a module $path of type Application, but a module $path of type XXX already exists.
-
-        @Suppress("UNCHECKED_CAST")
-        project as? AndroidProjectDefinition<ApplicationExtension>
+        project as? AndroidApplicationDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Application")
         action(project)
 
@@ -148,8 +157,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             AndroidLibraryDefinitionImpl(it)
         }
 
-        @Suppress("UNCHECKED_CAST")
-        project as? AndroidProjectDefinition<LibraryExtension>
+        project as? AndroidLibraryDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Library")
 
         action(project)
@@ -167,9 +175,26 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             AndroidDynamicFeatureDefinitionImpl(it)
         }
 
-        @Suppress("UNCHECKED_CAST")
-        project as? AndroidProjectDefinition<DynamicFeatureExtension>
+        project as? AndroidDynamicFeatureDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Dynamic Feature")
+
+        action(project)
+
+        return project
+    }
+
+    override fun privacySandboxSdk(
+        path: String,
+        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
+    ): AndroidProjectDefinition<PrivacySandboxSdkExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
+
+        val project = subProjects.computeIfAbsent(path) {
+            PrivacySandboxSdkDefinitionImpl(it)
+        }
+
+        project as? PrivacySandboxSdkDefinitionImpl
+            ?: errorOnWrongType(project, path, "Android Privacy Sandbox SDK")
 
         action(project)
 
@@ -185,6 +210,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             is AndroidApplicationDefinitionImpl -> "Android Application"
             is AndroidLibraryDefinitionImpl -> "Android Library"
             is AndroidDynamicFeatureDefinitionImpl -> "Android Dynamic Feature"
+            is PrivacySandboxSdkDefinitionImpl -> "Android Privacy Sandbox SDK"
             else -> project.javaClass.name
         }
 

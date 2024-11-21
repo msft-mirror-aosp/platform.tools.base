@@ -21,6 +21,7 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.api.dsl.LibraryProductFlavor
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.provider.Property
@@ -43,7 +44,9 @@ class DslProxy private constructor(
     private val contentHolder: DslContentHolder,
 ): InvocationHandler {
 
-    private val rootExtensionProxy = CommonExtension::class.java.isAssignableFrom(theInterface)
+    private val rootExtensionProxy =
+        CommonExtension::class.java.isAssignableFrom(theInterface) ||
+                PrivacySandboxSdkExtension::class.java.isAssignableFrom(theInterface)
 
     companion object {
 
@@ -180,8 +183,26 @@ class DslProxy private constructor(
                 if (method.returnType.name.startsWith("com.android.build.api")) {
                     // FIXME should we check whether there is a matching action method?
                     try {
-                        val theInterface = javaClass.classLoader.loadClass(method.returnType.name)
-                        contentHolder.chainedProxy(propName, theInterface)
+                        val returnType = method.genericReturnType
+                        val actualReturnType = if (returnType is TypeVariable<*>) {
+                            // search in the class that defined the method for the index of the type param for
+                            // the type used in the function.
+                            val ownerClass = method.declaringClass
+                            val index = findTypeParameterIndex(ownerClass, returnType.name)
+
+                            // get the same info on the proxied interface to get the final type, and find the
+                            // type from the same index.
+                            val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
+
+                            resolvedType.typeName
+                        } else {
+                            method.returnType.name
+                        }
+
+                        contentHolder.chainedProxy(
+                            propName,
+                            javaClass.classLoader.loadClass(actualReturnType)
+                        )
                     } catch (e: ClassNotFoundException) {
                         throw RuntimeException(
                             "Failed to load ${method.returnType.name} for ${theInterface.name}.$propName",

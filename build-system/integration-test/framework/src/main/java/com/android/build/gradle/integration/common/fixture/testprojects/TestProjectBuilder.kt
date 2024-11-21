@@ -25,16 +25,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 
 /**
- * Creates a [TestProject] with the provided configuration action
- */
-fun createProject(action: TestProjectBuilder.() -> Unit): TestProject {
-    val builder = RootTestProjectBuilderImpl()
-    action(builder)
-
-    return builder
-}
-
-/**
  * Creates a [GradleTestProject] with the provided configuration action
  */
 fun createGradleProject(

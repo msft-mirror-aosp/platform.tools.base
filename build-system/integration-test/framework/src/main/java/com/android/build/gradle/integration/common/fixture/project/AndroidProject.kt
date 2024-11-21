@@ -18,9 +18,9 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
@@ -31,7 +31,6 @@ import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
-import com.android.utils.combineAsCamelCase
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
@@ -39,7 +38,7 @@ import kotlin.io.path.name
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
  */
-interface AndroidProject<T: CommonExtension<*, *, *, *, *, *>>: GradleProject {
+interface AndroidProject<T>: GradleProject {
 
     /**
      * The namespace of the project.
@@ -123,7 +122,7 @@ interface AndroidProject<T: CommonExtension<*, *, *, *, *, *>>: GradleProject {
 /**
  * Default implementation of [AndroidProject]
  */
-internal abstract class AndroidProjectImpl<T: CommonExtension<*, *, *, *, *, *>>(
+internal abstract class AndroidProjectImpl<T>(
     location: Path,
     localProjectDefinition: AndroidProjectDefinition<T>,
     final override val namespace: String,
@@ -301,11 +300,46 @@ internal class AndroidFeatureImpl(
     }
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        error("AAR unavailable from Android Application project")
+        error("AAR unavailable from Android  Dynamic Feature project")
     }
 
     override fun hasAar(aarSelector: AarSelector): Boolean {
         error("AAR unavailable from Android Dynamic Feature project")
     }
 }
+
+internal class PrivacySandboxSdkImpl(
+    location: Path,
+    override val projectDefinition: AndroidProjectDefinition<PrivacySandboxSdkExtension>,
+    namespace: String,
+    private val buildWriter: () -> BuildWriter,
+    parentBuild: GradleBuildDefinitionImpl,
+): AndroidProjectImpl<PrivacySandboxSdkExtension>(location, projectDefinition, namespace, parentBuild) {
+
+    override fun reconfigure(
+        buildFileOnly: Boolean,
+        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
+    ) {
+        action(projectDefinition)
+
+        // we need to query the other projects for their plugins
+        val allPlugins = parentBuild.computeAllPluginMap()
+
+        projectDefinition as AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>
+        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
+    }
+
+    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {
+        error("AAR unavailable from Android Privacy Sandbox SDK project")
+    }
+
+    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
+        error("AAR unavailable from Android Privacy Sandbox SDK project")
+    }
+
+    override fun hasAar(aarSelector: AarSelector): Boolean {
+        error("AAR unavailable from Android Privacy Sandbox SDK project")
+    }
+}
+
 

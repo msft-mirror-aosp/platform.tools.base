@@ -17,11 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.testprojects.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TestProject
 import com.android.build.gradle.integration.common.fixture.testprojects.AndroidProjectBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.createProject
 
 /**
  * Creates a [GradleTestProject] and initialize it with a HelloWorld App module
@@ -37,47 +35,6 @@ fun createHelloWorldAppGradleProject(): GradleTestProject {
     }
 }
 
-/**
- * Creates a [GradleTestProject] and initialize it with a HelloWorld Library module
- */
-fun createHelloWorldLibGradleProject(): GradleTestProject {
-    return createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }
-}
-
-/**
- * Creates a [TestProject] and initialize it with a HelloWorld App module
- */
-fun createHelloWorldAppProject(): TestProject {
-    return createProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }
-}
-
-/**
- * Creates a [TestProject] and initialize it with a HelloWorld Library module
- */
-fun createHelloWorldLibProject(): TestProject {
-    return createProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }
-}
 
 fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true) {
     if (setupDefaultCompileSdk) {

@@ -38,6 +38,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.sdklib.internal.project.ProjectProperties
@@ -219,6 +220,14 @@ class GradleRule internal constructor(
                 )
 
                 is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
+                    computeSubProjectPath(rootFolder, definition.path),
+                    definition,
+                    definition.namespace,
+                    buildWriter,
+                    build
+                )
+
+                is PrivacySandboxSdkDefinitionImpl -> definition.path to PrivacySandboxSdkImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     definition.namespace,

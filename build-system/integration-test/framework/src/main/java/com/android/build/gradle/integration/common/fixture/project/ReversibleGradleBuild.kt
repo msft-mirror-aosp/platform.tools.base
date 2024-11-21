@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -71,15 +72,19 @@ internal class ReversibleGradleBuild(
     }
 
     override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
-        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
+        throw UnsupportedOperationException("Call androidApplication() during modification as reconfiguration is not possible")
     }
 
     override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
-        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
+        throw UnsupportedOperationException("Call androidLibrary() during modification as reconfiguration is not possible")
     }
 
     override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
-        throw UnsupportedOperationException("Call androidProject() during modification as reconfiguration is not possible")
+        throw UnsupportedOperationException("Call androidFeature() during modification as reconfiguration is not possible")
+    }
+
+    override fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension> {
+        throw UnsupportedOperationException("Call privacySandboxSdk() during modification as reconfiguration is not possible")
     }
 
     override fun includedBuild(name: String): GradleBuild {

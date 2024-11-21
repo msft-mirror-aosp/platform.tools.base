@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -56,6 +57,11 @@ interface GradleBuild {
      * The project must exist and be an Android Dynamic Feature project
      */
     fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension>
+    /**
+     * Queries for a privacy sandbox sdk via its gradle path.
+     * The project must exist and be a Privacy Sandbox SDK.
+     */
+    fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension>
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -142,6 +148,18 @@ internal class GradleBuildImpl(
             """
                 Project with path '$path' is not an Android project.
                 Possible androidFeatures are ${getProjectListByType<AndroidFeatureImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension> {
+        val project = subProjects[path]
+        if (project is PrivacySandboxSdkImpl) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible privacySandboxSdk are ${getProjectListByType<PrivacySandboxSdkImpl>()}
             """.trimIndent()
         )
     }
