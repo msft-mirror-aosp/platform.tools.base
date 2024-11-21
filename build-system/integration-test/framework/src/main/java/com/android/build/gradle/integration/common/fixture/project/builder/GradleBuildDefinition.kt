@@ -67,8 +67,6 @@ interface GradleBuildDefinition {
      */
     fun androidFeature(path: String, action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit): AndroidProjectDefinition<DynamicFeatureExtension>
 
-    fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit)
-
     fun mavenRepository(action: MavenRepository.() -> Unit)
 }
 
@@ -78,8 +76,6 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
     internal val rootProject = GradleProjectDefinitionImpl(":")
     internal val subProjects = mutableMapOf<String, BaseGradleProjectDefinitionImpl>()
-
-    private val gradlePropertiesBuilder = GradlePropertiesBuilderImpl()
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
@@ -193,10 +189,6 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         }
 
         throw RuntimeException("Attempting to create a module with path '$path' of type '$expectedType', but a module of type '$wrongType' already exists.")
-    }
-
-    override fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
-        action(gradlePropertiesBuilder)
     }
 
     override fun mavenRepository(action: MavenRepository.() -> Unit) {
