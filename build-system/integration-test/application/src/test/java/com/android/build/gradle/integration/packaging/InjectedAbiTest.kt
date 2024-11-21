@@ -31,19 +31,14 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
-import com.android.testutils.apk.Apk
 import com.android.testutils.truth.PathSubject
-import com.android.testutils.truth.ZipFileSubject
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Path
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
-import kotlin.test.assertContains
 import kotlin.test.fail
 
 /** Test APK is packaged correctly when injected ABI exists or changes */
@@ -69,7 +64,7 @@ class InjectedAbiTest {
 
     @Test
     fun testInjectedAbiChange_WithSplits() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             enableSplits(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a"))
         }
         val project = build.androidApplication(":app")
@@ -270,7 +265,7 @@ class InjectedAbiTest {
 
     @Test
     fun testMissingSoFiles_WithSplits() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             enableSplits(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a"))
         }
         val project = build.androidApplication(":app")

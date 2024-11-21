@@ -22,12 +22,12 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 /**
  * Interface to configure gradle options inside a test method. see [GradleRule.configure]
  *
- * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [from] method
+ * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [build] method
  * must be called at the end to write the test and return a [GradleBuild]
  */
 interface LocalRuleOptionBuilder: RuleOptionBuilder {
-    fun from(): GradleBuild
-    fun from(action: GradleBuildDefinition.() -> Unit): GradleBuild
+    val build: GradleBuild
+    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild
     override fun withGradle(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): LocalRuleOptionBuilder
     override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): LocalRuleOptionBuilder
@@ -43,14 +43,15 @@ internal class LocalRuleOptionBuilderImpl(
 ): LocalRuleOptionBuilder {
     private val delegate = DefaultRuleOptionBuilder()
 
-    override fun from(): GradleBuild {
-        ruleOptionBuilder.mergeWith(delegate)
-        return gradleRule.build
-    }
+    override val build: GradleBuild
+        get() {
+            ruleOptionBuilder.mergeWith(delegate)
+            return gradleRule.build
+        }
 
-    override fun from(action: GradleBuildDefinition.() -> Unit): GradleBuild {
+    override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
         ruleOptionBuilder.mergeWith(delegate)
-        return gradleRule.configureBuild(action)
+        return gradleRule.build(action)
     }
 
     override fun withGradle(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {

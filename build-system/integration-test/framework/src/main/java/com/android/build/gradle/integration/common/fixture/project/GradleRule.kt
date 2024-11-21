@@ -118,14 +118,6 @@ class GradleRule internal constructor(
         )
     }
 
-    private val buildWriter: () -> BuildWriter by lazy {
-        if (true) {
-            { GroovyBuildWriter() }
-        } else {
-            { KtsBuildWriter() }
-        }
-    }
-
     /**
      * Configures the build with one final action and returns the [GradleBuild]
      *
@@ -135,7 +127,7 @@ class GradleRule internal constructor(
      * It is possible after the fact to add more source files can be added via [GradleProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
-    fun configureBuild(action: GradleBuildDefinition.() -> Unit): GradleBuild {
+    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
         // cannot reconfigure the build since static rules creates a single build for all test methods.
         if (status == Status.WRITTEN_STATIC) {
             throw RuntimeException("Build from static GradleRule cannot be reconfigured")
@@ -154,7 +146,7 @@ class GradleRule internal constructor(
      * The returned instance of [LocalRuleOptionBuilder] allows configuring many Gradle options.
      *
      * The gradle build must be queried at the end with either versions of
-     * [LocalRuleOptionBuilder.from]
+     * [LocalRuleOptionBuilder.build]
      *
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
@@ -163,6 +155,14 @@ class GradleRule internal constructor(
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilderImpl(this, this.ruleOptionBuilder)
+
+    private val buildWriter: () -> BuildWriter by lazy {
+        if (true) {
+            { GroovyBuildWriter() }
+        } else {
+            { KtsBuildWriter() }
+        }
+    }
 
     private fun doWriteBuild() {
         val location = mutableProjectLocation ?: throw RuntimeException("Location not set before writing!")

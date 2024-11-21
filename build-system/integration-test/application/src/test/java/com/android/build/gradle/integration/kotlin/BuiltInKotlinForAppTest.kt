@@ -42,7 +42,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinClassesInApk() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 files {
                     add("src/main/java/com/foo/application/AppFoo.kt",
@@ -71,7 +71,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinClassesInTestApk() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 files {
                     add("src/androidTest/java/AppFooTest.kt",
@@ -100,7 +100,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testUnitTests() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 dependencies {
                     testImplementation("junit:junit:4.12")
@@ -142,7 +142,7 @@ class BuiltInKotlinForAppTest {
         val build = rule.configure()
             .withProperties {
                 add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }.from {
+            }.build {
                 androidApplication(":app") {
                     android.experimentalProperties[SCREENSHOT_TEST.key] = true
 
@@ -177,7 +177,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testInternalModifierAccessibleFromTests() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 files {
                     add("src/main/java/com/foo/application/AppFoo.kt",
@@ -207,7 +207,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testAppCompilesAgainstKotlinClassesFromDependency() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidLibrary(":lib") {
                 applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
@@ -249,7 +249,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinAndJavaCrossReferences() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 files {
                     add("src/main/java/com/foo/application/AppJavaFoo.java",
@@ -291,7 +291,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinStdLibMissing() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 // reset to remove the main dependency on kotlin stdlib
                 dependencies.clear()
@@ -315,7 +315,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testErrorWhenBuiltInKotlinSupportAndKagpUsedInSameModule() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
@@ -329,7 +329,7 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinDsl() {
-        val build = rule.configureBuild {
+        val build = rule.build {
             androidApplication(":app") {
                 files {
                     add("src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
