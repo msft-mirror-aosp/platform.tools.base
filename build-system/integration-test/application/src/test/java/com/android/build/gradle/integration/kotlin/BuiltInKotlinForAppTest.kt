@@ -16,14 +16,11 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.ANDROIDTEST_DEBUG
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
@@ -34,114 +31,85 @@ import org.junit.Test
 class BuiltInKotlinForAppTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                setUpHelloWorld()
-            }
-            dependencies {
-                api(project(":lib"))
-            }
-            appendToBuildFile { builtInKotlinSupportDependencies }
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+
+            HelloWorldAndroid.setupKotlin(files)
+            HelloWorldAndroid.setupKotlinDependencies(this)
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                setUpHelloWorld()
-            }
-            appendToBuildFile { builtInKotlinSupportDependencies }
-        }
-    }.withBuiltInKotlinSupport(true)
-        .create()
+    }
 
     @Test
     fun testKotlinClassesInApk() {
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("java")
-            .resolve("AppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class AppFoo
-                        """.trimIndent()
-                )
-            }
-        app.getMainSrcDir("kotlin")
-            .resolve("KotlinAppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class KotlinAppFoo
-                        """.trimIndent()
-                )
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                files {
+                    add("src/main/java/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo
+                        """.trimIndent())
+                    add("src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class KotlinAppFoo
+                        """.trimIndent())
+                }
             }
 
-        app.executor().run(":app:assembleDebug")
-        app.getApk(DEBUG).use {
-            assertThat(it).hasClass("Lcom/foo/application/AppFoo;")
-            assertThat(it).hasClass("Lcom/foo/application/KotlinAppFoo;")
+        }
+
+        build.executor.run(":app:assembleDebug")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            hasClass("Lcom/foo/application/AppFoo;")
+            hasClass("Lcom/foo/application/KotlinAppFoo;")
         }
     }
 
     @Test
     fun testKotlinClassesInTestApk() {
-        val app = project.getSubproject(":app")
-        app.file("src/androidTest/java/AppFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                //language=kotlin
-                it.writeText(
-                    """
-                        package com.foo.application
-                        class AppFooTest
-                        """.trimIndent()
-                )
-            }
-        app.file("src/androidTest/kotlin/KotlinAppFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class KotlinAppFooTest
-                        """.trimIndent()
-                )
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                files {
+                    add("src/androidTest/java/AppFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFooTest
+                        """.trimIndent())
+                    add("src/androidTest/kotlin/KotlinAppFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class KotlinAppFooTest
+                        """.trimIndent())
+                }
             }
 
-        app.executor().run(":app:assembleDebugAndroidTest")
-        app.getApk(ANDROIDTEST_DEBUG).use {
-            assertThat(it).hasClass("Lcom/foo/application/AppFooTest;")
-            assertThat(it).hasClass("Lcom/foo/application/KotlinAppFooTest;")
+        }
+
+        build.executor.run(":app:assembleDebugAndroidTest")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG.forTestSuite("androidTest")) {
+            hasClass("Lcom/foo/application/AppFooTest;")
+            hasClass("Lcom/foo/application/KotlinAppFooTest;")
         }
     }
 
     @Test
     fun testUnitTests() {
-        val app = project.getSubproject(":app")
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
+        val build = rule.configureBuild {
+            androidApplication(":app") {
                 dependencies {
-                  testImplementation "junit:junit:4.12"
+                    testImplementation("junit:junit:4.12")
                 }
-                """.trimIndent()
-        )
-        app.file("src/test/kotlin/AppFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
+
+                files {
+                    add("src/test/kotlin/AppFooTest.kt",
+                        //language=kotlin
+                        """
                         package com.foo.application.test
 
                         class AppFooTest {
@@ -149,14 +117,17 @@ class BuiltInKotlinForAppTest {
                           fun testSample() {}
                         }
                         """.trimIndent()
-                )
+                    )
+                }
             }
+        }
 
-        app.executor().run(":app:testDebug")
+        build.executor.run(":app:testDebug")
+        val app = build.androidApplication(":app")
         val testResults =
-            app.buildDir
+            app.location
                 .resolve(
-                    "test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
+                    "build/test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
                 )
         PathSubject.assertThat(testResults).exists()
     }
@@ -168,203 +139,189 @@ class BuiltInKotlinForAppTest {
      */
     @Test
     fun testWithScreenshotTestEnabled() {
-        val app = project.getSubproject(":app")
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
-        )
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
-                android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
+        val build = rule.configure()
+            .withProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }.from {
+                androidApplication(":app") {
+                    android.experimentalProperties[SCREENSHOT_TEST.key] = true
 
-                dependencies {
-                    screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+                    dependencies {
+                        screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+                    }
+
+                    files {
+                        add(
+                            "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
+                            //language=kotlin
+                            """
+                                package com.foo.application
+                                class AppScreenshotTestFoo
+                            """.trimIndent()
+                        )
+                        add(
+                            "src/main/java/com/foo/application/AppFoo.kt",
+                            //language=kotlin
+                            """
+                                package com.foo.application
+                                class AppFoo
+                            """.trimIndent()
+                        )
+                    }
                 }
-                """.trimIndent()
-        )
-        app.file("src/screenshotTest/kotlin/AppScreenshotTestFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                //language=kotlin
-                """
-                    package com.foo.application
-                    class AppScreenshotTestFoo
-                    """.trimIndent()
-            )
-        }
-        app.getMainSrcDir("java").resolve("AppFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                //language=kotlin
-                """
-                    package com.foo.application
-                    class AppFoo
-                    """.trimIndent()
-            )
-        }
-        app.executor().run(":app:compileDebugScreenshotTestKotlin")
-        app.executor().run(":app:assembleDebug")
+            }
+
+        build.executor.run(":app:compileDebugScreenshotTestKotlin")
+        build.executor.run(":app:assembleDebug")
     }
 
     @Test
     fun testInternalModifierAccessibleFromTests() {
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("java")
-            .resolve("AppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class AppFoo {
-                          internal fun bar() {}
-                        }
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                files {
+                    add("src/main/java/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo {
+                              internal fun bar() {}
+                            }
                         """.trimIndent()
-                )
-            }
-        app.file("src/test/AppFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class AppFooTest {
-                          init { AppFoo().bar() }
-                        }
+                    )
+                    add("src/test/com/foo/application/AppFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFooTest {
+                              init { AppFoo().bar() }
+                            }
                         """.trimIndent()
-                )
+                    )
+                }
             }
-        app.executor().run(":app:assembleDebugUnitTest")
+        }
+
+        build.executor.run(":app:assembleDebugUnitTest")
     }
 
     @Test
     fun testAppCompilesAgainstKotlinClassesFromDependency() {
-        val lib = project.getSubproject(":lib")
-        lib.getMainSrcDir("java")
-            .resolve("LibFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.library
-                        open class LibFoo
-                        """.trimIndent()
-                )
+        val build = rule.configureBuild {
+            androidLibrary(":lib") {
+                applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+
+                HelloWorldAndroid.setupKotlin(files)
+                HelloWorldAndroid.setupKotlinDependencies(this)
+
+                files {
+                    add("src/main/java/com/foo/library/LibFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            open class LibFoo
+                        """.trimIndent())
+                }
             }
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("kotlin")
-            .resolve("AppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class AppFoo: com.foo.library.LibFoo()
+            androidApplication(":app") {
+                files {
+                    add(
+                        "src/main/kotlin/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo: com.foo.library.LibFoo()
                         """.trimIndent()
-                )
+                    )
+                }
+                dependencies {
+                    api(project(":lib"))
+                }
             }
-        app.executor().run(":app:assembleDebug")
-        app.getApk(DEBUG).use {
-            assertThat(it).hasClass("Lcom/foo/application/AppFoo;")
-            assertThat(it).hasClass("Lcom/foo/library/LibFoo;")
+        }
+
+        build.executor.run(":app:assembleDebug")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            hasClass("Lcom/foo/application/AppFoo;")
+            hasClass("Lcom/foo/library/LibFoo;")
         }
     }
 
     @Test
     fun testKotlinAndJavaCrossReferences() {
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("java")
-            .let {
-                it.mkdirs()
-                it.resolve("AppJavaFoo.java")
-                    .writeText(
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                files {
+                    add("src/main/java/com/foo/application/AppJavaFoo.java",
                         //language=java
                         """
                             package com.foo.application;
                             public class AppJavaFoo {
                               String prop = new AppKotlinBar().getAppJavaFooClassName();
                             }
-                            """.trimIndent()
+                        """.trimIndent()
                     )
-                it.resolve("AppKotlinFoo.kt")
-                    .writeText(
+                    add("src/main/java/com/foo/application/AppKotlinFoo.kt",
                         //language=kotlin
                         """
                             package com.foo.application
                             class AppKotlinFoo: AppJavaFoo()
-                            """.trimIndent()
+                        """.trimIndent()
                     )
-                it.resolve("AppKotlinBar.kt")
-                    .writeText(
+                    add("src/main/java/com/foo/application/AppKotlinBar.kt",
                         //language=kotlin
                         """
                             package com.foo.application
                             class AppKotlinBar {
                               val appJavaFooClassName = AppJavaFoo::class.java.name
                             }
-                            """.trimIndent()
+                        """.trimIndent()
                     )
+                }
             }
-        app.executor().run(":app:assembleDebug")
-        app.getApk(DEBUG).use {
-            assertThat(it).hasClass("Lcom/foo/application/AppJavaFoo;")
-            assertThat(it).hasClass("Lcom/foo/application/AppKotlinFoo;")
-            assertThat(it).hasClass("Lcom/foo/application/AppKotlinBar;")
+        }
+
+        build.executor.run(":app:assembleDebug")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            hasClass("Lcom/foo/application/AppJavaFoo;")
+            hasClass("Lcom/foo/application/AppKotlinFoo;")
+            hasClass("Lcom/foo/application/AppKotlinBar;")
         }
     }
 
     @Test
     fun testKotlinStdLibMissing() {
-        for (moduleName in listOf(":app", ":lib")) {
-            val module = project.getSubproject(moduleName)
-            module.buildFile
-                .let { buildFile ->
-                    TestFileUtils.searchAndReplace(
-                        buildFile,
-                        "api(\"org.jetbrains.kotlin:kotlin-stdlib",
-                        "//api(\"org.jetbrains.kotlin:kotlin-stdlib"
-                    )
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                // reset to remove the main dependency on kotlin stdlib
+                dependencies.clear()
+                // only setup the test, not the main one.
+                HelloWorldAndroid.setupTestKotlinDependencies(this)
+
+                files {
+                    add("src/main/java/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo
+                        """.trimIndent())
                 }
-        }
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("java")
-            .resolve("AppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    //language=kotlin
-                    """
-                        package com.foo.application
-                        class AppFoo
-                        """.trimIndent()
-                )
             }
-        val result = app.executor().expectFailure().run(":app:assembleDebug")
+        }
+
+        val result = build.executor.expectFailure().run(":app:assembleDebug")
         result.assertErrorContains("Kotlin standard library is missing")
     }
 
     @Test
     fun testErrorWhenBuiltInKotlinSupportAndKagpUsedInSameModule() {
-        val app = project.getSubproject(":app")
-        with(app.buildFile) {
-            val current = readText()
-
-            writeText(
-                """
-                    plugins {
-                      id("${PluginType.KOTLIN_ANDROID.id}")
-                    }
-                    $current
-                """.trimIndent()
-            )
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
+            }
         }
 
-        val result = app.executor().expectFailure().run(":app:assembleDebug")
+        val result = build.executor.expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
             "The \"org.jetbrains.kotlin.android\" plugin has been applied, but it is not compatible"
         )
@@ -372,32 +329,26 @@ class BuiltInKotlinForAppTest {
 
     @Test
     fun testKotlinDsl() {
-        val app = project.getSubproject(":app")
-        // Add some kotlin code that will fail the build when kotlin.explicitApi is set to Strict.
-        app.getMainSrcDir("kotlin")
-            .resolve("KotlinAppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.application
+        val build = rule.configureBuild {
+            androidApplication(":app") {
+                files {
+                    add("src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
 
-                        // This will cause the build to fail because it's missing an explicit
-                        // visibility modifier.
-                        fun publicFunction() {}
-                        """.trimIndent()
-                )
-            }
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            // language=groovy
-            """
+                            // This will cause the build to fail because it's missing an explicit
+                            // visibility modifier.
+                            fun publicFunction() {}
+                        """.trimIndent())
+                }
                 kotlin {
                     explicitApi()
                 }
-                """.trimIndent()
-        )
-        val result = project.executor().expectFailure().run(":app:compileDebugKotlin")
+            }
+        }
+
+        val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
         ScannerSubject.assertThat(result.stderr)
             .contains("Visibility must be specified in explicit API mode")
     }

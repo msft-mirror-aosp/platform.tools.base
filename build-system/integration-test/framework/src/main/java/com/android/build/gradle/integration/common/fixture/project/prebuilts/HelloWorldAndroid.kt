@@ -185,5 +185,18 @@ class HelloWorldAndroid {
                 testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
             }
         }
+
+        fun setupMainKotlinDependencies(project: BaseGradleProjectDefinition) {
+            project.dependencies {
+                api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+            }
+        }
+
+        fun setupTestKotlinDependencies(project: BaseGradleProjectDefinition) {
+            project.dependencies {
+                androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+                testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+            }
+        }
     }
 }

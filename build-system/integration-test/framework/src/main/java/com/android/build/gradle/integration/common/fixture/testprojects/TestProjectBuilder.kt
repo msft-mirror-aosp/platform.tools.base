@@ -360,6 +360,13 @@ interface DependenciesBuilder {
     fun lintChecks(dependency: Any)
 
     /**
+     * adds a dependency in the screenshotTest scope.
+     *
+     * See [implementation] for details
+     */
+    fun screenshotTestImplementation(dependency: Any)
+
+    /**
      * Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope
      */
     fun localJar(action: LocalJarBuilder.() -> Unit) : LocalJarBuilder

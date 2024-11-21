@@ -88,6 +88,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         dependencies.add("lintChecks" to dependency)
     }
 
+    override fun screenshotTestImplementation(dependency: Any) {
+        dependencies.add("screenshotTestImplementation" to dependency)
+    }
+
     override fun localJar(action: LocalJarBuilder.() -> Unit): LocalJarBuilder =
             LocalJarBuilderImpl().also { action(it) }
 

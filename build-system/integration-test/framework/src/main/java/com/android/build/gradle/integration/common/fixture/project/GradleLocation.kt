@@ -50,7 +50,7 @@ data class GradleLocation(
     }
 }
 
-class GradleLocationDelegate(): GradleLocationBuilder {
+class GradleLocationDelegate: GradleLocationBuilder {
     private var customGradleInstallation: File? = null // FIXME is this needed?
     private var gradleVersion: String? = null
     private var gradleDistributionDirectory: File? = null

@@ -40,8 +40,18 @@ interface BaseGradleProjectDefinition {
      * Applies a plugin with an optional version string. If null, the default version is used.
      *
      * For core gradle plugin, the version should always be null.
+     *
+     * @param type the type of the plugin to apply
+     * @param version the version of the plugin.
+     * @param applyFirst if true, applies this plugin first, before other plugins
      */
-    fun applyPlugin(type: PluginType, version: String? = null)
+    fun applyPlugin(type: PluginType, version: String? = null, applyFirst: Boolean = false)
+    /**
+     * Replaces an applied plugin, with a provided version
+     *
+     * This replaces the plugin in the same place as the previous one.
+     */
+    fun replaceAppliedPlugin(type: PluginType, version: String)
 
     var group: String?
     var version: String?
@@ -52,6 +62,7 @@ interface BaseGradleProjectDefinition {
      * Configures dependencies of the project
      */
     fun dependencies(action: DependenciesBuilder.() -> Unit)
+    val dependencies: DependenciesBuilder
 
     /**
      * Wraps a library binary with a module
@@ -78,16 +89,42 @@ internal class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefin
 internal abstract class BaseGradleProjectDefinitionImpl(
     override val path: String
 ): BaseGradleProjectDefinition {
-    internal val plugins = mutableMapOf<PluginType, String>()
+    data class AppliedPlugin(
+        val plugin: PluginType,
+        val version: String
+    )
+
+    internal val plugins = mutableListOf<AppliedPlugin>()
 
     override var group: String? = null
     override var version: String? = null
 
-    override fun applyPlugin(type: PluginType, version: String?) {
-        plugins[type] = version ?: type.version ?: INTERNAL_PLUGIN_VERSION
+    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        // search for existing one
+        plugins.firstOrNull { it.plugin == type }?.let {
+            throw RuntimeException("Plugin $type is already applied! (version: ${it.version}")
+        }
+
+        val appliedPlugin = AppliedPlugin(type, version ?: type.version ?: INTERNAL_PLUGIN_VERSION)
+        if (applyFirst) {
+            plugins.add(0, appliedPlugin)
+        } else {
+            plugins += appliedPlugin
+        }
     }
 
-    private val dependencies: DependenciesBuilderImpl = DependenciesBuilderImpl()
+    override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        val match = plugins.firstOrNull { it.plugin == type }
+            ?: throw RuntimeException("Plugin $type not yet applied")
+
+        val appliedPlugin = AppliedPlugin(type, version)
+        val index = plugins.indexOf(match)
+        plugins[index] = appliedPlugin
+    }
+
+    internal fun hasPlugin(plugin: PluginType): Boolean = plugins.any { it.plugin == plugin }
+
+    override val dependencies: DependenciesBuilderImpl = DependenciesBuilderImpl()
 
     override fun dependencies(action: DependenciesBuilder.() -> Unit) {
         action(dependencies)
@@ -144,7 +181,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
 
                 // write the plugins used by the other projects (only for root project)
                 if (isRoot) {
-                    val remainingPlugins = allPlugins - plugins.keys
+                    val remainingPlugins = allPlugins - plugins.map { it.plugin }.toSet()
 
                     // we can exclude plugin with no versions
                     for ((plugin, versions) in remainingPlugins) {

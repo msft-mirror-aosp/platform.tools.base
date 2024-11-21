@@ -58,7 +58,7 @@ sealed class PluginType(
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KOTLIN_ANDROID: PluginType(
-        id = "kotlin-android",
+        id = "org.jetbrains.kotlin.android",
         isAndroid = true,
         isKotlin = true,
         useNewDsl = false,

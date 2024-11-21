@@ -242,12 +242,12 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> {
         val allPlugins = mutableMapOf<PluginType, Set<String>>()
         (subProjects.values + rootProject).forEach { project ->
-            project.plugins.entries.forEach { entry ->
-                val set = allPlugins.computeIfAbsent(entry.key) {
+            project.plugins.forEach { entry ->
+                val set = allPlugins.computeIfAbsent(entry.plugin) {
                     mutableSetOf()
                 } as MutableSet<String>
 
-                set.add(entry.value)
+                set.add(entry.version)
             }
         }
         return allPlugins

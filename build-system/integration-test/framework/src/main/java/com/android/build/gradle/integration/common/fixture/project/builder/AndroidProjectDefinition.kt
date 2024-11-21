@@ -72,7 +72,7 @@ internal abstract class AndroidProjectDefinitionImpl<T : CommonExtension<*, *, *
     }
 
     override fun kotlin(action: KotlinExtension.() -> Unit) {
-        if (!plugins.contains(PluginType.ANDROID_BUILT_IN_KOTLIN))
+        if (!hasPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN))
             throw RuntimeException("Cannot configure kotlin without plugin ANDROID_BUILT_IN_KOTLIN")
 
         contentHolder.runNestedBlock(
