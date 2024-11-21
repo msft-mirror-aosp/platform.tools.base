@@ -3,7 +3,9 @@
           package='%PACKAGE'
           android:versionCode='%VERSION'
           android:versionName='1.0'>
-    <application android:label='A Hello Android'>
+    <application
+          android:label='A Hello Android'
+          android:debuggable="true">
         <activity android:name='com.example.simpleapp.MainActivity'>
              <intent-filter>
                 <category android:name='android.intent.category.LAUNCHER'/>

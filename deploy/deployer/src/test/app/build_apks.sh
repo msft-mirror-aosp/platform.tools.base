@@ -7,10 +7,10 @@ if [ -z ${ANDROID_SDK+x} ]; then
   exit 1
 fi
 
-BUILD_TOOLS_VERSION=30.0.2
-SDK_VERSION=28
+BUILD_TOOLS_VERSION=35.0.0
+SDK_VERSION=35
 AAPT2="$ANDROID_SDK/build-tools/$BUILD_TOOLS_VERSION/aapt2"
-DX="$ANDROID_SDK/build-tools/$BUILD_TOOLS_VERSION/dx"
+DEXER="$ANDROID_SDK/build-tools/$BUILD_TOOLS_VERSION/d8"
 ZIPALIGN="$ANDROID_SDK
 HAS_RESOURCES=$7
 PACKAGE_NAME=$8/build-tools/$BUILD_TOOLS_VERSION/zipalign"
@@ -55,13 +55,13 @@ function build_apk() {
 
   echo "Compiling source..."
   if [ "$HAS_RESOURCES" = "true" ]; then
-      javac -d $OBJ -classpath src -bootclasspath $PLATFORM -source 1.7 -target 1.7 $GEN_SRC/com/example/simpleapp/R.java
+      javac -d $OBJ -classpath src -bootclasspath $PLATFORM -source 1.8 -target 1.8 $GEN_SRC/com/example/simpleapp/R.java
   fi
   sed  "s/%TEXT/$TEXT/" src/com/example/simpleapp/$SOURCE_FILE > $GEN_SRC/$SOURCE_FILE
-  javac -d $OBJ -classpath src -classpath $OBJ -bootclasspath $PLATFORM -source 1.7 -target 1.7 $GEN_SRC/$SOURCE_FILE
+  javac -d $OBJ -classpath src -classpath $OBJ -bootclasspath $PLATFORM -source 1.8 -target 1.8 $GEN_SRC/$SOURCE_FILE
 
   echo "Translating in class to dex ..."
-  $DX --dex --incremental --output=$BIN/classes.dex $OBJ
+  $DEXER --output $BIN $OBJ/com/example/simpleapp/*.class
 
   echo "Adding dexs to APK..."
   (cd $BIN; zip -r base.apk classes.dex )
