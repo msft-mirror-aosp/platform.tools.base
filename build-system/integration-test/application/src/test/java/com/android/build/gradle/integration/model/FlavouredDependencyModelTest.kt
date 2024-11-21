@@ -74,7 +74,6 @@ class FlavouredDependencyModelTest: ModelComparator() {
         }
     }
 
-    @Ignore("b/379307487")
     @Test
     fun `test models`() {
         val result = rule.build.modelBuilder

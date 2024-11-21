@@ -183,6 +183,7 @@ class DslContentHolderTest {
         ) {
             name = "bob"
             sendMessage("Hello!")
+            something("one", "two")
         }
 
         val writer = GroovyBuildWriter()
@@ -191,6 +192,7 @@ class DslContentHolderTest {
             person {
               name = 'bob'
               sendMessage('Hello!')
+              something('one', 'two')
             }
 
         """.trimIndent())

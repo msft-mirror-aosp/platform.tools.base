@@ -16,9 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.ProductFlavor
+import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.provider.Property
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -46,23 +50,22 @@ class DslProxy private constructor(
         /**
          * Creates a Java proxy for type `theClass`
          */
+        @Suppress("UNCHECKED_CAST")
         fun <T> createProxy(
             theClass: Class<T>,
             contentHolder: DslContentHolder,
         ): T {
-            if (ProductFlavor::class.java.isAssignableFrom(theClass)) {
-                return ManualProxy.createManualProxy(
-                    theInterface = theClass,
+            return when (theClass) {
+                ApplicationProductFlavor::class.java -> ApplicationProductFlavorProxy(contentHolder) as T
+                LibraryProductFlavor::class.java -> LibraryProductFlavorProxy(contentHolder) as T
+                DynamicFeatureProductFlavor::class.java -> DynamicFeatureProductFlavorProxy(contentHolder) as T
+                TestProductFlavor::class.java -> TestProductFlavorProxy(contentHolder) as T
+                else -> Proxy.newProxyInstance(
+                    DslProxy::class.java.classLoader,
+                    arrayOf(theClass),
                     DslProxy(theClass, contentHolder)
-                )
+                ) as T
             }
-
-            @Suppress("UNCHECKED_CAST")
-            return Proxy.newProxyInstance(
-                DslProxy::class.java.classLoader,
-                arrayOf(theClass),
-                DslProxy(theClass, contentHolder)
-            ) as T
         }
     }
 
