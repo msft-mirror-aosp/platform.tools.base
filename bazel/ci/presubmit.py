@@ -104,8 +104,14 @@ def _find_impacted_targets(
   """
   with tempfile.TemporaryDirectory() as temp_dir:
     temp_path = pathlib.Path(temp_dir)
+    dep_edges = temp_path / 'dep-edges.json'
+    try:
+      current_hashes = _generate_hash_file(build_env, dep_edges)
+    except subprocess.TimeoutExpired as e:
+      raise SelectivePresubmitError(
+          f'generate-hashes timed out after {e.timeout} seconds'
+      )
 
-    base_hashes = temp_path / 'base-hashes.json'
     reference_bid = gce.get_reference_build_id(
         build_env.build_number,
         build_env.build_target_name,
@@ -115,6 +121,7 @@ def _find_impacted_targets(
         bid=reference_bid,
         target=build_env.build_target_name,
     )
+    base_hashes = temp_path / 'base-hashes.json'
     exists = gce.download_from_gcs(
         _HASH_FILE_BUCKET,
         object_name,
@@ -123,14 +130,6 @@ def _find_impacted_targets(
     if not exists:
       raise SelectivePresubmitError(f'Base hash file {object_name} not found')
     logging.info('Base hash file %s found', object_name)
-
-    dep_edges = temp_path / 'dep-edges.json'
-    try:
-      current_hashes = _generate_hash_file(build_env, dep_edges)
-    except subprocess.TimeoutExpired as e:
-      raise SelectivePresubmitError(
-          f'generate-hashes timed out after {e.timeout} seconds'
-      )
 
     impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
     bazel_diff.get_impacted_targets(
