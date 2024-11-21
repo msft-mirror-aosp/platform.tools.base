@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.APP_LINK_WARNING
+import com.android.tools.lint.checks.AppLinksValidDetector.Companion.TEST_URL
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.VALIDATION
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.XmlContext
@@ -60,6 +61,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             <data android:scheme="https"/>
                             <!-- Don't warn on only host and port -->
                             <data android:host="example.com" android:port="40"/>
+                            <!-- But do warn if there's a path -->
                             <data android:host="example.com" android:port="41" android:path="/sub"/>
                         </intent-filter>
                     </service>
@@ -72,7 +74,6 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                     <activity android:name="com.example.Activity2">
                         <intent-filter>
                             <data android:scheme="https" android:host="example.com"/>
-                            <!-- Don't warn on multiple attributes of only path variants-->
                             <data
                                 android:pathPrefix="/prefix"
                                 android:path="/path"
@@ -95,59 +96,72 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:5: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
-                            <data android:scheme="https" android:host="example.com"/>
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:6: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
-                            <data android:scheme="http" android:host="example.org"/>
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:12: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
-                            <data
-                            ^
-                AndroidManifest.xml:24: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
-                            <data android:host="example.com" android:port="41" android:path="/sub"/>
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:30: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
-                            <data android:host="example.com" android:mimeType="image/jpeg"/>
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 5 warnings
-                """
+          AndroidManifest.xml:5: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data android:scheme="https" android:host="example.com"/>
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:6: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data android:scheme="http" android:host="example.org"/>
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:12: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data
+                      ^
+          AndroidManifest.xml:25: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data android:host="example.com" android:port="41" android:path="/sub"/>
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:36: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data android:scheme="https" android:host="example.com"/>
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:37: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                      <data
+                      ^
+          0 errors, 6 warnings
+        """
       )
       .verifyFixes()
       .robot(true)
       .expectFixDiffs(
         """
-                Autofix for AndroidManifest.xml line 5: Replace with <data android:scheme="https"/>...:
-                @@ -5 +5
-                -             <data android:scheme="https" android:host="example.com"/>
-                +             <data android:scheme="https"/>
-                +             <data android:host="example.com"/>
-                Autofix for AndroidManifest.xml line 6: Replace with <data android:scheme="http"/>...:
-                @@ -6 +6
-                -             <data android:scheme="http" android:host="example.org"/>
-                +             <data android:scheme="http"/>
-                +             <data android:host="example.org"/>
-                Autofix for AndroidManifest.xml line 12: Replace with <data android:scheme="https"/>...:
-                @@ -12 +12
-                -             <data
-                -                 android:host="example.com"
-                -                 android:path="/path"
-                -                 android:scheme="https"
-                -                 />
-                +             <data android:scheme="https"/>
-                +             <data android:host="example.com"/>
-                +             <data android:path="/path"/>
-                Autofix for AndroidManifest.xml line 24: Replace with <data android:host="example.com" android:port="41"/>...:
-                @@ -24 +24
-                -             <data android:host="example.com" android:port="41" android:path="/sub"/>
-                +             <data android:host="example.com" android:port="41"/>
-                +             <data android:path="/sub"/>
-                Autofix for AndroidManifest.xml line 30: Replace with <data android:host="example.com"/>...:
-                @@ -30 +30
-                -             <data android:host="example.com" android:mimeType="image/jpeg"/>
-                +             <data android:host="example.com"/>
-                +             <data android:mimeType="image/jpeg"/>
-                """
+        Autofix for AndroidManifest.xml line 5: Replace with <data android:scheme="https" />...:
+        @@ -5 +5
+        -             <data android:scheme="https" android:host="example.com"/>
+        +             <data android:scheme="https" />
+        +             <data android:host="example.com" />
+        Autofix for AndroidManifest.xml line 6: Replace with <data android:scheme="http" />...:
+        @@ -6 +6
+        -             <data android:scheme="http" android:host="example.org"/>
+        +             <data android:scheme="http" />
+        +             <data android:host="example.org" />
+        Autofix for AndroidManifest.xml line 12: Replace with <data android:scheme="https" />...:
+        @@ -12 +12
+        -             <data
+        -                 android:host="example.com"
+        -                 android:path="/path"
+        -                 android:scheme="https"
+        -                 />
+        +             <data android:scheme="https" />
+        +             <data android:host="example.com" />
+        +             <data android:path="/path" />
+        Autofix for AndroidManifest.xml line 25: Replace with <data android:host="example.com" android:port="41" />...:
+        @@ -25 +25
+        -             <data android:host="example.com" android:port="41" android:path="/sub"/>
+        +             <data android:host="example.com" android:port="41" />
+        +             <data android:path="/sub" />
+        Autofix for AndroidManifest.xml line 36: Replace with <data android:scheme="https" />...:
+        @@ -36 +36
+        -             <data android:scheme="https" android:host="example.com"/>
+        +             <data android:scheme="https" />
+        +             <data android:host="example.com" />
+        Autofix for AndroidManifest.xml line 37: Replace with <data android:path="/path" />...:
+        @@ -37 +37
+        -             <data
+        -                 android:pathPrefix="/prefix"
+        -                 android:path="/path"
+        -                 android:pathPattern="/pattern/*"
+        -                 />
+        +             <data android:path="/path" />
+        +             <data android:pathPrefix="/prefix" />
+        +             <data android:pathPattern="/pattern/*" />
+        """
       )
   }
 
@@ -187,17 +201,17 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .robot(true)
       .expectFixDiffs(
         """
-                Autofix for AndroidManifest.xml line 5: Replace with <data alt-android:scheme="https"/>...:
-                @@ -5 +5
-                -             <data alt-android:scheme="https" alt-android:host="example.com"/>
-                +             <data alt-android:scheme="https"/>
-                +             <data alt-android:host="example.com"/>
-                Autofix for AndroidManifest.xml line 6: Replace with <data alt-android:scheme="http"/>...:
-                @@ -6 +6
-                -             <data alt-android:scheme="http" alt-android:host="example.org"/>
-                +             <data alt-android:scheme="http"/>
-                +             <data alt-android:host="example.org"/>
-                """
+        Autofix for AndroidManifest.xml line 5: Replace with <data alt-android:scheme="https" />...:
+        @@ -5 +5
+        -             <data alt-android:scheme="https" alt-android:host="example.com"/>
+        +             <data alt-android:scheme="https" />
+        +             <data alt-android:host="example.com" />
+        Autofix for AndroidManifest.xml line 6: Replace with <data alt-android:scheme="http" />...:
+        @@ -6 +6
+        -             <data alt-android:scheme="http" alt-android:host="example.org"/>
+        +             <data alt-android:scheme="http" />
+        +             <data alt-android:host="example.org" />
+        """
       )
   }
 
@@ -375,6 +389,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      .issues(TEST_URL)
       .run()
       .expect(expected)
   }
@@ -415,6 +430,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      .issues(TEST_URL)
       .run()
       .expectClean()
   }
@@ -2336,7 +2352,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expectFixDiffs(
         """
-        Autofix for AndroidManifest.xml line 21: Replace with <data android:scheme="https"/>...:
+        Autofix for AndroidManifest.xml line 21: Replace with <data android:scheme="https" />...:
         @@ -21 +21
         -                 <data android:scheme="https"
         -                       android:host="example.com"
@@ -2345,13 +2361,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         -                       android:pathPattern=".*gizmos"
         -                       android:path="/gizmos"
         -                       android:pathSuffix="gizmos" />
-        +                 <data android:scheme="https"/>
-        +                 <data android:host="example.com"/>
-        +                 <data android:path="/gizmos"/>
-        +                 <data android:pathPrefix="/gizmos"/>
-        +                 <data android:pathPattern=".*gizmos"/>
-        +                 <data android:pathSuffix="gizmos"/>
-        +                 <data android:pathAdvancedPattern="[A-Z]gizmos"/>
+        +                 <data android:scheme="https" />
+        +                 <data android:host="example.com" />
+        +                 <data android:path="/gizmos" />
+        +                 <data android:pathPrefix="/gizmos" />
+        +                 <data android:pathPattern=".*gizmos" />
+        +                 <data android:pathAdvancedPattern="[A-Z]gizmos" />
+        +                 <data android:pathSuffix="gizmos" />
       """
       )
   }
