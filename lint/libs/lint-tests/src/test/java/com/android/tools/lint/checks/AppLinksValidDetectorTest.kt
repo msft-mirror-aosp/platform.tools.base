@@ -1878,7 +1878,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun suggestAddHost_whenCustomSchemeAndPathArePresent() {
+  fun testSuggestAddHost_whenCustomSchemeAndPathArePresent() {
     // Regression test for https://issuetracker.google.com/62810553
     val expected =
       """
