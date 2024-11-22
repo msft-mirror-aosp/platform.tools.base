@@ -232,7 +232,7 @@ internal class AdbServerControllerImpl(
                 processRunner.runProcess(command, envVars)
                 true
             } catch (e: IOException) {
-                logger.info { "failed running process `$command`" }
+                logger.info(e) { "failed running process `$command`" }
                 false
             }
         }
@@ -247,7 +247,7 @@ internal class AdbServerControllerImpl(
                 processRunner.runProcess(command, envVars)
                 true
             } catch (e: IOException) {
-                logger.info { "failed running process `$command`" }
+                logger.info(e) { "failed running process `$command`" }
                 false
             }
         }
@@ -339,6 +339,10 @@ internal class AdbServerControllerImpl(
      * by this [StartingState] with a completed job.
      */
     private class StartingState(params: StateParams, previousJob: Deferred<Unit>) : State(params) {
+        // Job completed with exception (including a cancellation exception)
+        @Volatile
+        private var jobCompletedWithException = false
+
         private val startJob: Deferred<Unit> = scope.async {
             // Cancel and wait for previously running job
             previousJob.cancelAndJoin()
@@ -356,11 +360,22 @@ internal class AdbServerControllerImpl(
             }
             params.lastUsedConfig.update { config }
             params.isStartedFlow.update { true }
+        }.also {
+            it.invokeOnCompletion { e ->
+                jobCompletedWithException = e != null
+            }
         }
 
         override fun start(): State {
-            // We are already starting (or started) => no-op
-            return this
+            // NOTE: We could use `startJob.isCompleted && startJob.getCompletionExceptionOrNull() != null`
+            //  if the API was not experimental.
+            return if (jobCompletedWithException) {
+                // Previous start attempt failed => try again
+                StartingState(params, startJob)
+            } else {
+                // We are already starting (or started) => no-op
+                this
+            }
         }
 
         override fun stop(): State {
@@ -387,6 +402,10 @@ internal class AdbServerControllerImpl(
      * The "stopping" state, i.e. [State.stop] has been called.
      */
     private class StoppingState(params: StateParams, previousJob: Deferred<Unit>) : State(params) {
+        // Job completed with exception (including a cancellation exception)
+        @Volatile
+        private var jobCompletedWithException = false
+
         private val stopJob: Deferred<Unit> = scope.async {
             // Cancel and wait for previously running job
             previousJob.cancelAndJoin()
@@ -397,6 +416,10 @@ internal class AdbServerControllerImpl(
                 runKillServerProcess(adbFilePath, config.envVars)
             }
             params.isStartedFlow.update { false }
+        }.also {
+            it.invokeOnCompletion { e ->
+                jobCompletedWithException = e != null
+            }
         }
 
         override fun start(): State {
@@ -405,8 +428,15 @@ internal class AdbServerControllerImpl(
         }
 
         override fun stop(): State {
-            // We are stopping (or stopped) => no-op
-            return this
+            // NOTE: We could use `stopJob.isCompleted && stopJob.getCompletionExceptionOrNull() != null`
+            //  if the API was not experimental.
+            return if (jobCompletedWithException) {
+                // Previous stop attempt failed => try again
+                StoppingState(params, stopJob)
+            } else {
+                // We are stopping (or stopped) => no-op
+                this
+            }
         }
 
         override fun restart(): State {

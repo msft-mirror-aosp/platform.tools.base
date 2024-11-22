@@ -85,7 +85,7 @@ class AdbServerControllerImplTest {
   }
 
   @Test
-  fun testCreateChannelThrowsTimeoutException_whenTimeoutOutWaitingForControllerIsStarted(): Unit =
+  fun testCreateChannelThrowsTimeoutException_whenTimesOutWaitingForControllerIsStarted(): Unit =
     runBlockingWithTimeout {
       // Prepare
       val controller = registerCloseable(AdbServerControllerImpl(host, configFlow))
@@ -264,6 +264,48 @@ class AdbServerControllerImplTest {
     }
 
   @Test
+  fun testOnlyOneAdbServerStartIsTriggered_whenStartIsCalledConcurrently(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val processRunner = FakeProcessRunner(50)
+      val controller =
+        registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+      configFlow.update {
+        it.copy(adbFile = File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+      }
+
+      // Act: queue up multiple start calls at the same time
+      val restartJobs = List(5) { launch { controller.start() } }
+      restartJobs.joinAll()
+
+      // Assert
+      assertTrue(controller.isStarted)
+      assertContentEquals(listOf(START_COMMAND), processRunner.allCommands)
+    }
+
+  @Test
+  fun testOnlyOneAdbServerStopIsTriggered_whenStopIsCalledConcurrently(): Unit =
+    runBlockingWithTimeout {
+      // Prepare
+      val processRunner = FakeProcessRunner(50)
+      val controller =
+        registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+      configFlow.update {
+        it.copy(adbFile = File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+      }
+      controller.start()
+      processRunner.reset()
+
+      // Act: queue up multiple start calls at the same time
+      val restartJobs = List(5) { launch { controller.stop() } }
+      restartJobs.joinAll()
+
+      // Assert
+      assertFalse(controller.isStarted)
+      assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+    }
+
+  @Test
   fun testCallingRestartAfterAnotherRestartCompleted_shouldRestartAgain(): Unit =
     runBlockingWithTimeout {
       // Prepare
@@ -288,14 +330,84 @@ class AdbServerControllerImplTest {
       )
     }
 
+  @Test
+  fun testCanStartAfterTheFirstStartFails(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val processRunner = FakeProcessRunner()
+    val controller =
+      registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+    configFlow.update { it.copy(File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false) }
+
+    // Act
+    val startJob = launch {
+      processRunner.throwOnNextCommand =
+        IllegalStateException("Exception in a first call to `controller.start()`")
+      try {
+        controller.start()
+      } catch (_: IllegalStateException) {
+        // Ignore: This exception is expected
+      }
+    }
+    startJob.join()
+
+    // Assert
+    assertFalse(controller.isStarted)
+    assertTrue(processRunner.allCommands.isEmpty())
+
+    // Act: Try to start again, and this time don't throw the exception
+    processRunner.throwOnNextCommand = null
+    controller.start()
+
+    // Assert
+    assertTrue(controller.isStarted)
+    assertContentEquals(listOf(START_COMMAND), processRunner.allCommands)
+  }
+
+  @Test
+  fun testCanStopAfterTheFirstStopFails(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val processRunner = FakeProcessRunner()
+    val controller =
+      registerCloseable(AdbServerControllerImpl(host, configFlow, processRunner = processRunner))
+    configFlow.update { it.copy(File(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false) }
+    controller.start()
+    processRunner.reset()
+
+    // Act
+    val startJob = launch {
+      processRunner.throwOnNextCommand =
+        IllegalStateException("Exception in a first call to `controller.start()`")
+      try {
+        controller.stop()
+      } catch (_: IllegalStateException) {
+        // Ignore: This exception is expected
+      }
+    }
+    startJob.join()
+
+    // Assert
+    assertTrue(controller.isStarted)
+    assertTrue(processRunner.allCommands.isEmpty())
+
+    // Act: Try to stop again, and this time don't throw the exception
+    processRunner.throwOnNextCommand = null
+    controller.stop()
+
+    // Assert
+    assertFalse(controller.isStarted)
+    assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+  }
+
   private class FakeProcessRunner(private val delayByMs: Long = 0) :
     AdbServerControllerImpl.ProcessRunner {
 
     var lastCommand: List<String>? = null
     val allCommands: MutableList<List<String>> = mutableListOf()
+    var throwOnNextCommand: Throwable? = null
 
     override suspend fun runProcess(command: List<String>, envVars: Map<String, String>) {
       delay(delayByMs)
+      throwOnNextCommand?.let { throw it }
       lastCommand = command
       allCommands.add(command)
     }
