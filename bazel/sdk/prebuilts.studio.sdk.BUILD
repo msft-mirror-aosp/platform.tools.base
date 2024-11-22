@@ -216,6 +216,11 @@ java_import(
 )
 
 platform_filegroup(
+    name = "platforms/android-Baklava",
+    visibility = ["//visibility:public"],
+)
+
+platform_filegroup(
     name = "platforms/android-35",
     visibility = ["//visibility:public"],
 )
