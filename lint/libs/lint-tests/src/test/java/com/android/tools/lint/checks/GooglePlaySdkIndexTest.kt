@@ -895,6 +895,173 @@ class GooglePlaySdkIndexTest {
                 )
             )
         )
+        // Deprecated library full name
+        .addSdks(
+          Sdk.newBuilder()
+            .setIndexUrl("http://index.example.url/")
+            .setIndexAvailability(Sdk.IndexAvailability.AVAILABLE_IN_PUBLIC_SDK_INDEX)
+            .setSdkName("SDK with name")
+            // with alternatives
+            .addLibraries(
+              Library.newBuilder()
+                .setLibraryId(
+                  LibraryIdentifier.newBuilder()
+                    .setMavenId(
+                      MavenIdentifier.newBuilder()
+                        .setGroupId("deprecated.library.named")
+                        .setArtifactId("with.alternatives")
+                        .build()
+                    )
+                )
+                // Multiple version to make sure all versions are reported as deprecated
+                .addVersions(
+                  // No other issues
+                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
+                )
+                .addVersions(
+                  // Outdated
+                  LibraryVersion.newBuilder()
+                    .setVersionString("1.9.0")
+                    .setVersionLabels(
+                      LibraryVersionLabels.newBuilder()
+                        .setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
+                    )
+                )
+                .addVersions(
+                  // Critical
+                  LibraryVersion.newBuilder()
+                    .setVersionString("1.8.0")
+                    .setVersionLabels(
+                      LibraryVersionLabels.newBuilder()
+                        .setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
+                    )
+                )
+                .addVersions(
+                  // Policy
+                  LibraryVersion.newBuilder()
+                    .setVersionString("1.7.0")
+                    .setVersionLabels(
+                      LibraryVersionLabels.newBuilder()
+                        .setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
+                    )
+                )
+                .addVersions(
+                  // Vulnerability
+                  LibraryVersion.newBuilder()
+                    .setVersionString("1.6.0")
+                    .setVersionLabels(
+                      LibraryVersionLabels.newBuilder()
+                        .setSecurityVulnerabilitiesInfo(
+                          LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
+                        )
+                    )
+                )
+                .setLibraryDeprecation(
+                  LibraryDeprecation.newBuilder()
+                    .setDeprecationTimestampSeconds(
+                      1732060800 // 2024-11-20 00:00:00 GMT
+                    )
+                    .addAlternativeLibraries(
+                      AlternativeLibrary.newBuilder()
+                        .setSdkName("Full name")
+                        .setMavenSdkId(
+                          MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name")
+                        )
+                    )
+                    .addAlternativeLibraries(
+                      AlternativeLibrary.newBuilder()
+                        .setMavenSdkId(
+                          MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name")
+                        )
+                    )
+                )
+            )
+            // no alternatives
+            .addLibraries(
+              Library.newBuilder()
+                .setLibraryId(
+                  LibraryIdentifier.newBuilder()
+                    .setMavenId(
+                      MavenIdentifier.newBuilder()
+                        .setGroupId("deprecated.library.named")
+                        .setArtifactId("no.alternatives")
+                        .build()
+                    )
+                )
+                .addVersions(
+                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
+                )
+                .setLibraryDeprecation(
+                  LibraryDeprecation.newBuilder()
+                    .setDeprecationTimestampSeconds(
+                      1732060800 // 2024-11-20 00:00:00 GMT
+                    )
+                )
+            )
+        )
+        // Deprecated library no name
+        .addSdks(
+          Sdk.newBuilder()
+            .setIndexUrl("http://index.example.url/")
+            .setIndexAvailability(Sdk.IndexAvailability.AVAILABLE_IN_PUBLIC_SDK_INDEX)
+            // with alternatives
+            .addLibraries(
+              Library.newBuilder()
+                .setLibraryId(
+                  LibraryIdentifier.newBuilder()
+                    .setMavenId(
+                      MavenIdentifier.newBuilder()
+                        .setGroupId("deprecated.library.no.name")
+                        .setArtifactId("with.alternatives")
+                        .build()
+                    )
+                )
+                .addVersions(
+                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
+                )
+                .setLibraryDeprecation(
+                  LibraryDeprecation.newBuilder()
+                    .setDeprecationTimestampSeconds(
+                      1732060800 // 2024-11-20 00:00:00 GMT
+                    )
+                    .addAlternativeLibraries(
+                      AlternativeLibrary.newBuilder()
+                        .setSdkName("Full name")
+                        .setMavenSdkId(
+                          MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name")
+                        )
+                    )
+                    .addAlternativeLibraries(
+                      AlternativeLibrary.newBuilder()
+                        .setMavenSdkId(
+                          MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name")
+                        )
+                    )
+                )
+            )
+            // no alternatives
+            .addLibraries(
+              Library.newBuilder()
+                .setLibraryId(
+                  LibraryIdentifier.newBuilder()
+                    .setMavenId(
+                      MavenIdentifier.newBuilder()
+                        .setGroupId("deprecated.library.no.name")
+                        .setArtifactId("no.alternatives")
+                        .build()
+                    )
+                )
+                .addVersions(
+                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
+                )
+                .setLibraryDeprecation(
+                  LibraryDeprecation.newBuilder()
+                    .setDeprecationTimestampSeconds(
+                      1732060800 // 2024-11-20 00:00:00 GMT
+                    )
+                )
+            )
+        )
         .build()
     index =
       object : GooglePlaySdkIndex() {
@@ -914,27 +1081,40 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `outdated issues shown`() {
-    assertThat(countOutdatedIssues()).isEqualTo(4)
+    assertThat(countOutdatedIssues()).isEqualTo(5)
   }
 
   @Test
   fun `critical issues shown`() {
-    assertThat(countCriticalIssues()).isEqualTo(3)
+    assertThat(countCriticalIssues()).isEqualTo(4)
   }
 
   @Test
   fun `policy issues shown`() {
-    assertThat(countPolicyIssues()).isEqualTo(21)
+    assertThat(countPolicyIssues()).isEqualTo(22)
   }
 
   @Test
   fun `vulnerability issues shown`() {
-    assertThat(countVulnerabilityIssues()).isEqualTo(23)
+    assertThat(countVulnerabilityIssues()).isEqualTo(24)
+  }
+
+  @Test
+  fun `deprecated issues shown if flag set`() {
+    index.showDeprecationIssues = true
+    assertThat(countDeprecatedIssues()).isEqualTo(8)
+  }
+
+  @Test
+  fun `deprecated issues not shown if flag not set`() {
+    index.showDeprecationIssues = false
+    assertThat(countDeprecatedIssues()).isEqualTo(0)
   }
 
   @Test
   fun `errors and warnings shown correctly`() {
-    assertThat(countHasErrorOrWarning()).isEqualTo(38)
+    index.showDeprecationIssues = true
+    assertThat(countHasErrorOrWarning()).isEqualTo(46)
   }
 
   @Test
@@ -1406,6 +1586,56 @@ class GooglePlaySdkIndexTest {
       .isEmpty()
   }
 
+  @Test
+  fun `Named deprecated library issues with alternatives`() {
+    val groupId = "deprecated.library.named"
+    val artifactId = "with.alternatives"
+    val expectedMessage =
+      "SDK with name ($groupId:$artifactId) has been deprecated by its developer. Consider updating to an " +
+        "alternative SDK before publishing a new release.\n" +
+        "The developer has recommended these alternatives:\n" +
+        "```\n" +
+        " - Full name (full:name)\n" +
+        " - no:name\n" +
+        "```"
+    assertThat(index.generateDeprecatedMessage(groupId, artifactId)).isEqualTo(expectedMessage)
+  }
+
+  @Test
+  fun `Named deprecated library issues without alternatives`() {
+    val groupId = "deprecated.library.named"
+    val artifactId = "no.alternatives"
+    val expectedMessage =
+      "SDK with name ($groupId:$artifactId) has been deprecated by its developer. Consider updating to an " +
+        "alternative SDK before publishing a new release."
+    assertThat(index.generateDeprecatedMessage(groupId, artifactId)).isEqualTo(expectedMessage)
+  }
+
+  @Test
+  fun `No name deprecated library issues with alternatives`() {
+    val groupId = "deprecated.library.no.name"
+    val artifactId = "with.alternatives"
+    val expectedMessage =
+      "$groupId:$artifactId has been deprecated by its developer. Consider updating to an alternative SDK before " +
+        "publishing a new release.\n" +
+        "The developer has recommended these alternatives:\n" +
+        "```\n" +
+        " - Full name (full:name)\n" +
+        " - no:name\n" +
+        "```"
+    assertThat(index.generateDeprecatedMessage(groupId, artifactId)).isEqualTo(expectedMessage)
+  }
+
+  @Test
+  fun `No name deprecated library issues without`() {
+    val groupId = "deprecated.library.no.name"
+    val artifactId = "no.alternatives"
+    val expectedMessage =
+      "$groupId:$artifactId has been deprecated by its developer. Consider updating to an alternative SDK before " +
+        "publishing a new release."
+    assertThat(index.generateDeprecatedMessage(groupId, artifactId)).isEqualTo(expectedMessage)
+  }
+
   private fun countOutdatedIssues(): Int {
     var result = 0
     for (sdk in proto.sdksList) {
@@ -1464,6 +1694,22 @@ class GooglePlaySdkIndexTest {
           if (index.hasLibraryVulnerabilityIssues(group, artifact, version.versionString, null)) {
             result +=
               index.generateVulnerabilityMessages(group, artifact, version.versionString).size
+          }
+        }
+      }
+    }
+    return result
+  }
+
+  private fun countDeprecatedIssues(): Int {
+    var result = 0
+    for (sdk in proto.sdksList) {
+      for (library in sdk.librariesList) {
+        val group = library.libraryId.mavenId.groupId
+        val artifact = library.libraryId.mavenId.artifactId
+        for (version in library.versionsList) {
+          if (index.isLibraryDeprecated(group, artifact, version.versionString, null)) {
+            result++
           }
         }
       }
