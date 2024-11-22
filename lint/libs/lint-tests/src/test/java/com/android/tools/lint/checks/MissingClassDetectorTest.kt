@@ -376,6 +376,7 @@ class MissingClassDetectorTest : AbstractCheckTest() {
             /* HIDE-FROM-DOCUMENTATION */
             package javax.inject;
 
+            import static java.lang.annotation.ElementType.CONSTRUCTOR;
             import java.lang.annotation.Target;
 
             @Target({ CONSTRUCTOR })

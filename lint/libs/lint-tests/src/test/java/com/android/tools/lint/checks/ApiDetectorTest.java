@@ -35,6 +35,7 @@ import com.android.tools.lint.checks.infrastructure.ProjectDescription;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestLintResult;
 import com.android.tools.lint.checks.infrastructure.TestLintTask;
+import com.android.tools.lint.checks.infrastructure.TestMode;
 import com.android.tools.lint.detector.api.ApiConstraint;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -9999,6 +10000,152 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 .expectClean();
     }
 
+    @SuppressWarnings("all") // sample code
+    public void testDependencyInjection() {
+        // Regression test for b/379363329
+        lint().files(
+                        manifest().minSdk(21),
+                        java(
+                                "package test.pkg;\n"
+                                    + "\n"
+                                    + "import android.telephony.ims.ImsManager;\n"
+                                    + "\n"
+                                    + "import javax.inject.Inject;\n"
+                                    + "import dagger.assisted.AssistedInject;\n"
+                                    + "\n"
+                                    + "public class InjectTest {\n"
+                                    + "    private final ImsManager imsManager;\n"
+                                    + "\n"
+                                    + "    // Constructor invoked by dependency injection"
+                                    + " framework, not \"our\" code\n"
+                                    + "    // but will be called by the framework\n"
+                                    + "    @Inject\n"
+                                    + "    InjectTest(ImsManager imsManager) { // ERROR 1\n"
+                                    + "        this.imsManager = imsManager;\n"
+                                    + "    }\n"
+                                    + "    @AssistedInject\n"
+                                    + "    InjectTest(ImsManager imsManager) { // ERROR 2\n"
+                                    + "        this.imsManager = imsManager;\n"
+                                    + "    }\n"
+                                    + "}"),
+                        java(
+                                "package test.pkg;\n"
+                                        + "\n"
+                                        + "import android.telephony.ims.ImsManager;\n"
+                                        + "import javax.inject.Inject;\n"
+                                        + "import androidx.annotation.RequiresApi;\n"
+                                        + "@RequiresApi(31)\n"
+                                        + "public class InjectTest2 {\n"
+                                        + "    private final ImsManager imsManager;\n"
+                                        + "\n"
+                                        + "    @Inject\n"
+                                        + "    InjectTest2(ImsManager imsManager) {\n"
+                                        + "        this.imsManager = imsManager;\n"
+                                        + "    }\n"
+                                        + "}"),
+                        java(
+                                "src/test/pkg/InjectTest3.java",
+                                "package test.pkg;\n"
+                                    + "\n"
+                                    + "import android.os.Build;\n"
+                                    + "import android.telephony.ims.ImsManager;\n"
+                                    + "\n"
+                                    + "import androidx.annotation.RequiresApi;\n"
+                                    + "\n"
+                                    + "import javax.inject.Provider;\n"
+                                    + "\n"
+                                    + "class Foo {\n"
+                                    + "    @Inject\n"
+                                    + "    Foo(Provider<ImsManager> managerProvider) { }\n"
+                                    + "}\n"
+                                    + "\n"
+                                    + "class InjectTest3 {\n"
+                                    + "    void barThat(Provider<ImsManager> managerProvider) {\n"
+                                    + "        ImsManager manager = managerProvider.get(); // ERROR"
+                                    + " 3\n"
+                                    + "        if (Build.VERSION.SDK_INT >= 30) {\n"
+                                    + "            ImsManager manager2 = managerProvider.get(); //"
+                                    + " OK 1\n"
+                                    + "        }\n"
+                                    + "    }\n"
+                                    + "}"),
+                        java(
+                                "package test.pkg;\n"
+                                        + "\n"
+                                        + "import android.os.Build;\n"
+                                        + "import android.telephony.ims.ImsManager;\n"
+                                        + "\n"
+                                        + "import androidx.annotation.RequiresApi;\n"
+                                        + "\n"
+                                        + "import javax.inject.Inject;\n"
+                                        + "\n"
+                                        + "class SomeLibraryClass {\n"
+                                        + "    @Inject\n"
+                                        + "    @RequiresApi(Build.VERSION_CODES.R)\n"
+                                        + "    SomeLibraryClass(ImsManager manager) {}\n"
+                                        + "}"),
+                        java(
+                                "package test.pkg;\n"
+                                    + "\n"
+                                    + "class InjectTest4 {\n"
+                                    + "    @Inject\n"
+                                    + "    SomeApplicationClass(SomeLibraryClass clazz) {} // ERROR"
+                                    + " 4\n"
+                                    + "}"),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
+                                    + "import javax.inject.Inject\n"
+                                    + "import android.os.Build\n"
+                                    + "import android.telephony.ims.ImsManager\n"
+                                    + "import androidx.annotation.RequiresApi\n"
+                                    + "\n"
+                                    + "class SomeLibraryClass2 @Inject"
+                                    + " @RequiresApi(Build.VERSION_CODES.R) constructor(manager:"
+                                    + " ImsManager) // OK\n"
+                                    + "class SomeApplicationClass2 @Inject constructor(clazz:"
+                                    + " SomeLibraryClass) // ERROR 5\n"
+                                    + "class SomeApplicationClass3 @Inject constructor(clazz:"
+                                    + " SomeLibraryClass2) // ERROR 6\n"),
+                        daggerStub,
+                        SUPPORT_ANNOTATIONS_JAR)
+                // skip @JvmOverloads test mode: duplicate error because of the extra test mode
+                // constructor
+                .skipTestModes(TestMode.JVM_OVERLOADS)
+                .run()
+                .expect(
+                        "src/test/pkg/InjectTest.java:14: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "    InjectTest(ImsManager imsManager) { // ERROR 1\n"
+                            + "               ~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/InjectTest.java:18: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "    InjectTest(ImsManager imsManager) { // ERROR 2\n"
+                            + "               ~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/InjectTest3.java:17: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "        ImsManager manager = managerProvider.get(); // ERROR 3\n"
+                            + "                             ~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/InjectTest4.java:5: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "    SomeApplicationClass(SomeLibraryClass clazz) {} // ERROR 4\n"
+                            + "                         ~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/SomeLibraryClass2.kt:9: Error: Class requires API level"
+                            + " 30 (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "class SomeApplicationClass2 @Inject constructor(clazz:"
+                            + " SomeLibraryClass) // ERROR 5\n"
+                            + "                                               "
+                            + " ~~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/SomeLibraryClass2.kt:10: Error: Class requires API"
+                            + " level 30 (current min is 21): android.telephony.ims.ImsManager"
+                            + " [NewApi]\n"
+                            + "class SomeApplicationClass3 @Inject constructor(clazz:"
+                            + " SomeLibraryClass2) // ERROR 6\n"
+                            + "                                               "
+                            + " ~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "6 errors, 0 warnings");
+    }
+
     @Override
     protected TestLintClient createClient() {
         return super.createClient();
@@ -10654,4 +10801,47 @@ public class ApiDetectorTest extends AbstractCheckTest {
                             + "    int maxSdkVersion() default Integer.MAX_VALUE;\n"
                             + "    String codeName() default \"unset\";\n"
                             + "}");
+
+    private static final TestFile daggerStub =
+            binaryStub(
+                    "libs/dagger.jar",
+                    new TestFile[] {
+                        // Stubs
+                        java(
+                                "/* HIDE-FROM-DOCUMENTATION */\n"
+                                        + "package javax.inject;\n"
+                                        + "\n"
+                                        + "public interface Provider<T> {\n"
+                                        + "    T get();\n"
+                                        + "}"),
+                        java(
+                                "/* HIDE-FROM-DOCUMENTATION */\n"
+                                    + "package javax.inject;\n"
+                                    + "\n"
+                                    + "import static"
+                                    + " java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+                                    + "import java.lang.annotation.Target;\n"
+                                    + "\n"
+                                    + "@Target({CONSTRUCTOR})\n"
+                                    + "public @interface Inject {\n"
+                                    + "}"),
+                        java(
+                                "/* HIDE-FROM-DOCUMENTATION */\n"
+                                    + "package dagger.assisted;\n"
+                                    + "\n"
+                                    + "import static"
+                                    + " java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+                                    + "import static"
+                                    + " java.lang.annotation.RetentionPolicy.RUNTIME;\n"
+                                    + "\n"
+                                    + "import java.lang.annotation.Documented;\n"
+                                    + "import java.lang.annotation.Retention;\n"
+                                    + "import java.lang.annotation.Target;\n"
+                                    + "\n"
+                                    + "@Documented\n"
+                                    + "@Retention(RUNTIME)\n"
+                                    + "@Target(CONSTRUCTOR)\n"
+                                    + "public @interface AssistedInject {}"),
+                    },
+                    true);
 }

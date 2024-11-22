@@ -142,6 +142,7 @@ import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiSuperExpression
 import com.intellij.psi.PsiType
+import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTreeUtil
@@ -1600,6 +1601,37 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           }
         }
       }
+
+      // noinspection ExternalAnnotations
+      if (
+        node.isConstructor && node.uAnnotations.any { it.qualifiedName.isInjectAnnotationName() }
+      ) {
+        for (parameter in node.uastParameters) {
+          val type = parameter.type as? PsiClassType ?: continue
+          val cls = type.resolve() ?: continue
+          val owner = cls.qualifiedName ?: continue
+          if (apiDatabase?.containsClass(owner) == false) {
+            // See if it's an injected method
+            for (constructor in cls.constructors) {
+              if (constructor.annotations.any { it.qualifiedName.isInjectAnnotationName() }) {
+                for (injectedParameter in constructor.parameterList.parameters) {
+                  val type = injectedParameter.type as? PsiClassType ?: continue
+                  // report the error back on the original call site referencing this injected
+                  // parameter
+                  // (which could be in bytecode)
+                  checkClassReference(parameter, type)
+                }
+              }
+            }
+          } else {
+            checkClassReference(parameter, type)
+          }
+        }
+      }
+    }
+
+    private fun String?.isInjectAnnotationName(): Boolean {
+      return this != null && endsWith("Inject")
     }
 
     override fun visitClass(node: UClass) {
@@ -1813,7 +1845,20 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       val name = getInternalMethodName(method)
 
       if (!apiDatabase.containsClass(owner)) {
-        handleKotlinExtensionMethods(name, owner, call, evaluator, method, reference)
+        if (
+          name == "get" &&
+            owner.endsWith("Provider") &&
+            method.parameterList.isEmpty &&
+            (method.returnType as PsiClassType).resolve() is PsiTypeParameter
+        ) {
+          // Dependency injection via provider?
+          val type = call.getExpressionType() as? PsiClassType
+          if (type != null) {
+            checkClassReference(call, type)
+          }
+        } else {
+          handleKotlinExtensionMethods(name, owner, call, evaluator, method, reference)
+        }
         return
       }
 
