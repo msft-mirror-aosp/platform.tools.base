@@ -787,6 +787,7 @@ DATA = [
     "com.google.android.material:material:1.8.0",
     "com.google.android.material:material:1.9.0",
     "com.google.android.play:app-update:2.0.0",  # Used by SdkIndexIssuesSyncListenerTest
+    "com.google.android.play:core:1.10.3",  # Used by SdkIndexIssuesSyncListenerTest
     "com.google.android.support:wearable:2.9.0",
     "com.google.android.wearable:wearable:2.9.0",
     "com.google.apis:google-api-services-cloudresourcemanager:v1beta1-rev20240128-2.0.0",

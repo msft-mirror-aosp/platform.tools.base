@@ -53508,6 +53508,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.play.core_1.10.3",
+    pom = "repository/com/google/android/play/core/1.10.3/core-1.10.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/play/core/1.10.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.support.wearable_2.9.0",
     pom = "repository/com/google/android/support/wearable/2.9.0/wearable-2.9.0.pom",
     repo_root_path = "repository",
