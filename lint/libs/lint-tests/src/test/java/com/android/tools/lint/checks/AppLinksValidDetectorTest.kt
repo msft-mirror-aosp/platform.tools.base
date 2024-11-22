@@ -15,10 +15,13 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.SdkConstants.TAG_INTENT_FILTER
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.APP_LINK_WARNING
+import com.android.tools.lint.checks.AppLinksValidDetector.Companion.ElementWrapper
+import com.android.tools.lint.checks.AppLinksValidDetector.Companion.IntentFilterData
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.TEST_URL
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.VALIDATION
-import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.checks.AppLinksValidDetector.Companion.getIntentFilterData
 import com.android.tools.lint.detector.api.XmlContext
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth.assertThat
@@ -26,10 +29,9 @@ import java.net.URL
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
-import org.w3c.dom.Element
 
 class AppLinksValidDetectorTest : AbstractCheckTest() {
-  override fun getDetector(): Detector {
+  override fun getDetector(): AppLinksValidDetector {
     return AppLinksValidDetector()
   }
 
@@ -1981,26 +1983,21 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
     val activity = XmlUtils.getFirstSubTag(application)
     assertThat(activity).isNotNull()
 
-    val detector = AppLinksValidDetector()
-    fun createUriInfos(
-      activity: Element,
-      context: XmlContext,
-    ): List<AppLinksValidDetector.UriInfo> =
-      detector.checkActivityIntentFiltersAndGetUriInfos(activity, context)
+    val mockContext =
+      mock<XmlContext>().apply {
+        whenever(getLocation(any())).thenReturn(mock())
+        whenever(client).thenReturn(mock())
+        whenever(driver).thenReturn(mock())
+        whenever(project).thenReturn(mock())
+      }
+    val infos =
+      XmlUtils.getSubTagsByName(activity, TAG_INTENT_FILTER).map {
+        getIntentFilterData(ElementWrapper(it, mockContext))
+      }
 
-    fun testElement(testUrl: URL, infos: List<AppLinksValidDetector.UriInfo>): String? =
+    fun testElement(testUrl: URL, infos: List<IntentFilterData>): String? =
       detector.checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
 
-    val infos =
-      createUriInfos(
-        activity!!,
-        mock<XmlContext>().apply {
-          whenever(getLocation(any())).thenReturn(mock())
-          whenever(client).thenReturn(mock())
-          whenever(driver).thenReturn(mock())
-          whenever(project).thenReturn(mock())
-        },
-      )
     assertThat(testElement(URL("http://example.com/literal/path"), infos)).isNull() // success
     assertThat(testElement(URL("http://example.com/gizmos/foo/bar"), infos)).isNull() // success
     assertThat(testElement(URL("https://example.com/gizmos/foo/bar"), infos))
