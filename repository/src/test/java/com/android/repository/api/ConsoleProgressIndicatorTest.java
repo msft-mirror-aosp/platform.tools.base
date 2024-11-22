@@ -17,9 +17,10 @@ package com.android.repository.api;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import org.junit.Test;
 
 /** Tests for {@link ConsoleProgressIndicator} */
 public class ConsoleProgressIndicatorTest {
@@ -78,11 +79,11 @@ public class ConsoleProgressIndicatorTest {
     }
 
     @Test
-    public void dumb() {
+    public void testCanPrintProgressDisabled() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         ConsoleProgressIndicator progressIndicator =
-                new ConsoleProgressIndicator(new PrintStream(out), new PrintStream(err), true);
+                new ConsoleProgressIndicator(new PrintStream(out), new PrintStream(err), false);
 
         progressIndicator.setText("foo");
         progressIndicator.setFraction(0.1);

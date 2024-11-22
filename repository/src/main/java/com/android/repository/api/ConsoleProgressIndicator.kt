@@ -13,163 +13,130 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.repository.api
 
-package com.android.repository.api;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.google.common.annotations.VisibleForTesting;
-import java.io.PrintStream;
-import java.util.Locale;
+import java.io.PrintStream
+import java.util.Locale
 
 /**
- * A simple {@link ProgressIndicator} that prints log messages to {@code stdout} and {@code stderr}.
+ * A simple [ProgressIndicator] that prints log messages to `stdout` and `stderr`.
  *
  * Progress rendering is done by emitting spaces followed by a carriage return, that way text can be
  * re-rendered on the same line. For more information, see https://stackoverflow.com/a/852802.
+ *
+ * @param canPrintProgress should be false for CI environments where 'TERM' is declared as 'dumb'
+ * to avoid flooding logs (b/137389944, b/66347650)
  */
-public class ConsoleProgressIndicator extends ProgressIndicatorAdapter {
+open class ConsoleProgressIndicator @JvmOverloads constructor(
+    private val out: PrintStream = System.out,
+    private val err: PrintStream = System.err,
+    private val canPrintProgress: Boolean = System.getenv("TERM") != "dumb"
+) : ProgressIndicatorAdapter() {
 
-    private static final int PROGRESS_WIDTH = 40;
-    private static final int MAX_WIDTH = 80;
+    private var text: String? = ""
+    private var secondaryText: String? = ""
+    private var progress = 0.0
 
-    private String mText = "";
-    private String mSecondaryText = "";
-    private double mProgress = 0;
+    private var last: String? = null
 
-    private PrintStream mOut;
-    private PrintStream mErr;
-    private final boolean mDumb;
+    override fun getFraction() = progress
 
-    private String mLast = null;
-
-    private static final String SPACES =
-            "                                                                                ";
-
-    public ConsoleProgressIndicator() {
-        this(System.out, System.err);
+    override fun setFraction(progress: Double) {
+        this.progress = progress
+        printProgress(true)
     }
 
-    public ConsoleProgressIndicator(@NonNull PrintStream out, @NonNull PrintStream err) {
-        this(out, err, "dumb".equals(System.getenv("TERM")));
-    }
-
-    @VisibleForTesting
-    ConsoleProgressIndicator(@NonNull PrintStream out, @NonNull PrintStream err, boolean dumb) {
-        mOut = out;
-        mErr = err;
-        mDumb = dumb;
-    }
-
-    public void setOut(@NonNull PrintStream out) {
-        mOut = out;
-    }
-
-    public void setErr(@NonNull PrintStream err) {
-        mErr = err;
-    }
-
-    @Override
-    public double getFraction() {
-        return mProgress;
-    }
-
-    @Override
-    public void setFraction(double progress) {
-        mProgress = progress;
-        printStatusLine(true);
-    }
-
-    private void printStatusLine(boolean forceShowProgress) {
-        if (mDumb) {
-            return;
+    private fun printProgress(forceShowProgress: Boolean) {
+        if (!canPrintProgress) {
+            return
         }
-        StringBuilder line = new StringBuilder();
-        if (forceShowProgress || getFraction() > 0) {
-            line.append("[");
-            int i = 1;
-            for (; i < PROGRESS_WIDTH * mProgress; i++) {
-                line.append("=");
+        val line = StringBuilder()
+        if (forceShowProgress || fraction > 0) {
+            line.append("[")
+            var i = 1
+            while (i < PROGRESS_WIDTH * progress) {
+                line.append("=")
+                i++
             }
-            for (; i < PROGRESS_WIDTH; i++) {
-                line.append(" ");
+            while (i < PROGRESS_WIDTH) {
+                line.append(" ")
+                i++
             }
-            line.append("] ");
+            line.append("] ")
 
-            line.append(String.format(Locale.US, "%.0f%%", 100 * mProgress));
-            line.append(" ");
+            line.append(String.format(Locale.US, "%.0f%%", 100 * progress))
+            line.append(" ")
         }
-        line.append(mText);
-        line.append(" ");
-        line.append(mSecondaryText);
-        if (line.length() > MAX_WIDTH) {
-            line.delete(MAX_WIDTH, line.length());
+        line.append(text)
+        line.append(" ")
+        line.append(secondaryText)
+        if (line.length > MAX_WIDTH) {
+            line.delete(MAX_WIDTH, line.length)
         } else {
-            line.append(SPACES, 0, MAX_WIDTH - line.length());
+            line.append(SPACES, 0, MAX_WIDTH - line.length)
         }
 
-        line.append("\r");
+        line.append("\r")
 
         // If the progress is at maximum, then append a newline so that future calls to logMessage
         // won't overlap with this output.
-        if (getFraction() >= 1) {
-            line.append(System.lineSeparator());
+        if (fraction >= 1) {
+            line.append(System.lineSeparator())
         }
 
-        String result = line.toString();
-        if (!result.equals(mLast)) {
-            mOut.print(result);
-            mOut.flush();
-            mLast = result;
+        val result = line.toString()
+        if (result != last) {
+            out.print(result)
+            out.flush()
+            last = result
         }
     }
 
-    private void logMessage(@NonNull String s, @Nullable Throwable e, @NonNull PrintStream stream) {
+    private fun logMessage(
+        s: String, e: Throwable?, stream: PrintStream
+    ) {
         // Overwrite the entire progress bar with blanks so that we can re-render it on a visibly
-        // lower line at the end of this function when we call printStatusLine.
+        // lower line at the end of this function when we call printProgress.
         //
         // There is no need to blank this out when the progress is full since we would have already
         // printed a newline character.
-        if (mProgress > 0 && mProgress < 1) {
-            mOut.print(SPACES);
-            mOut.print("\r");
-            mLast = null;
+        if (progress > 0 && progress < 1) {
+            out.print(SPACES)
+            out.print("\r")
+            last = null
         }
-        stream.println(s);
-        if (e != null) {
-            e.printStackTrace();
-        }
+        stream.println(s)
+        e?.printStackTrace()
 
         // Re-render the progress bar after having blanked it out.
-        if (mProgress > 0 && mProgress < 1) {
-            printStatusLine(false);
+        if (progress > 0 && progress < 1) {
+            printProgress(false)
         }
     }
 
-    @Override
-    public void logWarning(@NonNull String s, @Nullable Throwable e) {
-        logMessage("Warning: " + s, e, mErr);
+    override fun logWarning(s: String, e: Throwable?) {
+        logMessage("Warning: $s", e, err)
     }
 
-    @Override
-    public void logError(@NonNull String s, @Nullable Throwable e) {
-        logMessage("Error: " + s, e, mErr);
+    override fun logError(s: String, e: Throwable?) {
+        logMessage("Error: $s", e, err)
     }
 
-    @Override
-    public void logInfo(@NonNull String s) {
-        logMessage("Info: " + s, null, mOut);
+    override fun logInfo(s: String) {
+        logMessage("Info: $s", null, out)
     }
 
-    @Override
-    public void setText(@Nullable String text) {
-        mText = text;
-        printStatusLine(false);
+    override fun setText(text: String?) {
+        this.text = text
+        printProgress(false)
     }
 
-    @Override
-    public void setSecondaryText(@Nullable String text) {
-        mSecondaryText = text;
-        printStatusLine(false);
+    override fun setSecondaryText(text: String?) {
+        secondaryText = text
+        printProgress(false)
     }
 }
+
+private const val PROGRESS_WIDTH = 40
+private const val MAX_WIDTH = 80
+private const val SPACES = "                                                                                "
