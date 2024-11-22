@@ -106,6 +106,10 @@ public class App {
         return apks;
     }
 
+    public boolean isDebuggable() {
+        return apks.stream().anyMatch(apk -> apk.debuggable);
+    }
+
     public List<Path> getBaselineProfile(int api) {
         for (BaselineProfile bp : baselineProfiles) {
             if (bp.getMinApi() <= api && api <= bp.getMaxApi()) {

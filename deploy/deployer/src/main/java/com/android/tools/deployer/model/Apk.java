@@ -33,6 +33,7 @@ public class Apk implements Serializable {
     public final String checksum;
     public final String path;
     public final String packageName;
+    public final boolean debuggable;
 
     // If this APK contains native libraries, this list specifies the target ABI of the included
     // libraries. If the APK contains no native libraries, this list is empty.
@@ -58,6 +59,7 @@ public class Apk implements Serializable {
             String checksum,
             String path,
             String packageName,
+            boolean debuggable,
             List<String> libraryAbis,
             List<String> targetPackages,
             @NonNull List<ManifestServiceInfo> services,
@@ -69,6 +71,7 @@ public class Apk implements Serializable {
         this.checksum = checksum;
         this.path = path;
         this.packageName = packageName;
+        this.debuggable = debuggable;
         this.libraryAbis = libraryAbis;
         this.targetPackages = targetPackages;
         this.sdkLibraries = sdkLibraries;
@@ -90,6 +93,7 @@ public class Apk implements Serializable {
         private String checksum;
         private String path;
         private String packageName;
+        private boolean debuggable;
         private List<String> targetPackages;
         private List<ManifestServiceInfo> services;
         private List<ManifestReceiverInfo> receivers;
@@ -154,6 +158,11 @@ public class Apk implements Serializable {
             return this;
         }
 
+        public Builder setDebuggable(boolean debuggable) {
+            this.debuggable = debuggable;
+            return this;
+        }
+
         public Builder addLibraryAbi(String abi) {
             this.libraryAbis.add(abi);
             return this;
@@ -181,6 +190,7 @@ public class Apk implements Serializable {
                             checksum,
                             path,
                             packageName,
+                            debuggable,
                             libraryAbis.build(),
                             targetPackages,
                             services,

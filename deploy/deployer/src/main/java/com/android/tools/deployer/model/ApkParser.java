@@ -145,6 +145,7 @@ public class ApkParser {
                             .setChecksum(digest)
                             .setPath(absolutePath)
                             .setPackageName(manifest.getApplicationId())
+                            .setDebuggable(manifest.getDebuggable())
                             .setTargetPackages(manifest.getInstrumentationTargetPackages())
                             .setActivities(manifest.activities())
                             .setServices(manifest.services())

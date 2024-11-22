@@ -135,6 +135,7 @@ public class ManifestInfoParserTest {
         try (InputStream input = url.openStream()) {
             ManifestInfo manifest = ManifestInfo.parseBinaryFromStream(input);
             Assert.assertEquals(3, manifest.getVersionCode());
+            Assert.assertFalse(manifest.getDebuggable());
             Assert.assertTrue(manifest.getInstrumentationTargetPackages()
                                       .contains("com.android.shell"));
         }

@@ -333,7 +333,7 @@ public class ApkInstaller {
         builder.setInherit(inherit);
         builder.addAllPatchInstructions(patches);
         builder.setPackageName(app.getAppId());
-        builder.setAssumeVerified(options.getAssumeVerified());
+        builder.setAssumeVerified(app.isDebuggable() && options.getAssumeVerified());
 
         Deploy.InstallInfo info = builder.build();
         // Check that size if not beyond the limit.
@@ -461,18 +461,31 @@ public class ApkInstaller {
             List<String> options,
             boolean allowReinstall,
             boolean assumeVerified) {
-        return adb.install(
-                app, assumeVerified ? injectAssumeVerified(options) : options, allowReinstall);
+        return adb.install(app,
+                           maybeInjectAssumeVerified(app.isDebuggable(), assumeVerified, options),
+                           allowReinstall);
     }
 
-    private List<String> injectAssumeVerified(List<String> options) {
+    private List<String> maybeInjectAssumeVerified(
+            boolean isDebuggable, boolean allowAssumeVerified, List<String> options) {
+        // Release builds should not use assume-verified
+        if (!isDebuggable) {
+            return options;
+        }
+
+        // User needs to at least have selected the checkbox
+        if (!allowAssumeVerified) {
+            return options;
+        }
+
+        // Avoid duplicating the flag if the user already has this as an option.
         if (options.contains("assume-verfied")) {
             return options;
-        } else {
-            List<String> newOptions = Lists.newArrayList(options);
-            newOptions.add("--dexopt-compiler-filter");
-            newOptions.add("assume-verified");
-            return newOptions;
         }
+
+        List<String> newOptions = Lists.newArrayList(options);
+        newOptions.add("--dexopt-compiler-filter");
+        newOptions.add("assume-verified");
+        return newOptions;
     }
 }
