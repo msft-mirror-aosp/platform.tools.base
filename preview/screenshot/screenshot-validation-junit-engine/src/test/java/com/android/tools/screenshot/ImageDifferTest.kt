@@ -62,8 +62,9 @@ class ImageDifferTest {
     fun pixelPerfectSimilar() {
         val result = ImageDiffer.PixelPerfect().diff(loadTestImage("circle"), loadTestImage("circle"))
         assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("Pixel percentage difference: 0.0. 0 of 65536 pixels are different", result.description)
+        assertEquals("Pixel percentage difference: 0.00%. 0 of 65536 pixels are different", result.description)
         assertNull(result.highlights)
+        assertEquals(result.percentDiff, "0.00%")
     }
 
     @Test
@@ -72,10 +73,11 @@ class ImageDifferTest {
 
         val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
         assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("Pixel percentage difference: 0.27217102. 17837 of 65536 pixels are different", result.description)
+        assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
         assertIs<ImageDiffer.DiffResult.Similar>(
             ImageDiffer.PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff"))
         )
+        assertEquals(result.percentDiff, "27.22%")
     }
 
     @Test
@@ -83,10 +85,11 @@ class ImageDifferTest {
         val result = ImageDiffer.PixelPerfect().diff(loadTestImage("circle"), loadTestImage("star"))
 
         assertIs<ImageDiffer.DiffResult.Different>(result)
-        assertEquals("Pixel percentage difference: 0.27217102. 17837 of 65536 pixels are different", result.description)
+        assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
         assertIs<ImageDiffer.DiffResult.Similar>(
             ImageDiffer.PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff"))
         )
+        assertEquals(result.percentDiff, "27.22%")
     }
 
     @Test

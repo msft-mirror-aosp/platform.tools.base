@@ -226,6 +226,14 @@ class PreviewScreenshotTestEngine : TestEngine {
                 testResult.apply {
                     addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
                 }
+                if (result.imageDiff.percentDiff != null) {
+                    testResult.addDetails(
+                        createTestDetailsEntry(
+                            "percentDifference",
+                            result.imageDiff.percentDiff
+                        )
+                    )
+                }
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
@@ -243,6 +251,14 @@ class PreviewScreenshotTestEngine : TestEngine {
                         addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
                     }
                     diffImage
+                }
+                if (result.imageDiff.percentDiff != null) {
+                    testResult.addDetails(
+                        createTestDetailsEntry(
+                            "percentDifference",
+                            result.imageDiff.percentDiff
+                        )
+                    )
                 }
                 testResult.setTestStatus(TestStatusProto.TestStatus.PASSED)
                 result.toPreviewResponse(0,

@@ -467,6 +467,7 @@ class ScreenshotTest {
         var simpleComposableTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleComposableTest_simpleComposable"}
         // Verify two test artifacts - actual and reference images
         assertThat(simpleComposableTestMethodResult.outputArtifactCount).isEqualTo(2)
+        assertThat(simpleComposableTestMethodResult.detailsList.single { it.key == "percentDifference" }.value).isEqualTo("0.00%")
 
         // Update previews to be different from the references
         val testFile = appProject.projectDir.resolve("src/main/java/com/Example.kt")

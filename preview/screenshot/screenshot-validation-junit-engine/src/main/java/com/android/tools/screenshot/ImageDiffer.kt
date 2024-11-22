@@ -16,8 +16,11 @@
 package com.android.tools.screenshot
 
 import java.awt.image.BufferedImage
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.Locale
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
  *  Functional interface to compare two images and returns a [ImageDiffer.DiffResult] ADT containing
@@ -49,19 +52,25 @@ fun interface ImageDiffer {
      *
      * @property highlights An image with a transparent background, highlighting where the compared
      * images differ, typically in shades of magenta. Displayed in CI.
+     *
+     * @property percentDiff The percentage of pixels that differed between the reference image
+     * and the screenshot image. This percentage is rounded to two decimal places.
      */
     sealed interface DiffResult {
         val description: String
         val highlights: BufferedImage?
+        val percentDiff: String?
 
         data class Similar(
             override val description: String,
-            override val highlights: BufferedImage? = null
+            override val highlights: BufferedImage? = null,
+            override val percentDiff: String? = null
         ) : DiffResult
 
         data class Different(
             override val description: String,
-            override val highlights: BufferedImage
+            override val highlights: BufferedImage,
+            override val percentDiff: String? = null
         ) : DiffResult
     }
 
@@ -79,13 +88,14 @@ fun interface ImageDiffer {
             val numPixelsDifferent = pixelDiff.second
 
             val percentDiff: Float = numPixelsDifferent.toFloat() / (a.width * a.height)
-            val description = "Pixel percentage difference: ${percentDiff}. $numPixelsDifferent of ${a.width * a.height} pixels are different"
+            val percentDiffString = "${BigDecimal(percentDiff.toDouble() * 100).setScale(2, RoundingMode.HALF_EVEN)}%"
+            val description = "Pixel percentage difference: $percentDiffString. $numPixelsDifferent of ${a.width * a.height} pixels are different"
             return if (numPixelsDifferent == 0) {
-                DiffResult.Similar(description)
+                DiffResult.Similar(description, null, percentDiffString)
             } else if (percentDiff.compareTo(imageDiffThreshold) <= 0) {
-                DiffResult.Similar(description, highlights)
+                DiffResult.Similar(description, highlights, percentDiffString)
             } else {
-                DiffResult.Different(description, highlights)
+                DiffResult.Different(description, highlights, percentDiffString)
             }
         }
     }
