@@ -246,7 +246,7 @@ public class DeployerRunner {
                     options.setInstallOnUser(parameters.getTargetUserId());
                 }
 
-                options.setAssumeVerified(deployerOption.allowAssumeVerified);
+                options.setShouldUseAssumeVerified(deployerOption.allowAssumeVerified);
 
                 deployResult = deployer.install(app, options.build(), installMode);
             } else if (parameters.getCommands().contains(DeployRunnerParameters.Command.FULLSWAP)) {

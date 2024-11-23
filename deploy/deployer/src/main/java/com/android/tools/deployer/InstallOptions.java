@@ -28,18 +28,18 @@ public final class InstallOptions {
 
     private final List<String> allFlags;
     private final List<String> userFlags;
-    private final boolean assumeVerified;
+    private final boolean shouldUseAssumeVerified;
 
     private final Canceller canceller;
 
     private InstallOptions(
             List<String> allFlags,
             List<String> userFlags,
-            boolean assumeVerified,
+            boolean shouldUseAssumeVerified,
             Canceller canceller) {
         this.allFlags = allFlags;
         this.userFlags = userFlags;
-        this.assumeVerified = assumeVerified;
+        this.shouldUseAssumeVerified = shouldUseAssumeVerified;
         this.canceller = canceller;
     }
 
@@ -55,8 +55,8 @@ public final class InstallOptions {
         return canceller;
     }
 
-    public boolean getAssumeVerified() {
-        return assumeVerified;
+    public boolean getShouldUseAssumeVerified() {
+        return shouldUseAssumeVerified;
     }
 
     public Builder toBuilder() {
@@ -73,7 +73,7 @@ public final class InstallOptions {
     public static final class Builder {
         private final List<String> flags;
         private final List<String> userFlags;
-        private boolean assumeVerified = false;
+        private boolean shouldUseAssumeVerified = false;
 
         private Canceller canceller = Canceller.NO_OP;
 
@@ -157,13 +157,13 @@ public final class InstallOptions {
             return this;
         }
 
-        public Builder setAssumeVerified(boolean assumeVerified) {
-            this.assumeVerified = assumeVerified;
+        public Builder setShouldUseAssumeVerified(boolean shouldUseAssumeVerified) {
+            this.shouldUseAssumeVerified = shouldUseAssumeVerified;
             return this;
         }
 
         public InstallOptions build() {
-            return new InstallOptions(flags, userFlags, assumeVerified, canceller);
+            return new InstallOptions(flags, userFlags, shouldUseAssumeVerified, canceller);
         }
     }
 

@@ -130,7 +130,7 @@ public class ApkInstaller {
                                             app,
                                             options.getFlags(),
                                             allowReinstall,
-                                            options.getAssumeVerified());
+                                            options.getShouldUseAssumeVerified());
                             long installStartTime = System.nanoTime();
                             DeployMetric installResult =
                                     new DeployMetric("INSTALL", installStartTime);
@@ -169,7 +169,7 @@ public class ApkInstaller {
                                     app,
                                     options.getFlags(),
                                     allowReinstall,
-                                    options.getAssumeVerified());
+                                    options.getShouldUseAssumeVerified());
 
                     DeployMetric installResult = new DeployMetric("INSTALL", installStartedNs);
                     installResult.finish(result.status.name(), metrics);
@@ -229,7 +229,7 @@ public class ApkInstaller {
                                     app,
                                     options.getFlags(),
                                     allowReinstall,
-                                    options.getAssumeVerified());
+                                    options.getShouldUseAssumeVerified());
                     message = message(result);
                 }
                 break;
@@ -333,7 +333,7 @@ public class ApkInstaller {
         builder.setInherit(inherit);
         builder.addAllPatchInstructions(patches);
         builder.setPackageName(app.getAppId());
-        builder.setAssumeVerified(app.isDebuggable() && options.getAssumeVerified());
+        builder.setAssumeVerified(app.isDebuggable() && options.getShouldUseAssumeVerified());
 
         Deploy.InstallInfo info = builder.build();
         // Check that size if not beyond the limit.
@@ -460,10 +460,11 @@ public class ApkInstaller {
             @NonNull App app,
             List<String> options,
             boolean allowReinstall,
-            boolean assumeVerified) {
-        return adb.install(app,
-                           maybeInjectAssumeVerified(app.isDebuggable(), assumeVerified, options),
-                           allowReinstall);
+            boolean shouldUseAssumeVerified) {
+        return adb.install(
+                app,
+                maybeInjectAssumeVerified(app.isDebuggable(), shouldUseAssumeVerified, options),
+                allowReinstall);
     }
 
     private List<String> maybeInjectAssumeVerified(
