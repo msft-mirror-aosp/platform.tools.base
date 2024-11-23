@@ -40,6 +40,7 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose:+")
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-viewmodel-compose:+")
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
+  addDependency(mavenCoordinate = "androidx.compose.runtime:runtime:1.8.0-alpha06+")
 
   // Add Compose dependencies, using the BOM to set versions
   addComposeDependencies(moduleData)
