@@ -262,6 +262,7 @@ message AgentResponse {
     AgentLiveLiteralUpdateResponse live_literal_response = 5;
     AgentLiveEditResponse le_response = 6;
     AgentComposeStatusResponse compose_status_response = 7;
+    AgentRestartActivityResponse restart_activity_response = 8;
   }
 }
 
@@ -367,6 +368,16 @@ message AgentComposeStatusResponse {
   Status status = 1;
   repeated ComposeException exceptions = 2;
   string error_message = 3;
+}
+
+message AgentRestartActivityResponse {
+  enum Status {
+    UNKNOWN = 0;
+    OK = 1;
+    ERROR = 2;
+  }
+
+  Status status = 1;
 }
 
 message UnsupportedChange {
@@ -479,6 +490,7 @@ message InstallerRequest {
     TimeoutRequest timeout_request = 13;
     RootPushInstallRequest root_push_install_request = 15;
     ComposeStatusRequest compose_status_request = 16;
+    RestartActivityRequest restart_activity_request = 17;
   }
 
   // The InstallerResponse should match the ID of the request.
@@ -514,6 +526,7 @@ message InstallerResponse {
     TimeoutResponse timeout_response = 13;
     RootPushInstallResponse root_push_install_response = 16;
     ComposeStatusResponse compose_status_response = 17;
+    RestartActivityResponse restart_activity_response = 18;
   }
 
   string error_message = 14;
@@ -711,6 +724,7 @@ message AgentRequest {
     LiveLiteralUpdateRequest live_literal_request = 2;
     LiveEditRequest le_request = 3;
     ComposeStatusRequest compose_status_request = 4;
+    RestartActivityRequest restart_activity_request = 5;
   }
 }
 
@@ -840,6 +854,24 @@ message TimeoutResponse {
     UNKNOWN = 0;
     OK = 1;
     ERROR = 2;
+  }
+  Status status = 1;
+}
+
+message RestartActivityRequest {
+  string application_id = 1;
+  Arch arch = 2;
+  repeated int32 process_ids = 3;
+}
+
+message RestartActivityResponse {
+  enum Status {
+    UNKNOWN = 0;
+    OK = 1;
+    READY_FOR_AGENTS_NOT_RECEIVED = 2;
+    AGENT_ATTACH_FAILED = 3;
+    INSTALL_SERVER_COM_ERR = 4;       // InstallServer internal or pipe rw error
+    AGENT_ERROR = 5;                  // One or more of the agents reported failure
   }
   Status status = 1;
 }

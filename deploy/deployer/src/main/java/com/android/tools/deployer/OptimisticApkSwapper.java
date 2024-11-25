@@ -22,6 +22,7 @@ import com.android.tools.deployer.InstallerResponseHandler.SuccessStatus;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.idea.protobuf.ByteString;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -201,6 +202,20 @@ public class OptimisticApkSwapper {
                 break;
             default:
                 throw new IllegalStateException("Unknown swap status");
+        }
+
+        // Always restart the activity, even if swap failed; this behavior is maintained from
+        // the previous implementation where the activity restart was handled as part of the
+        // overlay swap command in the installer.
+        try {
+            installer.restartActivity(
+                    Deploy.RestartActivityRequest.newBuilder()
+                            .setApplicationId(packageId)
+                            .setArch(arch)
+                            .addAllProcessIds(pids)
+                            .build());
+        } catch (IOException io) {
+            throw DeployerException.installerIoException(io);
         }
 
         return new SwapResult(overlayId, successStatus == SuccessStatus.OK);

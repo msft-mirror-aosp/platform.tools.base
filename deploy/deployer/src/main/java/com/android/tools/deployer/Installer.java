@@ -19,6 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -209,6 +210,20 @@ public abstract class Installer {
         }
 
         return resp.getNetworkTestResponse();
+    }
+
+    public Deploy.RestartActivityResponse restartActivity(Deploy.RestartActivityRequest request)
+            throws IOException {
+        Deploy.InstallerRequest.Builder reqBuilder = buildRequest("restartactivity");
+        reqBuilder.setRestartActivityRequest(request);
+        Deploy.InstallerRequest req = reqBuilder.build();
+
+        Deploy.InstallerResponse resp = send(req, Timeouts.CMD_RESTART_ACTIVITY_MS);
+        if (!resp.hasRestartActivityResponse()) {
+            errorAsymetry(req, resp);
+        }
+
+        return resp.getRestartActivityResponse();
     }
 
     private static Deploy.OverlayIdPush createOidPushRequest(

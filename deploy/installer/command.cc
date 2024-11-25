@@ -19,6 +19,7 @@
 #include <functional>
 #include <unordered_map>
 
+#include "restart_activity.h"
 #include "tools/base/deploy/installer/compose_status.h"
 #include "tools/base/deploy/installer/delta_install.h"
 #include "tools/base/deploy/installer/delta_preinstall.h"
@@ -64,6 +65,8 @@ std::unique_ptr<Command> GetCommand(const char* command_name,
            [&]() { return new ComposeStatusCommand(workspace); }},
           {"networktest", [&]() { return new NetworkTestCommand(workspace); }},
           {"timeout", [&]() { return new TimeoutCommand(workspace); }},
+          {"restartactivity",
+           [&] { return new RestartActivityCommand(workspace); }}
           // Add here more commands (e.g: version, install, patch, agent, ...)
       };
 

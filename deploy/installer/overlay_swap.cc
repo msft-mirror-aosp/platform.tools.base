@@ -233,7 +233,7 @@ void OverlaySwapCommand::ProcessResponse(proto::SwapResponse* response) {
 void OverlaySwapCommand::UpdateOverlay(proto::SwapResponse* response) {
   Phase p("UpdateOverlay");
 
-  bool swap_failed = (response->status() != proto::SwapResponse::OK);
+  bool swap_failed = response->status() != proto::SwapResponse::OK;
 
   proto::OverlayUpdateRequest req;
   BuildOverlayUpdateRequest(&req);
@@ -247,21 +247,8 @@ void OverlaySwapCommand::UpdateOverlay(proto::SwapResponse* response) {
   response->set_status(OverlayStatusToSwapStatus(resp->status()));
   response->set_extra(resp->error_message());
 
-  bool should_restart = request_.restart_activity() &&
-                        response->status() == proto::SwapResponse::OK;
-
-  CmdCommand cmd(workspace_);
-  std::string error;
-  if (should_restart &&
-      !cmd.UpdateAppInfo("all", request_.package_name(), &error)) {
-    response->set_status(proto::SwapResponse::ACTIVITY_RESTART_FAILED);
-  }
-
-  if (swap_failed &&
-      (response->status() == proto::SwapResponse::OK ||
-       response->status() == proto::SwapResponse::ACTIVITY_RESTART_FAILED)) {
-    // If we updated overlay even on swap fail or restart fail,
-    // alter the response accordingly.
+  if (swap_failed && response->status() == proto::SwapResponse::OK) {
+    // If we updated overlay even on swap fail alter the response accordingly.
     response->set_status(proto::SwapResponse::SWAP_FAILED_BUT_OVERLAY_UPDATED);
   }
 }

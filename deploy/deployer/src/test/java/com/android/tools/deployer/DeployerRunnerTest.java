@@ -2570,8 +2570,7 @@ public class DeployerRunnerTest {
                 "android.app.ApplicationLoaders",
                 "java.lang.Thread",
                 "dalvik.system.DexPathList",
-                "android.app.LoadedApk",
-                "android.app.ResourcesManager");
+                "android.app.LoadedApk");
         // Should have redefined each of these classes twice, once per restart.
         assertRedefined(
                 logcat,
@@ -2579,12 +2578,10 @@ public class DeployerRunnerTest {
                 "java.lang.Thread",
                 "dalvik.system.DexPathList",
                 "android.app.LoadedApk",
-                "android.app.ResourcesManager",
                 "android.app.ApplicationLoaders",
                 "java.lang.Thread",
                 "dalvik.system.DexPathList",
-                "android.app.LoadedApk",
-                "android.app.ResourcesManager");
+                "android.app.LoadedApk");
     }
 
     @Test

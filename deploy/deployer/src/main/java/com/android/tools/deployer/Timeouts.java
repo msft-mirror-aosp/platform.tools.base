@@ -36,6 +36,7 @@ public class Timeouts {
     static final long CMD_INSTALL_COROUTINE = T_5_SECONDS;
     static final long CMD_NETTEST = T_5_MINUTES;
     static final long CMD_TIMEOUT = T_5_SECONDS;
+    static final long CMD_RESTART_ACTIVITY_MS = T_5_SECONDS;
 
     static final long SHELL_MKDIR = T_5_SECONDS;
     static final long SHELL_RMFR = T_5_SECONDS;

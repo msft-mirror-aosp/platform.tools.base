@@ -18,10 +18,12 @@ package com.android.tools.deploy.instrument;
 
 import static com.android.tools.deploy.instrument.ReflectionHelpers.*;
 
+import android.app.Activity;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Resources;
 import android.os.Build;
 import android.util.Log;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -115,19 +117,12 @@ public final class InstrumentationHooks {
     }
 
     // Called on swap; overlays swapped resources onto the application. Pre-API 31 signature.
-    public static void addResourceOverlays(
-            Object resourcesManager, ApplicationInfo appInfo, String[] oldPaths) throws Exception {
+    // Unlike the other IWI hook methods, this is not called from an instrumentation hook - it is
+    // called directly by the agent after resource overlays have been updated.
+    public static void addResourceOverlays() throws Exception {
         try {
-            ResourceOverlays.addResourceOverlays(resourcesManager);
-        } catch (Exception e) {
-            Log.e(TAG, "Exception", e);
-        }
-    }
-
-    // Called on swap; overlays swapped resources onto the application. Post-API 31 signature.
-    public static void addResourceOverlays(
-            Object resourcesManager, String[] oldPaths, ApplicationInfo appInfo) throws Exception {
-        try {
+            Class<?> clazz = Class.forName("android.app.ResourcesManager");
+            Object resourcesManager = call(clazz, "getInstance");
             ResourceOverlays.addResourceOverlays(resourcesManager);
         } catch (Exception e) {
             Log.e(TAG, "Exception", e);
@@ -241,6 +236,16 @@ public final class InstrumentationHooks {
                 call(activityThread, "peekPackageInfo", arg(packageName), arg(true, boolean.class));
         ApplicationInfo info = (ApplicationInfo) call(loadedApk, "getApplicationInfo");
         return Paths.get(info.sourceDir.substring(0, info.sourceDir.lastIndexOf("/")));
+    }
+
+    public static void restartActivity() throws Exception {
+        Object activityThread = getActivityThread();
+        Collection<?> clientRecords =
+                (Collection<?>) call(getDeclaredField(activityThread, "mActivities"), "values");
+        for (Object record : clientRecords) {
+            Activity activity = (Activity) getDeclaredField(record, "activity");
+            activity.recreate();
+        }
     }
 
     // ResourcesImpl fixAppContext(ActivityThread activityThread)

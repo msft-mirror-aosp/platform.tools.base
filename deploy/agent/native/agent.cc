@@ -31,6 +31,7 @@
 #include "tools/base/deploy/agent/native/live_edit.h"
 #include "tools/base/deploy/agent/native/live_literal.h"
 #include "tools/base/deploy/agent/native/recompose.h"
+#include "tools/base/deploy/agent/native/restart_activity.h"
 #include "tools/base/deploy/agent/native/swapper.h"
 #include "tools/base/deploy/common/event.h"
 #include "tools/base/deploy/common/log.h"
@@ -193,6 +194,8 @@ jint HandleAgentRequest(jvmtiEnv* jvmti, JNIEnv* jni, char* socket_name) {
   } else if (request.has_compose_status_request()) {
     *response.mutable_compose_status_response() =
         ComposeStatus(jvmti, jni, request.compose_status_request());
+  } else if (request.has_restart_activity_request()) {
+    *response.mutable_restart_activity_response() = RestartActivity(jni);
   } else {
     Log::E("Unknown / Empty Agent Request");
   }
