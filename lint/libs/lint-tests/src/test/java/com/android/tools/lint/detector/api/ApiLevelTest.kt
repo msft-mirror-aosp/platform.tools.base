@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.detector.api
 
+import com.android.sdklib.SdkVersionInfo
 import com.android.tools.lint.detector.api.ApiConstraint.Companion.atLeast
 import org.junit.Assert.*
 import org.junit.Test
@@ -40,7 +41,7 @@ class ApiLevelTest {
   @Test
   fun testFromString() {
     assertEquals(21, ApiLevel.get("L").major)
-    assertEquals(35, ApiLevel.get("VanillaIceCream").major)
+    assertEquals(SdkVersionInfo.HIGHEST_KNOWN_API + 1, ApiLevel.get("AnUnknownCodename").major)
     assertEquals(35, ApiLevel.get("VANILLA_ICE_CREAM").major)
     assertEquals(35, ApiLevel.get("VANILLA_ICE_CREAM_0").major)
     assertEquals(1, ApiLevel.get("VANILLA_ICE_CREAM_1").minor)

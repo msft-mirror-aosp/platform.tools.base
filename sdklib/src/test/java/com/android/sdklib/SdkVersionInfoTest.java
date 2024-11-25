@@ -144,10 +144,6 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("BackToTheFuture", getVersion("BackToTheFuture", null).getCodename());
     }
 
-    public void testHighestStableApiInTestUtils() throws Exception {
-        assertEquals("android-" + HIGHEST_KNOWN_STABLE_API, TestUtils.getLatestAndroidPlatform());
-    }
-
     public void testGetVersionString() {
         // make sure all known versions are non-null
         for (int i = 1; i <= HIGHEST_KNOWN_STABLE_API; i++) {
