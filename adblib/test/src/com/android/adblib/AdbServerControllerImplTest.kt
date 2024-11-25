@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import java.nio.file.Path
 import java.nio.file.Paths
 
 class AdbServerControllerImplTest {
@@ -115,7 +116,7 @@ class AdbServerControllerImplTest {
                 )
             configFlow.update {
                 it.copy(
-                    adbPath = Paths.get(ADB_FILE_PATH),
+                    adbPath = ADB_FILE_PATH,
                     serverPort = fakeAdb.port,
                     isUnitTest = false
                 )
@@ -200,7 +201,7 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                adbPath = Paths.get(ADB_FILE_PATH),
+                adbPath = ADB_FILE_PATH,
                 serverPort = PORT,
                 isUnitTest = false
             )
@@ -212,11 +213,13 @@ class AdbServerControllerImplTest {
         // Assert
         assertTrue(controller.isStarted)
         assertEquals(START_COMMAND, processRunner.lastCommand)
+        assertEquals(ADB_FILE_DIR_PATH.toString(), processRunner.lastDirectory)
 
         // Act
         controller.stop()
         assertFalse(controller.isStarted)
         assertEquals(STOP_COMMAND, processRunner.lastCommand)
+        assertEquals(ADB_FILE_DIR_PATH.toString(), processRunner.lastDirectory)
     }
 
     @Test
@@ -233,7 +236,7 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                adbPath = Paths.get(ADB_FILE_PATH),
+                adbPath = ADB_FILE_PATH,
                 serverPort = PORT,
                 isUnitTest = false
             )
@@ -268,7 +271,7 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                adbPath = Paths.get(ADB_FILE_PATH),
+                adbPath = ADB_FILE_PATH,
                 serverPort = PORT,
                 isUnitTest = false
             )
@@ -305,7 +308,7 @@ class AdbServerControllerImplTest {
                     )
                 )
             configFlow.update {
-                it.copy(adbPath = Paths.get(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+                it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
             controller.start()
             processRunner.reset()
@@ -333,7 +336,7 @@ class AdbServerControllerImplTest {
                     )
                 )
             configFlow.update {
-                it.copy(adbPath = Paths.get(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+                it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
 
             // Act: queue up multiple start calls at the same time
@@ -359,7 +362,7 @@ class AdbServerControllerImplTest {
                     )
                 )
             configFlow.update {
-                it.copy(adbPath = Paths.get(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+                it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
             controller.start()
             processRunner.reset()
@@ -387,7 +390,7 @@ class AdbServerControllerImplTest {
                     )
                 )
             configFlow.update {
-                it.copy(adbPath = Paths.get(ADB_FILE_PATH), serverPort = PORT, isUnitTest = false)
+                it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
             controller.start()
             processRunner.reset()
@@ -418,7 +421,7 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                adbPath = Paths.get(ADB_FILE_PATH),
+                adbPath = ADB_FILE_PATH,
                 serverPort = PORT,
                 isUnitTest = false
             )
@@ -463,7 +466,7 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                adbPath = Paths.get(ADB_FILE_PATH),
+                adbPath = ADB_FILE_PATH,
                 serverPort = PORT,
                 isUnitTest = false
             )
@@ -499,18 +502,26 @@ class AdbServerControllerImplTest {
     private class FakeProcessRunner(private val delayByMs: Long = 0) :
         AdbServerControllerImpl.ProcessRunner {
 
+        var lastDirectory: String? = null
         var lastCommand: List<String>? = null
         val allCommands: MutableList<List<String>> = mutableListOf()
         var throwOnNextCommand: Throwable? = null
 
-        override suspend fun runProcess(command: List<String>, envVars: Map<String, String>) {
+        override suspend fun runProcess(
+            executable: Path,
+            args: List<String>,
+            envVars: Map<String, String>
+        ) {
             delay(delayByMs)
             throwOnNextCommand?.let { throw it }
+            val command = listOf(executable.toString()) + args
+            lastDirectory = executable.parent.toString()
             lastCommand = command
             allCommands.add(command)
         }
 
         fun reset() {
+            lastDirectory = null
             lastCommand = null
             allCommands.clear()
         }
@@ -518,9 +529,10 @@ class AdbServerControllerImplTest {
 
     companion object {
 
-        private const val ADB_FILE_PATH = "/dir1/dir2/adb"
+        private val ADB_FILE_PATH = Paths.get("dir1", "dir2", "adb")
+        private val ADB_FILE_DIR_PATH = Paths.get("dir1", "dir2")
         private const val PORT = 12345
-        private val START_COMMAND = listOf(ADB_FILE_PATH, "-P", 12345.toString(), "start-server")
-        private val STOP_COMMAND = listOf(ADB_FILE_PATH, "kill-server")
+        private val START_COMMAND = listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "start-server")
+        private val STOP_COMMAND = listOf(ADB_FILE_PATH.toString(), "kill-server")
     }
 }

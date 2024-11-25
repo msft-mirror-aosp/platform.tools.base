@@ -29,8 +29,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 internal class AdbServerControllerImpl(
@@ -152,17 +154,29 @@ internal class AdbServerControllerImpl(
 
     interface ProcessRunner {
 
-        suspend fun runProcess(command: List<String>, envVars: Map<String, String>)
+        /**
+         * Executes a command and waits for it to complete.
+         *
+         * @param executable The absolute path to the executable.
+         * @param args  A list of arguments to pass to the executable.
+         * @param envVars  A map of environment variables to set for the process.
+         */
+        suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>)
     }
 
     class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunner {
 
         private val logger = adbLogger(host)
 
-        override suspend fun runProcess(command: List<String>, envVars: Map<String, String>) {
+        override suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>) {
+            if (!executable.isAbsolute) {
+                throw IllegalArgumentException("Executable path must be absolute: `$executable`")
+            }
             runInterruptibleIO(host.blockingIoDispatcher) {
+                val command = listOf(executable.toString()) + args
                 logger.info { "runProcess: ${command.joinToString(" ")}" }
                 val processBuilder = ProcessBuilder(command)
+                processBuilder.directory(File(executable.parent.toString()))
                 val env = processBuilder.environment()
                 envVars.forEach { (key, value) -> env[key] = value }
                 processBuilder.redirectErrorStream(true)
@@ -226,38 +240,38 @@ internal class AdbServerControllerImpl(
             return configurationFlow.first { it.serverPort != null }
         }
 
-        suspend fun runKillServerProcess(path: String, envVars: Map<String, String>): Boolean {
-            val command = getAdbStopCommand(path)
+        suspend fun runKillServerProcess(path: Path, envVars: Map<String, String>): Boolean {
+            val commandArgs = getAdbStopCommandArgs()
             return try {
-                processRunner.runProcess(command, envVars)
+                processRunner.runProcess(path, commandArgs, envVars)
                 true
             } catch (e: IOException) {
-                logger.info(e) { "failed running process `$command`" }
+                logger.info(e) { "failed running process `$path $commandArgs`" }
                 false
             }
         }
 
         suspend fun runStartServerProcess(
-            path: String,
+            path: Path,
             port: Int,
             envVars: Map<String, String>,
         ): Boolean {
-            val command = getAdbLaunchCommand(path, port)
+            val commandArgs = getAdbLaunchCommandArgs(port)
             return try {
-                processRunner.runProcess(command, envVars)
+                processRunner.runProcess(path, commandArgs, envVars)
                 true
             } catch (e: IOException) {
-                logger.info(e) { "failed running process `$command`" }
+                logger.info(e) { "failed running process `$path $commandArgs`" }
                 false
             }
         }
 
-        private fun getAdbLaunchCommand(adbPath: String, adbPort: Int): List<String> {
-            return listOf(adbPath, "-P", adbPort.toString(), "start-server")
+        private fun getAdbLaunchCommandArgs(adbPort: Int): List<String> {
+            return listOf("-P", adbPort.toString(), "start-server")
         }
 
-        private fun getAdbStopCommand(adbPath: String): List<String> {
-            return listOf(adbPath, "kill-server")
+        private fun getAdbStopCommandArgs(): List<String> {
+            return listOf("kill-server")
         }
 
         /**
@@ -349,7 +363,7 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbPath?.toString()
+            val path = config.adbPath
             val port = config.serverPort
             val isUserManaged = config.isUserManaged
             val isUnitTest = config.isUnitTest
@@ -411,7 +425,7 @@ internal class AdbServerControllerImpl(
             previousJob.cancelAndJoin()
 
             val config = waitForServerConfigurationAvailable()
-            val adbFilePath = config.adbPath?.toString()
+            val adbFilePath = config.adbPath
             if (!config.isUserManaged && adbFilePath != null && config.serverPort != null) {
                 runKillServerProcess(adbFilePath, config.envVars)
             }
@@ -459,7 +473,7 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbPath?.toString()
+            val path = config.adbPath
             val port = config.serverPort!!
             if (path == null) {
                 // This is a non-restartable channel, but still try using `port` from the config the next
