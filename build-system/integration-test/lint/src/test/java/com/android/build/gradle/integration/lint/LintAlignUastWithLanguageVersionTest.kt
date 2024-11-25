@@ -319,151 +319,148 @@ class LintAlignUastWithLanguageVersionTest {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
     }
 
-    companion object {
+    /**
+     * Creates a multi-module android project
+     */
+    private fun createGradleTestProject(): GradleTestProject {
 
-        /**
-         * Creates a multi-module android project
-         */
-        private fun createGradleTestProject(): GradleTestProject {
+        val app =
+            MinimalSubProject.app()
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "kotlin-android"
 
-            val app =
-                MinimalSubProject.app()
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "kotlin-android"
-
-                            android {
-                                dynamicFeatures = [":feature"]
-                                lint {
-                                    checkDependencies = true
-                                    textOutput = file("lint-report.txt")
-                                    checkAllWarnings = true
-                                    checkTestSources = true
-                                }
-                            }
-
-                            kotlin {
-                                jvmToolchain(17)
-                            }
-                        """.trimIndent()
-                    )
-                    .withFile(
-                        "src/main/kotlin/com/example/ExampleClass.kt",
-                        // language=kotlin
-                        """
-                            package com.example
-
-                            class ExampleClass
-                        """.trimIndent()
-                    )
-
-            val lib =
-                MinimalSubProject.lib()
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "kotlin-android"
-
-                            android {
-                                lint {
-                                    checkAllWarnings = true
-                                    checkTestSources = true
-                                }
-                            }
-                        """.trimIndent()
-                    )
-
-            val feature =
-                MinimalSubProject.dynamicFeature("com.example.feature")
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "kotlin-android"
-
-                            android {
-                                lint {
-                                    checkAllWarnings = true
-                                    checkTestSources = true
-                                }
-                            }
-                        """.trimIndent()
-                    )
-
-            val javaLib =
-                MinimalSubProject.javaLibrary()
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "com.android.lint"
-
+                        android {
+                            dynamicFeatures = [":feature"]
                             lint {
+                                checkDependencies = true
+                                textOutput = file("lint-report.txt")
                                 checkAllWarnings = true
                                 checkTestSources = true
                             }
-                        """.trimIndent()
-                    )
+                        }
 
-            val kotlinLib =
-                MinimalSubProject.javaLibrary()
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "com.android.lint"
-                            apply plugin: "kotlin"
-
-                            lint {
-                                checkAllWarnings = true
-                                checkTestSources = true
-                            }
-                        """.trimIndent()
-                    )
-
-            // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
-            val kmpAndroidLib =
-                MinimalSubProject.kotlinMultiplatformAndroid("com.example.kmp")
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "com.android.lint"
-                        """.trimIndent()
-                    )
-
-            // kmpJvmLib is a KMP library with only a jvm target (no android target)
-            val kmpJvmLib =
-                MinimalSubProject.kotlinMultiplatformJvmOnly()
-                    .appendToBuild(
-                        // language=groovy
-                        """
-                            apply plugin: "com.android.lint"
-
-                            kotlin {
-                                jvm()
-                            }
-                        """.trimIndent()
-                    )
-
-            return GradleTestProject.builder()
-                .fromTestApp(
-                    MultiModuleTestProject.builder()
-                        .subproject(":app", app)
-                        .subproject(":lib", lib)
-                        .subproject(":feature", feature)
-                        .subproject(":java-lib", javaLib)
-                        .subproject(":kotlin-lib", kotlinLib)
-                        .subproject(":kmp-android-lib", kmpAndroidLib)
-                        .subproject(":kmp-jvm-lib", kmpJvmLib)
-                        .dependency(app, lib)
-                        .dependency(feature, app)
-                        .dependency(app, javaLib)
-                        .dependency(app, kotlinLib)
-                        .dependency(app, kmpAndroidLib)
-                        .dependency(app, kmpJvmLib)
-                        .build()
+                        kotlin {
+                            jvmToolchain(17)
+                        }
+                    """.trimIndent()
                 )
-                .withKotlinGradlePlugin(true)
-                .create()
-        }
+                .withFile(
+                    "src/main/kotlin/com/example/ExampleClass.kt",
+                    // language=kotlin
+                    """
+                        package com.example
+
+                        class ExampleClass
+                    """.trimIndent()
+                )
+
+        val lib =
+            MinimalSubProject.lib()
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "kotlin-android"
+
+                        android {
+                            lint {
+                                checkAllWarnings = true
+                                checkTestSources = true
+                            }
+                        }
+                    """.trimIndent()
+                )
+
+        val feature =
+            MinimalSubProject.dynamicFeature("com.example.feature")
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "kotlin-android"
+
+                        android {
+                            lint {
+                                checkAllWarnings = true
+                                checkTestSources = true
+                            }
+                        }
+                    """.trimIndent()
+                )
+
+        val javaLib =
+            MinimalSubProject.javaLibrary()
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "com.android.lint"
+
+                        lint {
+                            checkAllWarnings = true
+                            checkTestSources = true
+                        }
+                    """.trimIndent()
+                )
+
+        val kotlinLib =
+            MinimalSubProject.javaLibrary()
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "com.android.lint"
+                        apply plugin: "kotlin"
+
+                        lint {
+                            checkAllWarnings = true
+                            checkTestSources = true
+                        }
+                    """.trimIndent()
+                )
+
+        // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
+        val kmpAndroidLib =
+            MinimalSubProject.kotlinMultiplatformAndroid("com.example.kmp")
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "com.android.lint"
+                    """.trimIndent()
+                )
+
+        // kmpJvmLib is a KMP library with only a jvm target (no android target)
+        val kmpJvmLib =
+            MinimalSubProject.kotlinMultiplatformJvmOnly()
+                .appendToBuild(
+                    // language=groovy
+                    """
+                        apply plugin: "com.android.lint"
+
+                        kotlin {
+                            jvm()
+                        }
+                    """.trimIndent()
+                )
+
+        return GradleTestProject.builder()
+            .fromTestApp(
+                MultiModuleTestProject.builder()
+                    .subproject(":app", app)
+                    .subproject(":lib", lib)
+                    .subproject(":feature", feature)
+                    .subproject(":java-lib", javaLib)
+                    .subproject(":kotlin-lib", kotlinLib)
+                    .subproject(":kmp-android-lib", kmpAndroidLib)
+                    .subproject(":kmp-jvm-lib", kmpJvmLib)
+                    .dependency(app, lib)
+                    .dependency(feature, app)
+                    .dependency(app, javaLib)
+                    .dependency(app, kotlinLib)
+                    .dependency(app, kmpAndroidLib)
+                    .dependency(app, kmpJvmLib)
+                    .build()
+            )
+            .withKotlinGradlePlugin(true)
+            .create()
     }
 
     /**
