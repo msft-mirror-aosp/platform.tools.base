@@ -694,6 +694,362 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testValidation_uriRelativeFilterGroup_noMatchForPathsOrGroups() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <data android:path="/path" />
+                          <uri-relative-filter-group android:allow="false">
+                            <data android:path="/path2" />
+                          </uri-relative-filter-group>
+                          <uri-relative-filter-group>
+                            <data android:fragment="fragment" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com/path3" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:22: Error: Test URL did not match path literal /path, UriRelativeFilterGroup { allow = false, uri_filters = literal /path2 }, UriRelativeFilterGroup { allow = true, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = LITERAL, filter = fragment } } [TestAppLink]
+                    <tools:validation testUrl="http://example.com/path3" />
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testValidation_uriRelativeFilterGroup_matchesExclusionRule() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group android:allow="false">
+                            <data android:fragment="fragment" />
+                          </uri-relative-filter-group>
+                          <uri-relative-filter-group>
+                            <data android:fragmentPattern=".*" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com#fragment" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:21: Error: Test URL matched exclusion rule UriRelativeFilterGroup { allow = false, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = LITERAL, filter = fragment } } [TestAppLink]
+                    <tools:validation testUrl="http://example.com#fragment" />
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testValidation_uriRelativeFilterGroup_noMatch_becauseOfCaps() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:fragmentPattern="FRAGMENT" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com#fragment" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:18: Error: Test URL did not match UriRelativeFilterGroup { allow = true, uri_filters = UriRelativeFilter { uriPart = FRAGMENT, patternType = GLOB, filter = FRAGMENT } } Note that matching is case sensitive. [TestAppLink]
+                    <tools:validation testUrl="http://example.com#fragment" />
+                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  fun testValidation_uriRelativeFilterGroup_matchesPathEvaluatedBeforeExclusionRule() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group android:allow="false">
+                            <data android:path="/path" />
+                          </uri-relative-filter-group>
+                          <!-- This path should be evaluated before the uri-relative-filter-group, even though it's declared below it -->
+                          <data android:path="/path" />
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com/path" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValidation_uriRelativeFilterGroup_matchesMultipleQueriesInAnyOrder() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:query="query1=value1" />
+                            <data android:queryPattern=".*=value2" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com?param2=value2&amp;query1=value1" />
+                      <tools:validation testUrl="http://example.com?param2=value2;query1=value1" />
+                      <tools:validation testUrl="http://example.com/any/path/here?param2=value2&amp;query1=value1" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValidation_uriRelativeFilterGroup_matchesMultipleQueriesInAnyOrder_sameDataTag() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:query="query1=value1"
+                              android:queryPattern=".*=value2" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com?param2=value2&amp;query1=value1" />
+                      <tools:validation testUrl="http://example.com?param2=value2;query1=value1" />
+                      <tools:validation testUrl="http://example.com/any/path/here?param2=value2&amp;query1=value1" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValidation_uriRelativeFilterGroup_queryMatchesSpecialCharacter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:query="param=value!" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com?param=value!" />
+                      <tools:validation testUrl="http://example.com?param=value%21" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValidation_uriRelativeFilterGroup_fragmentMatchesSpecialCharacter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:fragmentPrefix="!" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com#!fragment" />
+                      <tools:validation testUrl="http://example.com#%21fragment" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValidation_uriRelativeFilterGroup_matchesWithExtraParams() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".MainActivity">
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                            <data android:queryAdvancedPattern="lang=[a-z]{2}" />
+                          </uri-relative-filter-group>
+                          <uri-relative-filter-group>
+                            <data android:fragmentSuffix="anchor" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                      <tools:validation testUrl="http://example.com?lang=en&amp;otherParam=value#paragraphanchor" />
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testValidPortNumber() {
     // Port numbers must be in the valid range
     val expected =

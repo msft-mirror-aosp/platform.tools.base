@@ -1325,6 +1325,7 @@ public final class SdkConstants {
     public static final String ATTR_QUERY_PATTERN = "queryPattern";
     public static final String ATTR_QUERY_PREFIX = "queryPrefix";
     public static final String ATTR_QUERY_SUFFIX = "querySuffix";
+    public static final String ATTR_ALLOW = "allow";
     public static final String ATTR_ALLOW_BACKUP = "allowBackup";
     public static final String ATTR_DEBUGGABLE = "debuggable";
     public static final String ATTR_READ_PERMISSION = "readPermission";
