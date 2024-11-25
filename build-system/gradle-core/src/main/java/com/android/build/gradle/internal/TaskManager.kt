@@ -53,7 +53,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactSco
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
 import com.android.build.gradle.internal.publishing.PublishedConfigSpec
-import com.android.build.gradle.internal.res.ConvertLinkedResourcesToProtoTask
+import com.android.build.gradle.internal.res.ConvertLinkedResourcesToBinaryTask
 import com.android.build.gradle.internal.res.ConvertShrunkResourcesToBinaryTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask
@@ -132,6 +132,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
+import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.tasks.runResourceShrinkingWithR8
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
@@ -754,6 +755,17 @@ abstract class TaskManager(
                         )
                 )
                 if (packageOutputType != null) {
+                    // When resource shrinking is enabled, LinkApplicationAndroidResourcesTask
+                    // produces LINKED_RESOURCES_PROTO_FORMAT instead of
+                    // LINKED_RESOURCES_BINARY_FORMAT. Because we'll still need the binary format
+                    // (see below), we'll have to convert the proto format to binary format.
+                    if (creationConfig.runResourceShrinking()) {
+                        taskFactory.register(ConvertLinkedResourcesToBinaryTask.CreationAction(creationConfig as ApkCreationConfig))
+                    }
+                    // Publish binary format instead of proto format because when linking resources
+                    // for a dynamic feature module, the `-I` argument of `aapt2 link` expects APKs,
+                    // which means it requires the binary format published from the base module (it
+                    // doesn't work with the proto format).
                     creationConfig.artifacts.republish(LINKED_RESOURCES_BINARY_FORMAT, packageOutputType)
                 }
 
@@ -1879,21 +1891,15 @@ abstract class TaskManager(
     private fun maybeCreateResourcesShrinkerTasks(
         creationConfig: ApkCreationConfig
     ) {
-        if (creationConfig.androidResourcesCreationConfig?.useResourceShrinker != true) {
-            return
-        }
-        if (creationConfig.componentType.isDynamicFeature) {
-            // For bundles resources are shrunk once bundle is packaged so the task is applicable
-            // for base module only.
-            return
-        }
+        if (!creationConfig.runResourceShrinking()) return
 
         // Shrink resources in APK with a new resource shrinker and produce stripped res
         // package.
-        taskFactory.register(ConvertLinkedResourcesToProtoTask.CreationAction(creationConfig))
         if (!creationConfig.runResourceShrinkingWithR8()) {
             taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
         }
+        // After shrinking, we'll need to convert the proto format back to binary format so it can
+        // be included in the APK
         taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
 
         // Shrink resources in bundles with new resource shrinker.

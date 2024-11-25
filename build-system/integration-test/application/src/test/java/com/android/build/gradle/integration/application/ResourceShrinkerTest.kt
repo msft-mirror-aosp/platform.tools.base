@@ -617,10 +617,15 @@ class ResourceShrinkerTest(
                     "intermediary-bundle.aab"
             )
 
-    private fun GradleTestProject.getLinkedProtoResources(splitName: String? = null) =
-        InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
-            .resolve("release/convertLinkedResourcesToProtoRelease")
-            .resolve(listOfNotNull("linked-resources-proto-format", splitName, "release.ap_").joinToString("-"))
+    private fun GradleTestProject.getLinkedProtoResources(splitName: String? = null): File {
+        val fileNameSuffix = if (splitName != null) {
+            "${splitName}Release"
+        } else {
+            "release"
+        }
+        return InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
+            .resolve("release/processReleaseResources/linked-resources-proto-format-$fileNameSuffix.ap_")
+    }
 
     private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
         val task = if (r8IntegratedResourceShrinking) {

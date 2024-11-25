@@ -21,6 +21,8 @@ import com.android.build.api.variant.MultiOutputHandler
 import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
+import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT
@@ -119,12 +121,21 @@ abstract class R8ResourceShrinkingParameters {
 
 }
 
+/** Returns true if resource shrinking is enabled. */
+fun ComponentCreationConfig.runResourceShrinking(): Boolean {
+    return this is ApkCreationConfig
+            && androidResourcesCreationConfig?.useResourceShrinker == true
+            // For bundles resources are shrunk once bundle is packaged so this is applicable for
+            // base module only
+            && !componentType.isDynamicFeature
+}
+
 /**
  * Returns true if resource shrinking is enabled AND it will be performed by [R8Task] instead of
  * a separate task.
  */
 fun ConsumableCreationConfig.runResourceShrinkingWithR8(): Boolean {
-    return androidResourcesCreationConfig?.useResourceShrinker == true
+    return runResourceShrinking()
             && services.projectOptions[BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING]
 }
 

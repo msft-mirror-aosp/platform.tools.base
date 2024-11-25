@@ -43,7 +43,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
@@ -148,28 +147,28 @@ abstract class ConvertResourcesAction @Inject constructor() :
     }
 }
 
-/** Converts [LINKED_RESOURCES_BINARY_FORMAT] to [LINKED_RESOURCES_PROTO_FORMAT]. */
+/** Converts [LINKED_RESOURCES_PROTO_FORMAT] to [LINKED_RESOURCES_BINARY_FORMAT]. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES)
-abstract class ConvertLinkedResourcesToProtoTask : ConvertResourcesTask<ConvertLinkedResourcesToProtoTask>() {
+abstract class ConvertLinkedResourcesToBinaryTask : ConvertResourcesTask<ConvertLinkedResourcesToBinaryTask>() {
 
-    override val convertToProto = true
-    override val outputArtifactType = LINKED_RESOURCES_PROTO_FORMAT
+    override val convertToProto = false
+    override val outputArtifactType = LINKED_RESOURCES_BINARY_FORMAT
 
     class CreationAction(creationConfig: ApkCreationConfig)
-        : ConvertResourcesTask.CreationAction<ConvertLinkedResourcesToProtoTask>(creationConfig) {
+        : ConvertResourcesTask.CreationAction<ConvertLinkedResourcesToBinaryTask>(creationConfig) {
 
-        override val type = ConvertLinkedResourcesToProtoTask::class.java
-        override val name = computeTaskName("convertLinkedResourcesToProto")
+        override val type = ConvertLinkedResourcesToBinaryTask::class.java
+        override val name = computeTaskName("convertLinkedResourcesToBinary")
 
-        override fun handleProvider(taskProvider: TaskProvider<ConvertLinkedResourcesToProtoTask>) {
+        override fun handleProvider(taskProvider: TaskProvider<ConvertLinkedResourcesToBinaryTask>) {
             super.handleProvider(taskProvider)
             transformationRequest = creationConfig.artifacts.use(taskProvider)
                 .wiredWithDirectories(
-                    ConvertLinkedResourcesToProtoTask::resourcesInputDir,
-                    ConvertLinkedResourcesToProtoTask::resourcesOutputDir
+                    ConvertLinkedResourcesToBinaryTask::resourcesInputDir,
+                    ConvertLinkedResourcesToBinaryTask::resourcesOutputDir
                 )
-                .toTransformMany(LINKED_RESOURCES_BINARY_FORMAT, LINKED_RESOURCES_PROTO_FORMAT)
+                .toTransformMany(LINKED_RESOURCES_PROTO_FORMAT, LINKED_RESOURCES_BINARY_FORMAT)
         }
     }
 }
