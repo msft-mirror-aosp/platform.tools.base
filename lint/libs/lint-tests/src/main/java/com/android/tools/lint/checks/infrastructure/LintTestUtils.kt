@@ -490,10 +490,11 @@ fun runOnSources(
   lintFactory: () -> TestLintTask,
   expected: String = "",
   accept: (File) -> Boolean = {
-    it.path.endsWith(DOT_KT) ||
-      it.path.endsWith(DOT_JAVA) &&
-        !it.path.endsWith("module-info.java") &&
-        !it.endsWith("package-info.java")
+    it.isFile &&
+      (it.path.endsWith(DOT_KT) ||
+        it.path.endsWith(DOT_JAVA) &&
+          !it.path.endsWith("module-info.java") &&
+          !it.endsWith("package-info.java"))
   },
   ignore: (File) -> Boolean = {
     val path = it.path.portablePath()

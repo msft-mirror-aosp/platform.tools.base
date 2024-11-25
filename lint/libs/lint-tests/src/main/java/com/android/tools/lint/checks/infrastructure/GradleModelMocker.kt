@@ -845,11 +845,11 @@ constructor(
         }
       }
       if (balance == 0) {
-        val line = gradle.substring(start, lineEnd).trim { it <= ' ' }
+        val line = gradle.substring(start, lineEnd).trim()
         val index = line.indexOf('{')
         if (line.endsWith("}") && index != -1) {
           // Single line block?
-          val name = line.substring(0, index).trim { it <= ' ' }
+          val name = line.substring(0, index).trim()
           @Language("Groovy") val blockBody = line.substring(index + 1, line.length - 1)
           block(name, blockBody, context)
         } else {
@@ -859,7 +859,7 @@ constructor(
       } else {
         // Find end of block
         val nameEnd = gradle.indexOf('{', start)
-        val name = gradle.substring(start, nameEnd).trim { it <= ' ' }
+        val name = gradle.substring(start, nameEnd).trim()
         start = lineEnd + 1
         for (i in lineEnd until end) {
           val c = gradle[i]
@@ -1081,7 +1081,7 @@ constructor(
         updateFlavorFromContext(context) { it.copy(targetSdkVersion = createAndroidVersion(key)) }
       }
       line.startsWith("versionCode ") -> {
-        val value = key.substring(key.indexOf(' ') + 1).trim { it <= ' ' }
+        val value = key.substring(key.indexOf(' ') + 1).trim()
         if (Character.isDigit(value[0])) {
           val number = Integer.decode(value)
           updateFlavorFromContext(context) { it.copy(versionCode = number) }
@@ -1187,14 +1187,14 @@ constructor(
         key.startsWith("android.") &&
         line.endsWith("]") -> {
         fun updateManifestPlaceholders(manifestPlaceholders: MutableMap<String, String>) {
-          val mapString = key.substring(key.indexOf('[') + 1, key.indexOf(']')).trim { it <= ' ' }
+          val mapString = key.substring(key.indexOf('[') + 1, key.indexOf(']')).trim()
 
           // TODO: Support one than one more entry in the map? Comma separated list
           val index = mapString.indexOf(':')
           assert(index != -1) { mapString }
-          var mapKey = mapString.substring(0, index).trim { it <= ' ' }
+          var mapKey = mapString.substring(0, index).trim()
           mapKey = getUnquotedValue(mapKey)
-          var mapValue = mapString.substring(index + 1).trim { it <= ' ' }
+          var mapValue = mapString.substring(index + 1).trim()
           mapValue = getUnquotedValue(mapValue)
           manifestPlaceholders.put(mapKey, mapValue)
         }
@@ -1302,7 +1302,7 @@ constructor(
           error("No value supplied for lint option $key")
           return
         }
-        val arg = key.substring(argIndex).trim { it <= ' ' }
+        val arg = key.substring(argIndex).trim()
         key = key.substring(0, argIndex)
         when (key) {
           "quiet" -> flags.isQuiet = toBoolean(arg)
@@ -1370,7 +1370,7 @@ constructor(
           error("No value supplied for build feature: $key")
           return
         }
-        val arg = key.substring(argIndex).trim { it <= ' ' }
+        val arg = key.substring(argIndex).trim()
         key = key.substring(0, argIndex)
         when (key) {
           "viewBinding" -> {
@@ -2086,10 +2086,10 @@ constructor(
 
     private fun normalize(line: String): String {
       var line = line
-      line = line.trim { it <= ' ' }
+      line = line.trim()
       var commentIndex = line.indexOf("//")
       if (commentIndex != -1) {
-        line = line.substring(0, commentIndex).trim { it <= ' ' }
+        line = line.substring(0, commentIndex).trim()
       }
       while (true) {
         // Strip out embedded comment markers, if any (there could be multiple)

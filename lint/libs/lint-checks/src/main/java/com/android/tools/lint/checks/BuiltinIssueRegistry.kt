@@ -472,6 +472,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           TranslationDetector.MISSING_BASE,
           TranslationDetector.TRANSLATED_UNTRANSLATABLE,
           TranslucentViewDetector.ISSUE,
+          TrimDetector.ISSUE,
           TypedefDetector.TYPE_DEF,
           TypoDetector.ISSUE,
           TypographyDetector.DASHES,
