@@ -88,6 +88,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           AppLinksValidDetector.APP_LINK_SPLIT_TO_WEB_AND_CUSTOM,
           AppLinksValidDetector.INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES,
           AppLinksValidDetector.TEST_URL,
+          AppLinksValidDetector.URI_RELATIVE_FILTER_GROUP,
           AppLinksValidDetector.VALIDATION,
           ArraySizeDetector.INCONSISTENT,
           AssertDetector.EXPENSIVE,
