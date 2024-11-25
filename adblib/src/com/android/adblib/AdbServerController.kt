@@ -16,7 +16,7 @@
 package com.android.adblib
 
 import kotlinx.coroutines.flow.StateFlow
-import java.io.File
+import java.nio.file.Path
 
 /**
  * Controller that can manage starting/stopping adb server.
@@ -25,38 +25,40 @@ import java.io.File
  * killed by an external user action.
  */
 interface AdbServerController : AutoCloseable {
-  /**
-   * The [AdbServerChannelProvider] this [AdbServerController] implements. The behavior of the
-   * channel provider is determined by the [start] and [stop] methods, as well as the current
-   * [AdbServerConfiguration]
-   */
-  val channelProvider: AdbServerChannelProvider
 
-  /** Start if not started, no-op otherwise */
-  suspend fun start()
+    /**
+     * The [AdbServerChannelProvider] this [AdbServerController] implements. The behavior of the
+     * channel provider is determined by the [start] and [stop] methods, as well as the current
+     * [AdbServerConfiguration]
+     */
+    val channelProvider: AdbServerChannelProvider
 
-  /** Stop if started, no-op otherwise */
-  suspend fun stop()
+    /** Start if not started, no-op otherwise */
+    suspend fun start()
 
-  companion object {
+    /** Stop if started, no-op otherwise */
+    suspend fun stop()
 
-    fun createServerController(
-      host: AdbSessionHost,
-      configurationFlow: StateFlow<AdbServerConfiguration>
-    ): AdbServerController {
-      return AdbServerControllerImpl(host, configurationFlow)
+    companion object {
+
+        fun createServerController(
+            host: AdbSessionHost,
+            configurationFlow: StateFlow<AdbServerConfiguration>
+        ): AdbServerController {
+            return AdbServerControllerImpl(host, configurationFlow)
+        }
     }
-  }
 }
 
 data class AdbServerConfiguration(
-  val adbFile: File?,
-  val serverPort: Int?,
-  val isUserManaged: Boolean,
-  val isUnitTest: Boolean,
-  val envVars: Map<String, String>
+    val adbPath: Path?,
+    val serverPort: Int?,
+    val isUserManaged: Boolean,
+    val isUnitTest: Boolean,
+    val envVars: Map<String, String>
 ) {
-  init {
-    require(serverPort == null || serverPort > 0) { "If provided, a port value should be positive" }
-  }
+
+    init {
+        require(serverPort == null || serverPort > 0) { "If provided, a port value should be positive" }
+    }
 }

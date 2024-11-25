@@ -349,7 +349,7 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbFile?.path
+            val path = config.adbPath?.toString()
             val port = config.serverPort
             val isUserManaged = config.isUserManaged
             val isUnitTest = config.isUnitTest
@@ -411,7 +411,7 @@ internal class AdbServerControllerImpl(
             previousJob.cancelAndJoin()
 
             val config = waitForServerConfigurationAvailable()
-            val adbFilePath = config.adbFile?.path
+            val adbFilePath = config.adbPath?.toString()
             if (!config.isUserManaged && adbFilePath != null && config.serverPort != null) {
                 runKillServerProcess(adbFilePath, config.envVars)
             }
@@ -459,7 +459,7 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbFile?.path
+            val path = config.adbPath?.toString()
             val port = config.serverPort!!
             if (path == null) {
                 // This is a non-restartable channel, but still try using `port` from the config the next
