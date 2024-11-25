@@ -20,7 +20,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.Locale
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 /**
  *  Functional interface to compare two images and returns a [ImageDiffer.DiffResult] ADT containing
