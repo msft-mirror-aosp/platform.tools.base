@@ -54,7 +54,8 @@ class JdwpProcessChangeFlowTest {
             fakeDevice.startClient(pid10, 0, "a.b.c", true)
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
-            waitForInitialProperties(processes[0].jdwpProcess!!)
+            // Wait for all process properties to get populated
+            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -139,9 +140,8 @@ class JdwpProcessChangeFlowTest {
             fakeDevice.startClient(pid10, 0, "a.b.c", true)
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
-            waitForInitialProperties(processes[0].jdwpProcess!!)
-            // wait for process to settle, e.g. process FEAT and WAIT packets
-            delay(100)
+            // Wait for all process properties to get populated
+            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -286,11 +286,5 @@ class JdwpProcessChangeFlowTest {
         return Pair(
             waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId), fakeDevice
         )
-    }
-
-    private suspend fun waitForInitialProperties(jdwpProcess: JdwpProcess) {
-        // Wait for initial properties that get populated from HELO, FEAT, etc. DDMS packages
-        // that are received right after JDWP-Handshake.
-        yieldUntil { jdwpProcess.properties.processName != null && jdwpProcess.properties.features.isNotEmpty() }
     }
 }
