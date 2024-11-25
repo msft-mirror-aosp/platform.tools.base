@@ -1074,6 +1074,114 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testTargetApi() {
+    lint()
+      .files(
+        manifest().minSdk(8),
+        java(
+            """
+            package test.pkg;
+            import android.os.Build;
+            import android.annotation.TargetApi;
+
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+            public class WrongUsagesJava {
+                @TargetApi(31) // ERROR 2
+                public void testApi() { }
+
+                @TargetApi(value = 32) // ERROR 3
+                public int testApi = 1;
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import android.annotation.TargetApi
+            import android.os.Build
+
+            class WrongUsagesKotlin(
+                @field:TargetApi(value = 31) // ERROR 4
+                @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+                val member: String
+            ) {
+                @TargetApi(31) // ERROR 6
+                fun testApi() {
+                }
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(AnnotationDetector.USE_REQUIRES_API)
+      .run()
+      .expect(
+        """
+        src/test/pkg/WrongUsagesJava.java:5: Warning: Use @RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of @TargetApi` to propagate the requirement to users of WrongUsagesJava [UseRequiresApi]
+        @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WrongUsagesJava.java:7: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+            @TargetApi(31) // ERROR 2
+            ~~~~~~~~~~~~~~
+        src/test/pkg/WrongUsagesJava.java:10: Warning: Use @RequiresApi(value = 32) instead of @TargetApi` to propagate the requirement to accessors of testApi [UseRequiresApi]
+            @TargetApi(value = 32) // ERROR 3
+            ~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WrongUsagesKotlin.kt:7: Warning: Use @RequiresApi(value = 31) instead of @TargetApi` to propagate the requirement to accessors of member [UseRequiresApi]
+            @field:TargetApi(value = 31) // ERROR 4
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WrongUsagesKotlin.kt:8: Warning: Use @RequiresApi(Build.VERSION_CODES.TIRAMISU) instead of @TargetApi` to propagate the requirement to callers of getMember [UseRequiresApi]
+            @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/WrongUsagesKotlin.kt:11: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+            @TargetApi(31) // ERROR 6
+            ~~~~~~~~~~~~~~
+        0 errors, 6 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for src/test/pkg/WrongUsagesJava.java line 5: Replace with `@RequiresApi`:
+        @@ -4 +4
+        + import androidx.annotation.RequiresApi;
+        @@ -5 +6
+        - @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        + @RequiresApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        Autofix for src/test/pkg/WrongUsagesJava.java line 7: Replace with `@RequiresApi`:
+        @@ -4 +4
+        + import androidx.annotation.RequiresApi;
+        @@ -7 +8
+        -     @TargetApi(31) // ERROR 2
+        +     @RequiresApi(31) // ERROR 2
+        Autofix for src/test/pkg/WrongUsagesJava.java line 10: Replace with `@RequiresApi`:
+        @@ -4 +4
+        + import androidx.annotation.RequiresApi;
+        @@ -10 +11
+        -     @TargetApi(value = 32) // ERROR 3
+        +     @RequiresApi(value = 32) // ERROR 3
+        Autofix for src/test/pkg/WrongUsagesKotlin.kt line 7: Replace with `@RequiresApi`:
+        @@ -5 +5
+        + import androidx.annotation.RequiresApi
+        @@ -7 +8
+        -     @field:TargetApi(value = 31) // ERROR 4
+        +     @field:RequiresApi(value = 31) // ERROR 4
+        Autofix for src/test/pkg/WrongUsagesKotlin.kt line 8: Replace with `@RequiresApi`:
+        @@ -5 +5
+        + import androidx.annotation.RequiresApi
+        @@ -8 +9
+        -     @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        +     @get:RequiresApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        Autofix for src/test/pkg/WrongUsagesKotlin.kt line 11: Replace with `@RequiresApi`:
+        @@ -5 +5
+        + import androidx.annotation.RequiresApi
+        @@ -11 +12
+        -     @TargetApi(31) // ERROR 6
+        +     @RequiresApi(31) // ERROR 6
+        """
+      )
+  }
+
   fun testValidateRequiresExtensions() {
     // TODO(b/331978236): Java UAST drops Kotlin annotations on methods
     if (!useFirUast()) {

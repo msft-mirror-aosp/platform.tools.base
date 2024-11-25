@@ -21,6 +21,7 @@ import com.android.AndroidXConstants.STRING_DEF_ANNOTATION
 import com.android.AndroidXConstants.SUPPORT_ANNOTATIONS_PREFIX
 import com.android.SdkConstants.ATTR_VALUE
 import com.android.SdkConstants.FQCN_SUPPRESS_LINT
+import com.android.SdkConstants.FQCN_TARGET_API
 import com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE
 import com.android.support.AndroidxName
 import com.android.tools.lint.checks.EmptySuperDetector.Companion.EMPTY_SUPER_ANNOTATION
@@ -202,9 +203,45 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       } else {
         checkTypedefAnnotation(annotation, type)
         if (isPlatformAnnotation(type)) {
-          checkAnnotation(annotation, toAndroidxAnnotation(type))
+          if (type == FQCN_TARGET_API) {
+            checkTargetApiAnnotation(annotation)
+          } else {
+            checkAnnotation(annotation, toAndroidxAnnotation(type))
+          }
         }
       }
+    }
+
+    private fun checkTargetApiAnnotation(annotation: UAnnotation) {
+      val value = annotation.attributeValues.firstOrNull()?.sourcePsi?.text ?: ""
+      var message = "Use `@RequiresApi($value) instead of `@TargetApi` to propagate the requirement"
+      val owner = annotation.uastParent
+      if (owner is UMethod) {
+        message += " to callers of `${owner.name}`"
+      } else if (owner is UVariable) {
+        message += " to accessors of `${owner.name}`"
+      } else if (owner is UClass) {
+        @Suppress("UElementAsPsi")
+        message += " to users of `${owner.name}`"
+      }
+
+      val fix =
+        fix()
+          .name("Replace with `@RequiresApi`")
+          .replace()
+          .pattern(annotation.namePsiElement?.text ?: "(?:android\\.annotation\\.)?TargetApi")
+          .with(REQUIRES_API_ANNOTATION.newName())
+          .shortenNames()
+          .autoFix(true, true)
+          .build()
+
+      context.report(
+        USE_REQUIRES_API,
+        annotation,
+        context.getNameLocation(annotation),
+        message,
+        fix,
+      )
     }
 
     private fun checkSuppressAnnotation(annotation: UAnnotation) {
@@ -1483,6 +1520,31 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
                 """,
         category = Category.CORRECTNESS,
         priority = 3,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
+
+    /** Using TargetApi instead of RequiresApi */
+    @JvmField
+    val USE_REQUIRES_API =
+      create(
+        id = "UseRequiresApi",
+        briefDescription = "Use `@RequiresApi` instead of `@TargetApi`",
+        explanation =
+          """
+          The `@TargetApi` annotation only *suppresses* API warnings locally. `@RequiresApi` \
+          on the other hand will propagate the requirement out to any *callers* of this API, \
+          making sure that they either perform API level checks (using for example `SDK_INT`), \
+          or defining `@RequiresApi` annotations themselves.
+
+          (The `@TargetApi` annotation predates `@RequiresApi`, and was introduced as an early \
+          way to *suppress* lint API warnings for a particular API level. Accidentally using \
+          `@TargetApi` can lead to crashes since there is no check that other calls to this \
+          method actually check that the call is safe.)
+          """,
+        category = Category.CORRECTNESS,
+        priority = 2,
         severity = Severity.WARNING,
         implementation = IMPLEMENTATION,
         androidSpecific = true,

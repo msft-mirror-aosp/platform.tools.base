@@ -73,6 +73,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           AnnotationDetector.INSIDE_METHOD,
           AnnotationDetector.SWITCH_TYPE_DEF,
           AnnotationDetector.UNIQUE,
+          AnnotationDetector.USE_REQUIRES_API,
           ApiDetector.INLINED,
           ApiDetector.OBSOLETE_SDK,
           ApiDetector.UNSUPPORTED,
