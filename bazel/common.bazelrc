@@ -231,6 +231,8 @@ build:ci --skip_incompatible_explicit_targets
 build:ci --strategy=Javac=worker
 build:ci --strategy=kotlinc=worker
 build:ci --strategy=Turbine=local
+# Verify lockfile for CI runs.
+common:ci --lockfile_mode=error
 
 ## Enables dynamic scheduling. This will run some actions locally
 ## as well as remotely, choosing whichever finishes first.
