@@ -14,48 +14,37 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
+package com.android.build.gradle.integration.common.fixture.project.options
 
-import com.android.build.gradle.integration.common.fixture.GradleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 
 /**
- * Interface to configure gradle options inside a test method. see [GradleRule.configure]
+ * class to configure gradle options inside a test method. see [GradleRule.configure]
  *
  * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [build] method
  * must be called at the end to write the test and return a [GradleBuild]
  */
-interface LocalRuleOptionBuilder: RuleOptionBuilder {
-    val build: GradleBuild
-    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild
-    override fun withGradle(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder
-    override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): LocalRuleOptionBuilder
-    override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): LocalRuleOptionBuilder
-    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): LocalRuleOptionBuilder
-}
-
-/**
- * Local implementation of [LocalRuleOptionBuilder]
- */
-internal class LocalRuleOptionBuilderImpl(
+class LocalRuleOptionBuilder internal constructor(
     private val gradleRule: GradleRule,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder
-): LocalRuleOptionBuilder {
+): RuleOptionBuilder {
     private val delegate = DefaultRuleOptionBuilder()
 
-    override val build: GradleBuild
+    val build: GradleBuild
         get() {
             ruleOptionBuilder.mergeWith(delegate)
             return gradleRule.build
         }
 
-    override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
+    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
         ruleOptionBuilder.mergeWith(delegate)
         return gradleRule.build(action)
     }
 
-    override fun withGradle(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withGradle(action)
+    override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {
+        delegate.withGradleLocation(action)
         return this
     }
 
@@ -71,6 +60,11 @@ internal class LocalRuleOptionBuilderImpl(
 
     override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): LocalRuleOptionBuilder {
         delegate.withProperties(action)
+        return this
+    }
+
+    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): LocalRuleOptionBuilder {
+        delegate.withCreationOptions(action)
         return this
     }
 }

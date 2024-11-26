@@ -24,6 +24,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.BazelIntegrationTestsSuite;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder;
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
@@ -433,8 +435,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         return this;
     }
 
-    private final GradleOptionBuilderDelegate gradleOptionDelegate =
-            new GradleOptionBuilderDelegate(null);
+    private final GradleOptionsDelegate gradleOptionDelegate = new GradleOptionsDelegate(null);
 
     @Override
     public GradleTestProjectBuilder withHeap(@Nullable String heapSize) {

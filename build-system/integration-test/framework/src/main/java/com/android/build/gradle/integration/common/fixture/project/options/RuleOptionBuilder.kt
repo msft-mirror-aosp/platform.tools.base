@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
-
-import com.android.build.gradle.integration.common.fixture.GradleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.GradleOptionBuilderDelegate
-import com.android.build.gradle.integration.common.fixture.GradleOptions
+package com.android.build.gradle.integration.common.fixture.project.options
 
 /**
  * Allows configuring a Gadle test project with various options
@@ -28,7 +24,7 @@ interface RuleOptionBuilder {
     /**
      * configures the Gradle version or location
      */
-    fun withGradle(action: GradleLocationBuilder.() -> Unit): RuleOptionBuilder
+    fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): RuleOptionBuilder
     /**
      * configures the Gradle options (memory, config caching)
      */
@@ -40,16 +36,22 @@ interface RuleOptionBuilder {
     fun withSdk(action: SdkConfigurationBuilder.() -> Unit): RuleOptionBuilder
 
     /**
-     * configures the Gradler properties
+     * configures the Gradle properties
      */
     fun withProperties(action: GradlePropertiesBuilder.() -> Unit): RuleOptionBuilder
+
+    /**
+     * configures the options for project creations
+     */
+    fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): RuleOptionBuilder
 }
 
 internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
     private val gradleLocationDelegate = GradleLocationDelegate()
     private val sdkConfigurationDelegate = SdkConfigurationDelegate()
-    private val gradleOptionsDelegate = GradleOptionBuilderDelegate(null)
-    private val propertiesDelegate = GradlePropertiesBuilderDelegate()
+    private val gradleOptionsDelegate = GradleOptionsDelegate(null)
+    private val propertiesDelegate = GradlePropertiesDelegate()
+    private val creationDelegate = CreationOptionsDelegate()
 
     val gradleLocation: GradleLocation
         get() = gradleLocationDelegate.asGradleLocation
@@ -63,7 +65,10 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
     val gradleProperties: List<String>
         get() = propertiesDelegate.properties
 
-    override fun withGradle(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
+    val creationOptions: CreationOptions
+        get() = creationDelegate.asCreationOptions
+
+    override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
         action(gradleLocationDelegate)
         return this
     }
@@ -83,10 +88,16 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
         return this
     }
 
+    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): RuleOptionBuilder {
+        action(creationDelegate)
+        return this
+    }
+
     internal fun mergeWith(other: DefaultRuleOptionBuilder) {
         gradleLocationDelegate.mergeWith(other.gradleLocationDelegate)
         sdkConfigurationDelegate.mergeWith(other.sdkConfigurationDelegate)
         gradleOptionsDelegate.mergeWith(other.gradleOptionsDelegate)
         propertiesDelegate.mergeWith(other.propertiesDelegate)
+        creationDelegate.mergeWith(other.creationDelegate)
     }
 }

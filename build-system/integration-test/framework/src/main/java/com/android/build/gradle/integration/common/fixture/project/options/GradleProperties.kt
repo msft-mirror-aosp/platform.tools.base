@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
+package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
@@ -43,7 +43,9 @@ interface GradlePropertiesBuilder {
     fun add(option: StringOption, value: String)
 }
 
-internal class GradlePropertiesBuilderDelegate: GradlePropertiesBuilder {
+internal class GradlePropertiesDelegate : GradlePropertiesBuilder,
+    MergeableOptions<GradlePropertiesDelegate> {
+
     private val mutableProperties = mutableMapOf<String, String>()
     private val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
     private val mutableStrings = mutableMapOf<StringOption, String>()
@@ -60,7 +62,7 @@ internal class GradlePropertiesBuilderDelegate: GradlePropertiesBuilder {
         mutableStrings[option] = value
     }
 
-    internal fun mergeWith(other: GradlePropertiesBuilderDelegate) {
+    override fun mergeWith(other: GradlePropertiesDelegate) {
         mutableProperties += other.mutableProperties
         mutableBooleans += other.mutableBooleans
         mutableStrings += other.mutableStrings

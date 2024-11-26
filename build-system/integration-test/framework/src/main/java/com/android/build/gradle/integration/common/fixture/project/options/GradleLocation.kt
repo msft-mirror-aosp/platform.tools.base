@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
+package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.GRADLE_TEST_VERSION
 import com.android.testutils.TestUtils
@@ -50,7 +50,7 @@ data class GradleLocation(
     }
 }
 
-class GradleLocationDelegate: GradleLocationBuilder {
+internal class GradleLocationDelegate: GradleLocationBuilder, MergeableOptions<GradleLocationDelegate> {
     private var customGradleInstallation: File? = null // FIXME is this needed?
     private var gradleVersion: String? = null
     private var gradleDistributionDirectory: File? = null
@@ -78,7 +78,7 @@ class GradleLocationDelegate: GradleLocationBuilder {
             gradleDistributionDirectory ?: TestUtils.resolveWorkspacePath("tools/external/gradle").toFile()
         )
 
-    internal fun mergeWith(other: GradleLocationDelegate) {
+    override fun mergeWith(other: GradleLocationDelegate) {
         other.customGradleInstallation?.let {
             customGradleInstallation = it
         }

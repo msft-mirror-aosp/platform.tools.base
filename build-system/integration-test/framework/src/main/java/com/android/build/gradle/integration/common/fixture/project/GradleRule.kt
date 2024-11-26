@@ -39,6 +39,9 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.PrivacySandboxSdkDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.sdklib.internal.project.ProjectProperties
@@ -155,13 +158,18 @@ class GradleRule internal constructor(
      * It is possible after the fact to add more source files can be added via [GradleProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
-    fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilderImpl(this, this.ruleOptionBuilder)
+    fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
 
     private val buildWriter: () -> BuildWriter by lazy {
-        if (true) {
-            { GroovyBuildWriter() }
-        } else {
-            { KtsBuildWriter() }
+        when (ruleOptionBuilder.creationOptions.buildFileType) {
+            BuildFileType.GROOVY -> {
+                // need to keep the braces to return a lambda
+                { GroovyBuildWriter() }
+            }
+            BuildFileType.KTS -> {
+                // need to keep the braces to return a lambda
+                { KtsBuildWriter() }
+            }
         }
     }
 

@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2.Comp
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.integration.common.truth.AarSubject

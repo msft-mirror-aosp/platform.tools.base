@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture
+package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
 import com.google.common.collect.ImmutableList
@@ -26,8 +26,8 @@ data class GradleOptions(
     val memoryRequirement: MemoryRequirement,
     val configurationCaching: ConfigurationCaching,
 ) {
-    internal fun mutate(action: GradleOptionBuilderDelegate.() -> Unit): GradleOptions {
-        val delegate = GradleOptionBuilderDelegate(this)
+    internal fun mutate(action: GradleOptionsDelegate.() -> Unit): GradleOptions {
+        val delegate = GradleOptionsDelegate(this)
         action(delegate)
         return delegate.asGradleOptions
     }
@@ -97,25 +97,25 @@ private val DEFAULT_CONFIG_CACHING_LEVEL = ConfigurationCaching.PROJECT_ISOLATIO
 /**
  * Self-contained implementation of [GradleOptionBuilder]
  */
-internal class GradleOptionBuilderDelegate(
+internal class GradleOptionsDelegate(
     defaultValues: GradleOptions? = null
-): GradleOptionBuilder<GradleOptionBuilderDelegate> {
+): GradleOptionBuilder<GradleOptionsDelegate>, MergeableOptions<GradleOptionsDelegate> {
 
     private var heap: String? = defaultValues?.memoryRequirement?.heap
     private var metaspace: String? = defaultValues?.memoryRequirement?.metaspace
     private var configurationCaching: ConfigurationCaching = defaultValues?.configurationCaching ?: DEFAULT_CONFIG_CACHING_LEVEL
 
-    override fun withHeap(heapSize: String?): GradleOptionBuilderDelegate {
+    override fun withHeap(heapSize: String?): GradleOptionsDelegate {
         heap = heapSize
         return this
     }
 
-    override fun withMetaspace(metaspaceSize: String?): GradleOptionBuilderDelegate {
+    override fun withMetaspace(metaspaceSize: String?): GradleOptionsDelegate {
         metaspace = metaspaceSize
         return this
     }
 
-    override fun withConfigurationCaching(configurationCaching: ConfigurationCaching): GradleOptionBuilderDelegate {
+    override fun withConfigurationCaching(configurationCaching: ConfigurationCaching): GradleOptionsDelegate {
         this.configurationCaching = configurationCaching
         return this
     }
@@ -126,7 +126,7 @@ internal class GradleOptionBuilderDelegate(
             configurationCaching
         )
 
-    internal fun mergeWith(other: GradleOptionBuilderDelegate) {
+    override fun mergeWith(other: GradleOptionsDelegate) {
         other.heap?.let {
             heap = it
         }

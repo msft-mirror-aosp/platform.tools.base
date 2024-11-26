@@ -19,6 +19,9 @@ package com.android.build.gradle.integration.common.fixture
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.utils.JacocoAgent
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -86,7 +89,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
     private var perTestPrefsRoot: Boolean = false
     private var failOnWarning: Boolean = true
     private var crashOnOutOfMemory: Boolean = false
-    private val gradleOptionBuilderDelegate = GradleOptionBuilderDelegate(gradleOptions)
+    private val gradleOptionsDelegate = GradleOptionsDelegate(gradleOptions)
 
 
     init {
@@ -199,7 +202,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
      * }.run("...")
      */
     fun configureOptions(action: GradleOptionBuilder<*>.() -> Unit): T {
-        action(gradleOptionBuilderDelegate)
+        action(gradleOptionsDelegate)
         return this as T
     }
 
@@ -212,19 +215,19 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
      * but has significantly more code duplication in the fixtures.
      */
     override fun withHeap(heapSize: String?): T {
-        gradleOptionBuilderDelegate.withHeap(heapSize)
+        gradleOptionsDelegate.withHeap(heapSize)
         return this as T
     }
 
     // API option 2
     override fun withMetaspace(metaspaceSize: String?): T {
-        gradleOptionBuilderDelegate.withMetaspace(metaspaceSize)
+        gradleOptionsDelegate.withMetaspace(metaspaceSize)
         return this as T
     }
 
     // API option 2
     override fun withConfigurationCaching(configurationCaching: ConfigurationCaching): T {
-        gradleOptionBuilderDelegate.withConfigurationCaching(configurationCaching)
+        gradleOptionsDelegate.withConfigurationCaching(configurationCaching)
         return this as T
     }
 
@@ -247,7 +250,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
             arguments.add("--warning-mode=fail")
         }
 
-        when (gradleOptionBuilderDelegate.asGradleOptions.configurationCaching) {
+        when (gradleOptionsDelegate.asGradleOptions.configurationCaching) {
             ConfigurationCaching.ON -> {
                 arguments.add("--configuration-cache")
                 arguments.add("--configuration-cache-problems=fail")
@@ -308,7 +311,7 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
 
     protected fun setJvmArguments(launcher: LongRunningOperation) {
         val jvmArguments: MutableList<String> = ArrayList(
-            gradleOptionBuilderDelegate.asGradleOptions.memoryRequirement.asJvmArgs
+            gradleOptionsDelegate.asGradleOptions.memoryRequirement.asJvmArgs
         )
 
         if (crashOnOutOfMemory) {

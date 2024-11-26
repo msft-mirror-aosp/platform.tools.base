@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2.Mode
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.model.FileNormalizer
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
 import com.android.builder.model.v2.ide.SyncIssue

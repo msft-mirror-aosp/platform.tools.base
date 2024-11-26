@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
+package com.android.build.gradle.integration.common.fixture.project.options
 
+import com.android.build.gradle.integration.common.fixture.project.TestEnvironment
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
@@ -40,7 +41,9 @@ data class SdkConfiguration(
     val ndkPath: Path?,
 )
 
-internal class SdkConfigurationDelegate: SdkConfigurationBuilder {
+internal class SdkConfigurationDelegate : SdkConfigurationBuilder,
+    MergeableOptions<SdkConfigurationDelegate> {
+
     private var sdkDir: Path? = null
     private var useSdk = true
 
@@ -77,7 +80,7 @@ internal class SdkConfigurationDelegate: SdkConfigurationBuilder {
             )
         }
 
-    internal fun mergeWith(other: SdkConfigurationDelegate) {
+    override fun mergeWith(other: SdkConfigurationDelegate) {
         if (!other.useSdk) {
             removeSdk()
         } else {

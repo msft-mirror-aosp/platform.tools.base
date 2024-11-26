@@ -16,6 +16,7 @@
 package com.android.build.gradle.integration.common.fixture
 
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.testutils.TestUtils
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableMap

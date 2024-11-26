@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.project
+package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
@@ -23,14 +23,14 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 
-class GradlePropertiesBuilderDelegateTest {
+class GradlePropertiesDelegateTest {
 
     @get:Rule
     val exceptionRule: ExpectedException = ExpectedException.none()
 
     @Test
     fun testBooleanAdd() {
-        val delegate = GradlePropertiesBuilderDelegate()
+        val delegate = GradlePropertiesDelegate()
 
         delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
 
@@ -39,7 +39,7 @@ class GradlePropertiesBuilderDelegateTest {
 
     @Test
     fun testStringAdd() {
-        val delegate = GradlePropertiesBuilderDelegate()
+        val delegate = GradlePropertiesDelegate()
 
         delegate.add(StringOption.LINT_HEAP_SIZE, "twelve")
 
@@ -48,7 +48,7 @@ class GradlePropertiesBuilderDelegateTest {
 
     @Test
     fun testConficts() {
-        val delegate = GradlePropertiesBuilderDelegate()
+        val delegate = GradlePropertiesDelegate()
 
         delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)
         delegate.add("android.experimental.enableTestFixtures","true")
