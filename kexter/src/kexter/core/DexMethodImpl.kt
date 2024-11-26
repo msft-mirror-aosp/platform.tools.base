@@ -17,118 +17,26 @@
 package kexter.core
 
 import kexter.DexMethod
-import kexter.DexMethodDebugInfo
 
-internal class CodeItem(
-  val registerSize: UShort,
-  val insSize: UShort,
-  val outsSize: UShort,
-  val triesSize: UShort,
-  val debugInfoOffset: UInt,
-  val sizeInstructions: UInt,
-  val instructions: ByteArray,
-) {
-
-  companion object {
-    fun from(reader: DexReader): CodeItem {
-      val registerSize = reader.ushort()
-      val insSize = reader.ushort()
-      val outsSize = reader.ushort()
-      val triesSize = reader.ushort()
-      val debugInfoOffset = reader.uint()
-      val sizeInstructions = reader.uint() * UShort.SIZE_BYTES.toUInt()
-      val instructions = reader.bytes(sizeInstructions)
-      // TODO
-      // padding
-      // tries
-      // handlers
-      return CodeItem(
-        registerSize,
-        insSize,
-        outsSize,
-        triesSize,
-        debugInfoOffset,
-        sizeInstructions,
-        instructions,
-      )
-    }
-  }
-}
-
-internal class DexMethodImpl(
-  private val method: EncodedMethod,
-  override val isDirect: Boolean,
-  private val dex: DexImpl,
+internal class DexMethodImpl
+private constructor(
+  override val name: String,
+  override val shorty: String,
+  override val returnType: String,
+  override val params: List<String>,
+  override val type: String,
 ) : DexMethod {
-
-  override val name: String by lazy(LazyThreadSafetyMode.NONE) { retrieveName() }
-
-  override val byteCode by lazy(LazyThreadSafetyMode.NONE) { retrieveByteCode() }
-
-  override val type: String by
-    lazy(LazyThreadSafetyMode.NONE) { dex.typeIds.get(methodId.classIndex.toUInt()) }
-
-  override val isNative: Boolean
-    get() = byteCode.instructions.size == 0
-
-  override val shorty: String
-    get() = dex.stringIds.get(protoId.shortyIndex)
-
-  override val params: List<String> by lazy(LazyThreadSafetyMode.NONE) { retrieveParams() }
-
-  override val returnType: String
-    get() = dex.typeIds.get(protoId.returnTypeIndex)
-
-  override val index: UInt
-    get() = method.methodIndex
-
-  private val methodId by lazy(LazyThreadSafetyMode.NONE) { dex.methodIds.get(method.methodIndex) }
-  private val protoId by lazy(LazyThreadSafetyMode.NONE) { dex.protoIds.get(methodId.protoIndex) }
-
-  private fun retrieveName(): String {
-    return dex.stringIds.get(methodId.nameIndex)
-  }
-
-  private fun retrieveByteCode(): DexBytecodeImpl {
-    val bytecode =
-      if (method.codeOffset == 0u) {
-        // Native method don't have bytecode
-        ByteArray(0)
-      } else {
-        val reader = dex.reader(method.codeOffset)
-        val codeItem = CodeItem.from(reader)
-        codeItem.instructions
+  companion object {
+    internal fun fromDex(index: UInt, dex: DexImpl): DexMethodImpl =
+      with(dex) {
+        val methodId = methodIds.get(index)
+        val name = stringIds.get(methodId.nameIndex)
+        val type = typeIds.get(methodId.classIndex.toUInt())
+        val protoId = protoIds.get(methodId.protoIndex)
+        val params = retrieveParams(protoId)
+        val shorty = stringIds.get(protoId.shortyIndex)
+        val returnType = typeIds.get(protoId.returnTypeIndex)
+        return DexMethodImpl(name, shorty, returnType, params, type)
       }
-
-    // Debug info
-    val debugInfo =
-      if (bytecode.isEmpty()) {
-        DexMethodDebugInfo()
-      } else {
-        retrieveDebugInfo()
-      }
-    return DexBytecodeImpl(bytecode, debugInfo, dex.logger)
-  }
-
-  private fun retrieveDebugInfo(): DexMethodDebugInfo {
-    val reader = dex.reader(method.codeOffset)
-    val codeItem = CodeItem.from(reader)
-    reader.position = codeItem.debugInfoOffset
-    return kexter.core.DexMethodDebugInfo.fromReader(reader, dex.logger)
-  }
-
-  private fun retrieveParams(): List<String> {
-    if (protoId.parameterOffset == 0u) {
-      return emptyList()
-    }
-
-    val params = mutableListOf<String>()
-    val reader = dex.reader(protoId.parameterOffset)
-    val size = reader.uint()
-    repeat(size.toInt()) {
-      val typeIdx = reader.ushort()
-      params.add(dex.typeIds.get(typeIdx.toUInt()))
-    }
-    return params
   }
 }

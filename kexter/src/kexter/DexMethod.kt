@@ -18,7 +18,6 @@ package kexter
 
 /** A representation of a class Method */
 interface DexMethod {
-
   /** The name of the method (does not include the short descriptor) */
   val name: String
 
@@ -37,24 +36,6 @@ interface DexMethod {
   /** The internal name of the parameters types. e.g: I for primitive type or Ljava/lang/Object; */
   val params: List<String>
 
-  /**
-   * A direct method is invoked without walking the inheritance chain of an object. DEX separate
-   * direct and indirect methods.
-   */
-  val isDirect: Boolean
-
-  /** The bytecode of this method. The content will be an empty list if this method is native. */
-  val byteCode: DexBytecode
-
   /** The internal name of the class this method belongs to. e.g.: Ljava/lang/Object; */
   val type: String
-
-  /**
-   * A native method does not have bytecode [byteCode] returns a DexBytecode with empty list of
-   * instructions.
-   */
-  val isNative: Boolean
-
-  /** Index in method_ids (see https://source.android.com/docs/core/runtime/dex-format#encoded-method). */
-  val index: UInt
 }

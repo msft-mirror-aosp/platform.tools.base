@@ -17,6 +17,7 @@
 package kexter.core
 
 import kexter.Dex
+import kexter.DexMethod
 import kexter.Logger
 
 internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex() {
@@ -30,7 +31,16 @@ internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex()
   val protoIds: ProtoIds = ProtoIds(header.protoIds, this)
   val typeIds: TypeIds = TypeIds(this)
 
+  private val allMethodsCache: MutableMap<UInt, DexMethod> = mutableMapOf()
+
   override val classes by lazy(LazyThreadSafetyMode.NONE) { retrieveClasses() }
+
+  override fun retrieveMethod(id: UInt): DexMethod? {
+    if (id >= methodIds.numElements()) {
+      return null
+    }
+    return allMethodsCache.computeIfAbsent(id) { DexMethodImpl.fromDex(id, this) }
+  }
 
   private fun retrieveClasses(): Map<String, DexClassImpl> {
     val map = mutableMapOf<String, DexClassImpl>()
@@ -40,5 +50,20 @@ internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex()
       map[clazz.name] = clazz
     }
     return map
+  }
+
+  fun retrieveParams(protoId: ProtoId): List<String> {
+    if (protoId.parameterOffset == 0u) {
+      return emptyList()
+    }
+
+    val params = mutableListOf<String>()
+    val reader = reader(protoId.parameterOffset)
+    val size = reader.uint()
+    repeat(size.toInt()) {
+      val typeIdx = reader.ushort()
+      params.add(typeIds.get(typeIdx.toUInt()))
+    }
+    return params
   }
 }

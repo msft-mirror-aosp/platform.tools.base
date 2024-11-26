@@ -16,23 +16,20 @@
 
 package kexter
 
-import java.nio.file.Files
-import java.nio.file.Path
+/** A representation of an encoded method that is present in a class section of a dex file */
+interface DexEncodedMethod : DexMethod {
+  /**
+   * A direct method is invoked without walking the inheritance chain of an object. DEX separate
+   * direct and indirect methods.
+   */
+  val isDirect: Boolean
 
-abstract class Dex {
-  abstract val classes: Map<String, DexClass>
+  /** The bytecode of this method. The content will be an empty list if this method is native. */
+  val byteCode: DexBytecode
 
-  /** Allows to fetch a method by its index from the method table of a dex file. */
-  abstract fun retrieveMethod(id: UInt): DexMethod?
-
-  companion object {
-    fun fromPath(path: Path, logger: Logger = Logger()): Dex {
-      val dexBytes = Files.readAllBytes(path)
-      return fromBytes(dexBytes, logger)
-    }
-
-    fun fromBytes(bytes: ByteArray, logger: Logger = Logger()): Dex {
-      return kexter.core.DexImpl(bytes, logger)
-    }
-  }
+  /**
+   * A native method does not have bytecode [byteCode] returns a DexBytecode with empty list of
+   * instructions.
+   */
+  val isNative: Boolean
 }

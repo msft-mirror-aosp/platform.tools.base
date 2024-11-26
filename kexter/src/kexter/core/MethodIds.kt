@@ -26,6 +26,8 @@ internal class MethodIds(private val span: Span, private val dex: DexImpl) {
 
   private val cache: MutableMap<UInt, MethodId> = mutableMapOf()
 
+  fun numElements() = span.count
+
   fun get(index: UInt): MethodId {
     return cache.computeIfAbsent(index) {
       if (index > span.count) {

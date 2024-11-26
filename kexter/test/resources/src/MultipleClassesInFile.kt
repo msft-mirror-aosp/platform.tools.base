@@ -14,25 +14,28 @@
  * limitations under the License.
  */
 
-package kexter
-
-import java.nio.file.Files
-import java.nio.file.Path
-
-abstract class Dex {
-  abstract val classes: Map<String, DexClass>
-
-  /** Allows to fetch a method by its index from the method table of a dex file. */
-  abstract fun retrieveMethod(id: UInt): DexMethod?
-
-  companion object {
-    fun fromPath(path: Path, logger: Logger = Logger()): Dex {
-      val dexBytes = Files.readAllBytes(path)
-      return fromBytes(dexBytes, logger)
-    }
-
-    fun fromBytes(bytes: ByteArray, logger: Logger = Logger()): Dex {
-      return kexter.core.DexImpl(bytes, logger)
-    }
-  }
+interface I1 {
+  fun i1() = 1
 }
+
+interface I2 : I1 {
+  fun i2() = 2
+}
+
+interface I3 : I2 {
+  fun i3() = 3
+}
+
+open class Base : I3 {
+  fun base() = 4
+}
+
+class X : Base() {
+  fun x() = 5
+}
+
+class A {
+  fun a() = 6
+}
+
+fun main() {}
