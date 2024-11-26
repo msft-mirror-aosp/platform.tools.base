@@ -16,13 +16,14 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.tasks.AsarsToCompatSplitsTask
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.nio.file.Path
 
-class BuildPrivacySandboxSdkApksTest {
+class AsarToCompatSplitsTaskTest {
 
     @Test
     fun testOutputNameChooserCollisionAvoidance() {
@@ -37,7 +38,7 @@ class BuildPrivacySandboxSdkApksTest {
 
         val actions = mutableListOf<Pair<Path, Path>>()
         val outDir = fs.getPath("out")
-        BuildPrivacySandboxSdkApks.forEachInputFile(inputs, outDir) { input, output ->
+        AsarsToCompatSplitsTask.forEachInputFile(inputs, outDir) { input, output ->
             actions += (input to output)
         }
         assertThat(actions).containsExactly(

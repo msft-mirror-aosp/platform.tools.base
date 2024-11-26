@@ -84,11 +84,11 @@ class PrivacySandboxTestOnlyModuleApkOutputTest {
                     if (apkInstall.size() != 4 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1 || apkInstall[2].apks.size() != 2 || apkInstall[3].apks.size() != 1) {
                         throw new GradleException("Unexpected number of apks")
                     }
-                    assert apkInstall[0].apks.first().getAsFile().name.contains("extracted-apk.apk")
-                    assert apkInstall[0].description.contains("Source Sdk: privacy-sandbox-sdk.apks")
+                    assert apkInstall[0].apks.first().getAsFile().name.contains("standalone.apk")
+                    assert apkInstall[0].description.contains("Source Sdk: com.example.privacysandboxsdk_10002")
 
-                    assert apkInstall[1].apks.first().getAsFile().name.contains("extracted-apk.apk")
-                    assert apkInstall[1].description.contains("Source Sdk: privacy-sandbox-sdk-b.apks")
+                    assert apkInstall[1].apks.first().getAsFile().name.contains("standalone.apk")
+                    assert apkInstall[1].description.contains("Source Sdk: com.example.privacysandboxsdkb_10002")
 
                     assert apkInstall[2].apks.any { it.getAsFile().name.contains("example-app-debug.apk") }
                     assert apkInstall[2].apks.any { it.getAsFile().name.contains("example-app-debug-injected-privacy-sandbox.apk") }

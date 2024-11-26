@@ -149,7 +149,6 @@ class PublishingSpecs {
 
                 api(RES_STATIC_LIBRARY, ArtifactType.RES_STATIC_LIBRARY)
                 api(FEATURE_RESOURCE_PKG, ArtifactType.FEATURE_RESOURCE_PKG)
-                runtime(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs, ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
                 runtime(InternalArtifactType.EXTRACTED_SDK_APKS, ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS)
                 runtime(InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT, ArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT)
 

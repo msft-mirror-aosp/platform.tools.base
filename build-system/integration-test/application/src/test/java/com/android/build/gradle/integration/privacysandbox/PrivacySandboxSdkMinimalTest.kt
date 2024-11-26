@@ -23,8 +23,10 @@ import com.android.build.gradle.integration.common.fixture.testprojects.prebuilt
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
+import com.android.ide.common.build.GenericBuiltArtifactsLoader
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -94,15 +96,20 @@ class PrivacySandboxSdkMinimalTest {
     @Test
     fun privacySandboxWithMinimalConfigAndDependency() {
         project.execute(":minimal-app:buildPrivacySandboxSdkApksForDebug")
-        val minimalApp = project.getSubproject("minimal-app")
-        val extractedPssApk = minimalApp.getIntermediateFile(
-                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs.getFolderName(),
+        val ideModelFile = project.getSubproject(":example-app")
+            .getIntermediateFile(
+                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName(),
                 "debug",
-                "empty-privacy-sandbox-sdk/standalone.apk"
-        )
-        Apk(extractedPssApk).use { apk ->
+                "buildPrivacySandboxSdkApksForDebug",
+                "ide_model.json")
+        val extractedPssApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
+            LoggerWrapper.getLogger(PrivacySandboxSdkMinimalTest::class.java))
+            .single { it.applicationId == "com.example.emptyprivacysandboxsdk" }
+            .elements.single().outputFile
+        val extractedPssApkFile = File(extractedPssApk)
+        Apk(extractedPssApkFile).use { apk ->
             ApkSubject.assertThat(apk).exists()
-            val manifest = ApkSubject.getManifestContent(extractedPssApk.toPath())
+            val manifest = ApkSubject.getManifestContent(extractedPssApkFile.toPath())
             Truth.assertThat(manifest).containsExactly(
                     "N: android=http://schemas.android.com/apk/res/android (line=2)",
                     "  E: manifest (line=2)",

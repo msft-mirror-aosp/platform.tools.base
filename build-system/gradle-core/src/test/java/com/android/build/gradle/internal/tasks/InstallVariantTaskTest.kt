@@ -15,12 +15,14 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.fixtures.FakeFileCollection
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectoryProperty
 import com.android.build.gradle.internal.fixtures.FakeLogger
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.utils.ApkSources
 import com.android.build.gradle.internal.utils.DefaultDeviceApkOutput
 import com.android.builder.testing.api.DeviceConnector
@@ -39,8 +41,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -127,7 +127,7 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
         if (sandboxSupported) {
             verify(deviceConnector, times(3)).installPackage(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
             assertThat(apkArgumentCaptor.allValues).contains(mainOutputFileApk)
-            assertThat(apkArgumentCaptor.allValues.filter { it.name.contains("extracted-apk") }.size).isEqualTo(2)
+            assertThat(apkArgumentCaptor.allValues.filter { it.name.contains("standalone.apk") }.size).isEqualTo(2)
             assertThat(optionsArgumentCaptor.allValues).containsExactly(ImmutableSet.of<String>(), ImmutableSet.of<String>(), ImmutableSet.of<String>())
             assertThat((timeoutArgumentCaptor.allValues)).containsExactly(4000, 4000, 4000)
         } else {
@@ -227,18 +227,22 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
 
     private fun getPrivacySandboxSdkApks(): Set<File> {
         val sdkApkDir = temporaryFolder.newFolder("sdkApks")
-        val sdkApks = listOf(
-            File(sdkApkDir, "sdkApk1.zip"),
-            File(sdkApkDir, "sdkApk2.zip")
-        )
-        sdkApks.forEach { zip ->
-            ZipOutputStream(BufferedOutputStream(FileOutputStream(zip))).use { instrumentedJar ->
-                val standalonesDir = ZipEntry("standalones/standalone.apk")
-                instrumentedJar.putNextEntry(standalonesDir)
-                instrumentedJar.closeEntry()
-            }
+        val sdks = listOf("sdkApk1", "sdkApk2")
+        val sdkFiles = mutableSetOf<File>()
+        sdks.forEach { sdk ->
+            val sdkApkSubDir = sdkApkDir.resolve(sdk)
+            sdkApkSubDir.mkdirs()
+            sdkFiles.add(sdkApkSubDir)
+            val standaloneApk = sdkApkSubDir.resolve("standalone.apk")
+            standaloneApk.createNewFile()
+            BuiltArtifactsImpl(
+                artifactType = InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs,
+                applicationId = sdk,
+                variantName = "",
+                elements = listOf(BuiltArtifactImpl.make(outputFile = standaloneApk.toString()))
+            ).saveToDirectory(sdkApkSubDir)
         }
-        return sdkApks.toSet()
+        return sdkFiles
     }
 
 }

@@ -331,7 +331,7 @@ open class TestVariantImpl @Inject constructor(
                     AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
                     AndroidArtifacts.ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType
-                        .ANDROID_PRIVACY_SANDBOX_SDK_APKS)
+                        .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
 
         return ApkSources(
             mainApkArtifact = testedApks,

@@ -403,10 +403,10 @@ open class ApplicationVariantImpl @Inject constructor(
     }
 
     private fun getPrivacySandboxSdkApks(): FileCollection = variantDependencies
-        .getArtifactFileCollection(
-            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-            AndroidArtifacts.ArtifactScope.ALL,
-            AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_APKS)
+                .getArtifactFileCollection(
+                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                    AndroidArtifacts.ArtifactScope.ALL,
+                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
 
     private fun getPrivacySandboxApkSources() : PrivacySandboxApkSources {
         return PrivacySandboxApkSources(

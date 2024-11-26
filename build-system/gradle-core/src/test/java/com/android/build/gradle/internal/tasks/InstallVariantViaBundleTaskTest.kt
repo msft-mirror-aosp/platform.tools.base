@@ -16,10 +16,14 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.apksig.apk.ApkUtils
+import com.android.build.api.variant.impl.BuiltArtifactImpl
+import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceProvider
 import com.android.bundle.Devices
@@ -160,15 +164,12 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
             "extract-apk",
             ""
         )
-        val sdk1Apks = File("sdk1.apks")
-        val sdk1ExtractedApk = tmp.newFile("sdk1-extracted.apk")
+        val sdk1ExtractedApk = tmp.newFile("standalone.apk")
+        val sdkApks = prepareSdkDirectory(mapOf("sdk1" to listOf(sdk1ExtractedApk)))
         val runnable = TestInstallRunnable(
-            getParams(listOf(sdk1Apks)),
+            getParams(sdkApks),
             deviceConnector,
-            listOf(outputPath),
-            privacySandboxSdkApkMapping = mapOf(
-                sdk1Apks to listOf(sdk1ExtractedApk)
-            )
+            listOf(outputPath)
         )
         runnable.run()
 
@@ -197,21 +198,19 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
             "extract-apk",
             ""
         )
-        val sdk1Apks = File("sdk1.apks")
-        val sdk1ExtractedApk1 = tmp.newFile("sdk1-extracted1.apk")
-        val sdk1ExtractedApk2 = tmp.newFile("sdk1-extracted2.apk")
+        val sdk1ExtractedApk1 = tmp.newFile("sdk1-standalone1.apk")
+        val sdk1ExtractedApk2 = tmp.newFile("sdk1-standalone2.apk")
 
-        val sdk2Apks = File("sdk2.apks")
-        val sdk2ExtractedApk1 = tmp.newFile("sdk2-extracted1.apk")
-        val sdk2ExtractedApk2 = tmp.newFile("sdk2-extracted2.apk")
+        val sdk2ExtractedApk1 = tmp.newFile("sdk2-standalone1.apk")
+        val sdk2ExtractedApk2 = tmp.newFile("sdk2-standalone2.apk")
+        val sdkApks = prepareSdkDirectory(mapOf(
+            "sdk1" to listOf(sdk1ExtractedApk1, sdk1ExtractedApk2),
+            "sdk2" to listOf(sdk2ExtractedApk1, sdk2ExtractedApk2)))
+
         val runnable = TestInstallRunnable(
-            getParams(listOf(sdk1Apks, sdk2Apks)),
+            getParams(sdkApks),
             deviceConnector,
-            listOf(outputPath),
-            privacySandboxSdkApkMapping = mapOf(
-                sdk1Apks to listOf(sdk1ExtractedApk1, sdk1ExtractedApk2),
-                sdk2Apks to listOf(sdk2ExtractedApk1, sdk2ExtractedApk2)
-            )
+            listOf(outputPath)
         )
 
         runnable.run()
@@ -226,8 +225,8 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
             assert(apksArgumentCaptor.allValues.size == 2)
             assert(apksArgumentCaptor.allValues[0].size == 2)
             assert(apksArgumentCaptor.allValues[1].size == 2)
-            assertThat(apksArgumentCaptor.allValues[0].all { it.name.contains("sdk1-extracted") }).isTrue()
-            assertThat(apksArgumentCaptor.allValues[1].all { it.name.contains("sdk2-extracted") }).isTrue()
+            assertThat(apksArgumentCaptor.allValues[0].all { it.name.contains("sdk1-standalone1") || it.name.contains("sdk1-standalone2")}).isTrue()
+            assertThat(apksArgumentCaptor.allValues[1].all { it.name.contains("sdk2-standalone1") || it.name.contains("sdk2-standalone2") }).isTrue()
             assertThat(timeoutArgumentCaptor.value).isEqualTo(0)
             assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
         }
@@ -237,11 +236,27 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
         assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
     }
 
+    private fun prepareSdkDirectory(sdkApks: Map<String, List<File>>): List<File> {
+        val sdksDir = tmp.newFolder()
+        val privacySandboxSdkApks = mutableListOf<File>()
+        sdkApks.forEach { (sdkName, standaloneApks) ->
+            val sdkApkDir = sdksDir.resolve(sdkName)
+            sdkApkDir.mkdirs()
+            BuiltArtifactsImpl(
+                artifactType = InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs,
+                applicationId = "app",
+                variantName = "",
+                elements = standaloneApks.map { BuiltArtifactImpl.make(outputFile = it.toString()) }
+            ).saveToDirectory(sdkApkDir)
+            privacySandboxSdkApks.add(sdkApkDir)
+        }
+        return privacySandboxSdkApks
+    }
+
     private class TestInstallRunnable(
         val params: InstallVariantViaBundleTask.Params,
         private val deviceConnector: DeviceConnector,
-        private val outputPaths: List<Path>,
-        private val privacySandboxSdkApkMapping: Map<File, List<File>> = mapOf(),
+        private val outputPaths: List<Path>
     ) : InstallVariantViaBundleTask.InstallRunnable() {
 
         override fun createDeviceProvider(iLogger: ILogger): DeviceProvider =
@@ -251,9 +266,6 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
                 : List<Path> {
             return ImmutableList.copyOf(outputPaths)
         }
-
-        override fun getPrivacySandboxSdkApkFiles(apk: Path) =
-            privacySandboxSdkApkMapping[apk.fileName.toFile()]!!
 
         override fun getParameters(): InstallVariantViaBundleTask.Params {
             return params

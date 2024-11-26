@@ -101,17 +101,6 @@
     </issue>
 
     <issue
-        id="NoNioFilesCopy"
-        message="Do not use `java.nio.file.Files.copy(Path, Path)`. Instead, use `FileUtils.copyFile(Path, Path)` or Kotlin&apos;s `File#copyTo(File)`"
-        errorLine1="            Files.copy(inputFile, renamedInputFile)"
-        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/tasks/AsarToApksTransform.kt"
-            line="75"
-            column="19"/>
-    </issue>
-
-    <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
         errorLine1="        Instant before = TaskProfilingRecord.Companion.getClock().instant();"
@@ -340,17 +329,6 @@
             file="src/main/java/com/android/build/gradle/internal/ide/SourceProviderImpl.java"
             line="211"
             column="20"/>
-    </issue>
-
-    <issue
-        id="CommonForkJoinPool"
-        message="Avoid using common ForkJoinPool, directly or indirectly (for example via CompletableFuture). It has a limited set of threads on some machines which leads to hangs. See `go/do-not-freeze`."
-        errorLine1="                    .setExecutorService(MoreExecutors.listeningDecorator(ForkJoinPool.commonPool()))"
-        errorLine2="                                                                                      ~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/tasks/AsarToApksTransform.kt"
-            line="80"
-            column="87"/>
     </issue>
 
     <issue

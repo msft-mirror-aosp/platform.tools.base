@@ -20,8 +20,10 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
+import com.android.ide.common.build.GenericBuiltArtifactsLoader
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
 import com.android.testutils.apk.Dex
@@ -93,17 +95,20 @@ class PrivacySandboxSdkToSdkTest {
 
         executor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
 
-        val standaloneSdkApk =
-            project.getSubproject(":example-app")
-                .getIntermediateFile(
-                    InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs.getFolderName(),
-                    "debug",
-                    "buildPrivacySandboxSdkApksForDebug",
-                    "privacy-sandbox-sdk",
-                    "standalone.apk")
+        val ideModelFile = project.getSubproject(":example-app")
+            .getIntermediateFile(
+                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName(),
+                "debug",
+                "buildPrivacySandboxSdkApksForDebug",
+                "ide_model.json")
+        val standaloneSdkApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
+            LoggerWrapper.getLogger(PrivacySandboxSdkToSdkTest::class.java))
+            .single { it.applicationId == "com.example.privacysandboxsdk_10002" }
+            .elements.single().outputFile
+
         val protoApkDump =
             AaptInvoker(TestUtils.getAapt2(), StdLogger(StdLogger.Level.VERBOSE)).dumpResources(
-                standaloneSdkApk)
+                File(standaloneSdkApk))
         val dumpedRes =
             protoApkDump.map { it.trim().removeSuffix(" PUBLIC") }
                 .filter { it.startsWith("resource") }

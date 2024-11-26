@@ -21,7 +21,6 @@ import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.tasks.extractApkFilesBypassingBundleTool
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.builder.internal.InstallUtils
 import com.android.sdklib.AndroidVersion
@@ -31,8 +30,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import java.io.File
-import java.nio.file.Path
-import java.util.stream.Collectors
 
 class DefaultDeviceApkOutput(
 
@@ -46,7 +43,7 @@ class DefaultDeviceApkOutput(
 
     override fun getApks(deviceSpec: DeviceSpec): List<ApkInstallGroup>{
         val apkInstallGroups = mutableListOf<ApkInstallGroup>()
-        var apkFiles: MutableList<File> = Lists.newLinkedList()
+        val apkFiles: MutableList<File> = Lists.newLinkedList()
         if (InstallUtils.checkDeviceApiLevel(deviceSpec.name, deviceSpec.apiLevel, deviceSpec.codeName,
                 minSdkVersion, iLogger, projectPath, variantName)
         ) {
@@ -58,14 +55,10 @@ class DefaultDeviceApkOutput(
                     !apkSources.privacySandboxSdksApksFiles.isEmpty
                             || (apkSources.additionalSupportedSdkApkSplits?.isPresent ?: false)
             if (privacySandboxSdksPresent && deviceSpec.supportsPrivacySandbox) {
-                apkSources.privacySandboxSdksApksFiles.files.forEach { file: File ->
-                    val sdkApkFiles = extractApkFilesBypassingBundleTool(
-                        file.toPath()).stream()
-                        .map { path: Path -> path.toFile() }
-                        .map { RegularFile { it } }
-                        .collect(Collectors.toUnmodifiableList())
-                    apkInstallGroups.add(DefaultSdkApkInstallGroup({ file }, sdkApkFiles))
-                }
+                apkSources.privacySandboxSdksApksFiles.files
+                    .mapNotNull { BuiltArtifactsLoaderImpl().load { it } }
+                    .map { artifacts -> artifacts.applicationId to artifacts.elements.map { RegularFile { File(it.outputFile) }  } }
+                    .forEach { (applicationId, sdkApkFiles) -> apkInstallGroups.add(DefaultSdkApkInstallGroup(applicationId, sdkApkFiles)) }
 
                 apkSources.additionalSupportedSdkApkSplits?.let { apkFiles.addAll(getFiles(it)) }
             } else {
@@ -98,7 +91,7 @@ class DefaultDeviceApkOutput(
         override val description: String) : ApkInstallGroup
 
     data class DefaultSdkApkInstallGroup(
-        override val sdkFile: RegularFile,
+        override val sourceSdk: String,
         override val apks: List<RegularFile>) : SdkApkInstallGroup
 
     companion object {

@@ -33,7 +33,8 @@ import org.gradle.api.attributes.Attribute;
  * (to repositories).
  */
 public class AndroidArtifacts {
-    public static final Attribute<String> ARTIFACT_TYPE = Attribute.of("artifactType", String.class);
+    public static final Attribute<String> ARTIFACT_TYPE =
+            Attribute.of("artifactType", String.class);
     public static final Attribute<String> MODULE_PATH = Attribute.of("modulePath", String.class);
 
     // types for main artifacts
@@ -118,7 +119,8 @@ public class AndroidArtifacts {
     private static final String TYPE_SYMBOL = "android-symbol";
     private static final String TYPE_SYMBOL_WITH_PACKAGE_NAME = "android-symbol-with-package-name";
 
-    private static final String TYPE_APP_SYMBOL_FOR_DATA_BINDING = "android-app-symbol-for-data-binding";
+    private static final String TYPE_APP_SYMBOL_FOR_DATA_BINDING =
+            "android-app-symbol-for-data-binding";
     private static final String TYPE_UNFILTERED_PROGUARD_RULES = "android-consumer-proguard-rules";
     private static final String TYPE_FILTERED_PROGUARD_RULES = "android-filtered-proguard-rules";
     private static final String TYPE_AAPT_PROGUARD_RULES = "android-aapt-proguard-rules";
@@ -189,8 +191,6 @@ public class AndroidArtifacts {
             "android-desugar-lib-merged-keep-rules";
 
     private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE = "asar";
-    private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_APKS =
-            "android-privacy-sandbox-sdk-apks";
     private static final String TYPE_ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS =
             "android-privacy-sandbox-sdk-compat-apks";
     private static final String TYPE_ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS =
@@ -607,10 +607,7 @@ public class AndroidArtifacts {
         // The 'ASAR' file for consuming privacy sandbox SDKs
         ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE(TYPE_ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE),
 
-        // The artifact-transform derived APKs from a privacy sandbox SDK
-        ANDROID_PRIVACY_SANDBOX_SDK_APKS(TYPE_ANDROID_PRIVACY_SANDBOX_SDK_APKS),
-
-        // The APKS extracted from privacy sandbox sdks.
+        // The APKs extracted from artifact-transform derived APKs from a privacy sandbox SDK
         ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS(TYPE_ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS),
 
         // The APKS containing split APK files for backward compatibility.

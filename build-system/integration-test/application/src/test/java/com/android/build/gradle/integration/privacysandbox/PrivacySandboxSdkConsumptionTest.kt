@@ -81,15 +81,19 @@ class PrivacySandboxSdkConsumptionTest {
 
         // Check building the SDK itself
         executor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
+        val ideModelFile = project.getSubproject(":example-app")
+            .getIntermediateFile(
+                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName(),
+                "debug",
+                "buildPrivacySandboxSdkApksForDebug",
+                "ide_model.json")
+        val privacySandboxSdkApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
+            LoggerWrapper.getLogger(PrivacySandboxSdkConsumptionTest::class.java))
+            .single { it.applicationId == "com.example.privacysandboxsdk_10002" }
+            .elements.single().outputFile
 
-        val privacySandboxSdkApk = project.getSubproject(":example-app")
-                .getIntermediateFile("extracted_apks_from_privacy_sandbox_sdks",
-                        "debug",
-                        "buildPrivacySandboxSdkApksForDebug",
-                        "privacy-sandbox-sdk",
-                        "standalone.apk")
 
-        Apk(privacySandboxSdkApk).use {
+        Apk(File(privacySandboxSdkApk)).use {
             ApkSubject.assertThat(it).containsClass(SDK_IMPL_A_CLASS)
             ApkSubject.assertThat(it).containsClass("Lcom/example/androidlib/Example;")
             ApkSubject.assertThat(it).containsClass("Lcom/example/androidlib/R;")
