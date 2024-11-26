@@ -114,7 +114,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 class KotlinMultiplatformAndroidPlugin @Inject constructor(
     listenerRegistry: BuildEventsListenerRegistry,
     private val buildFeatures: BuildFeatures,
-): AndroidPluginBaseServices(listenerRegistry), Plugin<Project> {
+): AndroidPluginBaseServices(listenerRegistry, buildFeatures), Plugin<Project> {
 
     private lateinit var global: GlobalTaskCreationConfig
     private lateinit var androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl

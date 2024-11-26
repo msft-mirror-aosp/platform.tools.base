@@ -100,7 +100,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "8.10.2"
+GRADLE_VERSION = "8.11.1"
 
 filegroup(
     name = "gradle-distrib",
@@ -549,6 +549,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.0-RC",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0-RC",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

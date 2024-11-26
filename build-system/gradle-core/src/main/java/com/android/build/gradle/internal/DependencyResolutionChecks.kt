@@ -21,6 +21,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.google.common.base.Throwables
 import org.gradle.api.Project
+import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.logging.LogLevel
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -28,10 +29,14 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * See  https://github.com/gradle/gradle/issues/2298
  */
-fun registerDependencyCheck(project: Project, projectOptions: ProjectOptions) {
+fun registerDependencyCheck(
+    project: Project,
+    projectOptions: ProjectOptions,
+    gradleBuildFeatures: BuildFeatures
+) {
     val fail = projectOptions[BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION]
 
-    if (skipDependencyCheck(projectOptions)) {
+    if (skipDependencyCheck(projectOptions, gradleBuildFeatures)) {
         return
     }
 
@@ -80,9 +85,15 @@ fun registerDependencyCheck(project: Project, projectOptions: ProjectOptions) {
     }
 }
 
-private fun skipDependencyCheck(projectOptions: ProjectOptions): Boolean {
-    return projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY]
-            || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
+private fun skipDependencyCheck(
+    projectOptions: ProjectOptions,
+    buildFeatures: BuildFeatures
+): Boolean {
+    // when using configuration cache, most configurations are resolved at configuration time
+    // to be saved and reused, so skip all checks in this case.
+    return buildFeatures.configurationCacheActive()
+        || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY]
+        || projectOptions[BooleanOption.IDE_BUILD_MODEL_ONLY_V2]
 }
 
 private fun errorMessage(configurationName: String): String {
@@ -90,5 +101,3 @@ private fun errorMessage(configurationName: String): String {
 This is a build performance and scalability issue.
 See https://github.com/gradle/gradle/issues/2298"""
 }
-
-

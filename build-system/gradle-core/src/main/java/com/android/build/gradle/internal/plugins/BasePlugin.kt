@@ -67,7 +67,6 @@ import com.android.build.gradle.internal.ide.v2.GlobalSyncService
 import com.android.build.gradle.internal.ide.v2.NativeModelBuilder
 import com.android.build.gradle.internal.lint.LintFixBuildService
 import com.android.build.gradle.internal.profile.AnalyticsUtil
-import com.android.build.gradle.internal.projectIsolationActive
 import com.android.build.gradle.internal.scope.DelayedActionsExecutor
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
@@ -96,7 +95,6 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.internal.variant.VariantInputModel
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.internal.variant.VariantModelImpl
-import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.IssueReporter.Type
 import com.android.builder.model.v2.ide.ProjectType
@@ -151,7 +149,7 @@ abstract class BasePlugin<
     val componentFactory: SoftwareComponentFactory,
     listenerRegistry: BuildEventsListenerRegistry,
     private val gradleBuildFeatures: org.gradle.api.configuration.BuildFeatures,
-): AndroidPluginBaseServices(listenerRegistry), Plugin<Project> {
+): AndroidPluginBaseServices(listenerRegistry, gradleBuildFeatures), Plugin<Project> {
 
     init {
         checkClasspathSanity()
@@ -543,12 +541,14 @@ abstract class BasePlugin<
         )
 
         // Register a builder for the native tooling model
-        val nativeModelBuilderV2 = NativeModelBuilder(
+        val nativeModelBuilderV2 = project.objects.newInstance(
+            NativeModelBuilder::class.java,
             project,
             projectServices.issueReporter,
             projectServices.projectOptions,
             variantModel
         )
+
         registry.register(nativeModelBuilderV2)
     }
 

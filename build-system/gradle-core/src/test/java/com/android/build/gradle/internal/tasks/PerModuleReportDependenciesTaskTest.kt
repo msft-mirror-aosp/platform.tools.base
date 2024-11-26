@@ -227,4 +227,7 @@ private class FakeResolvedComponentResultInternal(thingy: ResolvedComponentResul
     override fun getAvailableVariants(): MutableList<ResolvedVariantResult> {
         TODO("Not yet implemented")
     }
+    override fun getVariant(id: Long): ResolvedVariantResult? {
+        TODO("Not yet implemented")
+    }
 }

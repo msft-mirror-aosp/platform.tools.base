@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.fixtures
 
 import org.gradle.api.artifacts.ModuleIdentifier
 import org.gradle.api.artifacts.VersionConstraint
+import org.gradle.api.artifacts.capability.CapabilitySelector
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.attributes.AttributeContainer
@@ -42,6 +43,10 @@ class FakeModuleComponentSelector(
     }
 
     override fun getRequestedCapabilities(): MutableList<Capability> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getCapabilitySelectors(): MutableSet<CapabilitySelector> {
         TODO("Not yet implemented")
     }
 

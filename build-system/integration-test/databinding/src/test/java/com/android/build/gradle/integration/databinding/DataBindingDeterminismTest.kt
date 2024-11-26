@@ -166,7 +166,8 @@ class DataBindingDeterminismTest {
             } else if (contents2 == null) {
                 expect.fail("${file.path} is not found in the second build")
             } else {
-                if (!contents.contentEquals(contents1)) {
+                // Starting with Gradle 8.11, problems report contains project-specific data
+                if (!contents.contentEquals(contents1) && file.name != "problems-report.html") {
                     expect.fail("${file.path} is not consistent across two builds")
                 }
             }

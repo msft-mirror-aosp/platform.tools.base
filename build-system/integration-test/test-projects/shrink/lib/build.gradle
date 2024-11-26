@@ -12,6 +12,8 @@ android {
     targetSdkVersion 20
   }
   buildTypes {
-    minifyDontShrink.initWith(debug)
+    minifyDontShrink {
+        initWith(debug)
+    }
   }
 }

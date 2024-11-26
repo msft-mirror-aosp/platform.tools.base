@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.api
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.truth.ScannerSubject
@@ -63,9 +64,16 @@ class GetCompileClasspathTest {
                     })
                 }
             """.trimIndent())
-        val result = project.executor().expectFailure().run("debugPrintCompileClasspath")
+        // since the test is to verify that early dependency resolution detection works correctly,
+        // we must turn off configuration caching since it resolves all configurations at
+        // configuration time.
+        val result = project.executor()
+            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
+            .expectFailure().run("debugPrintCompileClasspath")
         ScannerSubject.assertThat(result.stderr).contains(
             "Configuration 'debugCompileClasspath' was resolved during configuration time."
         )
+        // validate success when configuration caching is on
+        project.executor().run("debugPrintCompileClasspath")
     }
 }

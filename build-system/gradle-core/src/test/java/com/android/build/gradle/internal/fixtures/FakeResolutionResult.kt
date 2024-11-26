@@ -22,6 +22,7 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolutionResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.provider.Provider
 
@@ -30,6 +31,10 @@ class FakeResolutionResult(private val root: ResolvedComponentResult): Resolutio
 
     override fun getRootComponent(): Provider<ResolvedComponentResult> {
         return FakeProviderFactory.factory.provider { getRoot() }
+    }
+
+    override fun getRootVariant(): Provider<ResolvedVariantResult> {
+        TODO("Not yet implemented")
     }
 
     override fun getAllComponents(): MutableSet<ResolvedComponentResult> {

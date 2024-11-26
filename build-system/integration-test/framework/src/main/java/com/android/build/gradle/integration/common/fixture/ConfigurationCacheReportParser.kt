@@ -159,12 +159,14 @@ class ConfigurationCacheReportParser(
                 .map(JsonElement::getAsJsonObject)
                 .forEach { element ->
                     val errorBuilder = Error.Builder()
-                    element.get("trace")
-                        .asJsonArray
-                        .map(JsonElement::getAsJsonObject)
-                        .forEach { trace ->
-                            errorBuilder.element = element.toString()
-                        }
+                    if (element.has("trace")) {
+                        element.get("trace")
+                            .asJsonArray
+                            .map(JsonElement::getAsJsonObject)
+                            .forEach { trace ->
+                                errorBuilder.element = element.toString()
+                            }
+                    }
 
                     if (element.has("input")) {
                         element.get("input")

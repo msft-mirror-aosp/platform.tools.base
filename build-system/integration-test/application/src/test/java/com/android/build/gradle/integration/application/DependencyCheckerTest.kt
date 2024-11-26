@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
@@ -41,8 +42,12 @@ class DependencyCheckerTest {
 
     @Test
     fun checkFailureAndWarning() {
+        // since the test is to verify that early dependency resolution detection works correctly,
+        // we must turn off configuration caching since it resolves all configurations at
+        // configuration time.
         val failure =
             app.executor()
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
                 .expectFailure().run("tasks")
         val rootCause = Throwables.getRootCause(failure.exception!!)
         assertThat(rootCause).hasMessageThat()
@@ -50,8 +55,9 @@ class DependencyCheckerTest {
 
         val warning =
             app.executor()
-            .with(BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION, false)
-            .run("tasks")
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
+                .with(BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION, false)
+                .run("tasks")
         warning.stdout.use {
             ScannerSubject.assertThat(it)
                 .contains("Configuration 'debugRuntimeClasspath' was resolved")

@@ -1548,7 +1548,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="33"
+            line="34"
             column="9"/>
     </issue>
 
@@ -1559,7 +1559,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="37"
+            line="38"
             column="9"/>
     </issue>
 
@@ -1570,7 +1570,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="41"
+            line="42"
             column="9"/>
     </issue>
 
@@ -1581,7 +1581,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="45"
+            line="46"
             column="9"/>
     </issue>
 
@@ -1592,7 +1592,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="61"
+            line="50"
             column="9"/>
     </issue>
 
@@ -1603,7 +1603,18 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
-            line="65"
+            line="66"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="StopShip"
+        message="`TODO` call found; points to code which must be fixed prior to release"
+        errorLine1="        TODO(&quot;Not yet implemented&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/build/gradle/internal/fixtures/FakeModuleComponentSelector.kt"
+            line="70"
             column="9"/>
     </issue>
 
@@ -2131,7 +2142,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="42"
+            line="37"
             column="9"/>
     </issue>
 
@@ -2142,7 +2153,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="46"
+            line="47"
             column="9"/>
     </issue>
 
@@ -2153,7 +2164,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="50"
+            line="51"
             column="9"/>
     </issue>
 
@@ -2164,7 +2175,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="54"
+            line="55"
             column="9"/>
     </issue>
 
@@ -2175,7 +2186,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="58"
+            line="59"
             column="9"/>
     </issue>
 
@@ -2186,7 +2197,18 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
-            line="62"
+            line="63"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="StopShip"
+        message="`TODO` call found; points to code which must be fixed prior to release"
+        errorLine1="        TODO(&quot;Not yet implemented&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
+            line="67"
             column="9"/>
     </issue>
 
@@ -2219,7 +2241,7 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/tasks/PerModuleReportDependenciesTaskTest.kt"
-            line="216"
+            line="225"
             column="9"/>
     </issue>
 
@@ -2230,7 +2252,18 @@
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/com/android/build/gradle/internal/tasks/PerModuleReportDependenciesTaskTest.kt"
-            line="219"
+            line="228"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="StopShip"
+        message="`TODO` call found; points to code which must be fixed prior to release"
+        errorLine1="        TODO(&quot;Not yet implemented&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/test/java/com/android/build/gradle/internal/tasks/PerModuleReportDependenciesTaskTest.kt"
+            line="231"
             column="9"/>
     </issue>
 

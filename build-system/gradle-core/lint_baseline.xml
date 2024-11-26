@@ -112,17 +112,6 @@
     </issue>
 
     <issue
-        id="ProjectExecOperations"
-        message="Avoid using `org.gradle.api.Project.exec` as it is incompatible with Gradle configuration cache."
-        errorLine1="            project.exec(action)"
-        errorLine2="                    ~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/v2/NativeModelBuilder.kt"
-            line="66"
-            column="21"/>
-    </issue>
-
-    <issue
         id="VisibleForTests"
         message="This method should only be accessed from tests or within private scope"
         errorLine1="        Instant before = TaskProfilingRecord.Companion.getClock().instant();"
