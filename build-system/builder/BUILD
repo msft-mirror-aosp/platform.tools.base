@@ -41,7 +41,6 @@ kotlin_library(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/signflinger",
-        "@maven//:commons-codec.commons-codec",
         "@maven//:javax.inject.javax.inject",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",

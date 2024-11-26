@@ -24,7 +24,6 @@ dependencies {
     implementation libs.kotlin_stdlib
     api libs.javawriter
     implementation libs.bouncycastle_pkix
-    implementation libs.apache_commons_codec
     implementation libs.bouncycastle_prov
     implementation libs.javax_inject
     implementation libs.asm_commons
