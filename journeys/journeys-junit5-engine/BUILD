@@ -29,7 +29,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.1.0-RC",
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.1.0-RC",
         "@maven//:org.jsoup.jsoup_1.13.1",
-        "@maven//:org.junit.junit-bom_5.9.3",
+        "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.platform.junit-platform-engine",
     ],
 )

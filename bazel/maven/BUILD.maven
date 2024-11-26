@@ -3419,25 +3419,25 @@ maven_import(
 )
 
 maven_artifact(
-    name = "commons-io.commons-io_2.13.0",
-    pom = "repository/commons-io/commons-io/2.13.0/commons-io-2.13.0.pom",
+    name = "commons-io.commons-io_2.16.1",
+    pom = "repository/commons-io/commons-io/2.16.1/commons-io-2.16.1.pom",
     repo_root_path = "repository",
-    repo_path = "commons-io/commons-io/2.13.0",
-    parent = "org.apache.commons.commons-parent_58",
+    repo_path = "commons-io/commons-io/2.16.1",
+    parent = "org.apache.commons.commons-parent_69",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "commons-io.commons-io",
     classifiers = [],
-    parent = "org.apache.commons.commons-parent_58",
+    parent = "org.apache.commons.commons-parent_69",
     jars = [
-        "repository/commons-io/commons-io/2.13.0/commons-io-2.13.0.jar"
+        "repository/commons-io/commons-io/2.16.1/commons-io-2.16.1.jar"
     ],
     original_deps = [],
-    pom = "repository/commons-io/commons-io/2.13.0/commons-io-2.13.0.pom",
+    pom = "repository/commons-io/commons-io/2.16.1/commons-io-2.16.1.pom",
     repo_root_path = "repository",
-    repo_path = "commons-io/commons-io/2.13.0",
+    repo_path = "commons-io/commons-io/2.16.1",
     visibility = ["//visibility:public"],
 )
 
@@ -56763,6 +56763,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "commons-io.commons-io_2.13.0",
+    pom = "repository/commons-io/commons-io/2.13.0/commons-io-2.13.0.pom",
+    repo_root_path = "repository",
+    repo_path = "commons-io/commons-io/2.13.0",
+    parent = "org.apache.commons.commons-parent_58",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-io.commons-io_2.4",
     pom = "repository/commons-io/commons-io/2.4/commons-io-2.4.pom",
     repo_root_path = "repository",
@@ -71021,6 +71030,14 @@ maven_artifact(
     pom = "repository/org/junit/junit-bom/5.10.1/junit-bom-5.10.1.pom",
     repo_root_path = "repository",
     repo_path = "org/junit/junit-bom/5.10.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.10.2",
+    pom = "repository/org/junit/junit-bom/5.10.2/junit-bom-5.10.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.10.2",
     visibility = ["//visibility:public"],
 )
 

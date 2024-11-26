@@ -373,6 +373,7 @@ maven_repository(
         "@maven//:androidx.lifecycle.lifecycle-common-java8_2.4.0",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
+        "@maven//:org.junit.junit-bom_5.10.2",
     ],
     visibility = ["//prebuilts/studio/buildbenchmarks:__subpackages__"],
 )
@@ -555,6 +556,7 @@ maven_repository(
         "@maven//:org.jetbrains.markdown",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
+        "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.tensorflow.tensorflow-lite-metadata",
     ],

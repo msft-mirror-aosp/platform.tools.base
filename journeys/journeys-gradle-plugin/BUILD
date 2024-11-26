@@ -17,6 +17,7 @@ maven_repository(
     artifacts = [
         "@maven//:com.google.protobuf.protobuf-gradle-plugin_0.9.3",
         "@maven//:com.googlecode.jarjar.jarjar_1.3",
+        "@maven//:commons-io.commons-io_2.16.1",
         "@maven//:commons-lang.commons-lang_2.6",
         "@maven//:gradle.plugin.org.jetbrains.gradle.plugin.idea-ext.gradle-idea-ext_0.8.1",
         "@maven//:org.jetbrains.kotlin.kotlin-build-common_2.1.0-RC",
@@ -26,7 +27,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.1.0-RC",
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.1.0-RC",
         "@maven//:org.jsoup.jsoup_1.13.1",
-        "@maven//:org.junit.junit-bom_5.9.3",
+        "@maven//:org.junit.junit-bom_5.10.2",
     ],
 )
 
