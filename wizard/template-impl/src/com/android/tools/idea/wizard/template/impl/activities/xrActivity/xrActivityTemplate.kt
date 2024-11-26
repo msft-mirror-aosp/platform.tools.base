@@ -36,7 +36,7 @@ val xrActivityTemplate
   get() = template {
     name = "Basic Headset Activity"
     description = "Creates a new basic XR headset activity"
-    minApi = 21
+    minApi = 30
     constraints =
       listOf(
         TemplateConstraint.AndroidX,
