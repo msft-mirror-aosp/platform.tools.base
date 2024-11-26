@@ -46,6 +46,11 @@ class MergeJavaResourceTaskTest {
             MavenRepoGenerator.Library(
                 "com.example:lib2:0.1",
                 jarWithTextEntries("conflict_res" to "b")
+            ),
+            MavenRepoGenerator.Library(
+                "com.example:libWithAdditionalArtifact:0.1", // b/377366954
+                mainArtifact = jarWithTextEntries("content1" to "a"),
+                additionalArtifact = jarWithTextEntries("content2" to "a")
             )
         )
     )
@@ -54,9 +59,7 @@ class MergeJavaResourceTaskTest {
     @JvmField
     val project = GradleTestProject.builder().fromTestApp(
         MinimalSubProject.app("com.example.test")
-    )
-        .withAdditionalMavenRepo(mavenRepo)
-        .create()
+    ).withAdditionalMavenRepo(mavenRepo).create()
 
     @Before
     fun before() {
@@ -208,5 +211,23 @@ class MergeJavaResourceTaskTest {
             assertThat(getTask(":processDebugJavaRes")).didWork()
             assertThat(getTask(":mergeDebugJavaResource")).didWork()
         }
+    }
+
+    // Regression test for b/377366954
+    @Test
+    fun javaResIncrementalBuildWithAdditionalArtifact() {
+        TestFileUtils.appendToFile(
+            project.buildFile,
+            """
+                dependencies {
+                    implementation 'com.example:libWithAdditionalArtifact:0.1'
+                }
+            """.trimIndent()
+        )
+        project.executor().run("clean", ":mergeDebugJavaResource")
+        val newResourceFile = File(project.mainJavaResDir, "file.txt")
+        assertThat(newResourceFile.exists()).isFalse()
+        FileUtils.writeToFile(newResourceFile, "resource")
+        project.executor().run(":mergeDebugJavaResource")
     }
 }
