@@ -32,8 +32,8 @@ private const val MAIN_PANEL_ENTITY_CLASS = "com.google.vr.realitycore.runtime.a
 // The com.google.vr classes will be migrated to androidx.xr in the future.
 // Once the migration happens we can remove the com.google.vr names.
 private const val PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntity"
-private const val PANEL_ENTITY_IMPL_CLASS_ANDROIDX = "androidx.xr.scenecore.PanelEntityImpl"
-private const val MAIN_PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.MainPanelEntityImpl"
+private const val PANEL_ENTITY_IMPL_CLASS_ANDROIDX = "androidx.xr.scenecore.impl.PanelEntityImpl"
+private const val MAIN_PANEL_ENTITY_CLASS_ANDROIDX = "androidx.xr.scenecore.impl.MainPanelEntityImpl"
 
 private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"
 private const val IS_HIDDEN_METHOD = "isHidden"
