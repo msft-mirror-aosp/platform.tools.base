@@ -10068,6 +10068,9 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                     + " OK 1\n"
                                     + "        }\n"
                                     + "    }\n"
+                                    + "    void unrelated(my.pkg.IntProvider intProvider) {\n"
+                                    + "        int value = intProvider.get(); // OK 2\n"
+                                    + "    }\n"
                                     + "}"),
                         java(
                                 "package test.pkg;\n"
@@ -10107,6 +10110,18 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                     + " SomeLibraryClass) // ERROR 5\n"
                                     + "class SomeApplicationClass3 @Inject constructor(clazz:"
                                     + " SomeLibraryClass2) // ERROR 6\n"),
+                        binaryStub(
+                                "libs/intprovider.jar",
+                                new TestFile[] {
+                                    java(
+                                            "/* HIDE-FROM-DOCUMENTATION */\n"
+                                                    + "package my.pkg;\n"
+                                                    + "\n"
+                                                    + "public interface IntProvider {\n"
+                                                    + "    int get();\n"
+                                                    + "}")
+                                },
+                                true),
                         daggerStub,
                         SUPPORT_ANNOTATIONS_JAR)
                 // skip @JvmOverloads test mode: duplicate error because of the extra test mode

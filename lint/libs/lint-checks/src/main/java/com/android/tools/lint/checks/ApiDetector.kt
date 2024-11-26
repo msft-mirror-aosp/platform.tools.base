@@ -1849,7 +1849,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           name == "get" &&
             owner.endsWith("Provider") &&
             method.parameterList.isEmpty &&
-            (method.returnType as PsiClassType).resolve() is PsiTypeParameter
+            (method.returnType as? PsiClassType)?.resolve() is PsiTypeParameter
         ) {
           // Dependency injection via provider?
           val type = call.getExpressionType() as? PsiClassType
