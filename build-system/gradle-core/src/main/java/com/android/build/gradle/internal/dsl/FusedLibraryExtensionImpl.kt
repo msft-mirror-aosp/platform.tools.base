@@ -29,4 +29,6 @@ abstract class FusedLibraryExtensionImpl @Inject constructor(
     abstract override var namespace: String?
 
     abstract override var minSdk: Int?
+
+    abstract override var manifestPlaceholders: Map<String, String>
 }

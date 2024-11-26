@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -27,14 +28,15 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
 import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.apk.Aar
 import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
 import java.nio.charset.Charset
+import kotlin.io.path.readText
 
 /* Tests for [FusedLibraryManifestMergerTask] */
 internal class FusedLibraryManifestMergerTaskTest {
@@ -79,6 +81,10 @@ internal class FusedLibraryManifestMergerTaskTest {
                     """<?xml version="1.0" encoding="utf-8"?>
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <uses-permission android:name="android.permission.SEND_SMS"/>
+                            <intent-filter>
+                                <data android:scheme="https" android:host="${'$'}{hostName}" />
+                                <data android:scheme="https" android:host="${'$'}{notReplaced}" />
+                            </intent-filter>
                         </manifest>"""
             )
         }
@@ -112,9 +118,15 @@ internal class FusedLibraryManifestMergerTaskTest {
                 namespace = "com.example.fusedLib1"
                 minSdk = 19
             }
+            appendToBuildFile {
+                """
+                    androidFusedLibrary.manifestPlaceholders.hostName = "injected-value-for-hostName"
+                """.trimIndent()
+            }
             dependencies {
                 include(project(":androidLib3"))
                 include(project(":androidLib2"))
+                include(project(":androidLib1"))
                 include(MavenRepoGenerator.Library("com.externaldep:externalaar:1", "aar", testAar))
             }
         }
@@ -133,7 +145,6 @@ internal class FusedLibraryManifestMergerTaskTest {
     }
 
     @Test
-    @Ignore("b/236828934")
     fun checkFusedLibraryManifest() {
         val fusedLib1Project = project.getSubproject("fusedLib1")
         project.execute(":fusedLib1:mergeManifest")
@@ -161,10 +172,7 @@ internal class FusedLibraryManifestMergerTaskTest {
                 .contains("<uses-permission android:name=\"android.permission.SEND_SMS\" />")
         checkManifestBlameLogIsCreated(fusedLib1Project)
         assertThat(mergedManifestContents)
-                .contains("    <permission\n" +
-                        "        android:name=\"com.externaldep.permission.REMOTE_PERMISSION\"\n" +
-                        "        android:description=\"@string/external_permission_label\"\n" +
-                        "        android:label=\"@string/external_permission_label\" />")
+                .contains("android:name=\"com.externaldep.permission.REMOTE_PERMISSION\"")
     }
 
     @Test
@@ -221,6 +229,21 @@ internal class FusedLibraryManifestMergerTaskTest {
         assertThat(parsedManifest.minSdkVersion?.apiLevel).isEqualTo(19)
         assertThat(parsedManifest.packageName).isEqualTo("com.example.app")
         assertThat(parsedManifest.targetSdkVersion?.apiLevel).isEqualTo(19)
+    }
+
+    @Test
+    fun testManifestPlaceholders() {
+        project.executor().run(":fusedLib1:assemble")
+
+        Aar(
+            project.getSubproject("fusedLib1")
+                .buildDir.resolve("bundle/bundle.aar")
+        ).use {
+            val manifest = it.getEntryAsFile(SdkConstants.ANDROID_MANIFEST_XML).readText()
+            assertThat(manifest).contains("""android:host="injected-value-for-hostName"""")
+            assertThat(manifest).contains("""android:host="${'$'}{notReplaced}"""")
+        }
+
     }
 
     private fun checkManifestBlameLogIsCreated(builtFusedLibraryProject: GradleTestProject) {

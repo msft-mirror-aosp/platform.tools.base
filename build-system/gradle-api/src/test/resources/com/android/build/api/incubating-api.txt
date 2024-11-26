@@ -727,3 +727,6 @@ https://issuetracker.google.com/362941219
 https://issuetracker.google.com/368059518
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.getLint: com.android.build.api.dsl.Lint ()
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)
+https://issuetracker.google.com/379870599
+  * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
+  * com.android.build.api.dsl.FusedLibraryExtension.setManifestPlaceholders: void (java.util.Map<java.lang.String, java.lang.String>)
