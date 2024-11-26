@@ -39,29 +39,6 @@ _git = [
     },
 ]
 
-# Vendor repository mapped to git repositories.
-_vendor_git = [
-    # Use the Android SDK specified by the ANDROID_HOME variable (specified in
-    # platform_specific.bazelrc)
-    {
-        "name": "androidsdk",
-        "build_tools_version": "30.0.3",
-        "api_level": 34,
-    },
-    {
-        "name": "skia_repo",
-        "path": "external/skia",
-        "repo_mapping": {
-            "@freetype": "@freetype_repo",
-            "@libpng": "@libpng_repo",
-        },
-    },
-    {
-        "name": "skia_user_config",
-        "path": "tools/vendor/google/skia/external/skia-user-config",
-    },
-]
-
 # Bazel repository mapped to archive files, containing the sources.
 _archives = [
     {
@@ -185,9 +162,6 @@ vendor_repository = repository_rule(
     },
 )
 
-def setup_vendor_repos():
-    _setup_git_repos(_vendor_git)
-
 def setup_external_repositories(prefix = ""):
     _setup_git_repos(_git, prefix)
     _setup_archive_repos(prefix)
@@ -196,17 +170,14 @@ def setup_external_repositories(prefix = ""):
 def _setup_git_repos(repos, prefix = ""):
     for _repo in repos:
         repo = dict(_repo)
-        if repo["name"] == "androidsdk":
-            native.android_sdk_repository(**repo)
+        repo["path"] = prefix + repo["path"]
+        if "build_file" in repo:
+            repo["build_file"] = prefix + repo["build_file"]
+            native.new_local_repository(**repo)
+        elif "build_file_content" in repo:
+            native.new_local_repository(**repo)
         else:
-            repo["path"] = prefix + repo["path"]
-            if "build_file" in repo:
-                repo["build_file"] = prefix + repo["build_file"]
-                native.new_local_repository(**repo)
-            elif "build_file_content" in repo:
-                native.new_local_repository(**repo)
-            else:
-                native.local_repository(**repo)
+            native.local_repository(**repo)
 
 def _setup_archive_repos(prefix = ""):
     for _repo in _archives:

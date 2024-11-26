@@ -1,13 +1,25 @@
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
 new_local_repository(
-    name = "freetype_repo",
+    name = "freetype",
     build_file = "//tools/vendor/google/skia:external/freetype.BUILD",
     path = "external/freetype",
 )
 
 new_local_repository(
-    name = "libpng_repo",
+    name = "libpng",
     build_file = "//tools/vendor/google/skia:external/libpng.BUILD",
     path = "external/libpng",
+)
+
+local_repository(
+    name = "skia_repo",
+    path = "external/skia",
+)
+
+local_repository(
+    name = "skia_user_config",
+    path = "tools/vendor/google/skia/external/skia-user-config",
 )
