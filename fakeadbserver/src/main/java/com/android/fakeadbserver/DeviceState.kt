@@ -172,20 +172,27 @@ class DeviceState internal constructor(
     }
 
     fun startClient(
-        pid: Int, uid: Int, packageName: String, isWaiting: Boolean
+        pid: Int, userId: Int, packageName: String, isWaiting: Boolean
     ): ClientState {
-        return startClient(pid, uid, packageName, packageName, isWaiting)
+        return startClient(pid, userId, packageName, packageName, isWaiting)
+    }
+
+    fun startClient(
+        pid: Int, userId: Int, processName: String, packageName: String, isWaiting: Boolean
+    ): ClientState {
+        return startClient(pid, userId, 0, processName, packageName, isWaiting)
     }
 
     fun startClient(
         pid: Int,
+        userId: Int,
         uid: Int,
         processName: String,
         packageName: String,
         isWaiting: Boolean
     ): ClientState {
         synchronized(mProcessStates) {
-            val clientState = ClientState(pid, uid, processName, packageName, isWaiting, cpuAbi)
+            val clientState = ClientState(pid, userId, uid, processName, packageName, isWaiting, cpuAbi)
             mProcessStates[pid] = clientState
             clientChangeHub.clientListChanged()
             clientChangeHub.appProcessListChanged()
@@ -218,8 +225,23 @@ class DeviceState internal constructor(
     fun startProfileableProcess(
         pid: Int, architecture: String, commandLine: String
     ): ProfileableProcessState {
+        return startProfileableProcess(pid, architecture, 0, 10, commandLine, commandLine)
+    }
+
+    fun startProfileableProcess(
+        pid: Int,
+        architecture: String,
+        userId: Int,
+        uid: Int,
+        processName: String,
+        packageName: String,
+    ): ProfileableProcessState {
         synchronized(mProcessStates) {
-            val process = ProfileableProcessState(pid, architecture, commandLine)
+            val process = ProfileableProcessState(pid, architecture,
+                                                  commandLine = processName,
+                                                  userId = userId,
+                                                  uid = uid,
+                                                  packageName = packageName)
             mProcessStates[pid] = process
             clientChangeHub.appProcessListChanged()
             return process
@@ -471,6 +493,9 @@ class DeviceState internal constructor(
                 }
                 if (api >= 34) {
                     features.add("support_boot_stages")
+                }
+                if (api >= 36) {
+                    features.add("app_info")
                 }
             } catch (e: NumberFormatException) {
                 // Cannot add more features based on API level since it is not the expected integer

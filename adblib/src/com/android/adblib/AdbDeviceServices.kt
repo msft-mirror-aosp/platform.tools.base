@@ -364,6 +364,10 @@ interface AdbDeviceServices {
      * underlying [AdbChannel].
      *
      * Note: This service was first available in Android `S` (i.e. [DeviceProperties.api] >= 31).
+     * Note: If the [AdbFeatures.APP_INFO] feature is supported by the device, [AppProcessEntry]
+     * entries contain additional fields (such a process name), and the [Flow] is generally
+     * more active as these additional fields change more often (see
+     * [code change](https://android-review.googlesource.com/q/topic:%22app_info%22))
      */
     fun trackApp(device: DeviceSelector): Flow<List<AppProcessEntry>>
 
@@ -410,12 +414,72 @@ fun emptyProcessIdList(): ProcessIdList = emptyListWithErrors()
 
 /**
  * A single process entry returned by [AdbDeviceServices.trackApp]
+ *
+ * Note: This is an immutable data class, so it can be safely compared, copied and generally used
+ * as "values" (such as map keys, for example).
  */
 data class AppProcessEntry(
+    /**
+     * The process ID of the process the device
+     */
     val pid: Int,
+
+    /**
+     * Whether a JDWP debugger can attach to the process (see [AdbDeviceServices.jdwp])
+     */
     val debuggable: Boolean,
+
+    /**
+     * Whether profiling tools can profile the process
+     */
     val profileable: Boolean,
-    val architecture: String)
+
+    /**
+     * The Android ABI the process is executing with, as defined at
+     * [abis](https://developer.android.com/ndk/guides/abis).
+     * Examples: "arm64-v8a", "x86_64"
+     */
+    val architecture: String,
+
+    /**
+     * The Android User ID
+     *
+     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+     */
+    val userId: Long?,
+
+    /**
+     * The process name
+     *
+     * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+     */
+    val processName: String?,
+
+    /**
+     * The list of packages this process hosts, typically only one for "regular"
+     * Android Applications
+     *
+     * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+     */
+    val packageNames: List<String>?,
+
+    /**
+     * Whether the JDWP process is waiting for a JDWP debugger to attach
+     *
+     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+     */
+    val waitingForDebugger: Boolean?,
+
+    /**
+     * The Android `uid`, i.e. the results of calling `getuid()` in the process.
+     * The `uid` is a unique identifier for a given [user ID][userId] and
+     * [package name][packageNames], i.e. 2 packages with the same name but different
+     * [userId] values will have different [uid] values.
+     *
+     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported  by the device (API 36+)
+     */
+    val uid: Long?,
+    )
 
 
 /**

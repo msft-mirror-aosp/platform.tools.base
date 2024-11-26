@@ -77,7 +77,7 @@ class HeloHandler : DdmPacketHandler {
             payloadBuffer.putChar(c)
         }
         if (writeUserId) {
-            payloadBuffer.putInt(client.uid)
+            payloadBuffer.putInt(client.userId)
         }
         if (writeAbi) {
             payloadBuffer.putInt(abi.length)
@@ -131,7 +131,7 @@ class HeloHandler : DdmPacketHandler {
 
             // User ID
             if (writeUserId) {
-                apmnPayload.putInt(client.uid)
+                apmnPayload.putInt(client.userId)
             }
 
             // Package Name

@@ -150,7 +150,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             Assert.assertEquals(pid1, props1.pid)
             Assert.assertEquals(clientState1.processName, props1.processName)
             Assert.assertEquals(clientState1.packageName, props1.packageName)
-            Assert.assertEquals(clientState1.uid, props1.userId)
+            Assert.assertEquals(clientState1.userId, props1.userId)
             Assert.assertEquals(clientState1.architecture, props1.abi)
             Assert.assertEquals(false, props1.isWaitingForDebugger)
             Assert.assertTrue(props1.features.contains("feat1"))
@@ -168,7 +168,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             Assert.assertEquals(pid2, props2pid2.pid)
             Assert.assertEquals(clientState2.processName, props2pid2.processName)
             Assert.assertEquals(clientState2.packageName, props2pid2.packageName)
-            Assert.assertEquals(clientState2.uid, props2pid2.userId)
+            Assert.assertEquals(clientState2.userId, props2pid2.userId)
             Assert.assertEquals(clientState2.architecture, props2pid2.abi)
             Assert.assertEquals(false, props2pid2.isWaitingForDebugger)
             Assert.assertTrue(props2pid2.features.contains("feat1"))
@@ -207,7 +207,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
         Assert.assertEquals(pid, props1.pid)
         Assert.assertEquals(clientState.processName, props1.processName)
         Assert.assertEquals(clientState.packageName, props1.packageName)
-        Assert.assertEquals(clientState.uid, props1.userId)
+        Assert.assertEquals(clientState.userId, props1.userId)
         Assert.assertEquals(clientState.architecture, props1.abi)
         Assert.assertEquals(false, props1.isWaitingForDebugger)
         Assert.assertTrue(props1.features.contains("feat1"))
@@ -269,7 +269,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     private fun DeviceState.addSampleJdwpProcess(pid: Int): ClientState {
         return startClient(
             pid,
-            uid = 0,
+            userId = 0,
             packageName = "a.b.c",
             isWaiting = false
         ).also {

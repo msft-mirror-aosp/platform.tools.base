@@ -26,6 +26,16 @@ abstract class ProcessState(val pid: Int) {
 
     abstract val architecture: String
 
+    abstract val userId: Int
+
+    abstract val uid: Int
+
+    abstract val processName: String
+
+    abstract val packageNames: List<String>
+
+    abstract val waitingForDebugger: Boolean
+
     open var commandLine: String = ""
 }
 
@@ -35,7 +45,10 @@ abstract class ProcessState(val pid: Int) {
 class ProfileableProcessState(
     pid: Int,
     override val architecture: String,
-    override var commandLine: String
+    override var commandLine: String,
+    override val userId: Int,
+    override val uid: Int,
+    val packageName: String
 ) : ProcessState(pid) {
 
     override val debuggable: Boolean
@@ -43,4 +56,13 @@ class ProfileableProcessState(
 
     override val profileable: Boolean
         get() = true
+
+    override val packageNames: List<String>
+        get() = listOf(packageName)
+
+    override val processName: String
+        get() = commandLine
+
+    override val waitingForDebugger: Boolean
+        get() = false
 }

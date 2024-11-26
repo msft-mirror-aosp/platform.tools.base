@@ -56,6 +56,20 @@ object AdbFeatures {
     const val TRACK_APP = "track_app"
 
     /**
+     * This device feature indicates that additional fields are set in the [AppProcessEntry] data
+     * class, if the [TRACK_APP] feature is supported.
+     *
+     * See [Appinfo: Make adb the app debug source of truth](https://android-review.googlesource.com/q/topic:%22app_info%22)
+     *
+     * @see [AppProcessEntry.processName]
+     * @see [AppProcessEntry.packageNames]
+     * @see [AppProcessEntry.waitingForDebugger]
+     * @see [AppProcessEntry.uid]
+     * @see [AppProcessEntry.userId]
+     */
+    const val APP_INFO = "app_info"
+
+    /**
      * If the result of [AdbHostServices.features] contains this value, the
      * [AdbHostServices.serverStatus] invocation is supported by the host.
      *

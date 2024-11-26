@@ -350,11 +350,11 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         waitForDebugger: Boolean = false
     ): ClientState {
         return fakeAdb.device(serialNumber).startClient(
-            pid = pid,
-            uid = 2,
-            processName = "p1",
-            packageName = "pkg",
-            isWaiting = waitForDebugger
+          pid = pid,
+          userId = 2,
+          processName = "p1",
+          packageName = "pkg",
+          isWaiting = waitForDebugger
         )
     }
 
