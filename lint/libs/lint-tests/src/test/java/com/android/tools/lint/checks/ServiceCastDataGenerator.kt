@@ -48,9 +48,11 @@ fun main() {
     "tools/base/lint/libs/lint-checks/src/main/java/com/android/tools/lint/checks/ServiceCastDetector.kt"
   val viewDetectorFile = resolveWorkspacePath(serviceCast).toFile()
   val contextFile =
-    File(
-      "${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java"
-    )
+    File("${System.getenv("ANDROID_SDK_HOME")}/sources/android-35/android/content/Context.java")
+      .let { if (it.isFile) it else null }
+      ?: File(
+        "${System.getenv("ANDROID_BUILD_TOP")}/frameworks/base/core/java/android/content/Context.java"
+      )
   val extractor = ServiceCastDataGenerator(viewDetectorFile, contextFile)
   extractor.analyze()
 }
