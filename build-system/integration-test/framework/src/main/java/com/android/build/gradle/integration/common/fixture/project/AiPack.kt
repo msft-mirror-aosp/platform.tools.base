@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AiPackExtension
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
@@ -48,7 +49,7 @@ interface AiPackDefinition: GradleProjectDefinition {
 /**
  * Implementation of [AiPackDefinition]
  */
-internal class AndroidAiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
+internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
     AiPackDefinition {
 
     init {
@@ -85,7 +86,7 @@ internal class AndroidAiPackDefinitionImpl(path: String) : GradleProjectDefiniti
 /**
  * Specialized interface for AI Pack [AndroidProject] to use in the test
  */
-interface AndroidAiPackProject: GradleProject<AiPackDefinition> {
+interface AiPackProject: GradleProject<AiPackDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
@@ -93,28 +94,34 @@ interface AndroidAiPackProject: GradleProject<AiPackDefinition> {
 /**
  * Implementation of [AndroidProject]
  */
-internal class AndroidAiPackImpl(
+internal class AiPackImpl(
     location: Path,
     projectDefinition: AiPackDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : GradleProjectImpl<AiPackDefinition>(location, projectDefinition,buildWriter, parentBuild),
-    AndroidAiPackProject {
+    modelBuilder: () -> ModelBuilderV2,
+) : GradleProjectImpl<AiPackDefinition>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild,
+    modelBuilder
+), AiPackProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidAiPackProject =
-        ReversibleAndroidAiPackProject(this, projectModification)
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AiPackProject =
+        ReversibleAiPackProject(this, projectModification)
 }
 
 /**
- * Reversible version of [AndroidAiPackProject]
+ * Reversible version of [AiPackProject]
  */
-internal class ReversibleAndroidAiPackProject(
-    parentProject: AndroidAiPackProject,
+internal class ReversibleAiPackProject(
+    parentProject: AiPackProject,
     projectModification: TemporaryProjectModification
-) : ReversibleGradleProject<AndroidAiPackProject, AiPackDefinition>(
+) : ReversibleGradleProject<AiPackProject, AiPackDefinition>(
     parentProject,
-), AndroidAiPackProject {
+), AiPackProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 }

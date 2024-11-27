@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
@@ -87,11 +88,13 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
     final override val namespace: String,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
 ) : GradleProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder
 ), AndroidProject<ProjectDefinitionT> {
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)

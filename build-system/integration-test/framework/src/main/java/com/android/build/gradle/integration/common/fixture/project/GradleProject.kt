@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
@@ -56,6 +57,7 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
     protected val projectDefinition: ProjectDefinitionT,
     private val buildWriter: () -> BuildWriter,
     protected val parentBuild: GradleBuildDefinitionImpl,
+    protected val modelBuilder: () -> ModelBuilderV2,
 ) : GradleProject<ProjectDefinitionT> {
 
     override fun file(path: String): File? {

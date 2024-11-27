@@ -128,6 +128,12 @@ sealed class PluginType(
         useNewDsl = true,
         version = androidxPrivacySandboxLibraryPluginVersion,
     )
+    object ANDROID_ASSET_PACK: PluginType(
+        id = "com.android.asset-pack",
+        isAndroid = true,
+        useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+    )
     object ANDROID_AI_PACK: PluginType(
         id = "com.android.ai-pack",
         isAndroid = true,

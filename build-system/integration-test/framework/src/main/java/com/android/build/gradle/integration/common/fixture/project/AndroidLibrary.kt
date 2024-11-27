@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
@@ -87,14 +88,16 @@ internal class AndroidLibraryImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
-    private val buildWriter: () -> BuildWriter,
+    buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(
     location,
     projectDefinition,
     namespace,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder,
 ), AndroidLibraryProject {
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{

@@ -53,7 +53,7 @@ class AiPackTest {
             HelloWorldAndroid.setupJava(files)
         }
 
-        androidAiPack(":customModelInstallTime") {
+        aiPack(":customModelInstallTime") {
             aiPack {
                 packName.set("customModelInstallTime")
                 dynamicDelivery {
@@ -68,7 +68,7 @@ class AiPackTest {
             }
         }
 
-        androidAiPack(":customModelFastFollow") {
+        aiPack(":customModelFastFollow") {
             aiPack {
                 packName.set("customModelFastFollow")
                 dynamicDelivery {
@@ -82,7 +82,7 @@ class AiPackTest {
             }
         }
 
-        androidAiPack(":modelAdaptationOnDemand") {
+        aiPack(":modelAdaptationOnDemand") {
             aiPack {
                 packName.set("modelAdaptationOnDemand")
                 dynamicDelivery {

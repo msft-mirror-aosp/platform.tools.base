@@ -57,7 +57,12 @@ interface GradleBuild {
      * Queries for an AI pack project via its gradle path.
      * The project must exist and be an AI Pack project
      */
-    fun androidAiPack(path: String): AndroidAiPackProject
+    fun aiPack(path: String): AiPackProject
+    /**
+     * Queries for an Asset pack project via its gradle path.
+     * The project must exist and be an AI Pack project
+     */
+    fun assetPack(path: String): AssetPackProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -154,14 +159,26 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
-    override fun androidAiPack(path: String): AndroidAiPackProject {
+    override fun aiPack(path: String): AiPackProject {
         val project = subProject(path)
-        if (project is AndroidAiPackProject) return project
+        if (project is AiPackProject) return project
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
-                Possible options are ${getProjectListByType<AndroidAiPackImpl>()}
+                Project with path '$path' is not an AI Pack project.
+                Possible options are ${getProjectListByType<AiPackImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun assetPack(path: String): AssetPackProject {
+        val project = subProject(path)
+        if (project is AssetPackProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Asset Pack project.
+                Possible options are ${getProjectListByType<AssetPackImpl>()}
             """.trimIndent()
         )
     }

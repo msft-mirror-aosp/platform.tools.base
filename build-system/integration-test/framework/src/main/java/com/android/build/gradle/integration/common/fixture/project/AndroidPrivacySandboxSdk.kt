@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
@@ -76,14 +77,16 @@ internal class AndroidPrivacySandboxSdkImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<PrivacySandboxSdkExtension>,
     namespace: String,
-    private val buildWriter: () -> BuildWriter,
+    buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<PrivacySandboxSdkExtension>>(
     location,
     projectDefinition,
     namespace,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder,
 ), AndroidPrivacySandboxSdkProject {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidPrivacySandboxSdkProject =

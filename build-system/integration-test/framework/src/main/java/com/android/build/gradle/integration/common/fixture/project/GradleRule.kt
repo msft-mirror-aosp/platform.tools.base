@@ -217,52 +217,70 @@ class GradleRule internal constructor(
             )
         }
 
+        val modelBuilderProvider = { instantiateModelBuilder(location) }
+
         val subProjects = build.subProjects.values.associate { definition ->
+            val subProjectLocation = computeSubProjectPath(rootFolder, definition.path)
+
             when (definition) {
                 is AndroidApplicationDefinitionImpl -> definition.path to AndroidApplicationImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 is AndroidLibraryDefinitionImpl -> definition.path to AndroidLibraryImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 is PrivacySandboxSdkDefinitionImpl -> definition.path to AndroidPrivacySandboxSdkImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
-                is AndroidAiPackDefinitionImpl -> definition.path to AndroidAiPackImpl(
+                is AssetPackDefinitionImpl -> definition.path to AssetPackImpl(
+                    subProjectLocation,
+                    definition,
+                    buildWriter,
+                    build,
+                    modelBuilderProvider,
+                )
+
+                is AiPackDefinitionImpl -> definition.path to AiPackImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider
                 )
 
                 is GenericProjectDefinitionImpl -> definition.path to GenericProjectImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 else -> throw RuntimeException("Unsupported GradleProjectDefinition type")
@@ -273,15 +291,16 @@ class GradleRule internal constructor(
             rootFolder,
             subProjects = subProjects + mapOf(
                 ":" to GenericProjectImpl(
-                    computeSubProjectPath(
-                        rootFolder,
-                        ":"
-                    ), build.rootProject, buildWriter, build
+                    computeSubProjectPath(rootFolder, ":"),
+                    build.rootProject,
+                    buildWriter,
+                    build,
+                    modelBuilderProvider
                 )
             ),
             includedBuilds = includedBuilds,
             executorProvider = { instantiateExecutor(location) },
-            modelBuilderProvider = { instantiateModelBuilder(location) },
+            modelBuilderProvider = modelBuilderProvider,
         )
     }
 

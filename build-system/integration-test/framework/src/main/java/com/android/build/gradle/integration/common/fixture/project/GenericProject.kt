@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
@@ -87,11 +88,13 @@ internal class GenericProjectImpl(
     projectDefinition: GenericProjectDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
 ) : GradleProjectImpl<GenericProjectDefinition>(
     location,
     projectDefinition,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder,
 ), GenericProject {
 
 

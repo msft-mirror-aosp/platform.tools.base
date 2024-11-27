@@ -21,10 +21,12 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
-import com.android.build.gradle.integration.common.fixture.project.AndroidAiPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
@@ -87,12 +89,20 @@ interface GradleBuildDefinition {
     ): AndroidProjectDefinition<PrivacySandboxSdkExtension>
 
     /**
-     * Configures a subProject with the Android AI Pack SDK plugin, creating it if needed.
+     * Configures a subProject with the Android AI Pack plugin, creating it if needed.
      */
-    fun androidAiPack(
+    fun aiPack(
         path: String,
         action: AiPackDefinition.() -> Unit
     ): AiPackDefinition
+
+    /**
+     * Configures a subProject with the Android Asset Pack plugin, creating it if needed.
+     */
+    fun assetPack(
+        path: String,
+        action: AssetPackDefinition.() -> Unit
+    ): AssetPackDefinition
 
     /**
      * Configures a maven repositories with custom artifacts
@@ -216,18 +226,36 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         return project
     }
 
-    override fun androidAiPack(
+    override fun aiPack(
         path: String,
         action: AiPackDefinition.() -> Unit
     ): AiPackDefinition {
-        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
+        if (path == ":") throw RuntimeException("root project cannot be an AI pack")
 
         val project = subProjects.computeIfAbsent(path) {
-            AndroidAiPackDefinitionImpl(it)
+            AiPackDefinitionImpl(it)
         }
 
         project as? AiPackDefinition
             ?: errorOnWrongType(project, path, "Android AI Pack")
+
+        action(project)
+
+        return project
+    }
+
+    override fun assetPack(
+        path: String,
+        action: AssetPackDefinition.() -> Unit
+    ): AssetPackDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be an asset pack")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AssetPackDefinitionImpl(it)
+        }
+
+        project as? AssetPackDefinition
+            ?: errorOnWrongType(project, path, "Asset Pack")
 
         action(project)
 
