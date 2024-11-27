@@ -198,7 +198,7 @@ ARTIFACTS = [
     "org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i4",
     "org.robolectric:robolectric:4.8.2",
     "org.slf4j:slf4j-simple:1.7.2",
-    "org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2",
+    "org.tensorflow:tensorflow-lite-metadata:0.2.0",
     "org.tomlj:tomlj:1.1.0",
     "org.xerial:sqlite-jdbc:3.43.0.0",
 ]
@@ -1175,7 +1175,10 @@ DATA = [
     "org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i4",  # Runtime for Android P
     "org.robolectric:robolectric:4.8.2",
     "org.tensorflow:tensorflow-lite-metadata:0.1.0",
+    "org.tensorflow:tensorflow-lite-metadata:0.1.0-rc2",
+    "org.tensorflow:tensorflow-lite-metadata:0.2.0",
     "org.tensorflow:tensorflow-lite-support:0.1.0",
+    "org.tensorflow:tensorflow-lite-support:0.2.0",
     "org.threeten:threetenbp:1.3.3",
     "org.tukaani:xz:1.9",
     "org.xerial:sqlite-jdbc:3.21.0.1",

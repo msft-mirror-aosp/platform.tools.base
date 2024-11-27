@@ -11985,10 +11985,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.tensorflow.tensorflow-lite-metadata_0.1.0-rc2",
-    pom = "repository/org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2/tensorflow-lite-metadata-0.1.0-rc2.pom",
+    name = "org.tensorflow.tensorflow-lite-metadata_0.2.0",
+    pom = "repository/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2",
+    repo_path = "org/tensorflow/tensorflow-lite-metadata/0.2.0",
     deps = [
         "org.checkerframework.checker-qual_2.5.8",
         "com.google.flatbuffers.flatbuffers-java_1.12.0",
@@ -12000,7 +12000,7 @@ maven_import(
     name = "org.tensorflow.tensorflow-lite-metadata",
     classifiers = [],
     jars = [
-        "repository/org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2/tensorflow-lite-metadata-0.1.0-rc2.jar"
+        "repository/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.jar"
     ],
     exports = [
         "org.checkerframework.checker-qual",
@@ -12010,9 +12010,9 @@ maven_import(
         "org.checkerframework.checker-qual_2.5.8",
         "com.google.flatbuffers.flatbuffers-java_1.12.0",
     ],
-    pom = "repository/org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2/tensorflow-lite-metadata-0.1.0-rc2.pom",
+    pom = "repository/org/tensorflow/tensorflow-lite-metadata/0.2.0/tensorflow-lite-metadata-0.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2",
+    repo_path = "org/tensorflow/tensorflow-lite-metadata/0.2.0",
     visibility = ["//visibility:public"],
 )
 
@@ -71893,10 +71893,34 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.tensorflow.tensorflow-lite-metadata_0.1.0-rc2",
+    pom = "repository/org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2/tensorflow-lite-metadata-0.1.0-rc2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/tensorflow/tensorflow-lite-metadata/0.1.0-rc2",
+    deps = [
+        "org.checkerframework.checker-qual_2.5.8",
+        "com.google.flatbuffers.flatbuffers-java_1.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.tensorflow.tensorflow-lite-support_0.1.0",
     pom = "repository/org/tensorflow/tensorflow-lite-support/0.1.0/tensorflow-lite-support-0.1.0.pom",
     repo_root_path = "repository",
     repo_path = "org/tensorflow/tensorflow-lite-support/0.1.0",
+    deps = [
+        "org.checkerframework.checker-qual_2.5.8",
+        "org.tensorflow.tensorflow-lite_2.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.tensorflow.tensorflow-lite-support_0.2.0",
+    pom = "repository/org/tensorflow/tensorflow-lite-support/0.2.0/tensorflow-lite-support-0.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/tensorflow/tensorflow-lite-support/0.2.0",
     deps = [
         "org.checkerframework.checker-qual_2.5.8",
         "org.tensorflow.tensorflow-lite_2.4.0",
