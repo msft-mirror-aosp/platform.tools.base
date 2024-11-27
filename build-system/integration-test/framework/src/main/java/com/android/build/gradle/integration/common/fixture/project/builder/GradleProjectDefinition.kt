@@ -220,19 +220,26 @@ internal abstract class GradleProjectDefinitionImpl(
                 }
             }
 
+            emptyLine()
+
             val pluginToApply = cachedCustomPlugin ?: customPluginMap[path]
             pluginToApply?.let {
                 // cache it for next time
                 cachedCustomPlugin = it
                 // If there is a plugin class, apply it.
                 applyPluginFromClass(it)
+                emptyLine()
             }
 
-            group?.let {
-                set("group", it)
-            }
-            version?.let {
-                set("version", it)
+            if (group != null || version != null) {
+                group?.let {
+                    set("group", it)
+                }
+                version?.let {
+                    set("version", it)
+                }
+
+                emptyLine()
             }
 
             // write the Android extension if it exist

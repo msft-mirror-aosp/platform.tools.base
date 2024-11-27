@@ -37,7 +37,7 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
         get() = parentProject.buildDir
 
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
-        throw RuntimeException("Cannot reconfigure inside a reconfiguration")
+        throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
     }
 
     override fun file(path: String): File? {

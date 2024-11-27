@@ -17,10 +17,8 @@
 package com.android.build.gradle.integration.configurationcache
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
@@ -32,35 +30,26 @@ import kotlin.streams.asSequence
 
 class BasicConfigurationCacheTest {
 
-    private val app = MinimalSubProject.app("com.app")
-    private val lib = MinimalSubProject.lib("com.lib")
-
-    @JvmField
-    @Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .subproject(":lib", lib)
-                .subproject(
-                    ":test",
-                    MinimalSubProject
-                        .test("com.test")
-                        .appendToBuild("android.targetProjectPath ':app'")
-                )
-                .build()
-        )
-        .create()
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication {  }
+        androidLibrary {  }
+        androidTest {
+            android {
+                targetProjectPath = ":app"
+            }
+        }
+    }
 
     @Before
     fun setUp() {
-        project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
+        rule.directory.resolve(".gradle/configuration-cache").toFile().deleteRecursively()
     }
 
     @Test
     fun testUpToDate() {
         executor().run("assemble")
-        assertThat(project.projectDir.resolve(".gradle/configuration-cache")).isDirectory()
+        assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
         val result = executor().run("assemble")
         // AndroidLintTextOutputTask always run
         Truth.assertThat(result.didWorkTasks).containsExactly(
@@ -82,7 +71,7 @@ class BasicConfigurationCacheTest {
             .with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
             .run("assemble")
 
-        assertThat(project.projectDir.resolve(".gradle/configuration-cache")).isDirectory()
+        assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
         executor().run("clean")
         executor()
             .with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
@@ -92,10 +81,7 @@ class BasicConfigurationCacheTest {
     /** Regression test for b/146659187. */
     @Test
     fun testWithJniMerging() {
-        project.getSubproject("app").file("src/main/jniLibs/subDir/empty.so").also {
-            it.parentFile.mkdirs()
-            it.createNewFile()
-        }
+        rule.build.androidApplication().files.add("src/main/jniLibs/subDir/empty.so", "foo")
         executor().run(":app:mergeDebugJniLibFolders")
         executor().run("clean")
         executor().run(":app:mergeDebugJniLibFolders")
@@ -111,7 +97,11 @@ class BasicConfigurationCacheTest {
     /** Regression test for b/300617088. */
     @Test
     fun testStableConfigurationCacheFeatureFlag() {
-        project.settingsFile.appendText("\nenableFeaturePreview(\"STABLE_CONFIGURATION_CACHE\")")
+        rule.build {
+            settings {
+                enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+            }
+        }
 
         val result = executor().withFailOnWarning(false).withArgument("--warning-mode=all").run("assemble")
 
@@ -140,7 +130,8 @@ class BasicConfigurationCacheTest {
     }
 
     private fun executor(): GradleTaskExecutor =
-        project.executor()
+        rule.build
+            .executor
             .withLoggingLevel(LoggingLevel.LIFECYCLE)
             .with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
 }

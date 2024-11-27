@@ -79,6 +79,8 @@ internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(
             block("aiPack") {
                 contentHolder.writeContent(this)
             }
+
+            emptyLine()
         }
     }
 }

@@ -15,12 +15,11 @@
  */
 package com.android.build.gradle.integration.common.fixture
 
-import org.junit.rules.TestRule
 import java.io.File
 import java.nio.file.Path
 
 /**
- * Specialization of [TestRule] for Android related projects.
+ * Information about the test project, used by the [GradleTaskExecutor]
  */
 interface GradleTestInfo {
     val androidSdkDir: File?

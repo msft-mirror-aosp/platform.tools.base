@@ -196,10 +196,10 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
         path: String,
         action: GenericProjectDefinition.() -> Unit
     ): GenericProjectDefinition {
-        if (path == ":") return rootProject
-
-        val project = subProjects.computeIfAbsent(path) {
-            GenericProjectDefinitionImpl(it)
+        val project = if (path == ":") {
+            rootProject
+        } else {
+            subProjects.computeIfAbsent(path) { GenericProjectDefinitionImpl(it) }
         }
 
         project as? GenericProjectDefinition

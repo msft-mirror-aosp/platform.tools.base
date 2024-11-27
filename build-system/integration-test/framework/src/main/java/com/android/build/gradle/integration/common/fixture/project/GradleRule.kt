@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestInfo
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.GRADLE_DEAMON_IDLE_TIME_IN_SECONDS
+import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ProjectPropertiesWorkingCopy
 import com.android.build.gradle.integration.common.fixture.debugGradleConnectionExceptionThenRethrow
@@ -62,45 +63,29 @@ import java.util.concurrent.TimeUnit
  *
  * Entry point to create instances via [from] and [configure]
  */
-class GradleRule internal constructor(
-    val name: String,
-    private val gradleBuild: GradleBuildDefinitionImpl,
-    private val ruleOptionBuilder: DefaultRuleOptionBuilder,
-    private val externalLibraries: List<Library>
-): TestRule {
-    private var status = Status.PENDING
-
-    /** Project location, computed by the Statement at test execution */
-    private var mutableProjectLocation: ProjectLocation? = null
-
-    private val openConnections = mutableListOf<ProjectConnection>()
-
-    /** The last build result. this is only used to log it in case of a test failure */
-    private var lastBuildResult: GradleBuildResult? = null
-
+interface GradleRule: TestRule {
     companion object {
         /**
          * Returns a [GradleRule] for a project configured with the [TestProjectBuilder].
          *
          * To configure the rule, use [configure] instead
          */
-        fun from(
-            action: GradleBuildDefinition.() -> Unit
-        ): GradleRule {
-            val builder = GradleBuildDefinitionImpl(CreationOptions.DEFAULT_BUILD_NAME)
-            action(builder)
-
-            return GradleRuleBuilder().create(builder)
-        }
+        fun from(action: GradleBuildDefinition.() -> Unit): GradleRule =
+            GradleRuleBuilderImpl().create(GradleBuildDefinitionImpl(CreationOptions.DEFAULT_BUILD_NAME).also { action(it) })
 
         /**
          * Returns a [GradleRuleBuilder] that can be configured before calling [GradleRuleBuilder.from]
          */
-        fun configure(
-        ): GradleRuleBuilder {
-            return GradleRuleBuilder()
-        }
+        fun configure(): GradleRuleBuilder = GradleRuleBuilderImpl()
     }
+
+    /**
+     * The directory where the build will be written.
+     *
+     * This can safely be queried before a call to [build]. This is the same value as
+     * [GradleBuild.directory]
+     */
+    val directory: Path
 
     /**
      * The generated [GradleBuild].
@@ -111,16 +96,7 @@ class GradleRule internal constructor(
      * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
-    val build: GradleBuild by lazy {
-        if (!status.written) {
-            doWriteBuild()
-        }
-
-        computeGradleBuild(
-            gradleBuild,
-            mutableProjectLocation ?: throw RuntimeException("Location not set!")
-        )
-    }
+    val build: GradleBuild
 
     /**
      * Configures the build with one final action and returns the [GradleBuild]
@@ -131,18 +107,7 @@ class GradleRule internal constructor(
      * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
-    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
-        // cannot reconfigure the build since static rules creates a single build for all test methods.
-        if (status == Status.WRITTEN_STATIC) {
-            throw RuntimeException("Build from static GradleRule cannot be reconfigured")
-        } else if (status == Status.WRITTEN_USER) {
-            throw RuntimeException("Build was already reconfigured and written. Cannot be configured twice.")
-        }
-
-        action(gradleBuild)
-
-        return build
-    }
+    fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild
 
     /**
      * Configures the build with multi-step actions before returning the [GradleBuild]
@@ -158,7 +123,58 @@ class GradleRule internal constructor(
      * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
-    fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
+    fun configure(): LocalRuleOptionBuilder
+
+}
+
+// ---------------------------------
+
+internal class GradleRuleImpl internal constructor(
+    val name: String,
+    private val gradleBuild: GradleBuildDefinitionImpl,
+    private val ruleOptionBuilder: DefaultRuleOptionBuilder,
+    private val externalLibraries: List<Library>,
+    private val enableProfileOutput: Boolean,
+): GradleRule {
+    private var status = Status.PENDING
+
+    /** Project location, computed by the Statement at test execution */
+    private var mutableProjectLocation: ProjectLocation? = null
+
+    private val openConnections = mutableListOf<ProjectConnection>()
+
+    /** The last build result. this is only used to log it in case of a test failure */
+    private var lastBuildResult: GradleBuildResult? = null
+
+    override val build: GradleBuild by lazy {
+        if (!status.written) {
+            doWriteBuild()
+        }
+
+        computeGradleBuild(
+            gradleBuild,
+            mutableProjectLocation ?: throw RuntimeException("Location not set!")
+        )
+    }
+
+    override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
+        // cannot reconfigure the build since static rules creates a single build for all test methods.
+        if (status == Status.WRITTEN_STATIC) {
+            throw RuntimeException("Build from static GradleRule cannot be reconfigured")
+        } else if (status == Status.WRITTEN_USER) {
+            throw RuntimeException("Build was already reconfigured and written. Cannot be configured twice.")
+        }
+
+        action(gradleBuild)
+
+        return build
+    }
+
+    override fun configure(): LocalRuleOptionBuilder =
+        LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
+
+    override val directory: Path
+        get() = mutableProjectLocation?.projectDir?.toPath() ?: throw RuntimeException("Location not set!")
 
     private val buildWriter: () -> BuildWriter by lazy {
         when (ruleOptionBuilder.creationOptions.buildFileType) {
@@ -351,7 +367,7 @@ class GradleRule internal constructor(
         override val additionalMavenRepoDir: Path?
             get() = computeAdditionalMavenRepo()
         override val profileDirectory: Path?
-            get() = null
+            get() = if (enableProfileOutput) GradleTestProjectBuilder.DEFAULT_PROFILE_DIR else null
     }
 
     private fun createLocalProp() {

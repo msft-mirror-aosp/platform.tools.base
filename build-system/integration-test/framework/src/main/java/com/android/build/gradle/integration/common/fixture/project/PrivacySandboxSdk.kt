@@ -92,7 +92,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
 }
 
 /**
- * Specialized interface for application [AndroidProject] to use in the test
+ * Specialized interface for privacy sandbox SDK [AndroidProject] to use in the test
  */
 interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition> {
     /** the object that allows to add/update/remove files from the project */

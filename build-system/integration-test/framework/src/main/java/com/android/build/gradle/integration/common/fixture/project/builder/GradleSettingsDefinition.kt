@@ -49,9 +49,12 @@ interface GradleSettingsDefinition {
      * This will fails if no android plugins were added.
      */
     fun android(action: SettingsExtension.() -> Unit)
+
+    fun enableFeaturePreview(name: String)
 }
 
 internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
+    private val featurePreviews = mutableListOf<String>()
 
     private val plugins = mutableListOf<AppliedPlugin>()
     private val androidContentHolder = DefaultDslContentHolder()
@@ -97,6 +100,10 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         action(android)
     }
 
+    override fun enableFeaturePreview(name: String) {
+        featurePreviews += name
+    }
+
     internal fun write(
         name: String,
         location: Path,
@@ -114,11 +121,15 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
                 }
             }
 
+            emptyLine()
+
             block("plugins") {
                 for (plugin in plugins.toSet()) {
                     pluginId(plugin.plugin.id, plugin.version)
                 }
             }
+
+            emptyLine()
 
             block("dependencyResolutionManagement") {
                 method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
@@ -126,20 +137,32 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
                     for (repository in repositories) {
                         mavenSnippet(repository)
                     }
-
                 }
             }
+            emptyLine()
 
             set("rootProject.name", name)
+            emptyLine()
 
-            for (build in includedBuildNames) {
-                method("includeBuild", build)
+            if (featurePreviews.isNotEmpty()) {
+                for (name in featurePreviews) {
+                    method("enableFeaturePreview", name)
+                }
+                emptyLine()
+            }
+
+            if (includedBuildNames.isNotEmpty()) {
+                for (build in includedBuildNames) {
+                    method("includeBuild", build)
+                }
+                emptyLine()
             }
 
             if (hasAndroid()) {
                 block("android") {
                     androidContentHolder.writeContent(this)
                 }
+                emptyLine()
             }
 
             for (project in subProjectPaths) {

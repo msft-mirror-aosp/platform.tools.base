@@ -46,14 +46,18 @@ class GradleBuildDefinitionTest {
                   repositories {
                   }
                 }
+
                 plugins {
                 }
+
                 dependencyResolutionManagement {
                   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
                   repositories {
                   }
                 }
+
                 rootProject.name = 'root'
+
                 include(':app')
 
             """.trimIndent())
@@ -73,15 +77,20 @@ class GradleBuildDefinitionTest {
                   repositories {
                   }
                 }
+
                 plugins {
                 }
+
                 dependencyResolutionManagement {
                   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
                   repositories {
                   }
                 }
+
                 rootProject.name = 'root'
+
                 includeBuild('build-logic')
+
 
             """.trimIndent())
     }
@@ -108,8 +117,10 @@ class GradleBuildDefinitionTest {
                     }
                   }
                 }
+
                 plugins {
                 }
+
                 dependencyResolutionManagement {
                   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
                   repositories {
@@ -122,7 +133,9 @@ class GradleBuildDefinitionTest {
                     }
                   }
                 }
+
                 rootProject.name = 'root'
+
 
             """.trimIndent()
         )
@@ -144,8 +157,7 @@ class GradleBuildDefinitionTest {
                 plugins {
                   id('com.android.application') version '${Version.ANDROID_GRADLE_PLUGIN_VERSION}' apply false
                 }
-                dependencies {
-                }
+
 
             """.trimIndent()
         )
@@ -157,12 +169,12 @@ class GradleBuildDefinitionTest {
                 plugins {
                   id('com.android.application')
                 }
+
                 android {
                   namespace = 'pkg.name.app'
                   compileSdk = $DEFAULT_COMPILE_SDK_VERSION
                 }
-                dependencies {
-                }
+
 
             """.trimIndent()
         )
@@ -174,8 +186,7 @@ class GradleBuildDefinitionTest {
                 plugins {
                   id('java-library')
                 }
-                dependencies {
-                }
+
 
             """.trimIndent()
         )
@@ -198,9 +209,11 @@ class GradleBuildDefinitionTest {
             """
                 plugins {
                 }
+
                 dependencies {
                   api(project(':library'))
                 }
+
 
             """.trimIndent()
         )

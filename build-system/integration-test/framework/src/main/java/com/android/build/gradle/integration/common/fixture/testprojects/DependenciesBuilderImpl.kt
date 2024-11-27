@@ -147,6 +147,8 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
     }
 
     fun write(buildWriter: BuildWriter, projectLocation: Path) {
+        if (dependencies.isEmpty()) return
+
         buildWriter.apply {
             block("dependencies") {
                 for ((scope, dependency) in dependencies) {
@@ -187,6 +189,8 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                     }
                 }
             }
+
+            emptyLine()
         }
     }
 

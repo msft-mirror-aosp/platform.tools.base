@@ -34,6 +34,7 @@ import java.nio.file.Path
  * and query for the content of their output folder
  */
 interface GradleBuild {
+    val directory: Path
 
     /** Queries for a project via its gradle path. The project must exist. */
     fun genericProject(path: String): GenericProject
@@ -215,7 +216,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
  * Internal default implementation of [GradleBuild]
  */
 internal class GradleBuildImpl(
-    val directory: Path,
+    override val directory: Path,
     private val subProjects: Map<String, GradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
     private val executorProvider: () -> GradleTaskExecutor,

@@ -39,15 +39,34 @@ import org.junit.runners.model.Statement
  *
  * Don't use directly, use [GradleRule.configure].
  */
-class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
-
-    private val ruleOptionBuilder = DefaultRuleOptionBuilder()
-    private val mavenRepository = MavenRepositoryImpl()
+interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
 
     /**
      * Returns the [GradleRule], for a project initialized with the [TestProjectBuilder]
      */
-    fun from(action: GradleBuildDefinition.() -> Unit): GradleRule {
+    fun from(action: GradleBuildDefinition.() -> Unit): GradleRule
+
+    override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
+    override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
+    override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): GradleRuleBuilder
+    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): GradleRuleBuilder
+    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): GradleRuleBuilder
+
+    fun withMavenRepository(action: MavenRepository.() -> Unit): GradleRuleBuilder
+
+    fun withProfileOutput(): GradleRuleBuilder
+}
+
+
+// --------------------------
+
+internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
+
+    private val ruleOptionBuilder = DefaultRuleOptionBuilder()
+    private val mavenRepository = MavenRepositoryImpl()
+    private var enableProfileOutput = false
+
+    override fun from(action: GradleBuildDefinition.() -> Unit): GradleRule {
         val builder = GradleBuildDefinitionImpl(ruleOptionBuilder.creationOptions.name)
         action(builder)
 
@@ -79,8 +98,13 @@ class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
         return this
     }
 
-    fun withMavenRepository(action: MavenRepository.() -> Unit): GradleRuleBuilder {
+    override fun withMavenRepository(action: MavenRepository.() -> Unit): GradleRuleBuilder {
         action(mavenRepository)
+        return this
+    }
+
+    override fun withProfileOutput(): GradleRuleBuilder {
+        enableProfileOutput = true
         return this
     }
 
@@ -89,11 +113,12 @@ class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
     internal fun create(
         gradleBuild: GradleBuildDefinitionImpl
     ): GradleRule {
-        return GradleRule(
+        return GradleRuleImpl(
             name = ruleOptionBuilder.creationOptions.name,
             gradleBuild = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
-            externalLibraries = mavenRepository.libraries
+            externalLibraries = mavenRepository.libraries,
+            enableProfileOutput
         )
     }
 

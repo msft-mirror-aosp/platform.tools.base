@@ -79,6 +79,8 @@ internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionIm
             block("assetPack") {
                 contentHolder.writeContent(this)
             }
+
+            emptyLine()
         }
     }
 }

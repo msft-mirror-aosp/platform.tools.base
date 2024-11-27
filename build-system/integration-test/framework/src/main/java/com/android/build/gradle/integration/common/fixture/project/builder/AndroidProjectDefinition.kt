@@ -107,6 +107,8 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
             block("android") {
                 contentHolder.writeContent(this)
             }
+
+            emptyLine()
         }
     }
 }
