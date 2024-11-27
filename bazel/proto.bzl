@@ -122,7 +122,6 @@ _gen_proto_rule = rule(
         "include": attr.label(
             allow_files = [".proto"],
         ),
-        "proto_include_version": attr.string(),
         "protoc": attr.label(
             cfg = "exec",
             executable = True,
@@ -195,7 +194,6 @@ def java_proto_library(
         srcs = srcs,
         deps = proto_deps + ([] if skip_default_includes else ["@//tools/base/bazel:common-java_proto_srcs"]),
         outs = outs,
-        proto_include_version = protoc_version,
         protoc = "@//prebuilts/tools/common/m2:com.google.protobuf.protoc." + protoc_version + "_exe",
         grpc_plugin =
             "@//prebuilts/tools/common/m2:io.grpc.protoc-gen-grpc-java." + protoc_grpc_version + "_exe" if grpc_support else None,
@@ -296,7 +294,6 @@ def cc_grpc_proto_library(
         srcs = srcs,
         deps = proto_deps,
         outs = outs + hdrs,
-        proto_include_version = protoc_version,
         protoc = "@com_google_protobuf//:protoc",
         grpc_plugin = "@grpc_repo//:grpc_cpp_plugin" if grpc_support else None,
         target_language = proto_languages.CPP,
@@ -341,7 +338,6 @@ def maven_proto_library(
         srcs = srcs,
         deps = proto_deps + ["//tools/base/bazel:common-java_proto_srcs"],
         outs = outs,
-        proto_include_version = protoc_version,
         protoc = "@//prebuilts/tools/common/m2:com.google.protobuf.protoc." + protoc_version + "_exe",
         grpc_plugin =
             "@//prebuilts/tools/common/m2:io.grpc.protoc-gen-grpc-java." + protoc_grpc_version + "_exe" if grpc_support else None,
