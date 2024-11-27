@@ -48,5 +48,8 @@ internal open class GradleProjectImpl(
     override fun file(path: String): File? {
         return location.resolve(path).toFile()
     }
+
+    internal open fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
+        ReversibleGradleProject(this, projectModification.delegate(this))
 }
 

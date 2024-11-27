@@ -30,15 +30,11 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.Projec
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.configure
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.from
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidApplicationDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidDynamicFeatureDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
@@ -247,7 +243,7 @@ class GradleRule internal constructor(
                     build
                 )
 
-                is PrivacySandboxSdkDefinitionImpl -> definition.path to PrivacySandboxSdkImpl(
+                is PrivacySandboxSdkDefinitionImpl -> definition.path to AndroidPrivacySandboxSdkImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     definition.namespace,

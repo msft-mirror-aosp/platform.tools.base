@@ -63,7 +63,7 @@ class DynamicFeatureNamespaceTest {
         build.executor.run(":feature:processManifestDebugForFeature")
 
         val manifestFile =
-            build.androidProject(":feature")
+            build.androidFeature(":feature")
                 .getIntermediateFile(
                     "metadata_feature_manifest",
                     "debug",
@@ -86,7 +86,7 @@ class DynamicFeatureNamespaceTest {
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true)
             .run(":app:assembleDebug")
 
-        build.androidProject(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
             hasApplicationId("com.example.test")
         }
     }

@@ -16,11 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.DynamicFeatureExtension
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -39,52 +34,31 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 internal class ReversibleGradleBuild(
     private val parentBuild: GradleBuildImpl,
     private val projectModification: TemporaryProjectModification,
-): GradleBuild {
+): BaseGradleBuildImpl() {
 
-    private val modifiableSubProject = mutableMapOf<String, ReversibleGradleProject>()
+    private val modifiableSubProject = mutableMapOf<String, GradleProject>()
     private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
+
+    /**
+     * the list of project for this build is the modifiable map
+     */
+    override val subProjects: Map<String, GradleProject>
+        get() = modifiableSubProject
+    /**
+     * For validation, we use the parent list which is more complete because the local list
+     * is built on demand
+     */
+    override val subProjectsForValidation: Map<String, GradleProject>
+        get() = parentBuild.subProjects
 
     override fun subProject(path: String): GradleProject {
         val project = parentBuild.subProject(path)
 
         return modifiableSubProject.computeIfAbsent(path) {
-            if (project is AndroidProject<*>) {
-                ReversibleAndroidProject(project, projectModification.delegate(project))
-            } else {
-                ReversibleGradleProject(project, projectModification.delegate(project))
-            }
+            (project as GradleProjectImpl).getReversibleInstance(
+                projectModification.delegate(project)
+            )
         }
-    }
-
-    override fun androidProject(path: String): AndroidProject<CommonExtension<*, *, *, *, *, *>> {
-        val project = subProject(path)
-
-        // cannot check for exact type due to type erasure, so check for simpler type and cast
-        @Suppress("UNCHECKED_CAST")
-        if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
-
-        throw RuntimeException(
-            """
-                Project with path '$path' is not an Android project.
-                Possible androidProjects are ${parentBuild.getProjectListByType<AndroidProject<*>>()}
-            """.trimIndent()
-        )
-    }
-
-    override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
-        throw UnsupportedOperationException("Call androidApplication() during modification as reconfiguration is not possible")
-    }
-
-    override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
-        throw UnsupportedOperationException("Call androidLibrary() during modification as reconfiguration is not possible")
-    }
-
-    override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
-        throw UnsupportedOperationException("Call androidFeature() during modification as reconfiguration is not possible")
-    }
-
-    override fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension> {
-        throw UnsupportedOperationException("Call privacySandboxSdk() during modification as reconfiguration is not possible")
     }
 
     override fun includedBuild(name: String): GradleBuild {

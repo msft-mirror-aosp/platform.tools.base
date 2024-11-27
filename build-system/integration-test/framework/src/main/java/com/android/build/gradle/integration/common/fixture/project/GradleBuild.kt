@@ -16,11 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.DynamicFeatureExtension
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -37,31 +32,27 @@ interface GradleBuild {
 
     /** Queries for a project via its gradle path. The project must exist. */
     fun subProject(path: String): GradleProject
-    /**
-     * Queries for an android project via its gradle path.
-     * The project must exist and be an Android project
-     */
-    fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>>
+
     /**
      * Queries for an application project via its gradle path.
      * The project must exist and be an Android Application project
      */
-    fun androidApplication(path: String): AndroidProject<ApplicationExtension>
+    fun androidApplication(path: String): AndroidApplicationProject
     /**
      * Queries for a library project via its gradle path.
      * The project must exist and be an Android Library project
      */
-    fun androidLibrary(path: String): AndroidProject<LibraryExtension>
+    fun androidLibrary(path: String): AndroidLibraryProject
     /**
      * Queries for a feature project via its gradle path.
      * The project must exist and be an Android Dynamic Feature project
      */
-    fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension>
+    fun androidFeature(path: String): AndroidDynamicFeatureProject
     /**
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.
      */
-    fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension>
+    fun privacySandboxSdk(path: String): AndroidPrivacySandboxSdkProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -81,43 +72,35 @@ interface GradleBuild {
 }
 
 /**
- * Internal default implementation of [GradleBuild]
+ * Basic implementation of some features of [GradleBuild] to be shared across the 2 different
+ * implementations ([GradleBuildImpl] and [ReversibleGradleBuild]
  */
-internal class GradleBuildImpl(
-    val directory: Path,
-    private val subProjects: Map<String, GradleProject> = mapOf(),
-    private val includedBuilds: Map<String, GradleBuild> = mapOf(),
-    private val executorProvider: () -> GradleTaskExecutor,
-    private val modelBuilderProvider: () -> ModelBuilderV2,
-) : GradleBuild {
+internal abstract class BaseGradleBuildImpl() : GradleBuild {
+
+    /**
+     * the list of projects that make up this build
+     */
+    internal abstract val subProjects: Map<String, GradleProject>
+
+    /**
+     * a more compplete list of projects to validate project types. This is separate
+     * for the case of [ReversibleGradleBuild] where the subProject list is a clone of the
+     * parent build.
+     */
+    protected abstract val subProjectsForValidation: Map<String, GradleProject>
 
     override fun subProject(path: String): GradleProject {
         return subProjects[path]
             ?: throw RuntimeException(
                 """
                     Unable to find subproject '$path'.
-                    Possible subProjects are ${subProjects.keys.joinToString()}
+                    Possible subProjects are ${subProjectsForValidation.keys.joinToString()}
                 """.trimIndent()
             )
     }
 
-    override fun androidProject(path: String): AndroidProject<CommonExtension<*,*,*,*,*,*>> {
-        val project = subProjects[path]
-
-        // cannot check for exact type due to type erasure, so check for simpler type and cast
-        @Suppress("UNCHECKED_CAST")
-        if (project is AndroidProjectImpl<*>) return project as AndroidProject<CommonExtension<*,*,*,*,*,*>>
-
-        throw RuntimeException(
-            """
-                Project with path '$path' is not an Android project.
-                Possible androidProjects are ${getProjectListByType<AndroidProject<*>>()}
-            """.trimIndent()
-        )
-    }
-
-    override fun androidApplication(path: String): AndroidProject<ApplicationExtension> {
-        val project = subProjects[path]
+    override fun androidApplication(path: String): AndroidApplicationProject {
+        val project = subProject(path)
         if (project is AndroidApplicationImpl) return project
 
         throw RuntimeException(
@@ -128,8 +111,8 @@ internal class GradleBuildImpl(
         )
     }
 
-    override fun androidLibrary(path: String): AndroidProject<LibraryExtension> {
-        val project = subProjects[path]
+    override fun androidLibrary(path: String): AndroidLibraryProject {
+        val project = subProject(path)
         if (project is AndroidLibraryImpl) return project
 
         throw RuntimeException(
@@ -140,9 +123,9 @@ internal class GradleBuildImpl(
         )
     }
 
-    override fun androidFeature(path: String): AndroidProject<DynamicFeatureExtension> {
-        val project = subProjects[path]
-        if (project is AndroidFeatureImpl) return project
+    override fun androidFeature(path: String): AndroidDynamicFeatureProject {
+        val project = subProject(path)
+        if (project is AndroidDynamicFeatureProject) return project
 
         throw RuntimeException(
             """
@@ -152,17 +135,40 @@ internal class GradleBuildImpl(
         )
     }
 
-    override fun privacySandboxSdk(path: String): AndroidProject<PrivacySandboxSdkExtension> {
-        val project = subProjects[path]
-        if (project is PrivacySandboxSdkImpl) return project
+    override fun privacySandboxSdk(path: String): AndroidPrivacySandboxSdkProject {
+        val project = subProject(path)
+        if (project is AndroidPrivacySandboxSdkProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible privacySandboxSdk are ${getProjectListByType<PrivacySandboxSdkImpl>()}
+                Possible privacySandboxSdk are ${getProjectListByType<AndroidPrivacySandboxSdkImpl>()}
             """.trimIndent()
         )
     }
+
+    internal inline fun <reified T> getProjectListByType(): String {
+        return subProjectsForValidation.filter { it.key.javaClass == T::class.java }.map { it.key }.joinToString()
+    }
+}
+
+
+/**
+ * Internal default implementation of [GradleBuild]
+ */
+internal class GradleBuildImpl(
+    val directory: Path,
+    override val subProjects: Map<String, GradleProject> = mapOf(),
+    private val includedBuilds: Map<String, GradleBuild> = mapOf(),
+    private val executorProvider: () -> GradleTaskExecutor,
+    private val modelBuilderProvider: () -> ModelBuilderV2,
+): BaseGradleBuildImpl() {
+
+    /**
+     * For this implementation, both lists are the same.
+     */
+    override val subProjectsForValidation: Map<String, GradleProject>
+        get() = subProjects
 
     override fun includedBuild(name: String): GradleBuild {
         return includedBuilds[name]
@@ -189,8 +195,4 @@ internal class GradleBuildImpl(
 
     override val modelBuilder: ModelBuilderV2
         get() = modelBuilderProvider()
-
-    internal inline fun <reified T> getProjectListByType(): String {
-        return subProjects.filter { it.key.javaClass == T::class.java }.map { it.key }.joinToString()
-    }
 }

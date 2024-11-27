@@ -16,8 +16,7 @@
 
 package com.android.build.gradle.integration.packaging
 
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.integration.common.fixture.project.AndroidProject
+import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.DEBUG
 import com.android.build.gradle.integration.common.fixture.project.GradleProject
@@ -32,7 +31,6 @@ import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject
-import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -317,7 +315,7 @@ class InjectedAbiTest {
     @Test
     fun testPackagingTargetAbiCanBeDisabled() {
         val build = rule.build
-        val project = build.androidProject(":app")
+        val project = build.androidApplication(":app")
 
         // Run the build with target ABI but set BUILD_ONLY_TARGET_ABI to false,
         // check that APK contains native libraries for multiple ABIs
@@ -332,7 +330,7 @@ class InjectedAbiTest {
         }
     }
 
-    private fun AndroidProject<ApplicationExtension>.assertCorrectApk(
+    private fun AndroidApplicationProject.assertCorrectApk(
         apkSelector: ApkSelector,
         action: (ApkSubject.() -> Unit)? = null
     ) {
@@ -347,7 +345,7 @@ class InjectedAbiTest {
         }
     }
 
-    private fun AndroidProject<ApplicationExtension>.assertDoesNotExist(apkSelector: ApkSelector) {
+    private fun AndroidApplicationProject.assertDoesNotExist(apkSelector: ApkSelector) {
         if (this.hasApk(apkSelector)) {
             fail("APK ($apkSelector) exist for ${this.location}")
         }

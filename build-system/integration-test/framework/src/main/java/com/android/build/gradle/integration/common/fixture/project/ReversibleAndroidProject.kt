@@ -16,14 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 import com.android.build.gradle.integration.common.truth.AarSubject
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aar
-import com.android.testutils.apk.Apk
 import java.nio.file.Path
 
 /**
@@ -31,37 +28,19 @@ import java.nio.file.Path
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
-internal class ReversibleAndroidProject(
-    override val parentProject: AndroidProject<*>,
+internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ExtensionT>, ExtensionT>(
+    parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
-) : ReversibleGradleProject(
+) : ReversibleGradleProject<ProjectT>(
     parentProject,
     projectModification,
-), AndroidProject<CommonExtension<*,*,*,*,*,*>> {
+), AndroidProject<ExtensionT> {
 
     override val namespace: String
         get() = parentProject.namespace
 
     override val files: AndroidProjectFiles =
         ReversibleAndroidProjectFiles(parentProject.namespace, projectModification)
-
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R =
-        parentProject.withApk(apkSelector, action)
-
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        parentProject.assertApk(apkSelector, action)
-    }
-
-    override fun hasApk(apkSelector: ApkSelector): Boolean = parentProject.hasApk(apkSelector)
-
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R =
-        parentProject.withAar(aarSelector, action)
-
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        parentProject.assertAar(aarSelector, action)
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean = parentProject.hasAar(aarSelector)
 
     override fun getIntermediateFile(vararg paths: String?): Path = parentProject.getIntermediateFile(*paths)
 
@@ -73,7 +52,7 @@ internal class ReversibleAndroidProject(
 
     override fun reconfigure(
         buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<CommonExtension<*, *, *, *, *, *>>.() -> Unit
+        action: AndroidProjectDefinition<ExtensionT>.() -> Unit
     ) {
         throw UnsupportedOperationException("reconfigure not supported inside a modification block")
     }

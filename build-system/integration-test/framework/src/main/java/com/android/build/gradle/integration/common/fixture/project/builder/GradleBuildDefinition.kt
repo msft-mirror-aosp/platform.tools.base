@@ -20,6 +20,10 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
+import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType

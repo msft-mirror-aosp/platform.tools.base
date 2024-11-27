@@ -29,8 +29,8 @@ import java.nio.file.Path
  * This is simply a wrapper on a normal [GradleProject] object, that replaces the [GradleProjectFiles]
  * with [ReversibleProjectFiles]
  */
-internal open class ReversibleGradleProject(
-    protected open val parentProject: GradleProject,
+internal open class ReversibleGradleProject<ProjectT: GradleProject>(
+    protected open val parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
 ): GradleProject {
 

@@ -106,7 +106,7 @@ internal class PrivacySandboxSdkLinkAndroidResourcesTaskTest {
         val build = rule.build
         build.executor.run(":privacySdkSandbox1:linkPrivacySandboxResources")
 
-        val privacySandboxSdk = build.androidProject(":privacySdkSandbox1")
+        val privacySandboxSdk = build.privacySandboxSdk(":privacySdkSandbox1")
         val bundledResourcesFile = privacySandboxSdk.getIntermediateFile(
                 PrivacySandboxSdkInternalArtifactType.LINKED_MERGE_RES_FOR_ASB.getFolderName(),
                 "single",

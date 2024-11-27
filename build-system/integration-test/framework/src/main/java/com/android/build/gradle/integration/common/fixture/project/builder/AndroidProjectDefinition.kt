@@ -16,14 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.DynamicFeatureExtension
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
-import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 
@@ -109,87 +104,6 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
     }
 }
 
-/**
- * An Android Application Project
- */
-internal class AndroidApplicationDefinitionImpl(path: String): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_APP)
-    }
-
-    override val android: ApplicationExtension =
-        DslProxy.createProxy(
-            ApplicationExtension::class.java,
-            contentHolder,
-        ).also {
-            initDefaultValues(it)
-        }
-}
-
-/**
- * An Android Library Project
- */
-internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_LIB)
-    }
-
-    override val android: LibraryExtension =
-        DslProxy.createProxy(
-            LibraryExtension::class.java,
-            contentHolder,
-        ).also {
-            initDefaultValues(it)
-        }
-}
-
-/**
- * An Android Feature Project
- */
-internal class AndroidDynamicFeatureDefinitionImpl(path: String): AndroidProjectDefinitionImpl<DynamicFeatureExtension>(path) {
-    init {
-        applyPlugin(PluginType.ANDROID_DYNAMIC_FEATURE)
-    }
-
-    override val android: DynamicFeatureExtension =
-        DslProxy.createProxy(
-            DynamicFeatureExtension::class.java,
-            contentHolder,
-        ).also {
-            initDefaultValues(it)
-        }
-}
-
-/**
- * A Privacy Sandbox SDK
- */
-internal class PrivacySandboxSdkDefinitionImpl(path: String): AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>(path) {
-    init {
-        applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
-    }
-
-    override val namespace: String
-        get() = android.namespace ?: throw RuntimeException("Namespace has not been set yet!")
-
-    override val android: PrivacySandboxSdkExtension =
-        DslProxy.createProxy(
-            PrivacySandboxSdkExtension::class.java,
-            contentHolder,
-        ).also {
-            initDefaultValues(it)
-        }
-
-
-    override fun initDefaultValues(extension: PrivacySandboxSdkExtension) {
-        val pkgName = if (path == ":") {
-            "pkg.name"
-        } else {
-            "pkg.name${path.replace(':', '.')}"
-        }
-        extension.namespace = pkgName
-        extension.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
-    }
-}
 
 /**
  * Wraps a [AndroidProjectDefinition] into a [GradleProjectDefinition]
