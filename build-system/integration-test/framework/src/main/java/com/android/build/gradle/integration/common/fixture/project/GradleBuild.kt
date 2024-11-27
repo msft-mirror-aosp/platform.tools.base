@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.nio.file.Path
 
@@ -52,6 +53,11 @@ interface GradleBuild {
      * The project must exist and be an Android Dynamic Feature project
      */
     fun androidFeature(path: String = DEFAULT_FEATURE_PATH): AndroidDynamicFeatureProject
+    /**
+     * Queries for an android test project via its gradle path.
+     * The project must exist and be an Android Test project
+     */
+    fun androidTest(path: String = DEFAULT_TEST_PATH): AndroidTestProject
     /**
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.
@@ -147,6 +153,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not an Android project.
                 Possible options are ${getProjectListByType<AndroidFeatureImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun androidTest(path: String): AndroidTestProject {
+        val project = subProject(path)
+        if (project is AndroidTestProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible options are ${getProjectListByType<AndroidTestImpl>()}
             """.trimIndent()
         )
     }

@@ -34,6 +34,9 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition>: Tempo
     /** the location on disk of the project */
     val location: Path
 
+    /** The build folder for the project. This does NOT support build dir relocation */
+    val buildDir: Path
+
     /**
      * Reconfigure the project, and writes the result on disk right away
      *
@@ -59,6 +62,9 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
     protected val parentBuild: GradleBuildDefinitionImpl,
     protected val modelBuilder: () -> ModelBuilderV2,
 ) : GradleProject<ProjectDefinitionT> {
+
+    override val buildDir: Path
+        get() = location.resolve("build")
 
     override fun file(path: String): File? {
         return location.resolve(path).toFile()

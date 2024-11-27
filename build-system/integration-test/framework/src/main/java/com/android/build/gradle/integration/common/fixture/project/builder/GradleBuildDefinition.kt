@@ -19,11 +19,13 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AndroidTestDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
@@ -33,6 +35,7 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -122,6 +125,14 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
     ): AndroidProjectDefinition<DynamicFeatureExtension>
+
+    /**
+     * Configures a subProject with the Android Test plugin, creating it if needed.
+     */
+    fun androidTest(
+        path: String = DEFAULT_TEST_PATH,
+        action: AndroidProjectDefinition<TestExtension>.() -> Unit
+    ): AndroidProjectDefinition<TestExtension>
 
     /**
      * Configures a subProject with the Android Privacy Sandbox SDK plugin, creating it if needed.
@@ -286,6 +297,24 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
 
         project as? AndroidDynamicFeatureDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Dynamic Feature")
+
+        action(project)
+
+        return project
+    }
+
+    override fun androidTest(
+        path: String,
+        action: AndroidProjectDefinition<TestExtension>.() -> Unit
+    ): AndroidProjectDefinition<TestExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be an android project")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AndroidTestDefinitionImpl(it)
+        }
+
+        project as? AndroidTestDefinitionImpl
+            ?: errorOnWrongType(project, path, "Android Test")
 
         action(project)
 

@@ -33,6 +33,9 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     override val location: Path
         get() = parentProject.location
 
+    override val buildDir: Path
+        get() = parentProject.buildDir
+
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
         throw RuntimeException("Cannot reconfigure inside a reconfiguration")
     }

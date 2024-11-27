@@ -232,8 +232,8 @@ class GradleRule internal constructor(
         val subProjects = build.subProjects.values.associate { definition ->
             val subProjectLocation = computeSubProjectPath(rootFolder, definition.path)
 
-            when (definition) {
-                is AndroidApplicationDefinitionImpl -> definition.path to AndroidApplicationImpl(
+            definition.path to when (definition) {
+                is AndroidApplicationDefinitionImpl -> AndroidApplicationImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
@@ -242,7 +242,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is AndroidLibraryDefinitionImpl -> definition.path to AndroidLibraryImpl(
+                is AndroidLibraryDefinitionImpl -> AndroidLibraryImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
@@ -251,7 +251,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
+                is AndroidDynamicFeatureDefinitionImpl -> AndroidFeatureImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
@@ -260,7 +260,16 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is PrivacySandboxSdkDefinitionImpl -> definition.path to PrivacySandboxSdkImpl(
+                is AndroidTestDefinitionImpl -> AndroidTestImpl(
+                    subProjectLocation,
+                    definition,
+                    definition.namespace,
+                    buildWriter,
+                    build,
+                    modelBuilderProvider,
+                )
+
+                is PrivacySandboxSdkDefinitionImpl -> PrivacySandboxSdkImpl(
                     subProjectLocation,
                     definition,
                     buildWriter,
@@ -268,7 +277,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is AssetPackDefinitionImpl -> definition.path to AssetPackImpl(
+                is AssetPackDefinitionImpl -> AssetPackImpl(
                     subProjectLocation,
                     definition,
                     buildWriter,
@@ -276,7 +285,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is AiPackDefinitionImpl -> definition.path to AiPackImpl(
+                is AiPackDefinitionImpl -> AiPackImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     buildWriter,
@@ -284,7 +293,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider
                 )
 
-                is GenericProjectDefinitionImpl -> definition.path to GenericProjectImpl(
+                is GenericProjectDefinitionImpl -> GenericProjectImpl(
                     subProjectLocation,
                     definition,
                     buildWriter,

@@ -16,17 +16,13 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.ANDROIDTEST_DEBUG
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.DEBUG
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVAC
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
@@ -36,373 +32,391 @@ import org.junit.Test
  */
 class NamespaceAndApplicationIdTest {
 
-    private val app = MinimalSubProject.app("com.example.app")
-            .appendToBuild(
-                """
-                    android {
-                        buildFeatures {
-                            buildConfig true
-                        }
-                    }
-                """.trimIndent()
-            )
-            .withFile(
-                    "src/main/res/values/values.xml",
-                    """
-                <resources>
-                    <string name="app_string">hello</string>
-                </resources>""".trimIndent()
-            )
-            .withFile("src/main/java/com/example/app/MyClass.java",
-                    """
-                package com.example.app;
-
-                import com.example.app.BuildConfig;
-
-                public class MyClass {
-                    void test() {
-                        int r = R.string.app_string;
-                    }
-                }
-            """.trimIndent())
-            .withFile(
-                    "src/androidTest/res/values/values.xml",
-                    """
-                <resources>
-                    <string name="test_string">hi</string>
-                </resources>
-            """.trimIndent())
-            .withFile(
-                    "src/androidTest/java/com/example/app/test/MyTestClass.java",
-                    """
-                package com.example.app.test;
-
-                import com.example.app.BuildConfig;
-
-                public class MyTestClass {
-                    void test() {
-                        int app_r = com.example.app.R.string.app_string;
-                        int test_r = com.example.app.test.R.string.test_string;
-                    }
-                }
-            """.trimMargin())
-
-    private val test = MinimalSubProject.test("com.example.test")
-        .appendToBuild(
-            """
-                android {
-                    targetProjectPath ':app'
-                    buildFeatures {
-                        buildConfig true
-                    }
-                }
-            """.trimIndent()
-        )
-        .withFile(
-            "src/main/res/values/values.xml",
-            """
-                <resources>
-                    <string name="app_string">hello</string>
-                </resources>""".trimIndent()
-        )
-        .withFile("src/main/java/com/example/test/MyClass.java",
-            """
-                package com.example.test;
-
-                import com.example.test.BuildConfig;
-
-                public class MyClass {
-                    void test() {
-                        int r = R.string.app_string;
-                    }
-                }
-            """.trimIndent())
-
-    private val multiModuleTestProject =
-        MultiModuleTestProject.builder().subproject(":app", app).subproject(":test", test).build()
-
     @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(multiModuleTestProject).create()
+    val rule = GradleRule.from {
+        androidApplication {
+            android {
+                namespace = "com.example.app"
+                buildFeatures {
+                    buildConfig = true
+                }
+            }
+            files {
+                add(
+                    "src/main/res/values/values.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="app_string">hello</string>
+                        </resources>""".trimIndent()
+                )
+                add(
+                    "src/main/java/com/example/app/MyClass.java",
+                    //language=java
+                    """
+                        package com.example.app;
+
+                        import com.example.app.BuildConfig;
+
+                        public class MyClass {
+                            void test() {
+                                int r = R.string.app_string;
+                            }
+                        }""".trimIndent()
+                )
+                add(
+                    "src/androidTest/res/values/values.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="test_string">hi</string>
+                        </resources>""".trimIndent()
+                )
+                add(
+                    "src/androidTest/java/com/example/app/test/MyTestClass.java",
+                    //language=java
+                    """
+                        package com.example.app.test;
+
+                        import com.example.app.BuildConfig;
+
+                        public class MyTestClass {
+                            void test() {
+                                int app_r = com.example.app.R.string.app_string;
+                                int test_r = com.example.app.test.R.string.test_string;
+                            }
+                        }""".trimMargin()
+                )
+            }
+        }
+        androidTest {
+            android {
+                namespace = "com.example.test"
+                targetProjectPath = ":app"
+                buildFeatures {
+                    buildConfig = true
+                }
+            }
+            files {
+                add(
+                    "src/main/res/values/values.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="app_string">hello</string>
+                        </resources>""".trimIndent()
+                )
+                add(
+                    "src/main/java/com/example/test/MyClass.java",
+                    //language=java
+                    """
+                        package com.example.test;
+
+                        import com.example.test.BuildConfig;
+
+                        public class MyClass {
+                            void test() {
+                                int r = R.string.app_string;
+                            }
+                        }""".trimIndent()
+                )
+            }
+        }
+    }
 
     @Test
     fun testDefault() {
-        project.execute("app:assembleDebug", "app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.app")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.app.test")
+        val build = rule.build
+        val app = build.androidApplication()
+
+        build.executor.run("app:assembleDebug", "app:assembleAndroidTest")
+
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.app")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.app.test")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/app/test/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testDefaultForTestModule() {
-        project.execute(":test:assembleDebug")
-        assertThatApk(project.getSubproject(":test").getApk(DEBUG))
-            .hasApplicationId("com.example.test")
+        val build = rule.build
+        build.executor.run(":test:assembleDebug")
+        build.androidTest().assertApk(DEBUG) {
+            hasApplicationId("com.example.test")
+        }
     }
 
     @Test
     fun testCustomApplicationId() {
-        project.getSubproject(":app").buildFile.appendText(
-                """
-                android.defaultConfig.applicationId "com.example.applicationId"
-             """
-        )
+        val build = rule.build {
+            androidApplication {
+                android.defaultConfig.applicationId = "com.example.applicationId"
+            }
+        }
+        val app = build.androidApplication()
 
-        project.execute(":app:assembleDebug", ":app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.applicationId")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.applicationId.test")
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
+
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.applicationId")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.applicationId.test")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/app/test/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomTestApplicationId() {
-        project.getSubproject(":app").buildFile.appendText(
-                """
-                android.defaultConfig.testApplicationId "com.example.testApplicationId"
-            """)
+        val build = rule.build {
+            androidApplication {
+                android.defaultConfig.testApplicationId = "com.example.testApplicationId"
+            }
+        }
+        val app = build.androidApplication()
 
-        project.execute(":app:assembleDebug", ":app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.app")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.testApplicationId")
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
+
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.app")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.testApplicationId")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/app/test/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomApplicationIdAndTestApplicationId() {
-        project.getSubproject(":app").buildFile.appendText(
-                """
-                android.defaultConfig.applicationId "com.example.applicationId"
-                android.defaultConfig.testApplicationId "com.example.testApplicationId"
-            """)
+        val build = rule.build {
+            androidApplication {
+                android {
+                    defaultConfig {
+                        applicationId = "com.example.applicationId"
+                        testApplicationId = "com.example.testApplicationId"
+                    }
+                }
+            }
+        }
+        val app = build.androidApplication()
 
-        project.execute(":app:assembleDebug", "app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.applicationId")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.testApplicationId")
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
+
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.applicationId")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.testApplicationId")
+        }
+
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/app/test/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomNamespace() {
-        project.getSubproject(":app").buildFile.appendText(
-                """
-                android.namespace "com.example.namespace"
-            """)
+        val build = rule.build {
+            androidApplication {
+                android.namespace = "com.example.namespace"
+                files {
+                    // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
+                    update("src/main/java/com/example/app/MyClass.java") {
+                        it?.replace("R", "com.example.namespace.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
+                        it?.replace("com.example.app.R", "com.example.namespace.R")
+                            ?.replace("com.example.app.test.R", "com.example.namespace.test.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                }
+            }
+        }
+        val app = build.androidApplication()
 
-        // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-        val appClass =
-            project.getSubproject(":app").file("src/main/java/com/example/app/MyClass.java")
-        assertThat(appClass).exists()
-        TestFileUtils.searchAndReplace(appClass, "R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-            appClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
-        val testClass =
-            project.getSubproject(":app")
-                .file("src/androidTest/java/com/example/app/test/MyTestClass.java")
-        assertThat(testClass).exists()
-        TestFileUtils.searchAndReplace(testClass, "com.example.app.R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-                testClass,
-                "com.example.app.test.R",
-                "com.example.namespace.test.R"
-        )
-        TestFileUtils.searchAndReplace(
-            testClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
-        project.execute(":app:assembleDebug", ":app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.namespace")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.namespace.test")
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.namespace")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.namespace.test")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/namespace/test/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomNamespaceForTestModule() {
-        project.getSubproject(":test").buildFile.appendText(
-            """
-                android.namespace "com.example.namespace"
-            """)
+        val build = rule.build {
+            androidTest {
+                android.namespace = "com.example.namespace"
+                files {
+                    // Update the R and BuildConfig class namespaces in MyClass.java
+                    update("src/main/java/com/example/test/MyClass.java") {
+                        it?.replace("R", "com.example.namespace.R")
+                            ?.replace("com.example.test.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                }
+            }
+        }
 
-        // Update the R and BuildConfig class namespaces in MyClass.java
-        val appClass =
-            project.getSubproject(":test")
-                .file("src/main/java/com/example/test/MyClass.java")
-        assertThat(appClass).exists()
-        TestFileUtils.searchAndReplace(appClass, "R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-            appClass,
-            "com.example.test.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
-
-        project.execute(":test:assembleDebug")
-        assertThatApk(project.getSubproject(":test").getApk(DEBUG))
-            .hasApplicationId("com.example.namespace")
+        build.executor.run(":test:assembleDebug")
+        build.androidTest().assertApk(DEBUG) {
+            hasApplicationId("com.example.namespace")
+        }
     }
 
     @Test
     fun testCustomTestNamespace() {
-        project.getSubproject(":app").buildFile.appendText(
-            """
-                android.testNamespace "com.example.testNamespace"
-            """
-        )
+        val build = rule.build {
+            androidApplication {
+                android.testNamespace = "com.example.testNamespace"
+                files {
+                    // Update the test R class namespaces in MyTestClass.java
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
+                        it?.replace("com.example.app.test.R", "com.example.testNamespace.R")
+                            ?: error("unexpected missing file")
+                    }
+                }
+            }
+        }
+        val app = build.androidApplication()
 
-        // Update the test R class namespaces in MyTestClass.java
-        val testClass =
-            project.getSubproject(":app")
-                .file("src/androidTest/java/com/example/app/test/MyTestClass.java")
-        assertThat(testClass).exists()
-        TestFileUtils.searchAndReplace(
-            testClass,
-            "com.example.app.test.R",
-            "com.example.testNamespace.R"
-        )
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
-        project.execute(":app:assembleDebug", ":app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.app")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.app.test")
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.app")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.app.test")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/testNamespace/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomNamespaceAndTestNamespace() {
-        project.getSubproject(":app").buildFile.appendText(
-            """
-                android.namespace "com.example.namespace"
-                android.testNamespace "com.example.testNamespace"
-            """
-        )
+        val build = rule.build {
+            androidApplication {
+                android {
+                    namespace = "com.example.namespace"
+                    testNamespace = "com.example.testNamespace"
+                }
+                files {
+                    // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
+                    update("src/main/java/com/example/app/MyClass.java") {
+                        it?.replace("R", "com.example.namespace.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
+                        it?.replace("com.example.app.R", "com.example.namespace.R")
+                            ?.replace("com.example.app.test.R", "com.example.testNamespace.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                }
+            }
+        }
+        val app = build.androidApplication()
 
-        // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-        val appClass =
-            project.getSubproject(":app").file("src/main/java/com/example/app/MyClass.java")
-        assertThat(appClass).exists()
-        TestFileUtils.searchAndReplace(appClass, "R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-            appClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
-        val testClass = project.getSubproject(":app")
-            .file("src/androidTest/java/com/example/app/test/MyTestClass.java")
-        assertThat(testClass).exists()
-        TestFileUtils.searchAndReplace(testClass, "com.example.app.R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-            testClass,
-            "com.example.app.test.R",
-            "com.example.testNamespace.R"
-        )
-        TestFileUtils.searchAndReplace(
-            testClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
-        project.execute(":app:assembleDebug", ":app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.namespace")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.namespace.test")
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.namespace")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.namespace.test")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/testNamespace/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testCustomEverything() {
-        project.getSubproject(":app").buildFile.appendText(
-                """
-                android.namespace "com.example.namespace"
-                android.testNamespace "com.example.testNamespace"
-                android.defaultConfig.applicationId "com.example.applicationId"
-                android.defaultConfig.testApplicationId "com.example.testApplicationId"
-            """)
+        val build = rule.build {
+            androidApplication {
+                android {
+                    namespace = "com.example.namespace"
+                    testNamespace = "com.example.testNamespace"
+                    defaultConfig {
+                        applicationId = "com.example.applicationId"
+                        testApplicationId = "com.example.testApplicationId"
+                    }
+                }
+                files {
+                    // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
+                    update("src/main/java/com/example/app/MyClass.java") {
+                        it?.replace("R", "com.example.namespace.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
+                        it?.replace("com.example.app.R", "com.example.namespace.R")
+                            ?.replace("com.example.app.test.R", "com.example.testNamespace.R")
+                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                            ?: error("unexpected missing file")
+                    }
+                }
+            }
+        }
 
-        // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-        val appClass = project.getSubproject(":app")
-            .file("src/main/java/com/example/app/MyClass.java")
-        assertThat(appClass).exists()
-        TestFileUtils.searchAndReplace(appClass, "R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-            appClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
-        val testClass = project.getSubproject(":app")
-            .file("src/androidTest/java/com/example/app/test/MyTestClass.java")
-        assertThat(testClass).exists()
-        TestFileUtils.searchAndReplace(testClass, "com.example.app.R", "com.example.namespace.R")
-        TestFileUtils.searchAndReplace(
-                testClass,
-                "com.example.app.test.R",
-                "com.example.testNamespace.R"
-        )
-        TestFileUtils.searchAndReplace(
-            testClass,
-            "com.example.app.BuildConfig",
-            "com.example.namespace.BuildConfig"
-        )
+        val app = build.androidApplication()
 
-        project.execute(":app:assembleDebug", "app:assembleAndroidTest")
-        assertThatApk(project.getSubproject(":app").getApk(DEBUG))
-            .hasApplicationId("com.example.applicationId")
-        assertThatApk(project.getSubproject(":app").getTestApk())
-            .hasApplicationId("com.example.testApplicationId")
+        build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
+
+        app.assertApk(DEBUG) {
+            hasApplicationId("com.example.applicationId")
+        }
+        app.assertApk(ANDROIDTEST_DEBUG) {
+            hasApplicationId("com.example.testApplicationId")
+        }
         assertThat(
-            JAVAC.getOutputDir(project.getSubproject(":app").buildDir)
+            JAVAC.getOutputDir(app.buildDir.toFile())
                 .resolve("debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes/com/example/testNamespace/BuildConfig.class")
         ).isFile()
     }
 
     @Test
     fun testErrorWhenTestNamespaceEqualsNamespace() {
-        project.getSubproject(":app").buildFile.appendText(
-            """
-                android.namespace "com.example.app"
-                android.testNamespace "com.example.app"
-            """)
+        val build = rule.build {
+            androidApplication {
+                android {
+                    namespace = "com.example.app"
+                    testNamespace = "com.example.app"
+                }
+            }
+        }
+
         // We don't expect an error if not building a test component
-        project.execute(":app:assembleDebug")
-        val result = project.executor().expectFailure().run(":app:assembleAndroidTest")
+        build.executor.run(":app:assembleDebug")
+        val result = build.executor.expectFailure().run(":app:assembleAndroidTest")
         ScannerSubject.assertThat(result.stderr).contains(
             "namespace and testNamespace have the same value (\"com.example.app\"), which is not allowed."
         )
-
     }
-
 }

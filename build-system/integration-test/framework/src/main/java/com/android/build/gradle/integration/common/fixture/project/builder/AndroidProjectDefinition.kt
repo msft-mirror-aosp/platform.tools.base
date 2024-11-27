@@ -31,6 +31,7 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
         const val DEFAULT_APP_PATH = ":app"
         const val DEFAULT_LIB_PATH = ":lib"
         const val DEFAULT_FEATURE_PATH = ":feature"
+        const val DEFAULT_TEST_PATH = ":test"
     }
 
     val android: ExtensionT
