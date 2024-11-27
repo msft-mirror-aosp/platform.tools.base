@@ -10,7 +10,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-private const val DEFAULT_ADB_HOST_PORT = 5037
+internal const val DEFAULT_ADB_HOST_PORT = 5037
 
 /**
  * A provider of [AdbChannel] instances ready for communication with an ADB host.

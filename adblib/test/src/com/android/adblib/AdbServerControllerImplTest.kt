@@ -499,6 +499,34 @@ class AdbServerControllerImplTest {
         assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
     }
 
+    @Test
+    fun testStartDoesNotSpecifyPortParamWhenUsingDefaultAdbPort(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val processRunner = FakeProcessRunner()
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow,
+                    processRunner = processRunner
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = DEFAULT_ADB_HOST_PORT,
+                isUnitTest = false
+            )
+        }
+
+        // Act
+        controller.start()
+
+        // Assert
+        assertTrue(controller.isStarted)
+        assertEquals(listOf(ADB_FILE_PATH.toString(), "start-server"), processRunner.lastCommand)
+    }
+
     private class FakeProcessRunner(private val delayByMs: Long = 0) :
         AdbServerControllerImpl.ProcessRunner {
 

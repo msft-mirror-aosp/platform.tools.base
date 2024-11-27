@@ -267,7 +267,11 @@ internal class AdbServerControllerImpl(
         }
 
         private fun getAdbLaunchCommandArgs(adbPort: Int): List<String> {
-            return listOf("-P", adbPort.toString(), "start-server")
+            return if (adbPort == DEFAULT_ADB_HOST_PORT) {
+                listOf("start-server")
+            } else {
+                listOf("-P", adbPort.toString(), "start-server")
+            }
         }
 
         private fun getAdbStopCommandArgs(): List<String> {
