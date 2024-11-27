@@ -41,11 +41,10 @@ class PluginTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             componentCallback = AppCallback::class.java
 
             files {
-                HelloWorldAndroid.setupJava(this)
                 add("src/main/assets/FileToTransform.txt", "initial content")
             }
         }
@@ -66,7 +65,7 @@ class PluginTest {
 
         build.executor.run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsFileWithContent("assets/FileToTransform.txt", "transformed content")
         }
     }

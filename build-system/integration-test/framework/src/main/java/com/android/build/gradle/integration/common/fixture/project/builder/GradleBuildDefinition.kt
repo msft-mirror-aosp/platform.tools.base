@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.fixture.project.GenericProjec
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.io.File
 import java.nio.file.Path
@@ -60,7 +61,26 @@ interface GradleBuildDefinition {
      * Configures a subProject with the Android Application plugin, creating it if needed.
      */
     fun androidApplication(
-        path: String,
+        path: String = ":app",
+        createManifest: Boolean = true,
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension>
+
+    /**
+     * Configures a subProject with the Android Application plugin, creating it if needed,
+     * and setting up some default basic java content
+     */
+    fun androidJavaApplication(
+        path: String = ":app",
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension>
+
+    /**
+     * Configures a subProject with the Android Application plugin, creating it if needed,
+     * and setting up some default basic java content
+     */
+    fun androidKotlinApplication(
+        path: String = ":app",
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension>
 
@@ -68,7 +88,7 @@ interface GradleBuildDefinition {
      * Configures a subProject with the Android Library plugin, creating it if needed.
      */
     fun androidLibrary(
-        path: String,
+        path: String = ":lib",
         action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
     ): AndroidProjectDefinition<LibraryExtension>
 
@@ -157,19 +177,64 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun androidApplication(
         path: String,
+        createManifest: Boolean,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
 
+        var justCreated = false
         val project = subProjects.computeIfAbsent(path) {
+            justCreated = true
             AndroidApplicationDefinitionImpl(it)
         }
 
         project as? AndroidApplicationDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Application")
+
+        // create the manifest first, so that the action can update it if needed
+        if (justCreated && createManifest) {
+            project.files.add(
+                "src/main/AndroidManifest.xml",
+                //language=XML
+                """
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                             xmlns:dist="http://schemas.android.com/apk/distribution">
+                        <application />
+                    </manifest>""".trimMargin()
+            )
+        }
+
         action(project)
 
         return project
+    }
+
+    override fun androidJavaApplication(
+        path: String,
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension> = androidApplication(
+        path,
+        createManifest = false,
+        action
+    ).also {
+        HelloWorldAndroid.setupJava(it.files)
+    }
+
+    override fun androidKotlinApplication(
+        path: String,
+        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
+    ): AndroidProjectDefinition<ApplicationExtension> {
+        // kotlin plugin must be applied first (or you cannot access the kotlin {} block,
+        // so order is important here.
+        val app = androidApplication(path, createManifest = false) {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+        }
+        action(app)
+        // always do this last as it needs the final namespace value
+        HelloWorldAndroid.setupKotlin(app.files)
+        HelloWorldAndroid.setupKotlinDependencies(app)
+
+        return app
     }
 
     override fun androidLibrary(

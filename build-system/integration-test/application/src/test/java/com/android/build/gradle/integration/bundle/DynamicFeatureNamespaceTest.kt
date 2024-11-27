@@ -21,7 +21,6 @@ import com.android.SdkConstants.ATTR_PACKAGE
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth
@@ -33,15 +32,13 @@ class DynamicFeatureNamespaceTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidJavaApplication {
             android {
                 defaultConfig {
                     applicationId = "com.example.test"
                 }
                 dynamicFeatures.add(":feature")
             }
-
-            HelloWorldAndroid.setupJava(files)
         }
         androidFeature(":feature") {
             android {
@@ -86,7 +83,7 @@ class DynamicFeatureNamespaceTest {
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true)
             .run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             hasApplicationId("com.example.test")
         }
     }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.fixture
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicBuilds
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType.KTS
 import org.junit.Rule
@@ -30,11 +31,7 @@ class KtsTest {
     val rule = GradleRule.configure()
         .withCreationOptions {
             buildFileType = KTS
-        }.from {
-            androidApplication(":app") {
-                HelloWorldAndroid.setupJava(files)
-            }
-        }
+        }.from(BasicBuilds.HELLO_WORLD_APP)
 
     @Test
     fun test() {

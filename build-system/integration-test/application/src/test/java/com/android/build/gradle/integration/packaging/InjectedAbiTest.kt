@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector.C
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject
@@ -43,9 +42,8 @@ class InjectedAbiTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidJavaApplication {
             files {
-                HelloWorldAndroid.setupJava(this)
                 createOriginalSoFile("x86", "libapp.so", "app:abcd")
                 createOriginalSoFile("arm64-v8a", "libapp.so", "app:abcd")
                 createOriginalSoFile("armeabi-v7a", "libapp.so", "app:abcd")
@@ -64,7 +62,7 @@ class InjectedAbiTest {
         val build = rule.build {
             enableSplits(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a"))
         }
-        val project = build.androidApplication(":app")
+        val project = build.androidApplication()
 
         // Run the first build with a target ABI, check that only the APK for that ABI is generated
         // and that APK only contains native libraries for target ABI
@@ -143,7 +141,7 @@ class InjectedAbiTest {
     @Test
     fun testInjectedAbiChange_WithoutSplits() {
         val build = rule.build
-        val project = build.androidApplication(":app")
+        val project = build.androidApplication()
 
         // Run the first build with a target ABI, check that no split APKs are generated
         // and main APK only contains native libraries for target ABI
@@ -186,7 +184,7 @@ class InjectedAbiTest {
     @Test
     fun testMissingSoFiles_WithoutSplits() {
         val build = rule.build
-        val project = build.androidApplication(":app")
+        val project = build.androidApplication()
 
         // Build first with all .so files present. Inject x86_64 first, followed by x86
         val result1 = build.executor
@@ -265,7 +263,7 @@ class InjectedAbiTest {
         val build = rule.build {
             enableSplits(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a"))
         }
-        val project = build.androidApplication(":app")
+        val project = build.androidApplication()
 
         // Build first with all .so files present. Inject x86_64 first, followed by x86
         val result1 = build.executor
@@ -314,7 +312,7 @@ class InjectedAbiTest {
     @Test
     fun testPackagingTargetAbiCanBeDisabled() {
         val build = rule.build
-        val project = build.androidApplication(":app")
+        val project = build.androidApplication()
 
         // Run the build with target ABI but set BUILD_ONLY_TARGET_ABI to false,
         // check that APK contains native libraries for multiple ABIs
@@ -366,7 +364,7 @@ class InjectedAbiTest {
     }
 
     private fun GradleBuildDefinition.enableSplits(abis: List<String>) {
-        androidApplication(":app") {
+        androidApplication {
             android {
                 splits {
                     abi {

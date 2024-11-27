@@ -32,8 +32,7 @@ class MissingDependencyModelTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
-            HelloWorldAndroid.setupJava(files)
+        androidApplication {
             dependencies {
                 implementation("foo:bar:1.1")
             }

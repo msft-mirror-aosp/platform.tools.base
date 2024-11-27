@@ -128,8 +128,7 @@ class GradleBuildDefinitionTest {
     @Test
     fun testPlugins() {
         val folder = writeBuild {
-            androidApplication(":app") {
-            }
+            androidApplication { }
             genericProject(":library") {
                 applyPlugin(PluginType.JAVA_LIBRARY)
             }

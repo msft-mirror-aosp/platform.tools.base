@@ -16,17 +16,9 @@
 
 package com.android.build.gradle.integration.dependencies
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.TestInputsGenerator
-import com.android.tools.profgen.Apk
 import org.junit.Rule
 import org.junit.Test
 
@@ -37,46 +29,45 @@ class AndroidTestClasspathTest {
         .withMavenRepository {
             jar("com.test:lib:1.0").setEmptyClasses("com/test/MyClass")
         }.from {
-        androidApplication(":app") {
-            android {
-                namespace = "com.test.app"
-            }
+            androidApplication {
+                android {
+                    namespace = "com.test.app"
+                }
 
-            dependencies {
-                implementation("com.test:lib:1.0")
-                implementation(project(":lib"))
-                androidTestImplementation("com.test:lib:1.0")
-            }
+                dependencies {
+                    implementation("com.test:lib:1.0")
+                    implementation(project(":lib"))
+                    androidTestImplementation("com.test:lib:1.0")
+                }
 
-            files {
-                HelloWorldAndroid.setupJava(this)
-                add("src/androidTest/java/test/DataTest.java",
-                    // language=java
-                    """
-                        package test;
-                        public class DataTest extends Data {}
-                    """.trimIndent())
-            }
+                files {
+                    add("src/androidTest/java/test/DataTest.java",
+                        // language=java
+                        """
+                            package test;
+                            public class DataTest extends Data {}
+                        """.trimIndent())
+                }
 
+            }
+            androidLibrary("lib") {
+                android {
+                    namespace = "com.test.lib"
+                }
+
+                group = "com.test"
+                version = "99.0"
+
+                files {
+                    add("src/main/java/test/Data.java",
+                        // language=java
+                        """
+                            package test;
+                            public class Data {}
+                        """.trimIndent())
+                }
+            }
         }
-        androidLibrary("lib") {
-            android {
-                namespace = "com.test.lib"
-            }
-
-            group = "com.test"
-            version = "99.0"
-
-            files {
-                add("src/main/java/test/Data.java",
-                    // language=java
-                    """
-                        package test;
-                        public class Data {}
-                    """.trimIndent())
-            }
-        }
-    }
 
     @Test
     fun testAndroidTestClasspathContainsProjectDep() {
@@ -90,7 +81,7 @@ class AndroidTestClasspathTest {
             )
         }
 
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
         app.reconfigure(buildFileOnly = true) {
             dependencies {
                 androidTestImplementation(project(":lib"))

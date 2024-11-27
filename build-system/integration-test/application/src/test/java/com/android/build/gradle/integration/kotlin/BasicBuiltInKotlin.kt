@@ -27,9 +27,7 @@ class BasicBuiltInKotlin {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-
+        androidKotlinApplication {
             android {
                 namespace = "com.foo.application"
             }
@@ -40,9 +38,6 @@ class BasicBuiltInKotlin {
                     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
                 }
             }
-
-            HelloWorldAndroid.setupKotlin(files)
-            HelloWorldAndroid.setupKotlinDependencies(this)
         }
     }
 
@@ -50,7 +45,7 @@ class BasicBuiltInKotlin {
     fun basicTest() {
         val build = rule.build
         build.executor.run(":app:assembleDebug")
-        val project = rule.build.androidApplication(":app")
+        val project = rule.build.androidApplication()
         project.assertApk(ApkSelector.DEBUG) {
             hasClass("Lcom/foo/application/HelloWorld;")
         }
