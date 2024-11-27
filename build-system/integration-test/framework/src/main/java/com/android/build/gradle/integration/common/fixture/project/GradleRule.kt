@@ -45,6 +45,8 @@ import com.android.build.gradle.integration.common.fixture.testprojects.BuildFil
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.sdklib.internal.project.ProjectProperties
+import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.MavenRepoGenerator.Library
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
 import org.gradle.tooling.GradleConnectionException
@@ -67,6 +69,7 @@ class GradleRule internal constructor(
     val name: String,
     private val gradleBuild: GradleBuildDefinitionImpl,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder,
+    private val externalLibraries: List<Library>
 ): TestRule {
     private var status = Status.PENDING
 
@@ -180,7 +183,16 @@ class GradleRule internal constructor(
         FileUtils.deleteRecursivelyIfExists(projectDir)
         FileUtils.mkdirs(projectDir)
 
-        val localRepositories = BuildSystem.get().localRepositories
+        val localRepositories = mutableListOf<Path>().also {
+            it += BuildSystem.get().localRepositories
+        }
+
+        if (externalLibraries.isNotEmpty()) {
+            val repoPath = location.projectDir.toPath().resolve("_maven_repo")
+            MavenRepoGenerator(externalLibraries).generate(repoPath)
+
+            localRepositories.add(repoPath)
+        }
 
         gradleBuild.write(projectDir.toPath(), localRepositories, buildWriter)
 
@@ -346,7 +358,6 @@ class GradleRule internal constructor(
 
         localProp.save()
     }
-
 
     override fun apply(
         base: Statement,

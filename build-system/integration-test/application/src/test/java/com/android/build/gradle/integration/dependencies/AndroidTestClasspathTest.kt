@@ -19,90 +19,94 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
+import com.android.tools.profgen.Apk
 import org.junit.Rule
 import org.junit.Test
 
 class AndroidTestClasspathTest {
 
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder().fromTestApp(
-        MultiModuleTestProject.builder()
-            .subproject("app", MinimalSubProject.app("com.test.app"))
-            .subproject("lib", MinimalSubProject.lib("com.test.lib"))
-            .build()
-    ).withAdditionalMavenRepo(
-        MavenRepoGenerator(
-            listOf(
-                MavenRepoGenerator.Library(
-                    "com.test:lib:1.0",
-                    TestInputsGenerator.jarWithEmptyClasses(listOf("com/test/MyClass"))
-                )
-            )
-        )
-    ).create()
-
-    @Test
-    fun testAndroidTestClasspathContainsProjectDep() {
-        val appBuildFile = project.getSubproject("app").buildFile
-        appBuildFile.appendText(
-            """
-            dependencies {
-                implementation "com.test:lib:1.0"
-                implementation project(":lib")
-                androidTestImplementation "com.test:lib:1.0"
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            jar("com.test:lib:1.0").setEmptyClasses("com/test/MyClass")
+        }.from {
+        androidApplication(":app") {
+            android {
+                namespace = "com.test.app"
             }
-        """.trimIndent()
-        )
 
-        project.getSubproject("lib").buildFile.appendText(
-            """
+            dependencies {
+                implementation("com.test:lib:1.0")
+                implementation(project(":lib"))
+                androidTestImplementation("com.test:lib:1.0")
+            }
+
+            files {
+                HelloWorldAndroid.setupJava(this)
+                add("src/androidTest/java/test/DataTest.java",
+                    // language=java
+                    """
+                        package test;
+                        public class DataTest extends Data {}
+                    """.trimIndent())
+            }
+
+        }
+        androidLibrary("lib") {
+            android {
+                namespace = "com.test.lib"
+            }
 
             group = "com.test"
             version = "99.0"
-        """.trimIndent()
-        )
 
-        project.getSubproject("lib").mainSrcDir.resolve("test/Data.java").also {
-            it.parentFile.mkdirs()
-            it.writeText("package test; public class Data {}")
-        }
-        with(project.getSubproject("app")) {
-            projectDir.resolve("src/androidTest/java/test/DataTest.java").also {
-                it.parentFile.mkdirs()
-                it.writeText("package test; public class DataTest extends Data {}")
-            }
-
-            val failure =
-                    executor().expectFailure().run("assembleDebug", "assembleDebugAndroidTest")
-            failure.stderr.use {
-                ScannerSubject.assertThat(it).contains(
-                        "Unable to align dependencies in configurations 'debugRuntimeClasspath' and 'debugAndroidTestRuntimeClasspath', as both require 'project :lib'.\n" +
-                                "  [Recommended action] Add the following dependency to ${buildFile.absolutePath}: \n" +
-                                "  androidTestImplementation(project(\":lib\"))"
-                )
-            }
-            appBuildFile.appendText(
+            files {
+                add("src/main/java/test/Data.java",
+                    // language=java
                     """
-                            dependencies {
-                                    androidTestImplementation project(":lib")
-                            }
-                            """
-            )
-            executor().run("assembleDebug", "assembleDebugAndroidTest")
+                        package test;
+                        public class Data {}
+                    """.trimIndent())
+            }
+        }
+    }
 
-            getApk(GradleTestProject.ApkType.DEBUG).use {
-                assertThatApk(it).containsClass("Ltest/Data;")
+    @Test
+    fun testAndroidTestClasspathContainsProjectDep() {
+        val build = rule.build
+
+        val failure = build.executor.expectFailure().run(":app:assembleDebugAndroidTest")
+
+        failure.stderr.use {
+            ScannerSubject.assertThat(it).contains(
+                "Unable to align dependencies in configurations 'debugRuntimeClasspath' and 'debugAndroidTestRuntimeClasspath', as both require 'project :lib'.\n"
+            )
+        }
+
+        val app = build.androidApplication(":app")
+        app.reconfigure(buildFileOnly = true) {
+            dependencies {
+                androidTestImplementation(project(":lib"))
             }
-            getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG).use {
-                assertThatApk(it).containsClass("Ltest/DataTest;")
-                assertThatApk(it).doesNotContainClass("Ltest/Data;")
-                assertThatApk(it).doesNotContainClass("Lcom/test/MyClass;")
-            }
+        }
+
+        build.executor.run(":app:assembleDebug", ":app:assembleDebugAndroidTest")
+
+        app.assertApk(ApkSelector.DEBUG) {
+            containsClass("Ltest/Data;")
+        }
+
+        app.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            containsClass("Ltest/DataTest;")
+            doesNotContainClass("Ltest/Data;")
+            doesNotContainClass("Lcom/test/MyClass;")
         }
     }
 }
