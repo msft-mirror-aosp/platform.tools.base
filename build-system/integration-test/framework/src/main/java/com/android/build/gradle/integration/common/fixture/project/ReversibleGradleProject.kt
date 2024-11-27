@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
@@ -25,9 +25,9 @@ import java.nio.file.Path
 /**
  * Base Class for all reversible projects
  */
-abstract class BaseReversibleGradleProject<ProjectT : BaseGradleProject<ProjectDefinitionT>, ProjectDefinitionT : BaseGradleProjectDefinition>(
+abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     protected open val parentProject: ProjectT,
-) : BaseGradleProject<ProjectDefinitionT> {
+) : GradleProject<ProjectDefinitionT> {
 
     override val location: Path
         get() = parentProject.location

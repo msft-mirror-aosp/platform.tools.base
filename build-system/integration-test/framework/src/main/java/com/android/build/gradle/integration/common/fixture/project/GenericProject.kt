@@ -17,8 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -36,7 +36,7 @@ import java.nio.file.Path
  *
  * This class represents non Android projects that don't have their own custom interfaces
  */
-interface GenericProjectDefinition: BaseGradleProjectDefinition {
+interface GenericProjectDefinition: GradleProjectDefinition {
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
 }
@@ -44,7 +44,7 @@ interface GenericProjectDefinition: BaseGradleProjectDefinition {
 /**
  * Default implementation for [GenericProjectDefinition]
  */
-internal open class GenericProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
+internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDefinitionImpl(path),
     GenericProjectDefinition {
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
@@ -74,7 +74,7 @@ internal open class GenericProjectDefinitionImpl(path: String): BaseGradleProjec
  * This class represents non Android projects that don't have their own custom interfaces
  *
  */
-interface GenericProject: BaseGradleProject<GenericProjectDefinition> {
+interface GenericProject: GradleProject<GenericProjectDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
@@ -87,7 +87,7 @@ internal class GenericProjectImpl(
     projectDefinition: GenericProjectDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<GenericProjectDefinition>(
+) : GradleProjectImpl<GenericProjectDefinition>(
     location,
     projectDefinition,
     buildWriter,
@@ -112,6 +112,6 @@ internal class GenericProjectImpl(
 internal open class ReversibleGenericProject(
     parentProject: GenericProject,
     projectModification: TemporaryProjectModification,
-): BaseReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
+): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 }

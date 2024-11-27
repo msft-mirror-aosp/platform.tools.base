@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import java.nio.file.Path
 
 /**
@@ -26,10 +26,10 @@ import java.nio.file.Path
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
-internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : BaseGradleProjectDefinition>(
+internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
-) : BaseReversibleGradleProject<ProjectT, ProjectDefinitionT>(
+) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
     parentProject,
 ), AndroidProject<ProjectDefinitionT> {
 

@@ -23,12 +23,11 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-
 /**
  * Base interface for all project definition, including but not limited to
  * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
-interface BaseGradleProjectDefinition {
+interface GradleProjectDefinition {
     val path: String
 
     /**
@@ -69,9 +68,9 @@ interface BaseGradleProjectDefinition {
 /**
  * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
  */
-internal abstract class BaseGradleProjectDefinitionImpl(
+internal abstract class GradleProjectDefinitionImpl(
     override val path: String
-): BaseGradleProjectDefinition {
+): GradleProjectDefinition {
     data class AppliedPlugin(
         val plugin: PluginType,
         val version: String

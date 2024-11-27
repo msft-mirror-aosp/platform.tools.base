@@ -105,7 +105,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
     internal val rootProject = GenericProjectDefinitionImpl(":")
-    internal val subProjects = mutableMapOf<String, BaseGradleProjectDefinitionImpl>()
+    internal val subProjects = mutableMapOf<String, GradleProjectDefinitionImpl>()
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
@@ -235,7 +235,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     }
 
     private fun errorOnWrongType(
-        project: BaseGradleProjectDefinition,
+        project: GradleProjectDefinition,
         path: String,
         expectedType: String
     ): Nothing {

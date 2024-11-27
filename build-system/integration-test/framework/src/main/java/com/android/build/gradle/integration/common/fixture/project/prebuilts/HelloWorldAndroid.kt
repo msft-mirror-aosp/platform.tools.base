@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 
 /**
@@ -178,7 +178,7 @@ class HelloWorldAndroid {
             }
         }
 
-        fun setupKotlinDependencies(project: BaseGradleProjectDefinition) {
+        fun setupKotlinDependencies(project: GradleProjectDefinition) {
             project.dependencies {
                 api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
                 androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
@@ -186,13 +186,13 @@ class HelloWorldAndroid {
             }
         }
 
-        fun setupMainKotlinDependencies(project: BaseGradleProjectDefinition) {
+        fun setupMainKotlinDependencies(project: GradleProjectDefinition) {
             project.dependencies {
                 api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
             }
         }
 
-        fun setupTestKotlinDependencies(project: BaseGradleProjectDefinition) {
+        fun setupTestKotlinDependencies(project: GradleProjectDefinition) {
             project.dependencies {
                 androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
                 testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")

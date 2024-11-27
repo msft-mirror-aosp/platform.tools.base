@@ -19,10 +19,10 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Apk
 import java.nio.file.Path
@@ -32,7 +32,7 @@ import kotlin.io.path.name
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
  */
-interface AndroidProject<ProjectDefinitionT : BaseGradleProjectDefinition> : BaseGradleProject<ProjectDefinitionT> {
+interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition> : GradleProject<ProjectDefinitionT> {
 
     /**
      * The namespace of the project.
@@ -81,13 +81,13 @@ interface GeneratesApk {
 /**
  * Default implementation of [AndroidProject]
  */
-internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjectDefinition>(
+internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     location: Path,
     projectDefinition: ProjectDefinitionT,
     final override val namespace: String,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<ProjectDefinitionT>(
+) : GradleProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
     buildWriter,

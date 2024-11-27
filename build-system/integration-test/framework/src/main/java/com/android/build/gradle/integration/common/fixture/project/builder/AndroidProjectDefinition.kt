@@ -26,7 +26,7 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
-interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
+interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     val android: ExtensionT
     fun android(action: ExtensionT.() -> Unit)
 
@@ -43,7 +43,7 @@ interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
  */
 internal abstract class AndroidProjectDefinitionImpl<T>(
     path: String
-): BaseGradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
+): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
     override val files: AndroidProjectFiles = AndroidProjectFilesImpl(this::namespace)
     override var componentCallback: Class<out AndroidComponentCallback>? = null

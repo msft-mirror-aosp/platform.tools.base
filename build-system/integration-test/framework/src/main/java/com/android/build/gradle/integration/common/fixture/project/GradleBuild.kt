@@ -85,14 +85,14 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
     /**
      * Returns a project from the path.
      */
-    abstract fun subProject(path: String): BaseGradleProject<*>
+    abstract fun subProject(path: String): GradleProject<*>
 
     /**
      * a more complete list of projects to validate project types. This is separate
      * for the case of [ReversibleGradleBuild] where the subProject list is a clone of the
      * parent build.
      */
-    internal abstract val subProjectsForValidation: Map<String, BaseGradleProject<*>>
+    internal abstract val subProjectsForValidation: Map<String, GradleProject<*>>
 
     override fun genericProject(path: String): GenericProject {
         val project = subProject(path)
@@ -177,13 +177,13 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
  */
 internal class GradleBuildImpl(
     val directory: Path,
-    private val subProjects: Map<String, BaseGradleProject<*>> = mapOf(),
+    private val subProjects: Map<String, GradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
 ): BaseGradleBuildImpl() {
 
-    override fun subProject(path: String): BaseGradleProject<*> {
+    override fun subProject(path: String): GradleProject<*> {
         return subProjects[path]
             ?: throw RuntimeException(
                 """
@@ -196,7 +196,7 @@ internal class GradleBuildImpl(
     /**
      * For this implementation, both lists are the same.
      */
-    override val subProjectsForValidation: Map<String, BaseGradleProject<*>>
+    override val subProjectsForValidation: Map<String, GradleProject<*>>
         get() = subProjects
 
     override fun includedBuild(name: String): GradleBuild {

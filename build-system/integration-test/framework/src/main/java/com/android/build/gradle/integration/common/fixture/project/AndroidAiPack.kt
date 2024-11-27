@@ -20,8 +20,8 @@ import com.android.build.api.dsl.AiPackExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -37,7 +37,7 @@ import java.nio.file.Path
 /**
  * Specialized interface for [GenericProjectDefinition]
  */
-interface AiPackDefinition: BaseGradleProjectDefinition {
+interface AiPackDefinition: GradleProjectDefinition {
     val aiPack: AiPackExtension
     fun aiPack(action: AiPackExtension.() -> Unit)
 
@@ -48,7 +48,7 @@ interface AiPackDefinition: BaseGradleProjectDefinition {
 /**
  * Implementation of [AiPackDefinition]
  */
-internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefinitionImpl(path),
+internal class AndroidAiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
     AiPackDefinition {
 
     init {
@@ -85,7 +85,7 @@ internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefi
 /**
  * Specialized interface for AI Pack [AndroidProject] to use in the test
  */
-interface AndroidAiPackProject: BaseGradleProject<AiPackDefinition> {
+interface AndroidAiPackProject: GradleProject<AiPackDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
@@ -98,7 +98,7 @@ internal class AndroidAiPackImpl(
     projectDefinition: AiPackDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<AiPackDefinition>(location, projectDefinition,buildWriter, parentBuild),
+) : GradleProjectImpl<AiPackDefinition>(location, projectDefinition,buildWriter, parentBuild),
     AndroidAiPackProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
@@ -113,7 +113,7 @@ internal class AndroidAiPackImpl(
 internal class ReversibleAndroidAiPackProject(
     parentProject: AndroidAiPackProject,
     projectModification: TemporaryProjectModification
-) : BaseReversibleGradleProject<AndroidAiPackProject, AiPackDefinition>(
+) : ReversibleGradleProject<AndroidAiPackProject, AiPackDefinition>(
     parentProject,
 ), AndroidAiPackProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
