@@ -152,6 +152,7 @@ import java.util.EnumSet
 import kotlin.math.max
 import org.jetbrains.kotlin.analysis.decompiled.light.classes.KtLightClassForDecompiledDeclaration
 import org.jetbrains.kotlin.asJava.elements.KtLightElementBase
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
@@ -166,6 +167,7 @@ import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UExpressionList
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UForEachExpression
 import org.jetbrains.uast.UIfExpression
@@ -1043,6 +1045,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       USwitchExpression::class.java,
       UCallableReferenceExpression::class.java,
       UArrayAccessExpression::class.java,
+      UAnnotation::class.java,
     )
   }
 
@@ -1289,6 +1292,53 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           }
         }
       context.report(incident, map)
+    }
+
+    override fun visitAnnotation(node: UAnnotation) {
+      if (node.qualifiedName.isInjectAnnotationName()) {
+        val anchor = node.getParentOfType<UAnnotated>()
+        if (anchor != null) {
+          checkInjection(anchor)
+        }
+      }
+    }
+
+    private fun checkInjection(element: UElement?) {
+      element ?: return
+      if (element is UMethod) {
+        val node = element
+        for (parameter in node.uastParameters) {
+          checkInjectionType(parameter, parameter.type)
+        }
+        if (element.sourcePsi is KtProperty) {
+          checkInjectionType(element, element.returnType)
+        }
+      } else if (element is UField) {
+        checkInjectionType(element, element.type)
+      }
+    }
+
+    private fun checkInjectionType(element: UElement, type: PsiType?) {
+      val classType = type as? PsiClassType ?: return
+      val cls = classType.resolve() ?: return
+      val owner = cls.qualifiedName ?: return
+      if (apiDatabase?.containsClass(owner) == false) {
+        // See if it's an injected method
+        for (constructor in cls.constructors) {
+          @Suppress("ExternalAnnotations")
+          if (constructor.annotations.any { it.qualifiedName.isInjectAnnotationName() }) {
+            for (injectedParameter in constructor.parameterList.parameters) {
+              val type = injectedParameter.type as? PsiClassType ?: continue
+              // report the error back on the original call site referencing this injected
+              // parameter
+              // (which could be in bytecode)
+              checkClassReference(element, type)
+            }
+          }
+        }
+      } else {
+        checkClassReference(element, classType)
+      }
     }
 
     override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
@@ -1598,33 +1648,6 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
               containingClass.qualifiedName,
               desugaring = Desugaring.INTERFACE_METHODS,
             )
-          }
-        }
-      }
-
-      // noinspection ExternalAnnotations
-      if (
-        node.isConstructor && node.uAnnotations.any { it.qualifiedName.isInjectAnnotationName() }
-      ) {
-        for (parameter in node.uastParameters) {
-          val type = parameter.type as? PsiClassType ?: continue
-          val cls = type.resolve() ?: continue
-          val owner = cls.qualifiedName ?: continue
-          if (apiDatabase?.containsClass(owner) == false) {
-            // See if it's an injected method
-            for (constructor in cls.constructors) {
-              if (constructor.annotations.any { it.qualifiedName.isInjectAnnotationName() }) {
-                for (injectedParameter in constructor.parameterList.parameters) {
-                  val type = injectedParameter.type as? PsiClassType ?: continue
-                  // report the error back on the original call site referencing this injected
-                  // parameter
-                  // (which could be in bytecode)
-                  checkClassReference(parameter, type)
-                }
-              }
-            }
-          } else {
-            checkClassReference(parameter, type)
           }
         }
       }
