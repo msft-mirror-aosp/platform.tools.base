@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
@@ -103,6 +104,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     private static ClientManager sClientManager;
     private static IDeviceManagerFactory sIDeviceManagerFactory;
     private static IDeviceUsageTracker iDeviceUsageTracker;
+    private static AdbDelegateUsageTracker adbDelegateUsageTracker;
     private static Map<String, String> sAdbEnvVars; // env vars to set while launching adb
 
     /** Full path to adb. */
@@ -175,6 +177,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
         sInitialized = true;
         sIDeviceManagerFactory = options.iDeviceManagerFactory;
         iDeviceUsageTracker = options.iDeviceUsageTracker;
+        adbDelegateUsageTracker = options.adbDelegateUsageTracker;
         sClientSupport = options.clientSupport;
         sClientManager = options.clientManager;
         if (sClientManager != null) {
@@ -388,7 +391,9 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
      */
     @Nullable
     public AndroidDebugBridge createBridge() {
-        return createBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        return logCall(
+                AdbDelegateUsageTracker.Method.CREATE_BRIDGE_1,
+                () -> createBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
     }
 
     /**
@@ -404,39 +409,45 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
      */
     @Nullable
     public AndroidDebugBridge createBridge(long timeout, @NonNull TimeUnit unit) {
-        AndroidDebugBridge localThis;
-        synchronized (sLock) {
-            if (sThis != null) {
-                return sThis;
-            }
+        return logCall(
+                AdbDelegateUsageTracker.Method.CREATE_BRIDGE_2,
+                () -> {
+                    AndroidDebugBridge localThis;
+                    synchronized (sLock) {
+                        if (sThis != null) {
+                            return sThis;
+                        }
 
-            try {
-                localThis = new AndroidDebugBridge();
-                if (!start(localThis, timeout, unit)) {
-                    // We return without notifying listeners, since there were no changes
-                    return null;
-                }
-            } catch (InvalidParameterException e) {
-                // We return without notifying listeners, since there were no changes
-                return null;
-            }
+                        try {
+                            localThis = new AndroidDebugBridge();
+                            if (!start(localThis, timeout, unit)) {
+                                // We return without notifying listeners, since there were no changes
+                                return null;
+                            }
+                        }
+                        catch (InvalidParameterException e) {
+                            // We return without notifying listeners, since there were no changes
+                            return null;
+                        }
 
-            // Success, store static instance
-            sThis = localThis;
-        }
+                        // Success, store static instance
+                        sThis = localThis;
+                    }
 
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(localThis);
-            } catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
+                    // Notify the listeners of the change (outside of the lock to decrease the likelihood
+                    // of deadlocks)
+                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
+                        // we attempt to catch any exception so that a bad listener doesn't kill our thread
+                        try {
+                            listener.bridgeChanged(localThis);
+                        }
+                        catch (Throwable t) {
+                            Log.e(DDMS, t);
+                        }
+                    }
 
-        return localThis;
+                    return localThis;
+                });
     }
 
     /**
@@ -456,7 +467,14 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     @Deprecated
     @Nullable
     public AndroidDebugBridge createBridge(@NonNull String osLocation, boolean forceNewBridge) {
-        return createBridge(osLocation, forceNewBridge, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        return logCall(
+                AdbDelegateUsageTracker.Method.CREATE_BRIDGE_3,
+                () -> {
+                    return createBridge(osLocation,
+                                        forceNewBridge,
+                                        Long.MAX_VALUE,
+                                        TimeUnit.MILLISECONDS);
+                });
     }
 
     /**
@@ -479,58 +497,65 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
             boolean forceNewBridge,
             long timeout,
             @NonNull TimeUnit unit) {
-        AndroidDebugBridge localThis;
-        synchronized (sLock) {
-            TimeoutRemainder rem = new TimeoutRemainder(timeout, unit);
-            if (!sUnitTestMode) {
-                if (sThis != null) {
-                    if (mAdbOsLocation != null
-                            && mAdbOsLocation.equals(osLocation)
-                            && !forceNewBridge) {
-                        // We return without notifying listeners, since there were no changes
-                        return sThis;
-                    } else {
-                        // stop the current server
-                        if (!stop(rem.getRemainingNanos(), TimeUnit.NANOSECONDS)) {
-                            // We return without notifying listeners, since there were no changes
-                            return null;
+        return logCall(
+                AdbDelegateUsageTracker.Method.CREATE_BRIDGE_4,
+                () -> {
+                    AndroidDebugBridge localThis;
+                    synchronized (sLock) {
+                        TimeoutRemainder rem = new TimeoutRemainder(timeout, unit);
+                        if (!sUnitTestMode) {
+                            if (sThis != null) {
+                                if (mAdbOsLocation != null
+                                    && mAdbOsLocation.equals(osLocation)
+                                    && !forceNewBridge) {
+                                    // We return without notifying listeners, since there were no changes
+                                    return sThis;
+                                }
+                                else {
+                                    // stop the current server
+                                    if (!stop(rem.getRemainingNanos(), TimeUnit.NANOSECONDS)) {
+                                        // We return without notifying listeners, since there were no changes
+                                        return null;
+                                    }
+                                }
+
+                                // We are successfully stopped. We need to notify listeners in all code paths
+                                // past this point.
+                                sThis = null;
+                            }
+                        }
+
+                        try {
+                            localThis = new AndroidDebugBridge();
+                            initOsLocationAndCheckVersion(osLocation);
+                            if (!start(localThis, rem.getRemainingNanos(), TimeUnit.NANOSECONDS)) {
+                                // Note: Don't return here, as we want to notify listeners
+                                localThis = null;
+                            }
+                        }
+                        catch (InvalidParameterException e) {
+                            // Note: Don't return here, as we want to notify listeners
+                            localThis = null;
+                        }
+
+                        // Success, store static instance
+                        sThis = localThis;
+                    }
+
+                    // Notify the listeners of the change (outside of the lock to decrease the likelihood
+                    // of deadlocks)
+                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
+                        // we attempt to catch any exception so that a bad listener doesn't kill our thread
+                        try {
+                            listener.bridgeChanged(localThis);
+                        }
+                        catch (Throwable t) {
+                            Log.e(DDMS, t);
                         }
                     }
 
-                    // We are successfully stopped. We need to notify listeners in all code paths
-                    // past this point.
-                    sThis = null;
-                }
-            }
-
-            try {
-                localThis = new AndroidDebugBridge();
-                initOsLocationAndCheckVersion(osLocation);
-                if (!start(localThis, rem.getRemainingNanos(), TimeUnit.NANOSECONDS)) {
-                    // Note: Don't return here, as we want to notify listeners
-                    localThis = null;
-                }
-            } catch (InvalidParameterException e) {
-                // Note: Don't return here, as we want to notify listeners
-                localThis = null;
-            }
-
-            // Success, store static instance
-            sThis = localThis;
-        }
-
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(localThis);
-            } catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
-
-        return localThis;
+                    return localThis;
+                });
     }
 
     /** Returns the current debug bridge. Can be <code>null</code> if none were created. */
@@ -1624,6 +1649,24 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                     Log.e(DDMS, t);
                 }
             }
+        }
+    }
+
+    private <R> R logCall(AdbDelegateUsageTracker.Method method, Supplier<R> block) {
+        R result;
+        try {
+            result = block.get();
+            maybeLogUsage(method, false);
+            return result;
+        } catch (Throwable t) {
+            maybeLogUsage(method, true);
+            throw t;
+        }
+    }
+
+    private void maybeLogUsage(AdbDelegateUsageTracker.Method method, boolean isException) {
+        if (adbDelegateUsageTracker != null) {
+            adbDelegateUsageTracker.logUsage(method, isException);
         }
     }
 }
