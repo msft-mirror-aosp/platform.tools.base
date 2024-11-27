@@ -244,6 +244,7 @@ def kotlin_library(
         name = name,
         srcs = srcs,
         jar = jar,
+        jvm_target = jvm_target,
         deps = deps,
         exports = exports,
         compress_resources = compress_resources,
@@ -309,6 +310,16 @@ def _kotlin_library_impl(ctx):
         for friend in ctx.attr.friends:
             friend_jars += friend[JavaInfo].compile_jars.to_list()
 
+        jvm_target = ctx.attr.jvm_target
+        if jvm_target == "8":
+            kt_java_runtime = ctx.attr._kt_java_runtime_8[java_common.JavaRuntimeInfo]
+        elif jvm_target == "11":
+            kt_java_runtime = ctx.attr._kt_java_runtime_11[java_common.JavaRuntimeInfo]
+        elif jvm_target == "17":
+            kt_java_runtime = ctx.attr._kt_java_runtime_17[java_common.JavaRuntimeInfo]
+        else:
+            fail("JVM target " + jvm_target + " is not currently supported in kotlin_library")
+
         kotlin_providers.append(kotlin_compile(
             ctx = ctx,
             name = ctx.attr.module_name,
@@ -317,7 +328,7 @@ def _kotlin_library_impl(ctx):
             friend_jars = friend_jars,
             out = kotlin_jar,
             out_ijar = kotlin_ijar,
-            java_runtime = ctx.attr._kt_java_runtime[java_common.JavaRuntimeInfo],
+            java_runtime = kt_java_runtime,
             kotlinc_opts = ctx.attr.kotlinc_opts,
             transitive_classpath = True,  # Matches Java rules (sans strict-deps enforcement)
         ))
@@ -397,6 +408,7 @@ _kotlin_library = rule(
         "data": attr.label_list(allow_files = True),
         "friends": attr.label_list(),
         "jar": attr.output(mandatory = True),
+        "jvm_target": attr.string(mandatory = True),
         "deps": attr.label_list(providers = [JavaInfo]),
         "exports": attr.label_list(providers = [JavaInfo]),
         "runtime_deps": attr.label_list(
@@ -415,10 +427,27 @@ _kotlin_library = rule(
         ),
         "stdlib": attr.label(),
         "_java_toolchain": attr.label(default = Label("@bazel_tools//tools/jdk:current_java_toolchain")),
-        "_kt_java_runtime": attr.label(
+        "_kt_java_runtime_8": attr.label(
+            # We need this to be able to target JRE 8 in Kotlin, because
+            # Kotlinc does not support the --release 8 Javac option.
+            # see https://youtrack.jetbrains.com/issue/KT-29974
+            default = Label("//prebuilts/studio/jdk:jdk_runtime"),
+            providers = [java_common.JavaRuntimeInfo],
+            cfg = "exec",
+        ),
+        "_kt_java_runtime_11": attr.label(
             # We need this to be able to target JRE 11 in Kotlin, because
             # Kotlinc does not support the --release 11 Javac option.
+            # see https://youtrack.jetbrains.com/issue/KT-29974
             default = Label("//prebuilts/studio/jdk/jdk11:jdk11_runtime"),
+            providers = [java_common.JavaRuntimeInfo],
+            cfg = "exec",
+        ),
+        "_kt_java_runtime_17": attr.label(
+            # We need this to be able to target JRE 17 in Kotlin, because
+            # Kotlinc does not support the --release 17 Javac option.
+            # see https://youtrack.jetbrains.com/issue/KT-29974
+            default = Label("//prebuilts/studio/jdk/jdk17:jdk17_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
