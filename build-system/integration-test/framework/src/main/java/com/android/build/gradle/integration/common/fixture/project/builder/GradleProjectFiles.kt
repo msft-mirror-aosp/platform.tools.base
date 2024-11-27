@@ -23,7 +23,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * Allows manipulating files of a [GradleProjectDefinition]
+ * Allows manipulating files of a [GenericProjectDefinition]
  */
 interface GradleProjectFiles {
 

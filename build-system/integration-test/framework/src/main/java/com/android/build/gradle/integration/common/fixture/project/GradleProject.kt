@@ -17,13 +17,12 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
@@ -34,14 +33,14 @@ import java.nio.file.Path
  * This class represents non Android projects that don't have their own custom interfaces
  *
  */
-interface GradleProject: BaseGradleProject<GradleProjectDefinition> {
+interface GenericProject: BaseGradleProject<GenericProjectDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
 
 /**
  * Base interface for all projects, including but not limited to
- * [GradleProject] and [AndroidProject].
+ * [GenericProject] and [AndroidProject].
  */
 interface BaseGradleProject<out ProjectDefinitionT : BaseGradleProjectDefinition>: TemporaryProjectModification.FileProvider {
     /** the location on disk of the project */
@@ -53,7 +52,7 @@ interface BaseGradleProject<out ProjectDefinitionT : BaseGradleProjectDefinition
      * This is useful to make "edits" to the build file during a test.
      *
      * This can also be used to update [GradleProjectFiles], but when only touching project files
-     * (and not the build files) consider using [GradleProject.files] directly instead
+     * (and not the build files) consider using [GenericProject.files] directly instead
      *
      * @param buildFileOnly whether to only update the build files, or do a full reset, including files added via [BaseGradleProjectDefinition.files]
      * @param action the action to configure the [BaseGradleProjectDefinition]
@@ -64,24 +63,25 @@ interface BaseGradleProject<out ProjectDefinitionT : BaseGradleProjectDefinition
 
 
 /**
- * Default implementation of [GradleProject]
+ * Default implementation of [GenericProject]
  */
-internal class GradleProjectImpl(
+internal class GenericProjectImpl(
     location: Path,
-    projectDefinition: GradleProjectDefinition,
+    projectDefinition: GenericProjectDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<GradleProjectDefinition>(
+) : BaseGradleProjectImpl<GenericProjectDefinition>(
     location,
     projectDefinition,
     buildWriter,
     parentBuild
-), GradleProject {
+), GenericProject {
+
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
 
-     override fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
-        ReversibleGradleProject(this, projectModification.delegate(this))
+     override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
+        ReversibleGenericProject(this, projectModification.delegate(this))
 }
 
 /**

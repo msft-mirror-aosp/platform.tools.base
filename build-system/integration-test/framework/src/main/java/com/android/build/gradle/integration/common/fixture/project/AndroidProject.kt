@@ -148,4 +148,3 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjec
         return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
     }
 }
-

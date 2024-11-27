@@ -33,7 +33,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -108,7 +108,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     val build: GradleBuild by lazy {
@@ -128,7 +128,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
@@ -155,7 +155,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
@@ -259,7 +259,7 @@ class GradleRule internal constructor(
                     build
                 )
 
-                is GradleProjectDefinitionImpl -> definition.path to GradleProjectImpl(
+                is GenericProjectDefinitionImpl -> definition.path to GenericProjectImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     buildWriter,
@@ -273,7 +273,7 @@ class GradleRule internal constructor(
         return GradleBuildImpl(
             rootFolder,
             subProjects = subProjects + mapOf(
-                ":" to GradleProjectImpl(
+                ":" to GenericProjectImpl(
                     computeSubProjectPath(
                         rootFolder,
                         ":"

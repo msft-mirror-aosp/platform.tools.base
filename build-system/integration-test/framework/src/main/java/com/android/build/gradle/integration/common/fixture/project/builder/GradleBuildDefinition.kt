@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidAiPack
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.GenericProject
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -45,12 +46,12 @@ interface GradleBuildDefinition {
     /**
      * Configures the root project. This cannot be an Android Project.
      */
-    fun rootProject(action: GradleProjectDefinition.() -> Unit)
+    fun rootProject(action: GenericProjectDefinition.() -> Unit)
 
     /**
      * Configures a subProject, creating it if needed.
      */
-    fun subProject(path: String, action: GradleProjectDefinition.() -> Unit): GradleProjectDefinition
+    fun genericProject(path: String, action: GenericProjectDefinition.() -> Unit): GenericProjectDefinition
 
     /**
      * Configures a subProject with the Android Application plugin, creating it if needed.
@@ -102,7 +103,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
-    internal val rootProject = GradleProjectDefinitionImpl(":")
+    internal val rootProject = GenericProjectDefinitionImpl(":")
     internal val subProjects = mutableMapOf<String, BaseGradleProjectDefinitionImpl>()
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
@@ -121,29 +122,26 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         return build
     }
 
-    override fun rootProject(action: GradleProjectDefinition.() -> Unit) {
+    override fun rootProject(action: GenericProjectDefinition.() -> Unit) {
         action(rootProject)
     }
 
-    override fun subProject(
+    override fun genericProject(
         path: String,
-        action: GradleProjectDefinition.() -> Unit
-    ): GradleProjectDefinition {
+        action: GenericProjectDefinition.() -> Unit
+    ): GenericProjectDefinition {
         if (path == ":") return rootProject
 
         val project = subProjects.computeIfAbsent(path) {
-            GradleProjectDefinitionImpl(it)
+            GenericProjectDefinitionImpl(it)
         }
 
-        val configurableProject = when (project) {
-            is AndroidApplicationDefinitionImpl -> project.asGradleProject()
-            is GradleProjectDefinitionImpl -> project
-            else -> throw RuntimeException("Unexpected type of BaseGradleProjectDefinitionIpl: ${project.javaClass.name}")
-        }
+        project as? GenericProjectDefinition
+            ?: errorOnWrongType(project, path, "Generic Project")
 
-        action(configurableProject)
+        action(project)
 
-        return configurableProject
+        return project
     }
 
     override fun androidApplication(

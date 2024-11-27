@@ -31,7 +31,7 @@ import java.nio.file.Path
 interface GradleBuild {
 
     /** Queries for a project via its gradle path. The project must exist. */
-    fun genericProject(path: String): GradleProject
+    fun genericProject(path: String): GenericProject
 
     /**
      * Queries for an application project via its gradle path.
@@ -70,7 +70,7 @@ interface GradleBuild {
     /**
      * Allows making modifications that are reverted.
      *
-     * Any modifications to the project (using [GradleProject.files]) made from within the action,
+     * Any modifications to the project (using [GenericProject.files]) made from within the action,
      * using the provided instance of [GradleBuild], will be reverted after the action is run.
      */
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
@@ -94,14 +94,14 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
      */
     internal abstract val subProjectsForValidation: Map<String, BaseGradleProject<*>>
 
-    override fun genericProject(path: String): GradleProject {
+    override fun genericProject(path: String): GenericProject {
         val project = subProject(path)
-        if (project is GradleProject) return project
+        if (project is GenericProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not a generic project.
-                Possible options are ${getProjectListByType<GradleProjectImpl>()}
+                Possible options are ${getProjectListByType<GenericProjectImpl>()}
             """.trimIndent()
         )
     }

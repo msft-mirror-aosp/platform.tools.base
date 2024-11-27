@@ -102,23 +102,4 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
             }
         }
     }
-
-    internal fun asGradleProject(): GradleProjectDefinition {
-        return AndroidProjectDefinitionWrapper(this)
-    }
-}
-
-
-/**
- * Wraps a [AndroidProjectDefinition] into a [GradleProjectDefinition]
- *
- * This can be usd when manipulating project in their most basic form.
- */
-internal class AndroidProjectDefinitionWrapper(
-    private val androidProject: AndroidProjectDefinition<*>
-): BaseGradleProjectDefinition by androidProject, GradleProjectDefinition {
-
-    override fun files(action: GradleProjectFiles.() -> Unit) {
-        androidProject.files(action)
-    }
 }

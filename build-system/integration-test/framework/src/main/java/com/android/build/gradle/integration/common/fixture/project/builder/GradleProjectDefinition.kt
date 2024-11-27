@@ -28,14 +28,14 @@ import kotlin.io.path.writeText
  *
  * This class represents non Android projects that don't have their own custom interfaces
  */
-interface GradleProjectDefinition: BaseGradleProjectDefinition {
+interface GenericProjectDefinition: BaseGradleProjectDefinition {
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
 }
 
 /**
  * Base interface for all project definition, including but not limited to
- * [GradleProjectDefinition] and [AndroidProjectDefinition].
+ * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
 interface BaseGradleProjectDefinition {
     val path: String
@@ -76,10 +76,24 @@ interface BaseGradleProjectDefinition {
 }
 
 /**
- * Default implementation for [GradleProjectDefinition]
+ * Default implementation for [GenericProjectDefinition]
  */
-internal open class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
-    GradleProjectDefinition {
+internal open class GenericProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
+    GenericProjectDefinition {
+
+    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        if (type.isAndroid) {
+            throw RuntimeException("Do not use genericProject for Android Plugins")
+        }
+        super.applyPlugin(type, version, applyFirst)
+    }
+
+    override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        if (type.isAndroid) {
+            throw RuntimeException("Do not use genericProject for Android Plugins")
+        }
+        super.replaceAppliedPlugin(type, version)
+    }
 
     override val files: GradleProjectFiles = GradleProjectFilesImpl()
 
@@ -89,7 +103,7 @@ internal open class GradleProjectDefinitionImpl(path: String): BaseGradleProject
 }
 
 /**
- * Implementation shared between [GradleProjectDefinition] and [AndroidProjectDefinition]
+ * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
  */
 internal abstract class BaseGradleProjectDefinitionImpl(
     override val path: String

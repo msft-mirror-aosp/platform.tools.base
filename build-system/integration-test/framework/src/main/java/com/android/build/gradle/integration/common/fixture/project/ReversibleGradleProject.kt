@@ -18,23 +18,23 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
 
 /**
- * a version of [GradleProject] that can reverses the changes made during a test.
+ * a version of [GenericProject] that can reverses the changes made during a test.
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  *
- * This is simply a wrapper on a normal [GradleProject] object, that replaces the [GradleProjectFiles]
+ * This is simply a wrapper on a normal [GenericProject] object, that replaces the [GradleProjectFiles]
  * with [ReversibleProjectFiles]
  */
-internal open class ReversibleGradleProject(
-    parentProject: GradleProject,
+internal open class ReversibleGenericProject(
+    parentProject: GenericProject,
     projectModification: TemporaryProjectModification,
-): BaseReversibleGradleProject<GradleProject, GradleProjectDefinition>(parentProject), GradleProject {
+): BaseReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 }
 

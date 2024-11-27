@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.DEBUG
-import com.android.build.gradle.integration.common.fixture.project.GradleProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles

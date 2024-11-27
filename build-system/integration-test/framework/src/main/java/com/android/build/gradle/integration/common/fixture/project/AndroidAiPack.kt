@@ -17,25 +17,18 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AiPackExtension
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.testutils.apk.Apk
-import java.io.File
 import java.nio.file.Path
 
 /*
@@ -43,7 +36,7 @@ import java.nio.file.Path
  */
 
 /**
- * Specialized interface for [GradleProjectDefinition]
+ * Specialized interface for [GenericProjectDefinition]
  */
 interface AiPackDefinition: BaseGradleProjectDefinition {
     val aiPack: AiPackExtension

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
+import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -34,7 +35,7 @@ class GradleBuildDefinitionTest {
     @Test
     fun testSettingsWithSingleProject() {
         val folder = writeBuild {
-            subProject(":app") { }
+            genericProject(":app") { }
         }
 
         checkFile(
@@ -127,10 +128,9 @@ class GradleBuildDefinitionTest {
     @Test
     fun testPlugins() {
         val folder = writeBuild {
-            subProject(":app") {
-                applyPlugin(PluginType.ANDROID_APP)
+            androidApplication(":app") {
             }
-            subProject(":library") {
+            genericProject(":library") {
                 applyPlugin(PluginType.JAVA_LIBRARY)
             }
         }
@@ -155,6 +155,10 @@ class GradleBuildDefinitionTest {
                 plugins {
                   id('com.android.application')
                 }
+                android {
+                  namespace = 'pkg.name.app'
+                  compileSdk = $DEFAULT_COMPILE_SDK_VERSION
+                }
                 dependencies {
                 }
 
@@ -178,12 +182,12 @@ class GradleBuildDefinitionTest {
     @Test
     fun testDependencies() {
         val folder = writeBuild {
-            subProject(":app") {
+            genericProject(":app") {
                 dependencies {
                     api(project(":library"))
                 }
             }
-            subProject(":library") { }
+            genericProject(":library") { }
         }
 
         checkFile(

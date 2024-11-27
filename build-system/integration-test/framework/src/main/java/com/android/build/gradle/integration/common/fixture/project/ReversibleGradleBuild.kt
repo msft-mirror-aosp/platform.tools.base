@@ -51,7 +51,7 @@ internal class ReversibleGradleBuild(
         val project = parentBuild.subProject(path)
 
         return modifiableSubProject.computeIfAbsent(path) {
-            (project as GradleProjectImpl).getReversibleInstance(
+            (project as GenericProjectImpl).getReversibleInstance(
                 projectModification.delegate(project)
             )
         }
