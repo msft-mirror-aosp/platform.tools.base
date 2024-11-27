@@ -541,6 +541,209 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testNioCompatWarnings() {
+    // Regression test for b/381126163
+    val testFiles =
+      arrayOf(
+        java(
+            """
+            package test.pkg;
+
+            import java.io.File;
+            import java.io.IOException;
+            import java.nio.ByteBuffer;
+            import java.nio.channels.AsynchronousFileChannel;
+            import java.nio.file.FileSystem;
+            import java.nio.file.Files;
+            import java.nio.file.Path;
+            import java.nio.file.WatchService;
+            import java.nio.file.attribute.BasicFileAttributes;
+
+            public class NioTest {
+                public void test() {
+                    Path path = new File("").toPath();
+                    try(AsynchronousFileChannel open = AsynchronousFileChannel.open(path)) { // ERROR 1
+                        open.read(ByteBuffer.allocate(1024), 1024); // ERROR 2
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                public void watchService(FileSystem fileSystem, Path path, WatchService service) throws IOException {
+                    fileSystem.newWatchService().poll(); // ERROR 3
+                }
+
+                public void lookup(FileSystem fileSystem) throws IOException {
+                    fileSystem.getUserPrincipalLookupService(); // ERROR 4
+                }
+
+                public void links(FileSystem fileSystem, Path p1, Path p2) throws IOException {
+                    fileSystem.provider().createLink(p1, p2); // ERROR 5
+                    fileSystem.provider().createSymbolicLink(p1, p2); // ERROR 6
+                    BasicFileAttributes attributes = Files.readAttributes(p1, BasicFileAttributes.class);
+                    if (attributes.isSymbolicLink()) { // OK
+                        System.out.println(p1 + " is a symbolic link.");
+                    }
+                }
+
+                public void tryCatch(Path p1) throws IOException {
+                    try {
+                        Files.readAttributes(p1, BasicFileAttributes.class);
+                    } catch (java.nio.file.NoSuchFileException e) { // ERROR 7
+                    }
+                    try {
+                        Files.readAttributes(p1, BasicFileAttributes.class);
+                    } catch (java.nio.file.NoSuchFileException e) { // OK - also handling IOException
+                    } catch (java.io.IOException e2) { // OK
+                       throw RuntimeException(e2);
+                    }
+                }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import java.nio.channels.AsynchronousFileChannel
+            import java.nio.channels.FileChannel
+            import java.nio.file.Files
+            import java.nio.file.Path
+            import java.nio.file.Paths
+            import java.nio.file.StandardCopyOption
+            import java.nio.file.StandardOpenOption.DELETE_ON_CLOSE
+            import java.nio.file.StandardOpenOption.READ
+            import java.nio.file.StandardOpenOption.SPARSE
+            import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
+            import java.nio.file.StandardOpenOption.WRITE
+            import java.nio.file.attribute.GroupPrincipal
+            import java.nio.file.attribute.PosixFilePermission.GROUP_READ
+            import java.nio.file.attribute.PosixFilePermission.OTHERS_READ
+            import java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE
+            import java.nio.file.attribute.PosixFilePermission.OWNER_READ
+            import java.nio.file.attribute.PosixFilePermission.OWNER_WRITE
+            import java.nio.file.attribute.PosixFilePermissions
+            import java.nio.file.attribute.UserPrincipalLookupService
+
+            fun testPosix(path: Path) {
+                // Set permissions
+                val newPermissions = PosixFilePermissions.fromString("rwxr-xr-x") // ERROR 8
+                Files.setPosixFilePermissions(path, newPermissions) // ERROR 9
+
+                // Set owner (requires appropriate privileges)
+                val lookupService = path.fileSystem.userPrincipalLookupService // ERROR 10
+                val newOwner = lookupService.lookupPrincipalByName("new_owner_username") // ERROR 11
+                Files.setOwner(path, newOwner)
+            }
+
+            fun testGroup(path: Path, lookupService: UserPrincipalLookupService) {
+                // Set group (requires appropriate privileges)
+                val newGroup: GroupPrincipal = lookupService.lookupPrincipalByGroupName("new_group_name") // ERROR 12
+                val owner = setGroup(path, newGroup)
+            }
+
+            fun setGroup(
+                path: Path,
+                newGroup: GroupPrincipal
+            ): Path? = Files.setOwner(path, newGroup)
+
+            fun testFileAttributes(directoryPath: Path) {
+                val permissions = PosixFilePermissions.asFileAttribute( // ERROR 13
+                    setOf(
+                        OWNER_READ, OWNER_WRITE, OWNER_EXECUTE, GROUP_READ, OTHERS_READ,
+                    )
+                )
+                Files.createDirectory(directoryPath, permissions)
+            }
+
+            fun testCopy(path: Path, destination: Path) {
+                Files.copy(path, destination, StandardCopyOption.REPLACE_EXISTING) // OK
+                Files.copy(path, destination, StandardCopyOption.COPY_ATTRIBUTES) // WARNING 1
+                Files.copy(path, destination, StandardCopyOption.ATOMIC_MOVE) // WARNING 2
+            }
+
+            fun channels() {
+                val path = Paths.get("my_file.txt")
+                val channel = FileChannel.open(path, READ, WRITE, TRUNCATE_EXISTING) // OK
+                val channel2 = FileChannel.open(path, SPARSE) // ERROR 14
+                val channel3 = FileChannel.open(path, DELETE_ON_CLOSE) // WARNING 3
+                val channel4 = AsynchronousFileChannel.open(path, SPARSE) // ERROR 15
+            }
+            """
+          )
+          .indented(),
+      )
+
+    // No warnings after API level 26 with full library desugaring
+    lint().files(manifest().minSdk(26), *testFiles).desugaring(Desugaring.FULL).run().expectClean()
+
+    // Special warnings with library desugaring prior to API level 26
+    lint()
+      .files(manifest().minSdk(25), *testFiles)
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expect(
+        """
+        src/test/pkg/NioTest.java:16: Error: Using AsynchronousFileChannel is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                try(AsynchronousFileChannel open = AsynchronousFileChannel.open(path)) { // ERROR 1
+                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/NioTest.java:17: Error: Using AsynchronousFileChannel is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                    open.read(ByteBuffer.allocate(1024), 1024); // ERROR 2
+                    ~~~~~~~~~
+        src/test/pkg/NioTest.java:24: Error: Using a WatchService is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                fileSystem.newWatchService().poll(); // ERROR 3
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/NioTest.java:28: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                fileSystem.getUserPrincipalLookupService(); // ERROR 4
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/NioTest.java:32: Error: Creating links is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                fileSystem.provider().createLink(p1, p2); // ERROR 5
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/NioTest.java:33: Error: Creating links is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+                fileSystem.provider().createSymbolicLink(p1, p2); // ERROR 6
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/NioTest.java:43: Error: When using core library desugaring on API levels lower than 26, file operations sometimes raise java.io.FileNotFoundException instead of java.nio.file.NoSuchFileException when a file is not found. They are both subclasses of java.io.IOException, so the issue can be mitigated by catching java.io.IOException instead. [NioDesugaring]
+                } catch (java.nio.file.NoSuchFileException e) { // ERROR 7
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:25: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val newPermissions = PosixFilePermissions.fromString("rwxr-xr-x") // ERROR 8
+                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:26: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            Files.setPosixFilePermissions(path, newPermissions) // ERROR 9
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:29: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val lookupService = path.fileSystem.userPrincipalLookupService // ERROR 10
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:30: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val newOwner = lookupService.lookupPrincipalByName("new_owner_username") // ERROR 11
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:36: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val newGroup: GroupPrincipal = lookupService.lookupPrincipalByGroupName("new_group_name") // ERROR 12
+                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:46: Error: POSIX file features are not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val permissions = PosixFilePermissions.asFileAttribute( // ERROR 13
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:63: Error: Option SPARSE is ignored by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val channel2 = FileChannel.open(path, SPARSE) // ERROR 14
+                                                  ~~~~~~
+        src/test/pkg/test.kt:65: Error: Using AsynchronousFileChannel is not supported by core library desugaring on API levels lower than 26 [NioDesugaring]
+            val channel4 = AsynchronousFileChannel.open(path, SPARSE) // ERROR 15
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:56: Warning: With core library desugaring on API levels lower than 26, file copy with the COPY_ATTRIBUTES option does not copy attributes, though it is usually not important to copy basic attributes [NioDesugaring]
+            Files.copy(path, destination, StandardCopyOption.COPY_ATTRIBUTES) // WARNING 1
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:57: Warning: With core library desugaring on API levels lower than 26, file move with the ATOMIC_MOVE option uses file renaming. Linux does not guarantee renaming to be atomic, though it usually is, and the desugaring implementation will have the semantics of the OS. [NioDesugaring]
+            Files.copy(path, destination, StandardCopyOption.ATOMIC_MOVE) // WARNING 2
+                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:64: Warning: With core library desugaring on API levels lower than 26, DELETE_ON_CLOSE is only partially supported; the file is only closed when FileChannel is closed [NioDesugaring]
+            val channel3 = FileChannel.open(path, DELETE_ON_CLOSE) // WARNING 3
+                                                  ~~~~~~~~~~~~~~~
+        15 errors, 3 warnings
+        """
+      )
+  }
+
   fun testLibraryDesugaringFields() {
     try {
       val project =

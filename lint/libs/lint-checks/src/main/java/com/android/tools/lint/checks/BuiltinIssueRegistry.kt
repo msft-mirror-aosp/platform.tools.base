@@ -76,6 +76,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           AnnotationDetector.USE_REQUIRES_API,
           ApiDetector.INLINED,
           ApiDetector.OBSOLETE_SDK,
+          ApiDetector.NIO_DESUGARING,
           ApiDetector.UNSUPPORTED,
           ApiDetector.UNUSED,
           ApiDetector.WRONG_SDK_INT,

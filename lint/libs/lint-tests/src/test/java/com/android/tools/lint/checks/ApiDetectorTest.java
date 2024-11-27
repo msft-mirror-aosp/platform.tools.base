@@ -10185,6 +10185,54 @@ public class ApiDetectorTest extends AbstractCheckTest {
                             + "8 errors, 0 warnings");
     }
 
+    @SuppressWarnings("all") // sample code
+    public void testRedundantCastWarning() {
+        // Make sure that when we have an implicit cast warning
+        // we avoid it if we're *also* going to have an API warning
+        // for the value passed into the cast
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
+                                    + "import java.nio.channels.FileChannel\n"
+                                    + "import java.nio.file.OpenOption\n"
+                                    + "import java.nio.file.Path\n"
+                                    + "import java.nio.file.StandardOpenOption\n"
+                                    + "import java.nio.file.StandardOpenOption.DELETE_ON_CLOSE\n"
+                                    + "\n"
+                                    + "fun fieldCast(path: Path) {\n"
+                                    + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                                    + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                                    + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                                    + "}"))
+                .run()
+                .expect(
+                        "src/test/pkg/test.kt:10: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:10: Error: Field requires API level 26, or core library desugaring (current min is 21): java.nio.file.StandardOpenOption#DELETE_ON_CLOSE [NewApi]\n"
+                            + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/test.kt:11: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:11: Error: Implicit cast from StandardOpenOption to OpenOption requires API level 26, or core library desugaring (current min is 21) [NewApi]\n"
+                            + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/test.kt:12: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:12: Error: Class requires API level 26 (current min is 21): java.nio.file.OpenOption [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                                    ~~~~~~~~~~\n"
+                            // Hold up why is this an IMPLICIT CAST?
+                            + "src/test/pkg/test.kt:12: Error: Implicit cast to OpenOption requires API level 26 (current min is 21) [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "7 errors, 0 warnings");
+    }
+
     @Override
     protected TestLintClient createClient() {
         return super.createClient();
