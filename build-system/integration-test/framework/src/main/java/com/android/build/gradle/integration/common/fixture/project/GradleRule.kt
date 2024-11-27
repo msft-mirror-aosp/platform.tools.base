@@ -33,7 +33,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder

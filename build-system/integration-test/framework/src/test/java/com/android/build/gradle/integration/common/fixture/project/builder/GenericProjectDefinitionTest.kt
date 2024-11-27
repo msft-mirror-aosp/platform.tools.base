@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test

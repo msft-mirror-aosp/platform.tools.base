@@ -25,7 +25,8 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidAiPack
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.GenericProject
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType

@@ -20,23 +20,10 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
-
-/**
- * a subproject part of a [GradleBuild].
- *
- * This class represents non Android projects that don't have their own custom interfaces
- *
- */
-interface GenericProject: BaseGradleProject<GenericProjectDefinition> {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
 
 /**
  * Base interface for all projects, including but not limited to
@@ -59,29 +46,6 @@ interface BaseGradleProject<out ProjectDefinitionT : BaseGradleProjectDefinition
      *
      */
     fun reconfigure(buildFileOnly: Boolean = false, action: ProjectDefinitionT.() -> Unit)
-}
-
-
-/**
- * Default implementation of [GenericProject]
- */
-internal class GenericProjectImpl(
-    location: Path,
-    projectDefinition: GenericProjectDefinition,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<GenericProjectDefinition>(
-    location,
-    projectDefinition,
-    buildWriter,
-    parentBuild
-), GenericProject {
-
-
-    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
-
-     override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
-        ReversibleGenericProject(this, projectModification.delegate(this))
 }
 
 /**

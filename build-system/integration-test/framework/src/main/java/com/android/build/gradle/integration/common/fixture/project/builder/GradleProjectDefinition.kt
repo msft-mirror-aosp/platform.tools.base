@@ -23,15 +23,6 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-/**
- * Represents a Gradle Project that can be configured before being written on disk.
- *
- * This class represents non Android projects that don't have their own custom interfaces
- */
-interface GenericProjectDefinition: BaseGradleProjectDefinition {
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
-}
 
 /**
  * Base interface for all project definition, including but not limited to
@@ -73,33 +64,6 @@ interface BaseGradleProjectDefinition {
      * Wraps a library binary with a module
      */
     fun wrap(library: ByteArray, fileName: String)
-}
-
-/**
- * Default implementation for [GenericProjectDefinition]
- */
-internal open class GenericProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
-    GenericProjectDefinition {
-
-    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
-        if (type.isAndroid) {
-            throw RuntimeException("Do not use genericProject for Android Plugins")
-        }
-        super.applyPlugin(type, version, applyFirst)
-    }
-
-    override fun replaceAppliedPlugin(type: PluginType, version: String) {
-        if (type.isAndroid) {
-            throw RuntimeException("Do not use genericProject for Android Plugins")
-        }
-        super.replaceAppliedPlugin(type, version)
-    }
-
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
-
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
 }
 
 /**

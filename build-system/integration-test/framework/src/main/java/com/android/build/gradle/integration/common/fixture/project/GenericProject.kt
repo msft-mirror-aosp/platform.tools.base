@@ -16,10 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.AiPackExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
-import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
@@ -31,28 +28,37 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import java.nio.file.Path
 
 /*
- * Support for Android AI Pack in the [GradleRule] fixture
+ * Support for Generic gradle Projects in the [GradleRule] fixture
  */
 
 /**
- * Specialized interface for [GenericProjectDefinition]
+ * Represents a Gradle Project that can be configured before being written on disk.
+ *
+ * This class represents non Android projects that don't have their own custom interfaces
  */
-interface AiPackDefinition: BaseGradleProjectDefinition {
-    val aiPack: AiPackExtension
-    fun aiPack(action: AiPackExtension.() -> Unit)
-
+interface GenericProjectDefinition: BaseGradleProjectDefinition {
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
 }
 
 /**
- * Implementation of [AiPackDefinition]
+ * Default implementation for [GenericProjectDefinition]
  */
-internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefinitionImpl(path),
-    AiPackDefinition {
+internal open class GenericProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
+    GenericProjectDefinition {
 
-    init {
-        applyPlugin(PluginType.ANDROID_AI_PACK)
+    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        if (type.isAndroid) {
+            throw RuntimeException("Do not use genericProject for Android Plugins")
+        }
+        super.applyPlugin(type, version, applyFirst)
+    }
+
+    override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        if (type.isAndroid) {
+            throw RuntimeException("Do not use genericProject for Android Plugins")
+        }
+        super.replaceAppliedPlugin(type, version)
     }
 
     override val files: GradleProjectFiles = GradleProjectFilesImpl()
@@ -60,61 +66,52 @@ internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefi
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
     }
-
-    private val contentHolder = DefaultDslContentHolder()
-
-    override val aiPack: AiPackExtension =
-        DslProxy.createProxy(
-            AiPackExtension::class.java,
-            contentHolder,
-        )
-
-    override fun aiPack(action: AiPackExtension.() -> Unit) {
-        action(aiPack)
-    }
-
-    override fun writExtension(writer: BuildWriter) {
-        writer.apply {
-            block("aiPack") {
-                contentHolder.writeContent(this)
-            }
-        }
-    }
 }
 
 /**
- * Specialized interface for AI Pack [AndroidProject] to use in the test
+ * a subproject part of a [GradleBuild].
+ *
+ * This class represents non Android projects that don't have their own custom interfaces
+ *
  */
-interface AndroidAiPackProject: BaseGradleProject<AiPackDefinition> {
+interface GenericProject: BaseGradleProject<GenericProjectDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
 
 /**
- * Implementation of [AndroidProject]
+ * Default implementation of [GenericProject]
  */
-internal class AndroidAiPackImpl(
+internal class GenericProjectImpl(
     location: Path,
-    projectDefinition: AiPackDefinition,
+    projectDefinition: GenericProjectDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<AiPackDefinition>(location, projectDefinition,buildWriter, parentBuild),
-    AndroidAiPackProject {
+) : BaseGradleProjectImpl<GenericProjectDefinition>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild
+), GenericProject {
+
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidAiPackProject =
-        ReversibleAndroidAiPackProject(this, projectModification)
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
+        ReversibleGenericProject(this, projectModification.delegate(this))
 }
 
 /**
- * Reversible version of [AndroidAiPackProject]
+ * a version of [GenericProject] that can reverses the changes made during a test.
+ *
+ * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
+ *
+ * This is simply a wrapper on a normal [GenericProject] object, that replaces the [GradleProjectFiles]
+ * with [ReversibleProjectFiles]
  */
-internal class ReversibleAndroidAiPackProject(
-    parentProject: AndroidAiPackProject,
-    projectModification: TemporaryProjectModification
-) : BaseReversibleGradleProject<AndroidAiPackProject, AiPackDefinition>(
-    parentProject,
-), AndroidAiPackProject {
+internal open class ReversibleGenericProject(
+    parentProject: GenericProject,
+    projectModification: TemporaryProjectModification,
+): BaseReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 }
