@@ -139,7 +139,8 @@ class ArtifactsImplTest {
                 TEST_FILE.getFolderName(),
                 "debug",
                 taskName,
-                "out.jar")
+                "test-file.dat"
+            )
         )
     }
 
@@ -1267,7 +1268,7 @@ class ArtifactsImplTest {
 
         Truth.assertThat(artifacts.getArtifactContainer(TEST_FILE).get().get().asFile.absolutePath)
             .endsWith(
-                FileUtils.join("test_file", "debug", "agpTask", DEFAULT_FILE_NAME_OF_REGULAR_FILE_ARTIFACTS)
+                FileUtils.join("test_file", "debug", "agpTask", "test-file.dat")
             )
     }
 
