@@ -49,6 +49,22 @@ class AabSubject(failureMetadata: FailureMetadata, subject: Aab) : AbstractZipSu
             ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
     }
 
+    override fun contains(vararg paths: String) {
+        exists()
+        for (path in paths) {
+            actual().getEntry(path)
+                ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
+        }
+    }
+
+    override fun contains(paths: MutableCollection<String>) {
+        exists()
+        for (path in paths) {
+            actual().getEntry(path)
+                ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
+        }
+    }
+
     @Throws(IOException::class)
     override fun doesNotContain(path: String) {
         exists()

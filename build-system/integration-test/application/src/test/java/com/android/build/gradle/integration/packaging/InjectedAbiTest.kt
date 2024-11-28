@@ -359,7 +359,7 @@ class InjectedAbiTest {
         add("src/main/jniLibs/$abi/$filename", content)
     }
 
-    private fun GradleProject.removeSoFiles(abis: List<String>) {
+    private fun AndroidApplicationProject.removeSoFiles(abis: List<String>) {
         abis.forEach {
             val folder = location.resolve("src/main/jniLibs/$it")
             FileUtils.deleteRecursivelyIfExists(folder.toFile())

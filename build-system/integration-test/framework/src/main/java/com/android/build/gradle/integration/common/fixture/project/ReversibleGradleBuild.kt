@@ -36,22 +36,18 @@ internal class ReversibleGradleBuild(
     private val projectModification: TemporaryProjectModification,
 ): BaseGradleBuildImpl() {
 
-    private val modifiableSubProject = mutableMapOf<String, GradleProject>()
+    private val modifiableSubProject = mutableMapOf<String, BaseGradleProject<*>>()
     private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
 
-    /**
-     * the list of project for this build is the modifiable map
-     */
-    override val subProjects: Map<String, GradleProject>
-        get() = modifiableSubProject
+
     /**
      * For validation, we use the parent list which is more complete because the local list
      * is built on demand
      */
-    override val subProjectsForValidation: Map<String, GradleProject>
-        get() = parentBuild.subProjects
+    override val subProjectsForValidation: Map<String, BaseGradleProject<*>>
+        get() = parentBuild.subProjectsForValidation
 
-    override fun subProject(path: String): GradleProject {
+    override fun subProject(path: String): BaseGradleProject<*> {
         val project = parentBuild.subProject(path)
 
         return modifiableSubProject.computeIfAbsent(path) {

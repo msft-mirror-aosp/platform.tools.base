@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
@@ -25,8 +24,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.testutils.apk.Apk
 import java.nio.file.Path
 
 /*
@@ -34,7 +31,7 @@ import java.nio.file.Path
  */
 
 /**
- * An Android Feature Project
+ * Implementation of [AndroidProjectDefinition] for [DynamicFeatureExtension]
  */
 internal class AndroidDynamicFeatureDefinitionImpl(
     path: String
@@ -55,21 +52,22 @@ internal class AndroidDynamicFeatureDefinitionImpl(
 /**
  * Specialized interface for dynamic feature [AndroidProject] to use in the test
  */
-interface AndroidDynamicFeatureProject: AndroidProject<DynamicFeatureExtension>
+interface AndroidDynamicFeatureProject: AndroidProject<AndroidProjectDefinition<DynamicFeatureExtension>>
 
 /**
  * Implementation of [AndroidProject]
  */
 internal class AndroidFeatureImpl(
     location: Path,
-    override val projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
+    projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : AndroidProjectImpl<DynamicFeatureExtension>(
+) : AndroidProjectImpl<AndroidProjectDefinition<DynamicFeatureExtension>>(
     location,
     projectDefinition,
     namespace,
+    buildWriter,
     parentBuild
 ), AndroidDynamicFeatureProject {
 
@@ -86,7 +84,7 @@ internal class AndroidFeatureImpl(
         projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidDynamicFeatureProject =
         ReversibleAndroidDynamicFeatureProject(this, projectModification)
 }
 
@@ -96,7 +94,7 @@ internal class AndroidFeatureImpl(
 internal class ReversibleAndroidDynamicFeatureProject(
     parentProject: AndroidDynamicFeatureProject,
     projectModification: TemporaryProjectModification
-) : ReversibleAndroidProject<AndroidDynamicFeatureProject, DynamicFeatureExtension>(
+) : ReversibleAndroidProject<AndroidDynamicFeatureProject, AndroidProjectDefinition<DynamicFeatureExtension>>(
     parentProject,
     projectModification
 ), AndroidDynamicFeatureProject {

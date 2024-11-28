@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
@@ -37,7 +36,7 @@ import kotlin.io.path.isRegularFile
  */
 
 /**
- * An Android Library Project
+ * Implementation of [AndroidProjectDefinition] for [LibraryExtension]
  */
 internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
     init {
@@ -56,7 +55,7 @@ internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinit
 /**
  * Specialized interface for library [AndroidProject] to use in the test
  */
-interface AndroidLibraryProject: AndroidProject<LibraryExtension>, GeneratesApk {
+interface AndroidLibraryProject: AndroidProject<AndroidProjectDefinition<LibraryExtension>>, GeneratesApk {
     /**
      * Runs the action with a provided instance of [Aar].
      *
@@ -86,24 +85,17 @@ interface AndroidLibraryProject: AndroidProject<LibraryExtension>, GeneratesApk 
  */
 internal class AndroidLibraryImpl(
     location: Path,
-    override val projectDefinition: AndroidProjectDefinition<LibraryExtension>,
+    projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-): AndroidProjectImpl<LibraryExtension>(location, projectDefinition, namespace, parentBuild), AndroidLibraryProject {
-
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
-    ) {
-        action(projectDefinition)
-
-        // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
-
-        projectDefinition as AndroidProjectDefinitionImpl<LibraryExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
-    }
+) : AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(
+    location,
+    projectDefinition,
+    namespace,
+    buildWriter,
+    parentBuild
+), AndroidLibraryProject {
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
         if (apkSelector.testName == null) {
@@ -148,7 +140,7 @@ internal class AndroidLibraryImpl(
         return computeOutputPath(aarSelector).isRegularFile()
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidLibraryProject =
         ReversibleAndroidLibraryProject(this, projectModification)
 }
 
@@ -158,7 +150,7 @@ internal class AndroidLibraryImpl(
 internal class ReversibleAndroidLibraryProject(
     parentProject: AndroidLibraryProject,
     projectModification: TemporaryProjectModification
-) : ReversibleAndroidProject<AndroidLibraryProject, LibraryExtension>(
+) : ReversibleAndroidProject<AndroidLibraryProject, AndroidProjectDefinition<LibraryExtension>>(
     parentProject,
     projectModification
 ), AndroidLibraryProject {

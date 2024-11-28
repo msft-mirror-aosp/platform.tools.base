@@ -31,7 +31,7 @@ import java.nio.file.Path
 interface GradleBuild {
 
     /** Queries for a project via its gradle path. The project must exist. */
-    fun subProject(path: String): GradleProject
+    fun genericProject(path: String): GradleProject
 
     /**
      * Queries for an application project via its gradle path.
@@ -53,6 +53,11 @@ interface GradleBuild {
      * The project must exist and be a Privacy Sandbox SDK.
      */
     fun privacySandboxSdk(path: String): AndroidPrivacySandboxSdkProject
+    /**
+     * Queries for an AI pack project via its gradle path.
+     * The project must exist and be an AI Pack project
+     */
+    fun androidAiPack(path: String): AndroidAiPackProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -75,50 +80,52 @@ interface GradleBuild {
  * Basic implementation of some features of [GradleBuild] to be shared across the 2 different
  * implementations ([GradleBuildImpl] and [ReversibleGradleBuild]
  */
-internal abstract class BaseGradleBuildImpl() : GradleBuild {
+internal abstract class BaseGradleBuildImpl : GradleBuild {
 
     /**
-     * the list of projects that make up this build
+     * Returns a project from the path.
      */
-    internal abstract val subProjects: Map<String, GradleProject>
+    abstract fun subProject(path: String): BaseGradleProject<*>
 
     /**
-     * a more compplete list of projects to validate project types. This is separate
+     * a more complete list of projects to validate project types. This is separate
      * for the case of [ReversibleGradleBuild] where the subProject list is a clone of the
      * parent build.
      */
-    protected abstract val subProjectsForValidation: Map<String, GradleProject>
+    internal abstract val subProjectsForValidation: Map<String, BaseGradleProject<*>>
 
-    override fun subProject(path: String): GradleProject {
-        return subProjects[path]
-            ?: throw RuntimeException(
-                """
-                    Unable to find subproject '$path'.
-                    Possible subProjects are ${subProjectsForValidation.keys.joinToString()}
-                """.trimIndent()
-            )
+    override fun genericProject(path: String): GradleProject {
+        val project = subProject(path)
+        if (project is GradleProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not a generic project.
+                Possible options are ${getProjectListByType<GradleProjectImpl>()}
+            """.trimIndent()
+        )
     }
 
     override fun androidApplication(path: String): AndroidApplicationProject {
         val project = subProject(path)
-        if (project is AndroidApplicationImpl) return project
+        if (project is AndroidApplicationProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible androidApplications are ${getProjectListByType<AndroidApplicationImpl>()}
+                Possible options are ${getProjectListByType<AndroidApplicationImpl>()}
             """.trimIndent()
         )
     }
 
     override fun androidLibrary(path: String): AndroidLibraryProject {
         val project = subProject(path)
-        if (project is AndroidLibraryImpl) return project
+        if (project is AndroidLibraryProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible androidLibraries are ${getProjectListByType<AndroidLibraryImpl>()}
+                Possible options are ${getProjectListByType<AndroidLibraryImpl>()}
             """.trimIndent()
         )
     }
@@ -130,7 +137,7 @@ internal abstract class BaseGradleBuildImpl() : GradleBuild {
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible androidFeatures are ${getProjectListByType<AndroidFeatureImpl>()}
+                Possible options are ${getProjectListByType<AndroidFeatureImpl>()}
             """.trimIndent()
         )
     }
@@ -142,7 +149,19 @@ internal abstract class BaseGradleBuildImpl() : GradleBuild {
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible privacySandboxSdk are ${getProjectListByType<AndroidPrivacySandboxSdkImpl>()}
+                Possible options are ${getProjectListByType<AndroidPrivacySandboxSdkImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun androidAiPack(path: String): AndroidAiPackProject {
+        val project = subProject(path)
+        if (project is AndroidAiPackProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible options are ${getProjectListByType<AndroidAiPackImpl>()}
             """.trimIndent()
         )
     }
@@ -158,16 +177,26 @@ internal abstract class BaseGradleBuildImpl() : GradleBuild {
  */
 internal class GradleBuildImpl(
     val directory: Path,
-    override val subProjects: Map<String, GradleProject> = mapOf(),
+    private val subProjects: Map<String, BaseGradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
 ): BaseGradleBuildImpl() {
 
+    override fun subProject(path: String): BaseGradleProject<*> {
+        return subProjects[path]
+            ?: throw RuntimeException(
+                """
+                    Unable to find subproject '$path'.
+                    Possible subProjects are ${subProjectsForValidation.keys.joinToString()}
+                """.trimIndent()
+            )
+    }
+
     /**
      * For this implementation, both lists are the same.
      */
-    override val subProjectsForValidation: Map<String, GradleProject>
+    override val subProjectsForValidation: Map<String, BaseGradleProject<*>>
         get() = subProjects
 
     override fun includedBuild(name: String): GradleBuild {

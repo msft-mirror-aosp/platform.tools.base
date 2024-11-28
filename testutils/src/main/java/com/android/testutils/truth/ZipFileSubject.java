@@ -23,6 +23,7 @@ import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Truth;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 /** Truth support for zip files. */
@@ -52,6 +53,28 @@ public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject, Zip> {
         if (actual().getEntry(path) == null) {
             failWithoutActual(
                     Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+        }
+    }
+
+    @Override
+    public void contains(@NonNull String... paths) {
+        exists();
+        for (String path :  paths) {
+            if (actual().getEntry(path) == null) {
+                failWithoutActual(
+                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+            }
+        }
+    }
+
+    @Override
+    public void contains(@NonNull Collection<String> paths) {
+        exists();
+        for (String path :  paths) {
+            if (actual().getEntry(path) == null) {
+                failWithoutActual(
+                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+            }
         }
     }
 

@@ -28,6 +28,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,28 @@ public abstract class AbstractAndroidSubject<
         if (actual().getEntry(path) == null) {
             failWithoutActual(
                     Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+        }
+    }
+
+    @Override
+    public void contains(String... paths) throws IOException {
+        for (String path : paths) {
+            checkArgument(!isClassName(path), "Use containsClass to check for classes.");
+            if (actual().getEntry(path) == null) {
+                failWithoutActual(
+                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+            }
+        }
+    }
+
+    @Override
+    public void contains(Collection<String> paths) throws IOException {
+        for (String path : paths) {
+            checkArgument(!isClassName(path), "Use containsClass to check for classes.");
+            if (actual().getEntry(path) == null) {
+                failWithoutActual(
+                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+            }
         }
     }
 

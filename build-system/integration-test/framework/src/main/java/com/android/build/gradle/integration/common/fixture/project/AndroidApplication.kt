@@ -24,18 +24,24 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.testutils.apk.Aab
 import com.android.testutils.apk.Apk
+import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.isRegularFile
 
 /*
  * Support for Android Application in the [GradleRule] fixture
  */
 
 /**
- * Implementation of [AndroidProjectDefinition]
+ * Implementation of [AndroidProjectDefinition] for [ApplicationExtension]
  */
-internal class AndroidApplicationDefinitionImpl(path: String): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
+internal class AndroidApplicationDefinitionImpl(
+    path: String
+): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_APP)
     }
@@ -52,34 +58,61 @@ internal class AndroidApplicationDefinitionImpl(path: String): AndroidProjectDef
 /**
  * Specialized interface for application [AndroidProject] to use in the test
  */
-interface AndroidApplicationProject: AndroidProject<ApplicationExtension>, GeneratesApk
+interface AndroidApplicationProject: AndroidProject<AndroidProjectDefinition<ApplicationExtension>>, GeneratesApk {
+    /**
+     * Runs the action with a provided instance of [Aab].
+     *
+     * It is possible to return a value from the action, but it should not be [Aab] as this
+     * may not be safe. [Aab] is a [AutoCloseable] and should be treated as such.
+     */
+    fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R
+
+    /**
+     * Runs the action with a provided [ZipSubject]
+     */
+    fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit)
+
+    fun getBundle(bundleSelector: BundleSelector): File
+}
 
 /**
  * Implementation of [AndroidProject]
  */
 internal class AndroidApplicationImpl(
     location: Path,
-    override val projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
+    projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
     namespace: String,
-    private val buildWriter: () -> BuildWriter,
+    buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : AndroidProjectImpl<ApplicationExtension>(location, projectDefinition, namespace, parentBuild),
-    AndroidApplicationProject {
+) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
+    location,
+    projectDefinition,
+    namespace,
+    buildWriter,
+    parentBuild
+), AndroidApplicationProject {
 
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
-    ) {
-        action(projectDefinition)
+    override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R {
+        val path = computeOutputPath(bundleSelector)
+        if (!path.isRegularFile()) error("Bundle file does not exist: $path")
 
-        // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
-
-        projectDefinition as AndroidProjectDefinitionImpl<ApplicationExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
+        return Aab(path.toFile()).use {
+            action(it)
+        }
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
+    override fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit) {
+        withBundle(bundleSelector) {
+            AabSubject.assertThat(this).use {
+                action(it)
+            }
+        }
+    }
+
+    override fun getBundle(bundleSelector: BundleSelector): File =
+        computeOutputPath(bundleSelector).toFile()
+
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidApplicationProject =
         ReversibleAndroidApplicationProject(this, projectModification)
 }
 
@@ -89,7 +122,7 @@ internal class AndroidApplicationImpl(
 internal class ReversibleAndroidApplicationProject(
     parentProject: AndroidApplicationProject,
     projectModification: TemporaryProjectModification
-) : ReversibleAndroidProject<AndroidApplicationProject, ApplicationExtension>(
+) : ReversibleAndroidProject<AndroidApplicationProject, AndroidProjectDefinition<ApplicationExtension>>(
     parentProject,
     projectModification
 ), AndroidApplicationProject {
@@ -102,5 +135,15 @@ internal class ReversibleAndroidApplicationProject(
     }
 
     override fun hasApk(apkSelector: ApkSelector): Boolean = parentProject.hasApk(apkSelector)
+
+    override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R =
+        parentProject.withBundle(bundleSelector, action)
+
+    override fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit) {
+        parentProject.assertBundle(bundleSelector, action)
+    }
+
+    override fun getBundle(bundleSelector: BundleSelector): File =
+        parentProject.getBundle(bundleSelector)
 }
 

@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -30,7 +32,7 @@ import kotlin.io.path.name
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
  */
-interface AndroidProject<T>: GradleProject {
+interface AndroidProject<ProjectDefinitionT : BaseGradleProjectDefinition> : BaseGradleProject<ProjectDefinitionT> {
 
     /**
      * The namespace of the project.
@@ -38,21 +40,7 @@ interface AndroidProject<T>: GradleProject {
     val namespace: String
 
     /** the object that allows to add/update/remove files from the project */
-    override val files: AndroidProjectFiles
-
-    /**
-     * Reconfigure the project, and writes the result on disk right away
-     *
-     * This is useful to make "edits" to the build file during a test.
-     *
-     * This can also be used to update [AndroidProjectFiles], but when only touching project files
-     * (and not the build files) consider using [AndroidProject.files] instead
-     *
-     * @param buildFileOnly whether to only update the build files, or do a full reset, including files added via [AndroidProjectFiles]
-     * @param action the action to configure the [AndroidProjectDefinition]
-     *
-     */
-    fun reconfigure(buildFileOnly: Boolean = false, action: AndroidProjectDefinition<T>.() -> Unit)
+    val files: AndroidProjectFiles
 
     /** Return a File under the intermediates directory from Android plugins.  */
     fun getIntermediateFile(vararg paths: String?): Path
@@ -93,14 +81,18 @@ interface GeneratesApk {
 /**
  * Default implementation of [AndroidProject]
  */
-internal abstract class AndroidProjectImpl<T>(
+internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjectDefinition>(
     location: Path,
-    localProjectDefinition: AndroidProjectDefinition<T>,
+    projectDefinition: ProjectDefinitionT,
     final override val namespace: String,
+    buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-): GradleProjectImpl(location, localProjectDefinition, parentBuild), AndroidProject<T> {
-
-    override abstract val projectDefinition: AndroidProjectDefinition<T>
+) : BaseGradleProjectImpl<ProjectDefinitionT>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild
+), AndroidProject<ProjectDefinitionT> {
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
 

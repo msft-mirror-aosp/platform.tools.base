@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
@@ -29,20 +31,32 @@ import java.nio.file.Path
  * This is simply a wrapper on a normal [GradleProject] object, that replaces the [GradleProjectFiles]
  * with [ReversibleProjectFiles]
  */
-internal open class ReversibleGradleProject<ProjectT: GradleProject>(
-    protected open val parentProject: ProjectT,
+internal open class ReversibleGradleProject(
+    parentProject: GradleProject,
     projectModification: TemporaryProjectModification,
-): GradleProject {
+): BaseReversibleGradleProject<GradleProject, GradleProjectDefinition>(parentProject), GradleProject {
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+}
+
+/**
+ * Base Class for all reversible projects
+ */
+abstract class BaseReversibleGradleProject<ProjectT : BaseGradleProject<ProjectDefinitionT>, ProjectDefinitionT : BaseGradleProjectDefinition>(
+    protected open val parentProject: ProjectT,
+) : BaseGradleProject<ProjectDefinitionT> {
 
     override val location: Path
         get() = parentProject.location
 
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
+        throw RuntimeException("Cannot reconfigure inside a reconfiguration")
+    }
 
     override fun file(path: String): File? {
         return parentProject.file(path)
     }
 }
+
 
 internal open class ReversibleProjectFiles(
     private val projectModification: TemporaryProjectModification,

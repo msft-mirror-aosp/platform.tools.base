@@ -16,111 +16,102 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.BundleSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.bundle.Config
-import com.android.testutils.apk.Zip
-import com.google.common.truth.Truth.assertThat
-import com.android.testutils.truth.PathSubject
 import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_VALUE
 import com.android.tools.build.bundletool.model.AppBundle
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
-import java.util.Optional
-import java.util.zip.ZipFile
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
+import java.util.Optional
+import java.util.zip.ZipFile
 
 class AiPackTest {
-
     private val packageName = "com.example.aipacktestapp"
-    private val aiPackTestApp = MultiModuleTestProject.builder().apply {
-        val app = MinimalSubProject.app("$packageName")
-            .appendToBuild(
-                """
-                android {
-                    assetPacks = [':customModelInstallTime', ':customModelFastFollow', ':modelAdaptationOnDemand']
-
-                    bundle {
-                        aiModelVersion {
-                            enableSplit = true
-                            defaultVersion = '1'
-                        }
-                    }
-                }
-                """.trimIndent()
-            )
-
-        val customModelInstallTime = MinimalSubProject.aiPack()
-            .appendToBuild(
-                """aiPack {
-                          |  packName = "customModelInstallTime"
-                          |  dynamicDelivery {
-                          |    deliveryType = "install-time"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile(
-                "src/main/assets/customModel.tflite",
-                """This is a custom model delivered at install time."""
-            )
-
-        val customModelFastFollow = MinimalSubProject.aiPack()
-            .appendToBuild(
-                """aiPack {
-                          |  packName = "customModelFastFollow"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile(
-                "src/main/assets/customModel.jax",
-                """This is a custom model delivered after install time."""
-            )
-
-        val modelAdaptationOnDemand = MinimalSubProject.aiPack()
-            .appendToBuild(
-                """aiPack {
-                          |  packName = "modelAdaptationOnDemand"
-                          |  dynamicDelivery {
-                          |    deliveryType = "on-demand"
-                          |  }
-                          |  modelDependency {
-                          |    aiModelPackageName = "com.foundation.app"
-                          |    aiModelName = "com.foundation.llm"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile(
-                "src/main/assets/adaptation.lora",
-                """This is an adaptation file delivered on-demand."""
-            )
-
-        subproject(":app", app)
-        subproject(":customModelInstallTime", customModelInstallTime)
-        subproject(":customModelFastFollow", customModelFastFollow)
-        subproject(":modelAdaptationOnDemand", modelAdaptationOnDemand)
-    }
-        .build()
 
     @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(aiPackTestApp)
-        .create()
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            android {
+                namespace = packageName
+                assetPacks += listOf(
+                    ":customModelInstallTime",
+                    ":customModelFastFollow",
+                    ":modelAdaptationOnDemand"
+                )
+                bundle {
+                    aiModelVersion {
+                        enableSplit = true
+                        defaultVersion = "1"
+                    }
+                }
+            }
+            HelloWorldAndroid.setupJava(files)
+        }
+
+        androidAiPack(":customModelInstallTime") {
+            aiPack {
+                packName.set("customModelInstallTime")
+                dynamicDelivery {
+                    deliveryType.set("install-time")
+                }
+            }
+            files {
+                add(
+                    "src/main/assets/customModel.tflite",
+                    """This is a custom model delivered at install time."""
+                )
+            }
+        }
+
+        androidAiPack(":customModelFastFollow") {
+            aiPack {
+                packName.set("customModelFastFollow")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files {
+                add(
+                    "src/main/assets/customModel.jax",
+                    """This is a custom model delivered after install time."""                )
+            }
+        }
+
+        androidAiPack(":modelAdaptationOnDemand") {
+            aiPack {
+                packName.set("modelAdaptationOnDemand")
+                dynamicDelivery {
+                    deliveryType.set("on-demand")
+                }
+                modelDependency {
+                    aiModelPackageName.set("com.foundation.app")
+                    aiModelName.set("com.foundation.llm")
+                }
+            }
+            files {
+                add(
+                    "src/main/assets/adaptation.lora",
+                    """This is an adaptation file delivered on-demand."""
+                )
+            }
+        }
+    }
 
     @Test
     fun buildDebugBundle() {
-        project.executor().run(":app:bundleDebug")
+        val build = rule.build
 
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
-        PathSubject.assertThat(bundleFile).exists()
+        build.executor.run(":app:bundleDebug")
 
-        Zip(bundleFile).use { bundle ->
-            val bundleContents = bundle.entries
-
-            assertThat(bundleContents.map { it.toString() }).containsAtLeast(
+        val app = build.androidApplication(":app")
+        app.assertBundle(BundleSelector.DEBUG) {
+            exists()
+            contains(
                 "/customModelInstallTime/assets/customModel.tflite",
                 "/customModelInstallTime/manifest/AndroidManifest.xml",
                 "/customModelInstallTime/assets.pb",
@@ -132,6 +123,8 @@ class AiPackTest {
                 "/modelAdaptationOnDemand/assets.pb",
             )
         }
+
+        val bundleFile = app.getBundle(BundleSelector.DEBUG)
 
         ZipFile(bundleFile).use { zip ->
             val appBundle = AppBundle.buildFromZip(zip)

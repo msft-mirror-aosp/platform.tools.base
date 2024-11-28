@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
@@ -26,8 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.testutils.apk.Apk
 import java.nio.file.Path
 
 /*
@@ -35,9 +32,11 @@ import java.nio.file.Path
  */
 
 /**
- *  Implementation of [AndroidProjectDefinition] for Privacy Sandbox SDK
+ *  Implementation of [AndroidProjectDefinition] for [PrivacySandboxSdkExtension]
  */
-internal class PrivacySandboxSdkDefinitionImpl(path: String): AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>(path) {
+internal class PrivacySandboxSdkDefinitionImpl(
+    path: String
+) : AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>(path) {
     init {
         applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
     }
@@ -68,21 +67,22 @@ internal class PrivacySandboxSdkDefinitionImpl(path: String): AndroidProjectDefi
 /**
  * Specialized interface for application [AndroidProject] to use in the test
  */
-interface AndroidPrivacySandboxSdkProject: AndroidProject<PrivacySandboxSdkExtension>
+interface AndroidPrivacySandboxSdkProject: AndroidProject<AndroidProjectDefinition<PrivacySandboxSdkExtension>>
 
 /**
  * Implementation of [AndroidProject]
  */
 internal class AndroidPrivacySandboxSdkImpl(
     location: Path,
-    override val projectDefinition: AndroidProjectDefinition<PrivacySandboxSdkExtension>,
+    projectDefinition: AndroidProjectDefinition<PrivacySandboxSdkExtension>,
     namespace: String,
     private val buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : AndroidProjectImpl<PrivacySandboxSdkExtension>(
+) : AndroidProjectImpl<AndroidProjectDefinition<PrivacySandboxSdkExtension>>(
     location,
     projectDefinition,
     namespace,
+    buildWriter,
     parentBuild
 ), AndroidPrivacySandboxSdkProject {
 
@@ -99,7 +99,7 @@ internal class AndroidPrivacySandboxSdkImpl(
         projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject =
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidPrivacySandboxSdkProject =
         ReversibleAndroidPrivacySandboxSdkProject(this, projectModification)
 }
 
@@ -109,7 +109,7 @@ internal class AndroidPrivacySandboxSdkImpl(
 internal class ReversibleAndroidPrivacySandboxSdkProject(
     parentProject: AndroidPrivacySandboxSdkProject,
     projectModification: TemporaryProjectModification
-) : ReversibleAndroidProject<AndroidPrivacySandboxSdkProject, PrivacySandboxSdkExtension>(
+) : ReversibleAndroidProject<AndroidPrivacySandboxSdkProject, AndroidProjectDefinition<PrivacySandboxSdkExtension>>(
     parentProject,
     projectModification
 ), AndroidPrivacySandboxSdkProject

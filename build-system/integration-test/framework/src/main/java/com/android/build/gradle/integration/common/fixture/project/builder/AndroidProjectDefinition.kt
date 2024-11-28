@@ -25,9 +25,9 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
-interface AndroidProjectDefinition<T>: BaseGradleProjectDefinition {
-    val android: T
-    fun android(action: T.() -> Unit)
+interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
+    val android: ExtensionT
+    fun android(action: ExtensionT.() -> Unit)
 
     fun kotlin(action: KotlinExtension.() -> Unit)
 
@@ -91,7 +91,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun writeAndroid(writer: BuildWriter) {
+    override fun writExtension(writer: BuildWriter) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)

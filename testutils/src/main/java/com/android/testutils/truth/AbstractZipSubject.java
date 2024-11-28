@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +46,12 @@ public abstract class AbstractZipSubject<S extends Subject<S, T>, T extends Zip>
 
     /** Asserts the zip file contains a file with the specified path. */
     public abstract void contains(@NonNull String path) throws IOException;
+
+    /** Asserts the zip file contains the files with the specified path. */
+    public abstract void contains(@NonNull String... paths) throws IOException;
+
+    /** Asserts the zip file contains the files with the specified path. */
+    public abstract void contains(@NonNull Collection<String> paths) throws IOException;
 
     /** Asserts the zip file does not contains a file with the specified path. */
     public abstract void doesNotContain(@NonNull String path) throws IOException;

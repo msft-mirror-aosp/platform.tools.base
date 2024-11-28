@@ -101,6 +101,7 @@ class MinimalSubProject private constructor(
         }
 
         @JvmOverloads
+        @Deprecated("Use GradleRule instead")
         fun app(namespace: String = "com.example.app", projectPath: String = "app"): MinimalSubProject {
             return MinimalSubProject(
                 path = projectPath,
@@ -113,6 +114,7 @@ class MinimalSubProject private constructor(
         }
 
         @JvmOverloads
+        @Deprecated("Use GradleRule instead")
         fun lib(namespace: String = "com.example.lib", projectPath: String = "lib"): MinimalSubProject {
             return MinimalSubProject(
                 path = projectPath,
@@ -124,17 +126,7 @@ class MinimalSubProject private constructor(
             )
         }
 
-        fun feature(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.feature",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = true,
-                namespace = namespace,
-            )
-        }
-
+        @Deprecated("Use GradleRule instead")
         fun dynamicFeature(namespace: String): MinimalSubProject {
             return MinimalSubProject(
                 path = null,
@@ -157,6 +149,7 @@ class MinimalSubProject private constructor(
             )
         }
 
+        @Deprecated("Use GradleRule instead")
         fun javaLibrary(): MinimalSubProject {
             return MinimalSubProject(
                 path = null,
@@ -168,6 +161,7 @@ class MinimalSubProject private constructor(
             )
         }
 
+        @Deprecated("Use GradleRule instead")
         fun aiPack(): MinimalSubProject {
             return MinimalSubProject(
                 path = null,
@@ -210,17 +204,6 @@ class MinimalSubProject private constructor(
                 addManifestFile = false,
                 namespace = namespace,
                 androidExtension = "androidFusedLibrary"
-            )
-        }
-
-        fun privacySandboxSdk(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.privacy-sandbox-sdk",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = namespace,
             )
         }
 

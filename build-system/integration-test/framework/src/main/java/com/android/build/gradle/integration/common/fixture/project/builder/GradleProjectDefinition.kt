@@ -24,14 +24,18 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
 /**
- * Represents a Gradle Project that can be configured before being written on disk
+ * Represents a Gradle Project that can be configured before being written on disk.
+ *
+ * This class represents non Android projects that don't have their own custom interfaces
  */
 interface GradleProjectDefinition: BaseGradleProjectDefinition {
+    /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
 }
 
 /**
- * Base interface for [GradleProjectDefinition] and [AndroidProjectDefinition]
+ * Base interface for all project definition, including but not limited to
+ * [GradleProjectDefinition] and [AndroidProjectDefinition].
  */
 interface BaseGradleProjectDefinition {
     val path: String
@@ -56,6 +60,7 @@ interface BaseGradleProjectDefinition {
     var group: String?
     var version: String?
 
+    /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 
     /**
@@ -73,7 +78,7 @@ interface BaseGradleProjectDefinition {
 /**
  * Default implementation for [GradleProjectDefinition]
  */
-internal class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
+internal open class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
     GradleProjectDefinition {
 
     override val files: GradleProjectFiles = GradleProjectFilesImpl()
@@ -151,7 +156,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         write(location, allPlugins, isRoot = true, buildFileOnly = false, buildWriter)
     }
 
-    protected open fun writeAndroid(writer: BuildWriter) {
+    protected open fun writExtension(writer: BuildWriter) {
         // nothing to do here
     }
 
@@ -206,7 +211,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
             }
 
             // write the Android extension if it exist
-            writeAndroid(this)
+            writExtension(this)
 
             dependencies.write(this, location)
         }.also {

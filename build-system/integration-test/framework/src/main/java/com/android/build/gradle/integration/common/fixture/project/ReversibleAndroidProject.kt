@@ -17,10 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.truth.AarSubject
-import com.android.testutils.apk.Aar
+import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import java.nio.file.Path
 
 /**
@@ -28,13 +26,12 @@ import java.nio.file.Path
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
-internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ExtensionT>, ExtensionT>(
+internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : BaseGradleProjectDefinition>(
     parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
-) : ReversibleGradleProject<ProjectT>(
+) : BaseReversibleGradleProject<ProjectT, ProjectDefinitionT>(
     parentProject,
-    projectModification,
-), AndroidProject<ExtensionT> {
+), AndroidProject<ProjectDefinitionT> {
 
     override val namespace: String
         get() = parentProject.namespace
@@ -49,13 +46,6 @@ internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ExtensionT
 
     override val outputsDir: Path
         get() = parentProject.outputsDir
-
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<ExtensionT>.() -> Unit
-    ) {
-        throw UnsupportedOperationException("reconfigure not supported inside a modification block")
-    }
 }
 
 internal class ReversibleAndroidProjectFiles(

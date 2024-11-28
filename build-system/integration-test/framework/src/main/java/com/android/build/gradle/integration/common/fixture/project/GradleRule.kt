@@ -33,6 +33,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -251,11 +252,21 @@ class GradleRule internal constructor(
                     build
                 )
 
-                else -> definition.path to GradleProjectImpl(
+                is AndroidAiPackDefinitionImpl -> definition.path to AndroidAiPackImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
+                    buildWriter,
                     build
                 )
+
+                is GradleProjectDefinitionImpl -> definition.path to GradleProjectImpl(
+                    computeSubProjectPath(rootFolder, definition.path),
+                    definition,
+                    buildWriter,
+                    build
+                )
+
+                else -> throw RuntimeException("Unsupported GradleProjectDefinition type")
             }
         }
 
@@ -266,7 +277,7 @@ class GradleRule internal constructor(
                     computeSubProjectPath(
                         rootFolder,
                         ":"
-                    ), build.rootProject, build
+                    ), build.rootProject, buildWriter, build
                 )
             ),
             includedBuilds = includedBuilds,
@@ -437,7 +448,11 @@ class GradleRule internal constructor(
 
     private fun checkConfigurationCache() {
         val checker = ConfigurationCacheReportChecker()
-        build.subProject(":").location.resolve("build/reports").toFile().walk()
+        (build as GradleBuildImpl).subProject(":")
+            .location
+            .resolve("build/reports")
+            .toFile()
+            .walk()
             .filter { it.isFile }
             .filter { it.name != "configuration-cache.html" }
             .forEach(checker::checkReport)

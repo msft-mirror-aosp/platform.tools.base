@@ -20,12 +20,12 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
+import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.AndroidAiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.GradlePropertiesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.io.File
 import java.nio.file.Path
@@ -83,6 +83,17 @@ interface GradleBuildDefinition {
         action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
     ): AndroidProjectDefinition<PrivacySandboxSdkExtension>
 
+    /**
+     * Configures a subProject with the Android AI Pack SDK plugin, creating it if needed.
+     */
+    fun androidAiPack(
+        path: String,
+        action: AiPackDefinition.() -> Unit
+    ): AiPackDefinition
+
+    /**
+     * Configures a maven repositories with custom artifacts
+     */
     fun mavenRepository(action: MavenRepository.() -> Unit)
 }
 
@@ -199,6 +210,24 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
         project as? PrivacySandboxSdkDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Privacy Sandbox SDK")
+
+        action(project)
+
+        return project
+    }
+
+    override fun androidAiPack(
+        path: String,
+        action: AiPackDefinition.() -> Unit
+    ): AiPackDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AndroidAiPackDefinitionImpl(it)
+        }
+
+        project as? AiPackDefinition
+            ?: errorOnWrongType(project, path, "Android AI Pack")
 
         action(project)
 
