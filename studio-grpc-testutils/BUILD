@@ -23,9 +23,10 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:studio-grpc[test]",
         "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/android-test-framework:intellij.android.testFramework[module, test]",
+        "@intellij//:intellij.libraries.grpc",
+        "//prebuilts/tools/common/m2:grpc-inprocess-1.66.0",
     ],
 )
