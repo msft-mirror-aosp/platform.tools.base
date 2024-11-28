@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.truth.GradleTaskSubject.asser
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithTextEntries
 import com.android.testutils.truth.PathSubject.assertThat
@@ -208,5 +209,29 @@ class MergeJavaResourceTaskTest {
             assertThat(getTask(":processDebugJavaRes")).didWork()
             assertThat(getTask(":mergeDebugJavaResource")).didWork()
         }
+    }
+
+    // Regression test for b/377366954
+    @Test
+    fun javaResIncrementalBuildWithMultipleFilesPerArtifact() {
+        // The appcompat library contains a dependency that caused the failure in the relevant bug
+        TestFileUtils.appendToFile(
+            project.buildFile,
+            """
+                dependencies {
+                    implementation 'androidx.appcompat:appcompat:1.7.0'
+                }
+            """.trimIndent()
+        )
+        project.executor()
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .run(":mergeDebugJavaResource")
+        val newResourceFile =
+            File(project.mainJavaResDir, "file.txt")
+        assertThat(newResourceFile.exists()).isFalse()
+        FileUtils.writeToFile(newResourceFile, "resource")
+        project.executor()
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .run(":mergeDebugJavaResource")
     }
 }

@@ -26,11 +26,9 @@ import com.android.build.gradle.integration.common.fixture.testprojects.prebuilt
 import com.android.builder.merge.DuplicateRelativeFileException
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
-import com.android.testutils.TestInputsGenerator.jarWithEmptyClasses
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Path
 
 private val basicSetupAction: TestProjectBuilder.() -> Unit = {
     subProject(":app") {
@@ -180,7 +178,7 @@ class JavaResPackagingConflictWithExternalLibrariesTest {
 3 files found with path 'foo.txt' from inputs:
  - project(":library")
  - project(":library2")
- - com.example:jar:1
+ - com.example:jar:1/jar-1.jar
 Adding a packaging block may help, please refer to
 https://developer.android.com/reference/tools/gradle-api/com/android/build/api/dsl/Packaging
 for more information

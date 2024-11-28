@@ -205,7 +205,7 @@ private fun copyFromFolder(from: File, outputDirectory: File, pathSegments: Muta
                 copyFromFolder(child, outputDirectory, pathSegments)
             } else if (child.isFile) {
                 if (pattern.matcher(Joiner.on('/').join(pathSegments)).matches()) {
-                    // copy the file. Howeve, we do want to skip the first segment ('lib') here
+                    // copy the file. However, we do want to skip the first segment ('lib') here
                     // since the 'jni' folder is representing the same concept.
                     val to = FileUtils.join(outputDirectory, pathSegments.subList(1, 3))
                     FileUtils.mkdirs(to.parentFile)

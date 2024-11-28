@@ -238,7 +238,8 @@ abstract class MergeJavaResourceTask
             val owner = it.variant.owner
 
             val name = when (owner) {
-                is ModuleComponentIdentifier -> "${owner.group}:${owner.module}:${owner.version}"
+                is ModuleComponentIdentifier ->
+                    "${owner.group}:${owner.module}:${owner.version}" + "/${it.file.name}"
                 is ProjectComponentIdentifier -> {
                     if (displayBuildInfo) {
                         "project(\"${owner.projectPath}\") - Build: ${owner.build.buildPath}"
@@ -246,7 +247,7 @@ abstract class MergeJavaResourceTask
                         "project(\"${owner.projectPath}\")"
                     }
                 }
-                else -> owner.displayName
+                else -> owner.displayName + "/${it.file.name}"
             }
             SourcedInput(it.file, name)
         }
