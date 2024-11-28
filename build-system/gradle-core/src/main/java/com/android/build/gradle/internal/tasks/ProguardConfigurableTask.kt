@@ -415,7 +415,7 @@ abstract class ProguardConfigurableTask(
     ) {
 
         private val includeFeaturesInScopes: Boolean = (creationConfig as? ApplicationCreationConfig)
-            ?.consumesDynamicFeatures == true
+            ?.shrinkingWithDynamicFeatures == true
         protected val componentType: ComponentType = creationConfig.componentType
         private val testedConfig = (creationConfig as? TestComponentCreationConfig)?.mainVariant
 

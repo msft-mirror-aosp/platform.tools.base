@@ -256,7 +256,7 @@ open class ApplicationVariantImpl @Inject constructor(
     private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
     private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
 
-    override val consumesDynamicFeatures: Boolean
+    override val shrinkingWithDynamicFeatures: Boolean
         get() = optimizationCreationConfig.minifiedEnabled && global.hasDynamicFeatures
 
     private fun createVersionNameProperty(): Property<String> =

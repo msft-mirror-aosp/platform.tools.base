@@ -85,6 +85,10 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
+    /** Whether this is a base module or a dynamic feature module. */
+    @get:Input
+    abstract val baseModule: Property<Boolean>
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dexDirectories: ConfigurableFileCollection
@@ -95,15 +99,15 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val resFiles: RegularFileProperty
-
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val javaResJar: RegularFileProperty
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val featureJavaResFiles: ConfigurableFileCollection
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val linkedResourcesFile: RegularFileProperty
 
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -168,27 +172,15 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                 Relocator(FD_ASSETS)
             )
 
-            jarCreator.addJar(resFiles.get().asFile.toPath(), excludeJarManifest, ResRelocator())
-
             // Sort and rename the dex files similarly to how they are packaged in the APK
             // (see DexIncrementalRenameManager)
-            val sortedDexFiles = dexDirectoriesToPackage().asFileTree.files.sortedWith(DexFileComparator)
-            addHybridFolder(
-                jarCreator,
-                sortedDexFiles,
-                DexRelocator(FD_DEX),
-                excludeJarManifest
-            )
+            val sortedDexFiles = getDexDirectories().asFileTree.files.sortedWith(DexFileComparator)
+            addHybridFolder(jarCreator, sortedDexFiles, DexRelocator(FD_DEX), excludeJarManifest)
 
-            // we check baseConsumesDynamicFeatures() instead of checking if
-            // featureJavaResFiles.files.isNotEmpty() because we want to use featureJavaResFiles
-            // even if it's empty (which will be the case when using proguard)
-            val javaResFilesSet =
-                if (baseConsumesDynamicFeatures()) featureJavaResFiles.files else setOf(javaResJar.asFile.get())
-            addHybridFolder(
-                jarCreator, javaResFilesSet, Relocator("root"),
-                JarFlinger.EXCLUDE_CLASSES
-            )
+            addHybridFolder(jarCreator, getJavaResourcesFiles(), Relocator("root"), JarFlinger.EXCLUDE_CLASSES)
+
+            jarCreator.addJar(getResourcesFile().toPath(), excludeJarManifest, ResRelocator())
+
             addHybridFolder(
                 jarCreator,
                 appMetadata.orNull?.asFile?.let { metadataFile -> setOf(metadataFile) }
@@ -252,31 +244,39 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     }
 
     /**
-     * Selects the dex directories to package.
+     * Whether this is a dynamic feature module and the base module has shrinking enabled
+     * (see [ApplicationCreationConfig.shrinkingWithDynamicFeatures]).
      *
-     * Note: This decision depends on whether the base module consumes dynamic feature modules
-     * (i.e., whether shrinking is enabled in base), but from a dynamic feature module we don't have
-     * this info at task configuration time, so we have to do it at task execution time.
+     * Note: From a dynamic feature module, we don't have this info at task configuration time,
+     * so we need to check it at task execution time, and check it indirectly through the presence
+     * of [featureDexDirectories].
      */
-    private fun dexDirectoriesToPackage(): FileCollection {
-        return if (baseConsumesDynamicFeatures()) {
+    private fun isDynamicFeatureAndShrinkingEnabledInBase(): Boolean {
+        // This returns true when the directories are set, even if they may be empty directories
+        return !baseModule.get() && featureDexDirectories.files.isNotEmpty()
+    }
+
+    private fun getDexDirectories(): FileCollection {
+        return if (isDynamicFeatureAndShrinkingEnabledInBase()) {
             featureDexDirectories
         } else {
             dexDirectories
         }
     }
 
-    /**
-     * Whether this is a dynamic feature module, and the base module consumes dynamic feature
-     * modules (i.e., shrinking is enabled) -- see [ApplicationCreationConfig.consumesDynamicFeatures].
-     *
-     * Note: From a dynamic feature module, we don't have this info at task configuration time,
-     * that's why we need to check it at task execution time, and check it indirectly through the
-     * presence of [featureDexDirectories] (it is present only under the above condition).
-     */
-    private fun baseConsumesDynamicFeatures(): Boolean {
-        // This returns true when the directories are present, even if they may be empty directories
-        return featureDexDirectories.files.isNotEmpty()
+    private fun getJavaResourcesFiles(): Set<File> {
+        // we check isDynamicFeatureAndShrinkingEnabledInBase() instead of checking if
+        // featureJavaResFiles.files.isNotEmpty() because we want to use featureJavaResFiles
+        // even if it's empty (which will be the case when using proguard)
+        return if (isDynamicFeatureAndShrinkingEnabledInBase()) {
+            featureJavaResFiles.files
+        } else {
+            setOf(javaResJar.asFile.get())
+        }
+    }
+
+    private fun getResourcesFile(): File {
+        return linkedResourcesFile.get().asFile
     }
 
     class PrivacySandboxSdkCreationAction(
@@ -297,21 +297,22 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
         override fun configure(task: PerModuleBundleTask) {
             super.configure(task)
 
+            task.baseModule.setDisallowChanges(true)
             task.dexDirectories.fromDisallowChanges(
                 creationConfig.artifacts.get(
                     PrivacySandboxSdkInternalArtifactType.DEX
                 )
             )
-            task.assetsFilesDirectory.setDisallowChanges(
-                    creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_ASSETS)
+            task.javaResJar.setDisallowChanges(
+                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
             )
-            task.resFiles.setDisallowChanges(
+            task.linkedResourcesFile.setDisallowChanges(
                 creationConfig.artifacts.get(
                     PrivacySandboxSdkInternalArtifactType.LINKED_MERGE_RES_FOR_ASB
                 )
             )
-            task.javaResJar.setDisallowChanges(
-                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
+            task.assetsFilesDirectory.setDisallowChanges(
+                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_ASSETS)
             )
 
             // Not applicable
@@ -351,9 +352,13 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
             val componentType = creationConfig.componentType
             val artifacts = creationConfig.artifacts
 
-            check(componentType.isBaseModule || componentType.isDynamicFeature) {
-                "Unexpected component type: $componentType"
-            }
+            task.baseModule.setDisallowChanges(
+                when {
+                    componentType.isBaseModule -> true
+                    componentType.isDynamicFeature -> false
+                    else -> error("Unexpected component type: $componentType")
+                }
+            )
 
             if (creationConfig is DynamicFeatureCreationConfig) {
                 task.fileName.set(creationConfig.featureName.map { "$it.zip" })
@@ -379,7 +384,7 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
             } else {
                 // We set both properties below even though at execution time we'll use only one of
                 // them. This adds more build time, but we currently have no choice
-                // (see `dexDirectoriesToPackage()`).
+                // (see `isDynamicFeatureAndShrinkingEnabledInBase()`).
                 task.featureDexDirectories.fromDisallowChanges(
                     creationConfig.variantDependencies.getArtifactFileCollection(
                         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
@@ -391,18 +396,8 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                 task.dexDirectories.fromDisallowChanges(artifacts.getAll(InternalMultipleArtifactType.DEX))
             }
 
-            task.assetsFilesDirectory.setDisallowChanges(
-                creationConfig.artifacts.get(SingleArtifact.ASSETS)
-            )
-
-            task.resFiles.set(artifacts.get(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT))
-            task.resFiles.disallowChanges()
-
-            task.javaResJar.setDisallowChanges(
-                artifacts.get(InternalArtifactType.MERGED_JAVA_RES)
-            )
-            task.nativeLibsFiles.from(creationConfig.artifacts.get(STRIPPED_NATIVE_LIBS))
-            task.featureJavaResFiles.from(
+            task.javaResJar.setDisallowChanges(artifacts.get(InternalArtifactType.MERGED_JAVA_RES))
+            task.featureJavaResFiles.fromDisallowChanges(
                 creationConfig.variantDependencies.getArtifactFileCollection(
                     AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
                     AndroidArtifacts.ArtifactScope.PROJECT,
@@ -410,7 +405,12 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                     AndroidAttributes(MODULE_PATH to task.project.path)
                 )
             )
-            task.featureJavaResFiles.disallowChanges()
+
+            task.linkedResourcesFile.setDisallowChanges(
+                artifacts.get(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT))
+
+            task.assetsFilesDirectory.setDisallowChanges(creationConfig.artifacts.get(SingleArtifact.ASSETS))
+            task.nativeLibsFiles.from(creationConfig.artifacts.get(STRIPPED_NATIVE_LIBS))
 
             if (creationConfig.componentType.isDynamicFeature) {
                 // If this is a dynamic feature, we use the abiFilters published by the base module.

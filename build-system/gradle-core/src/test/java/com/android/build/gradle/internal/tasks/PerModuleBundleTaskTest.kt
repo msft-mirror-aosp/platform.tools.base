@@ -52,16 +52,17 @@ class PerModuleBundleTaskTest {
                     testFolder.newFolder("assets").absolutePath))
         }
 
-        val resFile = testFolder.newFile("res").also {
-            createRes(it)
-        }
-        task.resFiles.set(resFile)
+        task.baseModule.set(true)
         task.fileName.set("bar.zip")
         task.javaResJar.set(
             testFolder.root.toPath().resolve("java_resources.jar").also {
                 TestInputsGenerator.jarWithEmptyClasses(it, listOf())
             }.toFile()
         )
+        val resFile = testFolder.newFile("res").also {
+            createRes(it)
+        }
+        task.linkedResourcesFile.set(resFile)
         task.outputDir.set(testFolder.newFolder("out"))
     }
 
@@ -143,7 +144,7 @@ class PerModuleBundleTaskTest {
 
             }
         }
-        task.resFiles.set(resFile)
+        task.linkedResourcesFile.set(resFile)
         task.doTaskAction()
         val zipFile = task.outputDir.get().asFileTree.singleFile
         assertThat(zipFile) {
