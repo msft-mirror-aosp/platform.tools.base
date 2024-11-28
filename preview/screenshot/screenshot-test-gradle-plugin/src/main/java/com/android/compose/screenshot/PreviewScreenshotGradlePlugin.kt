@@ -88,9 +88,9 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         const val VALIDATION_ENGINE_VERSION_OVERRIDE = "android.compose.screenshot.validationEngineVersion"
 
         const val MIN_VALIDATION_ENGINE_VERSION = "0.0.1-alpha03"
-        private const val LAYOUTLIB_VERSION = "14.0.9"
-        private const val LAYOUTLIB_RUNTIME_VERSION = "14.0.9"
-        private const val LAYOUTLIB_RESOURCES_VERSION = "14.0.9"
+        private const val LAYOUTLIB_VERSION = "15.0.7"
+        private const val LAYOUTLIB_RUNTIME_VERSION = "15.0.7"
+        private const val LAYOUTLIB_RESOURCES_VERSION = "15.0.7"
 
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
             requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
