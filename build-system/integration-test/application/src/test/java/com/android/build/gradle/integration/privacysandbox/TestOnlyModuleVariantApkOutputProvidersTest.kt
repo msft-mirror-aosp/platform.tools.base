@@ -25,7 +25,7 @@ import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
 
-class TestOnlyModuleApkOutputProvidersTest {
+class TestOnlyModuleVariantApkOutputProvidersTest {
 
     @JvmField
     @Rule

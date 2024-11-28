@@ -24,7 +24,7 @@ import org.junit.Test
 
 class PrivacySandboxDefaultApkOutputTest {
     companion object {
-        fun getBuildFileContentWithFetchTask(verificationString: String) = """
+        private fun getFetchTaskText(verificationString: String) = """
 
             import com.android.build.api.variant.ApkInstallGroup
             import com.android.build.api.variant.ApkOutput
@@ -45,7 +45,10 @@ class PrivacySandboxDefaultApkOutputTest {
             }
 
             def taskProvider = tasks.register("fetchApks", FetchApkTask)
+            """.trimIndent()
 
+        fun getBuildFileContentWithFetchTaskForAppVariant(verificationString: String) = """
+            ${getFetchTaskText(verificationString)}
             androidComponents {
                 onVariants(selector().withName("debug")) { variant ->
                     if (variant instanceof ApplicationVariant) {
@@ -56,6 +59,38 @@ class PrivacySandboxDefaultApkOutputTest {
                 }
             }
         """.trimIndent()
+
+        fun getBuildFileContentWithFetchTaskForAndroidVariant(verificationString: String) = """
+            import com.android.build.api.variant.AndroidTest
+            ${getFetchTaskText(verificationString)}
+            androidComponents {
+                onVariants(selector().withName("debug")) { variant ->
+                    if (variant instanceof ApplicationVariant) {
+                        ApplicationVariant appVariant = (ApplicationVariant) variant
+                        AndroidTest androidTestVariant = (AndroidTest) variant.getNestedComponents().stream()
+                            .filter(component -> component instanceof AndroidTest)
+                            .findFirst().get()
+                        androidTestVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxEnabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(34).setCodeName("").setAbis([]).setSupportsPrivacySandbox(true).build())
+                        androidTestVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxDisabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(34).setCodeName("").setAbis([]).setSupportsPrivacySandbox(false).build())
+                    }
+                }
+            }
+        """.trimIndent()
+
+        fun getBuildFileContentWithFetchTaskForDynamicFeatureVariant(verificationString: String) = """
+            import com.android.build.api.variant.DynamicFeatureVariant
+            ${getFetchTaskText(verificationString)}
+            androidComponents {
+                onVariants(selector().withName("debug")) { variant ->
+                    if (variant instanceof DynamicFeatureVariant) {
+                        DynamicFeatureVariant featureVariant = (DynamicFeatureVariant) variant
+                        featureVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxEnabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(34).setCodeName("").setAbis([]).setSupportsPrivacySandbox(true).build())
+                        featureVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxDisabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(34).setCodeName("").setAbis([]).setSupportsPrivacySandbox(false).build())
+                    }
+                }
+            }
+        """.trimIndent()
+
         val viaBundleVerificationString = """
                     def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
                     if (apkInstall.size() != 3 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1 || apkInstall[2].apks.size() != 1) {
@@ -118,7 +153,7 @@ class PrivacySandboxDefaultApkOutputTest {
     @Test
     fun getApkOutput() {
         project.getSubproject("example-app").buildFile.appendText(
-            getBuildFileContentWithFetchTask(skipApkViaBundleVerificationString))
+            getBuildFileContentWithFetchTaskForAppVariant(skipApkViaBundleVerificationString))
 
         executor()
             .with(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE, true)
@@ -128,7 +163,7 @@ class PrivacySandboxDefaultApkOutputTest {
     @Test
     fun getViaBundleApkOutput() {
         project.getSubproject("example-app").buildFile.appendText(
-            getBuildFileContentWithFetchTask(viaBundleVerificationString))
+            getBuildFileContentWithFetchTaskForAppVariant(viaBundleVerificationString))
 
         executor().run(":example-app:fetchApks")
     }

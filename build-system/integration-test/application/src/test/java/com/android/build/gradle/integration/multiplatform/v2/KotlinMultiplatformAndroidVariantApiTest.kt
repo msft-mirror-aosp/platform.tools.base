@@ -118,6 +118,80 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
 
     @Test
+    fun testVariantApkOutput() {
+    TestFileUtils.prependToFile(project.getSubproject("kmpFirstLib").ktsBuildFile,
+        //language=kotlin
+            """
+                import com.android.build.api.variant.ApkOutput
+                import com.android.build.api.variant.DeviceSpec
+                import org.gradle.api.DefaultTask
+                import org.gradle.api.GradleException
+                import org.gradle.api.tasks.Internal
+                import org.gradle.api.tasks.TaskAction
+                import org.gradle.api.provider.Property
+            """.trimIndent())
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            // language=kotlin
+            """
+                abstract class FetchApkTask : DefaultTask() {
+                    @get:Internal
+                    abstract val privacySandboxEnabledApkOutput: Property<ApkOutput>
+
+                    @get:Internal
+                    abstract val privacySandboxDisabledApkOutput: Property<ApkOutput>
+
+                    @TaskAction
+                    fun execute() {
+                        var apkInstall = privacySandboxEnabledApkOutput.get().apkInstallGroups
+                        if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
+                            throw GradleException("Unexpected number of apks")
+                        }
+                        assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
+                        assert(apkInstall[0].description.contains("Testing Apk"))
+
+                        apkInstall = privacySandboxDisabledApkOutput.get().apkInstallGroups
+                        if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
+                            throw GradleException("Unexpected number of apks")
+                        }
+                        assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
+                        assert(apkInstall[0].description.contains("Testing Apk"))
+                    }
+                }
+                val taskProvider = tasks.register("fetchApks", FetchApkTask::class.java)
+                androidComponents {
+                    onVariant { variant ->
+                        variant.androidTest?.let {
+                            it.outputProviders.provideApkOutputToTask(
+                                taskProvider,
+                                FetchApkTask::privacySandboxEnabledApkOutput,
+                                DeviceSpec.Builder()
+                                    .setName("testDevice")
+                                    .setApiLevel(34)
+                                    .setCodeName("")
+                                    .setAbis(listOf())
+                                    .setSupportsPrivacySandbox(true)
+                                    .build())
+                        it.outputProviders.provideApkOutputToTask(
+                            taskProvider,
+                            FetchApkTask::privacySandboxDisabledApkOutput,
+                            DeviceSpec.Builder()
+                                .setName("testDevice")
+                                .setApiLevel(34)
+                                .setCodeName("")
+                                .setAbis(listOf())
+                                .setSupportsPrivacySandbox(false)
+                                .build())
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+
+        project.executor().run(":kmpFirstLib:fetchApks")
+    }
+
+    @Test
     fun testStaticAssets() {
         FileUtils.createFile(
             project.getSubproject("kmpFirstLib").file("src/assets/static.txt"),

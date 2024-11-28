@@ -28,6 +28,8 @@ import com.google.common.collect.Lists
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.ClasspathNormalizer
+import org.gradle.api.tasks.TaskInputs
 import java.io.File
 import java.nio.file.Path
 
@@ -71,5 +73,12 @@ class ViaBundleDeviceApkOutput(
             apkInstallGroups.add(DefaultDeviceApkOutput.DefaultApkInstallGroup(apkFiles, "Apks from Main Bundle"))
         }
         return apkInstallGroups
+    }
+
+    override fun setInputs(inputs: TaskInputs, deviceSpec: DeviceSpec) {
+        inputs.files(
+            apkBundle,
+            privacySandboxSdkApks,
+        ).withNormalizer(ClasspathNormalizer::class.java)
     }
 }
