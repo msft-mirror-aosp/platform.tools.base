@@ -56068,6 +56068,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-bom_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-bom/3.24.4/protobuf-bom-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-bom/3.24.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-java-util_3.10.0",
     pom = "repository/com/google/protobuf/protobuf-java-util/3.10.0/protobuf-java-util-3.10.0.pom",
     repo_root_path = "repository",
@@ -56127,6 +56135,23 @@ maven_artifact(
         "com.google.j2objc.j2objc-annotations_1.3",
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.code.gson.gson_2.8.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protobuf-java-util_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-java-util/3.24.4/protobuf-java-util-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java-util/3.24.4",
+    parent = "com.google.protobuf.protobuf-parent_3.24.4",
+    deps = [
+        "com.google.protobuf.protobuf-java_3.24.4",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.code.gson.gson_2.8.9",
+        "com.google.errorprone.error_prone_annotations_2.18.0",
+        "com.google.guava.guava_32.0.1-jre",
+        "com.google.j2objc.j2objc-annotations_2.8",
     ],
     visibility = ["//visibility:public"],
 )
@@ -56218,6 +56243,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-java_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-java/3.24.4/protobuf-java-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java/3.24.4",
+    parent = "com.google.protobuf.protobuf-parent_3.24.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-java_3.4.0",
     pom = "repository/com/google/protobuf/protobuf-java/3.4.0/protobuf-java-3.4.0.pom",
     repo_root_path = "repository",
@@ -56265,11 +56299,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-parent_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-parent/3.24.4/protobuf-parent-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-parent/3.24.4",
+    deps = [
+        "com.google.protobuf.protobuf-bom_3.24.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protoc_3.19.6",
     pom = "repository/com/google/protobuf/protoc/3.19.6/protoc-3.19.6.pom",
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protoc/3.19.6",
     parent = "com.google.google_1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protoc_3.24.4",
+    pom = "repository/com/google/protobuf/protoc/3.24.4/protoc-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protoc/3.24.4",
+    parent = "com.google.google_5",
     visibility = ["//visibility:public"],
 )
 
