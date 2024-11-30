@@ -27,7 +27,13 @@ abstract class DeviceProvisionerTestFixture {
   protected val fakeSession = FakeAdbSession()
 
   protected val deviceIcons =
-    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT)
+    DeviceIcons(
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+    )
 
   protected object SerialNumbers {
     const val PHYSICAL1_USB = "X1058A"

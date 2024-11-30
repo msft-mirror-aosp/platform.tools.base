@@ -236,6 +236,7 @@ interface DeviceProperties {
           characteristics.contains("watch") -> DeviceType.WEAR
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
+          characteristics.contains("xr") -> DeviceType.XR
           else -> DeviceType.HANDHELD
         }
       isVirtual = properties[RO_KERNEL_QEMU] == "1"
@@ -352,7 +353,8 @@ enum class DeviceType(val stringValue: String) {
   WEAR("Wear"),
   TV("TV"),
   AUTOMOTIVE("Automotive"),
-  DESKTOP("Desktop");
+  DESKTOP("Desktop"),
+  XR("XR");
 
   override fun toString() = stringValue
 }
@@ -363,12 +365,19 @@ enum class ConnectionType {
   NETWORK,
 }
 
-data class DeviceIcons(val handheld: Icon, val wear: Icon, val tv: Icon, val automotive: Icon) {
+data class DeviceIcons(
+  val handheld: Icon,
+  val wear: Icon,
+  val tv: Icon,
+  val automotive: Icon,
+  val headset: Icon,
+) {
   fun iconForDeviceType(type: DeviceType?) =
     when (type) {
       DeviceType.TV -> tv
       DeviceType.AUTOMOTIVE -> automotive
       DeviceType.WEAR -> wear
+      DeviceType.XR -> headset
       else -> handheld
     }
 }

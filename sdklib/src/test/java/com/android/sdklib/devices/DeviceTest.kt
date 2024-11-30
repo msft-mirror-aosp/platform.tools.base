@@ -128,4 +128,11 @@ class DeviceTest {
     val pixelCloneNewId = Device.Builder(pixelPhone).apply { setId("pixel_clone") }.build()
     assertThat(pixelPhone).isNotEqualTo(pixelCloneNewId)
   }
+
+  @Test
+  fun testIsXr() {
+    val xr = checkNotNull(devMgr.getDevice("xr_device", "Google"))
+    assertThat(Device.isXr(xr)).isTrue()
+    assertThat(Device.isPhone(xr)).isFalse()
+  }
 }

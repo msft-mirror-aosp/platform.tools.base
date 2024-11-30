@@ -44,6 +44,7 @@ class CaptureExecutor(
     @GuardedBy("state.lock")
     private val state: InspectorState,
     private val root: View,
+    private val isXr: Boolean,
     private val rootsDetector: RootsDetector,
     private val foldSupport: FoldSupport?,
     private val updateState: (ProgressCheckpoint) -> Unit,
@@ -72,7 +73,7 @@ class CaptureExecutor(
                     captureOutputStream.reset()
                 }
                 else {
-                    executeCapture(command, captureOutputStream, root)
+                    executeCapture(command, captureOutputStream, root, isXr)
                 }
             }
         } catch (exception: RejectedExecutionException) {
@@ -88,7 +89,7 @@ class CaptureExecutor(
     /**
      * @param doCapture Triggers a capture, the output of which is written into [captureOutputStream].
      */
-    private fun executeCapture(doCapture: Runnable, captureOutputStream: ByteArrayOutputStream, rootView: View) {
+    private fun executeCapture(doCapture: Runnable, captureOutputStream: ByteArrayOutputStream, rootView: View, isXr: Boolean) {
         var snapshotRequest: SnapshotRequest?
         var context: CaptureContext
         var screenshotSettings: ScreenshotSettings
@@ -142,7 +143,7 @@ class CaptureExecutor(
             if (!rootsDetector.lastRootIds.contains(rootView.uniqueDrawingId)) {
                 return@run
             }
-            sendLayoutEvent(rootView, context, screenshotSettings, captureOutputStream, snapshotResponse)
+            sendLayoutEvent(rootView, isXr, context, screenshotSettings, captureOutputStream, snapshotResponse)
         }
         if (snapshotResponse != null || context.isLastCapture) {
             sendAllPropertiesEvent(rootView, snapshotResponse)
@@ -156,6 +157,7 @@ class CaptureExecutor(
 
     private fun sendLayoutEvent(
         rootView: View,
+        isXr: Boolean,
         context: CaptureContext,
         screenshotSettings: ScreenshotSettings,
         os: ByteArrayOutputStream,
@@ -187,6 +189,7 @@ class CaptureExecutor(
             appContext,
             configuration,
             rootViewNode,
+            isXr,
             rootOffset,
             screenshotSettings,
             screenshot
@@ -235,6 +238,7 @@ class CaptureExecutor(
         appContext: LayoutInspectorViewProtocol.AppContext,
         configuration: LayoutInspectorViewProtocol.Configuration,
         rootView: LayoutInspectorViewProtocol.ViewNode,
+        isXr: Boolean,
         rootOffset: IntArray,
         screenshotSettings: ScreenshotSettings,
         screenshot: ByteString?
@@ -247,6 +251,8 @@ class CaptureExecutor(
             x = rootOffset[0]
             y = rootOffset[1]
         }.build()
+        this.isXr = isXr
+
 
         // only send a screenshot if bitmaps are enabled or if the current screenshot type is SKP
         if (state.enableBitmapScreenshot || screenshotSettings.type == LayoutInspectorViewProtocol.Screenshot.Type.SKP) {

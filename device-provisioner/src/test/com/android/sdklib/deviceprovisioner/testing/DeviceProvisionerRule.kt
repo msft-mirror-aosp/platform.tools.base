@@ -51,4 +51,5 @@ val testDeviceIcons =
     wear = EmptyIcon.DEFAULT,
     tv = EmptyIcon.DEFAULT,
     automotive = EmptyIcon.DEFAULT,
+    headset = EmptyIcon.DEFAULT,
   )

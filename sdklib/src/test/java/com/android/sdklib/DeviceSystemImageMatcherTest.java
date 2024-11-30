@@ -159,6 +159,20 @@ public final class DeviceSystemImageMatcherTest {
     }
 
     @Test
+    public void matchesDeviceTagIdIsNullAndImageIsXrImage() {
+        // Arrange
+        Device device = mockDevice(null);
+
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_TAG));
+
+        // Act
+        boolean matches = DeviceSystemImageMatcher.matches(device, image);
+
+        // Assert
+        assertFalse(matches);
+    }
+
+    @Test
     public void matchesDeviceTagIdEqualsDefaultTagIdAndImageIsAutomotiveImage() {
         // Arrange
         Device device = mockDevice(SystemImageTags.DEFAULT_TAG.getId());
@@ -244,6 +258,32 @@ public final class DeviceSystemImageMatcherTest {
     public void matchesDeviceTagIdEqualsGoogleTvTagIdAndImageIsntTvImage() {
         // Arrange
         Device device = mockDevice(SystemImageTags.GOOGLE_TV_TAG.getId());
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.GOOGLE_APIS_TAG));
+
+        // Act
+        boolean matches = DeviceSystemImageMatcher.matches(device, image);
+
+        // Assert
+        assertFalse(matches);
+    }
+
+    @Test
+    public void matchesDeviceTagIdEqualsXrTagIdAndImageIsXrImage() {
+        // Arrange
+        Device device = mockDevice(SystemImageTags.XR_TAG.getId());
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_TAG));
+
+        // Act
+        boolean matches = DeviceSystemImageMatcher.matches(device, image);
+
+        // Assert
+        assertTrue(matches);
+    }
+
+    @Test
+    public void matchesDeviceTagIdEqualsXrTvTagIdAndImageIsntXrImage() {
+        // Arrange
+        Device device = mockDevice(SystemImageTags.XR_TAG.getId());
         ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.GOOGLE_APIS_TAG));
 
         // Act

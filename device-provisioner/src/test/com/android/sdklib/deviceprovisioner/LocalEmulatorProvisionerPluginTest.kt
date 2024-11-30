@@ -55,7 +55,13 @@ class LocalEmulatorProvisionerPluginTest {
 
   val session = FakeAdbSession()
   private val deviceIcons =
-    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT)
+    DeviceIcons(
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+    )
 
   private lateinit var avdsPath: Path
   private lateinit var avdManager: FakeAvdManager
@@ -347,6 +353,21 @@ class LocalEmulatorProvisionerPluginTest {
     handle.awaitReady()
 
     assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.TV)
+  }
+
+  @Test
+  fun xrDeviceType() = runBlockingWithTimeout {
+    avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.XR_TAG))
+
+    yieldUntil { provisioner.devices.value.size == 1 }
+
+    val handle = provisioner.devices.value[0]
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
+
+    handle.activationAction?.activate()
+    handle.awaitReady()
+
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
   }
 
   @Test
