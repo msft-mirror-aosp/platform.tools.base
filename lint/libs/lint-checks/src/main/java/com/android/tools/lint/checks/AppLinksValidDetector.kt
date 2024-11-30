@@ -64,10 +64,7 @@ import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_LITERAL
 import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_PREFIX
 import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_SIMPLE_GLOB
 import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_SUFFIX
-import com.android.tools.lint.checks.AppLinksValidDetector.Companion.DEFAULT_INDENT_AMOUNT
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.ElementWrapper
-import com.android.tools.lint.checks.AppLinksValidDetector.Companion.concatenateWithIndent
-import com.android.tools.lint.checks.AppLinksValidDetector.Companion.indentation
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.ResourceRepositoryScope
 import com.android.tools.lint.detector.api.Category
@@ -75,6 +72,7 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.LintFix
+import com.android.tools.lint.detector.api.LintFix.Companion.TODO
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
@@ -303,18 +301,22 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // data node) ---
     val hasActionView = intentFilterData.actionSet.contains(ACTION_VIEW)
     val hasCategoryBrowsable = intentFilterData.categorySet.contains(CATEGORY_BROWSABLE)
-    if (intentFilterData.dataTags.isEmpty) {
-      if (hasCategoryBrowsable) {
-        // If this intent has ACTION_VIEW and CATEGORY_BROWSABLE, but doesn't have a data node, it's
-        // a likely mistake
-        reportUrlError(
-          context,
-          intentFilter,
-          context.getLocation(intentFilter),
-          "Missing data element",
-        )
-      }
-      return intentFilterData
+
+    // If this intent has ACTION_VIEW and CATEGORY_BROWSABLE, but doesn't have a data node, it's
+    // a likely mistake.
+    // Also, don't report this error if autoVerify is true. If autoVerify is true, then we provide a
+    // quick-fix to help the user populate the necessary data elements (see below).
+    if (
+      intentFilterData.dataTags.isEmpty &&
+        hasCategoryBrowsable &&
+        intentFilterData.autoVerify != VALUE_TRUE
+    ) {
+      reportUrlError(
+        context,
+        intentFilter,
+        context.getLocation(intentFilter),
+        "Missing data element",
+      )
     }
 
     // --- Check mimeType ---
@@ -564,23 +566,114 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // autoVerify means this is an Android App Link:
     // https://developer.android.com/training/app-links#android-app-links
     if (hasAutoVerifyButInvalidAppLink(intentFilterData)) {
-      if (!hasElementsRequiredForAppLinks(intentFilterData)) {
-        // If we are in Studio then add quick-fix data so that Studio adds the
-        // "Launch App Links Assistant" quick-fix.
-        val fix =
-          if (LintClient.isStudio) {
-            fix().data(KEY_SHOW_APP_LINKS_ASSISTANT, true)
-          } else {
-            null
+      // Construct content which includes all necessary elements + attributes for app links.
+      val contentToInsert = StringBuilder()
+      // Keep track of human-readable names of what we needed to add
+      val insertionDescriptions = mutableListOf<String>()
+
+      val innerIndent =
+        XmlUtils.getFirstSubTag(intentFilter)?.let { context.getLocation(it).start?.column }
+          ?: ((context.getLocation(intentFilter).start?.column ?: 0) + DEFAULT_INDENT_AMOUNT)
+      val newLineAndInnerIndent = "\n" + indentation(innerIndent)
+      val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
+
+      if (!intentFilterData.actionSet.contains(ACTION_VIEW)) {
+        contentToInsert
+          .append(newLineAndInnerIndent)
+          .append("""<$TAG_ACTION $namespace:$ATTRIBUTE_NAME="$ACTION_VIEW" />""")
+        insertionDescriptions.add("VIEW action")
+      }
+      for (categoryName in sequenceOf(CATEGORY_BROWSABLE, CATEGORY_DEFAULT)) {
+        if (!intentFilterData.categorySet.contains(categoryName)) {
+          contentToInsert
+            .append(newLineAndInnerIndent)
+            .append("""<$TAG_CATEGORY $namespace:$ATTRIBUTE_NAME="$categoryName" />""")
+          insertionDescriptions.add(
+            "${categoryName.substringAfter("android.intent.category.")} category"
+          )
+        }
+      }
+      // Provide a quick-fix to add schemes
+      if (
+        intentFilterData.dataTags.schemes.none { isSubstituted(it) || isWebScheme(it) } &&
+          // If an existing "needs scheme" fix comes from a host with no scheme, don't create a
+          // redundant fix
+          !(intentFilterData.dataTags.schemes.isEmpty() &&
+            intentFilterData.dataTags.hostPortPairs.isNotEmpty())
+      ) {
+        contentToInsert
+          .append(newLineAndInnerIndent)
+          .append("""<$TAG_DATA $namespace:$ATTR_SCHEME="$HTTP" />""")
+          .append(newLineAndInnerIndent)
+          .append("""<$TAG_DATA $namespace:$ATTR_SCHEME="$HTTPS" />""")
+        insertionDescriptions.add("`http(s)` scheme")
+      }
+      val needsHostFix =
+        intentFilterData.dataTags.hostPortPairs.isEmpty() &&
+          // If an existing "needs host" fix comes from a port with no host, don't create a
+          // redundant fix
+          intentFilterData.dataTags.dataTagElements.none {
+            it.getAttributeWrapper(ATTR_PORT) != null && it.getAttributeWrapper(ATTR_HOST) == null
+          }
+      if (needsHostFix) {
+        contentToInsert
+          .append(newLineAndInnerIndent)
+          .append("""<$TAG_DATA $namespace:$ATTR_HOST="$TODO" />""")
+        insertionDescriptions.add("`host` attribute")
+      }
+
+      // The first child is the (potentially whitespace) element immediately after
+      // <intent-filter ... >
+      val firstChildStart = context.getLocation(intentFilter.firstChild).start
+      // If the content to insert ended up being empty, don't report an issue. (This will happen if
+      // there's a "more fundamental" issue with the intent filter, such as a port with no
+      // host, and we don't want to report redundant issues in these cases.)
+      if (contentToInsert.isNotEmpty() && firstChildStart != null) {
+        val message =
+          when (insertionDescriptions.size) {
+            1 ->
+              "${insertionDescriptions.single()} is missing, but is required for Android App Links"
+            2 ->
+              "${insertionDescriptions.first()} and ${insertionDescriptions.last()} are missing, but are required for Android App Links"
+            else ->
+              "Several elements/attributes (such as ${insertionDescriptions.first()}) required for Android App Links are missing"
+          }
+        val fixName =
+          when (insertionDescriptions.size) {
+            1 -> "Add ${insertionDescriptions.single()}"
+            2 -> "Add ${insertionDescriptions.first()} and ${insertionDescriptions.last()}"
+            else -> "Add missing elements/attributes"
           }
 
-        // --- Check that all elements & attributes that are required for App Links are present ---
+        val fix =
+          fix()
+            .name(fixName)
+            .replace()
+            .with(contentToInsert.toString())
+            .apply {
+              if (needsHostFix) {
+                select(TODO)
+              }
+            }
+            .range(
+              Location.create(context.file, firstChildStart, firstChildStart)
+                .withSource(intentFilter)
+            )
+            .autoFix()
+            .build()
+
         reportUrlError(
           context,
           intentFilter,
-          context.getLocation(intentFilter),
-          "Missing required elements/attributes for Android App Links",
-          fix,
+          context.getNameLocation(intentFilter),
+          message,
+          // If we are in Studio then add quick-fix data so that Studio adds the
+          // "Launch App Links Assistant" quick-fix.
+          if (LintClient.isStudio) {
+            fix().group(fix().data(KEY_SHOW_APP_LINKS_ASSISTANT, true), fix)
+          } else {
+            fix
+          },
         )
       }
       /* else {
@@ -1515,19 +1608,19 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
     fun hasAutoVerifyButInvalidAppLink(data: IntentFilterData): Boolean {
       return data.autoVerify == VALUE_TRUE &&
+        // Is the intent filter missing anything that we expect from an app link?
         (!hasElementsRequiredForAppLinks(data) ||
+          // Does the intent filter include anything that we wouldn't expect from an app link?
+          // Such as a non-web scheme, which should be split out into a different intent filter.
           data.dataTags.schemes.any { !isSubstituted(it) && !isWebScheme(it) })
     }
 
     private fun hasElementsRequiredForAppLinks(data: IntentFilterData): Boolean {
-      return (data.actions.any { it.substitutedValue == ACTION_VIEW } &&
-        data.categories.any { it.substitutedValue == CATEGORY_DEFAULT } &&
-        data.categories.any { it.substitutedValue == CATEGORY_BROWSABLE } &&
+      return data.actionSet.contains(ACTION_VIEW) &&
+        data.categorySet.contains(CATEGORY_DEFAULT) &&
+        data.categorySet.contains(CATEGORY_BROWSABLE) &&
         data.dataTags.schemes.any { isSubstituted(it) || isWebScheme(it) } &&
-        data.dataTags.hostPortPairs.isNotEmpty()) ||
-        // If schemes are empty and hosts are non-empty, we already show a different check; showing
-        // this one would be a duplicate.
-        (data.dataTags.schemes.isEmpty() && data.dataTags.hostPortPairs.isNotEmpty())
+        data.dataTags.hostPortPairs.isNotEmpty()
     }
 
     private fun concatenateWithIndent(
@@ -1765,6 +1858,18 @@ class AppLinksValidDetector : Detector(), XmlScanner {
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
     if (issue == VALIDATION && old == "Missing URL" && new == "VIEW actions require a URI")
       return true // See commit 406811b
+    if (
+      issue == VALIDATION &&
+        old == "Missing required elements/attributes for Android App Links" &&
+        new.matches(
+          Regex(
+            "(.* is missing, but is required for Android App Links)|" +
+              "(.* and .* are missing, but are required for Android App Links)|" +
+              "(Several elements/attributes \\(such as .*\\) required for Android App Links are missing)"
+          )
+        )
+    )
+      return true
     return super.sameMessage(issue, new, old)
   }
 }

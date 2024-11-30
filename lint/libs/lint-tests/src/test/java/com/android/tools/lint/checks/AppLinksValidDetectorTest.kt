@@ -2473,31 +2473,74 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:27: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:27: Error: VIEW action is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
-                      ^
-          AndroidManifest.xml:38: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:38: Error: DEFAULT category is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
-                      ^
+                       ~~~~~~~~~~~~~
           AndroidManifest.xml:49: Error: Activity supporting ACTION_VIEW is not set as BROWSABLE [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
                       ^
-          AndroidManifest.xml:49: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:49: Error: BROWSABLE category is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
-                      ^
-          AndroidManifest.xml:60: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:60: Error: http(s) scheme is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
-                      ^
+                       ~~~~~~~~~~~~~
           AndroidManifest.xml:76: Error: At least one scheme must be specified [AppLinkUrlError]
                           <data android:host="example.com" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          AndroidManifest.xml:80: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:80: Error: host attribute is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing host -->
-                      ^
-          AndroidManifest.xml:89: Error: Missing data element [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:89: Error: http(s) scheme and host attribute are missing, but are required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
-                      ^
+                       ~~~~~~~~~~~~~
           8 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 27: Add VIEW action:
+        @@ -27 +27
+        -             <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <action android:name="android.intent.action.VIEW" /> <!-- Missing VIEW -->
+        Autofix for AndroidManifest.xml line 38: Add DEFAULT category:
+        @@ -38 +38
+        -             <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <category android:name="android.intent.category.DEFAULT" /> <!-- Missing DEFAULT -->
+        Autofix for AndroidManifest.xml line 49: Add BROWSABLE category:
+        @@ -49 +49
+        -             <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <category android:name="android.intent.category.BROWSABLE" /> <!-- Missing BROWSABLE -->
+        Autofix for AndroidManifest.xml line 60: Add `http(s)` scheme:
+        @@ -60 +60
+        -             <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" /> <!-- Has custom scheme, but missing http -->
+        Fix for AndroidManifest.xml line 76: Set scheme:
+        @@ -71 +71
+        -                 <data android:host="example.com" />
+        +                 <data
+        +                     android:host="example.com"
+        +                     android:scheme="http[TODO]|" />
+        Autofix for AndroidManifest.xml line 80: Add `host` attribute:
+        @@ -80 +80
+        -             <intent-filter android:autoVerify="true"> <!-- Missing host -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:host="[TODO]|" /> <!-- Missing host -->
+        Autofix for AndroidManifest.xml line 89: Add `http(s)` scheme and `host` attribute:
+        @@ -89 +89
+        -             <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" />
+        +                 <data android:host="[TODO]|" /> <!-- No data tags at all -->
         """
       )
   }
@@ -2622,6 +2665,92 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       -             <intent-filter> <!-- We expect a warning here -->
       +             <intent-filter android:autoVerify="true" > <!-- We expect a warning here -->
       """
+      )
+  }
+
+  fun testAutoVerifyFixesForEmptyIntentFilter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android:name=".FullscreenActivity">
+                      <intent-filter android:autoVerify='true'>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
+                    <intent-filter android:autoVerify='true'>
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        @@ -7 +7
+        +                 <action android:name="android.intent.action.VIEW" />
+        +                 <category android:name="android.intent.category.BROWSABLE" />
+        +                 <category android:name="android.intent.category.DEFAULT" />
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" />
+        +                 <data android:host="[TODO]|" />
+        """
+      )
+  }
+
+  fun testAutoVerifyFixesForEmptyIntentFilter_customNs() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android-ns:name=".FullscreenActivity">
+                      <intent-filter android-ns:autoVerify='true'>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
+                    <intent-filter android-ns:autoVerify='true'>
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        @@ -7 +7
+        +                 <action android-ns:name="android.intent.action.VIEW" />
+        +                 <category android-ns:name="android.intent.category.BROWSABLE" />
+        +                 <category android-ns:name="android.intent.category.DEFAULT" />
+        +                 <data android-ns:scheme="http" />
+        +                 <data android-ns:scheme="https" />
+        +                 <data android-ns:host="[TODO]|" />
+        """
       )
   }
 
@@ -2942,17 +3071,24 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:15: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
-                      <intent-filter android:autoVerify="true">
-                      ^
           AndroidManifest.xml:20: Error: At least one host must be specified [AppLinkUrlError]
                           <data android:scheme="http" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           AndroidManifest.xml:21: Error: The port must be specified in the same <data> element as the host [AppLinkUrlError]
                           <data android:port="8080" />
                                               ~~~~
-          3 errors, 0 warnings
-      """
+          2 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 20: Set host:
+        @@ -21 +21
+        -                 <data android:scheme="http" />
+        +                 <data
+        +                     android:host="[TODO]|"
+        +                     android:scheme="http" />
+        """
       )
   }
 
@@ -3000,6 +3136,36 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
     assertThat(
         AppLinksValidDetector()
           .sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")
+      )
+      .isTrue()
+
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new = "VIEW action is missing, but is required for Android App Links",
+            old = "Missing required elements/attributes for Android App Links",
+          )
+      )
+      .isTrue()
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new =
+              "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
+            old = "Missing required elements/attributes for Android App Links",
+          )
+      )
+      .isTrue()
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new =
+              "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
+            old = "Missing required elements/attributes for Android App Links",
+          )
       )
       .isTrue()
   }
