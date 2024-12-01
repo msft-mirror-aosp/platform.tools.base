@@ -274,29 +274,29 @@ class FullyQualifyNamesTestModeTest {
     @Language("java")
     val expected =
       """
-            package test.pkg;
-            import android.hardware.camera2.CameraAccessException;
-            import android.media.MediaDrmResetException;
-            @java.lang.SuppressWarnings({"unused", "WeakerAccess"})
-            public class CatchTest {
-                public class C4 {
-                    public void test() {
-                        try {
-                            thrower();
-                        } catch (android.hardware.camera2.CameraAccessException | android.media.MediaDrmResetException e) {
-                            logger(e.toString());
-                        }
-                    }
-                }
+      package test.pkg;
+      import android.hardware.camera2.CameraAccessException;
+      import android.media.MediaDrmResetException;
+      @java.lang.SuppressWarnings({"unused", "WeakerAccess"})
+      public class CatchTest {
+          public class C4 {
+              public void test() {
+                  try {
+                      thrower();
+                  } catch (android.hardware.camera2.CameraAccessException | android.media.MediaDrmResetException e) {
+                      logger(e.toString());
+                  }
+              }
+          }
 
-                private void logger(java.lang.String e) {
-                }
+          private void logger(java.lang.String e) {
+          }
 
-                public void thrower() throws CameraAccessException, MediaDrmResetException {
-                    throw new CameraAccessException(android.hardware.camera2.CameraAccessException.CAMERA_ERROR);
-                }
-            }
-        """
+          public void thrower() throws CameraAccessException, MediaDrmResetException {
+              throw new android.hardware.camera2.CameraAccessException(android.hardware.camera2.CameraAccessException.CAMERA_ERROR);
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -894,6 +894,64 @@ class FullyQualifyNamesTestModeTest {
                   }
               }
           }
+      }
+      """
+        .trimIndent()
+
+    val expanded = expandJava(java)
+    assertEquals(expected, expanded)
+  }
+
+  @Test
+  fun testStaticInitializationBlock() {
+    @Language("java")
+    val java =
+      """
+      package test.pkg;
+
+      @SuppressWarnings("StaticInitializerReferencesSubClass")
+      class Super {
+        static Super C1 = new Sub();
+        static Sub C2;
+        static final Sub C3;
+        final Sub C4;
+        static {
+          C2 = new Sub();
+          C3 = new Sub();
+        }
+        Super() {
+          C4 = new Sub();
+        }
+      }
+
+      class Sub extends Super {
+        static native Object create();
+      }
+      """
+        .trimIndent()
+
+    @Language("java")
+    val expected =
+      """
+      package test.pkg;
+
+      @java.lang.SuppressWarnings("StaticInitializerReferencesSubClass")
+      class Super {
+        static test.pkg.Super C1 = new test.pkg.Sub();
+        static test.pkg.Sub C2;
+        static final test.pkg.Sub C3;
+        final test.pkg.Sub C4;
+        static {
+          test.pkg.Super.C2 = new test.pkg.Sub();
+          C3 = new test.pkg.Sub();
+        }
+        Super() {
+          C4 = new test.pkg.Sub();
+        }
+      }
+
+      class Sub extends test.pkg.Super {
+        static native java.lang.Object create();
       }
       """
         .trimIndent()
