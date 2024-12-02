@@ -28,12 +28,13 @@ fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: 
   }
 }
 
-fun RecipeExecutor.addComposeDependencies(data: ModuleTemplateData, composeBomVersion: String = COMPOSE_BOM_VERSION) {
+fun RecipeExecutor.addComposeDependencies(data: ModuleTemplateData, composeBomVersion: String = COMPOSE_BOM_VERSION, composeUiVersion: String? = null) {
   applyPlugin("org.jetbrains.kotlin.plugin.compose", data.projectTemplateData.kotlinVersion)
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion")
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion", "androidTestImplementation")
 
-  addDependency(mavenCoordinate = "androidx.compose.ui:ui")
+  val composeUiFormattedVersion = composeUiVersion?.let { ":$it" } ?: ""
+  addDependency(mavenCoordinate = "androidx.compose.ui:ui$composeUiFormattedVersion")
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-graphics")
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-tooling", configuration = "debugImplementation")
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-tooling-preview")

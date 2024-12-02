@@ -43,15 +43,14 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime:1.8.0-alpha06")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData)
+  addComposeDependencies(moduleData, composeUiVersion = "1.8.0-alpha06")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
-  addFileDependency("./libs/androidx.xr.extensions-release.aar")
-  addFileDependency("./libs/compose-release.aar")
-  addFileDependency("./libs/impress_aar.aar")
-  addFileDependency("./libs/runtime-release.aar")
-  addFileDependency("./libs/scenecore-release.aar")
+  addDependency(mavenCoordinate = "androidx.compose.material3:material3:1.0.0-alpha01")
+  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha01", )
+  addDependency(mavenCoordinate = "androidx.xr.runtime:runtime:1.0.0-alpha01")
+  addDependency(mavenCoordinate = "androidx.xr.scenecore:scenecore:1.0.0-alpha01")
 
   generateManifest(
     moduleData = moduleData,
@@ -64,7 +63,6 @@ fun RecipeExecutor.xrActivityRecipe(
   )
 
   copy(File("xr-activity").resolve("drawable"), resOut.resolve("drawable"))
-  copy(File("xr-activity").resolve("libs"), rootDir.resolve("libs"))
 
   mergeXml(
     themesXml(themeName = moduleData.themesData.main.name),
