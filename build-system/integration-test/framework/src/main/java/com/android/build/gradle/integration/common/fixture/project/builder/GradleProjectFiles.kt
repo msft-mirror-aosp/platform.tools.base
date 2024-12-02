@@ -73,7 +73,11 @@ interface AndroidProjectFiles: GradleProjectFiles {
     }
 }
 
-internal open class GradleProjectFilesImpl: GradleProjectFiles {
+/**
+ * Implementation of [GradleProjectFiles] that only records the actions but does not yet
+ * write anything on disk. This is done later when the project is created via [write]
+ */
+internal open class DelayedGradleProjectFiles: GradleProjectFiles {
     // map from relative path to file content
     private val sourceFiles = mutableMapOf<String, String>()
 
@@ -135,9 +139,9 @@ internal open class DirectGradleProjectFilesImpl(
     }
 }
 
-internal class AndroidProjectFilesImpl(
+internal class DelayedAndroidProjectFiles(
     private val namespaceProvider: () -> String
-): GradleProjectFilesImpl(), AndroidProjectFiles {
+): DelayedGradleProjectFiles(), AndroidProjectFiles {
     override val namespace: String
         get() = namespaceProvider()
     override val namespaceAsPath: String

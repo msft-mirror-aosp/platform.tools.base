@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Build
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -62,7 +62,7 @@ internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDef
         super.replaceAppliedPlugin(type, version)
     }
 
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)

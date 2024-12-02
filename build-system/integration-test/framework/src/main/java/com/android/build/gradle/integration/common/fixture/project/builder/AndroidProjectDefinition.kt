@@ -52,7 +52,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
     path: String
 ): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
-    override val files: AndroidProjectFiles = AndroidProjectFilesImpl(this::namespace)
+    override val files: AndroidProjectFiles = DelayedAndroidProjectFiles(this::namespace)
     override var componentCallback: Class<out AndroidComponentCallback>? = null
 
     override fun files(action: AndroidProjectFiles.() -> Unit) {

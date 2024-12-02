@@ -23,12 +23,12 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -62,7 +62,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
     }
 
     private val contentHolder = DefaultDslContentHolder()
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)

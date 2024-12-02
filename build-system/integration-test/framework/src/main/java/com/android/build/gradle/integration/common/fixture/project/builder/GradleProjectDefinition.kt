@@ -253,7 +253,7 @@ internal abstract class GradleProjectDefinitionImpl(
 
         // write the rest of the content.
         if (!buildFileOnly) {
-            (files as GradleProjectFilesImpl).write(location)
+            (files as DelayedGradleProjectFiles).write(location)
         }
     }
 }

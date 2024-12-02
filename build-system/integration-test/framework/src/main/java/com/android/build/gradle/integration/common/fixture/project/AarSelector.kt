@@ -26,10 +26,7 @@ import com.android.SdkConstants.DOT_AAR
  * Creation of an instance can be done via [of] or by making a modified copy of an existing
  * instance, for example with [withFlavor]
  */
-interface AarSelector: OutputSelector {
-
-    val filter: String?
-    val suffix: String?
+sealed interface AarSelector: OutputSelector {
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): AarSelector
@@ -60,10 +57,10 @@ interface AarSelector: OutputSelector {
 }
 
 internal data class AarSelectorImp(
-    override val buildType: String,
-    override val flavors: List<String>,
-    override val filter: String? = null,
-    override val suffix: String? = null,
+    private val buildType: String,
+    private val flavors: List<String>,
+    private val filter: String? = null,
+    private val suffix: String? = null,
 ): AarSelector {
 
 

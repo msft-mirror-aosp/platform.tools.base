@@ -23,8 +23,6 @@ package com.android.build.gradle.integration.common.fixture.project
  */
 interface OutputSelector {
 
-    val buildType: String
-    val flavors: List<String>
     val fromIntermediates: Boolean
         get() = false
 

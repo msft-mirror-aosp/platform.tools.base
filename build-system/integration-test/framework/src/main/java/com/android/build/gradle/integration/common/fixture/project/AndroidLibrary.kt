@@ -109,21 +109,21 @@ internal class AndroidLibraryImpl(
 ), AndroidLibraryProject {
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         return super.withApk(apkSelector, action)
     }
 
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         super.assertApk(apkSelector, action)
     }
 
     override fun hasApk(apkSelector: ApkSelector): Boolean {
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         return super.hasApk(apkSelector)

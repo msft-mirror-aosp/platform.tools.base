@@ -28,12 +28,7 @@ import com.android.utils.combineAsCamelCase
  * Creation of an instance can be done via [of] or by making a modified copy of an existing
  * instance, for example with [withFlavor]
  */
-interface ApkSelector: OutputSelector {
-
-    val testName: String?
-    val isSigned: Boolean
-    val filter: String?
-    val suffix: String?
+sealed interface ApkSelector: OutputSelector {
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): ApkSelector
@@ -69,7 +64,7 @@ interface ApkSelector: OutputSelector {
         ): ApkSelector {
             return ApkSelectorImp(
                 buildType = buildType,
-                testName =  null,
+                testSuite =  null,
                 flavors = listOf(),
                 isSigned = isSigned
             )
@@ -78,12 +73,12 @@ interface ApkSelector: OutputSelector {
         @JvmStatic
         fun of(
             buildType: String,
-            testName: String?,
+            testSuite: String?,
             isSigned: Boolean
         ): ApkSelector {
             return ApkSelectorImp(
                 buildType = buildType,
-                testName =  testName,
+                testSuite =  testSuite,
                 flavors = listOf(),
                 isSigned = isSigned
             )
@@ -92,29 +87,29 @@ interface ApkSelector: OutputSelector {
 }
 
 internal data class ApkSelectorImp(
-    override val buildType: String,
-    override val testName: String?,
-    override val flavors: List<String>,
-    override val isSigned: Boolean,
-    override val filter: String? = null,
-    override val suffix: String? = null,
+    private val buildType: String,
+    internal val testSuite: String?,
+    private val flavors: List<String>,
+    private val isSigned: Boolean,
+    private val filter: String? = null,
+    private val suffix: String? = null,
     override val fromIntermediates: Boolean = false,
 ): ApkSelector {
 
     override fun withFlavor(name: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors + name, isSigned, filter, suffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
 
     override fun withFilter(newFilter: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors, isSigned, newFilter, suffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
 
     override fun withSuffix(newSuffix: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors, isSigned, filter, newSuffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
     override fun forTestSuite(name: String): ApkSelector =
         ApkSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
 
     override fun fromIntermediates(): ApkSelector = ApkSelectorImp(
-        buildType, testName, flavors, isSigned, filter, suffix,
+        buildType, testSuite, flavors, isSigned, filter, suffix,
         fromIntermediates = true
     )
 
@@ -125,7 +120,7 @@ internal data class ApkSelectorImp(
         flavors.let { segments.addAll(it) }
         filter?.let { segments.add(it) }
         buildType.let { segments.add(it) }
-        testName?.let { segments.add(it) }
+        testSuite?.let { segments.add(it) }
         suffix?.let { segments.add(it) }
         if (!isSigned) { segments.add("unsigned") }
 
@@ -137,7 +132,7 @@ internal data class ApkSelectorImp(
 
         // path always starts with this
         pathBuilder.append("apk/")
-        testName?.let {
+        testSuite?.let {
             pathBuilder.append(it).append('/')
         }
         if (flavors.isNotEmpty()) {

@@ -27,7 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -56,7 +56,7 @@ internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionIm
         applyPlugin(PluginType.ANDROID_ASSET_PACK)
     }
 
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
