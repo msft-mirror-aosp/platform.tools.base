@@ -569,7 +569,7 @@ maven_repository(
         "@maven//:com.android.support.constraint.constraint-layout_1.0.2",
         "@maven//:com.android.support.multidex_1.0.2",
         "@maven//:com.google.guava.guava_19.0",
-        "@maven//:com.google.protobuf.protobuf-java-util_3.22.3",
+        "@maven//:com.google.protobuf.protobuf-java-util_3.25.5",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler-embeddable_1.7.10",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.6.4",
     ],
