@@ -1202,7 +1202,7 @@ DATA = [
     "io.grpc:grpc-stub:jar:sources:1.57.0",
     "junit:junit:jar:sources:4.13.2",
     "org.brotli:dec:jar:sources:0.1.2",
-    "org.commonmark:commonmark:jar:sources:0.22.0",
+    "org.commonmark:commonmark:jar:sources:0.24.0",
     "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose-desktop:jar:sources:2.8.2",
     "org.jetbrains.compose.animation:animation-core-desktop:jar:sources:1.7.1",
     "org.jetbrains.compose.animation:animation-desktop:jar:sources:1.7.1",

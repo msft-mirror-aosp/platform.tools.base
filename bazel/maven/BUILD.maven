@@ -8440,6 +8440,7 @@ maven_import(
     pom = "repository/org/commonmark/commonmark/0.24.0/commonmark-0.24.0.pom",
     repo_root_path = "repository",
     repo_path = "org/commonmark/commonmark/0.24.0",
+    srcjar = "repository/org/commonmark/commonmark/0.24.0/commonmark-0.24.0-sources.jar",
     visibility = ["//visibility:public"],
 )
 
@@ -74154,13 +74155,6 @@ maven_artifact(
     pom = "repository/org/codehaus/codehaus-parent/4/codehaus-parent-4.pom",
     repo_root_path = "repository",
     repo_path = "org/codehaus/codehaus-parent/4",
-)
-
-maven_artifact(
-    name = "org.commonmark.commonmark-parent_0.22.0",
-    pom = "repository/org/commonmark/commonmark-parent/0.22.0/commonmark-parent-0.22.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/commonmark/commonmark-parent/0.22.0",
 )
 
 maven_artifact(
