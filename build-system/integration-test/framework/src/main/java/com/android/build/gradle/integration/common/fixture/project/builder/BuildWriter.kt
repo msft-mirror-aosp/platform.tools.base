@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import org.gradle.internal.extensions.stdlib.capitalized
+import java.io.File
 
 /**
  * An object that can write a Gradle build file.
@@ -170,6 +171,9 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                 } else {
                     allItems
                 }
+            }
+            is File -> {
+                "project.file(\"$this\")"
             }
             else -> toString()
 
