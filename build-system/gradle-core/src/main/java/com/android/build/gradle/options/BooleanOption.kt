@@ -357,6 +357,16 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * Whether to disable AGP's addition of the -Xuse-inline-scopes-numbers flag for KotlinCompile
+     * tasks.
+     */
+    DISABLE_INLINE_SCOPES_NUMBERS(
+        "android.kotlin.disableInlineScopesNumbers",
+        false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

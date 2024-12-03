@@ -52,6 +52,7 @@ import com.android.build.gradle.internal.utils.configureKotlinCompileTasks
 import com.android.build.gradle.internal.utils.getProjectKotlinPluginKotlinVersion
 import com.android.build.gradle.internal.utils.isComposeCompilerPluginApplied
 import com.android.build.gradle.internal.utils.isKotlinPluginAppliedInTheSameClassloader
+import com.android.build.gradle.internal.utils.maybeUseInlineScopesNumbers
 import com.android.build.gradle.internal.utils.recordKgpPropertiesForAnalytics
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.variant.ComponentInfo
@@ -341,6 +342,14 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             && !project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
             return
         }
+
+        configureKotlinCompileTasks(project, allPropertiesList) { kotlinCompile, creationConfig ->
+            if (globalConfig.services.projectOptions[BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS]) {
+                return@configureKotlinCompileTasks
+            }
+            maybeUseInlineScopesNumbers(kotlinCompile, creationConfig, logger)
+        }
+
         val composeIsEnabled = allPropertiesList
             .any { componentProperties: ComponentCreationConfig ->
                 componentProperties.buildFeatures.compose }
