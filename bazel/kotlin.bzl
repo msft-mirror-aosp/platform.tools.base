@@ -49,8 +49,8 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     # [1] tools/idea/.idea/libraries/kotlin_stdlib.xml
     # [2] https://docs.gradle.org/current/userguide/compatibility.html#kotlin
     # [3] https://developer.android.com/build/releases/gradle-plugin#updating-gradle
-    args.add("-api-version", "1.9")
-    args.add("-language-version", "1.9")
+    args.add("-api-version", "2.0")
+    args.add("-language-version", "2.0")
     args.add("-module-name", name)
     args.add("-nowarn")  # Mirrors the default javac opts.
     args.add("-Xjvm-default=all-compatibility")
@@ -231,6 +231,9 @@ def kotlin_library(
 
     javacopts = ["--release", jvm_target] + javacopts
     kotlinc_opts = ["-jvm-target", jvm_target] + kotlinc_opts
+
+    # b/382592220: various AGP-related targets are not ready for lambdas compiled with invokedynamic.
+    kotlinc_opts = ["-Xlambdas=class", "-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
     if coverage_baseline_enabled and not testonly:
