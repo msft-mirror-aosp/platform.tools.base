@@ -250,10 +250,9 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                is PrivacySandboxSdkDefinitionImpl -> definition.path to AndroidPrivacySandboxSdkImpl(
+                is PrivacySandboxSdkDefinitionImpl -> definition.path to PrivacySandboxSdkImpl(
                     subProjectLocation,
                     definition,
-                    definition.namespace,
                     buildWriter,
                     build,
                     modelBuilderProvider,

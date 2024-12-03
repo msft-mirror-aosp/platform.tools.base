@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
@@ -31,9 +30,11 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 /**
- * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
+ * a subproject part of a [GradleBuild], specifically for projects with Android plugins that have
+ * namespace, the android extension, and the androidComponent extension
  */
-interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition> : GradleProject<ProjectDefinitionT> {
+interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition>
+    : BaseAndroidProject<ProjectDefinitionT> {
 
     /**
      * The namespace of the project.
@@ -42,14 +43,6 @@ interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition> : GradleP
 
     /** the object that allows to add/update/remove files from the project */
     val files: AndroidProjectFiles
-
-    /** Return a File under the intermediates directory from Android plugins.  */
-    fun getIntermediateFile(vararg paths: String?): Path
-
-    /** Return the intermediates directory from Android plugins.  */
-    val intermediatesDir: Path
-    /** Return the output directory from Android plugins.  */
-    val outputsDir: Path
 }
 
 interface GeneratesApk {
@@ -89,7 +82,7 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
     modelBuilder: () -> ModelBuilderV2,
-) : GradleProjectImpl<ProjectDefinitionT>(
+) : BaseAndroidProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
     buildWriter,
@@ -98,10 +91,6 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
 ), AndroidProject<ProjectDefinitionT> {
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
-
-    override fun getIntermediateFile(vararg paths: String?): Path {
-        return intermediatesDir.resolve(paths.joinToString(separator = "/"))
-    }
 
     /**
      * Implementation of apk related function in the base class so it can be shared by
@@ -126,12 +115,6 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
 
     open fun hasApk(apkSelector: ApkSelector): Boolean =
         computeOutputPath(apkSelector).isRegularFile()
-
-    override val intermediatesDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
-
-    override val outputsDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
         if ((projectDefinition as AndroidProjectDefinition<*>).componentCallback != null) {

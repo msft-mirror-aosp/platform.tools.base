@@ -149,7 +149,7 @@ internal abstract class GradleProjectDefinitionImpl(
         )
     }
 
-    protected open fun writExtension(writer: BuildWriter) {
+    protected open fun writeExtension(writer: BuildWriter) {
         // nothing to do here
     }
 
@@ -218,7 +218,7 @@ internal abstract class GradleProjectDefinitionImpl(
             }
 
             // write the Android extension if it exist
-            writExtension(this)
+            writeExtension(this)
 
             dependencies.write(this, location)
         }.also {

@@ -95,7 +95,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun writExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)

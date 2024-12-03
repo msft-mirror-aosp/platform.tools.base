@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
@@ -29,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.AssetPackDefi
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -85,8 +85,8 @@ interface GradleBuildDefinition {
      */
     fun privacySandboxSdk(
         path: String,
-        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
-    ): AndroidProjectDefinition<PrivacySandboxSdkExtension>
+        action: PrivacySandboxSdkDefinition.() -> Unit
+    ): PrivacySandboxSdkDefinition
 
     /**
      * Configures a subProject with the Android AI Pack plugin, creating it if needed.
@@ -210,8 +210,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun privacySandboxSdk(
         path: String,
-        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
-    ): AndroidProjectDefinition<PrivacySandboxSdkExtension> {
+        action: PrivacySandboxSdkDefinition.() -> Unit
+    ): PrivacySandboxSdkDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
 
         val project = subProjects.computeIfAbsent(path) {

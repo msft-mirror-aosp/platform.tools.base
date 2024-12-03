@@ -20,11 +20,16 @@ import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -33,74 +38,94 @@ import java.nio.file.Path
  */
 
 /**
- *  Implementation of [AndroidProjectDefinition] for [PrivacySandboxSdkExtension]
+ * Specialized interface for [GradleProjectDefinition]
+ */
+interface PrivacySandboxSdkDefinition: GradleProjectDefinition {
+    val android: PrivacySandboxSdkExtension
+    fun android(action: PrivacySandboxSdkExtension.() -> Unit)
+
+    /** executes the lambda that adds/updates/removes files from the project */
+    fun files(action: GradleProjectFiles.() -> Unit)
+}
+
+/**
+ *  Implementation of [GradleProjectDefinition] for [PrivacySandboxSdkExtension]
  */
 internal class PrivacySandboxSdkDefinitionImpl(
     path: String
-) : AndroidProjectDefinitionImpl<PrivacySandboxSdkExtension>(path) {
+) : GradleProjectDefinitionImpl(path), PrivacySandboxSdkDefinition {
     init {
         applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
     }
 
-    override val namespace: String
-        get() = android.namespace ?: throw RuntimeException("Namespace has not been set yet!")
+    private val contentHolder = DefaultDslContentHolder()
+    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+
+    override fun files (action: GradleProjectFiles.() -> Unit) {
+        action(files)
+    }
 
     override val android: PrivacySandboxSdkExtension =
         DslProxy.createProxy(
             PrivacySandboxSdkExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
         }
 
+    override fun android(action: PrivacySandboxSdkExtension.() -> Unit) {
+        action(android)
+    }
 
-    override fun initDefaultValues(extension: PrivacySandboxSdkExtension) {
-        val pkgName = if (path == ":") {
-            "pkg.name"
-        } else {
-            "pkg.name${path.replace(':', '.')}"
+    override fun writeExtension(writer: BuildWriter) {
+        writer.apply {
+            block("android") {
+                contentHolder.writeContent(this)
+            }
         }
-        extension.namespace = pkgName
-        extension.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
     }
 }
 
 /**
  * Specialized interface for application [AndroidProject] to use in the test
  */
-interface AndroidPrivacySandboxSdkProject: AndroidProject<AndroidProjectDefinition<PrivacySandboxSdkExtension>>
-
-/**
- * Implementation of [AndroidProject]
- */
-internal class AndroidPrivacySandboxSdkImpl(
-    location: Path,
-    projectDefinition: AndroidProjectDefinition<PrivacySandboxSdkExtension>,
-    namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
-) : AndroidProjectImpl<AndroidProjectDefinition<PrivacySandboxSdkExtension>>(
-    location,
-    projectDefinition,
-    namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
-), AndroidPrivacySandboxSdkProject {
-
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidPrivacySandboxSdkProject =
-        ReversibleAndroidPrivacySandboxSdkProject(this, projectModification)
+interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition> {
+    /** the object that allows to add/update/remove files from the project */
+    val files: GradleProjectFiles
 }
 
 /**
- * Reversible version of [AndroidPrivacySandboxSdkProject]
+ * Implementation of [PrivacySandboxSdkProject]
  */
-internal class ReversibleAndroidPrivacySandboxSdkProject(
-    parentProject: AndroidPrivacySandboxSdkProject,
+internal class PrivacySandboxSdkImpl(
+    location: Path,
+    projectDefinition: PrivacySandboxSdkDefinition,
+    buildWriter: () -> BuildWriter,
+    parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
+) : BaseAndroidProjectImpl<PrivacySandboxSdkDefinition>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild,
+    modelBuilder,
+), PrivacySandboxSdkProject {
+
+    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
+
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): PrivacySandboxSdkProject =
+        ReversiblePrivacySandboxSdkProject(this, projectModification)
+}
+
+/**
+ * Reversible version of [PrivacySandboxSdkProject]
+ */
+internal class ReversiblePrivacySandboxSdkProject(
+    parentProject: PrivacySandboxSdkProject,
     projectModification: TemporaryProjectModification
-) : ReversibleAndroidProject<AndroidPrivacySandboxSdkProject, AndroidProjectDefinition<PrivacySandboxSdkExtension>>(
-    parentProject,
-    projectModification
-), AndroidPrivacySandboxSdkProject
+) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
+    parentProject
+), PrivacySandboxSdkProject {
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+}
 

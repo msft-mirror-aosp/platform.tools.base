@@ -29,7 +29,7 @@ import java.nio.file.Path
 internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
-) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
+) : BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(
     parentProject,
 ), AndroidProject<ProjectDefinitionT> {
 
@@ -38,14 +38,6 @@ internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDef
 
     override val files: AndroidProjectFiles =
         ReversibleAndroidProjectFiles(parentProject.namespace, projectModification)
-
-    override fun getIntermediateFile(vararg paths: String?): Path = parentProject.getIntermediateFile(*paths)
-
-    override val intermediatesDir: Path
-        get() = parentProject.intermediatesDir
-
-    override val outputsDir: Path
-        get() = parentProject.outputsDir
 }
 
 internal class ReversibleAndroidProjectFiles(
