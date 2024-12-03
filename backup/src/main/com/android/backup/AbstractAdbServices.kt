@@ -22,6 +22,7 @@ import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
+import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
 import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
 import com.android.backup.ErrorCode.PLAY_STORE_NOT_INSTALLED
@@ -194,8 +195,17 @@ abstract class AbstractAdbServices(
   }
 
   override suspend fun isInstalled(applicationId: String): Boolean {
-    val lines = executeCommand("pm list packages $applicationId").stdout.lines()
-    return lines.firstOrNull() == "package:$applicationId"
+    try {
+      val lines = executeCommand("pm list packages $applicationId").stdout.lines()
+      return lines.firstOrNull() == "package:$applicationId"
+    } catch (e: BackupException) {
+      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
+      // problem.
+      if (e.errorCode != DEVICE_DISCONNECTED) {
+        logger.warn(e.message, e)
+      }
+      return false
+    }
   }
 
   private suspend fun withTestMode(block: suspend () -> Unit) {

@@ -19,14 +19,19 @@ import com.android.adblib.AdbSession
 import com.android.adblib.OutputStreamCollector
 import com.android.adblib.ShellCommandOutput
 import com.android.adblib.TextShellV2Collector
+import com.android.adblib.connectedDevicesTracker
+import com.android.adblib.serialNumber
 import com.android.adblib.shellCommand
 import com.android.adblib.withTextCollector
 import com.android.backup.AdbServices.AdbOutput
+import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
+import com.android.backup.ErrorCode.UNEXPECTED_ERROR
 import com.android.tools.environment.Logger
-import kotlinx.coroutines.flow.first
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import kotlinx.coroutines.flow.first
 
 /** Provides backup services for a specific device */
 internal class AdbServicesImpl(
@@ -42,11 +47,17 @@ internal class AdbServicesImpl(
 
   override suspend fun executeCommand(command: String, errorCode: ErrorCode): AdbOutput {
     val output =
-      adbSession.deviceServices
-        .shellCommand(deviceSelector, command)
-        .withCollector(TextShellV2Collector())
-        .execute()
-        .first()
+      try {
+        adbSession.deviceServices
+          .shellCommand(deviceSelector, command)
+          .withCollector(TextShellV2Collector())
+          .execute()
+          .first()
+      } catch (e: IOException) {
+        val connectedDevice = adbSession.findConnectedDevice(serialNumber)
+        val code = if (connectedDevice != null) DEVICE_DISCONNECTED else UNEXPECTED_ERROR
+        throw BackupException(code, "Failed to run '$command' on $serialNumber", e)
+      }
 
     if (logger.isDebugEnabled) {
       logger.debug("Executed on `$serialNumber`: '$command' ${output.describe()}")
@@ -78,10 +89,13 @@ internal class AdbServicesImpl(
   }
 
   override suspend fun writeContent(inputStream: InputStream, uri: String) {
-    val output = adbSession.deviceServices.shellCommand(deviceSelector, "content write --uri $uri")
-      .withStdin(adbSession.channelFactory.wrapInputStream(inputStream))
-      .withTextCollector()
-      .execute().first()
+    val output =
+      adbSession.deviceServices
+        .shellCommand(deviceSelector, "content write --uri $uri")
+        .withStdin(adbSession.channelFactory.wrapInputStream(inputStream))
+        .withTextCollector()
+        .execute()
+        .first()
     val stderr = output.stderr
     if (stderr.isNotEmpty()) {
       throw BackupException(ErrorCode.READ_CONTENT_FAILED, "Error writing content $uri: $stderr")
@@ -98,3 +112,6 @@ private fun ShellCommandOutput.describe() = buildString {
     append("Stdout:\n${stderr}\n")
   }
 }
+
+private fun AdbSession.findConnectedDevice(serialNumber: String) =
+  connectedDevicesTracker.connectedDevices.value.find { it.serialNumber == serialNumber }
