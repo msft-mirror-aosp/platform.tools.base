@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.internal
 
+import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.internal.utils.ConsoleProgressIndicatorFactory
 import com.android.ide.common.repository.AgpVersion
 import com.android.repository.Revision
 import com.android.sdklib.AndroidVersion
@@ -135,6 +137,9 @@ class SdkParsingUtilsTest {
     @get:Rule
     val testFolder = TemporaryFolder()
 
+    private val consoleProgressIndicatorFactory: ConsoleProgressIndicatorFactory =
+        ConsoleProgressIndicatorFactory(FakeProviderFactory.factory)
+
     @Test
     fun buildBuildTools_ok() {
         val sdkDir = testFolder.newFolder("sdk")
@@ -188,7 +193,7 @@ class SdkParsingUtilsTest {
         val xml = testFolder.newFile("package.xml")
         xml.writeText(BUILD_TOOL_28_0_3_XML, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
 
         assertThat(localPackage).isNotNull()
         assertThat(localPackage!!.version).isEqualTo(Revision.parseRevision("28.0.3"))
@@ -200,7 +205,7 @@ class SdkParsingUtilsTest {
         val xml = testFolder.newFile("package.xml")
         xml.writeText(ADDON_XML, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val expectedJars = listOf("maps.jar", "usb.jar", "effects.jar")
@@ -215,7 +220,7 @@ class SdkParsingUtilsTest {
         val xml = testFolder.newFile("package.xml")
         xml.writeText(PLATFORM_28_XML, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val optionalLibraries = parseAdditionalLibraries(localPackage!!)
@@ -232,7 +237,7 @@ class SdkParsingUtilsTest {
         optionalJson.createNewFile()
         optionalJson.writeText(PLATFORM_28_OPTIONAL_JSON, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val expectedJars = listOf(
@@ -250,7 +255,7 @@ class SdkParsingUtilsTest {
         val xml = testFolder.newFile("package.xml")
         xml.writeText(PLATFORM_28_XML, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val optionalLibraries = parseOptionalLibraries(localPackage!!)
@@ -262,7 +267,7 @@ class SdkParsingUtilsTest {
         val xml = testFolder.newFile("package.xml")
         xml.writeText(PLATFORM_28_XML, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val androidVersion = parseAndroidVersion(localPackage!!)
@@ -285,7 +290,7 @@ class SdkParsingUtilsTest {
                 )
         xml.writeText(modifiedPlatform28Xml, Charsets.UTF_8)
 
-        val localPackage = parsePackage(xml)
+        val localPackage = parsePackage(xml, consoleProgressIndicatorFactory)
         assertThat(localPackage).isNotNull()
 
         val androidVersion = parseAndroidVersion(localPackage!!)
