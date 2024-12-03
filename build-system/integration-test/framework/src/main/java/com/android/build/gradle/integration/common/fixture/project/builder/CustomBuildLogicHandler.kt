@@ -20,8 +20,11 @@ import com.android.build.gradle.integration.common.fixture.project.builder.bytec
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.TestCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.TestComponentCallback
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassReader.SKIP_DEBUG
 import org.objectweb.asm.ClassWriter
@@ -61,10 +64,10 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         // write this class
         zipOutputStream.writeWithReferences(callbackClass)
 
-        val pluginClass = getPluginClass(callbackClass)
+        val pluginData = getPluginData(callbackClass)
 
         val callbackBinaryName = callbackClass.binaryName
-        val basePluginBinaryName = pluginClass.binaryName
+        val basePluginBinaryName = pluginData.pluginClass.binaryName
 
         // then create a custom plugin for this callback
         val newPluginBinaryName = "${callbackBinaryName}_Plugin"
@@ -74,14 +77,14 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
             newPluginBinaryName,
             basePluginBinaryName,
             callbackBinaryName,
-            "ApplicationAndroidComponentsExtension"
+            pluginData.extensionTypeClassName
         )
 
         zipOutputStream.write(newPluginBinaryName, newPluginClass)
 
         // need to record the plugin class as the custom plugin is written manually
         // and we don't inspect its references.
-        basePluginClasses += pluginClass
+        basePluginClasses += pluginData.pluginClass
 
         return newPluginClassName
     }
@@ -94,14 +97,23 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         zipOutputStream.close()
     }
 
+    data class PluginData(
+        val pluginClass: Class<*>,
+        val extensionTypeClassName: String
+    )
+
     /**
-     * Returns the matching base plugin class for a given callback interface.
+     * Returns information about the plugin as a [PluginData] based on the type of the callback
      */
-    private fun getPluginClass(callbackClass: Class<out AndroidComponentCallback>): Class<*> =
+    private fun getPluginData(callbackClass: Class<out AndroidComponentCallback>): PluginData =
         if (ApplicationComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            ApplicationCallbackPlugin::class.java
+            PluginData(ApplicationCallbackPlugin::class.java, "ApplicationAndroidComponentsExtension")
         } else if (LibraryComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            LibraryCallbackPlugin::class.java
+            PluginData(LibraryCallbackPlugin::class.java, "LibraryAndroidComponentsExtension")
+        } else if (DynamicFeatureComponentCallback::class.java.isAssignableFrom(callbackClass)) {
+            PluginData(DynamicFeatureComponentCallback::class.java, "DynamicFeatureAndroidComponentsExtension")
+        } else if (TestComponentCallback::class.java.isAssignableFrom(callbackClass)) {
+            PluginData(TestCallbackPlugin::class.java, "TestAndroidComponentsExtension")
         } else {
             throw RuntimeException("Unsupported PluginCallback: ${callbackClass.typeName}")
         }

@@ -17,7 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.DynamicFeatureAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.TestAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.gradle.api.Project
 
@@ -45,6 +47,28 @@ interface LibraryComponentCallback: AndroidComponentCallback {
     fun handleComponents(
         project: Project,
         androidComponents: LibraryAndroidComponentsExtension
+    )
+}
+
+/**
+ * interface to implement to provide custom plugin logic to a [GradleRule] project
+ * of type Android Dynamic Feature
+ */
+interface DynamicFeatureComponentCallback: AndroidComponentCallback {
+    fun handleComponents(
+        project: Project,
+        androidComponents: DynamicFeatureAndroidComponentsExtension
+    )
+}
+
+/**
+ * interface to implement to provide custom plugin logic to a [GradleRule] project
+ * of type Android Test
+ */
+interface TestComponentCallback: AndroidComponentCallback {
+    fun handleComponents(
+        project: Project,
+        androidComponents: TestAndroidComponentsExtension
     )
 }
 

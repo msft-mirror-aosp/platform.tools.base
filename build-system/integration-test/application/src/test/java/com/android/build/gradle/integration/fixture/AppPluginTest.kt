@@ -37,7 +37,7 @@ import java.io.File
  * A test that validates injecting custom plugins into a test project via the
  * [GradleRule] fixture.
  */
-class PluginTest {
+class AppPluginTest {
 
     @get:Rule
     val rule = GradleRule.from {
@@ -83,14 +83,14 @@ class PluginTest {
                     // only debug should be here now
                     val taskProvider = project.tasks.register(
                         "transformAssets",
-                        PluginTestTransformAssetsTask::class.java
+                        AppPluginTestTransformAssetsTask::class.java
                     )
 
                     // TransformAssetsTask will change the assets directory
                     variant.artifacts.use(taskProvider)
                         .wiredWithDirectories(
-                            PluginTestTransformAssetsTask::inputDir,
-                            PluginTestTransformAssetsTask::outputDir
+                            AppPluginTestTransformAssetsTask::inputDir,
+                            AppPluginTestTransformAssetsTask::outputDir
                         ).toTransform(SingleArtifact.ASSETS)
                 }
             }
@@ -98,7 +98,7 @@ class PluginTest {
     }
 }
 
-abstract class PluginTestTransformAssetsTask: DefaultTask() {
+abstract class AppPluginTestTransformAssetsTask: DefaultTask() {
 
     @get:InputDirectory
     abstract val inputDir: DirectoryProperty
