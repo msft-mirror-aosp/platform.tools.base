@@ -334,7 +334,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val isNonCompliant =
-      getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() == true
     if (isNonCompliant) {
       logNonCompliant(groupId, artifactId, versionString, buildFile)
     }
@@ -357,7 +357,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     versionString: String,
     buildFile: File?,
   ): Boolean {
-    val isOutdated = getLabels(groupId, artifactId, versionString)?.hasOutdatedIssueInfo() ?: false
+    val isOutdated = getLabels(groupId, artifactId, versionString)?.hasOutdatedIssueInfo() == true
     if (isOutdated) {
       logOutdated(groupId, artifactId, versionString, buildFile)
     }
@@ -381,7 +381,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val hasCriticalIssues =
-      getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() == true
     if (hasCriticalIssues) {
       logHasCriticalIssues(groupId, artifactId, versionString, buildFile)
     }
@@ -405,7 +405,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val hasVulnerabilities =
-      getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() == true
     if (hasVulnerabilities) {
       logVulnerability(groupId, artifactId, versionString, buildFile)
     }
@@ -463,7 +463,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @return true if the index has information about this particular version, and it has issues that
-   *   will cause an error or warning. (Any blocking issue is an error, non blocking outdated,
+   *   will cause an error or warning. (Any blocking issue is an error, non-blocking outdated,
    *   policy or vulnerability issues are warnings; deprecated libraries will cause a warning if no
    *   blocking issues exist (error otherwise))
    */
