@@ -140,7 +140,7 @@ class KmpTaskManager(
                 .taskContainer
                 .assetGenTask =
                 taskFactory.register(variant.computeTaskNameInternal("generate", "Assets"))
-            taskFactory.register(MergeSourceSetFolders.LibraryAssetCreationAction(variant))
+            taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(variant, false))
         }
 
         project.tasks.registerTask(

@@ -546,8 +546,11 @@ abstract class TaskManager(
         return mergeResourcesTask
     }
 
-    fun createMergeAssetsTask(creationConfig: ComponentCreationConfig) {
-        taskFactory.register(MergeSourceSetFolders.MergeAppAssetCreationAction(creationConfig))
+    fun createMergeAssetsTask(
+        creationConfig: ComponentCreationConfig,
+        includeDependencies: Boolean = true,
+    ) {
+        taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(creationConfig, includeDependencies))
     }
 
     fun createMergeJniLibFoldersTasks(creationConfig: ConsumableCreationConfig) {

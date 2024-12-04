@@ -83,7 +83,7 @@ class LibraryCacheabilityTest {
                     ":lib:mergeReleaseJavaResource", /* Bug 181142260 */
                     ":lib:mergeReleaseJniLibFolders",
                     ":lib:mergeReleaseShaders",
-                    ":lib:packageReleaseAssets",
+                    ":lib:mergeReleaseAssets",
                     ":lib:prepareLintJarForPublish", /* Bug 120413672 */
                     /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AarMetadataTask] */
                     ":lib:writeReleaseAarMetadata",

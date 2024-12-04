@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.publishing
 
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.SingleArtifact.APK
+import com.android.build.api.artifact.SingleArtifact.ASSETS
 import com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST
 import com.android.build.api.artifact.SingleArtifact.METADATA_LIBRARY_DEPENDENCIES_REPORT
 import com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE
@@ -51,7 +52,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_SET_
 import com.android.build.gradle.internal.scope.InternalArtifactType.FULL_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.GLOBAL_SYNTHETICS_MERGED
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
-import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_ASSETS
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_JNI
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL_METADATA
@@ -263,7 +263,7 @@ class PublishingSpecs {
                 // be used for incremental dexing of library subprojects.
                 runtime(RUNTIME_LIBRARY_CLASSES_DIR, ArtifactType.CLASSES_DIR, LibraryElements.CLASSES)
 
-                runtime(LIBRARY_ASSETS, ArtifactType.ASSETS)
+                runtime(ASSETS, ArtifactType.ASSETS)
                 runtime(PACKAGED_RES, ArtifactType.ANDROID_RES)
                 runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
                 runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
@@ -317,7 +317,7 @@ class PublishingSpecs {
                 // be used for incremental dexing of test fixtures.
                 runtime(RUNTIME_LIBRARY_CLASSES_DIR, ArtifactType.CLASSES_DIR, LibraryElements.CLASSES)
 
-                runtime(LIBRARY_ASSETS, ArtifactType.ASSETS)
+                runtime(ASSETS, ArtifactType.ASSETS)
                 runtime(PACKAGED_RES, ArtifactType.ANDROID_RES)
                 runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
                 runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
@@ -347,7 +347,7 @@ class PublishingSpecs {
                 // match the behavior of the Java library plugin. The LibraryElements attribute will
                 // be used for incremental dexing of test fixtures.
                 runtime(RUNTIME_LIBRARY_CLASSES_DIR, ArtifactType.CLASSES_DIR, LibraryElements.CLASSES)
-                runtime(LIBRARY_ASSETS, ArtifactType.ASSETS)
+                runtime(ASSETS, ArtifactType.ASSETS)
                 runtime(PACKAGED_RES, ArtifactType.ANDROID_RES)
                 runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
                 runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)

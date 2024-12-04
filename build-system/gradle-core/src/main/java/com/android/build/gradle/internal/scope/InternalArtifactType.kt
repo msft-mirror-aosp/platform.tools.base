@@ -308,7 +308,6 @@ InternalArtifactType<T : FileSystemLocation>(
     // Assets created by compiling shader
     object SHADER_ASSETS: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
-    object LIBRARY_ASSETS: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // compressed assets, ready to be packaged in the APK.
     object COMPRESSED_ASSETS: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
