@@ -15,10 +15,61 @@
  */
 package com.android.ide.common.pagealign
 
+import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions.AlignedCompressed
+import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions.AlignedUncompressed
+import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions.UnalignedUncompressed
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import com.google.common.truth.Truth.assertThat
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.util.zip.ZipEntry
+import com.android.ide.common.pagealign.AlignmentProblems.ElfNot16kAlignedInZip
+import com.android.ide.common.pagealign.AlignmentProblems.ElfLoadSectionsNot16kAligned
+import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions
+import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions.UnalignedCompressed
+import java.util.zip.CRC32
+
+// First bytes of ndk/28.0.12433566/toolchains/llvm/prebuilt/linux-x86_64/lib/aarch64-unknown-linux-musl/libc++abi.so
+val SO_FILE_16K_ALIGNED = byteArrayOf(
+    127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, -73, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    64, 0, 0, 0, 0, 0, 0, 0, 56, 92, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 56, 0, 10, 0, 64, 0, 35, 0, 33, 0,
+    6, 0, 0, 0, 4, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0,
+    48, 2, 0, 0, 0, 0, 0, 0, 48, 2, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4, -7, 1, 0, 0, 0, 0, 0,
+    -4, -7, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 0, 0, 0, -4, -7, 1, 0, 0, 0, 0, 0,
+    -4, -7, 2, 0, 0, 0, 0, 0, -4, -7, 2, 0, 0, 0, 0, 0, -124, -89, 2, 0, 0, 0, 0, 0, -124, -89, 2, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0, 0, 0, -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 6, 0, 0, 0, 0, 0,
+    -128, -95, 6, 0, 0, 0, 0, 0, 56, 61, 0, 0, 0, 0, 0, 0, -128, 62, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 6, 0, 0, 0, -72, -34, 4, 0, 0, 0, 0, 0, -72, -34, 7, 0, 0, 0, 0, 0, -72, -34, 7, 0, 0, 0, 0, 0,
+    104, 3, 0, 0, 0, 0, 0, 0, -88, 14, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 4, 0, 0, 0,
+    -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 5, 0, 0, 0, 0, 0, -128, -95, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    16, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0, -8, -37, 4, 0, 0, 0, 0, 0,
+    -8, -37, 6, 0, 0, 0, 0, 0, -8, -37, 6, 0, 0, 0, 0, 0, -112, 1, 0, 0, 0, 0, 0, 0, -112, 1, 0, 0, 0, 0, 0, 0,
+    8, 0, 0, 0, 0, 0, 0, 0, 82, -27, 116, 100, 4, 0, 0, 0, -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 6, 0, 0, 0, 0, 0,
+    -128, -95, 6, 0, 0, 0, 0, 0, 56, 61, 0, 0, 0, 0, 0, 0, -128, 62, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+    80, -27, 116, 100, 4, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0,
+    116, 17, 0, 0, 0, 0, 0, 0, 116, 17, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 81, -27, 116, 100, 6, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+val SO_FILE_NOT_16K_ALIGNED = byteArrayOf(
+    127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 62, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    64, 0, 0, 0, 0, 0, 0, 0, 120, -34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 56, 0, 6, 0, 64, 0, 33, 0, 31, 0,
+    6, 0, 0, 0, 4, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0,
+    80, 1, 0, 0, 0, 0, 0, 0, 80, 1, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, -54, 0, 0, 0, 0, 0, 0,
+    112, -54, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0,
+    0, -48, 0, 0, 0, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, -55, 14, 0, 0, 0, 0, 0, 0,
+    0, 16, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0,
+    0, -48, 0, 0, 0, 0, 0, 0, 96, 2, 0, 0, 0, 0, 0, 0, 96, 2, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0,
+    80, -27, 116, 100, 4, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0,
+    -52, 7, 0, 0, 0, 0, 0, 0, -52, 7, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 81, -27, 116, 100, 6, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 class PageAlignUtilsTest {
     enum class PageAlignCheckResult {
@@ -35,50 +86,60 @@ class PageAlignUtilsTest {
         return PageAlignCheckResult.IsAligned64BitElf
     }
 
-    // First bytes of ndk/28.0.12433566/toolchains/llvm/prebuilt/linux-x86_64/lib/aarch64-unknown-linux-musl/libc++abi.so
+    private fun checkZipPageAlign(content : ByteArray, options : ZipEntryOptions) : Set<AlignmentProblems> {
+        val result = findElfFile16kAlignmentProblems(ZipBuilder()
+                                                       .addFile("elf.so", content, options)
+                                                       .build())
+        return result["elf.so"] ?: setOf()
+    }
+
     @Test
     fun `so file that is 16 KB aligned`() {
-        val input = ByteArrayInputStream(byteArrayOf(
-            127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, -73, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            64, 0, 0, 0, 0, 0, 0, 0, 56, 92, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 56, 0, 10, 0, 64, 0, 35, 0, 33, 0,
-            6, 0, 0, 0, 4, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0,
-            48, 2, 0, 0, 0, 0, 0, 0, 48, 2, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -4, -7, 1, 0, 0, 0, 0, 0,
-            -4, -7, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 0, 0, 0, -4, -7, 1, 0, 0, 0, 0, 0,
-            -4, -7, 2, 0, 0, 0, 0, 0, -4, -7, 2, 0, 0, 0, 0, 0, -124, -89, 2, 0, 0, 0, 0, 0, -124, -89, 2, 0, 0, 0, 0, 0,
-            0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0, 0, 0, -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 6, 0, 0, 0, 0, 0,
-            -128, -95, 6, 0, 0, 0, 0, 0, 56, 61, 0, 0, 0, 0, 0, 0, -128, 62, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-            1, 0, 0, 0, 6, 0, 0, 0, -72, -34, 4, 0, 0, 0, 0, 0, -72, -34, 7, 0, 0, 0, 0, 0, -72, -34, 7, 0, 0, 0, 0, 0,
-            104, 3, 0, 0, 0, 0, 0, 0, -88, 14, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 7, 0, 0, 0, 4, 0, 0, 0,
-            -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 5, 0, 0, 0, 0, 0, -128, -95, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            16, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0, -8, -37, 4, 0, 0, 0, 0, 0,
-            -8, -37, 6, 0, 0, 0, 0, 0, -8, -37, 6, 0, 0, 0, 0, 0, -112, 1, 0, 0, 0, 0, 0, 0, -112, 1, 0, 0, 0, 0, 0, 0,
-            8, 0, 0, 0, 0, 0, 0, 0, 82, -27, 116, 100, 4, 0, 0, 0, -128, -95, 4, 0, 0, 0, 0, 0, -128, -95, 6, 0, 0, 0, 0, 0,
-            -128, -95, 6, 0, 0, 0, 0, 0, 56, 61, 0, 0, 0, 0, 0, 0, -128, 62, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-            80, -27, 116, 100, 4, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0, 92, 106, 1, 0, 0, 0, 0, 0,
-            116, 17, 0, 0, 0, 0, 0, 0, 116, 17, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 81, -27, 116, 100, 6, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-        assertThat(checkPageAlign(input)).isEqualTo(PageAlignCheckResult.IsAligned64BitElf)
+        assertThat(checkPageAlign(ByteArrayInputStream(SO_FILE_16K_ALIGNED))).isEqualTo(PageAlignCheckResult.IsAligned64BitElf)
+    }
+
+    @Test
+    fun `APK with so file that is 16 KB aligned LOAD sections`() {
+        // .so file is compressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_16K_ALIGNED, UnalignedCompressed))
+            .isEmpty()
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_16K_ALIGNED, UnalignedUncompressed))
+            .isEqualTo(setOf(ElfNot16kAlignedInZip))
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_16K_ALIGNED, AlignedCompressed))
+            .isEmpty()
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_16K_ALIGNED, AlignedUncompressed))
+            .isEmpty()
+    }
+
+    @Test
+    fun `APK with so file that is not 16 KB aligned LOAD sections`() {
+        // .so file is compressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_NOT_16K_ALIGNED, UnalignedCompressed))
+            .isEqualTo(setOf(ElfLoadSectionsNot16kAligned))
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_NOT_16K_ALIGNED, UnalignedUncompressed))
+            .isEqualTo(setOf(ElfLoadSectionsNot16kAligned, ElfNot16kAlignedInZip))
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_NOT_16K_ALIGNED, AlignedCompressed))
+            .isEqualTo(setOf(ElfLoadSectionsNot16kAligned))
+
+        // .so file is uncompressed and not 16k aligned
+        assertThat(checkZipPageAlign(SO_FILE_NOT_16K_ALIGNED, AlignedUncompressed))
+            .isEqualTo(setOf(ElfLoadSectionsNot16kAligned))
     }
 
     // /emulator/lib64/gles_swiftshader/libEGL.so[400]
     @Test
     fun `so that is not 16 KB aligned`() {
-        val input = ByteArrayInputStream(byteArrayOf(
-            127, 69, 76, 70, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 62, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            64, 0, 0, 0, 0, 0, 0, 0, 120, -34, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 56, 0, 6, 0, 64, 0, 33, 0, 31, 0,
-            6, 0, 0, 0, 4, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0,
-            80, 1, 0, 0, 0, 0, 0, 0, 80, 1, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 5, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 112, -54, 0, 0, 0, 0, 0, 0,
-            112, -54, 0, 0, 0, 0, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 6, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0,
-            0, -48, 0, 0, 0, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, -55, 14, 0, 0, 0, 0, 0, 0,
-            0, 16, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0, 0, -48, 0, 0, 0, 0, 0, 0,
-            0, -48, 0, 0, 0, 0, 0, 0, 96, 2, 0, 0, 0, 0, 0, 0, 96, 2, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0,
-            80, -27, 116, 100, 4, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0, -92, -62, 0, 0, 0, 0, 0, 0,
-            -52, 7, 0, 0, 0, 0, 0, 0, -52, 7, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 81, -27, 116, 100, 6, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        val input = ByteArrayInputStream(SO_FILE_NOT_16K_ALIGNED)
         assertThat(checkPageAlign(input)).isEqualTo(PageAlignCheckResult.IsNotAligned64bitElf)
     }
 
@@ -166,5 +227,47 @@ class PageAlignUtilsTest {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 0, 0, 0, 0, -16, -31, 16, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 64, 0, 56, 0, 8, 0, 64, 0, 34, 0, 31, 0, 6, 0, 0, 0, 4))
         assertThat(checkPageAlign(input)).isEqualTo(PageAlignCheckResult.IsNotAligned64bitElf)
+    }
+
+
+    class ZipBuilder {
+        private val outputStream = ByteArrayOutputStream()
+        private val zipOutputStream = ZipArchiveOutputStream(outputStream)
+
+        // Use an enum to make the tests read more transparently.
+        enum class ZipEntryOptions {
+            UnalignedCompressed,
+            UnalignedUncompressed,
+            AlignedCompressed,
+            AlignedUncompressed
+        }
+
+        fun addFile(filename: String, contents: ByteArray, options: ZipEntryOptions): ZipBuilder {
+            val entry = ZipArchiveEntry(filename)
+            val compressed = options == UnalignedCompressed || options == AlignedCompressed
+            val aligned = options == AlignedCompressed || options == AlignedUncompressed
+
+           if (!compressed) {
+                entry.method = ZipEntry.STORED
+                val crc32 = CRC32()
+                crc32.update(contents, 0, contents.size)
+                entry.crc = crc32.value
+                entry.size = contents.size.toLong()
+                entry.compressedSize = contents.size.toLong()
+            }
+            if (aligned) {
+                entry.setAlignment(PAGE_ALIGNMENT_16K.toInt())
+            }
+            zipOutputStream.putArchiveEntry(entry)
+            zipOutputStream.write(contents)
+            zipOutputStream.closeArchiveEntry()
+            return this
+        }
+
+
+        fun build(): ZipArchiveInputStream {
+            zipOutputStream.close() // Close the zipOutputStream to finalize the ZIP file
+            return ZipArchiveInputStream(ByteArrayInputStream(outputStream.toByteArray()))
+        }
     }
 }

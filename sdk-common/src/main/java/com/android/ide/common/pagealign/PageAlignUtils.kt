@@ -15,7 +15,13 @@
  */
 package com.android.ide.common.pagealign
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
+import java.util.zip.ZipEntry
+import com.android.ide.common.pagealign.AlignmentProblems.ElfLoadSectionsNot16kAligned
+import com.android.ide.common.pagealign.AlignmentProblems.ElfNot16kAlignedInZip
 
 // Define some ELF constants we'll need for parsing ELF file.
 private const val ELF_64BIT = 2.toByte()
@@ -109,3 +115,61 @@ private fun InputStream.readLongLittleEndian(): Long? {
             ((bytes[6].toLong() and 0xFF) shl 48) or
             ((bytes[7].toLong() and 0xFF) shl 56)
 }
+
+enum class AlignmentProblems {
+    ElfNot16kAlignedInZip,
+    ElfLoadSectionsNot16kAligned;
+}
+
+/**
+ * [input] is an [InputStream] that points to an APK zip input stream.
+ * This function detects issues that would cause this file to fail Play Store 16k alignment checks.
+ *
+ * Those problems:
+ * - ELF_COMPRESSED -- the Elf file must be stored uncompressed in the APK. If it isn't, then this value is returned.
+ * - ELF_NOT_16KB_ALIGNED_IN_ZIP -- the Elf file must be at a 16k boundary within the APK.
+ * - ELF_LOAD_SECTIONS_NOT_16KB_ALIGNED -- each of the LOAD sections of the Elf file must be aligned on a 16k boundary.
+ *
+ * This function doesn't assume [input] is a well-formed Elf file. If it isn't, then no problem will be reported.
+ */
+fun findElfFile16kAlignmentProblems(input: ZipArchiveInputStream) : Map<String, Set<AlignmentProblems>> {
+    val problems = mutableMapOf<String, MutableSet<AlignmentProblems>>()
+    var entry = input.getNextZipEntry()
+    fun addProblem(name : String, problem: AlignmentProblems) {
+        problems.computeIfAbsent(name) { mutableSetOf() } .add(problem)
+    }
+    while (entry != null) {
+        try {
+            val currentEntryAlignedAt16kbBoundaryInZip = is16kAligned(input.bytesRead)
+
+            if (hasElfMagicNumber(input)) {
+                val minimumLoadSectionAlignment = readElfMinimumLoadSectionAlignment(input)
+                if (minimumLoadSectionAlignment == -1L) continue // Not a well-formed Elf or not 64-bit
+                if (!is16kAligned(minimumLoadSectionAlignment)) {
+                    addProblem(entry.name, ElfLoadSectionsNot16kAligned)
+                }
+                if (entry.method == ZipEntry.STORED) {
+                    if (!currentEntryAlignedAt16kbBoundaryInZip) {
+                        addProblem(entry.name, ElfNot16kAlignedInZip)
+                    }
+                }
+            }
+        } finally {
+            entry = input.getNextZipEntry()
+        }
+    }
+    return problems
+}
+
+/**
+ * Same as [findElfFile16kAlignmentProblems] except that it accepts a [File] rather than a [ZipArchiveInputStream].
+ */
+fun findElfFile16kAlignmentProblems(file: File) : Map<String, Set<AlignmentProblems>> {
+    FileInputStream(file).use { input ->
+        ZipArchiveInputStream(input).use { zipInput ->
+            return findElfFile16kAlignmentProblems(zipInput)
+        }
+    }
+}
+
+private fun is16kAligned(value : Long) = (value % PAGE_ALIGNMENT_16K) == 0L
