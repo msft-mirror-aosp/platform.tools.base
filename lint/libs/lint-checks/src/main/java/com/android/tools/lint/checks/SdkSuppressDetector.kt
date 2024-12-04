@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_API_ANNOTATION
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_EXTENSION_ANNOTATION
+import com.intellij.psi.PsiModifierListOwner
 import java.util.EnumSet
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
@@ -92,6 +93,11 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
     // We only warn about requires annotations where @SdkSuppress
     // makes sense -- classes and methods.
     if (annotated !is UClass && annotated !is UMethod) {
+      return
+    }
+
+    val modifierOwner = annotated.javaPsi
+    if (modifierOwner is PsiModifierListOwner && !context.evaluator.isPublic(modifierOwner)) {
       return
     }
 
