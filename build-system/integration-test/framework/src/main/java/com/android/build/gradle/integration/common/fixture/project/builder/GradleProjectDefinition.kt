@@ -78,6 +78,14 @@ internal abstract class GradleProjectDefinitionImpl(
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
+    // right now we don't support changing the componentCallback during a reconfigure. However,
+    // we still need to rewrite the plugin application during a rewrite.
+    // Because we only reconfigure a single project and not the whole build (reason we don't yet
+    // support changing the callback), the custom plugin map passed to the write function is going
+    // to be empty.
+    // Here we cache the first non null plugin and always rewrite it on the next reconfigure.
+    private var cachedCustomPlugin: String? = null
+
     override var group: String? = null
     override var version: String? = null
 
@@ -205,7 +213,10 @@ internal abstract class GradleProjectDefinitionImpl(
                 }
             }
 
-            customPluginMap[path]?.let {
+            val pluginToApply = cachedCustomPlugin ?: customPluginMap[path]
+            pluginToApply?.let {
+                // cache it for next time
+                cachedCustomPlugin = it
                 // If there is a plugin class, apply it.
                 applyPluginFromClass(it)
             }

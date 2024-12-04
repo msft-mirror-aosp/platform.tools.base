@@ -16,25 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.testprojects.prebuilts
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.testprojects.AndroidProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-
-/**
- * Creates a [GradleTestProject] and initialize it with a HelloWorld App module
- */
-fun createHelloWorldAppGradleProject(): GradleTestProject {
-    return createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }
-}
-
 
 fun AndroidProjectBuilder.setUpHelloWorld(setupDefaultCompileSdk: Boolean = true) {
     if (setupDefaultCompileSdk) {
