@@ -2,32 +2,32 @@
    > defaultConfig:
       - sourceProvider:
          - shadersDirectories:
-            * {PROJECT}/src/main/shaders{!}{REMOVED}
+            * {PROJECT}/app/src/main/shaders{!}{REMOVED}
       - androidTestSourceProvider:
          - shadersDirectories:
-            * {PROJECT}/src/androidTest/shaders{!}{REMOVED}
+            * {PROJECT}/app/src/androidTest/shaders{!}{REMOVED}
       - unitTestSourceProvider:
          - shadersDirectories:
-            * {PROJECT}/src/test/shaders{!}{REMOVED}
+            * {PROJECT}/app/src/test/shaders{!}{REMOVED}
    < defaultConfig
    > buildTypes:
       > debug:
          - sourceProvider:
             - shadersDirectories:
-               * {PROJECT}/src/debug/shaders{!}{REMOVED}
+               * {PROJECT}/app/src/debug/shaders{!}{REMOVED}
          - androidTestSourceProvider:
             - shadersDirectories:
-               * {PROJECT}/src/androidTestDebug/shaders{!}{REMOVED}
+               * {PROJECT}/app/src/androidTestDebug/shaders{!}{REMOVED}
          - unitTestSourceProvider:
             - shadersDirectories:
-               * {PROJECT}/src/testDebug/shaders{!}{REMOVED}
+               * {PROJECT}/app/src/testDebug/shaders{!}{REMOVED}
       < debug
       - release:
          - sourceProvider:
             - shadersDirectories:
-               * {PROJECT}/src/release/shaders{!}{REMOVED}
+               * {PROJECT}/app/src/release/shaders{!}{REMOVED}
          - unitTestSourceProvider:
             - shadersDirectories:
-               * {PROJECT}/src/testRelease/shaders{!}{REMOVED}
+               * {PROJECT}/app/src/testRelease/shaders{!}{REMOVED}
    < buildTypes
 < BasicAndroidProject

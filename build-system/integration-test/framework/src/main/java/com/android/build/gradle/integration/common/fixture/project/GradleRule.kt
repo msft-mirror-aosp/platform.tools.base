@@ -35,6 +35,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.options.CreationOptions
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
@@ -86,7 +87,7 @@ class GradleRule internal constructor(
         fun from(
             action: GradleBuildDefinition.() -> Unit
         ): GradleRule {
-            val builder = GradleBuildDefinitionImpl("project")
+            val builder = GradleBuildDefinitionImpl(CreationOptions.DEFAULT_BUILD_NAME)
             action(builder)
 
             return GradleRuleBuilder().create(builder)
@@ -183,9 +184,13 @@ class GradleRule internal constructor(
             it += BuildSystem.get().localRepositories
         }
 
-        if (externalLibraries.isNotEmpty()) {
-            val repoPath = location.projectDir.toPath().resolve("_maven_repo")
-            MavenRepoGenerator(externalLibraries).generate(repoPath)
+        // Libraries can also be added inline during dependencies. We need to go through all
+        // the build definitions to query their projects for libraries added in such way.
+        val allLibraries = gradleBuild.gatherInlineLibraries() + externalLibraries
+
+        if (allLibraries.isNotEmpty()) {
+            val repoPath = computeAdditionalMavenRepo()
+            MavenRepoGenerator(allLibraries).generate(repoPath)
 
             localRepositories.add(repoPath)
         }
@@ -196,6 +201,11 @@ class GradleRule internal constructor(
         createGradleProp()
 
         status = Status.WRITTEN_USER
+    }
+
+    private fun computeAdditionalMavenRepo(): Path {
+        val location = mutableProjectLocation ?: throw RuntimeException("Location not set before writing!")
+        return location.projectDir.toPath().resolve("_maven_repo")
     }
 
     /**
@@ -330,7 +340,7 @@ class GradleRule internal constructor(
         override val androidNdkSxSRootSymlink: File?
             get() = location.testLocation.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
         override val additionalMavenRepoDir: Path?
-            get() = null
+            get() = computeAdditionalMavenRepo()
         override val profileDirectory: Path?
             get() = null
     }

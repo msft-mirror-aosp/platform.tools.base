@@ -98,6 +98,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     }
 
     internal fun write(
+        name: String,
         location: Path,
         repositories: Collection<Path>,
         includedBuildNames: Collection<String>,
@@ -128,6 +129,8 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
                 }
             }
+
+            set("rootProject.name", name)
 
             for (build in includedBuildNames) {
                 method("includeBuild", build)

@@ -17,22 +17,15 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
 class AppWithUseLibraryModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidApplication {  }
     },
     deltaConfig = {
-        rootProject {
+        androidApplication {
             android {
                 useLibrary("android.car")
             }

@@ -2,24 +2,24 @@
    > defaultConfig:
       > testFixturesSourceProvider{ADDED}:
          - name                    = "testFixtures"
-         - manifestFile            = {PROJECT}/src/testFixtures/AndroidManifest.xml{!}
+         - manifestFile            = {PROJECT}/lib/src/testFixtures/AndroidManifest.xml{!}
          - javaDirectories:
-            * {PROJECT}/src/testFixtures/java{!}
+            * {PROJECT}/lib/src/testFixtures/java{!}
          - kotlinDirectories:
-            * {PROJECT}/src/testFixtures/java{!}
-            * {PROJECT}/src/testFixtures/kotlin{!}
+            * {PROJECT}/lib/src/testFixtures/java{!}
+            * {PROJECT}/lib/src/testFixtures/kotlin{!}
          - resourcesDirectories:
-            * {PROJECT}/src/testFixtures/resources{!}
+            * {PROJECT}/lib/src/testFixtures/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {PROJECT}/src/testFixtures/res{!}
+            * {PROJECT}/lib/src/testFixtures/res{!}
          - assetsDirectories:
-            * {PROJECT}/src/testFixtures/assets{!}
+            * {PROJECT}/lib/src/testFixtures/assets{!}
          - jniLibsDirectories:
-            * {PROJECT}/src/testFixtures/jniLibs{!}
+            * {PROJECT}/lib/src/testFixtures/jniLibs{!}
          - shadersDirectories:
-            * {PROJECT}/src/testFixtures/shaders{!}
+            * {PROJECT}/lib/src/testFixtures/shaders{!}
          - mlModelsDirectories     = (null)
          - custom                  = []
       < testFixturesSourceProvider{ADDED}
@@ -28,24 +28,24 @@
       > debug:
          > testFixturesSourceProvider{ADDED}:
             - name                    = "testFixturesDebug"
-            - manifestFile            = {PROJECT}/src/testFixturesDebug/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/testFixturesDebug/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/testFixturesDebug/java{!}
+               * {PROJECT}/lib/src/testFixturesDebug/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/testFixturesDebug/java{!}
-               * {PROJECT}/src/testFixturesDebug/kotlin{!}
+               * {PROJECT}/lib/src/testFixturesDebug/java{!}
+               * {PROJECT}/lib/src/testFixturesDebug/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/testFixturesDebug/resources{!}
+               * {PROJECT}/lib/src/testFixturesDebug/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/testFixturesDebug/res{!}
+               * {PROJECT}/lib/src/testFixturesDebug/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/testFixturesDebug/assets{!}
+               * {PROJECT}/lib/src/testFixturesDebug/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/testFixturesDebug/jniLibs{!}
+               * {PROJECT}/lib/src/testFixturesDebug/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/testFixturesDebug/shaders{!}
+               * {PROJECT}/lib/src/testFixturesDebug/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < testFixturesSourceProvider{ADDED}
@@ -53,24 +53,24 @@
       > release:
          > testFixturesSourceProvider{ADDED}:
             - name                    = "testFixturesRelease"
-            - manifestFile            = {PROJECT}/src/testFixturesRelease/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/testFixturesRelease/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/testFixturesRelease/java{!}
+               * {PROJECT}/lib/src/testFixturesRelease/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/testFixturesRelease/java{!}
-               * {PROJECT}/src/testFixturesRelease/kotlin{!}
+               * {PROJECT}/lib/src/testFixturesRelease/java{!}
+               * {PROJECT}/lib/src/testFixturesRelease/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/testFixturesRelease/resources{!}
+               * {PROJECT}/lib/src/testFixturesRelease/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/testFixturesRelease/res{!}
+               * {PROJECT}/lib/src/testFixturesRelease/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/testFixturesRelease/assets{!}
+               * {PROJECT}/lib/src/testFixturesRelease/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/testFixturesRelease/jniLibs{!}
+               * {PROJECT}/lib/src/testFixturesRelease/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/testFixturesRelease/shaders{!}
+               * {PROJECT}/lib/src/testFixturesRelease/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < testFixturesSourceProvider{ADDED}

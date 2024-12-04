@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.options.RuleO
 import com.android.build.gradle.integration.common.fixture.project.options.SdkConfigurationBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
+import com.android.build.gradle.integration.common.fixture.project.options.CreationOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -40,8 +41,6 @@ import org.junit.runners.model.Statement
  */
 class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
 
-    private val name: String = DEFAULT_TEST_PROJECT_NAME
-
     private val ruleOptionBuilder = DefaultRuleOptionBuilder()
     private val mavenRepository = MavenRepositoryImpl()
 
@@ -49,7 +48,7 @@ class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
      * Returns the [GradleRule], for a project initialized with the [TestProjectBuilder]
      */
     fun from(action: GradleBuildDefinition.() -> Unit): GradleRule {
-        val builder = GradleBuildDefinitionImpl("project")
+        val builder = GradleBuildDefinitionImpl(ruleOptionBuilder.creationOptions.name)
         action(builder)
 
         return create(builder)
@@ -91,7 +90,7 @@ class GradleRuleBuilder internal constructor(): TestRule, RuleOptionBuilder {
         gradleBuild: GradleBuildDefinitionImpl
     ): GradleRule {
         return GradleRule(
-            name = name,
+            name = ruleOptionBuilder.creationOptions.name,
             gradleBuild = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
             externalLibraries = mavenRepository.libraries

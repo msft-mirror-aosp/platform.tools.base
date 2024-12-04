@@ -2,32 +2,32 @@
    > defaultConfig:
       - sourceProvider:
          - mlModelsDirectories:
-            * {PROJECT}/src/main/ml{!}{ADDED}
+            * {PROJECT}/app/src/main/ml{!}{ADDED}
       - androidTestSourceProvider:
          - mlModelsDirectories:
-            * {PROJECT}/src/androidTest/ml{!}{ADDED}
+            * {PROJECT}/app/src/androidTest/ml{!}{ADDED}
       - unitTestSourceProvider:
          - mlModelsDirectories:
-            * {PROJECT}/src/test/ml{!}{ADDED}
+            * {PROJECT}/app/src/test/ml{!}{ADDED}
    < defaultConfig
    > buildTypes:
       > debug:
          - sourceProvider:
             - mlModelsDirectories:
-               * {PROJECT}/src/debug/ml{!}{ADDED}
+               * {PROJECT}/app/src/debug/ml{!}{ADDED}
          - androidTestSourceProvider:
             - mlModelsDirectories:
-               * {PROJECT}/src/androidTestDebug/ml{!}{ADDED}
+               * {PROJECT}/app/src/androidTestDebug/ml{!}{ADDED}
          - unitTestSourceProvider:
             - mlModelsDirectories:
-               * {PROJECT}/src/testDebug/ml{!}{ADDED}
+               * {PROJECT}/app/src/testDebug/ml{!}{ADDED}
       < debug
       - release:
          - sourceProvider:
             - mlModelsDirectories:
-               * {PROJECT}/src/release/ml{!}{ADDED}
+               * {PROJECT}/app/src/release/ml{!}{ADDED}
          - unitTestSourceProvider:
             - mlModelsDirectories:
-               * {PROJECT}/src/testRelease/ml{!}{ADDED}
+               * {PROJECT}/app/src/testRelease/ml{!}{ADDED}
    < buildTypes
 < BasicAndroidProject

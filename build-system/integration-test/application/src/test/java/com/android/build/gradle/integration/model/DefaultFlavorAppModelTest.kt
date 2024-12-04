@@ -17,34 +17,31 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
 class DefaultFlavorAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += "foo"
                 productFlavors {
-                    named("flavorA") {
-                        dimension = "foo"
+                    create("flavorA") {
+                        it.dimension = "foo"
                     }
-                    named("flavorB") {
-                        dimension = "foo"
+                    create("flavorB") {
+                        it.dimension = "foo"
                     }
                 }
             }
         }
     },
     deltaConfig = {
-        rootProject {
+        androidApplication {
             android {
                 productFlavors {
                     named("flavorA") {
-                        isDefault = true
+                        it.isDefault = true
                     }
                 }
             }

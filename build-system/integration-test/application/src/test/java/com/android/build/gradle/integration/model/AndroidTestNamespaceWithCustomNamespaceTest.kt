@@ -17,22 +17,16 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
 class AndroidTestNamespaceWithCustomNamespaceTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+        androidApplication {
         }
     },
     deltaConfig = {
-        rootProject {
+        androidApplication {
             android {
                 namespace = "com.custom.namespace"
             }
@@ -45,8 +39,6 @@ class AndroidTestNamespaceWithCustomNamespaceTest: ReferenceModelComparator(
 
     @Test
     fun `test AndroidProject model`() {
-        // TODO(b/176931684) Once we stop using applicationId for the androidTestNamespace then
-        //  this will need to be changed as the namespace will be impacted by the DSL-set ns
         compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
     }
 

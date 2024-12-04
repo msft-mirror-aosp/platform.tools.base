@@ -58,15 +58,10 @@ class HelloWorldLibModelTest: ModelComparator() {
 
 class DisabledAndroidResourcesInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 buildFeatures {
                     androidResources = false
@@ -97,15 +92,10 @@ class DisabledAndroidResourcesInLibModelTest: ReferenceModelComparator(
 
 class EnabledDataBindingInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 buildFeatures {
                     dataBinding = true
@@ -136,15 +126,10 @@ class EnabledDataBindingInLibModelTest: ReferenceModelComparator(
 
 class EnabledTestFixturesInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 testFixtures {
                     enable = true

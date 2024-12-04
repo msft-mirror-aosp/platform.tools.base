@@ -311,6 +311,7 @@ class FileNormalizerImpl(
     init {
         val mutableList = mutableListOf<RootData>()
 
+
         // The order of the following must go from leaf to root.
         // So first we include the project themselves
         for ((buildName, buildInfo) in buildMap) {
@@ -334,6 +335,11 @@ class FileNormalizerImpl(
             if (buildInfo.name != ModelContainerV2.ROOT_BUILD_ID) {
                 mutableList.add(RootData(buildInfo.rootDir, "INCLUDED_BUILD(${buildInfo.name})"))
             }
+        }
+
+        // then the maven repo as it's inside the project folder
+        additionalMavenRepo?.let {
+            mutableList.add(RootData(it.toFile(), "ADDITIONAL_MAVEN_REPO"))
         }
 
         // then the root build (in case the included ones are inside the root build.
@@ -379,10 +385,6 @@ class FileNormalizerImpl(
             it.absolutePath.length
         }.forEach {
             mutableList.add(RootData(it, "LOCAL_REPO"))
-        }
-
-        additionalMavenRepo?.let {
-            mutableList.add(RootData(it.toFile(), "ADDITIONAL_MAVEN_REPO"))
         }
 
         rootDataList = mutableList.toList()

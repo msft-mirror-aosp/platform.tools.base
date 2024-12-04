@@ -53,6 +53,7 @@ class GradleBuildDefinitionTest {
                   repositories {
                   }
                 }
+                rootProject.name = 'root'
                 include(':app')
 
             """.trimIndent())
@@ -79,6 +80,7 @@ class GradleBuildDefinitionTest {
                   repositories {
                   }
                 }
+                rootProject.name = 'root'
                 includeBuild('build-logic')
 
             """.trimIndent())
@@ -120,6 +122,7 @@ class GradleBuildDefinitionTest {
                     }
                   }
                 }
+                rootProject.name = 'root'
 
             """.trimIndent()
         )

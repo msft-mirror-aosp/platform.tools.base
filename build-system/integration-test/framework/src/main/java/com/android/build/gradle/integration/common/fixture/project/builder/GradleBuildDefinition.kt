@@ -36,6 +36,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.testutils.MavenRepoGenerator.Library
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -44,7 +45,7 @@ import kotlin.io.path.createDirectories
  * Represents a Gradle Build that can be configured before being written on disk
  */
 interface GradleBuildDefinition {
-    val name: String
+    var name: String
 
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
@@ -151,14 +152,9 @@ interface GradleBuildDefinition {
         path: String,
         action: AssetPackDefinition.() -> Unit
     ): AssetPackDefinition
-
-    /**
-     * Configures a maven repositories with custom artifacts
-     */
-    fun mavenRepository(action: MavenRepository.() -> Unit)
 }
 
-internal class GradleBuildDefinitionImpl(override val name: String): GradleBuildDefinition {
+internal class GradleBuildDefinitionImpl(override var name: String): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
@@ -367,10 +363,6 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         throw RuntimeException("Attempting to create a module with path '$path' of type '$expectedType', but a module of type '$wrongType' already exists.")
     }
 
-    override fun mavenRepository(action: MavenRepository.() -> Unit) {
-        throw RuntimeException("todo")
-    }
-
     internal fun write(
         location: Path,
         repositories: Collection<Path>,
@@ -387,6 +379,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
         // write settings with the list of plugins
         settings.write(
+            name = name,
             location = location,
             repositories = repositories,
             includedBuildNames = includedBuilds.values.map { it.name},
@@ -425,6 +418,10 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         }
         return allPlugins
     }
+
+    internal fun gatherInlineLibraries(): List<Library> =
+        includedBuilds.values.flatMap { it.gatherInlineLibraries() } +
+                subProjects.values.flatMap { it.dependencies.externalLibraries }
 
     /**
      * This method handles project with custom plugins applied to them via [AndroidComponentCallback]

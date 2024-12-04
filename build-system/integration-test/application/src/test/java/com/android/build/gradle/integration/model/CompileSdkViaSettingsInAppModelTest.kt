@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -71,20 +70,19 @@ class CompileSdkViaSettingsInAppModelTest {
 class CompileSdkViaSettingsOverriddenInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 compileSdk = 24
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication(createMinimumProject = false) {
             android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
+                namespace = "com.example.app"
             }
         }
     },
     deltaConfig = {
-        rootProject {
+        androidApplication {
             android {
                 compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
             }

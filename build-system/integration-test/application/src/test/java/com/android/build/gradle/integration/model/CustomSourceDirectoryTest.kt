@@ -16,32 +16,36 @@
 
 package com.android.build.gradle.integration.model
 
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.builder.model.v2.ide.SyncIssue
+import org.gradle.api.Project
 import org.junit.Test
 
 class CustomSourceDirectoryTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+        androidLibrary {
         }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                registerSourceType("toml")
-            }
+        androidLibrary {
+            componentCallback = TomlCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class TomlCallback: LibraryComponentCallback {
+        override fun handleComponents(
+            project: Project,
+            androidComponents: LibraryAndroidComponentsExtension
+        ) {
+            androidComponents.registerSourceType("toml")
+        }
+    }
+
     @Test
     fun `test BasicAndroidProject model`() {
         compareBasicAndroidProjectWith()

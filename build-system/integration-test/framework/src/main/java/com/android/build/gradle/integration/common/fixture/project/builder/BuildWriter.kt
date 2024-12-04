@@ -430,7 +430,11 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
         return "[$mapDeclarationContent]"
     }
 
-    override fun toIsBooleanName(name: String): String = name
+    override fun toIsBooleanName(name: String): String {
+        // special case because Groovy is stupid
+        if (name == "default") return "isDefault"
+        return name
+    }
 
     override val buildFileName: String
         get() = "build.gradle"
