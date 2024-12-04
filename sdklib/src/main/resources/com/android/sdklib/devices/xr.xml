@@ -16,10 +16,10 @@
                 <d:dimensions>
                     <!-- X and Y dimensions are temporarily reversed to workaround b/369630150 -->
                     <d:x-dimension>2560</d:x-dimension>
-                    <d:y-dimension>2368</d:y-dimension>
+                    <d:y-dimension>2558</d:y-dimension>
                 </d:dimensions>
-                <d:xdpi>320</d:xdpi>
-                <d:ydpi>320</d:ydpi>
+                <d:xdpi>240</d:xdpi>
+                <d:ydpi>240</d:ydpi>
                 <d:touch>
                     <d:multitouch>jazz-hands</d:multitouch>
                     <d:mechanism>finger</d:mechanism>
@@ -43,6 +43,11 @@
                 StepDetector
             </d:sensors>
             <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>false</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
             <d:keyboard>qwerty</d:keyboard>
             <d:nav>trackball</d:nav>
             <d:ram unit="GiB">4</d:ram>
