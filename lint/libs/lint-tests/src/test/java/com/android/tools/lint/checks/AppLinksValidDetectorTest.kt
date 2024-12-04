@@ -2545,6 +2545,119 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testAutoVerify_extraAttribute_mimeType() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android:name=".FullscreenActivity">
+
+                      <intent-filter android:autoVerify="true"> <!-- Fine -->
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="example.com" />
+                          <data android:pathPrefix="/gizmos" />
+                      </intent-filter>
+
+                      <intent-filter android:autoVerify="true"> <!-- Has MIME type in its own data tag-->
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="example.com" />
+                          <data android:pathPrefix="/gizmos" />
+                          <data android:mimeType="application/json" />
+                      </intent-filter>
+
+                      <intent-filter android:autoVerify="true"> <!-- Has MIME type in the same data tag as other content -->
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+                      </intent-filter>
+
+                      <intent-filter android:autoVerify="true"> <!-- Has MIME type in the same data tag as other content; mix single/double quotes -->
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+          AndroidManifest.xml:29: Error: MIME types prevent Android App Links from matching [AppLinkUriRelativeFilterGroupError]
+                          <data android:mimeType="application/json" />
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:40: Error: MIME types prevent Android App Links from matching [AppLinkUriRelativeFilterGroupError]
+                          <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:51: Error: MIME types prevent Android App Links from matching [AppLinkUriRelativeFilterGroupError]
+                          <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:40: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                          <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:51: Warning: Consider splitting data tag into multiple tags with individual attributes to avoid confusion [IntentFilterUniqueDataAttributes]
+                          <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          3 errors, 2 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 29: Delete:
+        @@ -29 +29
+        -                 <data android:mimeType="application/json" />
+        Fix for AndroidManifest.xml line 40: Delete:
+        @@ -40 +40
+        -                 <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+        +                 <data android:host="example.com"  android:pathPrefix="/gizmos" />
+        Fix for AndroidManifest.xml line 51: Delete:
+        @@ -51 +51
+        -                 <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+        +                 <data android:host='example.com'  android:pathPrefix='/gizmos' />
+        Autofix for AndroidManifest.xml line 40: Replace with <data android:host="example.com" />...:
+        @@ -40 +40
+        -                 <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+        +                 <data android:host="example.com" />
+        +                 <data android:pathPrefix="/gizmos" />
+        Autofix for AndroidManifest.xml line 51: Replace with <data android:host="example.com" />...:
+        @@ -51 +51
+        -                 <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+        +                 <data android:host="example.com" />
+        +                 <data android:pathPrefix="/gizmos" />
+        """
+      )
+  }
+
   fun testAddAutoVerifySuggestion() {
     lint()
       .issues(APP_LINK_WARNING)

@@ -458,51 +458,21 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     }
     // --- Check uri-relative-filter-groups ---
     for (group in intentFilterData.uriRelativeFilterGroups) {
+      suggestRemovingAttributes(
+        context,
+        intentFilter,
+        group.dataTagInfo,
+        listOf(ATTR_SCHEME, ATTR_HOST, ATTR_PORT, ATTR_MIME_TYPE),
+        "Attributes not starting with `path`, `query`, or `fragment` in `uri-relative-filter-group` are ignored",
+      ) {
+        it in PATH_ATTRIBUTES ||
+          it in QUERY_ATTRIBUTES ||
+          it in FRAGMENT_ATTRIBUTES ||
+          it == ATTR_IGNORE
+      }
       for (dataTag in group.dataTagInfo) {
-        val dataElement = (dataTag as? ElementWrapper)?.element ?: continue
-        // Quick-fixes to delete everything other than path*, query*, fragment*
-        val (permitted, notPermitted) =
-          dataTag.attributes.partition {
-            it.name in PATH_ATTRIBUTES ||
-              it.name in QUERY_ATTRIBUTES ||
-              it.name in FRAGMENT_ATTRIBUTES ||
-              it.name == ATTR_IGNORE
-          }
-
-        if (permitted.isEmpty()) {
-          if (notPermitted.isNotEmpty()) {
-            context.report(
-              URI_RELATIVE_FILTER_GROUP,
-              dataElement,
-              context.getLocation(dataElement),
-              "Attributes not starting with `path`, `query`, or `fragment` in `uri-relative-filter-group` are ignored",
-              fix().replace().with("").build(),
-            )
-          }
-        } else { // permitted.isNotEmpty()
-          if (notPermitted.isNotEmpty()) {
-            val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
-            context.report(
-              URI_RELATIVE_FILTER_GROUP,
-              dataElement,
-              context.getLocation(dataElement),
-              "Attributes not starting with `path`, `query`, or `fragment` in `uri-relative-filter-group` are ignored",
-              // We need to put () around the whole thing to make it a capturing group;
-              // otherwise only the first capturing group gets replaced.
-              fix()
-                .replace()
-                .pattern(
-                  """($namespace:($ATTR_SCHEME|$ATTR_HOST|$ATTR_PORT|$ATTR_MIME_TYPE)=(("[^"]*")|('[^']*')))"""
-                )
-                .with("")
-                .repeatedly(true)
-                .reformat(true)
-                .build(),
-            )
-          }
-          for (path in PATH_ATTRIBUTES.mapNotNull { dataTag.getAttributeWrapper(it) }) {
-            handlePath(intentFilterData, intentFilter, dataTag, path, context)
-          }
+        for (path in PATH_ATTRIBUTES.mapNotNull { dataTag.getAttributeWrapper(it) }) {
+          handlePath(intentFilterData, intentFilter, dataTag, path, context)
         }
       }
       for (query in group.queryElements) {
@@ -676,6 +646,18 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           },
         )
       }
+
+      // If the intent filter has a MIME type, suggest deleting it
+      suggestRemovingAttributes(
+        context,
+        intentFilter,
+        intentFilterData.dataTags,
+        listOf(ATTR_MIME_TYPE),
+        "MIME types prevent Android App Links from matching",
+      ) {
+        it != ATTR_MIME_TYPE
+      }
+
       /* else {
         // If intent filter contains both web and non-web schemes
         val webSchemes = intentFilterData.dataTags.schemes.filter { isWebScheme(it) }
@@ -1016,6 +998,52 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         context.getValueLocation(attribute),
         "$name does not support `?` as a Regex character",
       )
+    }
+  }
+
+  private fun suggestRemovingAttributes(
+    context: XmlContext,
+    intentFilter: Element,
+    dataTagInfo: DataTagInfo,
+    attrNames: Collection<String>,
+    message: String,
+    isPermitted: (String) -> Boolean,
+  ) {
+    for (dataTag in dataTagInfo) {
+      val dataElement = (dataTag as? ElementWrapper)?.element ?: continue
+      // Quick-fixes to delete everything other than path*, query*, fragment*
+      val (permitted, notPermitted) = dataTag.attributes.partition { isPermitted(it.name) }
+
+      if (permitted.isEmpty()) {
+        if (notPermitted.isNotEmpty()) {
+          context.report(
+            URI_RELATIVE_FILTER_GROUP,
+            dataElement,
+            context.getLocation(dataElement),
+            message,
+            fix().replace().with("").build(),
+          )
+        }
+      } else { // permitted.isNotEmpty()
+        if (notPermitted.isNotEmpty()) {
+          val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
+          context.report(
+            URI_RELATIVE_FILTER_GROUP,
+            dataElement,
+            context.getLocation(dataElement),
+            message,
+            // We need to put () around the whole thing to make it a capturing group;
+            // otherwise only the first capturing group gets replaced.
+            fix()
+              .replace()
+              .pattern("""($namespace:(${attrNames.joinToString("|")})=(("[^"]*")|('[^']*')))""")
+              .with("")
+              .repeatedly(true)
+              .reformat(true)
+              .build(),
+          )
+        }
+      }
     }
   }
 
@@ -1611,8 +1639,10 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         // Is the intent filter missing anything that we expect from an app link?
         (!hasElementsRequiredForAppLinks(data) ||
           // Does the intent filter include anything that we wouldn't expect from an app link?
-          // Such as a non-web scheme, which should be split out into a different intent filter.
-          data.dataTags.schemes.any { !isSubstituted(it) && !isWebScheme(it) })
+          // Such as a non-web scheme, which should be split out into a different intent filter, or
+          // a MIME type.
+          data.dataTags.schemes.any { !isSubstituted(it) && !isWebScheme(it) } ||
+          data.dataTags.mimeTypes.isNotEmpty())
     }
 
     private fun hasElementsRequiredForAppLinks(data: IntentFilterData): Boolean {
