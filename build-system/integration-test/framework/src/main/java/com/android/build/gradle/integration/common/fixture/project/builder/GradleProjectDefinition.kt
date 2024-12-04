@@ -65,16 +65,17 @@ interface GradleProjectDefinition {
     fun wrap(library: ByteArray, fileName: String)
 }
 
+internal data class AppliedPlugin(
+    val plugin: PluginType,
+    val version: String
+)
+
 /**
  * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
  */
 internal abstract class GradleProjectDefinitionImpl(
     override val path: String
 ): GradleProjectDefinition {
-    data class AppliedPlugin(
-        val plugin: PluginType,
-        val version: String
-    )
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
@@ -90,6 +91,9 @@ internal abstract class GradleProjectDefinitionImpl(
     override var version: String? = null
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        if (type.isSettings) {
+            throw RuntimeException("Cannot apply settings plugin to a project")
+        }
         // search for existing one
         plugins.firstOrNull { it.plugin == type }?.let {
             throw RuntimeException("Plugin $type is already applied! (version: ${it.version}")
@@ -104,6 +108,9 @@ internal abstract class GradleProjectDefinitionImpl(
     }
 
     override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        if (type.isSettings) {
+            throw RuntimeException("Cannot apply settings plugin to a project")
+        }
         val match = plugins.firstOrNull { it.plugin == type }
             ?: throw RuntimeException("Plugin $type not yet applied")
 

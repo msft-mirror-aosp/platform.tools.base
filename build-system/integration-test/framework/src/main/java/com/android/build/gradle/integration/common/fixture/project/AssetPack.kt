@@ -124,5 +124,5 @@ internal class ReversibleAssetPackProject(
 ) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
     parentProject,
 ), AssetPackProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }

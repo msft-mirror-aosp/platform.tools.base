@@ -19,7 +19,9 @@ package com.android.build.gradle.integration.dependencies.app
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -29,14 +31,13 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             dependencies {
-                implementation(project(":library"))
+                implementation(project(DEFAULT_LIB_PATH))
                 runtimeOnly("com.google.guava:guava:19.0")
             }
         }
-        androidLibrary(":library") {
-            HelloWorldAndroid.setupJava(files)
+        androidLibrary {
             dependencies {
                 api(project(":jar"))
             }
@@ -73,10 +74,12 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
             .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies"
         )
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies"
+            projectAction = { getProject(DEFAULT_LIB_PATH) },
+            goldenFile = "library_VariantDependencies"
         )
     }
 
@@ -85,7 +88,7 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
         val build = rule.build
         build.executor.run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsClass("Lcom/example/android/multiproject/person/People;")
             containsClass("Lcom/example/android/multiproject/library/PersonView;")
         }

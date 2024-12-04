@@ -37,13 +37,14 @@ internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDef
         get() = parentProject.namespace
 
     override val files: AndroidProjectFiles =
-        ReversibleAndroidProjectFiles(parentProject.namespace, projectModification)
+        ReversibleAndroidProjectFiles(parentProject.namespace, projectModification, parentProject.location)
 }
 
 internal class ReversibleAndroidProjectFiles(
     override val namespace: String,
-    projectModification: TemporaryProjectModification
-): ReversibleProjectFiles(projectModification), AndroidProjectFiles {
+    projectModification: TemporaryProjectModification,
+    location: Path,
+): ReversibleProjectFiles(projectModification, location), AndroidProjectFiles {
     override val namespaceAsPath: String
         get() = namespaceAsPath.replace('.', '/')
 }

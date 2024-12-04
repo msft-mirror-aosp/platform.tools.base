@@ -27,6 +27,12 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
 interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
+    companion object {
+        const val DEFAULT_APP_PATH = ":app"
+        const val DEFAULT_LIB_PATH = ":lib"
+        const val DEFAULT_FEATURE_PATH = ":feature"
+    }
+
     val android: ExtensionT
     fun android(action: ExtensionT.() -> Unit)
 

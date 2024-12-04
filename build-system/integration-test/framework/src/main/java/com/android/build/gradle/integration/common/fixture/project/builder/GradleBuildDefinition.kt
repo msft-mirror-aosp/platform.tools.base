@@ -30,6 +30,9 @@ import com.android.build.gradle.integration.common.fixture.project.GenericProjec
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -59,52 +62,77 @@ interface GradleBuildDefinition {
 
     /**
      * Configures a subProject with the Android Application plugin, creating it if needed.
+     *
+     * if the project is already created, `createMinimumProject` has no effect
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
      */
     fun androidApplication(
-        path: String = ":app",
-        createManifest: Boolean = true,
+        path: String = DEFAULT_APP_PATH,
+        createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension>
 
     /**
-     * Configures a subProject with the Android Application plugin, creating it if needed,
-     * and setting up some default basic java content
+     * Configures a subProject with the Android Application plugin, creating it if needed
+     *
+     * This also creates some basic content: activity (java), manifest, layout
      */
     fun androidJavaApplication(
-        path: String = ":app",
+        path: String = DEFAULT_APP_PATH,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension>
 
     /**
-     * Configures a subProject with the Android Application plugin, creating it if needed,
-     * and setting up some default basic java content
+     * Configures a subProject with the Android Application plugin, creating it if needed
+     *
+     * This also creates some basic content: activity (kotlin, manifest, layout
      */
     fun androidKotlinApplication(
-        path: String = ":app",
+        path: String = DEFAULT_APP_PATH,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension>
 
     /**
      * Configures a subProject with the Android Library plugin, creating it if needed.
+     *
+     * if the project is already created, `createMinimumProject` has no effect
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
      */
     fun androidLibrary(
-        path: String = ":lib",
+        path: String = DEFAULT_LIB_PATH,
+        createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
     ): AndroidProjectDefinition<LibraryExtension>
 
     /**
      * Configures a subProject with the Android Dynamic Feature plugin, creating it if needed.
+     *
+     * if the project is already created, `createMinimumProject` has no effect
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
      */
     fun androidFeature(
-        path: String,
+        path: String = DEFAULT_FEATURE_PATH,
+        createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
     ): AndroidProjectDefinition<DynamicFeatureExtension>
 
     /**
      * Configures a subProject with the Android Privacy Sandbox SDK plugin, creating it if needed.
+     *
+     * if the project is already created, `createMinimumProject` has no effect
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
      */
     fun privacySandboxSdk(
         path: String,
+        createMinimumProject: Boolean = true,
         action: PrivacySandboxSdkDefinition.() -> Unit
     ): PrivacySandboxSdkDefinition
 
@@ -177,32 +205,21 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun androidApplication(
         path: String,
-        createManifest: Boolean,
+        createMinimumProject: Boolean,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
 
-        var justCreated = false
         val project = subProjects.computeIfAbsent(path) {
-            justCreated = true
-            AndroidApplicationDefinitionImpl(it)
+            AndroidApplicationDefinitionImpl(it, createMinimumProject).also {
+                if (createMinimumProject) {
+                    it.files.setupMinimumManifest()
+                }
+            }
         }
 
         project as? AndroidApplicationDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Application")
-
-        // create the manifest first, so that the action can update it if needed
-        if (justCreated && createManifest) {
-            project.files.add(
-                "src/main/AndroidManifest.xml",
-                //language=XML
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                             xmlns:dist="http://schemas.android.com/apk/distribution">
-                        <application />
-                    </manifest>""".trimMargin()
-            )
-        }
 
         action(project)
 
@@ -214,7 +231,7 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> = androidApplication(
         path,
-        createManifest = false,
+        createMinimumProject = true,
         action
     ).also {
         HelloWorldAndroid.setupJava(it.files)
@@ -226,25 +243,26 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     ): AndroidProjectDefinition<ApplicationExtension> {
         // kotlin plugin must be applied first (or you cannot access the kotlin {} block,
         // so order is important here.
-        val app = androidApplication(path, createManifest = false) {
+        val app = androidApplication(path, createMinimumProject = true) {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
         }
         action(app)
+
         // always do this last as it needs the final namespace value
         HelloWorldAndroid.setupKotlin(app.files)
-        HelloWorldAndroid.setupKotlinDependencies(app)
 
         return app
     }
 
     override fun androidLibrary(
         path: String,
+        createMinimumProject: Boolean,
         action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
     ): AndroidProjectDefinition<LibraryExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
 
         val project = subProjects.computeIfAbsent(path) {
-            AndroidLibraryDefinitionImpl(it)
+            AndroidLibraryDefinitionImpl(it, createMinimumProject)
         }
 
         project as? AndroidLibraryDefinitionImpl
@@ -257,12 +275,17 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun androidFeature(
         path: String,
+        createMinimumProject: Boolean,
         action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
     ): AndroidProjectDefinition<DynamicFeatureExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
 
         val project = subProjects.computeIfAbsent(path) {
-            AndroidDynamicFeatureDefinitionImpl(it)
+            AndroidDynamicFeatureDefinitionImpl(it, createMinimumProject).also {
+                if (createMinimumProject) {
+                    it.files.setupMinimumManifest()
+                }
+            }
         }
 
         project as? AndroidDynamicFeatureDefinitionImpl
@@ -275,12 +298,13 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun privacySandboxSdk(
         path: String,
+        createMinimumProject: Boolean,
         action: PrivacySandboxSdkDefinition.() -> Unit
     ): PrivacySandboxSdkDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
 
         val project = subProjects.computeIfAbsent(path) {
-            PrivacySandboxSdkDefinitionImpl(it)
+            PrivacySandboxSdkDefinitionImpl(it, createMinimumProject)
         }
 
         project as? PrivacySandboxSdkDefinitionImpl

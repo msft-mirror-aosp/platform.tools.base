@@ -123,5 +123,5 @@ internal class ReversibleAiPackProject(
 ) : ReversibleGradleProject<AiPackProject, AiPackDefinition>(
     parentProject,
 ), AiPackProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteExisting
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -29,13 +30,17 @@ interface GradleProjectFiles {
 
     /**
      * Adds a file to the given location with the given content.
+     *
+     * If the file already exists, an exception is thrown
      */
     fun add(relativePath: String, content: String)
 
     /**
-     * Update the content of a file
+     * Update the content of a file.
+     *
+     * If the file does not exist, the content passed to the lambda is null.
      */
-    fun update(relativePath: String, action: (String) -> String)
+    fun update(relativePath: String, action: (String?) -> String)
 
     /**
      * Removes the file at the given location
@@ -51,6 +56,21 @@ interface GradleProjectFiles {
 interface AndroidProjectFiles: GradleProjectFiles {
     val namespace: String
     val namespaceAsPath: String
+
+    /**
+     * Sets up a basic minimum Manifest, enough to build some projects
+     */
+    fun setupMinimumManifest() {
+        update("src/main/AndroidManifest.xml") {
+            //language=XML
+            """
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                             xmlns:dist="http://schemas.android.com/apk/distribution">
+                        <application />
+                    </manifest>
+                """.trimMargin()
+        }
+    }
 }
 
 internal open class GradleProjectFilesImpl: GradleProjectFiles {
@@ -66,10 +86,10 @@ internal open class GradleProjectFilesImpl: GradleProjectFiles {
         sourceFiles[relativePath] = content
     }
 
-    override fun update(relativePath: String, action: (String) -> String) {
+    override fun update(relativePath: String, action: (String?) -> String) {
         val existingContent = sourceFiles[relativePath]
-            ?: throw RuntimeException("No file exists at $relativePath")
 
+        // run the action whether the file exist or not.
         sourceFiles[relativePath] = action(existingContent)
     }
 
@@ -96,14 +116,18 @@ internal open class DirectGradleProjectFilesImpl(
 ): GradleProjectFiles {
 
     override fun add(relativePath: String, content: String) {
-        location.resolve(relativePath).writeText(content)
+        val file = location.resolve(relativePath)
+        file.parent.createDirectories()
+        file.writeText(content)
     }
 
-    override fun update(relativePath: String, action: (String) -> String) {
+    override fun update(relativePath: String, action: (String?) -> String) {
         val file = location.resolve(relativePath)
-        val originalContent = file.readText()
-        val newContent = action(originalContent)
-        file.writeText(newContent)
+
+        val oldContent = if (file.isRegularFile()) file.readText() else null
+
+        file.parent.createDirectories()
+        file.writeText(action(oldContent))
     }
 
     override fun remove(relativePath: String) {

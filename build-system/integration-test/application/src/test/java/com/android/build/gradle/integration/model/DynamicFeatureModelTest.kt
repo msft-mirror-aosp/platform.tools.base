@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
@@ -142,24 +144,25 @@ class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
 
 class CompileSdkViaSettingsInDynamicFeatureModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
+        androidFeature(createMinimumProject = false) {
             android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
+                namespace = "com.example.feature"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test compileTarget`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -174,24 +177,20 @@ class CompileSdkViaSettingsInDynamicFeatureModelTest {
 
 class MinSdkViaSettingsInDynamicFeatureModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 minSdk = 23
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidFeature { }
     }
 
     @Test
     fun `test minSdkVersion`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

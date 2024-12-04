@@ -18,7 +18,8 @@ package com.android.build.gradle.integration.dependencies.app
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -28,18 +29,17 @@ class AppWithJarDependOnLibTest : ModelComparator() {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             dependencies {
                 api(project(":jar"))
             }
         }
-        androidLibrary(":library") {
-            HelloWorldAndroid.setupJava(files)
+        androidLibrary {
         }
         genericProject(":jar") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             dependencies {
-                api(project(":library"))
+                api(project(DEFAULT_LIB_PATH))
             }
         }
     }
@@ -52,7 +52,8 @@ class AppWithJarDependOnLibTest : ModelComparator() {
             .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies"
         )
     }
 }

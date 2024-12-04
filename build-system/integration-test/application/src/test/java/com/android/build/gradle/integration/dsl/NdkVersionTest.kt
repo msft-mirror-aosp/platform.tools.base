@@ -16,37 +16,45 @@
 
 package com.android.build.gradle.integration.dsl
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.google.common.truth.Truth
 import junit.framework.TestCase
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 class NdkVersionTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 ndkVersion = "1.2"
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
+        androidApplication {
+            componentCallback = AppCallback::class.java
+        }
+    }
+
+    class AppCallback: ApplicationComponentCallback {
+        override fun handleComponents(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.finalizeDsl { extension ->
+                println("$PREFIX${extension.ndkVersion}")
             }
         }
     }
 
     @Test
     fun testNdkVersionFromSettings() {
-        project.buildFile.appendText("println(\"$PREFIX\${android.ndkVersion}\")")
-
-        val result = project.executor().run("projects")
+        val result = rule.build.executor.run("projects")
 
         var found = false
         result.stdout.forEachLine {

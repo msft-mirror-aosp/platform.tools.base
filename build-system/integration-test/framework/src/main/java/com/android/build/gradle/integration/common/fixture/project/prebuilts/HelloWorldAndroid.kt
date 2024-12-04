@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 
 /**
@@ -78,8 +79,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                add(
-                    "src/main/AndroidManifest.xml",
+                update("src/main/AndroidManifest.xml") {
                     // language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
@@ -98,7 +98,7 @@ class HelloWorldAndroid {
                             </application>
                         </manifest>
                     """.trimIndent()
-                )
+                }
             }
         }
 
@@ -154,8 +154,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                add(
-                    "src/main/AndroidManifest.xml",
+                update("src/main/AndroidManifest.xml") {
                     // language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
@@ -174,28 +173,7 @@ class HelloWorldAndroid {
                             </application>
                         </manifest>
                     """.trimIndent()
-                )
-            }
-        }
-
-        fun setupKotlinDependencies(project: GradleProjectDefinition) {
-            project.dependencies {
-                api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-                androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-                testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-            }
-        }
-
-        fun setupMainKotlinDependencies(project: GradleProjectDefinition) {
-            project.dependencies {
-                api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-            }
-        }
-
-        fun setupTestKotlinDependencies(project: GradleProjectDefinition) {
-            project.dependencies {
-                androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-                testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+                }
             }
         }
     }

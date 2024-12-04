@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
@@ -167,24 +169,25 @@ class EnabledTestFixturesInLibModelTest: ReferenceModelComparator(
 
 class CompileSdkViaSettingsInLibModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(createMinimumProject = false) {
             android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
+                namespace = "com.example.library"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test compileTarget`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -200,24 +203,26 @@ class CompileSdkViaSettingsInLibModelTest {
 
 class MinSdkViaSettingsInLibModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 minSdk = 23
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(createMinimumProject = false) {
             android {
-                setUpHelloWorld()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                namespace = "com.example.library"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test minSdkVersion`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

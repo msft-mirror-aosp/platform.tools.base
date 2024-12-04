@@ -41,9 +41,13 @@ import kotlin.io.path.isRegularFile
 
 /**
  * Implementation of [AndroidProjectDefinition] for [ApplicationExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
 internal class AndroidApplicationDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean,
 ): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_APP)
@@ -54,7 +58,9 @@ internal class AndroidApplicationDefinitionImpl(
             ApplicationExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 

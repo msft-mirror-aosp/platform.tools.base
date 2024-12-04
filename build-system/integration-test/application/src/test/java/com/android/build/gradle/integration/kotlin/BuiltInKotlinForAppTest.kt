@@ -31,7 +31,7 @@ class BuiltInKotlinForAppTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(createManifest = false) {
+        androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)

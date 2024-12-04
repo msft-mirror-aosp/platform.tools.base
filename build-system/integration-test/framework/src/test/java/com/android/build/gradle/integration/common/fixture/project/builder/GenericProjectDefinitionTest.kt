@@ -82,7 +82,7 @@ class GenericProjectDefinitionTest {
         project.files {
             add("foo.txt", "some content")
             update("foo.txt") {
-                it.replace("some", "more")
+                it?.replace("some", "more") ?: "error"
             }
         }
 
@@ -101,6 +101,16 @@ class GenericProjectDefinitionTest {
     }
 
     @Test
+    fun addExistingFile() {
+        val project = GenericProjectDefinitionImpl("name")
+
+        project.files.add("foo.txt", "foo")
+
+        expected.expect(RuntimeException::class.java)
+        project.files.add("foo.txt", "bar")
+    }
+
+    @Test
     fun removeMissingFile() {
         val project = GenericProjectDefinitionImpl("name")
 
@@ -109,13 +119,25 @@ class GenericProjectDefinitionTest {
     }
 
     @Test
-    fun changeMissingFile() {
+    fun updateMissingFile() {
         val project = GenericProjectDefinitionImpl("name")
 
-        expected.expect(RuntimeException::class.java)
         project.files.update("foo.txt") {
             "new content"
         }
+
+        val location = temporaryFolder.newFolder().toPath()
+        project.writeSubProject(
+            location = location,
+            buildFileOnly = false,
+            allPlugins = mapOf(),
+            buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
+        )
+
+        val fooFile = location.resolve("foo.txt")
+        Truth.assertThat(fooFile.isRegularFile()).isTrue()
+        Truth.assertThat(fooFile.readText()).isEqualTo("new content")
     }
 }
 

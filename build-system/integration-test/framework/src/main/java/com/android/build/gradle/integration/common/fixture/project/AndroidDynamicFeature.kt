@@ -33,9 +33,13 @@ import java.nio.file.Path
 
 /**
  * Implementation of [AndroidProjectDefinition] for [DynamicFeatureExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
 internal class AndroidDynamicFeatureDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean
 ): AndroidProjectDefinitionImpl<DynamicFeatureExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_DYNAMIC_FEATURE)
@@ -46,7 +50,9 @@ internal class AndroidDynamicFeatureDefinitionImpl(
             DynamicFeatureExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 

@@ -18,24 +18,21 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-private const val LIBRARY_PATH = ":library"
-
 /** Tests for library module with navigation. */
 class LibWithNavigationTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidLibrary(LIBRARY_PATH) {
-
-            files {
-                HelloWorldAndroid.setupJava(this)
-                update("src/main/AndroidManifest.xml") {
+        androidLibrary {
+            files.update("src/main/AndroidManifest.xml") {
                     """
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <application android:name="library">
@@ -44,9 +41,7 @@ class LibWithNavigationTest {
                                 </activity>
                              </application>
                         </manifest>""".trimIndent()
-                }
             }
-
         }
     }
 
@@ -57,9 +52,9 @@ class LibWithNavigationTest {
     @Test
     fun testAssembleReleaseWithNavGraphTagInManifest() {
         val build = rule.build
-        val library = build.androidLibrary(LIBRARY_PATH)
+        val library = build.androidLibrary()
 
-        build.executor.run("clean", "$LIBRARY_PATH:assembleRelease")
+        build.executor.run("clean", "$DEFAULT_LIB_PATH:assembleRelease")
         library.assertAar(AarSelector.RELEASE) {
             manifestFile().contains("<nav-graph android:value=\"@navigation/nav1\" />")
         }
@@ -71,11 +66,10 @@ class LibWithNavigationTest {
     @Test
     fun testDisablingAndroidResourcesDisablesExtractDeepLinksTask() {
         val build = rule.build
-        val library = build.androidLibrary(LIBRARY_PATH)
+        val library = build.androidLibrary()
 
         val taskName = "extractDeepLinksDebug"
-        val fullTaskName = "$LIBRARY_PATH:$taskName"
-
+        val fullTaskName = "$DEFAULT_LIB_PATH:$taskName"
 
         build.executor.run(fullTaskName).apply {
             assertThat(getTask(fullTaskName)).didWork()
@@ -95,7 +89,7 @@ class LibWithNavigationTest {
             assertThat(this)
                 .hasCauseThat()
                 .hasMessageThat()
-                .contains("Cannot locate tasks that match '$LIBRARY_PATH:$taskName'")
+                .contains("Cannot locate tasks that match '$DEFAULT_LIB_PATH:$taskName'")
         }
     }
 }

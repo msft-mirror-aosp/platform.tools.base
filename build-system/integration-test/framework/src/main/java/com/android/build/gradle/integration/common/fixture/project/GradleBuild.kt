@@ -19,6 +19,10 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.nio.file.Path
 
@@ -37,17 +41,17 @@ interface GradleBuild {
      * Queries for an application project via its gradle path.
      * The project must exist and be an Android Application project
      */
-    fun androidApplication(path: String = ":app"): AndroidApplicationProject
+    fun androidApplication(path: String = DEFAULT_APP_PATH): AndroidApplicationProject
     /**
      * Queries for a library project via its gradle path.
      * The project must exist and be an Android Library project
      */
-    fun androidLibrary(path: String = ":lib"): AndroidLibraryProject
+    fun androidLibrary(path: String = DEFAULT_LIB_PATH): AndroidLibraryProject
     /**
      * Queries for a feature project via its gradle path.
      * The project must exist and be an Android Dynamic Feature project
      */
-    fun androidFeature(path: String): AndroidDynamicFeatureProject
+    fun androidFeature(path: String = DEFAULT_FEATURE_PATH): AndroidDynamicFeatureProject
     /**
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.

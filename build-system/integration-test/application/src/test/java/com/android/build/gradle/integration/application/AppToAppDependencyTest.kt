@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import org.junit.Rule
 import org.junit.Test
 

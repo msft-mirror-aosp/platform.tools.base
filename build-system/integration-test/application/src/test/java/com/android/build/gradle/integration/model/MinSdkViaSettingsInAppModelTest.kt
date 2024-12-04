@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.integration.model
 
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -26,24 +27,26 @@ import org.junit.Test
 
 class MinSdkViaSettingsInAppModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 minSdk = 23
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication(createMinimumProject = false) {
             android {
-                setUpHelloWorld()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                namespace = "com.example.library"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test minSdkVersion`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

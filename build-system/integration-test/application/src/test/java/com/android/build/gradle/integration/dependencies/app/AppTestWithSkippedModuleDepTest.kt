@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.dependencies.app
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -29,7 +29,7 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             dependencies {
                 api(project(":jar"))
                 androidTestImplementation(project(":jar"))
@@ -68,7 +68,8 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
                 .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies"
         )
     }
 
@@ -76,7 +77,7 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
     fun checkAppBuild() {
         val build = rule.build
         build.executor.run(":app:assembleDebug")
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsClass("Lcom/example/android/multiproject/person/Person;")
         }
     }
@@ -85,7 +86,7 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
     fun checkTestBuild() {
         val build = rule.build
         build.executor.run(":app:assembleDebugAndroidTest")
-        build.androidApplication(":app").assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
             doesNotContainClass("Lcom/example/android/multiproject/person/Person;")
         }
     }

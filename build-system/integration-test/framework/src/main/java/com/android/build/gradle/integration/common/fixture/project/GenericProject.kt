@@ -116,5 +116,5 @@ internal open class ReversibleGenericProject(
     parentProject: GenericProject,
     projectModification: TemporaryProjectModification,
 ): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }

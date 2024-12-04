@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.dependencies.app
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -29,7 +29,7 @@ class AppWithKmpDependency : ModelComparator() {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             android {
                 defaultConfig.minSdk = 21
             }
@@ -48,7 +48,8 @@ class AppWithKmpDependency : ModelComparator() {
             .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies_android"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies_android"
         )
     }
 
@@ -61,7 +62,8 @@ class AppWithKmpDependency : ModelComparator() {
             .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies_desktop"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies_desktop"
         )
     }
 
@@ -72,7 +74,7 @@ class AppWithKmpDependency : ModelComparator() {
             .with(BooleanOption.USE_ANDROID_X, true)
             .run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsClass("Landroidx/lifecycle/ReportFragment;")
         }
     }
@@ -85,7 +87,7 @@ class AppWithKmpDependency : ModelComparator() {
             .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
             .run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             doesNotContainClass("Landroidx/lifecycle/ReportFragment;")
         }
     }

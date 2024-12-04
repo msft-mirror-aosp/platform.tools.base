@@ -38,8 +38,14 @@ import kotlin.io.path.isRegularFile
 
 /**
  * Implementation of [AndroidProjectDefinition] for [LibraryExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
-internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
+internal class AndroidLibraryDefinitionImpl(
+    path: String,
+    createMinimumProject: Boolean,
+): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_LIB)
     }
@@ -49,7 +55,9 @@ internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinit
             LibraryExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 

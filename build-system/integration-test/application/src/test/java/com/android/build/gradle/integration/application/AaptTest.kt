@@ -4,7 +4,6 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
@@ -21,7 +20,7 @@ class AaptTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             android {
                 defaultConfig.versionCode = 1
             }
@@ -40,7 +39,7 @@ class AaptTest {
         val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         additionalParameters += listOf("--trace-folder", windowsFriendlyFilePath)
@@ -56,7 +55,7 @@ class AaptTest {
         Truth.assertThat(tracesFolder.listFiles()!!.size).isEqualTo(1)
         FileUtils.deleteDirectoryContents(tracesFolder)
 
-        build.androidApplication(":app").reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure(buildFileOnly = true) {
             android.androidResources.additionalParameters.clear()
         }
 
@@ -89,7 +88,7 @@ class AaptTest {
         val build = rule.configure().withProperties {
             add("_aaptTest_", windowsFriendlyFilePath)
         }.build {
-            androidApplication(":app") {
+            androidApplication {
                 componentCallback = TraceFolderCallback::class.java
             }
         }
@@ -102,7 +101,7 @@ class AaptTest {
     @Test
     fun emptyNoCompressList() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         noCompress("")
@@ -114,7 +113,7 @@ class AaptTest {
         build.executor.run("clean", "assembleDebug")
 
         // Check that APK entries are uncompressed
-        build.androidApplication(":app").withApk(ApkSelector.DEBUG) {
+        build.androidApplication().withApk(ApkSelector.DEBUG) {
             // TODO (Issue 70118728) res/layout/main.xml should be uncompressed too.
             val entry = ZipArchive.listEntries(file)["classes.dex"]
             Truth.assertThat(entry?.compressionFlag).isEqualTo(ZipEntry.STORED)
@@ -124,14 +123,14 @@ class AaptTest {
     @Test
     fun testIgnoreAssetsPatterns_dsl() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android.androidResources.ignoreAssetsPattern = "ignored"
             }
         }
 
         build.executor.run("clean", "assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsFile("assets/kept")
             doesNotContain("assets/ignored")
         }
@@ -153,14 +152,14 @@ class AaptTest {
     @Test
     fun testIgnoreAssetsPatterns_variantApi() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 componentCallback = IgnorePatternCallback::class.java
             }
         }
 
         build.executor.run("clean", "assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             contains("assets/kept")
             doesNotContain("assets/ignored")
         }
@@ -221,7 +220,7 @@ class AaptTest {
         expectedTasksThatDidWorkOnANoIgnoreAssetsChange: List<String>
     ) {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         noCompress += "noCompressDsl"
@@ -234,7 +233,7 @@ class AaptTest {
 
         build.executor.run("clean", assembleTask)
 
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
 
         // test that tasks run when aapt options changed via the DSL
         app.reconfigure(buildFileOnly = true) {

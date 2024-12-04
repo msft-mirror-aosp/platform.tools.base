@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -27,7 +28,7 @@ class BuiltInKotlinAutomaticStdlibTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(createManifest = false) {
+        androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)

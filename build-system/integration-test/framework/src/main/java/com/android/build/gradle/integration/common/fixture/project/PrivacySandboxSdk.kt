@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -50,9 +49,13 @@ interface PrivacySandboxSdkDefinition: GradleProjectDefinition {
 
 /**
  *  Implementation of [GradleProjectDefinition] for [PrivacySandboxSdkExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
 internal class PrivacySandboxSdkDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean
 ) : GradleProjectDefinitionImpl(path), PrivacySandboxSdkDefinition {
     init {
         applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
@@ -70,7 +73,9 @@ internal class PrivacySandboxSdkDefinitionImpl(
             PrivacySandboxSdkExtension::class.java,
             contentHolder,
         ).also {
-            it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+            if (createMinimumProject) {
+                it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+            }
         }
 
     override fun android(action: PrivacySandboxSdkExtension.() -> Unit) {
@@ -126,6 +131,5 @@ internal class ReversiblePrivacySandboxSdkProject(
 ) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
     parentProject
 ), PrivacySandboxSdkProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }
-
