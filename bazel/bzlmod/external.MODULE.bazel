@@ -29,6 +29,12 @@ local_repository(
 )
 
 new_local_repository(
+    name = "intellij_plugins",
+    build_file = "//tools/base/bazel:external/intellij_plugins.BUILD",
+    path = "external/intellij-plugins",
+)
+
+new_local_repository(
     name = "native_toolchain",
     build_file = "//tools/base/bazel/toolchains:clang.BUILD",
     path = "prebuilts/clang",
