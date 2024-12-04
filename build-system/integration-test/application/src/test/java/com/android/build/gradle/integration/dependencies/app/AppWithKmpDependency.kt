@@ -16,12 +16,10 @@
 
 package com.android.build.gradle.integration.dependencies.app
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -30,13 +28,12 @@ import org.junit.Test
 class AppWithKmpDependency : ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication(":app") {
             android {
-                minSdk = 21
-                setUpHelloWorld()
+                defaultConfig.minSdk = 21
             }
+            HelloWorldAndroid.setupJava(files)
             // this is a kmp dependency published with -android and -desktop variants
             dependencies {
                 implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02")
@@ -46,11 +43,10 @@ class AppWithKmpDependency : ModelComparator() {
 
     @Test
     fun `test VariantDependencies model with kotlin attribute`() {
-        val result =
-            project.modelV2()
-                .with(BooleanOption.USE_ANDROID_X, true)
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+        val result = rule.build.modelBuilder
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
             projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies_android"
@@ -59,12 +55,11 @@ class AppWithKmpDependency : ModelComparator() {
 
     @Test
     fun `test VariantDependencies model without kotlin attribute`() {
-        val result =
-            project.modelV2()
-                .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
-                .with(BooleanOption.USE_ANDROID_X, true)
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+        val result = rule.build.modelBuilder
+            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
             projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies_desktop"
@@ -73,24 +68,26 @@ class AppWithKmpDependency : ModelComparator() {
 
     @Test
     fun checkPackagedClassesContainAndroidSpecificClass() {
-        project.executor()
+        val build = rule.build
+        build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .run(":app:assembleDebug")
 
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-
-        TruthHelper.assertThat(apk).containsClass("Landroidx/lifecycle/ReportFragment;")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            containsClass("Landroidx/lifecycle/ReportFragment;")
+        }
     }
 
     @Test
     fun checkPackagedClassesDoesntContainAndroidSpecificClass() {
-        project.executor()
+        val build = rule.build
+        build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
             .run(":app:assembleDebug")
 
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-
-        TruthHelper.assertThat(apk).doesNotContainClass("Landroidx/lifecycle/ReportFragment;")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            doesNotContainClass("Landroidx/lifecycle/ReportFragment;")
+        }
     }
 }
