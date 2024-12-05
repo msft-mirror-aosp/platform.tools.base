@@ -17,8 +17,9 @@
 package com.android.build.gradle.integration.dependencies.app
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -26,28 +27,33 @@ import org.junit.Test
 class AppWithCompileIndirectJarTest : ModelComparator() {
 
     @get:Rule
-    val rule = GradleRule.from {
-        androidApplication(":app") {
-            HelloWorldAndroid.setupJava(files)
+    val project = createGradleProject {
+        subProject(":app") {
+            plugins.add(PluginType.ANDROID_APP)
+            android {
+                setUpHelloWorld()
+            }
             dependencies {
                 implementation(project(":library"))
             }
         }
-        androidLibrary(":library") {
-            HelloWorldAndroid.setupJava(files)
+        subProject(":library") {
+            plugins.add(PluginType.ANDROID_LIB)
+            android {
+                setUpHelloWorld()
+            }
             dependencies {
                 api("com.google.guava:guava:18.0")
             }
         }
     }
 
-
     @Test
     fun `test VariantDependencies model`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+        val result =
+            project.modelV2()
+                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+                .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
             projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"

@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuilder
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,24 +29,44 @@ import org.junit.Test
 class AppToAppDependencyTest {
 
     @get:Rule
-    val rule = GradleRule.from {
-        androidApplication(":appA") {
+    val project = createGradleProject {
+        subProject(":appA") {
+            plugins.add(PluginType.ANDROID_APP)
             android {
                 namespace = "com.example.appa"
+                defaultCompileSdk()
             }
-            HelloWorldAndroid.setupJava(files)
+            addFile("src/main/AndroidManifest.xml",
+                with(ManifestFileBuilder()) {
+                    build()
+                }
+            )
             dependencies {
                 implementation(project(":appB"))
             }
         }
-        androidApplication(":appB") {
-            HelloWorldAndroid.setupJava(files)
+        subProject(":appB") {
+            plugins.add(PluginType.ANDROID_APP)
+            val appNamespace = "com.example.appb"
+            android {
+                namespace = namespace
+                defaultCompileSdk()
+            }
+            addFile("src/main/AndroidManifest.xml",
+                with(ManifestFileBuilder()) {
+                    build()
+                }
+            )
+            dependencies {
+            }
         }
+
+        withKotlinPlugin = true
     }
 
     @Test
     fun build() {
-        val failure = rule.build.executor.expectFailure().run("assembleDebug")
+        val failure = project.executor().expectFailure().run("assembleDebug")
         failure.assertErrorContains(
             "This application (com.example.appa) is not configured to use dynamic features."
         )
