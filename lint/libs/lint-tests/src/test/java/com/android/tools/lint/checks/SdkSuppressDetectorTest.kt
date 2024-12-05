@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.requiresExtensionStub
 
 class SdkSuppressDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector {
@@ -117,6 +118,10 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
 
                 @RequiresApi(api = 31) // OK because we only flag annotations on classes & methods
                 private val field2 = GridLayout(null)
+
+                @androidx.annotation.RequiresExtension(extension= Build.VERSION_CODES.R, version=4)
+                fun test3() { // OK until b/257429573 is fixed
+                }
             }
 
             @RequiresApi(29) private fun utility1() { } // OK - not public
@@ -154,6 +159,7 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         SUPPORT_ANNOTATIONS_JAR,
+        requiresExtensionStub,
       )
       .run()
       .expect(
