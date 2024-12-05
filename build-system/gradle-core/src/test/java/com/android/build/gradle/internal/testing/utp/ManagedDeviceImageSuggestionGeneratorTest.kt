@@ -73,7 +73,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "System Image specified by atd_device does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
                     "1. Automated Test Device image does not exist for this architecture on the " +
-                    "given apiLevel. However, a normal emulator image does exist from a " +
+                    "given sdkVersion. However, a normal emulator image does exist from a " +
                     "comparable source. Set systemImageSource = \"aosp\" to use."
         )
     }
@@ -96,7 +96,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "System Image specified by another_atd_device does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
                     "1. The image does not exist from google-atd for this architecture on the " +
-                    "given apiLevel. However, other sources exist. Set systemImageSource to any " +
+                    "given sdkVersion. However, other sources exist. Set systemImageSource to any " +
                     "of [aosp-atd, aosp] to use."
         )
     }
@@ -118,8 +118,8 @@ class ManagedDeviceImageSuggestionGeneratorTest {
         assertThat(generator.message).isEqualTo(
             "System Image specified by api_not_valid does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
-                    "1. The system image does not exist for apiLevel 12. However an image exists " +
-                    "for apiLevel 14. Set apiLevel = 14 to use."
+                    "1. The system image does not exist for sdkVersion 12. However an image exists " +
+                    "for sdkVersion 14. Set sdkVersion = 14 to use."
         )
     }
 
@@ -138,8 +138,8 @@ class ManagedDeviceImageSuggestionGeneratorTest {
         assertThat(generator.message).isEqualTo(
             "System Image specified by too_high_api does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
-                    "1. The system image does not presently exist for apiLevel 200. The latest " +
-                    "available apiLevel is 31. Set apiLevel = 31 to use."
+                    "1. The system image does not presently exist for sdkVersion 200. The latest " +
+                    "available sdkVersion is 31. Set sdkVersion = 31 to use."
         )
     }
 
@@ -159,7 +159,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
         assertThat(generator.message).isEqualTo(
             "System Image specified by require_64 does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
-                    "1. There is an available X86 image for apiLevel 24. Set require64Bit = " +
+                    "1. There is an available X86 image for sdkVersion 24. Set require64Bit = " +
                     "false to use. Be aware tests involving native X86_64 code will not be run " +
                     "with this change."
         )
@@ -190,10 +190,10 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "System Image specified by test_device does not exist.\n\n" +
                     "Try one of the following fixes:\n" +
                     "1. Automated Test Device image does not exist for this architecture on the " +
-                    "given apiLevel. However, a normal emulator image does exist from a " +
+                    "given sdkVersion. However, a normal emulator image does exist from a " +
                     "comparable source. Set systemImageSource = \"aosp\" to use.\n" +
-                    "2. The system image does not exist for apiLevel 29. However an image exists " +
-                    "for apiLevel 31. Set apiLevel = 31 to use."
+                    "2. The system image does not exist for sdkVersion 29. However an image exists " +
+                    "for sdkVersion 31. Set sdkVersion = 31 to use."
         )
     }
 

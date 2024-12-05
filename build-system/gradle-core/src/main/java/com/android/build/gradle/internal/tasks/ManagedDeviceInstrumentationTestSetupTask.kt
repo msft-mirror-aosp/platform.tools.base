@@ -72,7 +72,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
     abstract val abi: Property<String>
 
     @get: Input
-    abstract val apiLevel: Property<Int>
+    abstract val sdkVersion: Property<Int>
 
     @get: Input
     abstract val systemImageVendor: Property<String>
@@ -102,12 +102,12 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             it.avdService.set(avdService)
             it.deviceName.set(
                 computeAvdName(
-                    apiLevel.get(), systemImageVendor.get(), abi.get(), hardwareProfile.get()))
+                    sdkVersion.get(), systemImageVendor.get(), abi.get(), hardwareProfile.get()))
             it.hardwareProfile.set(hardwareProfile)
             it.emulatorGpuFlag.set(emulatorGpuFlag)
             it.managedDeviceName.set(managedDeviceName)
             it.systemImageVendor.set(systemImageVendor)
-            it.apiLevel.set(apiLevel)
+            it.sdkVersion.set(sdkVersion)
             it.require64Bit.set(require64Bit)
             it.abi.set(abi)
         }
@@ -148,7 +148,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             if (!sdkImageProvider.isPresent) {
                 error(generateSystemImageErrorMessage(
                     parameters.managedDeviceName.get(),
-                    parameters.apiLevel.get(),
+                    parameters.sdkVersion.get(),
                     parameters.systemImageVendor.get(),
                     parameters.require64Bit.get(),
                     versionedSdkLoader))
@@ -171,7 +171,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
 
         private fun computeImageHash(): String =
             computeSystemImageHashFromDsl(
-                parameters.apiLevel.get(),
+                parameters.sdkVersion.get(),
                 parameters.systemImageVendor.get(),
                 parameters.abi.get())
     }
@@ -186,7 +186,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         abstract val emulatorGpuFlag: Property<String>
         abstract val managedDeviceName: Property<String>
         abstract val systemImageVendor: Property<String>
-        abstract val apiLevel: Property<Int>
+        abstract val sdkVersion: Property<Int>
         abstract val require64Bit: Property<Boolean>
         abstract val abi: Property<String>
     }
@@ -194,7 +194,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
     class CreationAction(
         override val name: String,
         private val systemImageSource: String,
-        private val apiLevel: Int,
+        private val sdkVersion: Int,
         private val abi: String,
         private val hardwareProfile: String,
         private val managedDeviceName: String,
@@ -209,7 +209,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         ): this(
             name,
             managedDevice.systemImageSource,
-            managedDevice.apiLevel,
+            managedDevice.sdkVersion,
             computeAbiFromArchitecture(managedDevice),
             managedDevice.device,
             managedDevice.name,
@@ -231,7 +231,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             )
 
             task.systemImageVendor.setDisallowChanges(systemImageSource)
-            task.apiLevel.setDisallowChanges(apiLevel)
+            task.sdkVersion.setDisallowChanges(sdkVersion)
             task.abi.setDisallowChanges(abi)
             task.hardwareProfile.setDisallowChanges(hardwareProfile)
 
@@ -248,7 +248,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         @VisibleForTesting
         fun generateSystemImageErrorMessage(
             deviceName: String,
-            apiLevel: Int,
+            sdkVersion: Int,
             systemImageSource: String,
             require64Bit: Boolean,
             versionedSdkLoader: VersionedSdkLoader
@@ -266,7 +266,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             return ManagedDeviceImageSuggestionGenerator(
                 osArchitecture,
                 deviceName,
-                apiLevel,
+                sdkVersion,
                 systemImageSource,
                 require64Bit,
                 allImages

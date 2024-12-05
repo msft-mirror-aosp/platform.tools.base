@@ -53,7 +53,7 @@ class ReportingTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }

@@ -114,7 +114,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         doReturn(realPropertyFor(mock<Revision>()))
             .whenever(task).buildToolsRevision
         doReturn(realPropertyFor("x86_64")).whenever(task).abi
-        doReturn(realPropertyFor(29)).whenever(task).apiLevel
+        doReturn(realPropertyFor(29)).whenever(task).sdkVersion
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
         doReturn(realPropertyFor("Pixel 2")).whenever(task).hardwareProfile
         doReturn(realPropertyFor("auto-no-window")).whenever(task).emulatorGpuFlag
@@ -236,7 +236,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                     "setupTaskName",
                     ManagedVirtualDevice("testName").also {
                         it.device = "Pixel 3"
-                        it.apiLevel = 27
+                        it.sdkVersion = 27
                         it.systemImageSource = "aosp"
                     },
                     globalConfig
@@ -261,7 +261,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val compileSdkVersion = mockEmptyProperty<String>()
                 val buildToolsRevision = mockEmptyProperty<Revision>()
                 val abiProperty = mockEmptyProperty<String>()
-                val apiLevel = mockEmptyProperty<Int>()
+                val sdkVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
                 val emulatorGpuFlag = mockEmptyProperty<String>()
@@ -273,7 +273,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.compileSdkVersion).thenReturn(compileSdkVersion)
                 whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
                 whenever(task.abi).thenReturn(abiProperty)
-                whenever(task.apiLevel).thenReturn(apiLevel)
+                whenever(task.sdkVersion).thenReturn(sdkVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
                 whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
@@ -302,9 +302,9 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 verify(abiProperty).disallowChanges()
                 verifyNoMoreInteractions(abiProperty)
 
-                verify(apiLevel).set(27)
-                verify(apiLevel).disallowChanges()
-                verifyNoMoreInteractions(apiLevel)
+                verify(sdkVersion).set(27)
+                verify(sdkVersion).disallowChanges()
+                verifyNoMoreInteractions(sdkVersion)
 
                 verify(systemImageVendor).set("aosp")
                 verify(systemImageVendor).disallowChanges()
@@ -374,7 +374,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val compileSdkVersion = mockEmptyProperty<String>()
                 val buildToolsRevision = mockEmptyProperty<Revision>()
                 val abiProperty = mockEmptyProperty<String>()
-                val apiLevel = mockEmptyProperty<Int>()
+                val sdkVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
                 val emulatorGpuFlag = mockEmptyProperty<String>()
@@ -386,7 +386,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.compileSdkVersion).thenReturn(compileSdkVersion)
                 whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
                 whenever(task.abi).thenReturn(abiProperty)
-                whenever(task.apiLevel).thenReturn(apiLevel)
+                whenever(task.sdkVersion).thenReturn(sdkVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
                 whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
@@ -415,9 +415,9 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 verify(abiProperty).disallowChanges()
                 verifyNoMoreInteractions(abiProperty)
 
-                verify(apiLevel).set(28)
-                verify(apiLevel).disallowChanges()
-                verifyNoMoreInteractions(apiLevel)
+                verify(sdkVersion).set(28)
+                verify(sdkVersion).disallowChanges()
+                verifyNoMoreInteractions(sdkVersion)
 
                 verify(systemImageVendor).set("aosp")
                 verify(systemImageVendor).disallowChanges()

@@ -41,7 +41,7 @@ private fun isArm(architecture: CpuArchitecture) = when (architecture) {
  * @property architecture The architecture of the device that the
  * [ManagedVirtualDevice] will be run on. Affects which suggestions are made.
  * @property deviceName The name of the device from the DSL
- * @property apiLevel The api level specified in the [ManagedVirtualDevice]
+ * @property sdkVersion The api level specified in the [ManagedVirtualDevice]
  * @property systemImageSource The source specified in the [ManagedVirtualDevice]
  * @property require64Bit Whether the [ManagedVirtualDevice] requires a 64 bit image.
  * @property allImages The list of all valid images that are available for download/use.
@@ -49,7 +49,7 @@ private fun isArm(architecture: CpuArchitecture) = when (architecture) {
 class ManagedDeviceImageSuggestionGenerator (
     private val architecture: CpuArchitecture,
     private val deviceName: String,
-    private val apiLevel: Int,
+    private val sdkVersion: Int,
     private val systemImageSource: String,
     private val require64Bit: Boolean,
     private val allImages: List<String>
@@ -98,7 +98,7 @@ class ManagedDeviceImageSuggestionGenerator (
             yield(checkAllSourcesSuggestion())
             // Step 4:
             // Check for an api recommendation
-            yield(checkForOtherApiLevelSuggestion())
+            yield(checkForOtherSdkVersionSuggestion())
             // Step 5:
             // See if unsetting require64Bit makes a difference.
             yield(checkFor32BitSuggestion())
@@ -125,12 +125,12 @@ class ManagedDeviceImageSuggestionGenerator (
     private fun computeHash(
         otherArch: CpuArchitecture = architecture,
         otherRequire64Bit: Boolean = require64Bit,
-        otherApiLevel: Int = apiLevel,
+        otherSdkVersion: Int = sdkVersion,
         otherImageSource: String = systemImageSource
     ): String {
         val abi = computeAbiFromArchitecture(
-            otherRequire64Bit, otherApiLevel, otherImageSource, otherArch)
-        return computeSystemImageHashFromDsl(otherApiLevel, otherImageSource, abi)
+            otherRequire64Bit, otherSdkVersion, otherImageSource, otherArch)
+        return computeSystemImageHashFromDsl(otherSdkVersion, otherImageSource, abi)
     }
 
     private fun checkForOtherArchitectureMessage(): String {
@@ -159,7 +159,7 @@ class ManagedDeviceImageSuggestionGenerator (
 
         return if (allImages.contains(newHash)) {
             "Automated Test Device image does not exist for this architecture on the given " +
-                    "apiLevel. However, a normal emulator image does exist from a comparable " +
+                    "sdkVersion. However, a normal emulator image does exist from a comparable " +
                     "source. Set systemImageSource = \"$newImageSource\" to use."
         } else {
             null
@@ -183,22 +183,22 @@ class ManagedDeviceImageSuggestionGenerator (
 
         return if (validSources.isNotEmpty()) {
             "The image does not exist from $systemImageSource for this architecture on the given " +
-                    "apiLevel. However, other sources exist. Set systemImageSource to any of " +
+                    "sdkVersion. However, other sources exist. Set systemImageSource to any of " +
                     "$validSources to use."
         } else {
             null
         }
     }
 
-    private fun checkForOtherApiLevelSuggestion(): String? {
+    private fun checkForOtherSdkVersionSuggestion(): String? {
         // Figure out how far we should search.
         val highestApi = allImages.maxOfOrNull {
             parseApiFromHash(it) ?: 0
         } ?: 0
 
         var nextAvailableLevel: Int? = null
-        for (level in apiLevel..highestApi) {
-            val newHash = computeHash(otherApiLevel = level)
+        for (level in sdkVersion..highestApi) {
+            val newHash = computeHash(otherSdkVersion = level)
             if (allImages.contains(newHash)) {
                 nextAvailableLevel = level
                 break
@@ -206,15 +206,16 @@ class ManagedDeviceImageSuggestionGenerator (
         }
 
         if (nextAvailableLevel != null) {
-            return "The system image does not exist for apiLevel $apiLevel. However an image exists " +
-                    "for apiLevel $nextAvailableLevel. Set apiLevel = $nextAvailableLevel to use."
+            return "The system image does not exist for sdkVersion $sdkVersion. However an image " +
+                    "exists for sdkVersion $nextAvailableLevel. Set sdkVersion = " +
+                    "$nextAvailableLevel to use."
         }
 
         var latestAvailableLevel: Int? = null
 
-        // If an upgraded apiLevel does not exist. Then we should find the latest valid version.
-        for (level in min(apiLevel, highestApi) downTo 1) {
-            val newHash = computeHash(otherApiLevel = level)
+        // If an upgraded sdkVersion does not exist. Then we should find the latest valid version.
+        for (level in min(sdkVersion, highestApi) downTo 1) {
+            val newHash = computeHash(otherSdkVersion = level)
             if (allImages.contains(newHash)) {
                 latestAvailableLevel = level
                 break
@@ -222,8 +223,8 @@ class ManagedDeviceImageSuggestionGenerator (
         }
 
         if (latestAvailableLevel != null) {
-            return "The system image does not presently exist for apiLevel $apiLevel. The latest " +
-                    "available apiLevel is $latestAvailableLevel. Set apiLevel = " +
+            return "The system image does not presently exist for sdkVersion $sdkVersion. The " +
+                    "latest available sdkVersion is $latestAvailableLevel. Set sdkVersion = " +
                     "$latestAvailableLevel to use."
         }
 
@@ -241,9 +242,9 @@ class ManagedDeviceImageSuggestionGenerator (
             // 32 bit image does not exist.
             return null
         }
-        return "There is an available X86 image for apiLevel $apiLevel. Set require64Bit = false " +
-                "to use. Be aware tests involving native X86_64 code will not be run with this " +
-                "change."
+        return "There is an available X86 image for sdkVersion $sdkVersion. Set require64Bit = " +
+                "false to use. Be aware tests involving native X86_64 code will not be run with " +
+                "this change."
     }
 
     private fun suggestValidSource(): String? {

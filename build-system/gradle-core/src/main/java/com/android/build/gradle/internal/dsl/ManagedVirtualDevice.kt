@@ -17,15 +17,21 @@ open class ManagedVirtualDevice @Inject constructor(private val name: String) :
     @get: Input
     override var device = ""
 
+    @get: Internal
+    override var apiLevel: Int by this::sdkVersion
+
+    @get: Internal
+    override var apiPreview: String? by this::sdkPreview
+
     @get: Input
-    override var apiLevel: Int
+    override var sdkVersion: Int
         get() = apiVersion?.apiLevel ?: 0
         set(value) {
             apiVersion = DefaultApiVersion(value)
         }
 
     @get: Internal
-    override var apiPreview: String?
+    override var sdkPreview: String?
         get() = apiVersion?.codename
         set(value) {
             apiVersion = apiVersionFromString(value)

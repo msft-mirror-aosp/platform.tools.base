@@ -46,20 +46,20 @@ fun getManagedDeviceAvdFolder(
 
 fun computeAvdName(device: ManagedVirtualDevice): String =
     computeAvdName(
-        device.apiLevel,
+        device.sdkVersion,
         device.systemImageSource,
         computeAbiFromArchitecture(device),
         device.device)
 
 fun computeAvdName(
-    apiLevel: Int,
+    sdkVersion: Int,
     imageSource: String,
     abi: String,
     hardwareProfile: String
 ): String {
     val sanitizedProfile = sanitizeProfileName(hardwareProfile)
     val vendor = computeVendorString(imageSource)
-    return "dev${apiLevel}_${vendor}_${abi}_$sanitizedProfile"
+    return "dev${sdkVersion}_${vendor}_${abi}_$sanitizedProfile"
 }
 
 fun sanitizeProfileName(hardwareProfile: String) =
@@ -79,13 +79,13 @@ fun managedDeviceGroupSingleVariantTaskName(
 fun computeAbiFromArchitecture(device: ManagedVirtualDevice): String =
     computeAbiFromArchitecture(
         device.require64Bit,
-        device.apiLevel,
+        device.sdkVersion,
         device.systemImageSource
     )
 
 fun computeAbiFromArchitecture(
     require64Bit: Boolean,
-    apiLevel: Int,
+    sdkVersion: Int,
     vendor: String,
     cpuArch: CpuArchitecture = osArchitecture
 ): String = when {
@@ -94,8 +94,8 @@ fun computeAbiFromArchitecture(
     require64Bit -> "x86_64"
     // Neither system-images;android-30;default;x86 nor system-images;android-26;default;x86
     // exist, but the google images do.
-    vendor == "aosp" && apiLevel in listOf(26, 30) -> "x86_64"
-    apiLevel <= 30 -> "x86"
+    vendor == "aosp" && sdkVersion in listOf(26, 30) -> "x86_64"
+    sdkVersion <= 30 -> "x86"
     else -> "x86_64"
 }
 

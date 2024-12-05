@@ -1,5 +1,6 @@
 package com.android.build.api.dsl
 
+import com.android.build.api.annotations.ReplacedByIncubating
 import org.gradle.api.Incubating
 
 /**
@@ -21,26 +22,68 @@ interface ManagedVirtualDevice : Device {
     var device: String
 
     /**
-     * The api level of Android to be run on the device.
-     * Setting this it will override previous calls of [apiLevel] or [apiPreview] setters.
-     * Only one of [apiLevel] and [apiPreview] should be set.
+     * The api level of Android to be run on the device. This annotation is deprecated,
+     * use [sdkVersion] instead.
+     *
+     * This specifies the sdk version of the device. Setting this value will override previous
+     * calls of [sdkVersion], [sdkPreview], and [apiPreview].
      *
      * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html)
      * for a list of valid values.
      */
+    @get: ReplacedByIncubating(
+        message = "Replaced by the new property sdkVersion",
+        bugId = 382716517)
+    @set: ReplacedByIncubating(
+        message = "Replaced by the new property sdkVersion",
+        bugId = 382716517)
     var apiLevel: Int
 
     /**
-     * The api version code of Android to be run on the device.
-     * Setting this it will override previous calls of [apiLevel] or [apiPreview] setters.
-     * Only one of [apiLevel] and [apiPreview] should be set.
+     * The sdk version code of Android to be run on the device. This annotation is deprecated,
+     * use [sdkPreview] instead.
+     *
+     * Setting this it will override previous calls of [apiLevel], [apiPreview], [sdkVersion], and
+     * [sdkPreview] setters.
+     *
+     * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html)
+     * for a list of valid values.
+     */
+    @get: ReplacedByIncubating(
+        message = "Replaced by the new property sdkPreview",
+        bugId = 382716889)
+    @get: Incubating
+    @set: ReplacedByIncubating(
+        message = "Replaced by the new property sdkPreview",
+        bugId = 382716889)
+    @set: Incubating
+    var apiPreview: String?
+
+    /**
+     * The SDK version of Android to be run on the device.
+     *
+     * Setting this value will override previous calls of [sdkVersion] or [sdkPreview] setters.
+     * Only one of [sdkVersion] and [sdkPreview] should be set
      *
      * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html)
      * for a list of valid values.
      */
     @get: Incubating
     @set: Incubating
-    var apiPreview: String?
+    var sdkVersion: Int
+
+    /**
+     * The SDK version code of Android to be run on the device.
+     *
+     * Setting this value will override previous calls of [sdkVersion] or [sdkPreview] setters.
+     * Only one of [sdkVersion] and [sdkPreview] should be set
+     *
+     * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html)
+     * for a list of valid values.
+     */
+    @get: Incubating
+    @set: Incubating
+    var sdkPreview: String?
 
     /**
      * Which source the system image should come from. Either "google", "google-atd", "aosp", or

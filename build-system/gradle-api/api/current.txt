@@ -1735,20 +1735,26 @@ package com.android.build.api.dsl {
   }
 
   @org.gradle.api.Incubating public interface ManagedVirtualDevice extends com.android.build.api.dsl.Device {
-    method public int getApiLevel();
-    method @org.gradle.api.Incubating public String? getApiPreview();
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public int getApiLevel();
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public String? getApiPreview();
     method public String getDevice();
     method public boolean getRequire64Bit();
+    method @org.gradle.api.Incubating public String? getSdkPreview();
+    method @org.gradle.api.Incubating public int getSdkVersion();
     method public String getSystemImageSource();
-    method public void setApiLevel(int);
-    method @org.gradle.api.Incubating public void setApiPreview(String?);
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public void setApiLevel(int);
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public void setApiPreview(String?);
     method public void setDevice(String);
     method public void setRequire64Bit(boolean);
+    method @org.gradle.api.Incubating public void setSdkPreview(String?);
+    method @org.gradle.api.Incubating public void setSdkVersion(int);
     method public void setSystemImageSource(String);
-    property public abstract int apiLevel;
-    property @org.gradle.api.Incubating public abstract String? apiPreview;
+    property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public abstract int apiLevel;
+    property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public abstract String? apiPreview;
     property public abstract String device;
     property public abstract boolean require64Bit;
+    property @org.gradle.api.Incubating public abstract String? sdkPreview;
+    property @org.gradle.api.Incubating public abstract int sdkVersion;
     property public abstract String systemImageSource;
   }
 

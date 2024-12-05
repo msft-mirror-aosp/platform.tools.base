@@ -10,7 +10,7 @@ fun GradleTestProject.addManagedDevice(deviceName: String) {
                     localDevices {
                         $deviceName {
                             device = "Pixel 2"
-                            apiLevel = ${System.getProperty("sdk.repo.sysimage.apiLevel")}
+                            sdkVersion = ${System.getProperty("sdk.repo.sysimage.apiLevel")}
                             systemImageSource = "${System.getProperty("sdk.repo.sysimage.source")}"
                             require64Bit = true
                         }

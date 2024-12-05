@@ -731,5 +731,11 @@ https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/380074867
   * com.android.build.api.dsl.FusedLibraryExtension.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
+https://issuetracker.google.com/382716517
+  * com.android.build.api.dsl.ManagedVirtualDevice.getSdkVersion: int ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setSdkVersion: void (int)
+https://issuetracker.google.com/382716889
+  * com.android.build.api.dsl.ManagedVirtualDevice.getSdkPreview: java.lang.String ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
 https://issuetracker.google.com/383364112
   * com.android.build.api.variant.BuiltArtifact.getOutputFilePath: java.nio.file.Path ()
