@@ -10007,27 +10007,27 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         manifest().minSdk(21),
                         java(
                                 "package test.pkg;\n"
-                                    + "\n"
-                                    + "import android.telephony.ims.ImsManager;\n"
-                                    + "\n"
-                                    + "import javax.inject.Inject;\n"
-                                    + "import dagger.assisted.AssistedInject;\n"
-                                    + "\n"
-                                    + "public class InjectTest {\n"
-                                    + "    private final ImsManager imsManager;\n"
-                                    + "\n"
-                                    + "    // Constructor invoked by dependency injection"
-                                    + " framework, not \"our\" code\n"
-                                    + "    // but will be called by the framework\n"
-                                    + "    @Inject\n"
-                                    + "    InjectTest(ImsManager imsManager) { // ERROR 1\n"
-                                    + "        this.imsManager = imsManager;\n"
-                                    + "    }\n"
-                                    + "    @AssistedInject\n"
-                                    + "    InjectTest(ImsManager imsManager) { // ERROR 2\n"
-                                    + "        this.imsManager = imsManager;\n"
-                                    + "    }\n"
-                                    + "}"),
+                                        + "\n"
+                                        + "import android.telephony.ims.ImsManager;\n"
+                                        + "\n"
+                                        + "import javax.inject.Inject;\n"
+                                        + "import dagger.assisted.AssistedInject;\n"
+                                        + "\n"
+                                        + "public class InjectTest {\n"
+                                        + "    private final ImsManager imsManager;\n"
+                                        + "\n"
+                                        + "    // Constructor invoked by dependency injection"
+                                        + " framework, not \"our\" code\n"
+                                        + "    // but will be called by the framework\n"
+                                        + "    @Inject\n"
+                                        + "    InjectTest(ImsManager imsManager) { // ERROR 1\n"
+                                        + "        this.imsManager = imsManager;\n"
+                                        + "    }\n"
+                                        + "    @AssistedInject\n"
+                                        + "    InjectTest(ImsManager imsManager) { // ERROR 2\n"
+                                        + "        this.imsManager = imsManager;\n"
+                                        + "    }\n"
+                                        + "}"),
                         java(
                                 "package test.pkg;\n"
                                         + "\n"
@@ -10098,6 +10098,22 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         kotlin(
                                 "package test.pkg\n"
                                     + "\n"
+                                    + "import android.telephony.ims.ImsManager\n"
+                                    + "import javax.inject.Inject\n"
+                                    + "import javax.inject.Provider\n"
+                                    + "\n"
+                                    + "abstract class InjectTest5 {\n"
+                                    + "    @get:Inject abstract val manager1: ImsManager // ERROR"
+                                    + " 5\n"
+                                    + "    @set:Inject abstract var manager2: ImsManager // ERROR"
+                                    + " 6\n"
+                                    + "    @get:Inject abstract val manager3: Provider<ImsManager>"
+                                    + " // OK\n"
+                                    + "    abstract var manager4: ImsManager // OK\n"
+                                    + "}"),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
                                     + "import javax.inject.Inject\n"
                                     + "import android.os.Build\n"
                                     + "import android.telephony.ims.ImsManager\n"
@@ -10107,9 +10123,9 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                     + " @RequiresApi(Build.VERSION_CODES.R) constructor(manager:"
                                     + " ImsManager) // OK\n"
                                     + "class SomeApplicationClass2 @Inject constructor(clazz:"
-                                    + " SomeLibraryClass) // ERROR 5\n"
+                                    + " SomeLibraryClass) // ERROR 7\n"
                                     + "class SomeApplicationClass3 @Inject constructor(clazz:"
-                                    + " SomeLibraryClass2) // ERROR 6\n"),
+                                    + " SomeLibraryClass2) // ERROR 8\n"),
                         binaryStub(
                                 "libs/intprovider.jar",
                                 new TestFile[] {
@@ -10145,20 +10161,76 @@ public class ApiDetectorTest extends AbstractCheckTest {
                             + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
                             + "    SomeApplicationClass(SomeLibraryClass clazz) {} // ERROR 4\n"
                             + "                         ~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/InjectTest5.kt:8: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "    @get:Inject abstract val manager1: ImsManager // ERROR 5\n"
+                            + "                             ~~~~~~~~\n"
+                            + "src/test/pkg/InjectTest5.kt:9: Error: Class requires API level 30"
+                            + " (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
+                            + "    @set:Inject abstract var manager2: ImsManager // ERROR 6\n"
+                            + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                             + "src/test/pkg/SomeLibraryClass2.kt:9: Error: Class requires API level"
                             + " 30 (current min is 21): android.telephony.ims.ImsManager [NewApi]\n"
                             + "class SomeApplicationClass2 @Inject constructor(clazz:"
-                            + " SomeLibraryClass) // ERROR 5\n"
+                            + " SomeLibraryClass) // ERROR 7\n"
                             + "                                               "
                             + " ~~~~~~~~~~~~~~~~~~~~~~~\n"
                             + "src/test/pkg/SomeLibraryClass2.kt:10: Error: Class requires API"
                             + " level 30 (current min is 21): android.telephony.ims.ImsManager"
                             + " [NewApi]\n"
                             + "class SomeApplicationClass3 @Inject constructor(clazz:"
-                            + " SomeLibraryClass2) // ERROR 6\n"
+                            + " SomeLibraryClass2) // ERROR 8\n"
                             + "                                               "
                             + " ~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                            + "6 errors, 0 warnings");
+                            + "8 errors, 0 warnings");
+    }
+
+    @SuppressWarnings("all") // sample code
+    public void testRedundantCastWarning() {
+        // Make sure that when we have an implicit cast warning
+        // we avoid it if we're *also* going to have an API warning
+        // for the value passed into the cast
+        lint().files(
+                        manifest().minSdk(21),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
+                                    + "import java.nio.channels.FileChannel\n"
+                                    + "import java.nio.file.OpenOption\n"
+                                    + "import java.nio.file.Path\n"
+                                    + "import java.nio.file.StandardOpenOption\n"
+                                    + "import java.nio.file.StandardOpenOption.DELETE_ON_CLOSE\n"
+                                    + "\n"
+                                    + "fun fieldCast(path: Path) {\n"
+                                    + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                                    + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                                    + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                                    + "}"))
+                .run()
+                .expect(
+                        "src/test/pkg/test.kt:10: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:10: Error: Field requires API level 26, or core library desugaring (current min is 21): java.nio.file.StandardOpenOption#DELETE_ON_CLOSE [NewApi]\n"
+                            + "    FileChannel.open(path, DELETE_ON_CLOSE) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/test.kt:11: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:11: Error: Implicit cast from StandardOpenOption to OpenOption requires API level 26, or core library desugaring (current min is 21) [NewApi]\n"
+                            + "    FileChannel.open(path, StandardOpenOption.valueOf(\"DELETE_ON_CLOSE\")) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "src/test/pkg/test.kt:12: Error: Call requires API level 26, or core library desugaring (current min is 21): java.nio.channels.FileChannel#open [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                ~~~~\n"
+                            + "src/test/pkg/test.kt:12: Error: Class requires API level 26 (current min is 21): java.nio.file.OpenOption [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                                    ~~~~~~~~~~\n"
+                            // Hold up why is this an IMPLICIT CAST?
+                            + "src/test/pkg/test.kt:12: Error: Implicit cast to OpenOption requires API level 26 (current min is 21) [NewApi]\n"
+                            + "    FileChannel.open(path, object : OpenOption{}) // ERROR\n"
+                            + "                           ~~~~~~~~~~~~~~~~~~~~~\n"
+                            + "7 errors, 0 warnings");
     }
 
     @Override

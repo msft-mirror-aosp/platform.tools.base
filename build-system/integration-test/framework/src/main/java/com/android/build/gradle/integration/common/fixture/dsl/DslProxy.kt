@@ -168,7 +168,8 @@ class DslProxy private constructor(
                 ?: throw Error("Expected prop name but null")
 
         val returnValue = when (method.returnType) {
-            MutableList::class.java -> contentHolder.getList(propName)
+            MutableList::class.java,
+            MutableCollection::class.java -> contentHolder.getList(propName)
             MutableSet::class.java -> contentHolder.getSet(propName)
             MutableMap::class.java -> contentHolder.getMap(propName)
             Property::class.java -> contentHolder.getProperty(propName)

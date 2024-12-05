@@ -2473,31 +2473,74 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:27: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:27: Error: VIEW action is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
-                      ^
-          AndroidManifest.xml:38: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:38: Error: DEFAULT category is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
-                      ^
+                       ~~~~~~~~~~~~~
           AndroidManifest.xml:49: Error: Activity supporting ACTION_VIEW is not set as BROWSABLE [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
                       ^
-          AndroidManifest.xml:49: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:49: Error: BROWSABLE category is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
-                      ^
-          AndroidManifest.xml:60: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:60: Error: http(s) scheme is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
-                      ^
+                       ~~~~~~~~~~~~~
           AndroidManifest.xml:76: Error: At least one scheme must be specified [AppLinkUrlError]
                           <data android:host="example.com" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          AndroidManifest.xml:80: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
+          AndroidManifest.xml:80: Error: host attribute is missing, but is required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- Missing host -->
-                      ^
-          AndroidManifest.xml:89: Error: Missing data element [AppLinkUrlError]
+                       ~~~~~~~~~~~~~
+          AndroidManifest.xml:89: Error: http(s) scheme and host attribute are missing, but are required for Android App Links [AppLinkUrlError]
                       <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
-                      ^
+                       ~~~~~~~~~~~~~
           8 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 27: Add VIEW action:
+        @@ -27 +27
+        -             <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <action android:name="android.intent.action.VIEW" /> <!-- Missing VIEW -->
+        Autofix for AndroidManifest.xml line 38: Add DEFAULT category:
+        @@ -38 +38
+        -             <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <category android:name="android.intent.category.DEFAULT" /> <!-- Missing DEFAULT -->
+        Autofix for AndroidManifest.xml line 49: Add BROWSABLE category:
+        @@ -49 +49
+        -             <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <category android:name="android.intent.category.BROWSABLE" /> <!-- Missing BROWSABLE -->
+        Autofix for AndroidManifest.xml line 60: Add `http(s)` scheme:
+        @@ -60 +60
+        -             <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" /> <!-- Has custom scheme, but missing http -->
+        Fix for AndroidManifest.xml line 76: Set scheme:
+        @@ -71 +71
+        -                 <data android:host="example.com" />
+        +                 <data
+        +                     android:host="example.com"
+        +                     android:scheme="http[TODO]|" />
+        Autofix for AndroidManifest.xml line 80: Add `host` attribute:
+        @@ -80 +80
+        -             <intent-filter android:autoVerify="true"> <!-- Missing host -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:host="[TODO]|" /> <!-- Missing host -->
+        Autofix for AndroidManifest.xml line 89: Add `http(s)` scheme and `host` attribute:
+        @@ -89 +89
+        -             <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
+        +             <intent-filter android:autoVerify="true">
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" />
+        +                 <data android:host="[TODO]|" /> <!-- No data tags at all -->
         """
       )
   }
@@ -2622,6 +2665,92 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       -             <intent-filter> <!-- We expect a warning here -->
       +             <intent-filter android:autoVerify="true" > <!-- We expect a warning here -->
       """
+      )
+  }
+
+  fun testAutoVerifyFixesForEmptyIntentFilter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android:name=".FullscreenActivity">
+                      <intent-filter android:autoVerify='true'>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
+                    <intent-filter android:autoVerify='true'>
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        @@ -7 +7
+        +                 <action android:name="android.intent.action.VIEW" />
+        +                 <category android:name="android.intent.category.BROWSABLE" />
+        +                 <category android:name="android.intent.category.DEFAULT" />
+        +                 <data android:scheme="http" />
+        +                 <data android:scheme="https" />
+        +                 <data android:host="[TODO]|" />
+        """
+      )
+  }
+
+  fun testAutoVerifyFixesForEmptyIntentFilter_customNs() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android-ns:name=".FullscreenActivity">
+                      <intent-filter android-ns:autoVerify='true'>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:6: Error: Several elements/attributes (such as VIEW action) required for Android App Links are missing [AppLinkUrlError]
+                    <intent-filter android-ns:autoVerify='true'>
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        @@ -7 +7
+        +                 <action android-ns:name="android.intent.action.VIEW" />
+        +                 <category android-ns:name="android.intent.category.BROWSABLE" />
+        +                 <category android-ns:name="android.intent.category.DEFAULT" />
+        +                 <data android-ns:scheme="http" />
+        +                 <data android-ns:scheme="https" />
+        +                 <data android-ns:host="[TODO]|" />
+        """
       )
   }
 
@@ -2942,17 +3071,24 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:15: Error: Missing required elements/attributes for Android App Links [AppLinkUrlError]
-                      <intent-filter android:autoVerify="true">
-                      ^
           AndroidManifest.xml:20: Error: At least one host must be specified [AppLinkUrlError]
                           <data android:scheme="http" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           AndroidManifest.xml:21: Error: The port must be specified in the same <data> element as the host [AppLinkUrlError]
                           <data android:port="8080" />
                                               ~~~~
-          3 errors, 0 warnings
-      """
+          2 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 20: Set host:
+        @@ -21 +21
+        -                 <data android:scheme="http" />
+        +                 <data
+        +                     android:host="[TODO]|"
+        +                     android:scheme="http" />
+        """
       )
   }
 
@@ -3000,6 +3136,36 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
     assertThat(
         AppLinksValidDetector()
           .sameMessage(VALIDATION, new = "VIEW actions require a URI", old = "Missing URL")
+      )
+      .isTrue()
+
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new = "VIEW action is missing, but is required for Android App Links",
+            old = "Missing required elements/attributes for Android App Links",
+          )
+      )
+      .isTrue()
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new =
+              "`http(s)` scheme and `host` attribute are missing, but are required for Android App Links",
+            old = "Missing required elements/attributes for Android App Links",
+          )
+      )
+      .isTrue()
+    assertThat(
+        AppLinksValidDetector()
+          .sameMessage(
+            VALIDATION,
+            new =
+              "Several elements/attributes (such as BROWSABLE category) required for Android App Links are missing",
+            old = "Missing required elements/attributes for Android App Links",
+          )
       )
       .isTrue()
   }
@@ -3533,42 +3699,366 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
   }
 
   fun test_queryParameter_andFragment_insideUriRelativeFilterGroup() {
-    // TODO(b/370997994): Allow <data> tags inside <uri-relative-filter-group> to be visited, then
-    // enable this test.
-    //    lint()
-    //      .files(
-    //        xml(
-    //          "AndroidManifest.xml",
-    //          """
-    //                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    //                    package="com.example.helloworld" >
-    //                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
-    //
-    //                    <application>
-    //                        <activity android:name=".FullscreenActivity" android:exported="true">
-    //
-    //                            <intent-filter android:autoVerify="true">
-    //                                <action android:name="android.intent.action.VIEW" />
-    //                                <category android:name="android.intent.category.DEFAULT" />
-    //                                <category android:name="android.intent.category.BROWSABLE" />
-    //
-    //                                <data android:scheme="http" />
-    //                                <data android:host="example.com" />
-    //                                <uri-relative-filter-group>
-    //                                    <data android:path="/gizmos?queryParam" />
-    //                                    <data android:path="/gizmos#fragment" />
-    //                                </uri-relative-filter-group>
-    //                            </intent-filter>
-    //                        </activity>
-    //                    </application>
-    //                </manifest>
-    //                """,
-    //        )
-    //          .indented()
-    //      )
-    //      .run()
-    //      .expect("")
-    //      .expectFixDiffs("")
+    lint()
+      .files(
+        gradle(
+          """
+          apply plugin: 'com.android.application'
+
+          android {
+              compileSdkVersion 35
+
+              defaultConfig {
+                  minSdkVersion 30
+                  targetSdkVersion 35
+              }
+          }
+        """
+        ),
+        xml(
+            "AndroidManifest.xml",
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  package="com.example.helloworld" >
+                  <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+                  <application>
+                      <activity android:name=".FullscreenActivity" android:exported="true">
+
+                          <intent-filter android:autoVerify="true">
+                              <action android:name="android.intent.action.VIEW" />
+                              <category android:name="android.intent.category.DEFAULT" />
+                              <category android:name="android.intent.category.BROWSABLE" />
+
+                              <data android:scheme="http" />
+                              <data android:host="example.com" />
+                              <uri-relative-filter-group>
+                                  <data android:path="/gizmos?queryParam" />
+                                  <data android:path="/gizmos#fragment" />
+                              </uri-relative-filter-group>
+                          </intent-filter>
+                      </activity>
+                  </application>
+              </manifest>
+              """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+          src/main/AndroidManifest.xml:16: Error: path attributes do not support query parameters or fragments [AppLinkUrlError]
+                              <data android:path="/gizmos?queryParam" />
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/main/AndroidManifest.xml:17: Error: path attributes do not support query parameters or fragments [AppLinkUrlError]
+                              <data android:path="/gizmos#fragment" />
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          2 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for src/main/AndroidManifest.xml line 16: Replace with <data android:path=/gizmos />...:
+        @@ -16 +16
+        -                     <data android:path="/gizmos?queryParam" />
+        +                     <data android:path=/gizmos />
+        +                     <data android:query="queryParam" />
+        Fix for src/main/AndroidManifest.xml line 17: Replace with <data android:path=/gizmos />...:
+        @@ -17 +17
+        -                     <data android:path="/gizmos#fragment" />
+        +                     <data android:path=/gizmos />
+        +                     <data android:fragment="fragment" />
+        """
+      )
+  }
+
+  fun test_uriRelativeFilterGroup_emptyNotAllowed() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                              <data android:query="" />
+                              <data android:queryPrefix="" />
+                              <data android:queryPattern="" />
+                              <data android:queryAdvancedPattern="" />
+                              <data android:querySuffix="" />
+                              <data android:fragment="" />
+                              <data android:fragmentPrefix="" />
+                              <data android:fragmentPattern="" />
+                              <data android:fragmentAdvancedPattern="" />
+                              <data android:fragmentSuffix="" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:16: Error: query cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:query="" />
+                                  ~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:17: Error: queryPrefix cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:queryPrefix="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:18: Error: queryPattern cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:queryPattern="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:19: Error: queryAdvancedPattern cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:queryAdvancedPattern="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:20: Error: querySuffix cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:querySuffix="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:21: Error: fragment cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:fragment="" />
+                                  ~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:22: Error: fragmentPrefix cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:fragmentPrefix="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:23: Error: fragmentPattern cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:fragmentPattern="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:24: Error: fragmentAdvancedPattern cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:fragmentAdvancedPattern="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:25: Error: fragmentSuffix cannot be empty [AppLinkUriRelativeFilterGroupError]
+                            <data android:fragmentSuffix="" />
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~
+        10 errors, 0 warnings
+        """
+      )
+  }
+
+  fun test_uriRelativeFilterGroup_unusefulAttributes_inSameDataTagAsUsefulAttributes() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                              <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
+                              <!-- Regex should also match empty attributes -->
+                              <data android:scheme="" android:query="param" />
+                              <!-- Interleaving should also be allowed -->
+                              <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:18: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android:scheme="" android:query="param" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:20: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        3 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16
+        -                     <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
+        +                     <data     android:path="/path" />
+        Fix for AndroidManifest.xml line 18: Delete:
+        @@ -18 +18
+        -                     <data android:scheme="" android:query="param" />
+        +                     <data  android:query="param" />
+        Fix for AndroidManifest.xml line 20: Delete:
+        @@ -20 +20
+        -                     <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
+        +                     <data  android:path="/path"  android:query="param" />
+        """
+      )
+  }
+
+  fun test_uriRelativeFilterGroup_unusefulAttributes_inSameDataTagAsUsefulAttributes_customNamespace() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android-ns:compileSdkVersion="35" android-ns:minSdkVersion="31" android-ns:targetSdkVersion="35" />
+
+              <application>
+                  <activity android-ns:name=".FullscreenActivity" android-ns:exported="true">
+
+                      <intent-filter android-ns:autoVerify="true">
+                          <action android-ns:name="android.intent.action.VIEW" />
+                          <category android-ns:name="android.intent.category.DEFAULT" />
+                          <category android-ns:name="android.intent.category.BROWSABLE" />
+
+                          <data android-ns:scheme="http" />
+                          <data android-ns:host="example.com" />
+                          <uri-relative-filter-group>
+                              <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16
+        -                     <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
+        +                     <data     android-ns:path="/path" />
+        """
+      )
+  }
+
+  fun test_uriRelativeFilterGroup_singleQuotes() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                              <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
+                              <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:16: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:17: Error: Attributes not starting with path, query, or fragment in uri-relative-filter-group are ignored [AppLinkUriRelativeFilterGroupError]
+                            <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16
+        -                     <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
+        +                     <data    android:path='/path"with"quote' />
+        Fix for AndroidManifest.xml line 17: Delete:
+        @@ -17 +17
+        -                     <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
+        +                     <data    android:path="/path'with'quote" />
+        """
+      )
+  }
+
+  fun test_uriRelativeFilterGroup_emptyDataTag() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:host="example.com" />
+                          <uri-relative-filter-group>
+                              <data />
+                          </uri-relative-filter-group>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   // TODO(b/375352603): Re-enable this test.

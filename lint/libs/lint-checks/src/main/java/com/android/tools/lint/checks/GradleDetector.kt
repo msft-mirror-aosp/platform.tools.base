@@ -1326,10 +1326,34 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           Severity.WARNING
         }
       // Report all SDK Index issues without grouping them following this order (b/316038712):
+      //  - Deprecated (first since this applies to all versions and changing to a different version
+      // will not remove this issue)
       //  - Policy
       //  - Critical (if blocking)
       //  - Vulnerability
       //  - Outdated
+      if (sdkIndex.isLibraryDeprecated(groupId, artifactId, versionString, buildFile)) {
+        val fix =
+          generateSdkIndexFixes(
+            groupId,
+            artifactId,
+            version,
+            richVersionIdentifier,
+            null, // Do not suggest a new version
+            buildFile,
+            sdkIndex,
+          )
+        val message = sdkIndex.generateDeprecatedMessage(groupId, artifactId)
+        reported =
+          report(
+            context,
+            cookie,
+            PLAY_SDK_INDEX_DEPRECATED,
+            message,
+            fix,
+            overrideSeverity = severity,
+          ) || reported
+      }
       if (sdkIndex.isLibraryNonCompliant(groupId, artifactId, versionString, buildFile)) {
         val fix =
           generateSdkIndexFixes(
@@ -3538,6 +3562,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           "This library version has issues that could block publishing in the Google Play Store.",
         category = Category.COMPLIANCE,
         priority = 8,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION_WITH_TOML,
+        moreInfo = GOOGLE_PLAY_SDK_INDEX_URL,
+        androidSpecific = true,
+      )
+
+    @JvmField
+    val PLAY_SDK_INDEX_DEPRECATED =
+      Issue.create(
+        id = "PlaySdkIndexDeprecated",
+        briefDescription = "Library is marked as deprecated in SDK Index",
+        explanation =
+          "This library has been deprecated, please consider updating to an alternative SDK before publishing a new release.",
+        category = Category.SECURITY,
+        priority = 9,
         severity = Severity.ERROR,
         implementation = IMPLEMENTATION_WITH_TOML,
         moreInfo = GOOGLE_PLAY_SDK_INDEX_URL,

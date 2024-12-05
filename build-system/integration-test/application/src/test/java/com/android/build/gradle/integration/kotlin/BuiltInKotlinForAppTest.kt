@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
@@ -36,7 +35,6 @@ class BuiltInKotlinForAppTest {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)
-            HelloWorldAndroid.setupKotlinDependencies(this)
         }
     }
 
@@ -146,10 +144,6 @@ class BuiltInKotlinForAppTest {
                 androidApplication(":app") {
                     android.experimentalProperties[SCREENSHOT_TEST.key] = true
 
-                    dependencies {
-                        screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-                    }
-
                     files {
                         add(
                             "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
@@ -212,7 +206,6 @@ class BuiltInKotlinForAppTest {
                 applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
                 HelloWorldAndroid.setupKotlin(files)
-                HelloWorldAndroid.setupKotlinDependencies(this)
 
                 files {
                     add("src/main/java/com/foo/library/LibFoo.kt",
@@ -289,29 +282,6 @@ class BuiltInKotlinForAppTest {
         }
     }
 
-    @Test
-    fun testKotlinStdLibMissing() {
-        val build = rule.build {
-            androidApplication(":app") {
-                // reset to remove the main dependency on kotlin stdlib
-                dependencies.clear()
-                // only setup the test, not the main one.
-                HelloWorldAndroid.setupTestKotlinDependencies(this)
-
-                files {
-                    add("src/main/java/com/foo/application/AppFoo.kt",
-                        //language=kotlin
-                        """
-                            package com.foo.application
-                            class AppFoo
-                        """.trimIndent())
-                }
-            }
-        }
-
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
-        result.assertErrorContains("Kotlin standard library is missing")
-    }
 
     @Test
     fun testErrorWhenBuiltInKotlinSupportAndKagpUsedInSameModule() {
@@ -353,12 +323,3 @@ class BuiltInKotlinForAppTest {
             .contains("Visibility must be specified in explicit API mode")
     }
 }
-
-internal val builtInKotlinSupportDependencies =
-    """
-        dependencies {
-            api("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-            testImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
-        }
-        """.trimIndent()

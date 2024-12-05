@@ -20,6 +20,8 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.view.ContextMenu;
 import android.view.View;
+import android.view.Window;
+
 import java.util.HashMap;
 
 public class Activity extends Context implements View.OnCreateContextMenuListener {
@@ -32,5 +34,9 @@ public class Activity extends Context implements View.OnCreateContextMenuListene
     public void onCreateContextMenu(
             ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
         throw new UnsupportedOperationException();
+    }
+
+    public Window getWindow() {
+        return null;
     }
 }

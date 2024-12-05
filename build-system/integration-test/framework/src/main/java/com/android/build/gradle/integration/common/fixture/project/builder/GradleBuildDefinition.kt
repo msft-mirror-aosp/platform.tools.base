@@ -19,13 +19,18 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
-import com.android.build.gradle.integration.common.fixture.project.AndroidAiPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.io.File
 import java.nio.file.Path
@@ -44,12 +49,12 @@ interface GradleBuildDefinition {
     /**
      * Configures the root project. This cannot be an Android Project.
      */
-    fun rootProject(action: GradleProjectDefinition.() -> Unit)
+    fun rootProject(action: GenericProjectDefinition.() -> Unit)
 
     /**
      * Configures a subProject, creating it if needed.
      */
-    fun subProject(path: String, action: GradleProjectDefinition.() -> Unit): GradleProjectDefinition
+    fun genericProject(path: String, action: GenericProjectDefinition.() -> Unit): GenericProjectDefinition
 
     /**
      * Configures a subProject with the Android Application plugin, creating it if needed.
@@ -80,16 +85,24 @@ interface GradleBuildDefinition {
      */
     fun privacySandboxSdk(
         path: String,
-        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
-    ): AndroidProjectDefinition<PrivacySandboxSdkExtension>
+        action: PrivacySandboxSdkDefinition.() -> Unit
+    ): PrivacySandboxSdkDefinition
 
     /**
-     * Configures a subProject with the Android AI Pack SDK plugin, creating it if needed.
+     * Configures a subProject with the Android AI Pack plugin, creating it if needed.
      */
-    fun androidAiPack(
+    fun aiPack(
         path: String,
         action: AiPackDefinition.() -> Unit
     ): AiPackDefinition
+
+    /**
+     * Configures a subProject with the Android Asset Pack plugin, creating it if needed.
+     */
+    fun assetPack(
+        path: String,
+        action: AssetPackDefinition.() -> Unit
+    ): AssetPackDefinition
 
     /**
      * Configures a maven repositories with custom artifacts
@@ -101,8 +114,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
-    internal val rootProject = GradleProjectDefinitionImpl(":")
-    internal val subProjects = mutableMapOf<String, BaseGradleProjectDefinitionImpl>()
+    internal val rootProject = GenericProjectDefinitionImpl(":")
+    internal val subProjects = mutableMapOf<String, GradleProjectDefinitionImpl>()
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
@@ -120,29 +133,26 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         return build
     }
 
-    override fun rootProject(action: GradleProjectDefinition.() -> Unit) {
+    override fun rootProject(action: GenericProjectDefinition.() -> Unit) {
         action(rootProject)
     }
 
-    override fun subProject(
+    override fun genericProject(
         path: String,
-        action: GradleProjectDefinition.() -> Unit
-    ): GradleProjectDefinition {
+        action: GenericProjectDefinition.() -> Unit
+    ): GenericProjectDefinition {
         if (path == ":") return rootProject
 
         val project = subProjects.computeIfAbsent(path) {
-            GradleProjectDefinitionImpl(it)
+            GenericProjectDefinitionImpl(it)
         }
 
-        val configurableProject = when (project) {
-            is AndroidApplicationDefinitionImpl -> project.asGradleProject()
-            is GradleProjectDefinitionImpl -> project
-            else -> throw RuntimeException("Unexpected type of BaseGradleProjectDefinitionIpl: ${project.javaClass.name}")
-        }
+        project as? GenericProjectDefinition
+            ?: errorOnWrongType(project, path, "Generic Project")
 
-        action(configurableProject)
+        action(project)
 
-        return configurableProject
+        return project
     }
 
     override fun androidApplication(
@@ -200,8 +210,8 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
 
     override fun privacySandboxSdk(
         path: String,
-        action: AndroidProjectDefinition<PrivacySandboxSdkExtension>.() -> Unit
-    ): AndroidProjectDefinition<PrivacySandboxSdkExtension> {
+        action: PrivacySandboxSdkDefinition.() -> Unit
+    ): PrivacySandboxSdkDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
 
         val project = subProjects.computeIfAbsent(path) {
@@ -216,14 +226,14 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         return project
     }
 
-    override fun androidAiPack(
+    override fun aiPack(
         path: String,
         action: AiPackDefinition.() -> Unit
     ): AiPackDefinition {
-        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
+        if (path == ":") throw RuntimeException("root project cannot be an AI pack")
 
         val project = subProjects.computeIfAbsent(path) {
-            AndroidAiPackDefinitionImpl(it)
+            AiPackDefinitionImpl(it)
         }
 
         project as? AiPackDefinition
@@ -234,8 +244,26 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         return project
     }
 
+    override fun assetPack(
+        path: String,
+        action: AssetPackDefinition.() -> Unit
+    ): AssetPackDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be an asset pack")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AssetPackDefinitionImpl(it)
+        }
+
+        project as? AssetPackDefinition
+            ?: errorOnWrongType(project, path, "Asset Pack")
+
+        action(project)
+
+        return project
+    }
+
     private fun errorOnWrongType(
-        project: BaseGradleProjectDefinition,
+        project: GradleProjectDefinition,
         path: String,
         expectedType: String
     ): Nothing {
@@ -261,6 +289,10 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
     ) {
         location.createDirectories()
 
+        // gather all the custom binary plugin callbacks, and return whether we need to
+        // include build logic in the settings file
+        val customPluginMap = handleCustomBuildLogic(location)
+
         // gather all the plugins and all their versions so that the settings file can declare them as needed.
         val allPlugins = computeAllPluginMap()
 
@@ -274,12 +306,13 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
         )
 
         // write all the projects
-        rootProject.writeRoot(location, allPlugins, buildWriter)
+        rootProject.writeRoot(location, allPlugins, customPluginMap, buildWriter)
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
                 allPlugins,
+                customPluginMap,
                 buildWriter
             )
         }
@@ -302,6 +335,47 @@ internal class GradleBuildDefinitionImpl(override val name: String): GradleBuild
             }
         }
         return allPlugins
+    }
+
+    /**
+     * This method handles project with custom plugins applied to them via [AndroidComponentCallback]
+     */
+    private fun handleCustomBuildLogic(location: Path): Map<String, String> {
+        // gather all the custom callbacks. This returns a map from each callback class
+        // to a list of all projects using this callback.
+        val callbackMap = subProjects.asSequence()
+            .map { it.value }
+            .filterIsInstance(AndroidProjectDefinition::class.java)
+            .filter { it.componentCallback != null }
+            .map { definition ->
+                definition.componentCallback?.let {
+                    it to definition.path
+                }
+            }
+            .filterNotNull()
+            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+
+        if (callbackMap.isEmpty()) return mapOf()
+
+        // result to be used by the projects to apply their plugins.
+        // The map is from the project path to the plugin class name.
+        val pluginClassMap = mutableMapOf<String, String>()
+
+        val handler = CustomBuildLogicHandler(location.resolve("build-logic.jar"))
+        handler.use {
+            // include all the plugin callbacks
+            for ((callbackClass, paths) in callbackMap) {
+                val pluginClassName = it.addCallback(callbackClass)
+
+                // record this association, using the paths as keys since it'll be used
+                // by each subproject
+                paths.forEach { path ->
+                    pluginClassMap[path] = pluginClassName
+                }
+            }
+        }
+
+        return pluginClassMap
     }
 }
 

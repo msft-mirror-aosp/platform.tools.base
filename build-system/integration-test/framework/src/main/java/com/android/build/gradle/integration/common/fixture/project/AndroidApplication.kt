@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
@@ -26,6 +27,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.utils.getApkLocations
+import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.testutils.apk.Aab
 import com.android.testutils.apk.Apk
 import java.io.File
@@ -73,6 +76,9 @@ interface AndroidApplicationProject: AndroidProject<AndroidProjectDefinition<App
     fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit)
 
     fun getBundle(bundleSelector: BundleSelector): File
+
+    fun getApkFromBundleTaskName(variantName: String): String
+    fun locateApkFolderViaModel(variantName: String): File
 }
 
 /**
@@ -84,12 +90,14 @@ internal class AndroidApplicationImpl(
     namespace: String,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
+    modelBuilder: () -> ModelBuilderV2,
+    ) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
     location,
     projectDefinition,
     namespace,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder
 ), AndroidApplicationProject {
 
     override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R {
@@ -111,6 +119,27 @@ internal class AndroidApplicationImpl(
 
     override fun getBundle(bundleSelector: BundleSelector): File =
         computeOutputPath(bundleSelector).toFile()
+
+    override fun getApkFromBundleTaskName(variantName: String): String {
+        val projectPath = projectDefinition.path
+        val model = modelBuilder().fetchModels().container.getProject(projectPath).androidProject
+            ?: throw RuntimeException("Failed to get sync model for $projectPath module")
+
+        val variantMainArtifact = model.getVariantByName(variantName).mainArtifact
+        return variantMainArtifact.bundleInfo?.apkFromBundleTaskName
+            ?: throw RuntimeException("Module $projectPath does not have apkFromBundle task name")
+    }
+
+    override fun locateApkFolderViaModel(variantName: String): File {
+        val projectPath = projectDefinition.path
+
+        val apkFiles = modelBuilder().fetchModels().container.getProject(projectPath).androidProject
+            ?.getVariantByName(variantName)
+            ?.getApkLocations()
+
+        return apkFiles?.getOrNull(0)?.parentFile
+            ?: throw RuntimeException("Failed to get apk folder for $projectPath module")
+    }
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidApplicationProject =
         ReversibleAndroidApplicationProject(this, projectModification)
@@ -145,5 +174,11 @@ internal class ReversibleAndroidApplicationProject(
 
     override fun getBundle(bundleSelector: BundleSelector): File =
         parentProject.getBundle(bundleSelector)
+
+    override fun getApkFromBundleTaskName(variantName: String): String =
+        parentProject.getApkFromBundleTaskName(variantName)
+
+    override fun locateApkFolderViaModel(variantName: String): File =
+        parentProject.locateApkFolderViaModel(variantName)
 }
 

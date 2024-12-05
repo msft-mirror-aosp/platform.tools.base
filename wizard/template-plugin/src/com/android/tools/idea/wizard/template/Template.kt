@@ -45,7 +45,11 @@ enum class FormFactor(val displayName: String) {
   Wear("Wear OS"),
   Tv("Television"),
   Automotive("Automotive"),
+  XR("XR"),
   Generic("Generic");
+
+  /** Whether to include a "No Activity" template as the first option in the gallery */
+  val includeNoActivity get() = this != XR && this != Generic
 
   override fun toString(): String {
     return displayName

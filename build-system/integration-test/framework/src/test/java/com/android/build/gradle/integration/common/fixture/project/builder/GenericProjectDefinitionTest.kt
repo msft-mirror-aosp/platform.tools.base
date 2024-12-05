@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -24,7 +25,7 @@ import org.junit.rules.TemporaryFolder
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
-class GradleProjectDefinitionTest {
+class GenericProjectDefinitionTest {
 
     @get:Rule
     val temporaryFolder: TemporaryFolder = TemporaryFolder()
@@ -34,7 +35,7 @@ class GradleProjectDefinitionTest {
 
     @Test
     fun testAddFile() {
-        val project = GradleProjectDefinitionImpl("name")
+        val project = GenericProjectDefinitionImpl("name")
 
         project.files.add("foo.txt", "some content")
 
@@ -44,6 +45,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -53,7 +55,7 @@ class GradleProjectDefinitionTest {
 
     @Test
     fun testRemoveFile() {
-        val project = GradleProjectDefinitionImpl("name")
+        val project = GenericProjectDefinitionImpl("name")
 
         project.files {
             add("foo.txt", "some content")
@@ -66,6 +68,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -74,7 +77,7 @@ class GradleProjectDefinitionTest {
 
     @Test
     fun testChangeFile() {
-        val project = GradleProjectDefinitionImpl("name")
+        val project = GenericProjectDefinitionImpl("name")
 
         project.files {
             add("foo.txt", "some content")
@@ -89,6 +92,7 @@ class GradleProjectDefinitionTest {
             buildFileOnly = false,
             allPlugins = mapOf(),
             buildWriter = { GroovyBuildWriter() },
+            customPluginMap = mapOf(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -98,7 +102,7 @@ class GradleProjectDefinitionTest {
 
     @Test
     fun removeMissingFile() {
-        val project = GradleProjectDefinitionImpl("name")
+        val project = GenericProjectDefinitionImpl("name")
 
         expected.expect(RuntimeException::class.java)
         project.files.remove("foo.txt")
@@ -106,7 +110,7 @@ class GradleProjectDefinitionTest {
 
     @Test
     fun changeMissingFile() {
-        val project = GradleProjectDefinitionImpl("name")
+        val project = GenericProjectDefinitionImpl("name")
 
         expected.expect(RuntimeException::class.java)
         project.files.update("foo.txt") {

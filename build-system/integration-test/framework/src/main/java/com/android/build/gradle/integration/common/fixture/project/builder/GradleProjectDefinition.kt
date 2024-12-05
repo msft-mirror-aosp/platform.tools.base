@@ -24,20 +24,10 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
 /**
- * Represents a Gradle Project that can be configured before being written on disk.
- *
- * This class represents non Android projects that don't have their own custom interfaces
- */
-interface GradleProjectDefinition: BaseGradleProjectDefinition {
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
-}
-
-/**
  * Base interface for all project definition, including but not limited to
- * [GradleProjectDefinition] and [AndroidProjectDefinition].
+ * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
-interface BaseGradleProjectDefinition {
+interface GradleProjectDefinition {
     val path: String
 
     /**
@@ -76,30 +66,25 @@ interface BaseGradleProjectDefinition {
 }
 
 /**
- * Default implementation for [GradleProjectDefinition]
+ * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
  */
-internal open class GradleProjectDefinitionImpl(path: String): BaseGradleProjectDefinitionImpl(path),
-    GradleProjectDefinition {
-
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
-
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
-}
-
-/**
- * Implementation shared between [GradleProjectDefinition] and [AndroidProjectDefinition]
- */
-internal abstract class BaseGradleProjectDefinitionImpl(
+internal abstract class GradleProjectDefinitionImpl(
     override val path: String
-): BaseGradleProjectDefinition {
+): GradleProjectDefinition {
     data class AppliedPlugin(
         val plugin: PluginType,
         val version: String
     )
 
     internal val plugins = mutableListOf<AppliedPlugin>()
+
+    // right now we don't support changing the componentCallback during a reconfigure. However,
+    // we still need to rewrite the plugin application during a rewrite.
+    // Because we only reconfigure a single project and not the whole build (reason we don't yet
+    // support changing the callback), the custom plugin map passed to the write function is going
+    // to be empty.
+    // Here we cache the first non null plugin and always rewrite it on the next reconfigure.
+    private var cachedCustomPlugin: String? = null
 
     override var group: String? = null
     override var version: String? = null
@@ -143,26 +128,43 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         location: Path,
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         buildWriter: () -> BuildWriter,
     ) {
-        write(location, allPlugins, isRoot = false, buildFileOnly = buildFileOnly, buildWriter)
+        write(
+            location,
+            allPlugins,
+            customPluginMap,
+            isRoot = false,
+            buildFileOnly = buildFileOnly,
+            buildWriter
+        )
     }
 
     internal fun writeRoot(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         buildWriter: () -> BuildWriter,
     ) {
-        write(location, allPlugins, isRoot = true, buildFileOnly = false, buildWriter)
+        write(
+            location,
+            allPlugins,
+            customPluginMap,
+            isRoot = true,
+            buildFileOnly = false,
+            buildWriter
+        )
     }
 
-    protected open fun writExtension(writer: BuildWriter) {
+    protected open fun writeExtension(writer: BuildWriter) {
         // nothing to do here
     }
 
     private fun write(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
+        customPluginMap: Map<String, String>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
         buildWriter: () -> BuildWriter,
@@ -170,6 +172,14 @@ internal abstract class BaseGradleProjectDefinitionImpl(
         location.createDirectories()
 
         buildWriter().apply {
+            if (isRoot && customPluginMap.isNotEmpty()) {
+                block("buildscript") {
+                    block("dependencies") {
+                        method("classpath", rawMethod("files", "build-logic.jar"))
+                    }
+                }
+            }
+
             block("plugins") {
                 // write the plugins used by this project
                 for ((plugin, version) in plugins) {
@@ -203,6 +213,14 @@ internal abstract class BaseGradleProjectDefinitionImpl(
                 }
             }
 
+            val pluginToApply = cachedCustomPlugin ?: customPluginMap[path]
+            pluginToApply?.let {
+                // cache it for next time
+                cachedCustomPlugin = it
+                // If there is a plugin class, apply it.
+                applyPluginFromClass(it)
+            }
+
             group?.let {
                 set("group", it)
             }
@@ -211,7 +229,7 @@ internal abstract class BaseGradleProjectDefinitionImpl(
             }
 
             // write the Android extension if it exist
-            writExtension(this)
+            writeExtension(this)
 
             dependencies.write(this, location)
         }.also {

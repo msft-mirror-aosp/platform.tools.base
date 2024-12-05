@@ -17,14 +17,14 @@
 package kexter.core
 
 import kexter.DexClass
+import kexter.DexEncodedMethod
 import kexter.DexField
-import kexter.DexMethod
 
 internal class DexClassImpl(private val classDef: ClassDef, private val dex: DexImpl) : DexClass {
 
   override val name: String by lazy(LazyThreadSafetyMode.NONE) { retrieveName() }
   override val fields: Map<String, DexField> by lazy(LazyThreadSafetyMode.NONE) { retrieveFields() }
-  override val methods: Map<String, DexMethod> by
+  override val methods: Map<String, DexEncodedMethod> by
     lazy(LazyThreadSafetyMode.NONE) { retrieveMethods() }
 
   private fun retrieveName(): String {
@@ -38,8 +38,8 @@ internal class DexClassImpl(private val classDef: ClassDef, private val dex: Dex
     }
   }
 
-  private fun retrieveMethods(): Map<String, DexMethod> {
-    val methods = mutableMapOf<String, DexMethod>()
+  private fun retrieveMethods(): Map<String, DexEncodedMethod> {
+    val methods = mutableMapOf<String, DexEncodedMethod>()
 
     // Class is interface class
     if (classDef.classDataOffset == 0u) {
@@ -59,7 +59,7 @@ internal class DexClassImpl(private val classDef: ClassDef, private val dex: Dex
     return methods
   }
 
-  private fun getMethod(method: EncodedMethod, isDirect: Boolean): DexMethodImpl {
-    return DexMethodImpl(method, isDirect, dex)
+  private fun getMethod(method: EncodedMethod, isDirect: Boolean): DexEncodedMethodImpl {
+    return DexEncodedMethodImpl(method, isDirect, dex)
   }
 }

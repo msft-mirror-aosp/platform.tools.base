@@ -65,6 +65,7 @@ import com.android.tools.lint.checks.ApiLookup.UnsupportedVersionException
 import com.android.tools.lint.checks.ApiLookup.equivalentName
 import com.android.tools.lint.checks.ApiLookup.startsWithEquivalentPrefix
 import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.canBeDesugaredLater
+import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugaredClass
 import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugaredField
 import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugaredMethod
 import com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL
@@ -124,6 +125,7 @@ import com.android.tools.lint.detector.api.getInternalMethodName
 import com.android.tools.lint.detector.api.isInlined
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.minSdkAtLeast
+import com.android.tools.lint.detector.api.minSdkLessThan
 import com.android.tools.lint.detector.api.resolveOperator
 import com.android.utils.XmlUtils
 import com.android.utils.usLocaleCapitalize
@@ -152,6 +154,7 @@ import java.util.EnumSet
 import kotlin.math.max
 import org.jetbrains.kotlin.analysis.decompiled.light.classes.KtLightClassForDecompiledDeclaration
 import org.jetbrains.kotlin.asJava.elements.KtLightElementBase
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
@@ -166,6 +169,7 @@ import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UExpressionList
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UForEachExpression
 import org.jetbrains.uast.UIfExpression
@@ -1043,6 +1047,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       USwitchExpression::class.java,
       UCallableReferenceExpression::class.java,
       UArrayAccessExpression::class.java,
+      UAnnotation::class.java,
     )
   }
 
@@ -1291,6 +1296,53 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       context.report(incident, map)
     }
 
+    override fun visitAnnotation(node: UAnnotation) {
+      if (node.qualifiedName.isInjectAnnotationName()) {
+        val anchor = node.getParentOfType<UAnnotated>()
+        if (anchor != null) {
+          checkInjection(anchor)
+        }
+      }
+    }
+
+    private fun checkInjection(element: UElement?) {
+      element ?: return
+      if (element is UMethod) {
+        val node = element
+        for (parameter in node.uastParameters) {
+          checkInjectionType(parameter, parameter.type)
+        }
+        if (element.sourcePsi is KtProperty) {
+          checkInjectionType(element, element.returnType)
+        }
+      } else if (element is UField) {
+        checkInjectionType(element, element.type)
+      }
+    }
+
+    private fun checkInjectionType(element: UElement, type: PsiType?) {
+      val classType = type as? PsiClassType ?: return
+      val cls = classType.resolve() ?: return
+      val owner = cls.qualifiedName ?: return
+      if (apiDatabase?.containsClass(owner) == false) {
+        // See if it's an injected method
+        for (constructor in cls.constructors) {
+          @Suppress("ExternalAnnotations")
+          if (constructor.annotations.any { it.qualifiedName.isInjectAnnotationName() }) {
+            for (injectedParameter in constructor.parameterList.parameters) {
+              val type = injectedParameter.type as? PsiClassType ?: continue
+              // report the error back on the original call site referencing this injected
+              // parameter
+              // (which could be in bytecode)
+              checkClassReference(element, type)
+            }
+          }
+        }
+      } else {
+        checkClassReference(element, classType)
+      }
+    }
+
     override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression) {
       val resolved = node.resolve()
       if (resolved is PsiField) {
@@ -1337,14 +1389,15 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       // Builtin R8 desugaring, such as rewriting compare calls (see b/36390874)
       if (
-        isDesugaredMethod(
-          owner,
-          name,
-          desc,
-          context.sourceSetType,
-          if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
-          containingClass,
-        )
+        canBeDesugaredLater(owner) &&
+          isDesugaredMethod(
+            owner,
+            name,
+            desc,
+            context.sourceSetType,
+            if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+            containingClass,
+          )
       ) {
         return
       }
@@ -1483,6 +1536,31 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       }
       minSdk = max(minSdk, localMinSdk)
 
+      if (node is UReferenceExpression) {
+        val resolved = node.tryResolve()
+        if (resolved is PsiField) {
+          val owner = resolved.containingClass?.qualifiedName
+          if (owner != null) {
+            val versions = apiDatabase.getFieldVersions(owner, resolved.name)
+            if (!minSdk.isAtLeast(versions)) {
+              return
+            }
+          }
+        } else if (resolved is PsiMethod) {
+          val owner = resolved.containingClass?.qualifiedName
+          if (owner != null) {
+            val desc = context.evaluator.getMethodDescription(resolved, false, false)
+            if (desc != null) {
+              val versions =
+                apiDatabase.getMethodVersions(owner, getInternalMethodName(resolved), desc)
+              if (!minSdk.isAtLeast(versions)) {
+                return
+              }
+            }
+          }
+        }
+      }
+
       // Also see if this cast has been explicitly checked for
       var curr = node
       while (true) {
@@ -1522,6 +1600,22 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           }
         }
         curr = curr.uastParent ?: break
+      }
+
+      if (
+        canBeDesugaredLater(classType) &&
+          isDesugaredClass(
+            classType,
+            context.sourceSetType,
+            if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+          ) ||
+          // D8 library desugaring does seem to handle these, but they're missing
+          // from the database; see b/381126163
+          (classType == "java.nio.file.attribute.UserPrincipal" ||
+            classType == "java.nio.file.attribute.GroupPrincipal") &&
+            context.project.desugaring.contains(Desugaring.JAVA_8_LIBRARY)
+      ) {
+        return
       }
 
       var locationNode = node
@@ -1598,33 +1692,6 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
               containingClass.qualifiedName,
               desugaring = Desugaring.INTERFACE_METHODS,
             )
-          }
-        }
-      }
-
-      // noinspection ExternalAnnotations
-      if (
-        node.isConstructor && node.uAnnotations.any { it.qualifiedName.isInjectAnnotationName() }
-      ) {
-        for (parameter in node.uastParameters) {
-          val type = parameter.type as? PsiClassType ?: continue
-          val cls = type.resolve() ?: continue
-          val owner = cls.qualifiedName ?: continue
-          if (apiDatabase?.containsClass(owner) == false) {
-            // See if it's an injected method
-            for (constructor in cls.constructors) {
-              if (constructor.annotations.any { it.qualifiedName.isInjectAnnotationName() }) {
-                for (injectedParameter in constructor.parameterList.parameters) {
-                  val type = injectedParameter.type as? PsiClassType ?: continue
-                  // report the error back on the original call site referencing this injected
-                  // parameter
-                  // (which could be in bytecode)
-                  checkClassReference(parameter, type)
-                }
-              }
-            }
-          } else {
-            checkClassReference(parameter, type)
           }
         }
       }
@@ -2120,15 +2187,18 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       // Builtin R8 desugaring, such as rewriting compare calls (see b/36390874)
       if (
-        isDesugaredMethod(
-          owner,
-          name,
-          desc,
-          context.sourceSetType,
-          if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
-          containingClass,
-        )
+        canBeDesugaredLater(owner) &&
+          isDesugaredMethod(
+            owner,
+            name,
+            desc,
+            context.sourceSetType,
+            if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+            containingClass,
+          )
       ) {
+        // Special case some limitations in desugaring
+        handleNioDesugaringSpecialCases(owner, name, minSdk, call)
         return
       }
 
@@ -2185,6 +2255,156 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         desugaring,
         original,
       )
+    }
+
+    /**
+     * Even though various java.nio calls are backported using core library desugaring, there are
+     * some important limitations documented in
+     * https://developer.android.com/studio/write/java11-nio-support-table#java-nio-customizations
+     *
+     * This method looks for calls affected by these limitations.
+     */
+    private fun handleNioDesugaringSpecialCases(
+      owner: String,
+      name: String,
+      minSdk: ApiConstraint,
+      call: UCallExpression,
+    ) {
+      if (!owner.startsWith("java.nio.") || minSdk.isAtLeast(API_26)) {
+        return
+      }
+
+      when {
+        owner == "java.nio.channels.AsynchronousFileChannel" ->
+          reportNioIssue("Using `AsynchronousFileChannel` is not supported".byLibDesugaring(), call)
+        name == "newWatchService" && owner == "java.nio.file.FileSystem" ->
+          reportNioIssue("Using a `WatchService` is not supported".byLibDesugaring(), call)
+        name == "getUserPrincipalLookupService" && owner == "java.nio.file.FileSystem" ||
+          owner == "java.nio.file.attribute.UserPrincipalLookupService" ||
+          owner == "java.nio.file.attribute.PosixFilePermissions" ||
+          (name == "getPosixFilePermissions" || name == "setPosixFilePermissions") &&
+            owner == "java.nio.file.Files" ->
+          reportNioIssue("POSIX file features are not supported".byLibDesugaring(), call)
+        owner == "java.nio.file.spi.FileSystemProvider" &&
+          (name == "createLink" || name == "createSymbolicLink") ->
+          reportNioIssue("Creating links is not supported".byLibDesugaring(), call)
+        name == "copy" && owner == "java.nio.file.Files" -> {
+          for (argument in call.valueArguments) {
+            val resolved = argument.tryResolve()
+            if (resolved is PsiField) {
+              val fieldName = resolved.name
+              if (fieldName == "ATOMIC_MOVE") {
+                reportNioIssue(
+                  "file move with the `ATOMIC_MOVE` option uses file renaming. Linux does not guarantee renaming to be atomic, though it usually is, and the desugaring implementation will have the semantics of the OS."
+                    .withLibDesugaring(),
+                  argument,
+                  warnOnly = true,
+                )
+              } else if (fieldName == "COPY_ATTRIBUTES") {
+                reportNioIssue(
+                  "file copy with the `COPY_ATTRIBUTES` option does not copy attributes, though it is usually not important to copy basic attributes"
+                    .withLibDesugaring(),
+                  argument,
+                  warnOnly = true,
+                )
+              }
+            }
+          }
+        }
+        name == "open" && owner == "java.nio.channels.FileChannel" -> {
+          for (argument in call.valueArguments) {
+            val resolved = argument.tryResolve()
+            if (resolved is PsiField) {
+              val fieldName = resolved.name
+              if (fieldName == "SPARSE") {
+                reportNioIssue("Option `SPARSE` is ignored".byLibDesugaring(), argument)
+              } else if (fieldName == "DELETE_ON_CLOSE") {
+                reportNioIssue(
+                  "`DELETE_ON_CLOSE` is only partially supported; the file is only closed when FileChannel is closed"
+                    .withLibDesugaring(),
+                  argument,
+                  warnOnly = true,
+                )
+              }
+            }
+          }
+        }
+      }
+
+      for (argument in call.valueArguments) {
+        val type = argument.getExpressionType()
+        if (type is PsiClassType && type.canonicalText == "java.nio.file.attribute.FileAttribute") {
+          reportNioIssue(
+            "`FileAttribute` arguments are ignored".withLibDesugaring(),
+            argument,
+            warnOnly = true,
+          )
+        }
+      }
+    }
+
+    /**
+     * Even though various java.nio calls are backported using core library desugaring, there are
+     * some important limitations documented in
+     * https://developer.android.com/studio/write/java11-nio-support-table#java-nio-customizations
+     *
+     * This method looks for exception catch clauses affected by these limitations.
+     */
+    private fun handleNioDesugaringSpecialCases(
+      owner: String,
+      minSdk: ApiConstraint,
+      tryExpression: UTryExpression,
+      typeReference: UTypeReferenceExpression,
+    ) {
+      if (!owner.startsWith("java.nio.") || minSdk.isAtLeast(API_26)) {
+        return
+      }
+      val signature = owner
+      if (signature == "java.nio.file.NoSuchFileException") {
+        // Make sure we aren't already looking for java.io.Exception!
+        for (catchClause in tryExpression.catchClauses) {
+          for (typeReference in catchClause.typeReferences) {
+            if (typeReference.type.canonicalText == "java.io.IOException") {
+              return
+            }
+          }
+        }
+
+        reportNioIssue(
+          "When using core library desugaring on API levels lower than 26, file operations sometimes raise " +
+            "`java.io.FileNotFoundException` instead of `java.nio.file.NoSuchFileException` when a file is " +
+            "not found. They are both subclasses of `java.io.IOException`, so the issue can be mitigated " +
+            "by catching `java.io.IOException` instead.",
+          typeReference,
+        )
+      }
+    }
+
+    /** Shared error message suffix for the various NIO API level <= 26 limitations */
+    private fun String.byLibDesugaring(): String =
+      "$this by core library desugaring on API levels lower than 26"
+
+    /** Shared error message prefix for the various NIO API level <= 26 limitations */
+    private fun String.withLibDesugaring(): String =
+      "With core library desugaring on API levels lower than 26, $this"
+
+    /** Reports an issue related to java.nio limitations ([NIO_DESUGARING]) for the given call */
+    private fun reportNioIssue(message: String, call: UCallExpression, warnOnly: Boolean = false) {
+      reportNioIssue(message, call, warnOnly, context.getCallLocation(call, true, false))
+    }
+
+    /** Reports an issue related to java.nio limitations ([NIO_DESUGARING]) for the given element */
+    private fun reportNioIssue(
+      message: String,
+      element: UElement,
+      warnOnly: Boolean = false,
+      location: Location = context.getLocation(element),
+    ) {
+      val incident = Incident(NIO_DESUGARING, element, location, message)
+      if (warnOnly) {
+        incident.overrideSeverity(Severity.WARNING)
+      }
+      context.report(incident, minSdkLessThan(API_26))
     }
 
     private fun handleKotlinExtensionMethods(
@@ -2501,14 +2721,15 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
         // R8 rewrites many auto close methods now:
         if (
-          isDesugaredMethod(
-            owner,
-            name,
-            desc,
-            context.sourceSetType,
-            if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
-            containingClass,
-          )
+          canBeDesugaredLater(owner) &&
+            isDesugaredMethod(
+              owner,
+              name,
+              desc,
+              context.sourceSetType,
+              if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+              containingClass,
+            )
         ) {
           return
         }
@@ -2603,6 +2824,19 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           if (target != null && target.isAtLeast(api)) {
             return
           }
+        }
+
+        if (
+          canBeDesugaredLater(signature) &&
+            isDesugaredClass(
+              signature,
+              context.sourceSetType,
+              if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+            )
+        ) {
+          handleNioDesugaringSpecialCases(signature, minSdk, statement, typeReference)
+
+          return
         }
 
         // Don't use getSuppressed to pick up a higher minSdkVersion from SDK_INT checks here;
@@ -2803,13 +3037,14 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
         // R8 desugaring, such as rewriting NIO field references (see b/36390874)
         if (
-          isDesugaredField(
-            owner,
-            name,
-            context.sourceSetType,
-            if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
-            containingClass,
-          )
+          canBeDesugaredLater(owner) &&
+            isDesugaredField(
+              owner,
+              name,
+              context.sourceSetType,
+              if (context.driver.isGlobalAnalysis()) context.mainProject else context.project,
+              containingClass,
+            )
         ) {
           return
         }
@@ -3034,6 +3269,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
     private val API_21: ApiConstraint.SdkApiConstraint = ApiConstraint.get(21)
     private val API_23: ApiConstraint.SdkApiConstraint = ApiConstraint.get(23)
     private val API_24: ApiConstraint.SdkApiConstraint = ApiConstraint.get(24)
+    private val API_26: ApiConstraint.SdkApiConstraint = ApiConstraint.get(26)
 
     /** Accessing an unsupported API. */
     @JvmField
@@ -3190,6 +3426,27 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           You should typically compare `SDK_INT` with the constants in `Build.VERSION_CODES`, \
           and `SDK_INT_FULL` with the constants in `Build.VERSION_CODES_FULL`. This lint check \
           flags suspicious combinations of these comparisons.
+          """,
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = JAVA_IMPLEMENTATION,
+      )
+
+    /** Obsolete SDK_INT version check. */
+    @JvmField
+    val NIO_DESUGARING =
+      Issue.create(
+        id = "NioDesugaring",
+        briefDescription = "Unsupported `java.nio` operations",
+        explanation =
+          """
+          Core library desugaring handles most of the `java.nio` APIs, but \
+          prior to API level 26, a handful of APIs are not fully supported.
+
+          This is detailed in the documentation at \
+          https://developer.android.com/studio/write/java11-nio-support-table#java-nio-customizations .
           """,
         category = Category.CORRECTNESS,
         priority = 6,

@@ -3406,6 +3406,7 @@ com/android/tools/sdk-common
   com/android/ide/common/fonts/
   com/android/ide/common/gradle/
   com/android/ide/common/internal/
+  com/android/ide/common/pagealign/
   com/android/ide/common/process/
   com/android/ide/common/rendering/
   com/android/ide/common/repository/
@@ -3998,6 +3999,7 @@ com/android/tools/sdklib
   com/android/sdklib/devices/nexus.xml
   com/android/sdklib/devices/tv.xml
   com/android/sdklib/devices/wear.xml
+  com/android/sdklib/devices/xr.xml
   com/android/sdklib/internal/
   com/android/sdklib/internal/avd/
   com/android/sdklib/internal/build/

@@ -36,6 +36,8 @@ class AndroidKotlinPlugin : Plugin<Project> {
         }
         val kotlinJvmFactory = project.plugins.apply(KotlinBaseApiPlugin::class.java)
         val kotlinExtension = kotlinJvmFactory.createKotlinAndroidExtension()
+        // Set default coreLibrariesVersion
+        kotlinExtension.coreLibrariesVersion = kotlinJvmFactory.pluginVersion
         project.extensions.add("kotlin", kotlinExtension)
     }
 }

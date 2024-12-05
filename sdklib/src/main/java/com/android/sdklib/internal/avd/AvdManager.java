@@ -260,6 +260,21 @@ public class AvdManager {
         return null;
     }
 
+    /**
+     * Returns the {@link AvdInfo} with the given id (path of the AVD folder), or null if not found.
+     */
+    @Nullable
+    public AvdInfo findAvdWithFolder(@NonNull Path avdFolder) {
+        synchronized (mAllAvdList) {
+            for (AvdInfo avd : mAllAvdList) {
+                if (avd.getDataFolderPath().equals(avdFolder)) {
+                    return avd;
+                }
+            }
+        }
+        return null;
+    }
+
     /** Returns whether an emulator is currently running the AVD. */
     @Slow
     public boolean isAvdRunning(@NonNull AvdInfo info) {

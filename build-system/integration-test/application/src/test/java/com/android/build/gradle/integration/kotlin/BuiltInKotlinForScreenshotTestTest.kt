@@ -83,7 +83,6 @@ class BuiltInKotlinForScreenshotTestTest {
                 android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
 
                 dependencies {
-                    screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                     screenshotTestImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
                     screenshotTestImplementation(project(":lib2"))
                 }
@@ -140,10 +139,6 @@ class BuiltInKotlinForScreenshotTestTest {
         lib.buildFile.appendText(
             """
                 android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-
-                dependencies {
-                    screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                }
                 """.trimIndent()
         )
         lib.file("src/screenshotTest/kotlin/LibScreenshotTestFoo.kt").let {
@@ -186,10 +181,6 @@ class BuiltInKotlinForScreenshotTestTest {
         lib.buildFile.appendText(
             """
                 android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-
-                dependencies {
-                    screenshotTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                }
                 """.trimIndent()
         )
         val result = lib.executor().expectFailure().run(":lib:compileDebugScreenshotTest")

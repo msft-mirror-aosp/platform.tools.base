@@ -1,0 +1,131 @@
+/*
+ * Copyright (C) 2024 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.build.gradle.integration.common.fixture.project
+
+import com.android.build.api.dsl.PrivacySandboxSdkExtension
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
+import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import java.nio.file.Path
+
+/*
+ * Support for Android Privacy Sandbox SDK in the [GradleRule] fixture
+ */
+
+/**
+ * Specialized interface for [GradleProjectDefinition]
+ */
+interface PrivacySandboxSdkDefinition: GradleProjectDefinition {
+    val android: PrivacySandboxSdkExtension
+    fun android(action: PrivacySandboxSdkExtension.() -> Unit)
+
+    /** executes the lambda that adds/updates/removes files from the project */
+    fun files(action: GradleProjectFiles.() -> Unit)
+}
+
+/**
+ *  Implementation of [GradleProjectDefinition] for [PrivacySandboxSdkExtension]
+ */
+internal class PrivacySandboxSdkDefinitionImpl(
+    path: String
+) : GradleProjectDefinitionImpl(path), PrivacySandboxSdkDefinition {
+    init {
+        applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
+    }
+
+    private val contentHolder = DefaultDslContentHolder()
+    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+
+    override fun files (action: GradleProjectFiles.() -> Unit) {
+        action(files)
+    }
+
+    override val android: PrivacySandboxSdkExtension =
+        DslProxy.createProxy(
+            PrivacySandboxSdkExtension::class.java,
+            contentHolder,
+        ).also {
+            it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+        }
+
+    override fun android(action: PrivacySandboxSdkExtension.() -> Unit) {
+        action(android)
+    }
+
+    override fun writeExtension(writer: BuildWriter) {
+        writer.apply {
+            block("android") {
+                contentHolder.writeContent(this)
+            }
+        }
+    }
+}
+
+/**
+ * Specialized interface for application [AndroidProject] to use in the test
+ */
+interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition> {
+    /** the object that allows to add/update/remove files from the project */
+    val files: GradleProjectFiles
+}
+
+/**
+ * Implementation of [PrivacySandboxSdkProject]
+ */
+internal class PrivacySandboxSdkImpl(
+    location: Path,
+    projectDefinition: PrivacySandboxSdkDefinition,
+    buildWriter: () -> BuildWriter,
+    parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
+) : BaseAndroidProjectImpl<PrivacySandboxSdkDefinition>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild,
+    modelBuilder,
+), PrivacySandboxSdkProject {
+
+    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
+
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): PrivacySandboxSdkProject =
+        ReversiblePrivacySandboxSdkProject(this, projectModification)
+}
+
+/**
+ * Reversible version of [PrivacySandboxSdkProject]
+ */
+internal class ReversiblePrivacySandboxSdkProject(
+    parentProject: PrivacySandboxSdkProject,
+    projectModification: TemporaryProjectModification
+) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
+    parentProject
+), PrivacySandboxSdkProject {
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+}
+

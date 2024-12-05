@@ -20,12 +20,13 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
-interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
+interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     val android: ExtensionT
     fun android(action: ExtensionT.() -> Unit)
 
@@ -33,6 +34,8 @@ interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
 
     override val files: AndroidProjectFiles
     fun files(action: AndroidProjectFiles.() -> Unit)
+
+    var componentCallback: Class<out AndroidComponentCallback>?
 }
 
 /**
@@ -40,9 +43,10 @@ interface AndroidProjectDefinition<ExtensionT>: BaseGradleProjectDefinition {
  */
 internal abstract class AndroidProjectDefinitionImpl<T>(
     path: String
-): BaseGradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
+): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
     override val files: AndroidProjectFiles = AndroidProjectFilesImpl(this::namespace)
+    override var componentCallback: Class<out AndroidComponentCallback>? = null
 
     override fun files(action: AndroidProjectFiles.() -> Unit) {
         action(files)
@@ -91,30 +95,11 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun writExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)
             }
         }
-    }
-
-    internal fun asGradleProject(): GradleProjectDefinition {
-        return AndroidProjectDefinitionWrapper(this)
-    }
-}
-
-
-/**
- * Wraps a [AndroidProjectDefinition] into a [GradleProjectDefinition]
- *
- * This can be usd when manipulating project in their most basic form.
- */
-internal class AndroidProjectDefinitionWrapper(
-    private val androidProject: AndroidProjectDefinition<*>
-): BaseGradleProjectDefinition by androidProject, GradleProjectDefinition {
-
-    override fun files(action: GradleProjectFiles.() -> Unit) {
-        androidProject.files(action)
     }
 }

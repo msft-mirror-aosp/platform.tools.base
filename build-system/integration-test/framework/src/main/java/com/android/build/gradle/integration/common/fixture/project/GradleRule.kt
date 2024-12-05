@@ -33,7 +33,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -108,7 +107,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     val build: GradleBuild by lazy {
@@ -128,7 +127,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
@@ -155,7 +154,7 @@ class GradleRule internal constructor(
      * Once this is called the project is written on disk and it's not possible to change
      * its structure.
      *
-     * It is possible after the fact to add more source files can be added via [GradleProject.files]
+     * It is possible after the fact to add more source files can be added via [GenericProject.files]
      * and it's possible to amend the build file with [AndroidProject.reconfigure]
      */
     fun configure(): LocalRuleOptionBuilder = LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
@@ -218,52 +217,69 @@ class GradleRule internal constructor(
             )
         }
 
+        val modelBuilderProvider = { instantiateModelBuilder(location) }
+
         val subProjects = build.subProjects.values.associate { definition ->
+            val subProjectLocation = computeSubProjectPath(rootFolder, definition.path)
+
             when (definition) {
                 is AndroidApplicationDefinitionImpl -> definition.path to AndroidApplicationImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 is AndroidLibraryDefinitionImpl -> definition.path to AndroidLibraryImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
                 is AndroidDynamicFeatureDefinitionImpl -> definition.path to AndroidFeatureImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                     definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
-                is PrivacySandboxSdkDefinitionImpl -> definition.path to AndroidPrivacySandboxSdkImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                is PrivacySandboxSdkDefinitionImpl -> definition.path to PrivacySandboxSdkImpl(
+                    subProjectLocation,
                     definition,
-                    definition.namespace,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
-                is AndroidAiPackDefinitionImpl -> definition.path to AndroidAiPackImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                is AssetPackDefinitionImpl -> definition.path to AssetPackImpl(
+                    subProjectLocation,
                     definition,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider,
                 )
 
-                is GradleProjectDefinitionImpl -> definition.path to GradleProjectImpl(
+                is AiPackDefinitionImpl -> definition.path to AiPackImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
                     buildWriter,
-                    build
+                    build,
+                    modelBuilderProvider
+                )
+
+                is GenericProjectDefinitionImpl -> definition.path to GenericProjectImpl(
+                    subProjectLocation,
+                    definition,
+                    buildWriter,
+                    build,
+                    modelBuilderProvider,
                 )
 
                 else -> throw RuntimeException("Unsupported GradleProjectDefinition type")
@@ -273,16 +289,17 @@ class GradleRule internal constructor(
         return GradleBuildImpl(
             rootFolder,
             subProjects = subProjects + mapOf(
-                ":" to GradleProjectImpl(
-                    computeSubProjectPath(
-                        rootFolder,
-                        ":"
-                    ), build.rootProject, buildWriter, build
+                ":" to GenericProjectImpl(
+                    computeSubProjectPath(rootFolder, ":"),
+                    build.rootProject,
+                    buildWriter,
+                    build,
+                    modelBuilderProvider
                 )
             ),
             includedBuilds = includedBuilds,
             executorProvider = { instantiateExecutor(location) },
-            modelBuilderProvider = { instantiateModelBuilder(location) },
+            modelBuilderProvider = modelBuilderProvider,
         )
     }
 

@@ -79,9 +79,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             """
                 android.testFixtures.enable = true
 
-                $builtInKotlinSupportDependencies
                 dependencies {
-                    testFixturesImplementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
                     testFixturesImplementation project(':lib')
                     kaptTestFixtures project(':lib-compiler')
                 }

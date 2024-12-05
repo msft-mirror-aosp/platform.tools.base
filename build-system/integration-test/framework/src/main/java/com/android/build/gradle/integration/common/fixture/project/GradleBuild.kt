@@ -31,7 +31,7 @@ import java.nio.file.Path
 interface GradleBuild {
 
     /** Queries for a project via its gradle path. The project must exist. */
-    fun genericProject(path: String): GradleProject
+    fun genericProject(path: String): GenericProject
 
     /**
      * Queries for an application project via its gradle path.
@@ -52,12 +52,17 @@ interface GradleBuild {
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.
      */
-    fun privacySandboxSdk(path: String): AndroidPrivacySandboxSdkProject
+    fun privacySandboxSdk(path: String): PrivacySandboxSdkProject
     /**
      * Queries for an AI pack project via its gradle path.
      * The project must exist and be an AI Pack project
      */
-    fun androidAiPack(path: String): AndroidAiPackProject
+    fun aiPack(path: String): AiPackProject
+    /**
+     * Queries for an Asset pack project via its gradle path.
+     * The project must exist and be an AI Pack project
+     */
+    fun assetPack(path: String): AssetPackProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -70,7 +75,7 @@ interface GradleBuild {
     /**
      * Allows making modifications that are reverted.
      *
-     * Any modifications to the project (using [GradleProject.files]) made from within the action,
+     * Any modifications to the project (using [GenericProject.files]) made from within the action,
      * using the provided instance of [GradleBuild], will be reverted after the action is run.
      */
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
@@ -85,23 +90,23 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
     /**
      * Returns a project from the path.
      */
-    abstract fun subProject(path: String): BaseGradleProject<*>
+    abstract fun subProject(path: String): GradleProject<*>
 
     /**
      * a more complete list of projects to validate project types. This is separate
      * for the case of [ReversibleGradleBuild] where the subProject list is a clone of the
      * parent build.
      */
-    internal abstract val subProjectsForValidation: Map<String, BaseGradleProject<*>>
+    internal abstract val subProjectsForValidation: Map<String, GradleProject<*>>
 
-    override fun genericProject(path: String): GradleProject {
+    override fun genericProject(path: String): GenericProject {
         val project = subProject(path)
-        if (project is GradleProject) return project
+        if (project is GenericProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not a generic project.
-                Possible options are ${getProjectListByType<GradleProjectImpl>()}
+                Possible options are ${getProjectListByType<GenericProjectImpl>()}
             """.trimIndent()
         )
     }
@@ -142,26 +147,38 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
-    override fun privacySandboxSdk(path: String): AndroidPrivacySandboxSdkProject {
+    override fun privacySandboxSdk(path: String): PrivacySandboxSdkProject {
         val project = subProject(path)
-        if (project is AndroidPrivacySandboxSdkProject) return project
+        if (project is PrivacySandboxSdkProject) return project
 
         throw RuntimeException(
             """
                 Project with path '$path' is not an Android project.
-                Possible options are ${getProjectListByType<AndroidPrivacySandboxSdkImpl>()}
+                Possible options are ${getProjectListByType<PrivacySandboxSdkImpl>()}
             """.trimIndent()
         )
     }
 
-    override fun androidAiPack(path: String): AndroidAiPackProject {
+    override fun aiPack(path: String): AiPackProject {
         val project = subProject(path)
-        if (project is AndroidAiPackProject) return project
+        if (project is AiPackProject) return project
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
-                Possible options are ${getProjectListByType<AndroidAiPackImpl>()}
+                Project with path '$path' is not an AI Pack project.
+                Possible options are ${getProjectListByType<AiPackImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun assetPack(path: String): AssetPackProject {
+        val project = subProject(path)
+        if (project is AssetPackProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Asset Pack project.
+                Possible options are ${getProjectListByType<AssetPackImpl>()}
             """.trimIndent()
         )
     }
@@ -177,13 +194,13 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
  */
 internal class GradleBuildImpl(
     val directory: Path,
-    private val subProjects: Map<String, BaseGradleProject<*>> = mapOf(),
+    private val subProjects: Map<String, GradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
 ): BaseGradleBuildImpl() {
 
-    override fun subProject(path: String): BaseGradleProject<*> {
+    override fun subProject(path: String): GradleProject<*> {
         return subProjects[path]
             ?: throw RuntimeException(
                 """
@@ -196,7 +213,7 @@ internal class GradleBuildImpl(
     /**
      * For this implementation, both lists are the same.
      */
-    override val subProjectsForValidation: Map<String, BaseGradleProject<*>>
+    override val subProjectsForValidation: Map<String, GradleProject<*>>
         get() = subProjects
 
     override fun includedBuild(name: String): GradleBuild {

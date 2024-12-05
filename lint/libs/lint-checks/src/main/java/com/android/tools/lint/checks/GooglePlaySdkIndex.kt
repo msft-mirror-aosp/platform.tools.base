@@ -69,6 +69,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     // DEFAULT_SHOW_RECOMMENDED_VERSIONS should match
     // StudioFlags.SHOW_SDK_INDEX_RECOMMENDED_VERSIONS for consistency between CLI and AS
     const val DEFAULT_SHOW_RECOMMENDED_VERSIONS = true
+    // DEFAULT_SHOW_DEPRECATION_ISSUES should match
+    // StudioFlags.SHOW_SDK_INDEX_DEPRECATION_ISSUES for consistency between CLI and AS
+    const val DEFAULT_SHOW_DEPRECATION_ISSUES = true
     const val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_FILE = "snapshot.gz"
     const val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE = "sdk-index-offline-snapshot.proto.gz"
     val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_URL =
@@ -228,6 +231,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   private val libraryToSdk = HashMap<String, LibraryToSdk>()
   var showNotesFromDeveloper = DEFAULT_SHOW_NOTES_FROM_DEVELOPER
   var showRecommendedVersions = DEFAULT_SHOW_RECOMMENDED_VERSIONS
+  var showDeprecationIssues = DEFAULT_SHOW_DEPRECATION_ISSUES
 
   /**
    * Read Index snapshot (locally if it is not old and remotely if old and network is available) and
@@ -330,7 +334,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val isNonCompliant =
-      getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() == true
     if (isNonCompliant) {
       logNonCompliant(groupId, artifactId, versionString, buildFile)
     }
@@ -353,7 +357,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     versionString: String,
     buildFile: File?,
   ): Boolean {
-    val isOutdated = getLabels(groupId, artifactId, versionString)?.hasOutdatedIssueInfo() ?: false
+    val isOutdated = getLabels(groupId, artifactId, versionString)?.hasOutdatedIssueInfo() == true
     if (isOutdated) {
       logOutdated(groupId, artifactId, versionString, buildFile)
     }
@@ -377,7 +381,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val hasCriticalIssues =
-      getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() == true
     if (hasCriticalIssues) {
       logHasCriticalIssues(groupId, artifactId, versionString, buildFile)
     }
@@ -401,11 +405,36 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     buildFile: File?,
   ): Boolean {
     val hasVulnerabilities =
-      getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() ?: false
+      getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() == true
     if (hasVulnerabilities) {
       logVulnerability(groupId, artifactId, versionString, buildFile)
     }
     return hasVulnerabilities
+  }
+
+  /**
+   * Has this library been deprecated?
+   *
+   * @param groupId: group id for library coordinates
+   * @param artifactId: artifact id for library coordinates
+   * @param versionString: version currently used, for logging purposes
+   * @param buildFile: build file in which this dependency is declared, for logging purposes
+   * @return true if the index has information about this particular version, and it has been
+   *   labeled with [LibraryDeprecation].
+   */
+  fun isLibraryDeprecated(
+    groupId: String,
+    artifactId: String,
+    versionString: String,
+    buildFile: File?,
+  ): Boolean {
+    val library = getLibrary(groupId, artifactId) ?: return false
+    val deprecation = library.deprecation
+    if (deprecation != null && deprecation.deprecationTimestampSeconds > 0) {
+      logDeprecated(groupId, artifactId, versionString, buildFile)
+      return showDeprecationIssues
+    }
+    return false
   }
 
   /**
@@ -434,15 +463,18 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @return true if the index has information about this particular version, and it has issues that
-   *   will cause an error or warning. (Any blocking issue is an error, non blocking outdated,
-   *   policy or vulnerability issues are warnings)
+   *   will cause an error or warning. (Any blocking issue is an error, non-blocking outdated,
+   *   policy or vulnerability issues are warnings; deprecated libraries will cause a warning if no
+   *   blocking issues exist (error otherwise))
    */
   fun hasLibraryErrorOrWarning(
     groupId: String,
     artifactId: String,
     versionString: String,
   ): Boolean {
-    return getLabels(groupId, artifactId, versionString).hasErrorOrWarning()
+    val library = getLibrary(groupId, artifactId)
+    return library?.deprecation.isDeprecated() ||
+      library?.getVersion(versionString)?.versionLabels.hasErrorOrWarning()
   }
 
   /**
@@ -456,9 +488,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     if (!isReady()) {
       return null
     }
-    val sdk = getSdk(groupId, artifactId) ?: return null
-    if (sdk.sdk.indexAvailability == Sdk.IndexAvailability.NOT_AVAILABLE) return null
-    return sdk.sdk.indexUrl
+    val library = getLibrary(groupId, artifactId) ?: return null
+    if (library.sdk.indexAvailability == Sdk.IndexAvailability.NOT_AVAILABLE) return null
+    return library.sdk.indexUrl
   }
 
   /** Get latest version known by the SDK Index for a particular library (if available) */
@@ -466,7 +498,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     if (!isReady()) {
       return null
     }
-    return getSdk(groupId, artifactId)?.getLatestVersion()
+    return getLibrary(groupId, artifactId)?.getLatestVersion()
   }
 
   private fun getLabels(
@@ -491,7 +523,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return sdk.getVersion(versionString)
   }
 
-  private fun getSdk(groupId: String, artifactId: String): LibraryToSdk? {
+  private fun getLibrary(groupId: String, artifactId: String): LibraryToSdk? {
     val coordinate = createCoordinateString(groupId, artifactId)
     return libraryToSdk[coordinate]
   }
@@ -507,6 +539,11 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
             library.libraryId.mavenId.artifactId,
           )
         val currentLibrary = LibraryToSdk(coordinate, sdk)
+        // Add SDK deprecation issues
+        val deprecation = library.libraryDeprecation
+        if (deprecation.isDeprecated()) {
+          currentLibrary.deprecation = deprecation
+        }
         for (version in library.versionsList) {
           currentLibrary.addLibraryVersion(version.versionString, version)
         }
@@ -525,6 +562,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   private class LibraryToSdk(val libraryId: String, val sdk: Sdk) {
     private val versionToLibraryVersion = HashMap<String, LibraryVersion>()
     private var latestVersion: String? = null
+    var deprecation: LibraryDeprecation? = null
 
     fun addLibraryVersion(versionString: String, libraryVersion: LibraryVersion) {
       versionToLibraryVersion[versionString] = libraryVersion
@@ -648,6 +686,20 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     }
   }
 
+  fun generateDeprecatedMessage(groupId: String, artifactId: String): String {
+    val library = getLibrary(groupId, artifactId)
+    val sdkName = library?.sdk?.sdkName
+    val identification =
+      if (sdkName.isNullOrBlank()) {
+        "$groupId:$artifactId"
+      } else {
+        "$sdkName ($groupId:$artifactId)"
+      }
+    val alternatives = getDeprecatedAlternatives(library)
+    return "$identification has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release." +
+      alternatives
+  }
+
   /**
    * Generate a list of versions that the library owner has recommended to use instead of the passed
    * version.
@@ -692,6 +744,13 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   ) {}
 
   protected open fun logVulnerability(
+    groupId: String,
+    artifactId: String,
+    versionString: String,
+    file: File?,
+  ) {}
+
+  protected open fun logDeprecated(
     groupId: String,
     artifactId: String,
     versionString: String,
@@ -867,14 +926,65 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     }
     return result
   }
-}
 
-private fun LibraryVersionLabels?.hasErrorOrWarning(): Boolean {
-  if (this == null) {
-    return false
+  private fun getDeprecatedAlternatives(library: LibraryToSdk?): String {
+    val deprecation = library?.deprecation
+    if (deprecation == null) {
+      return ""
+    }
+    val alternatives =
+      deprecation.alternativeLibrariesList.mapNotNull { generateAlternativeName(it) }
+    if (alternatives.isEmpty()) {
+      return ""
+    }
+    return alternatives.joinToString(
+      prefix = "\nThe developer has recommended these alternatives:\n```\n - ",
+      separator = "\n - ",
+      postfix = "\n```",
+    )
   }
-  return this.severity == LibraryVersionLabels.Severity.BLOCKING_SEVERITY ||
-    this.hasOutdatedIssueInfo() ||
-    this.hasPolicyIssuesInfo() ||
-    this.hasSecurityVulnerabilitiesInfo()
+
+  private fun generateAlternativeName(library: AlternativeLibrary): String? {
+    val name = library.sdkName
+    val identifier = library.mavenSdkId
+    if (name.isNullOrBlank()) {
+      if (
+        identifier != null &&
+          (!identifier.groupId.isNullOrBlank()) &&
+          (!identifier.artifactId.isNullOrBlank())
+      ) {
+        return "${identifier.groupId}:${identifier.artifactId}"
+      }
+      return null
+    } else {
+      if (
+        identifier != null &&
+          (!identifier.groupId.isNullOrBlank()) &&
+          (!identifier.artifactId.isNullOrBlank())
+      ) {
+        return "$name (${identifier.groupId}:${identifier.artifactId})"
+      }
+      return name
+    }
+  }
+
+  private fun LibraryVersionLabels?.hasErrorOrWarning(): Boolean {
+    if (this == null) {
+      return false
+    }
+    return this.severity == LibraryVersionLabels.Severity.BLOCKING_SEVERITY ||
+      this.hasOutdatedIssueInfo() ||
+      this.hasPolicyIssuesInfo() ||
+      this.hasSecurityVulnerabilitiesInfo()
+  }
+
+  private fun LibraryDeprecation?.isDeprecated(): Boolean {
+    if (!showDeprecationIssues) {
+      return false
+    }
+    if (this == null) {
+      return false
+    }
+    return this.deprecationTimestampSeconds > 0
+  }
 }

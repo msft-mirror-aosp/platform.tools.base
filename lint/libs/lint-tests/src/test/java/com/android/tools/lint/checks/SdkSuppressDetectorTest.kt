@@ -89,6 +89,9 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
                 private GridLayout field1 = new GridLayout(null); // OK via @RequiresApiSuppress
                 @androidx.annotation.RequiresApi(api=31) // ERROR: don't use in tests, use @SdkSuppress instead
                 public void test() { }
+
+                @RequiresApi(29) void utility1() { } // OK - not public
+                @RequiresApi(29) private void utility2() { } // OK - not public
             }
             """,
           )
@@ -115,6 +118,9 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
                 @RequiresApi(api = 31) // OK because we only flag annotations on classes & methods
                 private val field2 = GridLayout(null)
             }
+
+            @RequiresApi(29) private fun utility1() { } // OK - not public
+            @RequiresApi(29) internal fun utility2() { } // OK - not public
             """,
           )
           .indented(),

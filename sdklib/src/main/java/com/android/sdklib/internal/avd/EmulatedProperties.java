@@ -80,6 +80,9 @@ public class EmulatedProperties {
      * services and apps running simultaneously)
      */
     public static Storage defaultRamSize(@NonNull Device device) {
+        if (Device.isXr(device)) {
+            return new Storage(4, Storage.Unit.GiB);
+        }
         return min(
                 device.getDefaultHardware().getRam(),
                 MAX_DEFAULT_RAM_SIZE,
@@ -88,6 +91,9 @@ public class EmulatedProperties {
 
     /** Returns the default VM heap size for the given device. */
     public static Storage defaultVmHeapSize(@NonNull Device device) {
+        if (Device.isXr(device)) {
+            return new Storage(512, Storage.Unit.MiB);
+        }
         return minimumVmHeapSize(
                 ScreenSize.getScreenSize(
                         device.getDefaultHardware().getScreen().getDiagonalLength()),
@@ -206,6 +212,9 @@ public class EmulatedProperties {
     }
 
     public static Storage defaultInternalStorage(@NonNull Device device) {
+        if (Device.isXr(device)) {
+            return new Storage(4, Storage.Unit.GiB);
+        }
         return DEFAULT_INTERNAL_STORAGE;
     }
 }

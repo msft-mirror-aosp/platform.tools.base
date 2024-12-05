@@ -16,12 +16,9 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -29,8 +26,6 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import kotlin.io.path.readBytes
 
 /*
@@ -41,63 +36,53 @@ import kotlin.io.path.readBytes
 class AarPublishTest {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":library") {
-            plugins.add(PluginType.ANDROID_LIB)
+    val rule = GradleRule.from {
+        androidLibrary(":library") {
             android {
-                defaultCompileSdk()
                 namespace = "com.example.library"
                 buildTypes {
                     named("debug") {
-                        testCoverageEnabled = true
+                        it.isTestCoverageEnabled = true
                     }
                 }
-                addFile(
-                    "src/main/res/values/strings.xml",
-                    "<resources>\n" +
-                            "<string name=\"one\">Some string</string>\n" +
-                            "</resources>"
+            }
+            files {
+                add("src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="one">Some string</string>
+                        </resources>
+                    """.trimIndent()
                 )
             }
         }
     }
 
-    @get:Rule
-    val temporaryDirectory = TemporaryFolder()
-
     /* Test to verify that AARs do not include Jacoco dependencies when published. */
     @Test
     fun canPublishLibraryAarWithCoverageEnabled() {
-        val librarySubproject = project.getSubproject(":library")
-        TestFileUtils.appendToFile(
-            librarySubproject.buildFile,
-            """
+        val build = rule.build {
+            androidLibrary(":library") {
                 android {
                     buildFeatures {
-                        buildConfig true
+                        buildConfig = true
                     }
                 }
-            """.trimIndent()
-        )
-        project.execute("library:assembleDebug")
-
-        val libraryPublishedAar =
-            FileUtils.join(librarySubproject.outputDir, "aar", "library-debug.aar")
-        val tempTestData = temporaryDirectory.newFolder("testData")
-        val extractedJar = File(tempTestData, "classes.jar")
-        // Extracts the zipped BuildConfig.class in library-debug.aar/classes.jar to
-        // the extractedBuildConfigClass temporary file, so it can be later loaded
-        // into a classloader.
-        ZipFile(libraryPublishedAar).use { libraryAar ->
-            libraryAar.getInputStream(libraryAar.getEntry("classes.jar")).use { stream ->
-                extractedJar.writeBytes(stream.readBytes())
             }
         }
-        val classNode = ClassNode(Opcodes.ASM9)
-        ClassReader(ZipFile(extractedJar).use {
-            it.getInputStream(ZipEntry("com/example/library/BuildConfig.class")).readBytes()
+        val librarySubproject = build.androidLibrary(":library")
+
+        build.executor.run("library:assembleDebug")
+
+        val classesBytes = librarySubproject.withAar(AarSelector.DEBUG) {
+            getEntryAsZip("classes.jar").use { classes ->
+                classes.getEntryAsFile("com/example/library/BuildConfig.class").readBytes()
+            }
         }
-        ).accept(classNode, 0)
+
+        val classNode = ClassNode(Opcodes.ASM9)
+        ClassReader(classesBytes).accept(classNode, 0)
         assertThat(classNode.methods.map { it.name }).containsExactly("<init>", "<clinit>")
         assertThat(classNode.fields.map { it.name }).containsExactly(
             "DEBUG",
@@ -108,46 +93,49 @@ class AarPublishTest {
 
     @Test
     fun canPublishMinifiedLibraryAarWithCoverageEnabled() {
-        val librarySubproject = project.getSubproject(":library")
-        librarySubproject.buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary(":library") {
                 android {
                     buildTypes {
-                        release {
-                            minifyEnabled = true
-                            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
-                                    "proguard-rules.pro"
+                        named("release") {
+                            it.isMinifyEnabled = true
+                            it.proguardFiles += File("proguard-rules.pro")
                         }
                     }
                 }
-            """.trimIndent()
-        )
-        librarySubproject.projectDir.resolve("src/main/java/com/example").also {
-            it.mkdirs()
-            it.resolve("Foo.java").writeText(
-                """
-                package com.example;
-                public class Foo { }
-            """.trimIndent()
-            )
-            it.resolve("Bar.java").writeText(
-                """
-                package com.example;
-                public class Bar { }
-            """.trimIndent()
-            )
-        }
-        librarySubproject.projectDir.resolve("proguard-rules.pro").writeText(
-            """
-            -keep class com.example.Foo {
-              <init>();
+                files {
+                    add(
+                        "src/main/java/com/example/Foo.java",
+                        //language=java
+                        """
+                            package com.example;
+                            public class Foo { }
+                        """.trimIndent()
+                    )
+                    add(
+                        "src/main/java/com/example/Bar.java",
+                        //language=java
+                        """
+                            package com.example;
+                            public class Bar { }
+                        """.trimIndent()
+                    )
+                    add(
+                        "proguard-rules.pro",
+                        """
+                            -keep class com.example.Foo {
+                              <init>();
+                            }
+                        """.trimIndent()
+                    )
+                }
             }
-        """.trimIndent()
-        )
-        project.execute("library:assembleRelease")
+        }
 
-        librarySubproject.getAar("release") { aar ->
-            aar.getEntryAsZip("classes.jar").use { classesJar ->
+        build.executor.run("library:assembleRelease")
+
+        build.androidLibrary(":library").withAar(AarSelector.RELEASE) {
+            getEntryAsZip("classes.jar").use { classesJar ->
                 val classNode = ClassNode(Opcodes.ASM9)
                 ClassReader(classesJar.getEntry("com/example/Foo.class").readBytes()).accept(
                     classNode,
@@ -162,8 +150,9 @@ class AarPublishTest {
 
     @Test
     fun aarContainsAllowedRootDirectories() {
-        project.execute("library:assembleDebug")
-        project.getSubproject(":library").assertThatAar(GradleTestProject.ApkType.DEBUG.buildType) {
+        val build = rule.build
+        build.executor.run(":library:assembleDebug")
+        build.androidLibrary(":library").assertAar(AarSelector.DEBUG) {
             containsFile("/AndroidManifest.xml")
             containsFile("/R.txt")
             containsFile("/classes.jar")

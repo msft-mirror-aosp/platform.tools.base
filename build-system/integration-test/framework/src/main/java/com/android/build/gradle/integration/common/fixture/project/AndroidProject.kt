@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Apk
 import java.nio.file.Path
@@ -30,9 +30,11 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 /**
- * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
+ * a subproject part of a [GradleBuild], specifically for projects with Android plugins that have
+ * namespace, the android extension, and the androidComponent extension
  */
-interface AndroidProject<ProjectDefinitionT : BaseGradleProjectDefinition> : BaseGradleProject<ProjectDefinitionT> {
+interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition>
+    : BaseAndroidProject<ProjectDefinitionT> {
 
     /**
      * The namespace of the project.
@@ -41,14 +43,6 @@ interface AndroidProject<ProjectDefinitionT : BaseGradleProjectDefinition> : Bas
 
     /** the object that allows to add/update/remove files from the project */
     val files: AndroidProjectFiles
-
-    /** Return a File under the intermediates directory from Android plugins.  */
-    fun getIntermediateFile(vararg paths: String?): Path
-
-    /** Return the intermediates directory from Android plugins.  */
-    val intermediatesDir: Path
-    /** Return the output directory from Android plugins.  */
-    val outputsDir: Path
 }
 
 interface GeneratesApk {
@@ -81,24 +75,22 @@ interface GeneratesApk {
 /**
  * Default implementation of [AndroidProject]
  */
-internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjectDefinition>(
+internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     location: Path,
     projectDefinition: ProjectDefinitionT,
     final override val namespace: String,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<ProjectDefinitionT>(
+    modelBuilder: () -> ModelBuilderV2,
+) : BaseAndroidProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder
 ), AndroidProject<ProjectDefinitionT> {
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
-
-    override fun getIntermediateFile(vararg paths: String?): Path {
-        return intermediatesDir.resolve(paths.joinToString(separator = "/"))
-    }
 
     /**
      * Implementation of apk related function in the base class so it can be shared by
@@ -124,12 +116,17 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjec
     open fun hasApk(apkSelector: ApkSelector): Boolean =
         computeOutputPath(apkSelector).isRegularFile()
 
-    override val intermediatesDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
+    override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
+        val previousComponent = (projectDefinition as AndroidProjectDefinition<*>).componentCallback
 
-    override val outputsDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
+        super.reconfigure(buildFileOnly, action)
 
+        val newComponent = (projectDefinition as AndroidProjectDefinition<*>).componentCallback
+
+        if (previousComponent != newComponent) {
+            throw RuntimeException("Cannot change componentCallback in reconfigure")
+        }
+    }
 
     protected fun computeOutputPath(outputSelector: OutputSelector): Path {
         val root = if (outputSelector.fromIntermediates) {
@@ -141,4 +138,3 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : BaseGradleProjec
         return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
     }
 }
-

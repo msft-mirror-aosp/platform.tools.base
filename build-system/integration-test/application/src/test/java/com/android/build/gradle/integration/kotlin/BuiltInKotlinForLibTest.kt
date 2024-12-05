@@ -38,7 +38,6 @@ class BuiltInKotlinForLibTest {
             android {
                 setUpHelloWorld()
             }
-            appendToBuildFile { builtInKotlinSupportDependencies }
         }
     }.withBuiltInKotlinSupport(true)
         .create()
@@ -142,10 +141,6 @@ class BuiltInKotlinForLibTest {
             lib.buildFile,
             """
                 android.testFixtures.enable = true
-
-                dependencies {
-                    testFixturesImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                }
                 """.trimIndent()
         )
         lib.file("src/testFixtures/kotlin/LibFooTestFixture.kt").let {

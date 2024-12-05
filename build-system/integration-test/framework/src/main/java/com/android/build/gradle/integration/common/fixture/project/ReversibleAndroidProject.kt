@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import java.nio.file.Path
 
 /**
@@ -26,10 +26,10 @@ import java.nio.file.Path
  *
  * Returned by [ReversibleGradleBuild] when used with [GradleBuild.withReversibleModifications]
  */
-internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : BaseGradleProjectDefinition>(
+internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
     projectModification: TemporaryProjectModification,
-) : BaseReversibleGradleProject<ProjectT, ProjectDefinitionT>(
+) : BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(
     parentProject,
 ), AndroidProject<ProjectDefinitionT> {
 
@@ -38,14 +38,6 @@ internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDef
 
     override val files: AndroidProjectFiles =
         ReversibleAndroidProjectFiles(parentProject.namespace, projectModification)
-
-    override fun getIntermediateFile(vararg paths: String?): Path = parentProject.getIntermediateFile(*paths)
-
-    override val intermediatesDir: Path
-        get() = parentProject.intermediatesDir
-
-    override val outputsDir: Path
-        get() = parentProject.outputsDir
 }
 
 internal class ReversibleAndroidProjectFiles(

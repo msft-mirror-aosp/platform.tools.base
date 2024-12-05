@@ -20,8 +20,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 abstract class Dex {
-
   abstract val classes: Map<String, DexClass>
+
+  /** Allows to fetch a method by its index from the method table of a dex file. */
+  abstract fun retrieveMethod(id: UInt): DexMethod?
 
   companion object {
     fun fromPath(path: Path, logger: Logger = Logger()): Dex {

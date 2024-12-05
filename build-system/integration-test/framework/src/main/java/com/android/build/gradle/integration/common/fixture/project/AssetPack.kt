@@ -16,15 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.AiPackExtension
-import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.AssetPackExtension
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.BaseGradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
@@ -33,9 +29,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.testutils.apk.Apk
-import java.io.File
 import java.nio.file.Path
 
 /*
@@ -43,24 +36,24 @@ import java.nio.file.Path
  */
 
 /**
- * Specialized interface for [GradleProjectDefinition]
+ * Specialized interface for [GenericProjectDefinition]
  */
-interface AiPackDefinition: BaseGradleProjectDefinition {
-    val aiPack: AiPackExtension
-    fun aiPack(action: AiPackExtension.() -> Unit)
+interface AssetPackDefinition: GradleProjectDefinition {
+    val assetPack: AssetPackExtension
+    fun assetPack(action: AssetPackExtension.() -> Unit)
 
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
 }
 
 /**
- * Implementation of [AiPackDefinition]
+ * Implementation of [AssetPackDefinition]
  */
-internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefinitionImpl(path),
-    AiPackDefinition {
+internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
+    AssetPackDefinition {
 
     init {
-        applyPlugin(PluginType.ANDROID_AI_PACK)
+        applyPlugin(PluginType.ANDROID_ASSET_PACK)
     }
 
     override val files: GradleProjectFiles = GradleProjectFilesImpl()
@@ -71,19 +64,19 @@ internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefi
 
     private val contentHolder = DefaultDslContentHolder()
 
-    override val aiPack: AiPackExtension =
+    override val assetPack: AssetPackExtension =
         DslProxy.createProxy(
-            AiPackExtension::class.java,
+            AssetPackExtension::class.java,
             contentHolder,
         )
 
-    override fun aiPack(action: AiPackExtension.() -> Unit) {
-        action(aiPack)
+    override fun assetPack(action: AssetPackExtension.() -> Unit) {
+        action(assetPack)
     }
 
-    override fun writExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter) {
         writer.apply {
-            block("aiPack") {
+            block("assetPack") {
                 contentHolder.writeContent(this)
             }
         }
@@ -91,9 +84,9 @@ internal class AndroidAiPackDefinitionImpl(path: String) : BaseGradleProjectDefi
 }
 
 /**
- * Specialized interface for AI Pack [AndroidProject] to use in the test
+ * Specialized interface for AssetPack [GradleProject] to use in the test
  */
-interface AndroidAiPackProject: BaseGradleProject<AiPackDefinition> {
+interface AssetPackProject: GradleProject<AssetPackDefinition> {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
@@ -101,28 +94,35 @@ interface AndroidAiPackProject: BaseGradleProject<AiPackDefinition> {
 /**
  * Implementation of [AndroidProject]
  */
-internal class AndroidAiPackImpl(
+internal class AssetPackImpl(
     location: Path,
-    projectDefinition: AiPackDefinition,
+    projectDefinition: AssetPackDefinition,
     buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
-) : BaseGradleProjectImpl<AiPackDefinition>(location, projectDefinition,buildWriter, parentBuild),
-    AndroidAiPackProject {
+    modelBuilder: () -> ModelBuilderV2,
+) : GradleProjectImpl<AssetPackDefinition>(
+    location,
+    projectDefinition,
+    buildWriter,
+    parentBuild,
+    modelBuilder
+),
+    AssetPackProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidAiPackProject =
-        ReversibleAndroidAiPackProject(this, projectModification)
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AssetPackProject =
+        ReversibleAssetPackProject(this, projectModification)
 }
 
 /**
- * Reversible version of [AndroidAiPackProject]
+ * Reversible version of [AssetPackProject]
  */
-internal class ReversibleAndroidAiPackProject(
-    parentProject: AndroidAiPackProject,
+internal class ReversibleAssetPackProject(
+    parentProject: AssetPackProject,
     projectModification: TemporaryProjectModification
-) : BaseReversibleGradleProject<AndroidAiPackProject, AiPackDefinition>(
+) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
     parentProject,
-), AndroidAiPackProject {
+), AssetPackProject {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
 }

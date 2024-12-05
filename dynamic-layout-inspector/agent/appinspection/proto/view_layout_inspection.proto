@@ -313,6 +313,12 @@ message EnableBitmapScreenshotCommand {
 message EnableBitmapScreenshotResponse {
 }
 
+message EnableXrInspectionCommand {
+    bool enable = 1;
+}
+message EnableXrInspectionResponse {
+}
+
 // An event sent for metrics logging purposes when the inspector passes certain
 // checkpoints during initial connect.
 // These should be a subset of the events in studio_stats.proto, and in the
@@ -349,6 +355,7 @@ message LayoutEvent {
     // the main window, but can be positive for floating windows (e.g. dialogs).
     Point root_offset = 5;
     optional Screenshot screenshot = 6;
+    bool is_xr = 7;
 }
 
 // An event fired whenever a new root is added or an old root is removed.
@@ -383,6 +390,7 @@ message Command {
         UpdateScreenshotTypeCommand update_screenshot_type_command = 4;
         CaptureSnapshotCommand capture_snapshot_command = 5;
         EnableBitmapScreenshotCommand enable_bitmap_screenshot_command = 6;
+        EnableXrInspectionCommand enable_xr_inspection_command = 7;
     }
 }
 
@@ -394,6 +402,7 @@ message Response {
         UpdateScreenshotTypeResponse update_screenshot_type_response = 4;
         CaptureSnapshotResponse capture_snapshot_response = 5;
         EnableBitmapScreenshotResponse enable_bitmap_screenshot_response = 6;
+        EnableXrInspectionResponse enable_xr_inspection_response = 7;
     }
 }
 

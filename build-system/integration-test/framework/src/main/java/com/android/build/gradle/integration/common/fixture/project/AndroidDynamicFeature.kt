@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.DynamicFeatureExtension
+import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
@@ -63,26 +64,15 @@ internal class AndroidFeatureImpl(
     namespace: String,
     private val buildWriter: () -> BuildWriter,
     parentBuild: GradleBuildDefinitionImpl,
+    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<DynamicFeatureExtension>>(
     location,
     projectDefinition,
     namespace,
     buildWriter,
-    parentBuild
+    parentBuild,
+    modelBuilder,
 ), AndroidDynamicFeatureProject {
-
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
-    ) {
-        action(projectDefinition)
-
-        // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
-
-        projectDefinition as AndroidProjectDefinitionImpl<DynamicFeatureExtension>
-        projectDefinition.writeSubProject(location, buildFileOnly, allPlugins, buildWriter)
-    }
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidDynamicFeatureProject =
         ReversibleAndroidDynamicFeatureProject(this, projectModification)

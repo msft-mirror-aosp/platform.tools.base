@@ -110,7 +110,13 @@ private fun testContext(
 ) =
   LocalEmulatorContext(
     FakeAdbLoggerFactory().createClassLogger(LocalEmulatorProvisionerPlugin::class.java),
-    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT),
+    DeviceIcons(
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
+    ),
     defaultPresentation = TestDefaultDeviceActionPresentation,
     avdManager = avdManager,
     diskIoDispatcher = Dispatchers.IO,

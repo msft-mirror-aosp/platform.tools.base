@@ -140,7 +140,7 @@ import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
-import com.android.build.gradle.internal.utils.checkKotlinStdLibIsInDependencies
+import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
 import com.android.build.gradle.internal.variant.ApkVariantData
@@ -955,7 +955,7 @@ abstract class TaskManager(
                     )
                 )
         } else {
-            checkKotlinStdLibIsInDependencies(project, creationConfig)
+            maybeAddKotlinStdlibDependency(project, creationConfig)
             val kotlinCompileTaskProvider =
                 KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
             if (creationConfig.useBuiltInKaptSupport) {

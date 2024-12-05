@@ -49,6 +49,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.MIN_SDK_TOO_LOW
 import com.android.tools.lint.checks.GradleDetector.Companion.MULTIPLE_VERSIONS_DEPENDENCY
 import com.android.tools.lint.checks.GradleDetector.Companion.NOT_INTERPOLATED
 import com.android.tools.lint.checks.GradleDetector.Companion.PATH
+import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_DEPRECATED
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_GENERIC_ISSUES
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_NON_COMPLIANT
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_VULNERABILITY
@@ -4952,6 +4953,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -12 +12
         -     compile 'com.example.ads.third.party:example:7.2.1' // OK
         +     compile 'com.example.ads.third.party:example:8.0.0' // OK
+        Show URL for build.gradle line 29: View details in Google Play SDK Index:
+        http://sdk.google.com/
         Fix for build.gradle line 7: Change to 1.2.18:
         @@ -7 +7
         -     compile 'log4j:log4j:1.2.13' // Critical BLOCKING
@@ -5261,6 +5264,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
                     compile 'com.example.issues:issues-on-latest:1.8.0' // Outdated blocking
                     compile 'com.example.issues:latest-is-preview:1.0.0' // Outdated non-blocking
+                    compile 'com.example.issues:deprecated:2.0.0' // Deprecated
 
                     compile 'log4j:log4j:latest.release' // OK
                     compile 'log4j:log4j' // OK
@@ -5279,6 +5283,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         PLAY_SDK_INDEX_NON_COMPLIANT,
         PLAY_SDK_INDEX_GENERIC_ISSUES,
         PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
       )
       .sdkHome(mockSupportLibraryInstallation)
       .run()
@@ -5299,6 +5304,13 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:12: Warning: A newer version of com.example.ads.third.party:example than 7.2.1 is available: 8.0.0 [GradleDependency]
               compile 'com.example.ads.third.party:example:7.2.1' // OK
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          build.gradle:29: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+          The developer has recommended these alternatives:
+           - Alternative 1 (first:alternative)
+           - second:alternative
+           [PlaySdkIndexDeprecated]
+              compile 'com.example.issues:deprecated:2.0.0' // Deprecated
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:7: Error: [Prevents app release in Google Play Console] log4j:log4j version 1.2.13 has been reported as problematic by its author and will block publishing of your app to Play Console [RiskyLibrary]
               compile 'log4j:log4j:1.2.13' // Critical BLOCKING
                       ~~~~~~~~~~~~~~~~~~~~
@@ -5430,7 +5442,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
               compile 'com.example.issues:latest-is-preview:1.0.0' // Outdated non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          9 errors, 37 warnings
+          9 errors, 38 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -5464,6 +5476,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 exVulMultiNon = "7.1.12"        # Vulnerability multiple (non-blocking)
                 exOutdated = "1.8.0"            # Outdated NON_BLOCKING
                 exOutPreview = "1.0.0"          # Outdated NON_BLOCKING
+                exDeprecated = "2.0.0"          # Deprecated
 
                 [libraries]
                 critical_log4j = { module = "log4j:log4j", version.ref = "log4Critical"}
@@ -5487,6 +5500,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 vulMultiNon = { module = "com.example.ads.third.party:example", version.ref = "exVulMultiNon"}
                 outdated_latest = {module = "com.example.issues:issues-on-latest", version.ref = "exOutdated"}
                 outdated_preview = {module = "com.example.issues:latest-is-preview", version.ref = "exOutPreview"}
+                deprecated = {module = "com.example.issues:deprecated", version.ref = "exDeprecated"}
                 """
         )
       )
@@ -5497,6 +5511,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         PLAY_SDK_INDEX_NON_COMPLIANT,
         PLAY_SDK_INDEX_GENERIC_ISSUES,
         PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
       )
       .sdkHome(mockSupportLibraryInstallation)
       .run()
@@ -5511,6 +5526,13 @@ class GradleDetectorTest : AbstractCheckTest() {
           ../gradle/libs.versions.toml:8: Warning: A newer version of log4j:log4j than 1.2.17 is available: 1.2.18 [GradleDependency]
                           log4Ok = "1.2.17"               # OK
                                    ~~~~~~~~
+          ../gradle/libs.versions.toml:25: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+          The developer has recommended these alternatives:
+           - Alternative 1 (first:alternative)
+           - second:alternative
+           [PlaySdkIndexDeprecated]
+                          exDeprecated = "2.0.0"          # Deprecated
+                                         ~~~~~~~
           ../gradle/libs.versions.toml:4: Error: [Prevents app release in Google Play Console] log4j:log4j version 1.2.13 has been reported as problematic by its author and will block publishing of your app to Play Console [RiskyLibrary]
                           log4CriticalBlock = "1.2.13"    # Critical BLOCKING
                                               ~~~~~~~~
@@ -5636,7 +5658,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
                           exOutPreview = "1.0.0"          # Outdated NON_BLOCKING
                                          ~~~~~~~
-          9 errors, 33 warnings
+          9 errors, 34 warnings
         """
       )
   }
@@ -5656,6 +5678,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -4 +4
         -     compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
         +     compile 'log4j:log4j:1.2.18' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
+        Show URL for build.gradle line 7: View details in Google Play SDK Index:
+        http://sdk.google.com/
         Fix for build.gradle line 2: Change to 8.0.0:
         @@ -2 +2
         -     compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
@@ -5699,6 +5723,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
                     compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
                     compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
+                    compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
                 }
                 """
           )
@@ -5753,6 +5778,16 @@ class GradleDetectorTest : AbstractCheckTest() {
           "{\"id\":\"com.example.issues:latest-is-preview:1.1.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
           "{\"id\":\"com.example.issues:latest-is-preview:1.0.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
       )
+      .networkData(
+        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22deprecated%22&core=gav&wt=json",
+        "" +
+          "{\"responseHeader\":" +
+          "{\"status\":0,\"QTime\":0,\"params\":" +
+          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"deprecated\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
+          "\"response\":" +
+          "{\"numFound\":3,\"start\":0,\"docs\":[" +
+          "{\"id\":\"com.example.issues:deprecated:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"deprecated\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
+      )
       .issues(
         REMOTE_VERSION,
         RISKY_LIBRARY,
@@ -5761,6 +5796,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         PLAY_SDK_INDEX_NON_COMPLIANT,
         PLAY_SDK_INDEX_GENERIC_ISSUES,
         PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
       )
       .sdkHome(mockSupportLibraryInstallation)
       .run()
@@ -5772,6 +5808,13 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:4: Warning: A newer version of log4j:log4j than 1.2.10 is available: 1.2.18 [NewerVersionAvailable]
               compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
                       ~~~~~~~~~~~~~~~~~~~~
+          build.gradle:7: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+          The developer has recommended these alternatives:
+           - Alternative 1 (first:alternative)
+           - second:alternative
+           [PlaySdkIndexDeprecated]
+              compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5791,7 +5834,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
               compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 7 warnings
+          0 errors, 8 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -5808,6 +5851,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -2 +2
         -     compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
         +     compile 'log4j:log4j:1.2.18' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
+        Show URL for build.gradle line 6: View details in Google Play SDK Index:
+        http://sdk.google.com/
         Fix for build.gradle line 3: Change to 8.0.0:
         @@ -3 +3
         -     compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
@@ -5836,6 +5881,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
                     compile 'com.example.issues:issues-on-latest:1.8.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
                     compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
+                    compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a version
                 }
                 """
           )
@@ -5890,6 +5936,16 @@ class GradleDetectorTest : AbstractCheckTest() {
           "{\"id\":\"com.example.issues:latest-is-preview:1.1.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
           "{\"id\":\"com.example.issues:latest-is-preview:1.0.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
       )
+      .networkData(
+        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22deprecated%22&core=gav&wt=json",
+        "" +
+          "{\"responseHeader\":" +
+          "{\"status\":0,\"QTime\":0,\"params\":" +
+          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"deprecated\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
+          "\"response\":" +
+          "{\"numFound\":3,\"start\":0,\"docs\":[" +
+          "{\"id\":\"com.example.issues:deprecated:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"deprecated\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
+      )
       .issues(
         REMOTE_VERSION,
         RISKY_LIBRARY,
@@ -5898,6 +5954,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         PLAY_SDK_INDEX_NON_COMPLIANT,
         PLAY_SDK_INDEX_GENERIC_ISSUES,
         PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
       )
       .sdkHome(mockSupportLibraryInstallation)
       .run()
@@ -5906,6 +5963,13 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:2: Warning: A newer version of log4j:log4j than 1.2.11 is available: 1.2.18 [GradleDependency]
               compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
                       ~~~~~~~~~~~~~~~~~~~~
+          build.gradle:6: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+          The developer has recommended these alternatives:
+           - Alternative 1 (first:alternative)
+           - second:alternative
+           [PlaySdkIndexDeprecated]
+              compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a version
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:3: Warning: com.example.ads.third.party:example version 7.1.0 has Ads policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5919,7 +5983,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
               compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 4 warnings
+          0 errors, 5 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -5966,6 +6030,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         PLAY_SDK_INDEX_NON_COMPLIANT,
         PLAY_SDK_INDEX_GENERIC_ISSUES,
         PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
       )
       .sdkHome(mockSupportLibraryInstallation)
       .run()
@@ -9198,6 +9263,46 @@ class GradleDetectorTest : AbstractCheckTest() {
                               )
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
+                      )
+                  )
+              )
+              // Library is deprecated
+              .addLibraries(
+                Library.newBuilder()
+                  .setLibraryId(
+                    LibraryIdentifier.newBuilder()
+                      .setMavenId(
+                        MavenIdentifier.newBuilder()
+                          .setGroupId("com.example.issues")
+                          .setArtifactId("deprecated")
+                          .build()
+                      )
+                  )
+                  // Latest, has no other issues
+                  .addVersions(
+                    LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
+                  )
+                  .setLibraryDeprecation(
+                    LibraryDeprecation.newBuilder()
+                      .setDeprecationTimestampSeconds(
+                        1732060800 // 2024-11-20 00:00:00 GMT
+                      )
+                      .addAlternativeLibraries(
+                        AlternativeLibrary.newBuilder()
+                          .setSdkName("Alternative 1")
+                          .setMavenSdkId(
+                            MavenIdentifier.newBuilder()
+                              .setGroupId("first")
+                              .setArtifactId("alternative")
+                          )
+                      )
+                      .addAlternativeLibraries(
+                        AlternativeLibrary.newBuilder()
+                          .setMavenSdkId(
+                            MavenIdentifier.newBuilder()
+                              .setGroupId("second")
+                              .setArtifactId("alternative")
+                          )
                       )
                   )
               )

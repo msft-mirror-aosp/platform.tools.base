@@ -173,6 +173,7 @@ class MinimalSubProject private constructor(
             )
         }
 
+        @Deprecated("Use GradleRule instead")
         fun assetPack(): MinimalSubProject {
             return MinimalSubProject(
                 path = null,

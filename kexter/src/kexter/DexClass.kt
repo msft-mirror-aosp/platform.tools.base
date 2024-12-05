@@ -32,5 +32,5 @@ interface DexClass {
    * not use JVM format but ART "shorty notation" described here:
    * https://source.android.com/docs/core/runtime/dex-format#used-by-proto_id_item e.g.: equals(ZL)
    */
-  val methods: Map<String, DexMethod>
+  val methods: Map<String, DexEncodedMethod>
 }

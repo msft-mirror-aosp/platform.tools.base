@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
@@ -32,60 +31,59 @@ import kotlin.test.fail
 
 class TextureTargetedAssetPackTest {
 
-    private val textureTargetedAssetPackTestApp = MultiModuleTestProject.builder().apply {
-        val app = MinimalSubProject.app("com.example.texturetargetedassetpacktestapp")
-            .appendToBuild(
-                """android.assetPacks = [':level1']"""
-            )
-            .appendToBuild(
-                """android.bundle.texture.enableSplit = true;
-                   |android.bundle.texture.defaultFormat = "etc2";""".trimMargin()
-            )
-
-        val level1 = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "level1"
-                          |  dynamicDelivery {
-                          |    deliveryType = "install-time"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile(
-                "src/main/assets/commonFile.txt",
-                """This is an asset file for level 1."""
-            )
-            .withFile(
-                "src/main/assets/textures#tcf_astc/astc.txt",
-                """ASTC texture"""
-            )
-            .withFile(
-                "src/main/assets/textures#tcf_etc2/etc2.txt",
-                """ETC2 texture"""
-            )
-
-        subproject(":app", app)
-        subproject(":level1", level1)
-    }
-        .build()
-
     @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(textureTargetedAssetPackTestApp)
-        .create()
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            android {
+                assetPacks += listOf(":level1")
+                bundle {
+                    texture {
+                        enableSplit = true
+                        defaultFormat = "etc2"
+                    }
+                }
+                HelloWorldAndroid.setupJava(files)
+            }
+        }
+        assetPack(":level1") {
+            assetPack {
+                packName.set("level1")
+                dynamicDelivery {
+                    deliveryType.set("install-time")
+                }
+            }
+            files {
+                add(
+                    "src/main/assets/commonFile.txt",
+                    """This is an asset file for level 1."""
+                )
+                add(
+                    "src/main/assets/textures#tcf_astc/astc.txt",
+                    """ASTC texture"""
+                )
+                add(
+                    "src/main/assets/textures#tcf_etc2/etc2.txt",
+                    """ETC2 texture"""
+                )
+            }
+        }
+    }
 
     @Test
     fun buildDebugApksForRecentAstcDevice() {
-        val apkFromBundleTaskName = project.getApkFromBundleTaskName("debug", ":app")
+        val build = rule.build
+        val app = build.androidApplication(":app")
+
+        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(27, true)
 
-        project
-            .executor()
+        build
+            .executor
             .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
             .run("app:$apkFromBundleTaskName")
 
         // Fetch the build output model.
-        val apkFolder = project.locateApkFolderViaModel("debug", ":app")
+        val apkFolder = app.locateApkFolderViaModel("debug")
         assertThat(apkFolder).isDirectory()
 
         // Verify the installed apks.
@@ -113,16 +111,19 @@ class TextureTargetedAssetPackTest {
 
     @Test
     fun buildDebugApksForRecentEtc2Device() {
-        val apkFromBundleTaskName = project.getApkFromBundleTaskName("debug", ":app")
+        val build = rule.build
+        val app = build.androidApplication(":app")
+
+        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(27, false)
 
-        project
-            .executor()
+        build
+            .executor
             .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
             .run("app:$apkFromBundleTaskName")
 
         // Fetch the build output model.
-        val apkFolder = project.locateApkFolderViaModel("debug", ":app")
+        val apkFolder = app.locateApkFolderViaModel("debug")
         assertThat(apkFolder).isDirectory()
 
         // Verify the installed apks.
@@ -150,16 +151,19 @@ class TextureTargetedAssetPackTest {
 
     @Test
     fun buildStandaloneDebugApksForPreLDevice() {
-        val apkFromBundleTaskName = project.getApkFromBundleTaskName("debug", ":app")
+        val build = rule.build
+        val app = build.androidApplication(":app")
+
+        val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(18, false)
 
-        project
-            .executor()
+        build
+            .executor
             .with(StringOption.IDE_APK_SELECT_CONFIG, jsonFile.toString())
             .run("app:$apkFromBundleTaskName")
 
         // Fetch the build output model.
-        val apkFolder = project.locateApkFolderViaModel("debug", ":app")
+        val apkFolder = app.locateApkFolderViaModel("debug")
         assertThat(apkFolder).isDirectory()
 
         // Verify the installed standalone apk.

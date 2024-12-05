@@ -16,114 +16,97 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.testutils.apk.Zip
-import com.google.common.truth.Truth.assertThat
-import com.android.testutils.truth.PathSubject
+import com.android.build.gradle.integration.common.fixture.project.BundleSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import org.junit.Rule
 import org.junit.Test
 
 class AssetPackTest {
 
-    private val assetPackTestApp = MultiModuleTestProject.builder().apply {
-        val app = MinimalSubProject.app("com.example.assetpacktestapp")
-            .appendToBuild(
-                """android.assetPacks = [
-                    |':assetPackOne',
-                    |':assetPackTwo',
-                    |':assetPackA',
-                    |':assetPackAA',
-                    |':assetPackA:assetPackAB']""".trimMargin()
-            )
-
-        val assetPackOne = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "assetPackOne"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |    instantDeliveryType = "on-demand"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile("src/main/assets/assetFileOne.txt",
-                """This is an asset file from asset pack one.""")
-
-        val assetPackTwo = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "assetPackTwo"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile("src/main/assets/assetFileTwo.txt",
-                """This is an asset file from asset pack two.""")
-
-        val assetPackA = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "assetPackA"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile("src/main/assets/assetFileA.txt",
-                """This is an asset file from asset pack A.""")
-
-        val assetPackAA = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "assetPackAA"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile("src/main/assets/assetFileAA.txt",
-                """This is an asset file from asset pack AA.""")
-
-        val assetPackAB = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """assetPack {
-                          |  packName = "assetPackAB"
-                          |  dynamicDelivery {
-                          |    deliveryType = "fast-follow"
-                          |  }
-                          |}""".trimMargin()
-            )
-            .withFile("src/main/assets/assetFileAB.txt",
-                """This is an asset file from asset pack AB.""")
-
-        subproject(":app", app)
-        subproject(":assetPackOne", assetPackOne)
-        subproject(":assetPackTwo", assetPackTwo)
-        subproject(":assetPackA", assetPackA)
-        subproject(":assetPackAA", assetPackAA)
-        subproject(":assetPackA:assetPackAB", assetPackAB)
-    }
-        .build()
-
     @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(assetPackTestApp)
-        .create()
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            android {
+                assetPacks += listOf(
+                    ":assetPackOne",
+                    ":assetPackTwo",
+                    ":assetPackA",
+                    ":assetPackAA",
+                    ":assetPackA:assetPackAB"
+                )
+            }
+            HelloWorldAndroid.setupJava(files)
+        }
+        assetPack(":assetPackOne") {
+            assetPack {
+                packName.set("assetPackOne")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                    instantDeliveryType.set("on-demand")
+                }
+            }
+            files.add(
+                "src/main/assets/assetFileOne.txt",
+                """This is an asset file from asset pack one."""
+            )
+        }
+        assetPack(":assetPackTwo") {
+            assetPack {
+                packName.set("assetPackTwo")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files.add(
+                "src/main/assets/assetFileTwo.txt",
+                """This is an asset file from asset pack two."""
+            )
+        }
+        assetPack(":assetPackA") {
+            assetPack {
+                packName.set("assetPackA")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files.add(
+                "src/main/assets/assetFileA.txt",
+                """This is an asset file from asset pack A."""
+            )
+        }
+        assetPack(":assetPackAA") {
+            assetPack {
+                packName.set("assetPackAA")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files.add(
+                "src/main/assets/assetFileAA.txt",
+                """This is an asset file from asset pack AA."""
+            )
+        }
+        assetPack(":assetPackA:assetPackAB") {
+            assetPack {
+                packName.set("assetPackAB")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files.add(
+                "src/main/assets/assetFileAB.txt",
+                """This is an asset file from asset pack AB."""
+            )
+        }
+    }
 
     @Test
     fun buildDebugBundle() {
-        project.executor().run(":app:bundleDebug")
-
-        val bundleFile =  project.locateBundleFileViaModel("debug", ":app")
-        PathSubject.assertThat(bundleFile).exists()
-
-        Zip(bundleFile).use { bundle ->
-            val bundleContents = bundle.entries
-
-            assertThat(bundleContents.map {it.toString()}).containsAtLeast(
+        val build = rule.build
+        build.executor.run(":app:bundleDebug")
+        build.androidApplication(":app").assertBundle(BundleSelector.DEBUG) {
+            contains(
                 "/assetPackOne/assets/assetFileOne.txt",
                 "/assetPackOne/manifest/AndroidManifest.xml",
                 "/assetPackOne/assets.pb",

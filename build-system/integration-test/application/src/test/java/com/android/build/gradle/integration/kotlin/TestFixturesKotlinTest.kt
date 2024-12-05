@@ -414,17 +414,6 @@ class TestFixturesKotlinTest(private val kotlinVersion: String) {
     }
 
     @Test
-    fun `test kotlin stdlib missing`() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "testFixturesImplementation \"org.jetbrains.kotlin:kotlin-stdlib:\${libs.versions.kotlinVersion.get()}\"",
-            ""
-        )
-        val result = executor().expectFailure().run(":app:testDebugUnitTest")
-        result.assertErrorContains("Kotlin standard library is missing")
-    }
-
-    @Test
     fun `test kotlin version too low`() {
         Assume.assumeTrue(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
         TestFileUtils.searchAndReplace(

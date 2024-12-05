@@ -8440,6 +8440,7 @@ maven_import(
     pom = "repository/org/commonmark/commonmark/0.24.0/commonmark-0.24.0.pom",
     repo_root_path = "repository",
     repo_path = "org/commonmark/commonmark/0.24.0",
+    srcjar = "repository/org/commonmark/commonmark/0.24.0/commonmark-0.24.0-sources.jar",
     visibility = ["//visibility:public"],
 )
 
@@ -43850,26 +43851,26 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-resources_14.0.9",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/14.0.9/layoutlib-resources-14.0.9.pom",
+    name = "com.android.tools.layoutlib.layoutlib-resources_15.0.7",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/15.0.7/layoutlib-resources-15.0.7.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-resources/14.0.9",
+    repo_path = "com/android/tools/layoutlib/layoutlib-resources/15.0.7",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-runtime_14.0.9",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/14.0.9/layoutlib-runtime-14.0.9.pom",
+    name = "com.android.tools.layoutlib.layoutlib-runtime_15.0.7",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/15.0.7/layoutlib-runtime-15.0.7.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/14.0.9",
+    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/15.0.7",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib_14.0.9",
-    pom = "repository/com/android/tools/layoutlib/layoutlib/14.0.9/layoutlib-14.0.9.pom",
+    name = "com.android.tools.layoutlib.layoutlib_15.0.7",
+    pom = "repository/com/android/tools/layoutlib/layoutlib/15.0.7/layoutlib-15.0.7.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib/14.0.9",
+    repo_path = "com/android/tools/layoutlib/layoutlib/15.0.7",
     visibility = ["//visibility:public"],
 )
 
@@ -53507,6 +53508,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.play.core_1.10.3",
+    pom = "repository/com/google/android/play/core/1.10.3/core-1.10.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/play/core/1.10.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.support.wearable_2.9.0",
     pom = "repository/com/google/android/support/wearable/2.9.0/wearable-2.9.0.pom",
     repo_root_path = "repository",
@@ -56068,6 +56077,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-bom_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-bom/3.24.4/protobuf-bom-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-bom/3.24.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-java-util_3.10.0",
     pom = "repository/com/google/protobuf/protobuf-java-util/3.10.0/protobuf-java-util-3.10.0.pom",
     repo_root_path = "repository",
@@ -56127,6 +56144,23 @@ maven_artifact(
         "com.google.j2objc.j2objc-annotations_1.3",
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.code.gson.gson_2.8.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protobuf-java-util_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-java-util/3.24.4/protobuf-java-util-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java-util/3.24.4",
+    parent = "com.google.protobuf.protobuf-parent_3.24.4",
+    deps = [
+        "com.google.protobuf.protobuf-java_3.24.4",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.code.gson.gson_2.8.9",
+        "com.google.errorprone.error_prone_annotations_2.18.0",
+        "com.google.guava.guava_32.0.1-jre",
+        "com.google.j2objc.j2objc-annotations_2.8",
     ],
     visibility = ["//visibility:public"],
 )
@@ -56218,6 +56252,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-java_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-java/3.24.4/protobuf-java-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java/3.24.4",
+    parent = "com.google.protobuf.protobuf-parent_3.24.4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-java_3.4.0",
     pom = "repository/com/google/protobuf/protobuf-java/3.4.0/protobuf-java-3.4.0.pom",
     repo_root_path = "repository",
@@ -56265,11 +56308,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-parent_3.24.4",
+    pom = "repository/com/google/protobuf/protobuf-parent/3.24.4/protobuf-parent-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-parent/3.24.4",
+    deps = [
+        "com.google.protobuf.protobuf-bom_3.24.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protoc_3.19.6",
     pom = "repository/com/google/protobuf/protoc/3.19.6/protoc-3.19.6.pom",
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protoc/3.19.6",
     parent = "com.google.google_1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protoc_3.24.4",
+    pom = "repository/com/google/protobuf/protoc/3.24.4/protoc-3.24.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protoc/3.24.4",
+    parent = "com.google.google_5",
     visibility = ["//visibility:public"],
 )
 
@@ -74100,13 +74163,6 @@ maven_artifact(
     pom = "repository/org/codehaus/codehaus-parent/4/codehaus-parent-4.pom",
     repo_root_path = "repository",
     repo_path = "org/codehaus/codehaus-parent/4",
-)
-
-maven_artifact(
-    name = "org.commonmark.commonmark-parent_0.22.0",
-    pom = "repository/org/commonmark/commonmark-parent/0.22.0/commonmark-parent-0.22.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/commonmark/commonmark-parent/0.22.0",
 )
 
 maven_artifact(

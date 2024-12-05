@@ -1,15 +1,15 @@
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.testutils.truth.PathSubject.assertThat
-
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.createHelloWorldAppGradleProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
 import com.google.common.truth.Truth
-import org.junit.Before
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -20,12 +20,14 @@ class AaptTest {
     @get:Rule  var temporaryFolder = TemporaryFolder()
 
     @get:Rule
-    var project = createHelloWorldAppGradleProject()
-
-    @Before
-    fun setUp() {
-        FileUtils.createFile(project.file("src/main/assets/ignored"), "ignored")
-        FileUtils.createFile(project.file("src/main/assets/kept"), "kept")
+    val rule = GradleRule.from {
+        androidApplication(":app") {
+            files {
+                HelloWorldAndroid.setupJava(this)
+                add("src/main/assets/ignored", "ignored")
+                add("src/main/assets/kept", "kept")
+            }
+        }
     }
 
     @Test
@@ -34,110 +36,131 @@ class AaptTest {
 
         val traceFolderPath = tracesFolder.absolutePath
         val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
-        val additionalParams = "additionalParameters \"--trace-folder\", \"$windowsFriendlyFilePath\""
 
-        TestFileUtils.appendToFile(
-        project.buildFile,
-            """
-            android {
-                aaptOptions {
-                    $additionalParams
+        val build = rule.build {
+            androidApplication(":app") {
+                android {
+                    androidResources {
+                        additionalParameters += listOf("--trace-folder", windowsFriendlyFilePath)
+                    }
                 }
             }
-            """.trimIndent()
-        )
+        }
 
-        project.executor().run("clean", "assembleDebug")
+        build.executor.run("clean", "assembleDebug")
 
         // Check that ids file is generated
         assertThat(tracesFolder).exists()
         Truth.assertThat(tracesFolder.listFiles()!!.size).isEqualTo(1)
         FileUtils.deleteDirectoryContents(tracesFolder)
 
-        searchAndReplace(project.buildFile, additionalParams, "")
+        build.androidApplication(":app").reconfigure(buildFileOnly = true) {
+            android.androidResources.additionalParameters.clear()
+        }
 
-        project.executor().run("assembleDebug")
+        build.executor.run("assembleDebug")
 
         // Check that ids file is not generated
         Truth.assertThat(tracesFolder.listFiles()).isEmpty()
+    }
 
-        // Test the same additional parameters specified via onVariants
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                androidComponents {
-                    onVariants(selector().all(), {
-                        androidResources.aaptAdditionalParameters.addAll(
-                            ["--trace-folder", "$windowsFriendlyFilePath"]
-                        )
-                    })
-                }
-                """.trimIndent()
-        )
+    class TraceFolderCallback: ApplicationComponentCallback {
+        override fun handleComponents(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            // we cannot pass values to the callback, so we're going to read it via a property
+            val path = project.providers.gradleProperty("_aaptTest_").orNull ?: throw RuntimeException("cannot find _aaptTest_")
 
-        project.executor().run("assembleDebug")
+            androidComponents.onVariants { variant ->
+                variant.androidResources.aaptAdditionalParameters.addAll(listOf("--trace-folder", path))
+            }
+        }
+    }
+
+    @Test
+    fun testAaptOptionsFlagsWithAapt2FromVariantApi() {
+        val tracesFolder = temporaryFolder.newFolder()
+        val traceFolderPath = tracesFolder.absolutePath
+        val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
+
+        val build = rule.configure().withProperties {
+            add("_aaptTest_", windowsFriendlyFilePath)
+        }.build {
+            androidApplication(":app") {
+                componentCallback = TraceFolderCallback::class.java
+            }
+        }
+
+        build.executor.run("assembleDebug")
         assertThat(tracesFolder).exists()
         Truth.assertThat(tracesFolder.listFiles()!!.size).isEqualTo(1)
     }
 
     @Test
     fun emptyNoCompressList() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            android {
-                aaptOptions {
-                    noCompress ""
+        val build = rule.build {
+            androidApplication(":app") {
+                android {
+                    androidResources {
+                        noCompress("")
+                    }
                 }
             }
-            """.trimIndent()
-        )
+        }
 
-        project.executor().run("clean", "assembleDebug")
+        build.executor.run("clean", "assembleDebug")
 
         // Check that APK entries are uncompressed
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+        build.androidApplication(":app").withApk(ApkSelector.DEBUG) {
             // TODO (Issue 70118728) res/layout/main.xml should be uncompressed too.
-            val entry = ZipArchive.listEntries(apk.file)["classes.dex"]
+            val entry = ZipArchive.listEntries(file)["classes.dex"]
             Truth.assertThat(entry?.compressionFlag).isEqualTo(ZipEntry.STORED)
         }
     }
 
     @Test
     fun testIgnoreAssetsPatterns_dsl() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "android.aaptOptions.ignoreAssetsPattern 'ignored'"
-        )
-
-        project.executor().run("clean", "assembleDebug")
-
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            val entryMap = ZipArchive.listEntries(apk.file)
-            Truth.assertThat(entryMap).containsKey("assets/kept")
-            Truth.assertThat(entryMap).doesNotContainKey("assets/ignored")
+        val build = rule.build {
+            androidApplication(":app") {
+                android.androidResources.ignoreAssetsPattern = "ignored"
+            }
         }
+
+        build.executor.run("clean", "assembleDebug")
+
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            containsFile("assets/kept")
+            doesNotContain("assets/ignored")
+        }
+    }
+
+    class IgnorePatternCallback: ApplicationComponentCallback {
+
+        override fun handleComponents(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.onVariants { variant ->
+                variant.androidResources.ignoreAssetsPatterns.add("ignored")
+            }
+        }
+
     }
 
     @Test
     fun testIgnoreAssetsPatterns_variantApi() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                androidComponents {
-                    onVariants(selector().all(), {
-                        androidResources.ignoreAssetsPatterns.add("ignored")
-                    })
-                }
-                """.trimIndent()
-        )
+        val build = rule.build {
+            androidApplication(":app") {
+                componentCallback = IgnorePatternCallback::class.java
+            }
+        }
 
-        project.executor().run("clean", "assembleDebug")
+        build.executor.run("clean", "assembleDebug")
 
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            val entryMap = ZipArchive.listEntries(apk.file)
-            Truth.assertThat(entryMap).containsKey("assets/kept")
-            Truth.assertThat(entryMap).doesNotContainKey("assets/ignored")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            contains("assets/kept")
+            doesNotContain("assets/ignored")
         }
     }
 
@@ -146,13 +169,13 @@ class AaptTest {
         testTasksRunAfterAaptOptionsChanges(
             assembleTask = "bundleDebug",
             expectedTasksThatDidWorkOnANoCompressChange = listOf(
-                ":bundleDebugResources",
-                ":mergeDebugJavaResource",
-                ":packageDebugBundle",
-                ":processDebugResources"
+                ":app:bundleDebugResources",
+                ":app:mergeDebugJavaResource",
+                ":app:packageDebugBundle",
+                ":app:processDebugResources"
             ),
             expectedTasksThatDidWorkOnANoIgnoreAssetsChange = listOf(
-                ":mergeDebugAssets"
+                ":app:mergeDebugAssets"
             )
         )
     }
@@ -162,14 +185,32 @@ class AaptTest {
         testTasksRunAfterAaptOptionsChanges(
             assembleTask = "assembleDebug",
             expectedTasksThatDidWorkOnANoCompressChange = listOf(
-                ":mergeDebugJavaResource",
-                ":packageDebug",
-                ":processDebugResources"
+                ":app:mergeDebugJavaResource",
+                ":app:packageDebug",
+                ":app:processDebugResources"
             ),
             expectedTasksThatDidWorkOnANoIgnoreAssetsChange = listOf(
-                ":mergeDebugAssets"
+                ":app:mergeDebugAssets"
             )
         )
+    }
+
+    class IgnorePatternCallback2 : ApplicationComponentCallback {
+
+        override fun handleComponents(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            // we want to change the value we pass here, so we're going to read this
+            // from a property again
+            val value = project.providers.systemProperty("newIgnorePattern").orNull
+
+            if (value != null) {
+                androidComponents.onVariants { variant ->
+                    variant.androidResources.ignoreAssetsPatterns.set(listOf(".ignoreAssetsPatternApi2"))
+                }
+            }
+        }
     }
 
     private fun testTasksRunAfterAaptOptionsChanges(
@@ -177,39 +218,49 @@ class AaptTest {
         expectedTasksThatDidWorkOnANoCompressChange: List<String>,
         expectedTasksThatDidWorkOnANoIgnoreAssetsChange: List<String>
     ) {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+        val build = rule.build {
+            androidApplication(":app") {
                 android {
-                    aaptOptions {
-                        noCompress "noCompressDsl"
-                        ignoreAssetsPattern ".ignoreAssetsPatternDsl"
+                    androidResources {
+                        noCompress += "noCompressDsl"
+                        ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
                     }
                 }
-                androidComponents {
-                    onVariants(selector().all(), {
-                        androidResources.ignoreAssetsPatterns.add(".ignoreAssetsPatternApi")
-                    })
-                }
-                """.trimIndent()
-        )
+                componentCallback = IgnorePatternCallback2::class.java
+            }
+        }
 
-        project.executor().run("clean", assembleTask)
+        build.executor.run("clean", assembleTask)
+
+        val app = build.androidApplication(":app")
 
         // test that tasks run when aapt options changed via the DSL
-        searchAndReplace(project.buildFile, "noCompressDsl", "noCompressDsl2")
-        project.executor().run(assembleTask).let { result ->
+        app.reconfigure(buildFileOnly = true) {
+            android.androidResources{
+                noCompress.clear()
+                noCompress += "noCompressDsl2"
+            }
+        }
+        build.executor.run(assembleTask).let { result ->
             Truth.assertThat(result.didWorkTasks)
                 .containsAtLeastElementsIn(expectedTasksThatDidWorkOnANoCompressChange)
         }
-        searchAndReplace(project.buildFile, "ignoreAssetsPatternDsl", "ignoreAssetsPatternDsl2")
-        project.executor().run(assembleTask).let { result ->
+
+        app.reconfigure(buildFileOnly = true) {
+            android.androidResources{
+                ignoreAssetsPattern = ".ignoreAssetsPatternDsl2"
+            }
+        }
+
+        build.executor.run(assembleTask).let { result ->
             Truth.assertThat(result.didWorkTasks)
                 .containsAtLeastElementsIn(expectedTasksThatDidWorkOnANoIgnoreAssetsChange)
         }
+
         // test that tasks run when aapt options changed via the variant API
-        searchAndReplace(project.buildFile, "ignoreAssetsPatternApi", "ignoreAssetsPatternApi2")
-        project.executor().run(assembleTask).let { result ->
+        build.executor
+            .withArgument("-DnewIgnorePattern=true")
+            .run(assembleTask).let { result ->
             Truth.assertThat(result.didWorkTasks)
                 .containsAtLeastElementsIn(expectedTasksThatDidWorkOnANoIgnoreAssetsChange)
         }
