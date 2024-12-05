@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.integration.dependencies.app
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -29,54 +28,49 @@ import org.junit.Test
 class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication(":app") {
             dependencies {
                 implementation(project(":library"))
                 runtimeOnly("com.google.guava:guava:19.0")
             }
         }
-        subProject(":library") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+        androidLibrary(":library") {
+            HelloWorldAndroid.setupJava(files)
             dependencies {
                 api(project(":jar"))
             }
-            addFile(
-                "src/main/java/com/example/android/multiproject/library/PersonView.java", """
-                package com.example.android.multiproject.library;
-
-                public class PersonView {}
-            """.trimIndent()
+            files.add(
+                "src/main/java/com/example/android/multiproject/library/PersonView.java",
+                //language=java
+                """
+                    package com.example.android.multiproject.library;
+                    public class PersonView {}
+                """.trimIndent()
             )
         }
-        subProject(":jar") {
-            plugins.add(PluginType.JAVA_LIBRARY)
+        genericProject(":jar") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
             dependencies {
                 api("com.google.guava:guava:19.0")
             }
-            addFile(
-                "src/main/java/com/example/android/multiproject/person/People.java", """
-                package com.example.android.multiproject.person;
-
-                public class People {}
-            """.trimIndent()
+            files.add(
+                "src/main/java/com/example/android/multiproject/person/People.java",
+                //language=java
+                """
+                    package com.example.android.multiproject.person;
+                    public class People {}
+                """.trimIndent()
             )
         }
     }
 
     @Test
     fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+        val result = rule.build
+            .modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
             projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
@@ -88,11 +82,12 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
     @Test
     fun checkPackagedJar() {
-        project.execute(":app:assembleDebug")
+        val build = rule.build
+        build.executor.run(":app:assembleDebug")
 
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            containsClass("Lcom/example/android/multiproject/person/People;")
+            containsClass("Lcom/example/android/multiproject/library/PersonView;")
+        }
     }
 }

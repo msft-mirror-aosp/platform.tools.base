@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.integration.dependencies.app
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -29,40 +28,42 @@ import org.junit.Test
 class AppTestWithSkippedModuleDepTest : ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication(":app") {
             dependencies {
                 api(project(":jar"))
                 androidTestImplementation(project(":jar"))
             }
         }
-        subProject(":jar") {
-            plugins.add(PluginType.JAVA_LIBRARY)
-            addFile(
-                "src/main/java/com/example/android/multiproject/person/People.java", """
-                package com.example.android.multiproject.person;
+        genericProject(":jar") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            files {
+                add(
+                    "src/main/java/com/example/android/multiproject/person/People.java",
+                    //language=java
+                    """
+                        package com.example.android.multiproject.person;
 
-                public class People {}
-            """.trimIndent()
-            )
-            addFile(
-                "src/main/java/com/example/android/multiproject/person/Person.java", """
-                package com.example.android.multiproject.person;
+                        public class People {}
+                    """.trimIndent()
+                )
+                add(
+                    "src/main/java/com/example/android/multiproject/person/Person.java",
+                    //language=java
+                    """
+                        package com.example.android.multiproject.person;
 
-                public class Person {}
-            """.trimIndent()
-            )
+                        public class Person {}
+                    """.trimIndent()
+                )
+            }
         }
     }
 
     @Test
     fun `test VariantDependencies model`() {
         val result =
-            project.modelV2()
+            rule.build.modelBuilder
                 .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
                 .fetchModels(variantName = "debug")
 
@@ -73,15 +74,19 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
 
     @Test
     fun checkAppBuild() {
-        project.execute(":app:assembleDebug")
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/person/Person;")
+        val build = rule.build
+        build.executor.run(":app:assembleDebug")
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            containsClass("Lcom/example/android/multiproject/person/Person;")
+        }
     }
 
     @Test
     fun checkTestBuild() {
-        project.execute(":app:assembleDebug")
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/person/Person;")
+        val build = rule.build
+        build.executor.run(":app:assembleDebugAndroidTest")
+        build.androidApplication(":app").assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            doesNotContainClass("Lcom/example/android/multiproject/person/Person;")
+        }
     }
 }
