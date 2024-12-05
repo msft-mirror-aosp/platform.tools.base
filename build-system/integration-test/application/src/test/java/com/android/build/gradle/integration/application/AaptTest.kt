@@ -22,8 +22,10 @@ class AaptTest {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication(":app") {
+            android {
+                defaultConfig.versionCode = 1
+            }
             files {
-                HelloWorldAndroid.setupJava(this)
                 add("src/main/assets/ignored", "ignored")
                 add("src/main/assets/kept", "kept")
             }

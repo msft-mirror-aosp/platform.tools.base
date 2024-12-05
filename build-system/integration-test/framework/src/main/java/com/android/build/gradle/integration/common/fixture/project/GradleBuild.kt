@@ -37,12 +37,12 @@ interface GradleBuild {
      * Queries for an application project via its gradle path.
      * The project must exist and be an Android Application project
      */
-    fun androidApplication(path: String): AndroidApplicationProject
+    fun androidApplication(path: String = ":app"): AndroidApplicationProject
     /**
      * Queries for a library project via its gradle path.
      * The project must exist and be an Android Library project
      */
-    fun androidLibrary(path: String): AndroidLibraryProject
+    fun androidLibrary(path: String = ":lib"): AndroidLibraryProject
     /**
      * Queries for a feature project via its gradle path.
      * The project must exist and be an Android Dynamic Feature project
