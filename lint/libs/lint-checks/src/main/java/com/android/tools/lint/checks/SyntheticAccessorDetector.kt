@@ -114,7 +114,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
           }
 
           val aClass = method.containingClass ?: return
-          if (aClass == containingClass.psi) {
+          if (aClass == containingClass.javaPsi) {
             return
           }
 

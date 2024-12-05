@@ -429,9 +429,9 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   private fun isInSameCompilationUnit(element1: UElement, element2: PsiElement): Boolean {
     val containingFile = element1.getContainingUFile()
-    var file = containingFile?.psi
+    var file = containingFile?.javaPsi
     if (file == null) {
-      val psi = element1.psi
+      val psi = element1.javaPsi
       if (psi != null) {
         file = psi.containingFile
       }

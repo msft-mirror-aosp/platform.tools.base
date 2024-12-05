@@ -379,11 +379,11 @@ open class JavaContext(
   }
 
   fun isSuppressedWithComment(scope: UElement, issue: Issue): Boolean {
-    val psi = scope.psi
+    val psi = scope.sourcePsi
     return psi != null && isSuppressedWithComment(psi, issue)
   }
 
-  @Suppress("UnstableApiUsage")
+  @Suppress("DEPRECATION", "UnstableApiUsage")
   @Deprecated(
     "Use UastFacade instead",
     ReplaceWith("org.jetbrains.uast.UastFacade"),

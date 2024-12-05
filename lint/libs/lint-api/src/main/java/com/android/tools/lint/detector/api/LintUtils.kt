@@ -1340,15 +1340,15 @@ fun isModelOlderThan(
 fun getLanguageLevel(element: UElement, defaultLevel: LanguageLevel): LanguageLevel {
   val containingFile = element.getContainingUFile() ?: return defaultLevel
 
-  return getLanguageLevel(containingFile.psi, defaultLevel)
+  return getLanguageLevel(containingFile.javaPsi, defaultLevel)
 }
 
 /**
  * Returns the Java language level for the given element, or the default level if an applicable the
  * language level is not found (for example if the element is not a Java element.
  */
-fun getLanguageLevel(element: PsiElement, defaultLevel: LanguageLevel): LanguageLevel {
-  val containingFile = element as? PsiFile ?: element.containingFile
+fun getLanguageLevel(element: PsiElement?, defaultLevel: LanguageLevel): LanguageLevel {
+  val containingFile = element as? PsiFile ?: element?.containingFile
   return (containingFile as? PsiJavaFile)?.languageLevel ?: defaultLevel
 }
 

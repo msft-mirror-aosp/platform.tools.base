@@ -108,6 +108,7 @@ import org.jetbrains.uast.UThrowExpression
 import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UUnaryExpression
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.UVariableEx
 import org.jetbrains.uast.UYieldExpression
 import org.jetbrains.uast.UastErrorType
 import org.jetbrains.uast.UastFacade
@@ -150,7 +151,7 @@ class UastLintUtils {
     /** Returns the containing file for the given element. */
     @JvmStatic
     fun getPsiFile(file: UFile?): PsiFile? {
-      return file?.let { getContainingFile(it.psi) }
+      return file?.let { getContainingFile(it.javaPsi) }
     }
 
     /** Returns the containing file for the given element. */
@@ -205,8 +206,8 @@ class UastLintUtils {
       var currVariable = variable
       var lastAssignment: UElement? = null
 
-      if (currVariable is UVariable) {
-        currVariable = currVariable.psi
+      if (currVariable is UVariableEx) {
+        currVariable = currVariable.javaPsi
       }
 
       if (
