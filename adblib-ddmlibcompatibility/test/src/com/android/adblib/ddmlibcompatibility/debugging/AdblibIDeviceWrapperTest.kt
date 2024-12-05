@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.readBytes
+import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -546,10 +547,15 @@ class AdblibIDeviceWrapperTest {
     @Test
     fun supportsFeature_doesNotThrow_whenInterrupted() = runBlockingWithTimeout {
         // Prepare
-        val (connectedDevice, deviceState) = createConnectedDevice("device1", DeviceState.DeviceStatus.ONLINE)
+        // Introduce a delay to give the thread below a chance to get interrupted during the
+        // `features` command. This delay needs to be set up as early as possible as `features`
+        // are also queried and cached by `trackDevices`.
+        val (connectedDevice, _) = createConnectedDevice(
+            "device1",
+            DeviceState.DeviceStatus.ONLINE,
+            delayStdout = 2.toDuration(DurationUnit.SECONDS)
+        )
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
-        // Introduce a delay to give a thread a chance to get interrupted
-        deviceState.delayStdout = 2.toDuration(DurationUnit.SECONDS)
 
         // Act
         val supportsShellV2 = AtomicReference<Boolean>()
@@ -1087,12 +1093,14 @@ class AdblibIDeviceWrapperTest {
     private suspend fun createConnectedDevice(
         serialNumber: String,
         deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,
-        sdk: String = "30"
+        sdk: String = "30",
+        delayStdout: Duration = Duration.ZERO
     ): Pair<ConnectedDevice, DeviceState> {
         val fakeDevice = fakeAdb.connectDevice(
             serialNumber, "test1", "test2", "model", sdk, DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = deviceStatus
+        fakeDevice.delayStdout = delayStdout
         val connectedDevice = waitForConnectedDevice(
             hostServices.session, serialNumber, deviceStatus
         )
