@@ -45,7 +45,7 @@ class BasicProjectStructures {
             gradleBuild.apply {
                 androidLibrary(":library1") { }
                 androidLibrary(":library2") { }
-                androidApplication {
+                androidApplication(":app") {
                     dependencies {
                         implementation(project(":library1"))
                         implementation(project(":library2"))

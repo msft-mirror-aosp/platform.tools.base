@@ -30,7 +30,8 @@ class CompositeBuildTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication {
+        androidApplication(":app") {
+            HelloWorldAndroid.setupJava(files)
             android {
                 buildTypes {
                     named("debug") {
@@ -79,7 +80,7 @@ class CompositeBuildTest {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
             exists()
         }
     }
@@ -90,7 +91,7 @@ class CompositeBuildTest {
 
         build.executor.withArgument("--configure-on-demand").run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
             exists()
         }
     }

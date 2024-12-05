@@ -24,18 +24,19 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 class BasicBuilds {
     companion object {
         val HELLO_WORLD_APP: GradleBuildDefinition.() -> Unit = {
-            androidJavaApplication {
+            androidApplication(":app") {
+                HelloWorldAndroid.setupJava(files)
             }
         }
 
         val HELLO_WORLD_LIBRARY: GradleBuildDefinition.() -> Unit = {
-            androidLibrary {
+            androidLibrary(":library") {
                 HelloWorldAndroid.setupJava(files)
             }
         }
 
         val COMPOSE_APP: GradleBuildDefinition.() -> Unit = {
-            androidApplication {
+            androidApplication(":app") {
                 // TODO
             }
         }

@@ -35,7 +35,7 @@ class AiPackTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidJavaApplication {
+        androidApplication(":app") {
             android {
                 namespace = packageName
                 assetPacks += listOf(
@@ -50,6 +50,7 @@ class AiPackTest {
                     }
                 }
             }
+            HelloWorldAndroid.setupJava(files)
         }
 
         aiPack(":customModelInstallTime") {
@@ -107,7 +108,7 @@ class AiPackTest {
 
         build.executor.run(":app:bundleDebug")
 
-        val app = build.androidApplication()
+        val app = build.androidApplication(":app")
         app.assertBundle(BundleSelector.DEBUG) {
             exists()
             contains(

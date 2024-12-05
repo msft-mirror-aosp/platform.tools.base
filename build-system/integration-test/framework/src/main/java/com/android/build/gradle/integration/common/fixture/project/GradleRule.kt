@@ -282,7 +282,7 @@ class GradleRule internal constructor(
                     modelBuilderProvider,
                 )
 
-                else -> throw RuntimeException("Unsupported GradleProjectDefinition type: ${definition::class.java}")
+                else -> throw RuntimeException("Unsupported GradleProjectDefinition type")
             }
         }
 

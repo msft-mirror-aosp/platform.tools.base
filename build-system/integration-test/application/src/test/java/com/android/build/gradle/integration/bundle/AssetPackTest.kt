@@ -26,7 +26,7 @@ class AssetPackTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidJavaApplication {
+        androidApplication(":app") {
             android {
                 assetPacks += listOf(
                     ":assetPackOne",
@@ -36,6 +36,7 @@ class AssetPackTest {
                     ":assetPackA:assetPackAB"
                 )
             }
+            HelloWorldAndroid.setupJava(files)
         }
         assetPack(":assetPackOne") {
             assetPack {
@@ -104,7 +105,7 @@ class AssetPackTest {
     fun buildDebugBundle() {
         val build = rule.build
         build.executor.run(":app:bundleDebug")
-        build.androidApplication().assertBundle(BundleSelector.DEBUG) {
+        build.androidApplication(":app").assertBundle(BundleSelector.DEBUG) {
             contains(
                 "/assetPackOne/assets/assetFileOne.txt",
                 "/assetPackOne/manifest/AndroidManifest.xml",
