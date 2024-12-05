@@ -126,8 +126,8 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun offlineDevices(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd()
-    avdManager.createAvd()
+    avdManager.createAvd(null)
+    avdManager.createAvd(null)
 
     yieldUntil { provisioner.devices.value.size == 2 }
     val devices = provisioner.devices.value
@@ -139,7 +139,7 @@ class LocalEmulatorProvisionerPluginTest {
   @Test
   fun removeOfflineDevice(): Unit = runBlockingWithTimeout {
     val n = 20
-    repeat(n) { avdManager.createAvd() }
+    repeat(n) { avdManager.createAvd(null) }
     val avds = avdManager.rescanAvds()
     yieldUntil { provisioner.devices.value.size == n }
 
@@ -153,7 +153,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun removedOfflineDeviceScopeIsCancelled(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd()
+    avdManager.createAvd(null)
     yieldUntil { provisioner.devices.value.size == 1 }
 
     val handle = provisioner.devices.value[0]
@@ -167,7 +167,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun startAndStopDevice(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd()
+    avdManager.createAvd(null)
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
@@ -194,7 +194,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun coldBootDevice(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd()
+    avdManager.createAvd(null)
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
@@ -297,14 +297,14 @@ class LocalEmulatorProvisionerPluginTest {
     // Editing the device adds "Edited" to its name. Verify that updating display name doesn't
     // affect ID equality.
     val id1 = handle.id
-    handle.editAction?.edit()
+    handle.editAction?.edit(null)
 
     assertThat(id1).isEqualTo(handle.id)
   }
 
   @Test
   fun isActivatable() = runBlockingWithTimeout {
-    avdManager.createAvd()
+    avdManager.createAvd(null)
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
@@ -384,7 +384,7 @@ class LocalEmulatorProvisionerPluginTest {
     val job = launch { handle.stateFlow.collect { channel.send(it) } }
 
     // Editing the device adds "Edited" to its name
-    handle.editAction?.edit()
+    handle.editAction?.edit(null)
 
     channel.receiveUntilPassing { newState ->
       assertThat(newState.properties.title).isEqualTo("$name Edited")
@@ -395,7 +395,7 @@ class LocalEmulatorProvisionerPluginTest {
     channel.receiveUntilPassing { newState ->
       assertThat(newState).isInstanceOf(Connected::class.java)
     }
-    handle.editAction?.edit()
+    handle.editAction?.edit(null)
 
     channel.receiveUntilPassing { newState ->
       assertThat(newState.error).isEqualTo(AvdChangedError)
@@ -433,7 +433,7 @@ class LocalEmulatorProvisionerPluginTest {
       avdInfo.copy(avdInfo.iniFile.resolveSibling("New $originalName"))
     }
 
-    handle.editAction?.edit()
+    handle.editAction?.edit(null)
     channel.receiveUntilPassing { newState ->
       assertThat((newState.properties as LocalEmulatorProperties).avdName)
         .isEqualTo("New $originalName")
@@ -448,7 +448,7 @@ class LocalEmulatorProvisionerPluginTest {
     avdManager.avdEditor = { avdInfo: AvdInfo ->
       avdInfo.copy(userSettings = mapOf(PREFERRED_ABI to "arm64-v8a"))
     }
-    handle.editAction?.edit()
+    handle.editAction?.edit(null)
     channel.receiveUntilPassing { newState ->
       assertThat((newState.properties as LocalEmulatorProperties).preferredAbi)
         .isEqualTo("arm64-v8a")
@@ -461,7 +461,7 @@ class LocalEmulatorProvisionerPluginTest {
   /** Verify that the device updates the expected number of times. */
   @Test
   fun updateCount() = runBlockingWithTimeout {
-    avdManager.createAvd()
+    avdManager.createAvd(null)
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
@@ -479,7 +479,7 @@ class LocalEmulatorProvisionerPluginTest {
   fun extension() {
     checkNotNull(plugin.extension<TestExtension>())
     runBlockingWithTimeout {
-      avdManager.createAvd()
+      avdManager.createAvd(null)
 
       yieldUntil { provisioner.devices.value.size == 1 }
 

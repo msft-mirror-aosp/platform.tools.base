@@ -20,6 +20,7 @@ import com.android.adblib.utils.createChildScope
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
+import java.awt.Component
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,9 +79,10 @@ open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
 
   override suspend fun rescanAvds(): List<AvdInfo> = unsupportedOperation()
 
-  override suspend fun createAvd(): Boolean = unsupportedOperation()
+  override suspend fun createAvd(parent: Component?): Boolean = unsupportedOperation()
 
-  override suspend fun editAvd(avdInfo: AvdInfo): Boolean = unsupportedOperation()
+  override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
+    unsupportedOperation()
 
   override suspend fun startAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
 
@@ -95,7 +97,8 @@ open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
 
   override suspend fun showOnDisk(avdInfo: AvdInfo): Unit = unsupportedOperation()
 
-  override suspend fun duplicateAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
+  override suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo): Unit =
+    unsupportedOperation()
 
   override suspend fun wipeData(avdInfo: AvdInfo): Unit = unsupportedOperation()
 
