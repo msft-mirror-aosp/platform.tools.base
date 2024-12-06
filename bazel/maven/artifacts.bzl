@@ -752,6 +752,7 @@ DATA = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
+    "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2",
     "com.flurry.android:analytics:13.0.0",  # Used by SdkIndexIssuesSyncListenerTest
     "com.github.bumptech.glide:glide:4.11.0",
     "com.google.accompanist:accompanist-appcompat-theme:0.28.0",  # Dependency of architecture-samples
@@ -877,6 +878,7 @@ DATA = [
     "com.google.testing.platform:core:0.0.9-alpha02",
     "com.google.testing.platform:launcher:0.0.8-alpha07",
     "com.google.testing.platform:launcher:0.0.8-alpha08",
+    "com.google.truth:truth:0.42",
     "com.google.truth:truth:0.44",
     "com.google.truth:truth:1.1.2",
     "com.googlecode.jarjar:jarjar:1.3",
@@ -885,6 +887,7 @@ DATA = [
     "com.jakewharton:butterknife-gradle-plugin:9.0.0-rc1",
     "com.jakewharton:butterknife-gradle-plugin:9.0.0-rc2",
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples
+    "com.jetbrains.intellij.java:java-compiler-ant-tasks:243.22562.145",
     "com.linkedin.testbutler:test-butler-app:1.3.1",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
@@ -932,6 +935,7 @@ DATA = [
     "org.jetbrains.compose.ui:ui-test-junit4-desktop:1.7.1",
     "org.jetbrains.dokka:dokka-base:1.4.32",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
+    "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
     "org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0",
     "org.jetbrains.jewel:jewel-int-ui-standalone-243:0.27.0",
     "org.jetbrains.jewel:jewel-markdown-extension-autolink-243:0.27.0",
@@ -956,6 +960,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.7.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.8.10",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0-RC",
@@ -1075,6 +1080,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.0-RC",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-dev-2943",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.24",
@@ -1127,6 +1133,7 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
+    "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-awt:0.8.18",
