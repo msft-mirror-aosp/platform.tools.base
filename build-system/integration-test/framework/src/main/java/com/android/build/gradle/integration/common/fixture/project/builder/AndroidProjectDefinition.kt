@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContent
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import java.nio.file.Path
 
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
@@ -102,7 +103,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)

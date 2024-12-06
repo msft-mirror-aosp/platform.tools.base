@@ -72,7 +72,7 @@ internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionIm
         action(assetPack)
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("assetPack") {
                 contentHolder.writeContent(this)

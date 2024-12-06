@@ -19,34 +19,29 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.builder.model.v2.ide.SyncIssue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class SeparateTestModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication { }
+        androidTest {
             android {
-                setUpHelloWorld()
-            }
-        }
-        subProject(":test") {
-            plugins.add(PluginType.ANDROID_TEST)
-            android {
-                defaultCompileSdk()
-                targetProjectPath = ":app"
+                targetProjectPath = DEFAULT_APP_PATH
             }
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
     }

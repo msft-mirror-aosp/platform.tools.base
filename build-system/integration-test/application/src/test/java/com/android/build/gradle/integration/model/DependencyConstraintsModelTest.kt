@@ -16,41 +16,28 @@
 
 package com.android.build.gradle.integration.model
 
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
-import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
 class DependencyConstraintsModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0")
             }
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
             projectAction = { getProject(":app") },
             goldenFile = "VariantDependencies"

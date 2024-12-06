@@ -72,7 +72,7 @@ internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(
         action(aiPack)
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("aiPack") {
                 contentHolder.writeContent(this)

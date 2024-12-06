@@ -16,17 +16,17 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.writeBytes
 
 /*
  * Support for Generic gradle Projects in the [GradleRule] fixture
@@ -40,6 +40,11 @@ import java.nio.file.Path
 interface GenericProjectDefinition: GradleProjectDefinition {
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)
+
+    /**
+     * Wraps a library binary with a module
+     */
+    fun wrap(library: ByteArray, fileName: String)
 }
 
 /**
@@ -47,6 +52,8 @@ interface GenericProjectDefinition: GradleProjectDefinition {
  */
 internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDefinitionImpl(path),
     GenericProjectDefinition {
+
+    private val wrappedLibraries = mutableListOf<Pair<String, ByteArray>>()
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
         if (type.isAndroid) {
@@ -66,6 +73,21 @@ internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDef
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
+    }
+
+    override fun wrap(library: ByteArray, fileName: String) {
+        wrappedLibraries.add(fileName to library)
+    }
+
+    override fun writeExtension(writer: BuildWriter, location: Path) {
+        if (wrappedLibraries.isEmpty()) return
+
+        writer.method("configurations.create", "default")
+
+        for ((fileName, libraryBinary) in wrappedLibraries) {
+            location.resolve(fileName).writeBytes(libraryBinary)
+            writer.method("artifacts.add", listOf("default", writer.rawMethod("file", fileName)), isVarArg = false)
+        }
     }
 }
 

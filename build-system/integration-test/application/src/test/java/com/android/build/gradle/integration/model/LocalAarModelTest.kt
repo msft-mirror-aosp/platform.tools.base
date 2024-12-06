@@ -17,9 +17,7 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
@@ -28,21 +26,14 @@ import org.junit.Rule
 import org.junit.Test
 
 class LocalAarModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation(project(":lib"))
             }
         }
-
-        subProject(":lib") {
+        genericProject(":lib") {
             wrap(
                 generateAarWithContent(
                     packageName = "com.example.aar",
@@ -51,12 +42,13 @@ class LocalAarModelTest: ModelComparator() {
                 ),
                 "lib.aar"
             )
+
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

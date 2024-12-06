@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.integration.model
 
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
-import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
@@ -31,60 +30,42 @@ import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldAppAndLibModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":lib"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }
-
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+        androidLibrary { }
     }
 
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "VariantDependencies"
         )
     }
 }
 
 class AppAndLibTestFixturesModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":lib"))
-                androidTestImplementation(project(":lib", testFixtures = true))
+                implementation(project(DEFAULT_LIB_PATH))
+                androidTestImplementation(project(DEFAULT_LIB_PATH, testFixtures = true))
             }
         }
-        subProject(":lib") {
+        androidLibrary {
             version = "1.2.3"
-            plugins.add(PluginType.ANDROID_LIB)
+
             android {
-                setUpHelloWorld()
                 testFixtures {
                     enable = true
                 }
@@ -92,66 +73,52 @@ class AppAndLibTestFixturesModelTest: ModelComparator() {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "VariantDependencies"
         )
     }
 }
 
 class AppAndJavaLibTestFixturesModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation(project(":lib"))
                 androidTestImplementation(project(":lib", testFixtures = true))
             }
         }
-        subProject(":lib") {
+        genericProject(":lib") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            applyPlugin(PluginType.JAVA_TEST_FIXTURES)
             version = "1.2.3"
-            plugins.add(PluginType.JAVA_LIBRARY)
-            plugins.add(PluginType.JAVA_TEST_FIXTURES)
         }
-    }
-
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
     }
 
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "VariantDependencies"
         )
     }
 }
 
 class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation(
                     MavenRepoGenerator.libraryWithFixtures(
@@ -164,7 +131,7 @@ class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
                         fixtureLibrary = {
                             artifact =
                                 TestInputsGenerator.jarWithEmptyClasses(listOf("com/example/jar/fixtures/MyClass"))
-                    })
+                        })
                 )
 
                 androidTestImplementation(
@@ -177,30 +144,23 @@ class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "VariantDependencies"
         )
     }
 }
 
 class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation(
                     MavenRepoGenerator.libraryWithFixtures(
@@ -238,16 +198,14 @@ class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test VariantDependencies`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "VariantDependencies"
         )
     }

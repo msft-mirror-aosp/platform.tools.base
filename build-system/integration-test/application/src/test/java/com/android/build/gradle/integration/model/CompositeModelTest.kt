@@ -19,50 +19,40 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldCompositeModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation("com.composite-build:lib:1.2")
             }
-        }
-        includedBuild("other-build") {
-            includedBuild("nested-build") {
-                subProject(":anotherLib") {
-                    group = "com.nested-build"
-                    version = "1.3"
-                    plugins.add(PluginType.ANDROID_LIB)
-                    android {
-                        setUpHelloWorld()
+            includedBuild("other-build") {
+                includedBuild("nested-build") {
+                    androidLibrary(":anotherLib") {
+                        group = "com.nested-build"
+                        version = "1.3"
                     }
                 }
-            }
-            subProject(":lib") {
-                group = "com.composite-build"
-                version = "1.2"
-                plugins.add(PluginType.ANDROID_LIB)
-                android {
-                    setUpHelloWorld()
+                androidLibrary(":lib") {
+                    group = "com.composite-build"
+                    version = "1.2"
                 }
             }
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
     }
@@ -103,38 +93,33 @@ class HelloWorldCompositeModelTest: ModelComparator() {
 class CompositeBuildWithSameNameTest: ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation("com.androidlib:lib:1.0")
                 implementation("com.javalib:lib:1.0")
             }
         }
         includedBuild("includedBuild1") {
-            subProject(":lib") {
+            androidLibrary(":lib") {
                 group = "com.androidlib"
                 version = "1.0"
-                plugins.add(PluginType.ANDROID_LIB)
-                android {
-                    setUpHelloWorld()
-                }
             }
         }
         includedBuild("includedBuild2") {
-            subProject(":lib") {
+            genericProject(":lib") {
+                applyPlugin(PluginType.JAVA_LIBRARY)
                 group = "com.javalib"
                 version = "1.0"
-                plugins.add(PluginType.JAVA_LIBRARY)
             }
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
     }

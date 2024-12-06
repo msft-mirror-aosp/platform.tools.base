@@ -134,9 +134,15 @@ interface GradleBuildDefinition {
 
     /**
      * Configures a subProject with the Android Test plugin, creating it if needed.
+     *
+     * if the project is already created, `createMinimumProject` has no effect
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
      */
     fun androidTest(
         path: String = DEFAULT_TEST_PATH,
+        createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<TestExtension>.() -> Unit
     ): AndroidProjectDefinition<TestExtension>
 

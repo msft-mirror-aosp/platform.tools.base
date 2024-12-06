@@ -192,12 +192,17 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
 
     override fun androidTest(
         path: String,
+        createMinimumProject: Boolean,
         action: AndroidProjectDefinition<TestExtension>.() -> Unit
     ): AndroidProjectDefinition<TestExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
 
         val project = subProjects.computeIfAbsent(path) {
-            AndroidTestDefinitionImpl(it)
+            AndroidTestDefinitionImpl(it, createMinimumProject).also {
+                if (createMinimumProject) {
+                    it.files.setupMinimumManifest()
+                }
+            }
         }
 
         project as? AndroidTestDefinitionImpl

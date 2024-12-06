@@ -17,9 +17,7 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -28,14 +26,9 @@ import org.junit.Test
  * Tests case where there's an artifact relocated via Gradle metadata
  */
 class RelocatedArtifactTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
             }
@@ -44,7 +37,7 @@ class RelocatedArtifactTest: ModelComparator() {
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

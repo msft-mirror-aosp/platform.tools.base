@@ -18,14 +18,12 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -82,7 +80,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
         action(android)
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)

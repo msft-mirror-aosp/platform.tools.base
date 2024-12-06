@@ -7,18 +7,18 @@
    > defaultConfig:
       > sourceProvider:
          - name                    = "main"
-         - manifestFile            = {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/AndroidManifest.xml{F}
+         - manifestFile            = {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/AndroidManifest.xml{!}
          - javaDirectories:
-            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/java{D}
+            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/java{!}
          - kotlinDirectories:
-            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/java{D}
+            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/java{!}
             * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/kotlin{!}
          - resourcesDirectories:
             * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/res{D}
+            * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/res{!}
          - assetsDirectories:
             * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/main/assets{!}
          - jniLibsDirectories:

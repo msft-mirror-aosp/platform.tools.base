@@ -19,26 +19,23 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.toValueString
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class PrebuiltLintChecksModelTest {
     @get:Rule
-    val project = createGradleProject {
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidLibrary {
             dependencies {
                 lintChecks(localJar {
                     name = "lint-check.jar"
@@ -48,15 +45,13 @@ class PrebuiltLintChecksModelTest {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test lintChecksJars in Lib model`() {
-        val androidProject = result.container.getProject(":lib").androidProject
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
+        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
             ?: throw RuntimeException("No AndroidProject model for :lib")
 
         Truth
@@ -67,18 +62,14 @@ class PrebuiltLintChecksModelTest {
 
 class SubProjectLintChecksModelTest {
     @get:Rule
-    val project = createGradleProject {
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidLibrary {
             dependencies {
                 lintChecks(project(":lint-check"))
             }
         }
-        subProject(":lint-check") {
-            plugins.add(PluginType.JAVA_LIBRARY)
+        genericProject(":lint-check") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
             dependencies {
                 implementation(localJar {
                     name = "local-lint.jar"
@@ -87,20 +78,18 @@ class SubProjectLintChecksModelTest {
                 implementation(project(":lint-check-dependency"))
             }
         }
-        subProject(":lint-check-dependency") {
-            plugins.add(PluginType.JAVA_LIBRARY)
+        genericProject(":lint-check-dependency") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
         }
-    }
-
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
     }
 
     @Test
     fun `test lintChecksJars in Lib model`() {
-        val androidProject = result.container.getProject(":lib").androidProject
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
+        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
             ?: throw RuntimeException("No AndroidProject model for :lib")
 
         Truth
@@ -115,21 +104,13 @@ class SubProjectLintChecksModelTest {
 
 class AppAndLibWithLintPublishModelTest {
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":lib"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+        androidLibrary {
             dependencies {
                 lintPublish(localJar {
                     name = "lint-publish.jar"
@@ -139,15 +120,18 @@ class AppAndLibWithLintPublishModelTest {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
     }
 
     @Test
     fun `test lint jar in library project model`() {
-        val androidProject = result.container.getProject(":lib").androidProject
+        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
             ?: throw RuntimeException("No AndroidProject model for :lib")
 
         Truth.assertThat(androidProject.lintJar.toValueString(result.normalizer))
@@ -156,7 +140,7 @@ class AppAndLibWithLintPublishModelTest {
 
     @Test
     fun `check publish jar does not show up in lintChecks`() {
-        val androidProject = result.container.getProject(":lib").androidProject
+        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
             ?: throw RuntimeException("No AndroidProject model for :lib")
 
         Truth.assertThat(androidProject.lintChecksJars).isEmpty()
@@ -165,12 +149,8 @@ class AppAndLibWithLintPublishModelTest {
 
 class AppWithExternalLibraryWithLintJarModelTest {
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 implementation(
                     MavenRepoGenerator.Library(
@@ -189,14 +169,12 @@ class AppWithExternalLibraryWithLintJarModelTest {
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
-
     @Test
     fun `test lint model in app dependency`() {
+        val result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+
         val variantDeps = result.container.getProject().variantDependencies
             ?: throw RuntimeException("No VariantDependencies model for :app")
 

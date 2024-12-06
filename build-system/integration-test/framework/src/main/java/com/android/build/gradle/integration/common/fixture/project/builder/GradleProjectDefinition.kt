@@ -58,11 +58,6 @@ interface GradleProjectDefinition {
      */
     fun dependencies(action: DependenciesBuilder.() -> Unit)
     val dependencies: DependenciesBuilder
-
-    /**
-     * Wraps a library binary with a module
-     */
-    fun wrap(library: ByteArray, fileName: String)
 }
 
 internal data class AppliedPlugin(
@@ -127,10 +122,6 @@ internal abstract class GradleProjectDefinitionImpl(
         action(dependencies)
     }
 
-    override fun wrap(library: ByteArray, fileName: String) {
-        throw RuntimeException("todo")
-    }
-
     internal fun writeSubProject(
         location: Path,
         buildFileOnly: Boolean = false,
@@ -164,7 +155,7 @@ internal abstract class GradleProjectDefinitionImpl(
         )
     }
 
-    protected open fun writeExtension(writer: BuildWriter) {
+    protected open fun writeExtension(writer: BuildWriter, location: Path) {
         // nothing to do here
     }
 
@@ -243,7 +234,7 @@ internal abstract class GradleProjectDefinitionImpl(
             }
 
             // write the Android extension if it exist
-            writeExtension(this)
+            writeExtension(this, location)
 
             dependencies.write(this, location)
         }.also {

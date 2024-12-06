@@ -1,6 +1,6 @@
 > AndroidProject:
-   - namespace             = "pkg.name"
-   - androidTestNamespace  = "pkg.name.test"
+   - namespace             = "pkg.name.lib"
+   - androidTestNamespace  = "pkg.name.lib.test"
    - testFixturesNamespace = (null)
    - resourcePrefix        = (null)
    - dynamicFeatures       = (null)
@@ -13,11 +13,11 @@
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
+               * {PROJECT}/lib/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/debug/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/debug/out{!}
             - minSdkVersion:
                - apiLevel = 14
                - codename = (null)
@@ -29,7 +29,7 @@
             - sourceGenTaskName             = "generateDebugSources"
             - resGenTaskName                = "generateDebugResources"
             - generatedResourceFolders:
-               * {PROJECT}/build/generated/res/resValues/debug{!}
+               * {PROJECT}/lib/build/generated/res/resValues/debug{!}
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = (null)
@@ -42,11 +42,11 @@
             - compileTaskName               = "compileDebugAndroidTestSources"
             - assembleTaskName              = "assembleDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/lib/build/intermediates/javac/debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugAndroidTestSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/debugAndroidTest/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/debugAndroidTest/out{!}
             - minSdkVersion:
                - apiLevel = 14
                - codename = (null)
@@ -54,14 +54,14 @@
             - maxSdkVersion                 = (null)
             - isSigned                      = true
             - signingConfigName             = "debug"
-            - applicationId                 = "pkg.name.test"
+            - applicationId                 = "pkg.name.lib.test"
             - sourceGenTaskName             = "generateDebugAndroidTestSources"
             - resGenTaskName                = "generateDebugAndroidTestResources"
             - generatedResourceFolders:
-               * {PROJECT}/build/generated/res/resValues/androidTest/debug{!}
+               * {PROJECT}/lib/build/generated/res/resValues/androidTest/debug{!}
             - generatedAssetsFolders        = []
             - abiFilters                    = []
-            - assembleTaskOutputListingFile = {PROJECT}/build/intermediates/apk_ide_redirect_file/debugAndroidTest/createDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
+            - assembleTaskOutputListingFile = {PROJECT}/lib/build/intermediates/apk_ide_redirect_file/debugAndroidTest/createDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
                - animationsDisabled       = false
                - execution                = HOST
@@ -75,13 +75,13 @@
             - compileTaskName       = "compileDebugUnitTestSources"
             - assembleTaskName      = "assembleDebugUnitTest"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}
+               * {PROJECT}/lib/build/intermediates/javac/debugUnitTest/compileDebugUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/debugUnitTest/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/debugUnitTest/out{!}
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {PROJECT}/build/intermediates/java_res/debugUnitTest/processDebugUnitTestJavaRes/out{!}
+            - runtimeResourceFolder = {PROJECT}/lib/build/intermediates/java_res/debugUnitTest/processDebugUnitTestJavaRes/out{!}
          < unitTestArtifact
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)
@@ -95,11 +95,11 @@
             - compileTaskName               = "compileReleaseSources"
             - assembleTaskName              = "assembleRelease"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}
+               * {PROJECT}/lib/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateReleaseSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/release/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/release/out{!}
             - minSdkVersion:
                - apiLevel = 14
                - codename = (null)
@@ -111,7 +111,7 @@
             - sourceGenTaskName             = "generateReleaseSources"
             - resGenTaskName                = "generateReleaseResources"
             - generatedResourceFolders:
-               * {PROJECT}/build/generated/res/resValues/release{!}
+               * {PROJECT}/lib/build/generated/res/resValues/release{!}
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = (null)
@@ -125,13 +125,13 @@
             - compileTaskName       = "compileReleaseUnitTestSources"
             - assembleTaskName      = "assembleReleaseUnitTest"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/releaseUnitTest/generateReleaseUnitTestStubRFile/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/releaseUnitTest/compileReleaseUnitTestJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/releaseUnitTest/generateReleaseUnitTestStubRFile/R.jar{!}
+               * {PROJECT}/lib/build/intermediates/javac/releaseUnitTest/compileReleaseUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/releaseUnitTest/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/releaseUnitTest/out{!}
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {PROJECT}/build/intermediates/java_res/releaseUnitTest/processReleaseUnitTestJavaRes/out{!}
+            - runtimeResourceFolder = {PROJECT}/lib/build/intermediates/java_res/releaseUnitTest/processReleaseUnitTestJavaRes/out{!}
          < unitTestArtifact
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)

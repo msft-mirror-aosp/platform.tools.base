@@ -123,7 +123,7 @@ class ExtractNativeLibsPackagingTest(
                 add("src/androidTest/jniLibs/x86/fake.so", "foo".repeat(100))
             }
         }
-        androidTest {
+        androidTest(createMinimumProject = false) {
             android {
                 namespace = "com.example"
                 this.compileSdk = compileSdk

@@ -20,31 +20,25 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_V
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldLibModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+    val rule = GradleRule.from {
+        androidLibrary {
             android {
-                minSdk = 14
-                setUpHelloWorld()
+                defaultConfig.minSdk = 14
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

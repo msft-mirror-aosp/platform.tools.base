@@ -17,29 +17,24 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldAppModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                minSdk = 14
-                setUpHelloWorld()
+                defaultConfig.minSdk = 14
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

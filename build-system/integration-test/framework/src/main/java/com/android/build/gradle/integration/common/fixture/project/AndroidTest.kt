@@ -38,7 +38,8 @@ import java.nio.file.Path
  * Implementation of [AndroidProjectDefinition] for [ApplicationExtension]
  */
 internal class AndroidTestDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean
 ): AndroidProjectDefinitionImpl<TestExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_TEST)
@@ -49,7 +50,9 @@ internal class AndroidTestDefinitionImpl(
             TestExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 

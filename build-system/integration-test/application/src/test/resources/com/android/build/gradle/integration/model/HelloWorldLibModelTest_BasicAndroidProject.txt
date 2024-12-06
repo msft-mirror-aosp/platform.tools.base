@@ -1,76 +1,76 @@
 > BasicAndroidProject:
    - projectType    = LIBRARY
-   - path           = ":"
-   - buildFolder    = {PROJECT}/build{!}
+   - path           = ":lib"
+   - buildFolder    = {PROJECT}/lib/build{!}
    - bootClasspath:
       * {ANDROID_SDK}/platforms/android-{COMPILE_SDK_VERSION}/android.jar{F}
    > defaultConfig:
       > sourceProvider:
          - name                    = "main"
-         - manifestFile            = {PROJECT}/src/main/AndroidManifest.xml{F}
+         - manifestFile            = {PROJECT}/lib/src/main/AndroidManifest.xml{!}
          - javaDirectories:
-            * {PROJECT}/src/main/java{D}
+            * {PROJECT}/lib/src/main/java{!}
          - kotlinDirectories:
-            * {PROJECT}/src/main/java{D}
-            * {PROJECT}/src/main/kotlin{!}
+            * {PROJECT}/lib/src/main/java{!}
+            * {PROJECT}/lib/src/main/kotlin{!}
          - resourcesDirectories:
-            * {PROJECT}/src/main/resources{!}
+            * {PROJECT}/lib/src/main/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {PROJECT}/src/main/res{D}
+            * {PROJECT}/lib/src/main/res{!}
          - assetsDirectories:
-            * {PROJECT}/src/main/assets{!}
+            * {PROJECT}/lib/src/main/assets{!}
          - jniLibsDirectories:
-            * {PROJECT}/src/main/jniLibs{!}
+            * {PROJECT}/lib/src/main/jniLibs{!}
          - shadersDirectories:
-            * {PROJECT}/src/main/shaders{!}
+            * {PROJECT}/lib/src/main/shaders{!}
          - mlModelsDirectories     = (null)
          - custom                  = []
       < sourceProvider
       > androidTestSourceProvider:
          - name                    = "androidTest"
-         - manifestFile            = {PROJECT}/src/androidTest/AndroidManifest.xml{!}
+         - manifestFile            = {PROJECT}/lib/src/androidTest/AndroidManifest.xml{!}
          - javaDirectories:
-            * {PROJECT}/src/androidTest/java{!}
+            * {PROJECT}/lib/src/androidTest/java{!}
          - kotlinDirectories:
-            * {PROJECT}/src/androidTest/java{!}
-            * {PROJECT}/src/androidTest/kotlin{!}
+            * {PROJECT}/lib/src/androidTest/java{!}
+            * {PROJECT}/lib/src/androidTest/kotlin{!}
          - resourcesDirectories:
-            * {PROJECT}/src/androidTest/resources{!}
+            * {PROJECT}/lib/src/androidTest/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {PROJECT}/src/androidTest/res{!}
+            * {PROJECT}/lib/src/androidTest/res{!}
          - assetsDirectories:
-            * {PROJECT}/src/androidTest/assets{!}
+            * {PROJECT}/lib/src/androidTest/assets{!}
          - jniLibsDirectories:
-            * {PROJECT}/src/androidTest/jniLibs{!}
+            * {PROJECT}/lib/src/androidTest/jniLibs{!}
          - shadersDirectories:
-            * {PROJECT}/src/androidTest/shaders{!}
+            * {PROJECT}/lib/src/androidTest/shaders{!}
          - mlModelsDirectories     = (null)
          - custom                  = []
       < androidTestSourceProvider
       > unitTestSourceProvider:
          - name                    = "test"
-         - manifestFile            = {PROJECT}/src/test/AndroidManifest.xml{!}
+         - manifestFile            = {PROJECT}/lib/src/test/AndroidManifest.xml{!}
          - javaDirectories:
-            * {PROJECT}/src/test/java{!}
+            * {PROJECT}/lib/src/test/java{!}
          - kotlinDirectories:
-            * {PROJECT}/src/test/java{!}
-            * {PROJECT}/src/test/kotlin{!}
+            * {PROJECT}/lib/src/test/java{!}
+            * {PROJECT}/lib/src/test/kotlin{!}
          - resourcesDirectories:
-            * {PROJECT}/src/test/resources{!}
+            * {PROJECT}/lib/src/test/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {PROJECT}/src/test/res{!}
+            * {PROJECT}/lib/src/test/res{!}
          - assetsDirectories:
-            * {PROJECT}/src/test/assets{!}
+            * {PROJECT}/lib/src/test/assets{!}
          - jniLibsDirectories:
-            * {PROJECT}/src/test/jniLibs{!}
+            * {PROJECT}/lib/src/test/jniLibs{!}
          - shadersDirectories:
-            * {PROJECT}/src/test/shaders{!}
+            * {PROJECT}/lib/src/test/shaders{!}
          - mlModelsDirectories     = (null)
          - custom                  = []
       < unitTestSourceProvider
@@ -80,70 +80,70 @@
       > debug:
          > sourceProvider:
             - name                    = "debug"
-            - manifestFile            = {PROJECT}/src/debug/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/debug/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/debug/java{!}
+               * {PROJECT}/lib/src/debug/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/debug/java{!}
-               * {PROJECT}/src/debug/kotlin{!}
+               * {PROJECT}/lib/src/debug/java{!}
+               * {PROJECT}/lib/src/debug/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/debug/resources{!}
+               * {PROJECT}/lib/src/debug/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/debug/res{!}
+               * {PROJECT}/lib/src/debug/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/debug/assets{!}
+               * {PROJECT}/lib/src/debug/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/debug/jniLibs{!}
+               * {PROJECT}/lib/src/debug/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/debug/shaders{!}
+               * {PROJECT}/lib/src/debug/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
          > androidTestSourceProvider:
             - name                    = "androidTestDebug"
-            - manifestFile            = {PROJECT}/src/androidTestDebug/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/androidTestDebug/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/androidTestDebug/java{!}
+               * {PROJECT}/lib/src/androidTestDebug/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/androidTestDebug/java{!}
-               * {PROJECT}/src/androidTestDebug/kotlin{!}
+               * {PROJECT}/lib/src/androidTestDebug/java{!}
+               * {PROJECT}/lib/src/androidTestDebug/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/androidTestDebug/resources{!}
+               * {PROJECT}/lib/src/androidTestDebug/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/androidTestDebug/res{!}
+               * {PROJECT}/lib/src/androidTestDebug/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/androidTestDebug/assets{!}
+               * {PROJECT}/lib/src/androidTestDebug/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/androidTestDebug/jniLibs{!}
+               * {PROJECT}/lib/src/androidTestDebug/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/androidTestDebug/shaders{!}
+               * {PROJECT}/lib/src/androidTestDebug/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < androidTestSourceProvider
          > unitTestSourceProvider:
             - name                    = "testDebug"
-            - manifestFile            = {PROJECT}/src/testDebug/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/testDebug/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/testDebug/java{!}
+               * {PROJECT}/lib/src/testDebug/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/testDebug/java{!}
-               * {PROJECT}/src/testDebug/kotlin{!}
+               * {PROJECT}/lib/src/testDebug/java{!}
+               * {PROJECT}/lib/src/testDebug/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/testDebug/resources{!}
+               * {PROJECT}/lib/src/testDebug/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/testDebug/res{!}
+               * {PROJECT}/lib/src/testDebug/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/testDebug/assets{!}
+               * {PROJECT}/lib/src/testDebug/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/testDebug/jniLibs{!}
+               * {PROJECT}/lib/src/testDebug/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/testDebug/shaders{!}
+               * {PROJECT}/lib/src/testDebug/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider
@@ -152,48 +152,48 @@
       > release:
          > sourceProvider:
             - name                    = "release"
-            - manifestFile            = {PROJECT}/src/release/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/release/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/release/java{!}
+               * {PROJECT}/lib/src/release/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/release/java{!}
-               * {PROJECT}/src/release/kotlin{!}
+               * {PROJECT}/lib/src/release/java{!}
+               * {PROJECT}/lib/src/release/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/release/resources{!}
+               * {PROJECT}/lib/src/release/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/release/res{!}
+               * {PROJECT}/lib/src/release/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/release/assets{!}
+               * {PROJECT}/lib/src/release/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/release/jniLibs{!}
+               * {PROJECT}/lib/src/release/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/release/shaders{!}
+               * {PROJECT}/lib/src/release/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
          - androidTestSourceProvider  = (null)
          > unitTestSourceProvider:
             - name                    = "testRelease"
-            - manifestFile            = {PROJECT}/src/testRelease/AndroidManifest.xml{!}
+            - manifestFile            = {PROJECT}/lib/src/testRelease/AndroidManifest.xml{!}
             - javaDirectories:
-               * {PROJECT}/src/testRelease/java{!}
+               * {PROJECT}/lib/src/testRelease/java{!}
             - kotlinDirectories:
-               * {PROJECT}/src/testRelease/java{!}
-               * {PROJECT}/src/testRelease/kotlin{!}
+               * {PROJECT}/lib/src/testRelease/java{!}
+               * {PROJECT}/lib/src/testRelease/kotlin{!}
             - resourcesDirectories:
-               * {PROJECT}/src/testRelease/resources{!}
+               * {PROJECT}/lib/src/testRelease/resources{!}
             - aidlDirectories         = (null)
             - renderscriptDirectories = (null)
             - resDirectories:
-               * {PROJECT}/src/testRelease/res{!}
+               * {PROJECT}/lib/src/testRelease/res{!}
             - assetsDirectories:
-               * {PROJECT}/src/testRelease/assets{!}
+               * {PROJECT}/lib/src/testRelease/assets{!}
             - jniLibsDirectories:
-               * {PROJECT}/src/testRelease/jniLibs{!}
+               * {PROJECT}/lib/src/testRelease/jniLibs{!}
             - shadersDirectories:
-               * {PROJECT}/src/testRelease/shaders{!}
+               * {PROJECT}/lib/src/testRelease/shaders{!}
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider

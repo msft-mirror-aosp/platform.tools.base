@@ -18,22 +18,17 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.builder.model.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
 class DesugaredMethodsModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
-                minSdk = 24
+                defaultConfig.minSdk = 24
                 compileOptions {
                     isCoreLibraryDesugaringEnabled = true
                 }
@@ -46,7 +41,7 @@ class DesugaredMethodsModelTest: ModelComparator() {
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
