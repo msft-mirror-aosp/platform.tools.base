@@ -30,7 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-class SettingsPluginTest {
+class SettingsExecutionProfileTest {
 
     @get:Rule
     val rule = GradleRule.from {
