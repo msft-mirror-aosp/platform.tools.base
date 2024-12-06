@@ -70,7 +70,7 @@ internal class GradleRuleImpl internal constructor(
     private var lastBuildResult: GradleBuildResult? = null
 
     override val build: GradleBuild by lazy {
-        if (!status.written) {
+        if (status != Status.WRITTEN) {
             doWriteBuild()
         }
 
@@ -82,9 +82,7 @@ internal class GradleRuleImpl internal constructor(
 
     override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
         // cannot reconfigure the build since static rules creates a single build for all test methods.
-        if (status == Status.WRITTEN_STATIC) {
-            throw RuntimeException("Build from static GradleRule cannot be reconfigured")
-        } else if (status == Status.WRITTEN_USER) {
+        if (status == Status.WRITTEN) {
             throw RuntimeException("Build was already reconfigured and written. Cannot be configured twice.")
         }
 
@@ -139,7 +137,7 @@ internal class GradleRuleImpl internal constructor(
         createLocalProp()
         createGradleProp()
 
-        status = Status.WRITTEN_USER
+        status = Status.WRITTEN
     }
 
     private fun computeMavenRepoLocation(): Path {
@@ -327,7 +325,16 @@ internal class GradleRuleImpl internal constructor(
     ): Statement? {
         return object: Statement() {
             override fun evaluate() {
-                val staticRule = description.methodName == null
+                // We should not support class level application of this rule as it does not make
+                // any sense.
+                // This would mean a single version of the on-disk project which means
+                // every test will write into the same output older which can be problematic
+                // there's also no (easy) way to write the project just once as each test
+                // gets its own instance of the test class (and therefore rule instance as well)
+                // so using in-instance caching does not work (even though our previous fixtures
+                // used this mechanism)
+                if (description.methodName == null)
+                    throw RuntimeException("Class level rule application is not supported.")
 
                 if (mutableProjectLocation == null) {
                     mutableProjectLocation = initializeProjectLocation(
@@ -339,13 +346,6 @@ internal class GradleRuleImpl internal constructor(
 
                 // log the location to help with debugging if needed
                 println("Project location for ${description}: ${mutableProjectLocation!!.projectDir}")
-
-                // the rule is static, then it's created just once for all the test methods and therefore
-                // we write it now.
-                if (staticRule) {
-                    doWriteBuild()
-                    status = Status.WRITTEN_STATIC
-                }
 
                 var testFailed = false
                 try {
@@ -437,9 +437,7 @@ internal class GradleRuleImpl internal constructor(
         }
     }
 
-    private enum class Status(
-        val written: Boolean = false,
-    ) {
-        PENDING, WRITTEN_STATIC(true), WRITTEN_USER(true)
+    private enum class Status {
+        PENDING, WRITTEN
     }
 }
