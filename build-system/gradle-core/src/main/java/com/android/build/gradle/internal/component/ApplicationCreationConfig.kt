@@ -20,6 +20,8 @@ import com.android.build.api.variant.VariantOutputConfiguration
 import com.android.build.api.variant.impl.ApplicationAndroidResourcesImpl
 import com.android.build.api.variant.impl.BundleConfigImpl
 import com.android.build.api.variant.impl.VariantOutputList
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT
 
 interface ApplicationCreationConfig: ApkCreationConfig, VariantCreationConfig, PublishableCreationConfig {
     val profileable: Boolean
@@ -29,6 +31,12 @@ interface ApplicationCreationConfig: ApkCreationConfig, VariantCreationConfig, P
      *
      * This property is needed because under the above condition, AGP has a different pipeline for
      * publishing/consuming artifacts between the base module and dynamic feature modules.
+     *
+     * For example, the pipeline for resource shrinking is as follows:
+     *   1. From dynamic features, publish [REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT]
+     *   2. From base, consume [REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT], process it, and
+     *   publish [FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT]
+     *   3. From dynamic features, consume [FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT]
      */
     val shrinkingWithDynamicFeatures: Boolean
 

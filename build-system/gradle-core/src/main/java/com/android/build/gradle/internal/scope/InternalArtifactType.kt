@@ -245,6 +245,12 @@ InternalArtifactType<T : FileSystemLocation>(
     /** Shrunk resources in binary format. */
     object SHRUNK_RESOURCES_BINARY_FORMAT: InternalArtifactType<Directory>(DIRECTORY), ContainsMany
 
+    /**
+     * Shrunk resources in proto format (produced by the base module, to be consumed by dynamic
+     * feature modules).
+     */
+    object FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT: InternalArtifactType<Directory>(DIRECTORY)
+
     object COMPILED_LOCAL_RESOURCES: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     object STABLE_RESOURCE_IDS_FILE: InternalArtifactType<RegularFile>(FILE)
 

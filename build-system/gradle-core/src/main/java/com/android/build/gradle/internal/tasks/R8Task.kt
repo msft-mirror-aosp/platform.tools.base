@@ -404,6 +404,12 @@ abstract class R8Task @Inject constructor(
                 creationConfig.artifacts
                     .setInitialProvider(taskProvider, R8Task::featureJavaResourceOutputDir)
                     .on(InternalArtifactType.FEATURE_SHRUNK_JAVA_RES)
+
+                if (creationConfig.runResourceShrinkingWithR8()) {
+                    creationConfig.artifacts.setInitialProvider(taskProvider) {
+                            it.resourceShrinkingParams.featureShrunkResourcesOutputDir
+                    }.on(InternalArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT)
+                }
             }
 
             if (creationConfig is ApkCreationConfig) {

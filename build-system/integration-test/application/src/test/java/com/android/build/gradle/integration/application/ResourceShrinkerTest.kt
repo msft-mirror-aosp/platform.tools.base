@@ -252,8 +252,12 @@ class ResourceShrinkerTest(
         project: GradleTestProject,
         unusedResources: List<String>
     ) {
-        assertThat(getZipPaths(project.getOriginalBundle())).containsAtLeastElementsIn(unusedResources)
-        assertThat(getZipPaths(project.getShrunkBundle())).containsNoneIn(unusedResources)
+        if (r8IntegratedResourceShrinking) {
+            assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
+        } else {
+            assertThat(getZipPaths(project.getOriginalBundle())).containsAtLeastElementsIn(unusedResources)
+            assertThat(getZipPaths(project.getShrunkBundle())).containsNoneIn(unusedResources)
+        }
     }
 
     @Test
@@ -473,7 +477,6 @@ class ResourceShrinkerTest(
             unusedResources = listOf(
                 "res/drawable/discard_from_feature_2.xml",
                 "res/drawable/force_remove.xml",
-                "res/drawable/from_raw_feat.xml",
                 "res/drawable/unused10.xml",
                 "res/drawable/unused11.xml",
                 "res/drawable/unused9.xml",
@@ -481,7 +484,6 @@ class ResourceShrinkerTest(
                 "res/layout/unused13.xml",
                 "res/layout/unused14.xml",
                 "res/layout/unused2.xml",
-                "res/layout/used_from_feature_2.xml",
                 "res/menu/unused12.xml",
             ) + if (r8IntegratedResourceShrinking) {
                 emptyList()
@@ -489,7 +491,11 @@ class ResourceShrinkerTest(
                 // This resource is used by a feature module, so the fact that it appears in this
                 // list of unusedResources is unexpected. This is a limitation of the legacy
                 // resource shrinking pipeline (r8IntegratedResourceShrinking = false).
-                listOf("res/layout/used_from_feature_1.xml")
+                listOf(
+                    "res/drawable/from_raw_feat.xml",
+                    "res/layout/used_from_feature_1.xml",
+                    "res/layout/used_from_feature_2.xml"
+                )
             }
         )
     }

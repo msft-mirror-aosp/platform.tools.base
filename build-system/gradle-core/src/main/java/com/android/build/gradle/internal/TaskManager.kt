@@ -17,6 +17,7 @@ package com.android.build.gradle.internal
 
 import android.databinding.tool.DataBindingBuilder
 import com.android.SdkConstants.DOT_JAR
+import com.android.SdkConstants.DOT_RES
 import com.android.build.api.artifact.Artifact.Single
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
@@ -1813,6 +1814,14 @@ abstract class TaskManager(
                     InternalArtifactType.FEATURE_SHRUNK_JAVA_RES,
                     AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_JAVA_RES,
                     DOT_JAR)
+            if (creationConfig.runResourceShrinkingWithR8()) {
+                publishArtifactsToDynamicFeatures(
+                    creationConfig,
+                    InternalArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT,
+                    AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT,
+                    DOT_RES
+                )
+            }
         }
 
         if (creationConfig.debuggable) {
@@ -1899,12 +1908,12 @@ abstract class TaskManager(
     private fun maybeCreateResourcesShrinkerTasks(
         creationConfig: ApkCreationConfig
     ) {
-        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
+        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true
+            && !creationConfig.runResourceShrinkingWithR8()
+        ) {
             // For the APK
-            if (!creationConfig.runResourceShrinkingWithR8()) {
-                taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
-                taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
-            }
+            taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
+            taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
 
             // For the bundle
             taskFactory.register(ShrinkAppBundleResourcesTask.CreationAction(creationConfig))
