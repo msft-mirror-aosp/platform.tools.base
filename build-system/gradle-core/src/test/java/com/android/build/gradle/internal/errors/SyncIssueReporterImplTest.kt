@@ -16,35 +16,69 @@
 
 package com.android.build.gradle.internal.errors
 
+import com.android.build.gradle.internal.fixtures.FakeAndroidProblemsReporter
+import com.android.build.gradle.internal.fixtures.FakeAndroidProblemsReporter.ReportedIssue
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.provider.Property
+import org.junit.Before
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import kotlin.test.assertFailsWith
 
 class SyncIssueReporterImplTest {
 
-    val issueReporter = object : SyncIssueReporterImpl.GlobalSyncIssueService() {
-        override fun getParameters(): Parameters {
-            return object : Parameters {
-                override val mode: Property<SyncOptions.EvaluationMode>
-                    get() = FakeGradleProperty(SyncOptions.EvaluationMode.IDE)
-                override val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
-                    get() = FakeGradleProperty(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
+    val androidProblemsReporterProviderService: AndroidProblemReporterProvider = mock()
+
+    val androidProblemsReporter = FakeAndroidProblemsReporter()
+
+    val issueReporter: SyncIssueReporterImpl.GlobalSyncIssueService by lazy {
+        object : SyncIssueReporterImpl.GlobalSyncIssueService() {
+            override fun getParameters(): Parameters {
+                return object : Parameters {
+                    override val mode: Property<SyncOptions.EvaluationMode>
+                        get() = FakeGradleProperty(SyncOptions.EvaluationMode.IDE)
+                    override val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
+                        get() = FakeGradleProperty(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
+                    override val androidProblemReporterProviderService: Property<AndroidProblemReporterProvider>
+                        get() = FakeGradleProperty(androidProblemsReporterProviderService)
+                }
             }
         }
     }
 
+    @Before
+    fun setup() {
+        whenever(androidProblemsReporterProviderService.reporter())
+            .thenReturn(androidProblemsReporter)
+    }
+
     @Test
-    fun testReportingIssueTwice() {
+    fun testCollectingIssueTwice() {
         issueReporter.reportError(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, RuntimeException(""))
         assertThat(issueReporter.getAllIssuesAndClear().map { it.type }).containsExactly(
             IssueReporter.Type.BUILD_TOOLS_TOO_LOW.type
         )
         assertThat(issueReporter.getAllIssuesAndClear().map { it.type }).isEmpty()
+        assertThat(androidProblemsReporter.reportedSyncIssues).isEqualTo(listOf(
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, "")
+        ))
+    }
+
+    @Test
+    fun testReportingSameIssueTwice() {
+        issueReporter.reportError(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, RuntimeException(""))
+        issueReporter.reportError(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, RuntimeException(""))
+        assertThat(issueReporter.getAllIssuesAndClear().map { it.type }).containsExactly(
+            IssueReporter.Type.BUILD_TOOLS_TOO_LOW.type
+        )
+        assertThat(androidProblemsReporter.reportedSyncIssues).isEqualTo(listOf(
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, ""),
+        ))
     }
 
     @Test
@@ -57,6 +91,10 @@ class SyncIssueReporterImplTest {
         assertThat(issueReporter.getAllIssuesAndClear().map { it.type }).containsExactly(
             IssueReporter.Type.COMPILE_SDK_VERSION_NOT_SET.type
         )
+        assertThat(androidProblemsReporter.reportedSyncIssues).isEqualTo(listOf(
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, ""),
+            ReportedIssue(IssueReporter.Type.COMPILE_SDK_VERSION_NOT_SET, IssueReporter.Severity.ERROR, ""),
+        ))
     }
 
     @Test
@@ -73,6 +111,12 @@ class SyncIssueReporterImplTest {
         // Ordering might change, so assert about the three errors together
         val errors = issueException.suppressed.asList() + issueException
         assertThat(errors.map { it.message }).containsExactly("Error: 1", "Error: 2", "Error: 3")
+        assertThat(androidProblemsReporter.reportedSyncIssues).isEqualTo(listOf(
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, "Error: 1"),
+            ReportedIssue(IssueReporter.Type.COMPILE_SDK_VERSION_NOT_SET, IssueReporter.Severity.ERROR, "Error: 2"),
+            ReportedIssue(IssueReporter.Type.EDIT_LOCKED_DSL_VALUE, IssueReporter.Severity.ERROR, "Error: 3"),
+            ReportedIssue(IssueReporter.Type.DEPRECATED_DSL, IssueReporter.Severity.WARNING, "Warning"),
+        ))
     }
 
     @Test
@@ -86,5 +130,10 @@ class SyncIssueReporterImplTest {
             issueReporter.reportError(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, RuntimeException(""))
         }
         assertThat(failure).hasMessageThat().isEqualTo("Issue registered after handler locked.")
+        // Problems API can still sed a message so should not be affected by handler locked.
+        assertThat(androidProblemsReporter.reportedSyncIssues).isEqualTo(listOf(
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, ""),
+            ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, "")
+        ))
     }
 }
