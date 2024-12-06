@@ -19,8 +19,10 @@ import static org.junit.Assert.assertArrayEquals;
 
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LocaleQualifier;
-import java.util.stream.Stream;
+
 import junit.framework.TestCase;
+
+import java.util.stream.Stream;
 
 public class LocaleTest extends TestCase {
     public void test1() {
@@ -169,5 +171,14 @@ public class LocaleTest extends TestCase {
         assertEquals(
                 "Spanish (es) in Latin America and the Caribbean (419)",
                 Locale.getLocaleLabel(Locale.create("b+es+419"), false));
+    }
+
+    public void testLocaleUnknownLanguageLabel() {
+        assertEquals("kq", Locale.getLocaleLabel(Locale.create("kq"), false));
+        assertEquals("kq in Guinea (GN)", Locale.getLocaleLabel(Locale.create("kq-rGN"), false));
+        assertEquals("kq (YY)", Locale.getLocaleLabel(Locale.create("kq-rYY"), false));
+        assertEquals("kq", Locale.getLocaleLabel(Locale.create("kq"), true));
+        assertEquals("kq (GN)", Locale.getLocaleLabel(Locale.create("kq-rGN"), true));
+        assertEquals("kq (YY)", Locale.getLocaleLabel(Locale.create("kq-rYY"), true));
     }
 }
