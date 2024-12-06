@@ -68,16 +68,10 @@ internal class AndroidFeatureImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<DynamicFeatureExtension>,
     namespace: String,
-    private val buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<DynamicFeatureExtension>>(
     location,
     projectDefinition,
     namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), AndroidDynamicFeatureProject {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidDynamicFeatureProject =

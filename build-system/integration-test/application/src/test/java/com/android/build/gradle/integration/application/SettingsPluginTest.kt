@@ -16,14 +16,16 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.StringOption
-import com.android.builder.model.v2.ide.ApiVersion
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -31,87 +33,80 @@ import org.junit.Test
 class SettingsPluginTest {
 
     @get:Rule
-    var project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                namespace = "com.example.lib"
-            }
+        androidLibrary(createMinimumProject = false) {
+            android.namespace = "com.example.lib"
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
-            }
+        androidApplication(createMinimumProject = false) {
+            android.namespace = "com.example.app"
+            files.setupMinimumManifest()
         }
     }
 
     data class Profile(
-            val name: String,
-            val r8JvmOptions: List<String>,
-            val r8RunInSeparateProcess: Boolean)
+        val name: String,
+        val r8JvmOptions: List<String>,
+        val r8RunInSeparateProcess: Boolean
+    )
 
-    private val defaultProfiles: List<Profile> =
-            listOf(
-                    Profile("low", listOf("-Xms200m", "-Xmx200m"), false),
-                    Profile("high", listOf("-Xms800m", "-Xmx800m"), true),
-                    Profile("pizza",
-                            listOf("-Xms801m", "-Xmx801m", "-XX:+HeapDumpOnOutOfMemoryError"),
-                            false),
-            )
+    private val defaultProfiles: List<Profile> = listOf(
+        Profile("low", listOf("-Xms200m", "-Xmx200m"), false),
+        Profile("high", listOf("-Xms800m", "-Xmx800m"), true),
+        Profile("pizza", listOf("-Xms801m", "-Xmx801m", "-XX:+HeapDumpOnOutOfMemoryError"), false),
+    )
 
-    private fun addSettingsBlock(
-            minSdk: Int = DEFAULT_MIN_SDK_VERSION,
-            compileSdk: Int = DEFAULT_COMPILE_SDK_VERSION,
-            targetSdk: Int = compileSdk,
-            execProfile: String?,
-            profiles: List<Profile> = defaultProfiles
+    private fun GradleSettingsDefinition.addSettingsBlock(
+        minSdk: Int = DEFAULT_MIN_SDK_VERSION,
+        compileSdk: Int = DEFAULT_COMPILE_SDK_VERSION,
+        targetSdk: Int = compileSdk,
+        execProfile: String?,
+        profileList: List<Profile> = defaultProfiles
     ) {
-        var profileBlocks = ""
-        val expandList = { it: List<String> ->
-            if (it.isNotEmpty()) "\"${it.joinToString("\", \"")}\"" else ""
+        android {
+            this.compileSdk = compileSdk
+            this.minSdk = minSdk
+            this.targetSdk = targetSdk
+            execution {
+                profiles {
+                    profileList.forEach { profile ->
+                        create(profile.name) {
+                            it.r8 {
+                                jvmOptions += profile.r8JvmOptions
+                                runInSeparateProcess = profile.r8RunInSeparateProcess
+                            }
+                        }
+                    }
+                }
+                execProfile?.let {
+                    defaultProfile = it
+                }
+            }
         }
-        profiles.forEach {
-            profileBlocks +=
-                    """|
-                |            ${it.name} {
-                |                r8 {
-                |                    jvmOptions = [${expandList(it.r8JvmOptions)}]
-                |                    runInSeparateProcess ${it.r8RunInSeparateProcess}
-                |                }
-                |            }
-                """.trimMargin("|")
-        }
-        project.settingsFile.appendText(
-                """|
-                |
-                |android {
-                |    compileSdk $compileSdk
-                |    minSdk $minSdk
-                |    targetSdk $targetSdk
-                |    execution {
-                |        profiles {
-                |$profileBlocks
-                |        }
-                |        ${execProfile?.run { """defaultProfile "$execProfile"""" } ?: ""}
-                |    }
-                |}
-            """.trimMargin("|")
-        )
     }
 
-    private fun withShrinker() {
-        project.buildFile.appendText("android.buildTypes.debug.minifyEnabled true")
+    private fun ApplicationExtension.withShrinker() {
+        buildTypes {
+            named("debug") {
+                it.isMinifyEnabled = true
+            }
+        }
     }
 
     @Test
     fun testInvalidProfile() {
-        withShrinker()
-        addSettingsBlock(execProfile = "invalid")
-        val result = project.executor().expectFailure().run("assembleDebug")
+        val build = rule.build {
+            settings {
+                addSettingsBlock(execProfile = "invalid")
+            }
+            androidApplication {
+                android.withShrinker()
+            }
+        }
+
+        val result = build.executor.expectFailure().run("assembleDebug")
 
         result.stderr.use {
             ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist")
@@ -120,20 +115,26 @@ class SettingsPluginTest {
 
     @Test
     fun testProfileOverride() {
-        withShrinker()
-        // First try to build with invalid profile
-        addSettingsBlock(execProfile = "invalid")
-        var result = project.executor().expectFailure().run("assembleDebug")
+        val build = rule.build {
+            settings {
+                // First try to build with invalid profile
+                addSettingsBlock(execProfile = "invalid")
+            }
+            androidApplication {
+                android.withShrinker()
+            }
+        }
+
+        var result = build.executor.expectFailure().run("assembleDebug")
 
         result.stderr.use {
             ScannerSubject.assertThat(it).contains("Selected profile 'invalid' does not exist")
         }
 
         // Make sure it builds when overriding the profile
-        result =
-                project.executor()
-                        .with(StringOption.EXECUTION_PROFILE_SELECTION, "low")
-                        .run("clean", "assembleDebug")
+        result = build.executor
+            .with(StringOption.EXECUTION_PROFILE_SELECTION, "low")
+            .run("clean", "assembleDebug")
 
         result.stdout.use {
             ScannerSubject.assertThat(it)
@@ -143,38 +144,43 @@ class SettingsPluginTest {
 
     @Test
     fun testProfileAutoSelection() {
-        withShrinker()
-        // Building with no profiles and no selection should go to default
-        addSettingsBlock(execProfile = null, profiles = listOf())
-        project.execute("assembleDebug")
+        val build = rule.build {
+            settings {
+                // Building with no profiles and no selection should go to default
+                addSettingsBlock(execProfile = null, profileList = listOf())
+            }
+            androidApplication {
+                android.withShrinker()
+            }
+        }
+
+        build.executor.run("assembleDebug")
 
         // Adding one profile should auto-select it, so it should also work
-        project.settingsFile.appendText(
-                """|
-                |android.execution.profiles {
-                |    profileOne {
-                |        r8.jvmOptions = []
-                |        r8.runInSeparateProcess false
-                |    }
-                |}
-            """.trimMargin()
-        )
-        var result = project.executor().run("clean", "assembleDebug")
+        build.reconfigureSettings {
+            android {
+                execution.profiles {
+                    create("profileOne") {
+                        it.r8.runInSeparateProcess = false
+                    }
+                }
+            }
+        }
+        var result = build.executor.run("clean", "assembleDebug")
 
         result.stdout.use {
             ScannerSubject.assertThat(it).contains("Using only execution profile 'profileOne'")
         }
 
         // Adding another profile with no selection should fail
-        project.settingsFile.appendText(
-                """|
-                |android.execution.profiles {
-                |    profileTwo {
-                |    }
-                |}
-            |""".trimMargin()
-        )
-        result = project.executor().expectFailure().run("clean", "assembleDebug")
+        build.reconfigureSettings {
+            android {
+                execution.profiles {
+                    create("profileTwo") { }
+                }
+            }
+        }
+        result = build.executor.expectFailure().run("clean", "assembleDebug")
 
         result.stderr.use {
             ScannerSubject.assertThat(it)
@@ -182,38 +188,37 @@ class SettingsPluginTest {
         }
 
         // Selecting a profile through override should work
-        project.executor()
+        build.executor
                 .with(StringOption.EXECUTION_PROFILE_SELECTION, "profileOne")
                 .run("clean", "assembleDebug")
 
         // So should adding the profile selection to the settings file
-        project.settingsFile.appendText(
-                """android.execution.defaultProfile "profileTwo" """
-        )
-        project.execute("clean", "assembleDebug")
+        build.reconfigureSettings {
+            android {
+                execution.defaultProfile = "profileTwo"
+            }
+        }
+        build.executor.run("clean", "assembleDebug")
     }
 
     // regression test for b/258704137
     @Test
     fun testJvmOptionsAreUsed() {
-        addSettingsBlock(
-                execProfile = "mid",
-                profiles = listOf(
+        val build = rule.build {
+            settings {
+                addSettingsBlock(
+                    execProfile = "mid",
+                    profileList = listOf(
                         Profile("mid", listOf(":pizza/foo"), true)
+                    )
                 )
-        )
+            }
+            androidApplication {
+                android.withShrinker()
+            }
+        }
 
-        project.buildFile.appendText(
-                """|
-                |android.buildTypes {
-                |    debug {
-                |        minifyEnabled true
-                |    }
-                |}
-            """.trimMargin()
-        )
-
-        val result = project.executor().expectFailure().run("clean", "minifyDebugWithR8")
+        val result = build.executor.expectFailure().run("clean", "minifyDebugWithR8")
 
         // If the jvm args used, r8 will be unable to create the separate process
         // with invalid arguments
@@ -227,14 +232,23 @@ class SettingsPluginTest {
         val compileSdk = DEFAULT_COMPILE_SDK_VERSION
         val targetSdk = DEFAULT_COMPILE_SDK_VERSION - 1
         val minSdk = DEFAULT_COMPILE_SDK_VERSION - 2
-        addSettingsBlock(compileSdk = compileSdk,
-                targetSdk = targetSdk,
-                minSdk = minSdk,
-                execProfile = null,
-                profiles = listOf())
+
+        val build = rule.build {
+            settings {
+                addSettingsBlock(compileSdk = compileSdk,
+                    targetSdk = targetSdk,
+                    minSdk = minSdk,
+                    execProfile = null,
+                    profileList = listOf())
+            }
+        }
 
         // First check app
-        val modelInfo = project.modelV2().fetchModels().container.getProject(":")
+        val modelInfo = build.modelBuilder
+            .fetchModels()
+            .container
+            .getProject(DEFAULT_APP_PATH)
+
         val androidDsl = modelInfo.androidDsl ?: error("failed to fetch android DSL model")
         assertThat(androidDsl.compileTarget)
                 .named("androidDsl.compileTarget")
@@ -254,7 +268,10 @@ class SettingsPluginTest {
         }
 
         // Then check library
-        val libModelInfo = project.modelV2().fetchModels().container.getProject(":lib")
+        val libModelInfo = build.modelBuilder
+            .fetchModels()
+            .container
+            .getProject(DEFAULT_LIB_PATH)
         val libAndroidDsl = libModelInfo.androidDsl ?: error("failed to fetch android DSL model")
         assertThat(libAndroidDsl.compileTarget)
             .named("libAndroidDsl.compileTarget")

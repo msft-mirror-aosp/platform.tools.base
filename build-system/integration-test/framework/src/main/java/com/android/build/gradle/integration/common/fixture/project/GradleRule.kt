@@ -131,7 +131,7 @@ interface GradleRule: TestRule {
 
 internal class GradleRuleImpl internal constructor(
     val name: String,
-    private val gradleBuild: GradleBuildDefinitionImpl,
+    private val buildDefinition: GradleBuildDefinitionImpl,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder,
     private val externalLibraries: List<Library>,
     private val enableProfileOutput: Boolean,
@@ -152,7 +152,7 @@ internal class GradleRuleImpl internal constructor(
         }
 
         computeGradleBuild(
-            gradleBuild,
+            buildDefinition,
             mutableProjectLocation ?: throw RuntimeException("Location not set!")
         )
     }
@@ -165,7 +165,7 @@ internal class GradleRuleImpl internal constructor(
             throw RuntimeException("Build was already reconfigured and written. Cannot be configured twice.")
         }
 
-        action(gradleBuild)
+        action(buildDefinition)
 
         return build
     }
@@ -202,16 +202,16 @@ internal class GradleRuleImpl internal constructor(
 
         // Libraries can also be added inline during dependencies. We need to go through all
         // the build definitions to query their projects for libraries added in such way.
-        val allLibraries = gradleBuild.gatherInlineLibraries() + externalLibraries
+        val allLibraries = buildDefinition.gatherInlineLibraries() + externalLibraries
 
         if (allLibraries.isNotEmpty()) {
-            val repoPath = computeAdditionalMavenRepo()
+            val repoPath = computeMavenRepoLocation()
             MavenRepoGenerator(allLibraries).generate(repoPath)
 
             localRepositories.add(repoPath)
         }
 
-        gradleBuild.write(projectDir.toPath(), localRepositories, buildWriter)
+        buildDefinition.write(projectDir.toPath(), localRepositories, buildWriter)
 
         createLocalProp()
         createGradleProp()
@@ -219,7 +219,7 @@ internal class GradleRuleImpl internal constructor(
         status = Status.WRITTEN_USER
     }
 
-    private fun computeAdditionalMavenRepo(): Path {
+    private fun computeMavenRepoLocation(): Path {
         val location = mutableProjectLocation ?: throw RuntimeException("Location not set before writing!")
         return location.projectDir.toPath().resolve("_maven_repo")
     }
@@ -231,12 +231,12 @@ internal class GradleRuleImpl internal constructor(
      * the included directory.
      */
     private fun computeGradleBuild(
-        build: GradleBuildDefinitionImpl,
+        buildDefinition: GradleBuildDefinitionImpl,
         location: ProjectLocation
     ): GradleBuild {
         val rootFolder = location.projectDir.toPath()
 
-        val includedBuilds = build.includedBuilds.values.associate {
+        val includedBuilds = buildDefinition.includedBuilds.values.associate {
             it.name to computeGradleBuild(
                 it,
                 ProjectLocation(rootFolder.resolve(it.name).toFile(), location.testLocation)
@@ -245,7 +245,7 @@ internal class GradleRuleImpl internal constructor(
 
         val modelBuilderProvider = { instantiateModelBuilder(location) }
 
-        val subProjects = build.subProjects.values.associate { definition ->
+        val subProjects = buildDefinition.subProjects.values.associate { definition ->
             val subProjectLocation = computeSubProjectPath(rootFolder, definition.path)
 
             definition.path to when (definition) {
@@ -253,89 +253,68 @@ internal class GradleRuleImpl internal constructor(
                     subProjectLocation,
                     definition,
                     definition.namespace,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is AndroidLibraryDefinitionImpl -> AndroidLibraryImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is AndroidDynamicFeatureDefinitionImpl -> AndroidFeatureImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is AndroidTestDefinitionImpl -> AndroidTestImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is PrivacySandboxSdkDefinitionImpl -> PrivacySandboxSdkImpl(
                     subProjectLocation,
                     definition,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is AssetPackDefinitionImpl -> AssetPackImpl(
                     subProjectLocation,
                     definition,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 is AiPackDefinitionImpl -> AiPackImpl(
                     computeSubProjectPath(rootFolder, definition.path),
                     definition,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider
                 )
 
                 is GenericProjectDefinitionImpl -> GenericProjectImpl(
                     subProjectLocation,
                     definition,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider,
                 )
 
                 else -> throw RuntimeException("Unsupported GradleProjectDefinition type: ${definition::class.java}")
             }
-        }
+        } + mapOf(
+            ":" to GenericProjectImpl(
+                computeSubProjectPath(rootFolder, ":"),
+                buildDefinition.rootProject,
+            )
+        )
 
         return GradleBuildImpl(
             rootFolder,
-            subProjects = subProjects + mapOf(
-                ":" to GenericProjectImpl(
-                    computeSubProjectPath(rootFolder, ":"),
-                    build.rootProject,
-                    buildWriter,
-                    build,
-                    modelBuilderProvider
-                )
-            ),
+            subProjects = subProjects,
             includedBuilds = includedBuilds,
+            definition = buildDefinition,
             executorProvider = { instantiateExecutor(location) },
             modelBuilderProvider = modelBuilderProvider,
-        )
+            buildWriter = buildWriter
+        ).also { build ->
+            subProjects.values.forEach {
+                it.build = build
+            }
+        }
     }
 
     /**
@@ -365,7 +344,7 @@ internal class GradleRuleImpl internal constructor(
         override val androidNdkSxSRootSymlink: File?
             get() = location.testLocation.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
         override val additionalMavenRepoDir: Path?
-            get() = computeAdditionalMavenRepo()
+            get() = computeMavenRepoLocation()
         override val profileDirectory: Path?
             get() = if (enableProfileOutput) GradleTestProjectBuilder.DEFAULT_PROFILE_DIR else null
     }
@@ -373,7 +352,7 @@ internal class GradleRuleImpl internal constructor(
     private fun createLocalProp() {
         createLocalProp(location.projectDir)
 
-        for (includedBuild in gradleBuild.includedBuilds.values) {
+        for (includedBuild in buildDefinition.includedBuilds.values) {
             createLocalProp(File(location.projectDir, includedBuild.name))
         }
     }

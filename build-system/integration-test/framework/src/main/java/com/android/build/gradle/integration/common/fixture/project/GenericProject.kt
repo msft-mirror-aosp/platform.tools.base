@@ -86,15 +86,9 @@ interface GenericProject: GradleProject<GenericProjectDefinition> {
 internal class GenericProjectImpl(
     location: Path,
     projectDefinition: GenericProjectDefinition,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : GradleProjectImpl<GenericProjectDefinition>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), GenericProject {
 
 

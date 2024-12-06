@@ -41,15 +41,9 @@ interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition>
 internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     location: Path,
     projectDefinition: ProjectDefinitionT,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : GradleProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder
 ), BaseAndroidProject<ProjectDefinitionT> {
 
     override val intermediatesDir: Path

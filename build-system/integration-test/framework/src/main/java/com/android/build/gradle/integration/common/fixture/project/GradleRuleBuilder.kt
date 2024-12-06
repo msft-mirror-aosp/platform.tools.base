@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_TEST_PROJECT_NAME
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.CreationOptionsBuilder
@@ -28,7 +27,6 @@ import com.android.build.gradle.integration.common.fixture.project.options.RuleO
 import com.android.build.gradle.integration.common.fixture.project.options.SdkConfigurationBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
-import com.android.build.gradle.integration.common.fixture.project.options.CreationOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -115,7 +113,7 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     ): GradleRule {
         return GradleRuleImpl(
             name = ruleOptionBuilder.creationOptions.name,
-            gradleBuild = gradleBuild,
+            buildDefinition = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
             externalLibraries = mavenRepository.libraries,
             enableProfileOutput

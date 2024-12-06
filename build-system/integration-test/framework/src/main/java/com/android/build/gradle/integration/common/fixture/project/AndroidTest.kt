@@ -66,16 +66,10 @@ internal class AndroidTestImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<TestExtension>,
     namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
-    ) : AndroidProjectImpl<AndroidProjectDefinition<TestExtension>>(
+) : AndroidProjectImpl<AndroidProjectDefinition<TestExtension>>(
     location,
     projectDefinition,
     namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder
 ), AndroidTestProject {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidTestProject =

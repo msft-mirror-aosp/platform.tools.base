@@ -394,7 +394,7 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
 
     internal fun write(
         location: Path,
-        repositories: Collection<Path>,
+        repositories: Collection<Path>?,
         buildWriter: () -> BuildWriter,
     ) {
         location.createDirectories()
@@ -406,15 +406,7 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
         // gather all the plugins and all their versions so that the settings file can declare them as needed.
         val allPlugins = computeAllPluginMap()
 
-        // write settings with the list of plugins
-        settings.write(
-            name = name,
-            location = location,
-            repositories = repositories,
-            includedBuildNames = includedBuilds.values.map { it.name},
-            subProjectPaths = subProjects.values.map { it.path },
-            buildWriter = buildWriter,
-        )
+        writeSetting(location, repositories, buildWriter)
 
         // write all the projects
         rootProject.writeRoot(location, allPlugins, customPluginMap, buildWriter)
@@ -432,6 +424,21 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
         includedBuilds.values.forEach {
             it.write(location.resolve(it.name), repositories, buildWriter)
         }
+    }
+
+    internal fun writeSetting(
+        location: Path,
+        repositories: Collection<Path>?,
+        buildWriter: () -> BuildWriter
+    ) {
+        settings.write(
+            name = name,
+            location = location,
+            repositories = repositories,
+            includedBuildNames = includedBuilds.values.map { it.name},
+            subProjectPaths = subProjects.values.map { it.path },
+            buildWriter = buildWriter,
+        )
     }
 
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> {

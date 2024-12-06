@@ -79,15 +79,9 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
     location: Path,
     projectDefinition: ProjectDefinitionT,
     final override val namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : BaseAndroidProjectImpl<ProjectDefinitionT>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder
 ), AndroidProject<ProjectDefinitionT> {
 
     override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)

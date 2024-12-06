@@ -105,15 +105,9 @@ interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefiniti
 internal class PrivacySandboxSdkImpl(
     location: Path,
     projectDefinition: PrivacySandboxSdkDefinition,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : BaseAndroidProjectImpl<PrivacySandboxSdkDefinition>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), PrivacySandboxSdkProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)

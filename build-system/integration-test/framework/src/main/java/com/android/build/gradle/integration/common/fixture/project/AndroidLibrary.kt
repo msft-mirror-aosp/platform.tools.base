@@ -96,16 +96,10 @@ internal class AndroidLibraryImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(
     location,
     projectDefinition,
     namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), AndroidLibraryProject {
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{

@@ -19,12 +19,15 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
 /**
@@ -82,6 +85,13 @@ interface GradleBuild {
     val executor: GradleTaskExecutor
     /** The [ModelBuilderV2] that can be used to query for models */
     val modelBuilder: ModelBuilderV2
+
+    /**
+     * Allows reconfiguring the settings
+     *
+     * This only rewrites the setting file, and does not change anything else
+     */
+    fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit)
 
     /**
      * Allows making modifications that are reverted.
@@ -219,8 +229,10 @@ internal class GradleBuildImpl(
     override val directory: Path,
     private val subProjects: Map<String, GradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
+    private val definition: GradleBuildDefinitionImpl,
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
+    internal val buildWriter: () -> BuildWriter,
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {
@@ -248,6 +260,14 @@ internal class GradleBuildImpl(
                 """.trimIndent()
             )
     }
+
+    override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
+        action(definition.settings)
+        definition.writeSetting(directory, null, buildWriter)
+    }
+
+    internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =
+        definition.computeAllPluginMap()
 
     /**
      * Runs the provided action with this build. At the end of the action, all file changes made

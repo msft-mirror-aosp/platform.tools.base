@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.BuildType
+import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
@@ -107,6 +108,12 @@ interface DslContentHolder {
         theInterface: Class<T>,
         parentChain: List<String> = listOf(),
         action: NamedDomainObjectContainerProxy<T>.() -> Unit,
+    )
+
+    fun executionProfiles(
+        theInterface: Class<ExecutionProfile>,
+        parentChain: List<String> = listOf(),
+        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit,
     )
 
     /**
@@ -301,6 +308,22 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         )
     }
 
+    override fun executionProfiles(
+        theInterface: Class<ExecutionProfile>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "profiles",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            parentChain = parentChain,
+            action = action,
+        )
+    }
+
     override fun <T> runNestedBlock(
         name: String,
         parameters: List<Any>,
@@ -483,6 +506,14 @@ internal class ChainedDslContentHolder(
         action: NamedDomainObjectContainerProxy<T>.() -> Unit
     ) {
         parent.productFlavors(theInterface, parentChain + this.name, action)
+    }
+
+    override fun executionProfiles(
+        theInterface: Class<ExecutionProfile>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
+    ) {
+        parent.executionProfiles(theInterface, parentChain + this.name, action)
     }
 
     override fun <T> runNestedBlock(

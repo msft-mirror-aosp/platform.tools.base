@@ -59,6 +59,9 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     private val plugins = mutableListOf<AppliedPlugin>()
     private val androidContentHolder = DefaultDslContentHolder()
 
+    // cache or the repositories as we need to keep this around for reconfiguration.
+    private var repositoriesCache: Collection<Path>? = null
+
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
         if (!type.isSettings) {
             throw RuntimeException("Cannot apply project plugin to a project")
@@ -107,15 +110,19 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     internal fun write(
         name: String,
         location: Path,
-        repositories: Collection<Path>,
+        repositories: Collection<Path>?,
         includedBuildNames: Collection<String>,
         subProjectPaths: Collection<String>,
         buildWriter: () -> BuildWriter,
     ) {
+        val repos = repositories ?: repositoriesCache ?: error("No repositories provided")
+
+        repositoriesCache = repos
+
         buildWriter().apply {
             block("pluginManagement") {
                 block("repositories") {
-                    for (repository in repositories) {
+                    for (repository in repos) {
                         mavenSnippet(repository)
                     }
                 }
@@ -134,7 +141,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             block("dependencyResolutionManagement") {
                 method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
                 block("repositories") {
-                    for (repository in repositories) {
+                    for (repository in repos) {
                         mavenSnippet(repository)
                     }
                 }
