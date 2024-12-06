@@ -38,6 +38,7 @@ import com.android.sdklib.TempSdkManager;
 import com.android.sdklib.devices.Device.Builder;
 import com.android.sdklib.devices.DeviceManager.DeviceFilter;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
+import com.android.sdklib.internal.avd.HardwareProperties;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
@@ -57,10 +58,10 @@ import java.util.Map;
 
 public class DeviceManagerTest {
 
-    static final String WSVGA_HASH             = "MD5:176ce220cc833bcb6dc60ff13b82c716";
-    static final String WSVGA_TRACKBALL_HASH   = "MD5:e964715d73bc8b2cc7ca2fadcb12fa41";
-    static final String NEXUS_ONE_HASH         = "MD5:ef39e456bf2cab397201c2ac251f35fc";
-    static final String NEXUS_ONE_PLUGGED_HASH = "MD5:474a72646a55e61e94f69bdd94758ceb";
+    static final String WSVGA_HASH             = "MD5:be7b258bf9edce03131d307b10b00856";
+    static final String WSVGA_TRACKBALL_HASH   = "MD5:b175af6e1b3d92b267ed4459bcbb5de7";
+    static final String NEXUS_ONE_HASH         = "MD5:7d6cfc4f88c91801ebb7340d8a7f7e6e";
+    static final String NEXUS_ONE_PLUGGED_HASH = "MD5:730700c2dec77d0dc439bad52f4b6a1c";
 
     @Rule public final TempSdkManager sdkManager =
             new TempSdkManager("sdk_" + getClass().getSimpleName());
@@ -776,9 +777,23 @@ public class DeviceManagerTest {
                         .collect(toList());
         assertThat(automotiveDevices).isNotEmpty();
         for (Device device : automotiveDevices) {
-            assertThat(DeviceManager.getHardwareProperties(device)).containsKey(CLUSTER_HEIGHT);
-            assertThat(DeviceManager.getHardwareProperties(device)).containsKey(CLUSTER_WIDTH);
+            Map<String, String> properties = DeviceManager.getHardwareProperties(device);
+            assertThat(properties).containsKey(CLUSTER_HEIGHT);
+            assertThat(properties).containsKey(CLUSTER_WIDTH);
         }
+    }
+
+    @Test
+    public void testAutomotiveDeviceSensors() {
+        Device device = dm.getDevice("automotive_1080p_landscape", "Google");
+        Map<String, String> properties = DeviceManager.getHardwareProperties(device);
+
+        assertThat(properties.get(HardwareProperties.HW_ACCELEROMETER)).isEqualTo("yes");
+        assertThat(properties.get(HardwareProperties.HW_GYROSCOPE)).isEqualTo("yes");
+        assertThat(properties.get(HardwareProperties.HW_MAGNETIC_FIELD_SENSOR)).isEqualTo("no");
+        assertThat(properties.get(HardwareProperties.HW_LIGHT_SENSOR)).isEqualTo("no");
+        assertThat(properties.get(HardwareProperties.HW_PRESSURE_SENSOR)).isEqualTo("no");
+        assertThat(properties.get(HardwareProperties.HW_PROXIMITY_SENSOR)).isEqualTo("no");
     }
 
     @Test
@@ -789,10 +804,9 @@ public class DeviceManagerTest {
                         .collect(toList());
         assertThat(automotiveDistantDisplayDevices).isNotEmpty();
         for (Device device : automotiveDistantDisplayDevices) {
-            assertThat(DeviceManager.getHardwareProperties(device))
-                    .containsKey(DISTANT_DISPLAY_HEIGHT);
-            assertThat(DeviceManager.getHardwareProperties(device))
-                    .containsKey(DISTANT_DISPLAY_WIDTH);
+            Map<String, String> properties = DeviceManager.getHardwareProperties(device);
+            assertThat(properties).containsKey(DISTANT_DISPLAY_HEIGHT);
+            assertThat(properties).containsKey(DISTANT_DISPLAY_WIDTH);
         }
     }
 
