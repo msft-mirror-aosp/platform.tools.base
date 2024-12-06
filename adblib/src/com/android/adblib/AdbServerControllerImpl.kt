@@ -16,7 +16,6 @@
 package com.android.adblib
 
 import com.android.adblib.impl.TimeoutTracker
-import com.android.adblib.impl.channels.runInterruptibleIO
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -29,7 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path
@@ -37,8 +35,7 @@ import java.util.concurrent.TimeUnit
 
 internal class AdbServerControllerImpl(
   private val host: AdbSessionHost,
-  configurationFlow: StateFlow<AdbServerConfiguration>,
-  processRunner: ProcessRunner = ProcessRunnerImpl(host),
+  configurationFlow: StateFlow<AdbServerConfiguration>
 ) : AdbServerController {
 
     private val logger = adbLogger(host)
@@ -52,7 +49,7 @@ internal class AdbServerControllerImpl(
      * The current [State] of this instance. The [start], [stop] and [restart] methods can change
      * the [currentState] at any time.
      */
-    private var currentState = State.initial(host, processRunner, configurationFlow)
+    private var currentState = State.initial(host, configurationFlow)
 
     /**
      * * Returns `true` after the [start] method has successfully completed, i.e. after ADB server
@@ -152,48 +149,6 @@ internal class AdbServerControllerImpl(
         }
     }
 
-    interface ProcessRunner {
-
-        /**
-         * Executes a command and waits for it to complete.
-         *
-         * @param executable The absolute path to the executable.
-         * @param args  A list of arguments to pass to the executable.
-         * @param envVars  A map of environment variables to set for the process.
-         */
-        suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>)
-    }
-
-    class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunner {
-
-        private val logger = adbLogger(host)
-
-        override suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>) {
-            if (!executable.isAbsolute) {
-                throw IllegalArgumentException("Executable path must be absolute: `$executable`")
-            }
-            runInterruptibleIO(host.blockingIoDispatcher) {
-                val command = listOf(executable.toString()) + args
-                logger.info { "runProcess: ${command.joinToString(" ")}" }
-                val processBuilder = ProcessBuilder(command)
-                processBuilder.directory(File(executable.parent.toString()))
-                val env = processBuilder.environment()
-                envVars.forEach { (key, value) -> env[key] = value }
-                processBuilder.redirectErrorStream(true)
-
-                val process = processBuilder.start()
-                val output = process.inputStream.bufferedReader().use { it.readText() }
-                logger.debug { output }
-
-                val exitCode = process.waitFor()
-                if (exitCode != 0) {
-                    logger.debug { "${command.joinToString(" ")} failed. Output: $output" }
-                    throw IOException("adb ${command.joinToString(" ")} failed. Exit code: $exitCode")
-                }
-            }
-        }
-    }
-
     /**
      * This class is used to keep track of transitions the adb server goes through.
      */
@@ -204,7 +159,6 @@ internal class AdbServerControllerImpl(
         class StateParams(
             val host: AdbSessionHost,
             val scope: CoroutineScope,
-            val processRunner: ProcessRunner,
             val configurationFlow: StateFlow<AdbServerConfiguration>,
             val isStartedFlow: MutableStateFlow<Boolean>,
             val lastUsedConfig: MutableStateFlow<AdbServerConfiguration?>,
@@ -217,7 +171,7 @@ internal class AdbServerControllerImpl(
             get() = params.scope
 
         val processRunner: ProcessRunner
-            get() = params.processRunner
+            get() = params.host.processRunner
 
         val configurationFlow: StateFlow<AdbServerConfiguration>
             get() = params.configurationFlow
@@ -310,7 +264,6 @@ internal class AdbServerControllerImpl(
              */
             fun initial(
                 host: AdbSessionHost,
-                processRunner: ProcessRunner,
                 configurationFlow: StateFlow<AdbServerConfiguration>
             ): State {
                 val scope = CoroutineScope(host.parentContext + host.ioDispatcher + SupervisorJob())
@@ -318,7 +271,6 @@ internal class AdbServerControllerImpl(
                 val stateParams = StateParams(
                     host = host,
                     scope = scope,
-                    processRunner = processRunner,
                     configurationFlow = configurationFlow,
                     isStartedFlow = MutableStateFlow(false),
                     lastUsedConfig = MutableStateFlow<AdbServerConfiguration?>(null))

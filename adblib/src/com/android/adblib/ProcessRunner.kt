@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.adblib.testing
+package com.android.adblib
 
-import com.android.adblib.AdbSessionHost
+import java.nio.file.Path
 
-class FakeAdbSessionHost : AdbSessionHost() {
+interface ProcessRunner {
 
-    override val loggerFactory = FakeAdbLoggerFactory()
-
-    override val timeProvider: FakeNanoTimeProvider = FakeNanoTimeProvider()
-
-    override val usageTracker: FakeAdbUsageTracker = FakeAdbUsageTracker()
-
-    override val processRunner: FakeProcessRunner = FakeProcessRunner()
-
-    override fun close() {
-    }
+    /**
+     * Executes a command and waits for it to complete.
+     *
+     * @param executable The absolute path to the executable.
+     * @param args  A list of arguments to pass to the executable.
+     * @param envVars  A map of environment variables to set for the process.
+     */
+    suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>)
 }
