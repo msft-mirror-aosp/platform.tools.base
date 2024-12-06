@@ -6,14 +6,14 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSI
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION
 import com.android.build.gradle.integration.common.fixture.app.LayoutFileBuilder
 import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import org.junit.Before
+import com.android.build.gradle.options.BooleanOption
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
+import java.time.Duration
 
 /** Connected tests for Library Android Test with views.  */
 class LibraryAndroidTestWithViewTest {
@@ -33,75 +33,81 @@ class LibraryAndroidTestWithViewTest {
             build()
         }
 
-        private val testViewSrc = """
-        package $testNamespace
+        private val testViewSrc =
+            // language=kotlin
+            """
+                package $testNamespace
 
-        import android.content.Context
-        import android.util.AttributeSet
-        import androidx.appcompat.widget.AppCompatEditText
-        import androidx.appcompat.R as AppCompatR
+                import android.content.Context
+                import android.util.AttributeSet
+                import androidx.appcompat.widget.AppCompatEditText
+                import androidx.appcompat.R as AppCompatR
 
-        class TestView @JvmOverloads constructor(
-                context: Context,
-                attrs: AttributeSet? = null,
-                defStyleAttr: Int = AppCompatR.attr.editTextStyle,
-        ) : AppCompatEditText(context, attrs, defStyleAttr)
-    """.trimIndent()
+                class TestView @JvmOverloads constructor(
+                        context: Context,
+                        attrs: AttributeSet? = null,
+                        defStyleAttr: Int = AppCompatR.attr.editTextStyle,
+                ) : AppCompatEditText(context, attrs, defStyleAttr)
+            """.trimIndent()
 
-        private val testActivitySrc = """
-        package $testNamespace
+        private val testActivitySrc =
+            //language=kotlin
+            """
+                package $testNamespace
 
-        import androidx.appcompat.app.AppCompatActivity
-        import com.android.tests.atviews.test.R
-        class TestActivity : AppCompatActivity(R.layout.test_view_layout)
-    """.trimIndent()
+                import androidx.appcompat.app.AppCompatActivity
+                import com.android.tests.atviews.test.R
+                class TestActivity : AppCompatActivity(R.layout.test_view_layout)
+            """.trimIndent()
 
-        private val testTestViewSrc = """
-        package $testNamespace
+        private val testTestViewSrc =
+            //language=kotlin
+            """
+                package $testNamespace
 
-        import android.Manifest
-        import android.os.Build
+                import android.Manifest
+                import android.os.Build
+                import androidx.test.ext.junit.rules.ActivityScenarioRule
+                import androidx.test.ext.junit.runners.AndroidJUnit4
+                import androidx.test.rule.GrantPermissionRule
+                import com.android.tests.atviews.TestView
+                import com.android.tests.atviews.test.R
+                import org.junit.Assert.*
+                import org.junit.Rule
+                import org.junit.Test
+                import org.junit.runner.RunWith
 
-        import androidx.test.ext.junit.rules.ActivityScenarioRule
-        import androidx.test.ext.junit.runners.AndroidJUnit4
-        import androidx.test.rule.GrantPermissionRule
-        import com.android.tests.atviews.TestView
-        import com.android.tests.atviews.test.R
-        import org.junit.Assert.*
-        import org.junit.Rule
-        import org.junit.Test
-        import org.junit.runner.RunWith
+                @RunWith(AndroidJUnit4::class)
+                class TestTestView {
+                    @get:Rule var rule = ActivityScenarioRule(TestActivity::class.java)
 
-        @RunWith(AndroidJUnit4::class)
-        class TestTestView {
-            @get:Rule var rule = ActivityScenarioRule(TestActivity::class.java)
+                    @get:Rule
+                    val mRuntimePermissionRule: GrantPermissionRule =
+                            if (Build.VERSION.SDK_INT >= 33) {
+                                GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                GrantPermissionRule.grant()
+                            }
 
-            @get:Rule
-            val mRuntimePermissionRule: GrantPermissionRule =
-                    if (Build.VERSION.SDK_INT >= 33) {
-                        GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
-                    } else {
-                        GrantPermissionRule.grant()
+                    @Test
+                    fun testLaunchActivity() {
+                        rule.scenario.onActivity { activity ->
+                            assertNotNull(activity)
+                            assertNotNull(activity.findViewById<TestView>(R.id.view_instance_1))
+                        }
                     }
-
-            @Test
-            fun testLaunchActivity() {
-                rule.scenario.onActivity { activity ->
-                    assertNotNull(activity)
-                    assertNotNull(activity.findViewById<TestView>(R.id.view_instance_1))
                 }
-            }
-        }
-    """.trimIndent()
+            """.trimIndent()
     }
 
-    @Rule
-    @JvmField
-    var project = createGradleProject {
-        withKotlinPlugin = true
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withProperties {
+            add(BooleanOption.USE_ANDROID_X, true)
+        }
+        .from {
+        androidLibrary(createMinimumProject = false) {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             dependencies {
                 implementation(externalLibrary("androidx.core:core-ktx:1.1.0"))
                 implementation(externalLibrary("androidx.appcompat:appcompat:1.3.+"))
@@ -114,39 +120,35 @@ class LibraryAndroidTestWithViewTest {
                 androidTestImplementation(externalLibrary("com.android.support.constraint:constraint-layout:$SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION"))
             }
             android {
-                namespace = testNamespace
+                namespace = Companion.testNamespace
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                minSdk = DEFAULT_MIN_SDK_VERSION
-                hasInstrumentationTests = true
+                defaultConfig{
+                    minSdk = DEFAULT_MIN_SDK_VERSION
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
                 buildFeatures {
                     viewBinding = true
                 }
-                kotlinOptions {
-                    jvmTarget = "1.8"
+                installation {
+                    timeOutInMs = Duration.ofSeconds(30).toMillis().toInt()
                 }
             }
-            addFile("src/main/java/${srcPackage}/TestView.kt", testViewSrc)
-            addFile("src/androidTest/AndroidManifest.xml", testManifest)
-            addFile("src/androidTest/res/layout/test_view_layout.xml", testLayout)
-            addFile("src/androidTest/java/${srcPackage}/TestActivity.kt", testActivitySrc)
-            addFile("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
+            files.add("src/main/java/${srcPackage}/TestView.kt", testViewSrc)
+            files.add("src/androidTest/AndroidManifest.xml", testManifest)
+            files.add("src/androidTest/res/layout/test_view_layout.xml", testLayout)
+            files.add("src/androidTest/java/${srcPackage}/TestActivity.kt", testActivitySrc)
+            files.add("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
         }
-    }
-
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        project.addUseAndroidXProperty()
-
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.execute("uninstallAll")
     }
 
     @Test
     fun connectedCheck() {
-        project.executor().run("connectedAndroidTest")
+        val build = rule.build
+
+        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+        // of each test and (2) check the adb connection before taking the time to build anything.
+        build.executor.run("uninstallAll")
+
+        build.executor.run("connectedAndroidTest")
     }
 }
