@@ -40,7 +40,7 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
                 mavenCoordinate,
                 packaging,
                 mainLibraryBuilder.toData(),
-                fixtureLibraryBuilder?.toData()
+                fixtureArtifact = fixtureLibraryBuilder?.toData()
             )
         }
     }
@@ -59,6 +59,7 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
         mavenCoordinate: String,
         internal val packaging: String,
         internal val mainArtifact: LibraryData,
+        internal val additionalArtifact: LibraryData? = null,
         internal val fixtureArtifact: LibraryData? = null
     ) {
         constructor(
@@ -79,6 +80,17 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
             vararg dependencies: String
         ) : this(mavenCoordinate, TestInputsGenerator.jarWithEmptyClasses(listOf()), *dependencies)
 
+        constructor(
+            mavenCoordinate: String,
+            mainArtifact: ByteArray,
+            additionalArtifact: ByteArray
+        ) : this(
+            mavenCoordinate,
+            "jar",
+            LibraryBuilderImpl(mainArtifact).toData(),
+            additionalArtifact = LibraryBuilderImpl(additionalArtifact).toData()
+        )
+
         val mavenCoordinate = MavenCoordinate.parse(mavenCoordinate)
 
         fun generatePom(): String {
@@ -90,7 +102,7 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
                 |    xmlns="http://maven.apache.org/POM/4.0.0"
                 |    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 |""".trimMargin())
-            if (fixtureArtifact != null) {
+            if (fixtureArtifact != null || additionalArtifact != null) {
                 // this is required for Gradle to look for a .module file
                 sb.append( """
                 |  <!-- This module was also published with a richer model, Gradle metadata,  -->
@@ -135,7 +147,8 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
 
         fun generateModule(
             mainArtifactPath: Path,
-            fixtureArtifactPath: Path
+            fixtureArtifactPath: Path? = null,
+            additionalArtifactPath: Path? = null
         ): String {
 
             val mainArtifactFile = mainArtifactPath.toFile()
@@ -147,74 +160,16 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
             val mainArtifactSha1 = Hashing.sha1().hashBytes(mainArtifactBytes).toString()
             val mainArtifactMd5 = Hashing.md5().hashBytes(mainArtifactBytes).toString()
 
-            val fixtureArtifactFile = fixtureArtifactPath.toFile()
-            val fixtureArtifactName = fixtureArtifactFile.name
-            val fixtureArtifactSize = fixtureArtifactFile.length()
-            val fixtureArtifactBytes = fixtureArtifactFile.readBytes()
-            val fixtureArtifactSha512 = Hashing.sha512().hashBytes(fixtureArtifactBytes).toString()
-            val fixtureArtifactSha256 = Hashing.sha256().hashBytes(fixtureArtifactBytes).toString()
-            val fixtureArtifactSha1 = Hashing.sha1().hashBytes(fixtureArtifactBytes).toString()
-            val fixtureArtifactMd5 = Hashing.md5().hashBytes(fixtureArtifactBytes).toString()
-
-            return """
-{
-  "formatVersion": "1.1",
-  "component": {
-    "group": "${mavenCoordinate.groupId}",
-    "module": "${mavenCoordinate.artifactId}",
-    "version": "${mavenCoordinate.version}",
-    "attributes": {
-      "org.gradle.status": "release"
-    }
-  },
-  "createdBy": {
-    "gradle": {
-      "version": "7.1"
-    }
-  },
-  "variants": [
-    {
-      "name": "releaseApiPublication",
-      "attributes": {
-        "org.gradle.category": "library",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.libraryelements": "$packaging",
-        "org.gradle.usage": "java-api"
-      },
-      "dependencies": [],
-      "files": [
-        {
-          "name": "$mainArtifactName",
-          "url": "$mainArtifactName",
-          "size": $mainArtifactSize,
-          "sha512": "$mainArtifactSha512",
-          "sha256": "$mainArtifactSha256",
-          "sha1": "$mainArtifactSha1",
-          "md5": "$mainArtifactMd5"
-        }
-      ]
-    },
-    {
-      "name": "releaseRuntimePublication",
-      "attributes": {
-        "org.gradle.category": "library",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.libraryelements": "$packaging",
-        "org.gradle.usage": "java-runtime"
-      },
-      "dependencies": [],
-      "files": [
-        {
-          "name": "$mainArtifactName",
-          "url": "$mainArtifactName",
-          "size": $mainArtifactSize,
-          "sha512": "$mainArtifactSha512",
-          "sha256": "$mainArtifactSha256",
-          "sha1": "$mainArtifactSha1",
-          "md5": "$mainArtifactMd5"
-        }
-      ]
-    },
+            val fixtureVariantsData = if (fixtureArtifactPath != null) {
+                val fixtureArtifactFile = fixtureArtifactPath.toFile()
+                val fixtureArtifactName = fixtureArtifactFile.name
+                val fixtureArtifactSize = fixtureArtifactFile.length()
+                val fixtureArtifactBytes = fixtureArtifactFile.readBytes()
+                val fixtureArtifactSha512 = Hashing.sha512().hashBytes(fixtureArtifactBytes).toString()
+                val fixtureArtifactSha256 = Hashing.sha256().hashBytes(fixtureArtifactBytes).toString()
+                val fixtureArtifactSha1 = Hashing.sha1().hashBytes(fixtureArtifactBytes).toString()
+                val fixtureArtifactMd5 = Hashing.md5().hashBytes(fixtureArtifactBytes).toString()
+                """,
     {
       "name": "releaseTestFixturesApiPublication",
       "attributes": {
@@ -287,6 +242,95 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
         }
       ]
     }
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+            val additionalArtifactData = if (additionalArtifactPath != null) {
+                val additionalArtifactFile = additionalArtifactPath.toFile()
+                val additionalArtifactName = additionalArtifactFile.name
+                val additionalArtifactSize = additionalArtifactFile.length()
+                val additionalArtifactBytes = additionalArtifactFile.readBytes()
+                val additionalArtifactSha512 = Hashing.sha512().hashBytes(additionalArtifactBytes).toString()
+                val additionalArtifactSha256 = Hashing.sha256().hashBytes(additionalArtifactBytes).toString()
+                val additionalArtifactSha1 = Hashing.sha1().hashBytes(additionalArtifactBytes).toString()
+                val additionalArtifactMd5 = Hashing.md5().hashBytes(additionalArtifactBytes).toString()
+                """
+                    ,
+                            {
+                              "name": "$additionalArtifactName",
+                              "url": "$additionalArtifactName",
+                              "size": $additionalArtifactSize,
+                              "sha512": "$additionalArtifactSha512",
+                              "sha256": "$additionalArtifactSha256",
+                              "sha1": "$additionalArtifactSha1",
+                              "md5": "$additionalArtifactMd5"
+                            }
+                """.trimIndent()
+            } else {
+                ""
+            }
+
+            return """
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "${mavenCoordinate.groupId}",
+    "module": "${mavenCoordinate.artifactId}",
+    "version": "${mavenCoordinate.version}",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "$packaging",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [],
+      "files": [
+        {
+          "name": "$mainArtifactName",
+          "url": "$mainArtifactName",
+          "size": $mainArtifactSize,
+          "sha512": "$mainArtifactSha512",
+          "sha256": "$mainArtifactSha256",
+          "sha1": "$mainArtifactSha1",
+          "md5": "$mainArtifactMd5"
+        }$additionalArtifactData
+      ]
+    },
+    {
+      "name": "releaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "$packaging",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [],
+      "files": [
+        {
+          "name": "$mainArtifactName",
+          "url": "$mainArtifactName",
+          "size": $mainArtifactSize,
+          "sha512": "$mainArtifactSha512",
+          "sha256": "$mainArtifactSha256",
+          "sha1": "$mainArtifactSha1",
+          "md5": "$mainArtifactMd5"
+        }$additionalArtifactData
+      ]
+    }$fixtureVariantsData
   ]
 }
 """.trimIndent()
@@ -339,20 +383,34 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
                 library.generatePom().toByteArray()
             )
 
-            library.fixtureArtifact?.let { fixture ->
-                val fixtureArtifactFile = dir.resolve(
+            val additionalArtifactFile = if (library.additionalArtifact != null) {
+                val file = dir.resolve("additional.${library.packaging}")
+                Files.write(file, library.additionalArtifact.artifact)
+                file
+            } else {
+                null
+            }
+
+            val fixtureArtifactFile = if (library.fixtureArtifact != null) {
+                val file = dir.resolve(
                     library.mavenCoordinate.getFileName(
                         library.packaging,
                         isFixture = true
                     )
                 )
-                Files.write(fixtureArtifactFile, fixture.artifact)
+                Files.write(file, library.fixtureArtifact.artifact)
+                file
+            } else {
+                null
+            }
 
+            if (fixtureArtifactFile != null || additionalArtifactFile != null) {
                 Files.write(
                     dir.resolve(library.mavenCoordinate.getFileName("module")),
                     library.generateModule(
                         mainArtifactFile,
-                        fixtureArtifactFile
+                        fixtureArtifactFile,
+                        additionalArtifactFile
                     ).toByteArray()
                 )
             }

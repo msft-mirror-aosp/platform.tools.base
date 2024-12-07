@@ -234,11 +234,14 @@ abstract class MergeJavaResourceTask
 
         val displayBuildInfo = hasIncludedBuilds.get()
 
-        return artifactCollection.get().artifacts.map { it ->
+        return artifactCollection.get().artifacts.map {
             val owner = it.variant.owner
 
             val name = when (owner) {
-                is ModuleComponentIdentifier -> "${owner.group}:${owner.module}:${owner.version}"
+                is ModuleComponentIdentifier ->
+                    // Add a file-specific name so the file merger can distinguish between multiple
+                    // files in one artifact (b/377366954)
+                    "${owner.group}:${owner.module}:${owner.version}" + "/${it.file.name}"
                 is ProjectComponentIdentifier -> {
                     if (displayBuildInfo) {
                         "project(\"${owner.projectPath}\") - Build: ${owner.build.buildPath}"
@@ -246,7 +249,7 @@ abstract class MergeJavaResourceTask
                         "project(\"${owner.projectPath}\")"
                     }
                 }
-                else -> owner.displayName
+                else -> owner.displayName + "/${it.file.name}"
             }
             SourcedInput(it.file, name)
         }
