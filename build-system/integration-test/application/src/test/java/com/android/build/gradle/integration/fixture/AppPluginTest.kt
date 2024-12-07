@@ -21,7 +21,6 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -42,7 +41,7 @@ class AppPluginTest {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
-            componentCallback = AppCallback::class.java
+            pluginCallback = AppCallback::class.java
 
             files {
                 add("src/main/assets/FileToTransform.txt", "initial content")
@@ -71,7 +70,7 @@ class AppPluginTest {
     }
 
     class AppCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {

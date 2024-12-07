@@ -34,14 +34,14 @@ class ProjectSubstitutionDependenciesTest: ModelComparator() {
                 runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
                 implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
             }
-            componentCallback = AppCallback::class.java
+            pluginCallback = AppCallback::class.java
         }
         androidLibrary(":lib") { }
         androidLibrary(":lib2") {  }
     }
 
     class AppCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {

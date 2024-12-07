@@ -16,12 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
-import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
-import org.gradle.api.Plugin
-import org.gradle.api.Project
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import org.gradle.api.Plugin
+import org.gradle.api.Project
 
 /**
  * A Custom plugin to be used with [ApplicationComponentCallback] in projects created
@@ -32,18 +33,20 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class ApplicationCallbackPlugin: Plugin<Project> {
-
+abstract class LegacyApplicationCallbackPlugin: Plugin<Project> {
     override fun apply(target: Project) {
         target.plugins.withType(AppPlugin::class.java) {
-            val componentsExtension = target.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
-            handleExtension(target, componentsExtension)
+            val androidExtension = target.extensions.getByType(AppExtension::class.java)
+
+            // cast it to the implementation because we can
+            val androidExtensionImpl = androidExtension as BaseAppModuleExtension
+            handleExtension(target, androidExtensionImpl)
         }
     }
 
     abstract fun handleExtension(
         project: Project,
-        componentsExtension: ApplicationAndroidComponentsExtension
+        extension: BaseAppModuleExtension
     )
 }
 
@@ -51,9 +54,9 @@ abstract class ApplicationCallbackPlugin: Plugin<Project> {
  * interface to implement to provide custom plugin logic to a [GradleRule] project
  * of type Android Application
  */
-interface ApplicationComponentCallback: PluginCallback {
+interface LegacyApplicationCallback: PluginCallback {
     fun handleExtension(
         project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
+        extension: BaseAppModuleExtension
     )
 }

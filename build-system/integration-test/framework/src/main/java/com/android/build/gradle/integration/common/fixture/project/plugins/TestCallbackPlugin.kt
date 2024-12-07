@@ -28,7 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
  * by [GradleRule].
  *
  * Do not extend this. Instead, implement [LibraryComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.componentCallback]
+ * class to [AndroidProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
@@ -37,12 +37,23 @@ abstract class TestCallbackPlugin: Plugin<Project> {
     override fun apply(target: Project) {
         target.plugins.withType(TestPlugin::class.java) {
             val componentsExtension = target.extensions.getByType(TestAndroidComponentsExtension::class.java)
-            handleComponents(target, componentsExtension)
+            handleExtension(target, componentsExtension)
         }
     }
 
-    abstract fun handleComponents(
+    abstract fun handleExtension(
         project: Project,
         componentsExtension: TestAndroidComponentsExtension
+    )
+}
+
+/**
+ * interface to implement to provide custom plugin logic to a [GradleRule] project
+ * of type Android Test
+ */
+interface TestComponentCallback: PluginCallback {
+    fun handleExtension(
+        project: Project,
+        androidComponents: TestAndroidComponentsExtension
     )
 }

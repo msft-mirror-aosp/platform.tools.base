@@ -17,12 +17,14 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.fixture.project.builder.bytecode.ReferenceFinderVisitor
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.TestCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.TestComponentCallback
 import org.objectweb.asm.ClassReader
@@ -42,6 +44,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.reflect.KClass
 
 /**
  * Handles custom build logic for [GradleRule] projects.
@@ -57,17 +60,40 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     private val writtenClasses = mutableSetOf<String>()
     private val basePluginClasses = mutableSetOf<Class<*>>()
 
+
+    private data class PluginData(
+        val callbackClass: KClass<out PluginCallback>,
+        val pluginClass: KClass<*>,
+        val extensionTypeClassName: String
+    )
+
+    companion object {
+        /**
+         * Data linking plugin callbacks, plugin classes, and extension types.
+         */
+        private val pluginMapping: List<PluginData> = listOf(
+            // component extension callbacks
+            PluginData(ApplicationComponentCallback::class, ApplicationCallbackPlugin::class, "com/android/build/api/variant/ApplicationAndroidComponentsExtension"),
+            PluginData(LibraryComponentCallback::class, LibraryCallbackPlugin::class, "com/android/build/api/variant/LibraryAndroidComponentsExtension"),
+            PluginData(DynamicFeatureComponentCallback::class, DynamicFeatureComponentCallback::class, "com/android/build/api/variant/DynamicFeatureAndroidComponentsExtension"),
+            PluginData(TestComponentCallback::class, TestCallbackPlugin::class, "com/android/build/api/variant/TestAndroidComponentsExtension"),
+
+            // legacy DSL callbacks
+            PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),
+        )
+    }
+
     /**
      * adds a new callback to the jar
      */
-    fun addCallback(callbackClass: Class<out AndroidComponentCallback>): String {
+    fun addCallback(callbackClass: Class<out PluginCallback>): String {
         // write this class
         zipOutputStream.writeWithReferences(callbackClass)
 
         val pluginData = getPluginData(callbackClass)
 
         val callbackBinaryName = callbackClass.binaryName
-        val basePluginBinaryName = pluginData.pluginClass.binaryName
+        val basePluginBinaryName = pluginData.pluginClass.java.binaryName
 
         // then create a custom plugin for this callback
         val newPluginBinaryName = "${callbackBinaryName}_Plugin"
@@ -84,7 +110,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
         // need to record the plugin class as the custom plugin is written manually
         // and we don't inspect its references.
-        basePluginClasses += pluginData.pluginClass
+        basePluginClasses += pluginData.pluginClass.java
 
         return newPluginClassName
     }
@@ -97,26 +123,18 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         zipOutputStream.close()
     }
 
-    data class PluginData(
-        val pluginClass: Class<*>,
-        val extensionTypeClassName: String
-    )
-
     /**
      * Returns information about the plugin as a [PluginData] based on the type of the callback
      */
-    private fun getPluginData(callbackClass: Class<out AndroidComponentCallback>): PluginData =
-        if (ApplicationComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            PluginData(ApplicationCallbackPlugin::class.java, "ApplicationAndroidComponentsExtension")
-        } else if (LibraryComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            PluginData(LibraryCallbackPlugin::class.java, "LibraryAndroidComponentsExtension")
-        } else if (DynamicFeatureComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            PluginData(DynamicFeatureComponentCallback::class.java, "DynamicFeatureAndroidComponentsExtension")
-        } else if (TestComponentCallback::class.java.isAssignableFrom(callbackClass)) {
-            PluginData(TestCallbackPlugin::class.java, "TestAndroidComponentsExtension")
-        } else {
-            throw RuntimeException("Unsupported PluginCallback: ${callbackClass.typeName}")
+
+    private fun getPluginData(callbackClass: Class<out PluginCallback>): PluginData  {
+        for (pluginData in pluginMapping) {
+            if (pluginData.callbackClass.java.isAssignableFrom(callbackClass)) {
+                return pluginData
+            }
         }
+        throw RuntimeException("Unsupported PluginCallback: ${callbackClass.typeName}")
+    }
 
     /**
      * Writes the custom plugin task from scratch using ASM.
@@ -165,8 +183,8 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
         val method = writer.visitMethod(
             ACC_PUBLIC,
-            "handleComponents",
-            "(Lorg/gradle/api/Project;Lcom/android/build/api/variant/${extensionType};)V",
+            "handleExtension",
+            "(Lorg/gradle/api/Project;L${extensionType};)V",
             null,
             null
         )
@@ -185,8 +203,8 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         method.visitMethodInsn(
             INVOKEVIRTUAL,
             callbackName,
-            "handleComponents",
-            "(Lorg/gradle/api/Project;Lcom/android/build/api/variant/${extensionType};)V",
+            "handleExtension",
+            "(Lorg/gradle/api/Project;L${extensionType};)V",
             false
         )
         method.visitInsn(RETURN)

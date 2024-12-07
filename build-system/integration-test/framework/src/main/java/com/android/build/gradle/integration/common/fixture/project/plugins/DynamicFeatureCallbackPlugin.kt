@@ -17,9 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.variant.DynamicFeatureAndroidComponentsExtension
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.DynamicFeaturePlugin
-import com.android.build.gradle.LibraryPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -30,7 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
  * by [GradleRule].
  *
  * Do not extend this. Instead, implement [DynamicFeatureComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.componentCallback]
+ * class to [AndroidProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
@@ -39,12 +37,23 @@ abstract class DynamicFeatureCallbackPlugin: Plugin<Project> {
     override fun apply(target: Project) {
         target.plugins.withType(DynamicFeaturePlugin::class.java) {
             val componentsExtension = target.extensions.getByType(DynamicFeatureAndroidComponentsExtension::class.java)
-            handleComponents(target, componentsExtension)
+            handleExtension(target, componentsExtension)
         }
     }
 
-    abstract fun handleComponents(
+    abstract fun handleExtension(
         project: Project,
         componentsExtension: DynamicFeatureAndroidComponentsExtension
+    )
+}
+
+/**
+ * interface to implement to provide custom plugin logic to a [GradleRule] project
+ * of type Android Dynamic Feature
+ */
+interface DynamicFeatureComponentCallback: PluginCallback {
+    fun handleExtension(
+        project: Project,
+        androidComponents: DynamicFeatureAndroidComponentsExtension
     )
 }

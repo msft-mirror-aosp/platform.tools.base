@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -58,6 +59,9 @@ interface GradleProjectDefinition {
      */
     fun dependencies(action: DependenciesBuilder.() -> Unit)
     val dependencies: DependenciesBuilder
+
+    /** Provides a callback to use with a binary plugin */
+    var pluginCallback: Class<out PluginCallback>?
 }
 
 internal data class AppliedPlugin(
@@ -74,13 +78,15 @@ internal abstract class GradleProjectDefinitionImpl(
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
-    // right now we don't support changing the componentCallback during a reconfigure. However,
+    // right now we don't support changing the pluginCallback during a reconfigure. However,
     // we still need to rewrite the plugin application during a rewrite.
     // Because we only reconfigure a single project and not the whole build (reason we don't yet
     // support changing the callback), the custom plugin map passed to the write function is going
     // to be empty.
     // Here we cache the first non null plugin and always rewrite it on the next reconfigure.
     private var cachedCustomPlugin: String? = null
+
+    override var pluginCallback: Class<out PluginCallback>? = null
 
     override var group: String? = null
     override var version: String? = null

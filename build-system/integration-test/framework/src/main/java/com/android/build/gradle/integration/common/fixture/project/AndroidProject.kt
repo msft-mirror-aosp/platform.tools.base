@@ -111,14 +111,14 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
         computeOutputPath(apkSelector).isRegularFile()
 
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
-        val previousComponent = (projectDefinition as AndroidProjectDefinition<*>).componentCallback
+        val previousPlugin = (projectDefinition as AndroidProjectDefinition<*>).pluginCallback
 
         super.reconfigure(buildFileOnly, action)
 
-        val newComponent = (projectDefinition as AndroidProjectDefinition<*>).componentCallback
+        val newPlugin = (projectDefinition as AndroidProjectDefinition<*>).pluginCallback
 
-        if (previousComponent != newComponent) {
-            throw RuntimeException("Cannot change componentCallback in reconfigure")
+        if (previousPlugin != newPlugin) {
+            throw RuntimeException("Cannot change pluginCallback in reconfigure")
         }
     }
 

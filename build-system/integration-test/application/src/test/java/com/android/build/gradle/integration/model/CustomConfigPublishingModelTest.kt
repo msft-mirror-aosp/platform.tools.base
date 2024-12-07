@@ -38,13 +38,13 @@ class CustomConfigPublishingModelTest : ModelComparator() {
             }
         }
         androidLibrary {
-            componentCallback = LibCallback::class.java
+            pluginCallback = LibCallback::class.java
 
         }
     }
 
     class LibCallback: LibraryComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: LibraryAndroidComponentsExtension
         ) {

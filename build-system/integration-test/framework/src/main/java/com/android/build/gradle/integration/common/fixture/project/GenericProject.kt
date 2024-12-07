@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.writeBytes
 

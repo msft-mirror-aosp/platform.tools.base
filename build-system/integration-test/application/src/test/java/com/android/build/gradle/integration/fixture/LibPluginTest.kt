@@ -34,7 +34,7 @@ class LibPluginTest {
     @get:Rule
     val rule = GradleRule.from {
         androidLibrary(":lib") {
-            componentCallback = LibCallback::class.java
+            pluginCallback = LibCallback::class.java
 
             files {
                 HelloWorldAndroid.setupJava(this)
@@ -53,7 +53,7 @@ class LibPluginTest {
     }
 
     class LibCallback: LibraryComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: LibraryAndroidComponentsExtension
         ) {

@@ -37,12 +37,12 @@ class FlavoredAppModelTest: ModelComparator() {
                     create("pro") { it.dimension = "model" }
                 }
             }
-            componentCallback = DisableSomeVariantCallback::class.java
+            pluginCallback = DisableSomeVariantCallback::class.java
         }
     }
 
     class DisableSomeVariantCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -86,12 +86,12 @@ class MultiFlavoredAppModelTest: ModelComparator() {
                     create("other") { it.dimension = "market" }
                 }
             }
-            componentCallback = DisableBunchOfVariantCallback::class.java
+            pluginCallback = DisableBunchOfVariantCallback::class.java
         }
     }
 
     class DisableBunchOfVariantCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -135,7 +135,7 @@ class DisabledVariantInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableDebugVariantCallback::class.java
+            pluginCallback = DisableDebugVariantCallback::class.java
         }
     },
     syncOptions = {
@@ -143,7 +143,7 @@ class DisabledVariantInAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableDebugVariantCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -180,7 +180,7 @@ class DisabledAndroidTestInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableDebugAndroidTestCallback::class.java
+            pluginCallback = DisableDebugAndroidTestCallback::class.java
         }
     },
     syncOptions = {
@@ -188,7 +188,7 @@ class DisabledAndroidTestInAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableDebugAndroidTestCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -227,7 +227,7 @@ class DisabledUnitTestInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableDebugUnitTestCallback::class.java
+            pluginCallback = DisableDebugUnitTestCallback::class.java
         }
     },
     syncOptions = {
@@ -235,7 +235,7 @@ class DisabledUnitTestInAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableDebugUnitTestCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -284,7 +284,7 @@ class DisabledSingleVariantInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableOneDebugVariantCallback::class.java
+            pluginCallback = DisableOneDebugVariantCallback::class.java
         }
     },
     syncOptions = {
@@ -292,7 +292,7 @@ class DisabledSingleVariantInFlavorAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableOneDebugVariantCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -342,7 +342,7 @@ class DisabledVariantByBuildTypeInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableAllDebugVariantsCallback::class.java
+            pluginCallback = DisableAllDebugVariantsCallback::class.java
         }
     },
     syncOptions = {
@@ -350,7 +350,7 @@ class DisabledVariantByBuildTypeInFlavorAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableAllDebugVariantsCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -400,7 +400,7 @@ class DisabledVariantByFlavorInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            componentCallback = DisableAllOneVariantsCallback::class.java
+            pluginCallback = DisableAllOneVariantsCallback::class.java
         }
     },
     syncOptions = {
@@ -408,7 +408,7 @@ class DisabledVariantByFlavorInFlavorAppModelTest: ReferenceModelComparator(
     }
 ) {
     class DisableAllOneVariantsCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -440,12 +440,12 @@ class NoVariantModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
-            componentCallback = DisableAllVariantsCallback::class.java
+            pluginCallback = DisableAllVariantsCallback::class.java
         }
     }
 
     class DisableAllVariantsCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {

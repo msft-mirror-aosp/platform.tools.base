@@ -37,12 +37,12 @@ class BuildToolsVersionTest {
             }
         }
         androidApplication {
-            componentCallback = AppCallback::class.java
+            pluginCallback = AppCallback::class.java
         }
     }
 
     class AppCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {

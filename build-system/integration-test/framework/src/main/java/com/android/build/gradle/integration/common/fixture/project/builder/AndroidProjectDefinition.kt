@@ -20,7 +20,6 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -42,8 +41,6 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
 
     override val files: AndroidProjectFiles
     fun files(action: AndroidProjectFiles.() -> Unit)
-
-    var componentCallback: Class<out AndroidComponentCallback>?
 }
 
 /**
@@ -54,7 +51,6 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
 ): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
     override val files: AndroidProjectFiles = DelayedAndroidProjectFiles(this::namespace)
-    override var componentCallback: Class<out AndroidComponentCallback>? = null
 
     override fun files(action: AndroidProjectFiles.() -> Unit) {
         action(files)

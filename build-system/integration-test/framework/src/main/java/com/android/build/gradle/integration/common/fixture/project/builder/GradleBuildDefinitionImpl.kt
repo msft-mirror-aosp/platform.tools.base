@@ -377,12 +377,9 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
     private fun handleCustomBuildLogic(location: Path): Map<String, String> {
         // gather all the custom callbacks. This returns a map from each callback class
         // to a list of all projects using this callback.
-        val callbackMap = subProjects.asSequence()
-            .map { it.value }
-            .filterIsInstance(AndroidProjectDefinition::class.java)
-            .filter { it.componentCallback != null }
+        val callbackMap = subProjects.values.asSequence()
             .map { definition ->
-                definition.componentCallback?.let {
+                definition.pluginCallback?.let {
                     it to definition.path
                 }
             }

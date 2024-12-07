@@ -30,7 +30,7 @@ class CustomSourceDirectoryTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidLibrary {
-            componentCallback = TomlCallback::class.java
+            pluginCallback = TomlCallback::class.java
         }
     },
     syncOptions = {
@@ -38,7 +38,7 @@ class CustomSourceDirectoryTest: ReferenceModelComparator(
     }
 ) {
     class TomlCallback: LibraryComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: LibraryAndroidComponentsExtension
         ) {

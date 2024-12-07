@@ -30,7 +30,7 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import java.nio.file.Path
 
 /*
- * Support for Android AI Pack in the [GradleRule] fixture
+ * Support for Android Asset Pack in the [GradleRule] fixture
  */
 
 /**
@@ -47,7 +47,9 @@ interface AssetPackDefinition: GradleProjectDefinition {
 /**
  * Implementation of [AssetPackDefinition]
  */
-internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
+internal class AssetPackDefinitionImpl(
+    path: String,
+) : GradleProjectDefinitionImpl(path),
     AssetPackDefinition {
 
     init {
