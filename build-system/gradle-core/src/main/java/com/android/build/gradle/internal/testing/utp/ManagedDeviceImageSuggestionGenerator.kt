@@ -43,6 +43,7 @@ private fun isArm(architecture: CpuArchitecture) = when (architecture) {
  * @property deviceName The name of the device from the DSL
  * @property sdkVersion The api level specified in the [ManagedVirtualDevice]
  * @property systemImageSource The source specified in the [ManagedVirtualDevice]
+ * @property pageAlignmentSuffix the vendor page size suffix specified by the [ManagedVirtualDevice]
  * @property require64Bit Whether the [ManagedVirtualDevice] requires a 64 bit image.
  * @property allImages The list of all valid images that are available for download/use.
  */
@@ -51,6 +52,7 @@ class ManagedDeviceImageSuggestionGenerator (
     private val deviceName: String,
     private val sdkVersion: Int,
     private val systemImageSource: String,
+    private val pageAlignmentSuffix: String,
     private val require64Bit: Boolean,
     private val allImages: List<String>
 ) {
@@ -126,11 +128,13 @@ class ManagedDeviceImageSuggestionGenerator (
         otherArch: CpuArchitecture = architecture,
         otherRequire64Bit: Boolean = require64Bit,
         otherSdkVersion: Int = sdkVersion,
-        otherImageSource: String = systemImageSource
+        otherImageSource: String = systemImageSource,
+        otherPageAlignment: String = pageAlignmentSuffix,
     ): String {
         val abi = computeAbiFromArchitecture(
             otherRequire64Bit, otherSdkVersion, otherImageSource, otherArch)
-        return computeSystemImageHashFromDsl(otherSdkVersion, otherImageSource, abi)
+        return computeSystemImageHashFromDsl(
+            otherSdkVersion, otherImageSource, otherPageAlignment, abi)
     }
 
     private fun checkForOtherArchitectureMessage(): String {

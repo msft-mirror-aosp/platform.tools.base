@@ -34,12 +34,20 @@ private const val ABI_OFFSET = 3
  * A system image is not guaranteed to exist with the given values, but this gives the hash that the
  * sdkHandler can check.
  */
-fun computeSystemImageHashFromDsl(version: Int, imageSource: String, abi: String) =
-    "$SYSTEM_IMAGE_PREFIX${computeVersionString(version)};${computeVendorString(imageSource)};$abi"
+fun computeSystemImageHashFromDsl(
+    version: Int,
+    imageSource: String,
+    pageAlignmentSuffix: String,
+    abi: String) =
+    "$SYSTEM_IMAGE_PREFIX${computeVersionString(version)};" +
+            "${computeVendorString(imageSource, pageAlignmentSuffix)};$abi"
 
 private fun computeVersionString(version: Int) = "android-${version}"
 
-fun computeVendorString(imageSource: String) =
+fun computeVendorString(imageSource: String, pageAlignmentSuffix: String) =
+    computeImageSource(imageSource) + pageAlignmentSuffix
+
+private fun computeImageSource(imageSource: String) =
     when (imageSource) {
         "google" -> "google_apis"
         "google-atd" -> "google_atd"

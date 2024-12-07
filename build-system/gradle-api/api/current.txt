@@ -1738,6 +1738,7 @@ package com.android.build.api.dsl {
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public int getApiLevel();
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public String? getApiPreview();
     method public String getDevice();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment getPageAlignment();
     method public boolean getRequire64Bit();
     method @org.gradle.api.Incubating public String? getSdkPreview();
     method @org.gradle.api.Incubating public int getSdkVersion();
@@ -1745,6 +1746,7 @@ package com.android.build.api.dsl {
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public void setApiLevel(int);
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public void setApiPreview(String?);
     method public void setDevice(String);
+    method @org.gradle.api.Incubating public void setPageAlignment(com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment);
     method public void setRequire64Bit(boolean);
     method @org.gradle.api.Incubating public void setSdkPreview(String?);
     method @org.gradle.api.Incubating public void setSdkVersion(int);
@@ -1752,10 +1754,19 @@ package com.android.build.api.dsl {
     property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public abstract int apiLevel;
     property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public abstract String? apiPreview;
     property public abstract String device;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment pageAlignment;
     property public abstract boolean require64Bit;
     property @org.gradle.api.Incubating public abstract String? sdkPreview;
     property @org.gradle.api.Incubating public abstract int sdkVersion;
     property public abstract String systemImageSource;
+  }
+
+  @org.gradle.api.Incubating public enum ManagedVirtualDevice.PageAlignment {
+    method public static com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
+    method public static com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment[] values();
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment DEFAULT_FOR_SDK_VERSION;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment FORCE_16KB_PAGES;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment FORCE_4KB_PAGES;
   }
 
   @org.gradle.api.Incubating public interface ModelDependency {

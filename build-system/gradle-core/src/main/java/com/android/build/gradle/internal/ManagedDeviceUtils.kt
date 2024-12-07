@@ -48,17 +48,19 @@ fun computeAvdName(device: ManagedVirtualDevice): String =
     computeAvdName(
         device.sdkVersion,
         device.systemImageSource,
+        device.pageAlignmentSuffix,
         computeAbiFromArchitecture(device),
         device.device)
 
 fun computeAvdName(
     sdkVersion: Int,
     imageSource: String,
+    pageAlignmentSuffix: String,
     abi: String,
     hardwareProfile: String
 ): String {
     val sanitizedProfile = sanitizeProfileName(hardwareProfile)
-    val vendor = computeVendorString(imageSource)
+    val vendor = computeVendorString(imageSource, pageAlignmentSuffix)
     return "dev${sdkVersion}_${vendor}_${abi}_$sanitizedProfile"
 }
 

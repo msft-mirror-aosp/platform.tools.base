@@ -1,16 +1,24 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ManagedVirtualDevice
+import com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment
 import com.android.builder.core.apiVersionFromString
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.model.ApiVersion
+import com.android.build.gradle.internal.LoggerWrapper
+import com.android.utils.ILogger
 import java.io.Serializable
 import javax.inject.Inject
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 
+const val PAGE_16KB_SUFFIX = "_ps16k"
+const val PAGE_EMPTY_SUFFIX = ""
+
 open class ManagedVirtualDevice @Inject constructor(private val name: String) :
     ManagedVirtualDevice {
+
+    private val logger: ILogger = LoggerWrapper.getLogger(ManagedVirtualDevice::class.java)
 
     override fun getName(): String = name
 
@@ -42,6 +50,34 @@ open class ManagedVirtualDevice @Inject constructor(private val name: String) :
 
     @get: Input
     override var require64Bit = false
+
+    @get: Internal
+    override var pageAlignment: PageAlignment =
+        PageAlignment.DEFAULT_FOR_SDK_VERSION
+
+    @get: Input
+    val pageAlignmentSuffix: String
+        get() = when (pageAlignment) {
+            PageAlignment.FORCE_16KB_PAGES -> PAGE_16KB_SUFFIX
+            PageAlignment.FORCE_4KB_PAGES -> PAGE_EMPTY_SUFFIX
+            else -> {
+                // We technically know that the 4kb aligned images are the ones that google_apis is
+                // validated against up to api 36. At present, however we don't know when the switch
+                // will happen where the 16kb images will be validated instead.
+                if (sdkVersion > 36 &&
+                    pageAlignment == PageAlignment.DEFAULT_FOR_SDK_VERSION) {
+                    logger.warning("""
+                            $name has a pageAlignment value of
+                            DEFAULT_FOR_SDK_VERSION. However for sdkVersion = ${sdkVersion},
+                            the page size of the validated system image cannot be determined. A 4 kb
+                            aligned image will be selected. If this is not intended set
+                            pageAlignment = ${PageAlignment.FORCE_16KB_PAGES} for
+                            ${name}
+                         """.trimIndent())
+                }
+                PAGE_EMPTY_SUFFIX
+            }
+        }
 
     private var apiVersion: ApiVersion? = null
 }

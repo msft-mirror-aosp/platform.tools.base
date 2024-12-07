@@ -30,12 +30,14 @@ class ManagedDeviceUtilsTest {
         val google = computeAvdName(
             30,
             "google",
+            "",
             "x86",
             "Pixel 2"
         )
         val googleApis = computeAvdName(
             30,
             "google_apis",
+            "",
             "x86",
             "Pixel 2"
         )
@@ -44,10 +46,34 @@ class ManagedDeviceUtilsTest {
     }
 
     @Test
+    fun computeAvdName_pageAlignmentWorks() {
+        val pageSize4k = computeAvdName(
+            36,
+            "google_apis",
+            "",
+            "x86",
+            "Pixel 3"
+        )
+
+        assertThat(pageSize4k).isEqualTo("dev36_google_apis_x86_Pixel_3")
+
+        val pageSize16k =computeAvdName(
+            36,
+            "google_apis",
+            "_ps16k",
+            "x86",
+            "Pixel 3"
+        )
+
+        assertThat(pageSize16k).isEqualTo("dev36_google_apis_ps16k_x86_Pixel_3")
+    }
+
+    @Test
     fun computeAvdName_worksWithParenthesis() {
         val computedName = computeAvdName(
             29,
             "google_apis",
+            "",
             "x86",
             "Pixel 2 (something)"
         )
@@ -60,6 +86,7 @@ class ManagedDeviceUtilsTest {
         val computedName = computeAvdName(
             33,
             "google_apis",
+            "",
             "x86",
             "8\" Fold-out",
         )

@@ -29,6 +29,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "invalid_device",
             30,
             "aosp",
+            "",
             false,
             listOf()
         )
@@ -46,6 +47,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "possible_valid_device",
             30,
             "aosp",
+            "",
             false,
             listOf("system-images;android-30;default;arm64-v8a")
         )
@@ -65,6 +67,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "atd_device",
             27,
             "aosp-atd",
+            "",
             false,
             listOf("system-images;android-27;default;x86")
         )
@@ -85,6 +88,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "another_atd_device",
             28,
             "google-atd",
+            "",
             true,
             listOf(
                 "system-images;android-28;aosp_atd;x86_64",
@@ -108,6 +112,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "api_not_valid",
             12,
             "aosp",
+            "",
             false,
             listOf(
                 "system-images;android-14;default;x86",
@@ -130,6 +135,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "too_high_api",
             200,
             "aosp",
+            "",
             false,
             listOf(
                 "system-images;android-31;default;arm64-v8a"
@@ -150,6 +156,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "require_64",
             24,
             "aosp",
+            "",
             true,
             listOf(
                 "system-images;android-24;default;x86"
@@ -172,6 +179,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "test_device",
             29,
             "aosp-atd",
+            "",
             true,
             listOf(
                 // Valid compatible non-atd image
@@ -204,6 +212,7 @@ class ManagedDeviceImageSuggestionGeneratorTest {
             "invalid_source_and_api",
             400,
             "foo",
+            "",
             false,
             listOf(
                 "system-images;android-29;default;x86",

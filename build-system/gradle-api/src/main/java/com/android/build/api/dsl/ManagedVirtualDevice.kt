@@ -108,4 +108,45 @@ interface ManagedVirtualDevice : Device {
      *   The value of this parameter has no effect. An arm64 image is always selected.
      */
     var require64Bit: Boolean
+
+    /**
+     * What size pages the device should be aligned to.
+     *
+     * By default, the system image that is validated against Google apis will be chosen.
+     * At present (api 35 or below) that is the 4KB page size system image. Newer apis will emit
+     * a warning when [PageAlignment.DEFAULT_FOR_SDK_VERSION] is chosen (as we will not be able
+     * to properly determine the validated image when offline.)
+     */
+    @get: Incubating
+    @set: Incubating
+    var pageAlignment: PageAlignment
+
+    /**
+     * Defines possible system image selection strategies based on the requested Page Alignment
+     *
+     * This allows for testing on devices for both 4KB and 16KB page sizes. See
+     * [Android Page Sizes](https://developer.android.com/guide/practices/page-sizes) for more
+     * information.
+     */
+    @Incubating
+    enum class PageAlignment {
+        /**
+         * Selects the page alignment that would result in the certified system image for the given
+         * [sdkVersion]. At present (API 35 and below), the certified image is always 4KB aligned.
+         */
+        @Incubating
+        DEFAULT_FOR_SDK_VERSION,
+        /**
+         * Selects the system image with 4KB aligned pages. If no such image exists, the setup for
+         * the managed device will fail.
+         */
+        @Incubating
+        FORCE_4KB_PAGES,
+        /**
+         * Selects the system image with 16KB aligned pages. If no such image exists, the setup for
+         * the managed device will fail.
+         */
+        @Incubating
+        FORCE_16KB_PAGES
+    }
 }

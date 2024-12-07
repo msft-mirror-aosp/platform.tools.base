@@ -115,6 +115,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             .whenever(task).buildToolsRevision
         doReturn(realPropertyFor("x86_64")).whenever(task).abi
         doReturn(realPropertyFor(29)).whenever(task).sdkVersion
+        doReturn(realPropertyFor("")).whenever(task).pageAlignmentSuffix
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
         doReturn(realPropertyFor("Pixel 2")).whenever(task).hardwareProfile
         doReturn(realPropertyFor("auto-no-window")).whenever(task).emulatorGpuFlag
@@ -452,6 +453,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             "test_device_name",
             28,
             "aosp",
+            "",
             true,
             mockVersionedSdkLoader
         )
@@ -473,6 +475,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             "some_test_device",
             28,
             "aosp",
+            "",
             true,
             mockVersionedSdkLoader
         )

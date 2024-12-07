@@ -739,3 +739,10 @@ https://issuetracker.google.com/382716889
   * com.android.build.api.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
 https://issuetracker.google.com/383364112
   * com.android.build.api.variant.BuiltArtifact.getOutputFilePath: java.nio.file.Path ()
+https://issuetracker.google.com/384516080
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment extends java.lang.Enum
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.getEntries: kotlin.enums.EnumEntries<com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment> ()
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.valueOf: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment (java.lang.String)
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.values: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment[] ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.getPageAlignment: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setPageAlignment: void (com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment)
