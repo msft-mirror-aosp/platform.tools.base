@@ -30,7 +30,6 @@ import com.android.ddmlib.internal.DeviceMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.SettableFuture;
@@ -47,20 +46,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelegate {
 
-    protected static final Set<AndroidDebugBridge.IDebugBridgeChangeListener> sBridgeListeners =
-            Sets.newCopyOnWriteArraySet();
-
-    protected static final Set<AndroidDebugBridge.IDeviceChangeListener> sDeviceListeners =
-            Sets.newCopyOnWriteArraySet();
-
-    protected static final Set<AndroidDebugBridge.IClientChangeListener> sClientListeners =
-            Sets.newCopyOnWriteArraySet();
+    protected static final AndroidDebugBridgeChangeEvents adbChangeEvents =
+            new AndroidDebugBridgeChangeEvents();
 
     /** Default timeout used when starting the ADB server */
     public static final long DEFAULT_START_ADB_TIMEOUT_MILLIS = 20_000;
@@ -369,7 +361,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public void addDebugBridgeChangeListener(
             @NonNull AndroidDebugBridge.IDebugBridgeChangeListener listener) {
-        sBridgeListeners.add(listener);
+        adbChangeEvents.addDebugBridgeChangeListener(listener);
 
         AndroidDebugBridge localThis = sThis;
 
@@ -392,12 +384,12 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public void removeDebugBridgeChangeListener(
             AndroidDebugBridge.IDebugBridgeChangeListener listener) {
-        sBridgeListeners.remove(listener);
+        adbChangeEvents.removeDebugBridgeChangeListener(listener);
     }
 
     @VisibleForTesting
     public int getDebugBridgeChangeListenerCount() {
-        return sBridgeListeners.size();
+        return adbChangeEvents.debugBridgeChangeListenerCount();
     }
 
     /**
@@ -410,7 +402,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public void addDeviceChangeListener(
             @NonNull AndroidDebugBridge.IDeviceChangeListener listener) {
-        sDeviceListeners.add(listener);
+        adbChangeEvents.addDeviceChangeListener(listener);
     }
 
     /**
@@ -421,12 +413,12 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      * @param listener The listener which should no longer be notified.
      */
     public void removeDeviceChangeListener(AndroidDebugBridge.IDeviceChangeListener listener) {
-        sDeviceListeners.remove(listener);
+        adbChangeEvents.removeDeviceChangeListener(listener);
     }
 
     @VisibleForTesting
     public int getDeviceChangeListenerCount() {
-        return sDeviceListeners.size();
+        return adbChangeEvents.deviceChangeListenerCount();
     }
 
     /**
@@ -437,7 +429,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      * @param listener The listener which should be notified.
      */
     public void addClientChangeListener(AndroidDebugBridge.IClientChangeListener listener) {
-        sClientListeners.add(listener);
+        adbChangeEvents.addClientChangeListener(listener);
     }
 
     /**
@@ -447,7 +439,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      * @param listener The listener which should no longer be notified.
      */
     public void removeClientChangeListener(AndroidDebugBridge.IClientChangeListener listener) {
-        sClientListeners.remove(listener);
+        adbChangeEvents.removeClientChangeListener(listener);
     }
 
     /**
@@ -661,15 +653,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      * @param device the new <code>IDevice</code>.
      */
     public void deviceConnected(@NonNull IDevice device) {
-        for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.deviceConnected(device);
-            }
-            catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
+        adbChangeEvents.notifyDeviceConnected(device);
     }
 
     /**
@@ -682,16 +666,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      * @param device the disconnected <code>IDevice</code>.
      */
     public void deviceDisconnected(@NonNull IDevice device) {
-        for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our
-            // thread
-            try {
-                listener.deviceDisconnected(device);
-            }
-            catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
+        adbChangeEvents.notifyDeviceDisconnected(device);
     }
 
     /**
@@ -705,16 +680,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public void deviceChanged(@NonNull IDevice device, int changeMask) {
         // Notify the listeners
-        for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our
-            // thread
-            try {
-                listener.deviceChanged(device, changeMask);
-            }
-            catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
+        adbChangeEvents.notifyDeviceChanged(device, changeMask);
     }
 
     /**
@@ -729,16 +695,7 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public void clientChanged(@NonNull Client client, int changeMask) {
         // Notify the listeners
-        for (AndroidDebugBridge.IClientChangeListener listener : sClientListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our
-            // thread
-            try {
-                listener.clientChanged(client, changeMask);
-            }
-            catch (Throwable t) {
-                Log.e(DDMS, t);
-            }
-        }
+        adbChangeEvents.notifyClientChanged(client, changeMask);
     }
 
     /**
@@ -869,19 +826,13 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
         }
     }
 
+    // TODO: This class is currently unused so it could be removed, but before doing that
+    //  lets figure out how to trigger `initializationError` from `AdbLibAndroidDebugBridge`
     private static class MonitorErrorHandler implements DeviceMonitor.MonitorErrorHandler {
 
         @Override
         public void initializationError(@NonNull Exception e) {
-            for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-                // we attempt to catch any exception so that a bad listener doesn't kill our thread
-                try {
-                    listener.initializationError(e);
-                }
-                catch (Throwable t) {
-                    Log.e(DDMS, t);
-                }
-            }
+            adbChangeEvents.notifyBridgeInitializationError(e);
         }
     }
 }
