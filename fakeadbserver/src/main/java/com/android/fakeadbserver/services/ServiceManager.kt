@@ -18,7 +18,7 @@ package com.android.fakeadbserver.services
 import com.android.fakeadbserver.DeviceState
 import java.util.Collections
 
-class ServiceManager(deviceState: DeviceState) {
+class ServiceManager(private val deviceState: DeviceState) {
 
     private val packageManager = PackageManager()
     private var activityManager: Service = ActivityManager(deviceState)
@@ -45,6 +45,13 @@ class ServiceManager(deviceState: DeviceState) {
         if (service == null) {
             output.writeStderr("Error: Service '$serviceName' is not supported")
             output.writeExitCode(5)
+            return
+        }
+
+        // TODO: This should be done at a higher level, the same way adb server performs this check
+        if (deviceState.deviceStatus.state != DeviceState.DeviceStatus.ONLINE.state) {
+            output.writeStderr("adb: device is ${deviceState.deviceStatus.state}")
+            output.writeExitCode(1)
             return
         }
 

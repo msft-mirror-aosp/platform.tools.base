@@ -137,6 +137,8 @@ class DeviceState internal constructor(
             mServer.deviceChangeHub.deviceStatusChanged(this, status)
         }
 
+    val deviceCapabilities = DeviceCapabilities.forApi(apiLevel)
+
     override fun toString(): String {
         return "${this::class.simpleName}(deviceId=$deviceId, deviceStatus=$deviceStatus, apiLevel=$apiLevel, transportId=$transportId)"
     }
@@ -471,6 +473,76 @@ class DeviceState internal constructor(
         val mQueue: StateChangeQueue,
         val mLogcatContents: List<String>
     )
+
+    data class DeviceCapabilities(
+        val capabilities: List<String>,
+        val vmCapabilities: List<String>,
+        val frameworkCapabilities: List<String>,
+        val vmInfo: VmInfo?
+    ) {
+
+        data class VmInfo(
+            val name: String,
+            val version: String
+        )
+
+        companion object {
+            private val api35VmCapabilities = """
+                            method-trace-profiling
+                            method-trace-profiling-streaming
+                            method-sample-profiling
+                            hprof-heap-dump
+                            hprof-heap-dump-streaming
+                            app_info
+                            """.trimIndent().lines()
+
+            private val api35FrameworkCapabilities = """
+                            opengl-tracing
+                            view-hierarchy
+                            support_boot_stages
+                            """.trimIndent().lines()
+
+            private val api35VmInfo = VmInfo(name = "Dalvik", version = "2.1.0")
+
+            private val api36VmCapabilities = api35VmCapabilities
+
+            private val api36FrameworkCapabilities = api35FrameworkCapabilities + "app_info"
+
+            private val api36VmInfo = api35VmInfo
+
+            fun forApi(apiLevel: Int): DeviceCapabilities? {
+                return when {
+                    apiLevel <= 33 -> {
+                        null
+                    }
+                    apiLevel <= 34 -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = emptyList(),
+                            frameworkCapabilities = emptyList(),
+                            vmInfo = null
+                        )
+                    }
+                    apiLevel <= 35 -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = api35VmCapabilities,
+                            frameworkCapabilities = api35FrameworkCapabilities,
+                            vmInfo = api35VmInfo
+                        )
+                    }
+                    else -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = api36VmCapabilities,
+                            frameworkCapabilities = api36FrameworkCapabilities,
+                            vmInfo = api36VmInfo
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     companion object {
 

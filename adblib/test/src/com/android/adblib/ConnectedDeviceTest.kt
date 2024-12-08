@@ -1062,6 +1062,107 @@ class ConnectedDeviceTest {
     }
 
     @Test
+    fun testActivityManagerCapabilitiesReturnsNullOnOlderDevice(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice()
+
+        // Act
+        val capabilitiesResult = fakeDevice.activityManager.capabilities()
+
+        // Assert
+        Assert.assertNull(capabilitiesResult)
+    }
+
+    @Test
+    fun testActivityManagerCapabilitiesWorksOnApi36(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice(sdk = 36)
+
+        // Act
+        val result = fakeDevice.activityManager.capabilities()
+
+        // Assert
+        Assert.assertNotNull(result)
+        Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+        Assert.assertEquals(listOf("method-trace-profiling",
+                                   "method-trace-profiling-streaming",
+                                   "method-sample-profiling",
+                                   "hprof-heap-dump",
+                                   "hprof-heap-dump-streaming",
+                                   "app_info",
+        ), result?.vmCapabilities)
+        Assert.assertEquals(listOf("opengl-tracing",
+                                   "view-hierarchy",
+                                   "support_boot_stages",
+                                   "app_info",
+        ), result?.frameworkCapabilities)
+        Assert.assertEquals("Dalvik", result?.vmInfo?.name)
+        Assert.assertEquals("2.1.0", result?.vmInfo?.version)
+    }
+
+    @Test
+    fun testActivityManagerCapabilitiesThrowsTimeoutIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice(sdk = 36)
+        val delay = Duration.ofMillis(500)
+        setHostPropertyValue(
+            fakeDevice.session.host,
+            AdbLibProperties.AM_SERVICE_TIMEOUT,
+            delay
+        )
+        fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+        fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+        // Act
+        exceptionRule.expect(TimeoutException::class.java)
+        fakeDevice.activityManager.capabilities()
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun testActivityManagerCapabilitiesWaitsForDeviceToBeOnline(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice(sdk = 36)
+        fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+        fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+        val delay = Duration.ofDays(1)
+        setHostPropertyValue(
+            fakeDevice.session.host,
+            AdbLibProperties.AM_SERVICE_TIMEOUT,
+            delay
+        )
+
+        // Act
+        val job = async {
+            delay(500)
+            fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
+        }
+        val result = fakeDevice.activityManager.capabilities()
+
+        // Assert
+        Assert.assertTrue(job.isCompleted)
+        Assert.assertNotNull(result)
+        Assert.assertNotNull(result)
+        Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+        Assert.assertEquals(listOf("method-trace-profiling",
+                                   "method-trace-profiling-streaming",
+                                   "method-sample-profiling",
+                                   "hprof-heap-dump",
+                                   "hprof-heap-dump-streaming",
+                                   "app_info",
+        ), result?.vmCapabilities)
+        Assert.assertEquals(listOf("opengl-tracing",
+                                   "view-hierarchy",
+                                   "support_boot_stages",
+                                   "app_info",
+        ), result?.frameworkCapabilities)
+        Assert.assertEquals("Dalvik", result?.vmInfo?.name)
+        Assert.assertEquals("2.1.0", result?.vmInfo?.version)
+    }
+
+    @Test
     fun testReverseForward(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeConnectedDevice()
@@ -1510,5 +1611,10 @@ class ConnectedDeviceTest {
         fun before() {
             TimeWaitSocketsThrottler.throttleIfNeeded()
         }
+
+        protected fun <T: Any> setHostPropertyValue(host: AdbSessionHost, property: AdbSessionHost.Property<T>, value: T) {
+            (host as TestingAdbSessionHost).setPropertyValue(property, value)
+        }
+
     }
 }

@@ -101,6 +101,80 @@ class AdbActivityManagerServicesTest {
         Assert.fail("Test should have thrown an exception")
     }
 
+    @Test
+    fun testCapabilitiesApi35(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val device = addFakeDevice(fakeAdb, sdk = 35)
+        val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+        // Act
+        val result = activityManagerServices.capabilities(deviceSelector)
+
+        // Assert
+        Assert.assertNotNull(result)
+        Assert.assertEquals(listOf("start.suspend"), result.capabilities)
+        Assert.assertEquals(listOf("method-trace-profiling",
+                                   "method-trace-profiling-streaming",
+                                   "method-sample-profiling",
+                                   "hprof-heap-dump",
+                                   "hprof-heap-dump-streaming",
+                                   "app_info",
+                                   ), result.vmCapabilities)
+        Assert.assertEquals(listOf("opengl-tracing",
+                                   "view-hierarchy",
+                                   "support_boot_stages",
+                                   ), result.frameworkCapabilities)
+        Assert.assertEquals("Dalvik", result.vmInfo?.name)
+        Assert.assertEquals("2.1.0", result.vmInfo?.version)
+    }
+
+    @Test
+    fun testCapabilitiesApi36(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val device = addFakeDevice(fakeAdb, sdk = 36)
+        val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+        // Act
+        val result = activityManagerServices.capabilities(deviceSelector)
+
+        // Assert
+        Assert.assertNotNull(result)
+        Assert.assertEquals(listOf("start.suspend"), result.capabilities)
+        Assert.assertEquals(listOf("method-trace-profiling",
+                                   "method-trace-profiling-streaming",
+                                   "method-sample-profiling",
+                                   "hprof-heap-dump",
+                                   "hprof-heap-dump-streaming",
+                                   "app_info",
+        ), result.vmCapabilities)
+        Assert.assertEquals(listOf("opengl-tracing",
+                                   "view-hierarchy",
+                                   "support_boot_stages",
+                                   "app_info",
+        ), result.frameworkCapabilities)
+        Assert.assertEquals("Dalvik", result.vmInfo?.name)
+        Assert.assertEquals("2.1.0", result.vmInfo?.version)
+    }
+
+    @Test
+    fun testCapabilitiesThrows_whenOlderDevice(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val device = addFakeDevice(fakeAdb, sdk = 30)
+        val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+        // Act
+        val result = runCatching { activityManagerServices.capabilities(deviceSelector) }
+
+        // Assert
+        result.onFailure { throwable ->
+            Assert.assertTrue(throwable is AdbActivityManagerException)
+            Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
+            Assert.assertFalse(throwable.isServiceNotRunning)
+        }.onSuccess {
+            Assert.fail("Command should have failed")
+        }
+    }
+
     private fun addFakeDevice(fakeAdb: FakeAdbServerProvider, sdk: Int = 30): DeviceState {
         val fakeDevice =
             fakeAdb.connectDevice(

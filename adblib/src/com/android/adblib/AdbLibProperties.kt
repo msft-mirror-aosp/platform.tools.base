@@ -67,4 +67,26 @@ internal object AdbLibProperties {
         name = "$NAME_PREFIX.connect.channel.provider.socket.channel.keepalive",
         defaultValue = true
     )
+
+    /**
+     * Timeout waiting for the `am` service to be loaded and ready on the device.
+     *
+     * See [ConnectedDevice].[activityManager][ActivityManager]
+     */
+    val AM_SERVICE_TIMEOUT = AdbSessionHost.DurationProperty(
+        name = "$NAME_PREFIX.am.service.timeout",
+        defaultValue = Duration.ofSeconds(10)
+    )
+
+    /**
+     * [Duration] between attempt to call the `am` service on a device if the
+     * service is not started yet.
+     *
+     * @see [AM_SERVICE_TIMEOUT]
+     * @see [ConnectedDevice].[activityManager][ActivityManager]
+     */
+    val AM_SERVICE_RETRY_DELAY = AdbSessionHost.DurationProperty(
+        name = "$NAME_PREFIX.am.service.retry.delay",
+        defaultValue = Duration.ofSeconds(1)
+    )
 }
