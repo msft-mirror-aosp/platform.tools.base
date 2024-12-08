@@ -23,6 +23,7 @@ import com.android.adblib.tools.debugging.SharedJdwpSessionFilterFactory
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.isDdmsCommand
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -31,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 internal class NoDdmsPacketFilter(session: SharedJdwpSession) : SharedJdwpSessionFilter {
 
     private val logger = adbLogger(session.device.session)
-        .withPrefix("device=${session.device.serialNumber}, pid=${session.pid}: ")
+        .withProcessPrefix(session.device, session.pid)
 
     private val activeDdmsCommands = ConcurrentHashMap.newKeySet<Int>()
 

@@ -41,6 +41,7 @@ import com.android.adblib.tools.debugging.utils.ByteBufferHolder
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
@@ -58,8 +59,8 @@ internal class JdwpSessionImpl(
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(session)
-        .withPrefix("(hash=${hashCode()}, '$peerName') device='${device.serialNumber}' pid=$pid: ")
+    private val logger = adbLogger(session).withPrefix("(hash=${hashCode()}, '$peerName') ")
+        .withProcessPrefix(device, pid)
 
     private val inputChannel = session.channelFactory.createReadAheadChannel(channel)
 

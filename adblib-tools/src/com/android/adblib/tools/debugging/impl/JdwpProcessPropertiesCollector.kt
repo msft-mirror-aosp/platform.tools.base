@@ -51,6 +51,7 @@ import com.android.adblib.tools.debugging.receiveWhile
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -81,8 +82,7 @@ internal class JdwpProcessPropertiesCollector(
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(device.session)
-        .withPrefix("${device.session} - $device - pid=$pid - ")
+    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     /**
      * Collects [JdwpProcessProperties] for the process [pid] emits them to [stateFlow],

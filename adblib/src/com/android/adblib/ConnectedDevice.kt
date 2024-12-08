@@ -176,7 +176,7 @@ class WithDeviceScopeContext(
     private val action: suspend CoroutineScope.() -> Unit
 ) {
 
-    private val logger = adbLogger(device.session).withPrefix("device=$device - ")
+    private val logger = adbLogger(device.session).withDevicePrefix(device)
 
     private var retryPredicate: suspend (Throwable) -> Boolean = { false }
     private var finallyAction: () -> Unit = {}
@@ -373,7 +373,7 @@ class ReverseForwardManager(val device: ConnectedDevice) {
 /**
  * Access to various `am` services for a given [ConnectedDevice].
  *
- * See https://developer.android.com/tools/adb#am
+ * See [am command](https://developer.android.com/tools/adb#am)
  */
 class ActivityManager(val device: ConnectedDevice) {
 
@@ -612,4 +612,12 @@ suspend fun ConnectedDevice.availableFeatures(): Set<String> {
  */
 suspend fun ConnectedDevice.hasAvailableFeature(feature: String): Boolean {
     return session.hostServices.hasAvailableFeature(selector, feature)
+}
+
+fun AdbLogger.withDevicePrefix(device: ConnectedDevice): AdbLogger {
+    return withPrefix("${device.session} - $device - ")
+}
+
+fun AdbLogger.withProcessPrefix(device: ConnectedDevice, pid: Int): AdbLogger {
+    return withPrefix("${device.session} - $device - pid=$pid - ")
 }

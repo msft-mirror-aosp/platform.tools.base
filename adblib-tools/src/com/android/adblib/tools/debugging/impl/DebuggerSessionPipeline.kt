@@ -29,6 +29,7 @@ import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.debugging.utils.receiveAll
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import java.io.EOFException
@@ -49,8 +50,7 @@ internal class DebuggerSessionPipeline(
     private val device: ConnectedDevice
         get() = debuggerSession.device
 
-    private val logger = adbLogger(device.session)
-        .withPrefix("${device.session} - $device - pid=$pid - ")
+    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val sendChannelImpl = SynchronizedChannel<JdwpPacketView>()
 
