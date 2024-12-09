@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_import", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
@@ -165,6 +166,22 @@ filegroup(
 
 maven_repository(
     name = "gradle-8.6-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-8.5",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.5"],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
+    name = "gradle-8.5-runtime-maven",
     # keep sorted
     artifacts = [
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
@@ -555,9 +572,9 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
+        "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
-        "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.tensorflow.tensorflow-lite-metadata",
     ],
