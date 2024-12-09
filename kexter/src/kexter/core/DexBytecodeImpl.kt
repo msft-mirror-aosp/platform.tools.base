@@ -43,7 +43,7 @@ internal class DexBytecodeImpl(
         payloadSize += pseudoCodeSize(reader)
         reader.position = pos
       }
-      instrs.add(Instruction(opcode, index, reader.bytes(payloadSize)))
+      instrs.add(Instruction.from(opcode, index, reader.bytes(payloadSize)))
     }
     return instrs
   }
