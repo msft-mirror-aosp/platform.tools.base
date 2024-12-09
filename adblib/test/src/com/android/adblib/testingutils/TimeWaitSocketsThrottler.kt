@@ -15,6 +15,7 @@
  */
 package com.android.adblib.testingutils
 
+import com.android.adblib.impl.SuspendingProcessExecutor
 import com.android.fakeadbserver.FakeAdbServer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -110,7 +111,7 @@ object TimeWaitSocketsThrottler {
         return try {
             val cmd =
                 listOf("cmd", "/c", "netstat", "-an", "-p", "tcp", "|", "findstr", "TIME_WAIT")
-            val result = SuspendableProcessExecutor().execute(cmd)
+            val result = SuspendingProcessExecutor().execute(cmd)
 
             if (result.exitCode != 0 && result.stderr.isNotEmpty() && result.stdout.isEmpty()) {
                 throw Exception("Netstat process execution failed with exit code ${result.exitCode}")

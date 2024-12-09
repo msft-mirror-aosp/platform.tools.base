@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.adblib.testingutils
+package com.android.adblib.impl
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
  * A coroutine friendly implementation of executing a process and collecting its
  * `stdout`, `stderr` and exit code.
  */
-class SuspendableProcessExecutor {
+internal class SuspendingProcessExecutor {
 
     suspend fun execute(cmd: List<String>): ProcessResult {
         return coroutineScope {
