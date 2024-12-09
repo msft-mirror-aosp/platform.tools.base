@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Groov
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
+import java.nio.file.Path
 
 /**
  * Creates a [GradleTestProject] with the provided configuration action
@@ -372,6 +373,11 @@ interface DependenciesBuilder {
     fun localJar(action: LocalJarBuilder.() -> Unit) : LocalJarBuilder
 
     /**
+     *  Creates a [LocalFiles] to be passed to the [implementation] or any other scope.
+     */
+    fun files(path: Path): LocalFiles
+
+    /**
      * Creates a [ProjectDependencyBuilder] to be passed to [implementation] or any other scope
      *
      * @param path the project path
@@ -402,6 +408,10 @@ interface DependenciesBuilder {
 interface LocalJarBuilder {
     var name: String
     fun addClass(className: String)
+}
+
+interface LocalFiles {
+    val path: Path
 }
 
 interface ProjectDependencyBuilder {

@@ -186,18 +186,6 @@ class MinimalSubProject private constructor(
             )
         }
 
-        fun fusedLibrary(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.fused-library",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = namespace,
-                androidExtension = "androidFusedLibrary"
-            )
-        }
-
         fun kotlinMultiplatformAndroid(namespace: String): MinimalSubProject {
             return MinimalSubProject(
                 path = null,

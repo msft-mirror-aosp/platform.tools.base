@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants.DOT_ANDROID_PACKAGE
 import com.android.SdkConstants.EXT_APP_BUNDLE
 import com.android.build.gradle.integration.common.fixture.project.BundleSelector.Companion.of
 import com.android.utils.combineAsCamelCase
@@ -66,7 +65,7 @@ sealed interface BundleSelector: OutputSelector {
         ): BundleSelector {
             return BundleSelectorImp(
                 buildType = buildType,
-                testName =  null,
+                testSuite =  null,
                 flavors = listOf(),
                 isSigned = isSigned
             )
@@ -80,7 +79,7 @@ sealed interface BundleSelector: OutputSelector {
         ): BundleSelector {
             return BundleSelectorImp(
                 buildType = buildType,
-                testName =  testName,
+                testSuite =  testName,
                 flavors = listOf(),
                 isSigned = isSigned
             )
@@ -90,7 +89,7 @@ sealed interface BundleSelector: OutputSelector {
 
 internal data class BundleSelectorImp(
     private val buildType: String,
-    private val testName: String?,
+    private val testSuite: String?,
     private val flavors: List<String>,
     private val isSigned: Boolean,
     private val filter: String? = null,
@@ -99,19 +98,19 @@ internal data class BundleSelectorImp(
 ): BundleSelector {
 
     override fun withFlavor(name: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors + name, isSigned, filter, suffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
 
     override fun withFilter(newFilter: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors, isSigned, newFilter, suffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
 
     override fun withSuffix(newSuffix: String): ApkSelector =
-        ApkSelectorImp(buildType, testName, flavors, isSigned, filter, newSuffix, fromIntermediates)
+        ApkSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
     override fun forTestSuite(name: String): ApkSelector =
         ApkSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
 
     override fun fromIntermediates(): ApkSelector = ApkSelectorImp(
-        buildType, testName, flavors, isSigned, filter, suffix,
+        buildType, testSuite, flavors, isSigned, filter, suffix,
         fromIntermediates = true
     )
 
@@ -122,7 +121,7 @@ internal data class BundleSelectorImp(
         flavors.let { segments.addAll(it) }
         filter?.let { segments.add(it) }
         buildType.let { segments.add(it) }
-        testName?.let { segments.add(it) }
+        testSuite?.let { segments.add(it) }
         suffix?.let { segments.add(it) }
         if (!isSigned) { segments.add("unsigned") }
 
@@ -134,7 +133,7 @@ internal data class BundleSelectorImp(
 
         // path always starts with this
         pathBuilder.append("bundle/")
-        testName?.let {
+        testSuite?.let {
             pathBuilder.append(it).append('/')
         }
         if (flavors.isNotEmpty()) {

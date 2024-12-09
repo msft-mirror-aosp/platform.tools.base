@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.apk.Aar;
+
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.truth.Fact;
@@ -27,10 +28,12 @@ import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
 import com.google.common.truth.Truth;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 
 /** Truth support for aar files. */
 public class AarSubject extends AbstractAndroidSubject<AarSubject, Aar> {
@@ -73,6 +76,35 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject, Aar> {
     public StringSubject manifestFile() {
         try {
             return Truth.assertThat(actual().getAndroidManifestContentsAsString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Asserts the subject contains an android resource at the given path with the specified String
+     * content.
+     *
+     * <p>Content is trimmed when compared.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public final void containsResourceWithContent(@NonNull String path, @NonNull String expected) {
+        try {
+            Path resource = actual().getResource(path);
+            if (resource == null) {
+                failWithoutActual(
+                        Fact.simpleFact("Resource " + path + " does not exist in " + actual()));
+                return;
+            }
+            String actual = Files.readAllLines(resource).stream().collect(Collectors.joining("\n"));
+            if (!expected.equals(actual)) {
+                failWithoutActual(
+                        Fact.simpleFact(
+                                String.format(
+                                        "Resource %s in %s does not have expected contents."
+                                                + " Expected '%s' actual '%s'",
+                                        path, actual(), expected, actual)));
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

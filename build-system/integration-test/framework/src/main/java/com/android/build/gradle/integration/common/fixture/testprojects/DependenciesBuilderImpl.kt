@@ -23,6 +23,7 @@ import com.android.testutils.TestInputsGenerator
 import com.android.utils.FileUtils
 import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 
 class DependenciesBuilderImpl() : DependenciesBuilder {
     private val dependencies = mutableListOf<Pair<String, Any>>()
@@ -95,6 +96,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
     override fun localJar(action: LocalJarBuilder.() -> Unit): LocalJarBuilder =
             LocalJarBuilderImpl().also { action(it) }
 
+    override fun files(path: Path): LocalFiles {
+        return LocalFilesImpl(path)
+    }
+
     override fun project(path: String, testFixtures: Boolean, configuration: String?): ProjectDependencyBuilder =
             ProjectDependencyBuilderImpl(path, testFixtures, configuration)
 
@@ -138,6 +143,9 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                 is LocalJarBuilderImpl -> {
                     val path = createLocalJar(dependency, projectDir)
                     sb.append("$scope files('$path')\n")
+                }
+                is LocalFiles -> {
+                    sb.append("$scope files('${dependency.path}')\n")
                 }
                 else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
             }
@@ -184,13 +192,25 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                             val path = createLocalJar(dependency, projectLocation.toFile())
                             dependency(scope, rawMethod("files", path))
                         }
-
+                        is LocalFiles -> {
+                            dependency(scope, rawMethod("files", dependency.path.toFile().toFormatted()))
+                        }
                         else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
                     }
                 }
             }
 
             emptyLine()
+        }
+    }
+
+    private fun File.toFormatted(): String {
+        return if (this.isAbsolute){
+            toURI().toString()
+        } else {
+            // in this case, we want to make sure this is using / even on window as the
+            // gradle (groovy) API requires this
+            toString().replace('\\', '/')
         }
     }
 
@@ -216,6 +236,8 @@ private class LocalJarBuilderImpl(
         classNames.add(className)
     }
 }
+
+private data class LocalFilesImpl(override val path: Path): LocalFiles
 
 private class ProjectDependencyBuilderImpl(
     override val path: String,

@@ -16,18 +16,16 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
-import kotlin.io.path.name
 
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins that have
@@ -70,6 +68,31 @@ interface GeneratesApk {
      * ```
      */
     fun hasApk(apkSelector: ApkSelector): Boolean
+}
+
+interface GeneratesAar {
+    /**
+     * Runs the action with a provided instance of [Aar].
+     *
+     * It is possible to return a value from the action, but it should not be [Aar] as this
+     * may not be safe. [Aar] is a [AutoCloseable] and should be treated as such.
+     */
+    fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R
+    /**
+     * Runs the action with a provided [AarSubject]
+     */
+    fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
+    /**
+     * Returns whether or not the AAR exists.
+     *
+     * To assert validity, prefer using
+     * ```
+     * project.assertAar(ApkSelector.DEBUG) {
+     *   exists()
+     * }
+     * ```
+     */
+    fun hasAar(aarSelector: AarSelector): Boolean
 }
 
 /**
@@ -120,15 +143,5 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
         if (previousPlugin != newPlugin) {
             throw RuntimeException("Cannot change pluginCallback in reconfigure")
         }
-    }
-
-    protected fun computeOutputPath(outputSelector: OutputSelector): Path {
-        val root = if (outputSelector.fromIntermediates) {
-            intermediatesDir
-        } else {
-            outputsDir
-        }
-
-        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
     }
 }

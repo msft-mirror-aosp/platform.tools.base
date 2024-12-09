@@ -30,6 +30,8 @@ import com.android.build.gradle.integration.common.fixture.project.AssetPackBund
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
@@ -283,6 +285,25 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
 
         project as? AssetPackBundleDefinition
             ?: errorOnWrongType(project, path, "Asset Pack Bundle")
+
+        action(project)
+
+        return project
+    }
+
+    override fun fusedLibrary(
+        path: String,
+        createMinimumProject: Boolean,
+        action: FusedLibraryDefinition.() -> Unit
+    ): FusedLibraryDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be a fused library")
+
+        val project = subProjects.computeIfAbsent(path) {
+            FusedLibraryDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? FusedLibraryDefinition
+            ?: errorOnWrongType(project, path, "Fused Library")
 
         action(project)
 

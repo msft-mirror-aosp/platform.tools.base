@@ -88,7 +88,7 @@ class R8TaskTest {
         adhocSetup()
         val buildResult = executor.withLoggingLevel(LoggingLevel.DEBUG)
             .run(":app:assembleReleaseAndroidTest")
-        val appClasses = app.getIntermediateFile(
+        val appClasses = app.getIntermediatePath(
             InternalArtifactType.COMPILE_APP_CLASSES_JAR.getFolderName() + "/release/bundleReleaseClassesToCompileJar/classes.jar"
         )
         buildResult.assertOutputContains("[R8] Classpath classes: [$appClasses]")

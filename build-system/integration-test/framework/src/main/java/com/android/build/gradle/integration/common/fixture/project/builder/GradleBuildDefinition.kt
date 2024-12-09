@@ -23,6 +23,7 @@ import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
@@ -185,6 +186,15 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: AssetPackBundleDefinition.() -> Unit
     ): AssetPackBundleDefinition
+
+    /**
+     * Configures a subProject with the Android Fused Library plugin, creating it if needed.
+     */
+    fun fusedLibrary(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: FusedLibraryDefinition.() -> Unit
+    ): FusedLibraryDefinition
 
     /**
      * configures the Gradle properties for this build

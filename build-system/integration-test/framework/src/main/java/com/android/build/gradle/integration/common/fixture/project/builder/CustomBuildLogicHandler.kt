@@ -22,6 +22,8 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Appli
 import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.FusedLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.FusedLibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
@@ -82,6 +84,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
             // other plugin callbacks
             PluginData(AssetPackBundleCallback::class, AssetPackBundleCallbackPlugin::class, "com/android/build/api/dsl/AssetPackBundleExtension"),
+            PluginData(FusedLibraryCallback::class, FusedLibraryCallbackPlugin::class, "com/android/build/api/dsl/FusedLibraryExtension"),
 
             // legacy DSL callbacks
             PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),
@@ -131,7 +134,6 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     /**
      * Returns information about the plugin as a [PluginData] based on the type of the callback
      */
-
     private fun getPluginData(callbackClass: Class<out PluginCallback>): PluginData  {
         for (pluginData in pluginMapping) {
             if (pluginData.callbackClass.java.isAssignableFrom(callbackClass)) {

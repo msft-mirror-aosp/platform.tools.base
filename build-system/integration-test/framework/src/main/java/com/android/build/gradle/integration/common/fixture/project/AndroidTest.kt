@@ -57,7 +57,7 @@ internal class AndroidTestDefinitionImpl(
 }
 
 /**
- * Specialized interface for application [AndroidProject] to use in the test
+ * Specialized interface for android test [AndroidProject] to use in the test
  */
 interface AndroidTestProject: AndroidProject<AndroidProjectDefinition<TestExtension>>, GeneratesApk {
 }

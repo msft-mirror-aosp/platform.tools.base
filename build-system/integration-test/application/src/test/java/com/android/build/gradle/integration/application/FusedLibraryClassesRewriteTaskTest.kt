@@ -16,8 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
@@ -26,83 +25,93 @@ import org.junit.Test
 import java.net.URLClassLoader
 
 internal class FusedLibraryClassesRewriteTaskTest {
-
-    @JvmField
-    @Rule
-    val project = createGradleProject {
-        subProject(":androidLib1") {
-            plugins.add(PluginType.ANDROID_LIB)
+    @get:Rule
+    val rule = GradleRule.from {
+        androidLibrary(":androidLib1") {
             android {
-                defaultCompileSdk()
                 namespace = "com.example.androidLib1"
             }
-            addFile(
-                "src/main/res/values/strings.xml",
-                """<resources>
-                <string name="androidlib1_str">A string from androidLib1</string>
-              </resources>"""
-            )
-            addFile("src/main/layout/main_activity.xml", "<root></root>")
+            files {
+                add(
+                    "src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="androidlib1_str">A string from androidLib1</string>
+                        </resources>
+                    """.trimIndent()
+                )
+                add("src/main/layout/main_activity.xml", "<root></root>")
+            }
         }
-        subProject(":androidLib2") {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(":androidLib2") {
             android {
-                defaultCompileSdk()
                 namespace = "com.example.androidLib2"
             }
-            addFile(
-                "src/main/res/values/strings.xml",
-                """<resources>
-                <string name="androidlib2_str">A string from androidLib2</string>
-              </resources>"""
-            )
-            addFile(
-                "src/main/java/com/example/androidLib2/MyClass.java",
-                // language=JAVA
-                """package com.example.androidLib2;
-                public class MyClass {
-                    public static void methodUsingNamespacedResource() {
-                        int string1 = com.example.androidLib1.R.string.androidlib1_str;
-                        int string2 = com.example.androidLib2.R.string.androidlib2_str;
-                    }
-                }
-            """.trimIndent()
-            )
+            files {
+                add(
+                    "src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="androidlib2_str">A string from androidLib2</string>
+                        </resources>
+                    """.trimIndent()
+                )
+                add(
+                    "src/main/java/com/example/androidLib2/MyClass.java",
+                    // language=JAVA
+                    """
+                        package com.example.androidLib2;
+                        public class MyClass {
+                            public static void methodUsingNamespacedResource() {
+                                int string1 = com.example.androidLib1.R.string.androidlib1_str;
+                                int string2 = com.example.androidLib2.R.string.androidlib2_str;
+                            }
+                        }
+                    """.trimIndent()
+                )
+            }
             dependencies {
                 implementation(project(":androidLib1"))
             }
         }
-        subProject(":fusedLib1") {
-            plugins.add(PluginType.FUSED_LIBRARY)
-            appendToBuildFile { """androidFusedLibrary.namespace="com.example.fusedLib1" """ }
+        fusedLibrary(":fusedLib1") {
+            androidFusedLibrary {
+                namespace = "com.example.fusedLib1"
+            }
             dependencies {
                 include(project(":androidLib1"))
                 include(project(":androidLib2"))
             }
         }
         gradleProperties {
-            set(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+            add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
         }
     }
 
     @Test
     fun rewritesUnderFusedRClass() {
-        project.executor().run(":fusedLib1:rewriteClasses")
+        val build = rule.build
+        val fusedLibrary = build.fusedLibrary(":fusedLib1")
+
+        build.executor.run(":fusedLib1:rewriteClasses")
+
         val rewrittenClasses =
-            project.getSubproject("fusedLib1")
-                .getIntermediateFile(
+            fusedLibrary
+                .getIntermediatePath(
                     FusedLibraryInternalArtifactType.CLASSES_WITH_REWRITTEN_R_CLASS_REFS.getFolderName(),
                     "single",
                     "rewriteClasses"
-                )
+                ).toFile()
         val fusedLibraryRjar =
-            project.getSubproject("fusedLib1")
-                .getIntermediateFile(
+            fusedLibrary
+                .getIntermediatePath(
                     FusedLibraryInternalArtifactType.FUSED_R_CLASS.getFolderName(),
                     "single",
                     "rewriteClasses",
                     "R.jar"
-                )
+                ).toFile()
 
         URLClassLoader(
             arrayOf(rewrittenClasses.toURI().toURL(), fusedLibraryRjar.toURI().toURL()),

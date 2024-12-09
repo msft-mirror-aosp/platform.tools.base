@@ -186,6 +186,11 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
+                is FusedLibraryDefinitionImpl -> FusedLibraryImpl(
+                    subProjectLocation,
+                    definition,
+                )
+
                 is GenericProjectDefinitionImpl -> GenericProjectImpl(
                     subProjectLocation,
                     definition,

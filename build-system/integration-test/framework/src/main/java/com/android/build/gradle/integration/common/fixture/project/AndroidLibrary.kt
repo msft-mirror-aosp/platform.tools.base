@@ -17,13 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -64,30 +61,8 @@ internal class AndroidLibraryDefinitionImpl(
 /**
  * Specialized interface for library [AndroidProject] to use in the test
  */
-interface AndroidLibraryProject: AndroidProject<AndroidProjectDefinition<LibraryExtension>>, GeneratesApk {
-    /**
-     * Runs the action with a provided instance of [Aar].
-     *
-     * It is possible to return a value from the action, but it should not be [Aar] as this
-     * may not be safe. [Aar] is a [AutoCloseable] and should be treated as such.
-     */
-    fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R
-    /**
-     * Runs the action with a provided [AarSubject]
-     */
-    fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
-    /**
-     * Returns whether or not the AAR exists.
-     *
-     * To assert validity, prefer using
-     * ```
-     * project.assertAar(ApkSelector.DEBUG) {
-     *   exists()
-     * }
-     * ```
-     */
-    fun hasAar(aarSelector: AarSelector): Boolean
-}
+interface AndroidLibraryProject: AndroidProject<AndroidProjectDefinition<LibraryExtension>>,
+    GeneratesApk, GeneratesAar
 
 /**
  * Implementation of [AndroidProject]

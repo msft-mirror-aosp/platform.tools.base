@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import org.gradle.api.JavaVersion
 import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
+import java.nio.file.Path
 
 /**
  * An object that can write a Gradle build file.
@@ -154,7 +156,10 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         // this for this method and the this of the builder.
         val enum = this?.javaClass?.isEnum ?: false
         if (enum) {
-            return "${this?.javaClass?.typeName}.$this"
+            return when (this) {
+                is JavaVersion -> "JavaVersion.${this.name}"
+                else -> "${this.javaClass.typeName}.$this"
+            }
         }
 
         return when (this) {
@@ -175,7 +180,10 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                 }
             }
             is File -> {
-                "project.file(\"${this.toFormatted()}\")"
+                "file(${quoteString(toFormatted())})"
+            }
+            is Path -> {
+                "file(${quoteString(this.toFile().toFormatted())})"
             }
             else -> toString()
 
