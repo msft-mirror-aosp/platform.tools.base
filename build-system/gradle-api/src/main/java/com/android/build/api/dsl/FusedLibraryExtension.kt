@@ -42,8 +42,7 @@ interface FusedLibraryExtension {
      * [Inject build variables into the manifest](https://developer.android.com/build/manage-manifests#inject_build_variables_into_the_manifest)
      */
     @get:Incubating
-    @set:Incubating
-    var manifestPlaceholders: Map<String, String>
+    val manifestPlaceholders: MutableMap<String, String>
 
     /** Options for configuring AAR metadata. */
     @get:Incubating

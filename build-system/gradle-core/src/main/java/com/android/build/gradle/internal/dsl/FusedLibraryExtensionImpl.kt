@@ -30,5 +30,5 @@ abstract class FusedLibraryExtensionImpl @Inject constructor(
 
     abstract override var minSdk: Int?
 
-    abstract override var manifestPlaceholders: Map<String, String>
+    abstract override val manifestPlaceholders: MutableMap<String, String>
 }
