@@ -19,6 +19,7 @@ import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.tools.debugging.AppProcessTracker
+import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.fakeadbserver.DeviceState
 import kotlinx.coroutines.delay
@@ -97,6 +98,42 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
         val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
 
         // Act
+        val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
+
+        // Assert
+        Assert.assertEquals("a.b.c", appProcessName)
+    }
+
+    @Test
+    fun retrieveProcessNameFromTrackAppAndAppInfo(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+        // Prepare
+        val deviceId = "1234"
+        val fakeDevice =
+            fakeAdb.connectDevice(
+                deviceId,
+                "test1",
+                "test2",
+                "model",
+                "36", // SDK >= 36 is required for `app_info` feature.
+                DeviceState.HostConnectionType.USB
+            )
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+        val connectedDevice =
+            hostServices.session.connectedDevicesTracker.connectedDevices
+                .mapNotNull { connectedDevices ->
+                    connectedDevices.firstOrNull { device ->
+                        device.serialNumber == fakeDevice.deviceId
+                    }
+                }.first()
+        val pid10 = 10
+        fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
+        val appTracker = AppProcessTracker.create(connectedDevice)
+        val appProcesses =
+            appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
+        val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+
+        // Act
+        Assert.assertTrue(connectedDevice.isAppInfoSupported())
         val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
         // Assert

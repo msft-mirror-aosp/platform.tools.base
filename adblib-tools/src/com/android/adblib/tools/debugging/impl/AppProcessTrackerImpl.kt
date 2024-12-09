@@ -75,12 +75,29 @@ internal class AppProcessTrackerImpl(
         val jdwpPids = newAppProcessEntryList.filter { it.debuggable }.map { it.pid }.toSet()
         val jdwpProcessMap = device.jdwpProcessManager.addProcesses(jdwpPids)
 
-        val appProcessPids = newAppProcessEntryList.map { it.pid }
-        appProcessMap.update(appProcessPids, valueFactory = { pid ->
+        // Ensure `appProcessMap` contains exactly all processes from `newAppProcessEntries`
+        val newAppProcessEntries = newAppProcessEntryList.associateBy({ it.pid }, { it })
+        appProcessMap.updateAll(newAppProcessEntries.keys, valueFactory = { pid ->
             logger.debug { "Adding process $pid to process map" }
-
-            val entry = newAppProcessEntryList.first { it.pid == pid }
-            AppProcessImpl(device, entry, jdwpProcessMap[pid])
+            val appProcessEntry = newAppProcessEntries.checkedGet(pid)
+            AppProcessImpl(device, appProcessEntry, jdwpProcessMap[pid])
         })
+
+        // Ensure each `AppProcessImpl` knows about the latest `AppProcessEntry` from
+        // the `track_app` service. This is only relevant if the `app_info` feature is
+        // supported on the device.
+        appProcessMap.values.forEach { appProcessImpl ->
+            val appProcessEntry = newAppProcessEntries.checkedGet(appProcessImpl.pid)
+            appProcessImpl.onAppProcessEntryUpdated(appProcessEntry)
+        }
+    }
+
+    private fun <K, V> Map<K, V>.checkedGet(key: K): V {
+        return this[key] ?: run {
+            val internalErrorMessage =
+                "Internal error: map should contain key=$key (map keys=${this.keys})"
+            logger.error(internalErrorMessage)
+            throw AssertionError(internalErrorMessage)
+        }
     }
 }

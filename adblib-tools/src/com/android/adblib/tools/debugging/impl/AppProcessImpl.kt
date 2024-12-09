@@ -22,34 +22,52 @@ import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
 import com.android.adblib.withPrefix
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Implementation of [AppProcess]
  */
 internal class AppProcessImpl(
     override val device: ConnectedDevice,
-    private val process: AppProcessEntry,
+    process: AppProcessEntry,
     override val jdwpProcess: JdwpProcess?,
 ) : AppProcess, AutoCloseable {
 
-    private val processDescription = "${device.session} - $device - pid=$pid"
+    private val processDescription = "${device.session} - $device - pid=${process.pid}"
 
     private val logger = adbLogger(device.session).withPrefix("$processDescription -")
 
     override val cache = CoroutineScopeCache.create(device.scope, processDescription)
 
-    override val pid: Int
-        get() = process.pid
+    private val stateFlow = MutableStateFlow(process)
 
-    override val debuggable: Boolean
-        get() = process.debuggable
+    override val appProcessEntryFlow: StateFlow<AppProcessEntry> = stateFlow.asStateFlow()
 
-    override val profileable: Boolean
-        get() = process.profileable
+    override val pid: Int = process.pid
 
-    override val architecture: String
-        get() = process.architecture
+    /**
+     * Called when a newer version of the [AppProcessEntry] for this process has been
+     * collected. This method updates the internal [appProcessEntryFlow] with the new value.
+     */
+    internal fun onAppProcessEntryUpdated(newEntry: AppProcessEntry) {
+        assert(newEntry.pid == pid)
+
+        // Minor optimization: if no changes, don't try to update the flow, to prevent
+        // unnecessary locking and GC usage.
+        if (newEntry != stateFlow.value) {
+            stateFlow.update {
+                newEntry.copy(
+                    processName = filterFakeName(newEntry.processName),
+                    packageNames = newEntry.packageNames?.mapNotNull { filterFakeName(it) }
+                )
+            }
+        }
+    }
 
     override fun close() {
         logger.debug { "close()" }
@@ -57,8 +75,7 @@ internal class AppProcessImpl(
     }
 
     override fun toString(): String {
-        return "AppProcess(device=$device, pid=$pid, " +
-                "debuggable=$debuggable, profileable=$profileable, architecture=$architecture, " +
-                "jdwpProcess=$jdwpProcess)"
+        return "AppProcess(device=$device, pid=$pid, jdwpProcess=$jdwpProcess, " +
+                "appProcessEntry=${stateFlow.value})"
     }
 }

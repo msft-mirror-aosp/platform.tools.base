@@ -48,16 +48,16 @@ internal class ProcessMap<T> where T: Any {
 
     /**
      * Incrementally update this collection so that it contains exactly all the process IDs
-     * from [keys], adding and removing [T] values as needed so that [pids] == [keys].
+     * from [effectivePids], adding and removing [T] values as needed so that
+     * [pids] == [effectivePids].
      *
      * * When adding an entry, [valueFactory] is invoked to create the corresponding [T] value.
      * * When removing an existing entry, [onRemove] is invoked on the corresponding
      *   [T] value.
      */
-    fun update(keys: Iterable<Int>, valueFactory: (Int) -> T) {
+    fun updateAll(effectivePids: Set<Int>, valueFactory: (Int) -> T) {
         val map = this
         val lastKnownPids = map.pids
-        val effectivePids = keys.toHashSet()
 
         val added = effectivePids - lastKnownPids
         val removed = lastKnownPids - effectivePids
