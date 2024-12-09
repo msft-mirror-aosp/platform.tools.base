@@ -30,7 +30,6 @@ import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
-import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.LintRequest
 import com.android.tools.lint.detector.api.Incident
@@ -174,7 +173,7 @@ fun createXmlContext(@Language("XML") xml: String, relativePath: File): XmlConte
   val client = project.client
 
   val request = LintRequest(client, listOf(fullPath))
-  val driver = LintDriver(TestIssueRegistry(), LintCliClient(LintClient.CLIENT_UNIT_TESTS), request)
+  val driver = LintDriver(TestIssueRegistry(), client, request)
   driver.scope = Scope.JAVA_FILE_SCOPE
   val folderType = ResourceFolderType.getFolderType(relativePath.parentFile.name)
   val document = client.getXmlDocument(fullPath, xml)
@@ -323,7 +322,7 @@ fun parse(
     )
   val client = project.client as LintCliClient
   val request = LintRequest(client, sourceOverride.keys.toList())
-  val driver = LintDriver(TestIssueRegistry(), LintCliClient(LintClient.CLIENT_UNIT_TESTS), request)
+  val driver = LintDriver(TestIssueRegistry(), client, request)
   driver.scope = EnumSet.of(Scope.ALL_JAVA_FILES)
 
   val uastParser = client.getUastParser(project)
