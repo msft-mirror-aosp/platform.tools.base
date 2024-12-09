@@ -16,12 +16,12 @@
 
 package com.android.backup.testing
 
-import ai.grazie.utils.dropPrefix
 import com.android.backup.AbstractAdbServices
 import com.android.backup.AdbServices.AdbOutput
 import com.android.backup.BackupException
 import com.android.backup.ErrorCode
 import com.android.tools.environment.log.NoopLogger
+import com.android.utils.text.dropPrefix
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream

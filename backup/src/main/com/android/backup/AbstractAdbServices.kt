@@ -15,7 +15,6 @@
  */
 package com.android.backup
 
-import ai.grazie.utils.dropPrefix
 import com.android.adblib.DeviceSelector
 import com.android.backup.BackupProgressListener.Step
 import com.android.backup.ErrorCode.APP_STOPPED
@@ -30,6 +29,7 @@ import com.android.backup.ErrorCode.TRANSPORT_INIT_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_NOT_SELECTED
 import com.android.backup.ErrorCode.UNEXPECTED_ERROR
 import com.android.tools.environment.Logger
+import com.android.utils.text.dropPrefix
 import kotlin.text.RegexOption.IGNORE_CASE
 
 private val TRANSPORT_COMMAND_REGEX =

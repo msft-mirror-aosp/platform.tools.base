@@ -14,6 +14,7 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:jimfs[test]",
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/base/adblib:studio.android.sdktools.adblib[module]",
+        "//tools/base/common:studio.android.sdktools.common[module]",
         "//tools/base/environment-services:studio.intellij.android.environment-services[module]",
     ],
 )
@@ -29,6 +30,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools[module]",
         "//tools/base/adblib:studio.android.sdktools.adblib[module]",
+        "//tools/base/common:studio.android.sdktools.common[module]",
         "//tools/base/environment-services:studio.intellij.android.environment-services[module]",
         "//tools/base/backup:studio.android.sdktools.backup[module]",
     ],
