@@ -28,6 +28,7 @@ import com.google.testing.platform.lib.logging.jvm.getLogger
 import com.google.testing.platform.proto.api.core.TestArtifactProto
 import com.google.testing.platform.proto.api.core.TestCaseProto.TestCase
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
+import com.google.testing.platform.proto.api.core.TestResultProto.TestResult.TestDetailsEntry
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.runtime.android.controller.ext.deviceShell
 import com.google.testing.platform.runtime.android.controller.ext.isTestServiceInstalled
@@ -42,19 +43,22 @@ import java.util.logging.Logger
 class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()) : HostPluginAdapter() {
 
     companion object {
-        const private val BENCHMARK_TEST_METRICS_KEY = "android.studio.display.benchmark"
-        const private val BENCHMARK_V2_TEST_METRICS_KEY = "android.studio.v2display.benchmark"
-        const private val BENCHMARK_PATH_TEST_METRICS_KEY = "android.studio.v2display.benchmark.outputDirPath"
+        const val BENCHMARK_TEST_METRICS_KEY = "android.studio.display.benchmark"
+        // V2
+        const val BENCHMARK_V2_TEST_METRICS_KEY = "android.studio.v2display.benchmark"
+        const val BENCHMARK_PATH_TEST_METRICS_KEY = "android.studio.v2display.benchmark.outputDirPath"
+        // V3
+        const val BENCHMARK_V3_TEST_METRICS_KEY = "android.studio.v3display.benchmark"
+        const val BENCHMARK_V3_PATH_TEST_METRICS_KEY = "android.studio.v3display.benchmark.outputDirPath"
+        // Regex for the benchmark output
         private val benchmarkPrefixRegex = "^benchmark:( )?".toRegex(RegexOption.MULTILINE)
         // Valid string: Benchmark test took [200 ms](path/to/my.trace) to run.
         // text = 200 ms, url = path/to/my.trace, title = "", total = "[200 ms](path/to/my.trace)"
-        private val benchmarkUrlRegex =
-            "(?<total>\\[(?<text>.+?)\\]\\((?<link>[^ ]+?)(?: \"(?<title>.+?)\")?\\))".toRegex()
-        // Workaround for the Kotlin issue KT-20865.
-        // matchResult.groups.get(BENCHMARK_LINK_REGEX_GROUP_INDEX)?.value is equivalent to
-        // matchResult.groups["link"]?.value.
-        const private val BENCHMARK_LINK_REGEX_GROUP_INDEX = 3
-        const private val BENCHMARK_TRACE_FILE_PREFIX = "file://"
+        val benchmarkUrlRegex = Regex(
+            pattern = """(\[(?<title>[^]]*)])?\((?<link>(?<protocol>(file|uri|http|https)://)(?<path>[^)]*))\)"""
+        )
+        private const val  LINK_GROUP = "link"
+        private const val BENCHMARK_TRACE_FILE_PREFIX = "file://"
 
         // AndroidX Test Storage service's output directory on device.
         // This constant value is a copy from TestStorageConstants.ON_DEVICE_PATH_TEST_OUTPUT.
@@ -141,31 +145,55 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
      * the [builder].
      */
     private fun addBenchmarkOutput(
-        testResult: TestResult, deviceController: DeviceController,
-        builder: TestResult.Builder) {
-        // Workaround solution for b/154322086.
-        // Newer libraries output strings on both BENCHMARK_TEST_METRICS_KEY and
-        // BENCHMARK_V2_OUTPUT_TEST_METRICS_KEY. The V2 supports linking while the V1 does not.
-        // This is done to maintain backward compatibility with older versions of studio.
-        val key = if (testResult.detailsList.find { entry ->
-                entry.key == BENCHMARK_V2_TEST_METRICS_KEY
-            } != null) {
-            BENCHMARK_V2_TEST_METRICS_KEY
-        } else {
-            BENCHMARK_TEST_METRICS_KEY
-        }
-
-        val benchmarkMessage = testResult.detailsList.find { entry ->
-            entry.key == key
-        }?.value ?: ""
+        testResult: TestResult,
+        deviceController: DeviceController,
+        builder: TestResult.Builder
+    ) {
+        val keyForMessage = benchmarkKey(
+            testResult,
+            orderedKeys = listOf(
+                BENCHMARK_V3_TEST_METRICS_KEY,
+                BENCHMARK_V2_TEST_METRICS_KEY,
+                BENCHMARK_TEST_METRICS_KEY,
+            )
+        )
+        val keyForCopy = benchmarkKey(
+            testResult, orderedKeys = listOf(
+                BENCHMARK_V2_TEST_METRICS_KEY,
+                BENCHMARK_TEST_METRICS_KEY,
+            )
+        )
+        val benchmarkMessage = benchmarkTestDetail(testResult, keyForMessage)?.value ?: ""
         val benchmarkMessageWithoutPrefix = benchmarkPrefixRegex.replace(benchmarkMessage, "")
-        val benchmarkOutputDir = testResult.detailsList.find { entry ->
-            entry.key == BENCHMARK_PATH_TEST_METRICS_KEY
-        }?.value ?: ""
-
+        val copyMessage = benchmarkTestDetail(testResult, keyForCopy)?.value ?: ""
+        val copyMessageWithoutPrefix = benchmarkPrefixRegex.replace(copyMessage, "")
+        val benchmarkOutputDir = benchmarkTestDetail(
+            testResult,
+            BENCHMARK_PATH_TEST_METRICS_KEY
+        )?.value ?: ""
         addBenchmarkMessage(benchmarkMessageWithoutPrefix, builder, testResult)
         addBenchmarkFiles(
-            benchmarkMessageWithoutPrefix, benchmarkOutputDir, deviceController, builder)
+            copyMessageWithoutPrefix, benchmarkOutputDir, deviceController, builder)
+    }
+
+    /**
+     * Gets the benchmark output from the [testResult] map. The order of the keys is important here, given we look
+     * at the first key (in that specific order) that exists in [testResult].
+     *
+     * We do this because, benchmark output is versioned, and we typically want outputs in the latest
+     * version while gracefully falling back to a prior version if that version of the output is not a part of [testResult]. That might
+     * happen when an older version of the `androidx.benchmark` library might be being used.
+     */
+    private fun benchmarkKey(testResult: TestResult, orderedKeys: List<String>): String? {
+        return orderedKeys.firstOrNull { key ->
+            testResult.detailsList.firstOrNull { entry ->
+                entry.key == key
+            } != null
+        }
+    }
+
+    private fun benchmarkTestDetail(testResult: TestResult, key: String?): TestDetailsEntry? {
+        return testResult.detailsList.find { it.key == key }
     }
 
     /**
@@ -184,7 +212,7 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
                 benchmarkUrlRegex.findAll(line)
             }
             .mapNotNull { matchResult ->
-                matchResult.groups[BENCHMARK_LINK_REGEX_GROUP_INDEX]?.value
+                matchResult.groups[LINK_GROUP]?.value
             }
             .filter { matchValue ->
                 matchValue.startsWith(BENCHMARK_TRACE_FILE_PREFIX)
