@@ -18,9 +18,10 @@ package com.android.flags;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlagTest {
 
@@ -290,7 +291,15 @@ public class FlagTest {
         Flag<Integer> intFlag = new IntFlag(group, "int", "Mango", "Mango", intSupplier);
         Flag<Long> longFlag = new LongFlag(group, "long", "Mango", "Mango", longSupplier);
         Flag<String> stringFlag = new StringFlag(group, "string", "Mango", "Mango", stringSupplier);
-        Flag<Colors> enumFlag = new EnumFlag<>(group, "enum", "Mango", "Mango", enumSupplier);
+        Flag<Colors> enumFlag =
+                new EnumFlag<>(group, "enum", "Mango", "Mango", enumSupplier, Colors.class);
+
+        // Check suppliers are not called at construction
+        assertThat(boolSupplierCalled.get()).isEqualTo(0);
+        assertThat(intSupplierCalled.get()).isEqualTo(0);
+        assertThat(longSupplierCalled.get()).isEqualTo(0);
+        assertThat(stringSupplierCalled.get()).isEqualTo(0);
+        assertThat(enumSupplierCalled.get()).isEqualTo(0);
 
         // Access each flag twice, to confirm the supplier is only run once.
         for (int i = 0; i < 2; i++) {
@@ -307,11 +316,11 @@ public class FlagTest {
         assertThat(stringSupplierCalled.get()).isEqualTo(1);
         assertThat(enumSupplierCalled.get()).isEqualTo(1);
 
-        assertThat(boolFlag.getDefaultValueDescription()).isEqualTo("test boolean supplier");
-        assertThat(intFlag.getDefaultValueDescription()).isEqualTo("test integer supplier");
-        assertThat(longFlag.getDefaultValueDescription()).isEqualTo("test long supplier");
-        assertThat(stringFlag.getDefaultValueDescription()).isEqualTo("test string supplier");
-        assertThat(enumFlag.getDefaultValueDescription()).isEqualTo("test enum supplier");
+        assertThat(boolFlag.getDefault().getExplanation()).isEqualTo("test boolean supplier");
+        assertThat(intFlag.getDefault().getExplanation()).isEqualTo("test integer supplier");
+        assertThat(longFlag.getDefault().getExplanation()).isEqualTo("test long supplier");
+        assertThat(stringFlag.getDefault().getExplanation()).isEqualTo("test string supplier");
+        assertThat(enumFlag.getDefault().getExplanation()).isEqualTo("test enum supplier");
     }
 
     private static final class GameFeatures {

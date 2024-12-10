@@ -20,3 +20,7 @@ import java.util.function.Supplier
 abstract class FlagDefault<T>(val explanation: String) : Supplier<T> {
 
 }
+
+class StaticFlagDefault<T>(private val default: T, explanation: String = "") : FlagDefault<T>(explanation) {
+    override fun get(): T = default
+}
