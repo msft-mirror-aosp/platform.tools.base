@@ -58,9 +58,8 @@ abstract class BuildPrivacySandboxSdkApks : NonIncrementalTask() {
     abstract val ideModelFile: RegularFileProperty
 
     override fun doTaskAction() {
-        val logLevel = if( deviceConfig.isPresent) LogLevel.INFO else LogLevel.LIFECYCLE
         if (sdkApksArchives.isEmpty) {
-            logger.log(logLevel, "There are no privacy sandbox SDK dependencies for ${projectPath.get()} $variantName ")
+            logger.log(LogLevel.LIFECYCLE, "There are no privacy sandbox SDK dependencies for ${projectPath.get()} $variantName ")
             return
         }
         val ideModel = ideModelFile.get().asFile.toPath()
