@@ -29,6 +29,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
+import kotlin.io.path.absolutePathString
 import kotlin.test.assertFailsWith
 
 /**
@@ -78,7 +79,9 @@ class BuiltArtifactsLoaderImplTest {
         assertThat(updatedBuiltArtifacts.artifactType).isEqualTo(SingleArtifact.APK)
         assertThat(updatedBuiltArtifacts.elements).hasSize(1)
         val updatedBuiltArtifact = updatedBuiltArtifacts.elements.first()
-        assertThat(File(updatedBuiltArtifact.outputFile).name).isEqualTo("file1.xml.new")
+        val updatedOutputFile = File(updatedBuiltArtifact.outputFile)
+        assertThat(updatedOutputFile.name).isEqualTo("file1.xml.new")
+        assertThat(updatedBuiltArtifact.outputFilePath.absolutePathString()).isEqualTo(updatedOutputFile.toPath().absolutePathString())
         assertThat(updatedBuiltArtifact.versionCode).isEqualTo(123)
         assertThat(updatedBuiltArtifact.versionName).isEqualTo("version_name")
         assertThat(updatedBuiltArtifact.outputType).isEqualTo(VariantOutputConfiguration.OutputType.SINGLE)

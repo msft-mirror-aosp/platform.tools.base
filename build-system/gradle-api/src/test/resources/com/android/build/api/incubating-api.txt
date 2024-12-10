@@ -728,3 +728,5 @@ https://issuetracker.google.com/368059518
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)
 https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
+https://issuetracker.google.com/383364112
+  * com.android.build.api.variant.BuiltArtifact.getOutputFilePath: java.nio.file.Path ()

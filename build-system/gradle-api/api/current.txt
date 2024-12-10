@@ -2620,9 +2620,11 @@ package com.android.build.api.variant {
 
   public interface BuiltArtifact extends com.android.build.api.variant.VariantOutputConfiguration {
     method public String getOutputFile();
+    method @org.gradle.api.Incubating public java.nio.file.Path getOutputFilePath();
     method public Integer? getVersionCode();
     method public String? getVersionName();
     property public abstract String outputFile;
+    property @org.gradle.api.Incubating public abstract java.nio.file.Path outputFilePath;
     property public abstract Integer? versionCode;
     property public abstract String? versionName;
   }
