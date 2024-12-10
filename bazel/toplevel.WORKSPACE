@@ -31,12 +31,6 @@ new_local_repository(
 )
 # END Cc toolchain dependencies
 
-new_local_repository(
-    name = "studio_jdk",
-    build_file = "prebuilts/studio/jdk/jdk8/BUILD.studio_jdk",
-    path = "prebuilts/studio/jdk/jdk8",
-)
-
 # rules_android_ndk must come before loading vendor.bzl, because it is
 # configured as a vendor dependency and can only be configured with a valid
 # ANDROID_NDK path.
@@ -54,42 +48,6 @@ vendor_repository(
 load("@vendor//:vendor.bzl", "setup_vendor_repositories")
 
 setup_vendor_repositories()
-
-local_repository(
-    name = "io_bazel_rules_kotlin",
-    path = "tools/external/bazelbuild-rules-kotlin",
-)
-
-local_repository(
-    name = "windows_toolchains",
-    path = "tools/base/bazel/toolchains/windows",
-)
-
-# Bazel cannot auto-detect python on Windows yet
-# See: https://github.com/bazelbuild/bazel/issues/7844
-register_toolchains("@windows_toolchains//:python_toolchain")
-
-local_repository(
-    name = "bazel_skylib",
-    path = "prebuilts/tools/common/external-src-archives/bazel-skylib/bazel-skylib-1.6.1",
-)
-
-local_repository(
-    name = "bazel_toolchains",
-    path = "prebuilts/tools/common/external-src-archives/bazel-toolchains/bazel-toolchains-5.1.2",
-)
-
-local_repository(
-    name = "rules_android",
-    path = "prebuilts/tools/common/external-src-archives/bazelbuild-rules_android",
-)
-
-load(
-    "@bazel_toolchains//repositories:repositories.bzl",
-    bazel_toolchains_repositories = "repositories",
-)
-
-bazel_toolchains_repositories()
 
 setup_external_sdk(
     name = "externsdk",

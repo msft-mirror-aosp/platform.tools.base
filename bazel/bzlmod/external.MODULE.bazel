@@ -28,6 +28,12 @@ local_repository(
     path = "external/gflags",
 )
 
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "io_bazel_rules_kotlin",
+    path = "tools/external/bazelbuild-rules-kotlin",
+)
+
 new_local_repository(
     name = "intellij_plugins",
     build_file = "//tools/base/bazel:external/intellij_plugins.BUILD",

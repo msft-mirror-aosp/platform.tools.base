@@ -5,3 +5,11 @@ tools/adt/idea/studio/monobuild/out
 tools/vendor/intellij/cidr/cidr-common/tests/testData
 tools/adt/idea/aswb/testing/test_deps/projects
 prebuilts/rust
+
+# Packages that are typically ignored in WORKSPACE due to a local_repository
+# pointing to them are not ignored with bzlmod.
+# See https://github.com/bazelbuild/bazel/issues/22208#issuecomment-2174586425
+tools/external/bazelbuild-rules-kotlin
+prebuilts/tools/common/external-src-archives/bazel-skylib/bazel-skylib-1.6.1
+prebuilts/tools/common/external-src-archives/bazel-toolchains/bazel-toolchains-5.1.2
+prebuilts/tools/common/external-src-archives/bazelbuild-rules_android

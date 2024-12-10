@@ -1,0 +1,25 @@
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "bazel_skylib",
+    path = "prebuilts/tools/common/external-src-archives/bazel-skylib/bazel-skylib-1.6.1",
+)
+
+local_repository(
+    name = "bazel_toolchains",
+    path = "prebuilts/tools/common/external-src-archives/bazel-toolchains/bazel-toolchains-5.1.2",
+)
+
+local_repository(
+    name = "rules_android",
+    path = "prebuilts/tools/common/external-src-archives/bazelbuild-rules_android",
+)
+
+new_local_repository(
+    name = "studio_jdk",
+    build_file = "prebuilts/studio/jdk/jdk8/BUILD.studio_jdk",
+    path = "prebuilts/studio/jdk/jdk8",
+)
