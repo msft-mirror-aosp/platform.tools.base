@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:maven/artifacts.bzl", "ARTIFACTS", "DATA", "REMOTE_REPOS")
@@ -575,5 +576,14 @@ java_proto_library(
     srcs = ["@com_google_protobuf//:well_known_protos"],
     skip_default_includes = True,
     strip_prefix = "src",
+    visibility = ["//visibility:public"],
+)
+
+# Copy runfiles library from @bazel_tools so that iml_to_build can find the package.
+copy_file(
+    name = "runfiles_java_lib",
+    src = "@bazel_tools//tools/java/runfiles:librunfiles.jar",
+    out = "librunfiles.jar",
+    allow_symlink = True,
     visibility = ["//visibility:public"],
 )

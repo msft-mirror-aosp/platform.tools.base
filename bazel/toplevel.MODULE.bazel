@@ -16,4 +16,6 @@ include("//tools/base/bazel/bzlmod:prebuilts.MODULE.bazel")
 
 include("//tools/base/bazel/bzlmod:coverage.MODULE.bazel")
 
+include("//tools/base/bazel/bzlmod:sdk.MODULE.bazel")
+
 include("//tools:vendor.MODULE.bazel")

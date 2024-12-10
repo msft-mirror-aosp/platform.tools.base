@@ -259,7 +259,17 @@ public class TestUtils {
     /** Gets the path to a specific Bazel workspace. */
     @NonNull
     public static Path getWorkspaceRoot(@NonNull String workspaceName) throws IOException {
-        String pathToParent = runningFromBazel() ? ".." : "bazel-out/../../../external";
+        if (runningFromBazel()) {
+            // Getting the path to a specific Bazel workspace requires importing Runfiles. This
+            // involves bundling the runfiles jar with testutils, which is undesirable, as it would
+            // be uploaded along with AGP.
+            // See ag/I90951b6f37ff9b0952b0c2cf2fd5c38b2b8c9381 for a Bazel-compatible example
+            // using runfiles.
+            throw new IllegalStateException(
+                    "getWorkspaceRoot(String) cannot be called when running from Bazel");
+        }
+
+        String pathToParent = "bazel-out/../../../external";
         // Canonicalize to get rid of the ".."s and symlinks.
         Path canonicalPath = resolveWorkspacePathUnchecked(pathToParent).toRealPath();
         return canonicalPath.resolve(workspaceName);
