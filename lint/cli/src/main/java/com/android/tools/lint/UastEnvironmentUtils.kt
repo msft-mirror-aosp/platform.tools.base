@@ -35,10 +35,15 @@ import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.pom.PomModel
+import com.intellij.pom.core.impl.PomModelImpl
 import com.intellij.pom.java.LanguageFeatureProvider
+import com.intellij.pom.tree.TreeAspect
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameHelper
+import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.PsiNameHelperImpl
+import com.intellij.psi.impl.RecordAugmentProvider
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
@@ -130,6 +135,9 @@ internal fun configureProjectEnvironment(
   if (javaLanguageLevel != null) {
     LanguageLevelProjectExtension.getInstance(project).languageLevel = javaLanguageLevel
   }
+  // Used by Java RecordAugmentProvider
+  project.registerService(TreeAspect::class.java)
+  project.registerService(PomModel::class.java, PomModelImpl::class.java)
 
   // PsiNameHelper is used by Kotlin UAST.
   project.registerService(PsiNameHelper::class.java, PsiNameHelperImpl::class.java)
@@ -335,9 +343,14 @@ internal fun configureApplicationEnvironment(
     UEvaluatorExtension.EXTENSION_POINT_NAME,
     UEvaluatorExtension::class.java,
   )
-  appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
+  CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(
+    PsiAugmentProvider.EP_NAME.toString(),
+    PsiAugmentProvider::class.java,
+  )
 
+  appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
+  PsiAugmentProvider.EP_NAME.point.registerExtension(RecordAugmentProvider())
 
   configurator(appEnv)
 
