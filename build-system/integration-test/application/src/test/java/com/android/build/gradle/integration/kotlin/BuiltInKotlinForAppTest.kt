@@ -321,4 +321,36 @@ class BuiltInKotlinForAppTest {
         ScannerSubject.assertThat(result.stderr)
             .contains("Visibility must be specified in explicit API mode")
     }
+
+    /**
+     * Regression test for b/338596003
+     */
+    @Test
+    fun testKotlinAttributeSetup() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    defaultConfig {
+                        minSdk = 21
+                    }
+                    dependencies {
+                        implementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
+                    }
+                }
+            }
+        }
+
+        // First test that kotlin compilation completes successfully.
+        build.executor
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .run(":app:compileDebugKotlin")
+
+        // Then test that the build fails if Kotlin attribute setup is disabled
+        val result = build.executor
+            .expectFailure()
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+            .run(":app:compileDebugKotlin")
+        ScannerSubject.assertThat(result.stderr).contains("Could not find androidx.compose.ui")
+    }
 }
