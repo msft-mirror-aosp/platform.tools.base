@@ -83,7 +83,7 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         val allPlugins = build.computeAllPluginMap()
 
         (projectDefinition as GradleProjectDefinitionImpl)
-            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), build.buildWriter)
+            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), build.getNewWriter())
     }
 
     abstract fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject<ProjectDefinitionT>

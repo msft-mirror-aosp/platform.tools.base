@@ -16,17 +16,15 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.options.CreationOptionsBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.GradleLocationBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.RuleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.SdkConfigurationBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
+import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.GradleLocationBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.RuleOptionBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.SdkConfigurationBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -47,14 +45,11 @@ interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
     override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): GradleRuleBuilder
-    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): GradleRuleBuilder
-    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): GradleRuleBuilder
 
     fun withMavenRepository(action: MavenRepository.() -> Unit): GradleRuleBuilder
 
     fun withProfileOutput(): GradleRuleBuilder
 }
-
 
 // --------------------------
 
@@ -65,7 +60,7 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     private var enableProfileOutput = false
 
     override fun from(action: GradleBuildDefinition.() -> Unit): GradleRule {
-        val builder = GradleBuildDefinitionImpl(ruleOptionBuilder.creationOptions.name)
+        val builder = GradleBuildDefinitionImpl(GradleBuildDefinition.DEFAULT_BUILD_NAME)
         action(builder)
 
         return create(builder)
@@ -86,16 +81,6 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
         return this
     }
 
-    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): GradleRuleBuilder {
-        ruleOptionBuilder.withProperties(action)
-        return this
-    }
-
-    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): GradleRuleBuilder {
-        ruleOptionBuilder.withCreationOptions(action)
-        return this
-    }
-
     override fun withMavenRepository(action: MavenRepository.() -> Unit): GradleRuleBuilder {
         action(mavenRepository)
         return this
@@ -112,7 +97,6 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
         gradleBuild: GradleBuildDefinitionImpl
     ): GradleRule {
         return GradleRuleImpl(
-            name = ruleOptionBuilder.creationOptions.name,
             buildDefinition = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
             externalLibraries = mavenRepository.libraries,

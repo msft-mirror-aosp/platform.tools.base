@@ -43,7 +43,7 @@ class BasicConfigurationCacheTest {
 
     @Before
     fun setUp() {
-        rule.directory.resolve(".gradle/configuration-cache").toFile().deleteRecursively()
+        rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
     }
 
     @Test

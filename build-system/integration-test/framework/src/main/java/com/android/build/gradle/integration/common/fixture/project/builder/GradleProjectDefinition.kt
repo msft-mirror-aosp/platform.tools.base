@@ -136,7 +136,7 @@ internal abstract class GradleProjectDefinitionImpl(
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         write(
             location,
@@ -152,7 +152,7 @@ internal abstract class GradleProjectDefinitionImpl(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         write(
             location,
@@ -174,11 +174,11 @@ internal abstract class GradleProjectDefinitionImpl(
         customPluginMap: Map<String, String>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         location.createDirectories()
 
-        buildWriter().apply {
+        buildWriter.apply {
             if (isRoot && customPluginMap.isNotEmpty()) {
                 block("buildscript") {
                     block("dependencies") {

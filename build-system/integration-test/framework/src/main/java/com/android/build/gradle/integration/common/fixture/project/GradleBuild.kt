@@ -232,7 +232,6 @@ internal class GradleBuildImpl(
     private val definition: GradleBuildDefinitionImpl,
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
-    internal val buildWriter: () -> BuildWriter,
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {
@@ -263,7 +262,7 @@ internal class GradleBuildImpl(
 
     override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
         action(definition.settings)
-        definition.writeSetting(directory, null, buildWriter)
+        definition.writeSetting(directory, null, getNewWriter())
     }
 
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =
@@ -284,4 +283,6 @@ internal class GradleBuildImpl(
 
     override val modelBuilder: ModelBuilderV2
         get() = modelBuilderProvider()
+
+    internal fun getNewWriter(): BuildWriter = definition.buildFileType.getNewWriter()
 }

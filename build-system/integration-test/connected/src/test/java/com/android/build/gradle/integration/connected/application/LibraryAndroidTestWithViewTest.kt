@@ -101,11 +101,7 @@ class LibraryAndroidTestWithViewTest {
     }
 
     @get:Rule
-    val rule = GradleRule.configure()
-        .withProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
-        }
-        .from {
+    val rule = GradleRule.from {
         androidLibrary(createMinimumProject = false) {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             dependencies {
@@ -138,6 +134,9 @@ class LibraryAndroidTestWithViewTest {
             files.add("src/androidTest/res/layout/test_view_layout.xml", testLayout)
             files.add("src/androidTest/java/${srcPackage}/TestActivity.kt", testActivitySrc)
             files.add("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
+        }
+        gradleProperties {
+            add(BooleanOption.USE_ANDROID_X, true)
         }
     }
 

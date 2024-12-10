@@ -44,7 +44,7 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = { GroovyBuildWriter() },
+            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
         )
 
@@ -67,7 +67,7 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = { GroovyBuildWriter() },
+            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
         )
 
@@ -91,7 +91,7 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = { GroovyBuildWriter() },
+            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
         )
 
@@ -131,7 +131,7 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = { GroovyBuildWriter() },
+            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
         )
 

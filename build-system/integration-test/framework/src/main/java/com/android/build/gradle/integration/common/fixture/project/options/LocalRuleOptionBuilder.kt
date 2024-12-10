@@ -57,14 +57,4 @@ class LocalRuleOptionBuilder internal constructor(
         delegate.withSdk(action)
         return this
     }
-
-    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withProperties(action)
-        return this
-    }
-
-    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): LocalRuleOptionBuilder {
-        delegate.withCreationOptions(action)
-        return this
-    }
 }

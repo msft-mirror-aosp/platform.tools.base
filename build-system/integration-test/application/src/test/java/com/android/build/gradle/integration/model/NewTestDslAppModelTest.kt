@@ -38,10 +38,7 @@ class NewTestDslAppModelTest: ReferenceModelComparator(
         }
     },
     deltaConfig = {
-        // nothing here, see deltaOptions
-    },
-    deltaOptions = {
-        withProperties {
+        gradleProperties {
             add(BooleanOption.ENABLE_NEW_TEST_DSL, true)
         }
     },

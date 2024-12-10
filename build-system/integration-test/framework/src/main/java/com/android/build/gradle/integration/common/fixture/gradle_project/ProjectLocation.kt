@@ -52,7 +52,7 @@ class ProjectLocation(
 fun initializeProjectLocation(
     testClass: Class<*>,
     methodName: String?,
-    projectName: String
+    projectName: String?
 ): ProjectLocation {
     val testLocation = initializeTestLocation()
 
@@ -68,7 +68,7 @@ private fun computeTestDir(
     testOutDir: File,
     testClass: Class<*>,
     methodName: String?,
-    projectName: String
+    projectName: String?
 ): File {
     var testDir = testOutDir
     if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS
@@ -129,5 +129,9 @@ private fun computeTestDir(
     if (methodDir != null) {
         testDir = File(testDir, methodDir)
     }
-    return File(testDir, projectName)
+    if (projectName != null) {
+        testDir = File(testDir, projectName)
+    }
+
+    return testDir
 }

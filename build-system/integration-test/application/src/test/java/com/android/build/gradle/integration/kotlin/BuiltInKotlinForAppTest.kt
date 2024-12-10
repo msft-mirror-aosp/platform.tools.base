@@ -137,33 +137,33 @@ class BuiltInKotlinForAppTest {
      */
     @Test
     fun testWithScreenshotTestEnabled() {
-        val build = rule.configure()
-            .withProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }.build {
-                androidApplication {
-                    android.experimentalProperties[SCREENSHOT_TEST.key] = true
+        val build = rule.build {
+            androidApplication {
+                android.experimentalProperties[SCREENSHOT_TEST.key] = true
 
-                    files {
-                        add(
-                            "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
-                            //language=kotlin
-                            """
-                                package com.foo.application
-                                class AppScreenshotTestFoo
-                            """.trimIndent()
-                        )
-                        add(
-                            "src/main/java/com/foo/application/AppFoo.kt",
-                            //language=kotlin
-                            """
-                                package com.foo.application
-                                class AppFoo
-                            """.trimIndent()
-                        )
-                    }
+                files {
+                    add(
+                        "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppScreenshotTestFoo
+                        """.trimIndent()
+                    )
+                    add(
+                        "src/main/java/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo
+                        """.trimIndent()
+                    )
                 }
             }
+            gradleProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }
+        }
 
         build.executor.run(":app:compileDebugScreenshotTestKotlin")
         build.executor.run(":app:assembleDebug")

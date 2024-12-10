@@ -28,12 +28,33 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 
 /**
  * Represents a Gradle Build that can be configured before being written on disk
  */
 interface GradleBuildDefinition {
+    companion object {
+        const val DEFAULT_BUILD_NAME = "project"
+    }
+
+    /**
+     * The name of the build. This impacts both the logical name and the folder in which the build
+     * is created
+     */
     var name: String
+
+    /**
+     * The root folder name. This only impacts the folder and not the logical name.
+     * If you wish to change the logical name only, use [name]
+     */
+    var rootFolderName: String
+
+    /**
+     * The type of files to use when generating gradle files.
+     */
+    var buildFileType: BuildFileType
 
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
@@ -148,4 +169,9 @@ interface GradleBuildDefinition {
         path: String,
         action: AssetPackDefinition.() -> Unit
     ): AssetPackDefinition
+
+    /**
+     * configures the Gradle properties for this build
+     */
+    fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit)
 }

@@ -113,13 +113,13 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         repositories: Collection<Path>?,
         includedBuildNames: Collection<String>,
         subProjectPaths: Collection<String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         val repos = repositories ?: repositoriesCache ?: error("No repositories provided")
 
         repositoriesCache = repos
 
-        buildWriter().apply {
+        buildWriter.apply {
             block("pluginManagement") {
                 block("repositories") {
                     for (repository in repos) {

@@ -85,11 +85,12 @@ class AaptTest {
         val traceFolderPath = tracesFolder.absolutePath
         val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
-        val build = rule.configure().withProperties {
-            add("_aaptTest_", windowsFriendlyFilePath)
-        }.build {
+        val build = rule.build {
             androidApplication {
                 componentCallback = TraceFolderCallback::class.java
+            }
+            gradleProperties {
+                add("_aaptTest_", windowsFriendlyFilePath)
             }
         }
 

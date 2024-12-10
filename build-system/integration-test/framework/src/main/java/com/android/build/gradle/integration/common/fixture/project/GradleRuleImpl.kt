@@ -27,16 +27,12 @@ import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ProjectPropertiesWorkingCopy
 import com.android.build.gradle.integration.common.fixture.debugGradleConnectionExceptionThenRethrow
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
-import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
+import com.android.build.gradle.integration.common.fixture.gradle_project.TestLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.sdklib.internal.project.ProjectProperties
 import com.android.testutils.MavenRepoGenerator
@@ -51,9 +47,10 @@ import org.junit.runners.model.Statement
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 
 internal class GradleRuleImpl internal constructor(
-    val name: String,
     private val buildDefinition: GradleBuildDefinitionImpl,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder,
     private val externalLibraries: List<MavenRepoGenerator.Library>,
@@ -61,8 +58,7 @@ internal class GradleRuleImpl internal constructor(
 ): GradleRule {
     private var status = Status.PENDING
 
-    /** Project location, computed by the Statement at test execution */
-    private var mutableProjectLocation: ProjectLocation? = null
+    private lateinit var locations: GradleRuleLocation
 
     private val openConnections = mutableListOf<ProjectConnection>()
 
@@ -74,10 +70,7 @@ internal class GradleRuleImpl internal constructor(
             doWriteBuild()
         }
 
-        computeGradleBuild(
-            buildDefinition,
-            mutableProjectLocation ?: throw RuntimeException("Location not set!")
-        )
+        computeGradleBuild(buildDefinition, locations.testFiles, locations.testSupportLocations)
     }
 
     override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
@@ -94,28 +87,14 @@ internal class GradleRuleImpl internal constructor(
     override fun configure(): LocalRuleOptionBuilder =
         LocalRuleOptionBuilder(this, this.ruleOptionBuilder)
 
-    override val directory: Path
-        get() = mutableProjectLocation?.projectDir?.toPath() ?: throw RuntimeException("Location not set!")
-
-    private val buildWriter: () -> BuildWriter by lazy {
-        when (ruleOptionBuilder.creationOptions.buildFileType) {
-            BuildFileType.GROOVY -> {
-                // need to keep the braces to return a lambda
-                { GroovyBuildWriter() }
-            }
-            BuildFileType.KTS -> {
-                // need to keep the braces to return a lambda
-                { KtsBuildWriter() }
-            }
-        }
+    override fun getMainBuildDirectory(): Path {
+        return locations.testFiles.resolve(buildDefinition.rootFolderName)
     }
 
     private fun doWriteBuild() {
-        val location = mutableProjectLocation ?: throw RuntimeException("Location not set before writing!")
-
-        val projectDir = location.projectDir
-        FileUtils.deleteRecursivelyIfExists(projectDir)
-        FileUtils.mkdirs(projectDir)
+        val rootBuildPath = locations.testFiles.resolve(buildDefinition.rootFolderName)
+        FileUtils.deleteRecursivelyIfExists(rootBuildPath.toFile())
+        rootBuildPath.createDirectories()
 
         val localRepositories = mutableListOf<Path>().also {
             it += BuildSystem.get().localRepositories
@@ -126,48 +105,41 @@ internal class GradleRuleImpl internal constructor(
         val allLibraries = buildDefinition.gatherInlineLibraries() + externalLibraries
 
         if (allLibraries.isNotEmpty()) {
-            val repoPath = computeMavenRepoLocation()
+            val repoPath = computeMavenRepoLocation(rootBuildPath)
             MavenRepoGenerator(allLibraries).generate(repoPath)
 
             localRepositories.add(repoPath)
         }
 
-        buildDefinition.write(projectDir.toPath(), localRepositories, buildWriter)
+        buildDefinition.write(rootBuildPath, localRepositories)
 
-        createLocalProp()
-        createGradleProp()
+        createAncillaryBuildFiles()
 
         status = Status.WRITTEN
     }
 
-    private fun computeMavenRepoLocation(): Path {
-        val location = mutableProjectLocation ?: throw RuntimeException("Location not set before writing!")
-        return location.projectDir.toPath().resolve("_maven_repo")
-    }
+    private fun computeMavenRepoLocation(rootBuildPath: Path): Path = rootBuildPath.resolve("_maven_repo")
 
     /**
      * compute a [GradleBuild].
      *
-     * For included builds, the location is the modified [location] so that `projectDir` is updated to be
+     * For included builds, the location is the modified [locations] so that `projectDir` is updated to be
      * the included directory.
      */
     private fun computeGradleBuild(
         buildDefinition: GradleBuildDefinitionImpl,
-        location: ProjectLocation
+        destinationPath: Path,
+        testSupportLocations: TestLocation,
     ): GradleBuild {
-        val rootFolder = location.projectDir.toPath()
+        // this is the location for the actual build
+        val buildPath = destinationPath.resolve(buildDefinition.rootFolderName)
 
         val includedBuilds = buildDefinition.includedBuilds.values.associate {
-            it.name to computeGradleBuild(
-                it,
-                ProjectLocation(rootFolder.resolve(it.name).toFile(), location.testLocation)
-            )
+            it.name to computeGradleBuild(it, buildPath, testSupportLocations)
         }
 
-        val modelBuilderProvider = { instantiateModelBuilder(location) }
-
         val subProjects = buildDefinition.subProjects.values.associate { definition ->
-            val subProjectLocation = computeSubProjectPath(rootFolder, definition.path)
+            val subProjectLocation = computeSubProjectPath(buildPath, definition.path)
 
             definition.path to when (definition) {
                 is AndroidApplicationDefinitionImpl -> AndroidApplicationImpl(
@@ -205,7 +177,7 @@ internal class GradleRuleImpl internal constructor(
                 )
 
                 is AiPackDefinitionImpl -> AiPackImpl(
-                    computeSubProjectPath(rootFolder, definition.path),
+                    subProjectLocation,
                     definition,
                 )
 
@@ -218,19 +190,18 @@ internal class GradleRuleImpl internal constructor(
             }
         } + mapOf(
             ":" to GenericProjectImpl(
-                computeSubProjectPath(rootFolder, ":"),
+                computeSubProjectPath(buildPath, ":"),
                 buildDefinition.rootProject,
             )
         )
 
         return GradleBuildImpl(
-            rootFolder,
+            buildPath,
             subProjects = subProjects,
             includedBuilds = includedBuilds,
             definition = buildDefinition,
-            executorProvider = { instantiateExecutor(location) },
-            modelBuilderProvider = modelBuilderProvider,
-            buildWriter = buildWriter
+            executorProvider = { instantiateExecutor() },
+            modelBuilderProvider = { instantiateModelBuilder() },
         ).also { build ->
             subProjects.values.forEach {
                 it.build = build
@@ -249,60 +220,68 @@ internal class GradleRuleImpl internal constructor(
         return rootDir.resolve(newPath.replace(':', '/'))
     }
 
-    private fun instantiateExecutor(location: ProjectLocation): GradleTaskExecutor =
-        GradleTaskExecutor(location, getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
+    private fun instantiateExecutor(): GradleTaskExecutor =
+        GradleTaskExecutor(
+            locations.toProjectLocation(buildDefinition),
+            getTestInfo(),
+            ruleOptionBuilder.gradleOptions,
+            projectConnection
+        ) {
             lastBuildResult = it
         }
 
-    private fun instantiateModelBuilder(location: ProjectLocation): ModelBuilderV2 =
-        ModelBuilderV2(location, getTestInfo(), ruleOptionBuilder.gradleOptions, projectConnection) {
+    private fun instantiateModelBuilder(): ModelBuilderV2 =
+        ModelBuilderV2(
+            locations.toProjectLocation(buildDefinition),
+            getTestInfo(),
+            ruleOptionBuilder.gradleOptions,
+            projectConnection
+        ) {
             lastBuildResult = it
         }.withPerTestPrefsRoot(true)
 
     private fun getTestInfo(): GradleTestInfo = object : GradleTestInfo {
         override val androidSdkDir: File?
             get() = ruleOptionBuilder.sdkConfiguration.sdkDir?.toFile()
-        override val androidNdkSxSRootSymlink: File?
-            get() = location.testLocation.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
-        override val additionalMavenRepoDir: Path?
-            get() = computeMavenRepoLocation()
+        override val androidNdkSxSRootSymlink: File
+            get() = locations.testSupportLocations.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
+        override val additionalMavenRepoDir: Path
+            get() = computeMavenRepoLocation(getMainBuildDirectory())
         override val profileDirectory: Path?
             get() = if (enableProfileOutput) GradleTestProjectBuilder.DEFAULT_PROFILE_DIR else null
     }
 
-    private fun createLocalProp() {
-        createLocalProp(location.projectDir)
-
-        for (includedBuild in buildDefinition.includedBuilds.values) {
-            createLocalProp(File(location.projectDir, includedBuild.name))
+    private fun createAncillaryBuildFiles() {
+        buildDefinition.createAncillaryBuildFiles(locations.testFiles) { path, properties ->
+            createLocalProp(path)
+            createGradleProp(path, properties)
         }
     }
 
-    private fun createGradleProp() {
+    private fun createGradleProp(destinationDir: Path, properties: List<String>) {
         // Use a specific Jdk to run Gradle, which might be different from the one running the test
         // class
         val jdkVersionForGradle = System.getProperty("gradle.java.version");
         val propList = if (jdkVersionForGradle != null && jdkVersionForGradle == "17") {
-            ruleOptionBuilder.gradleProperties + "org.gradle.java.home=${
+            properties + "org.gradle.java.home=${
                 TestUtils.getJava17Jdk().toString().replace("\\", "/")}"
         } else {
-            ruleOptionBuilder.gradleProperties
+            properties
         }
 
         if (propList.isEmpty()) {
             return
         }
 
-        val file = File(location.projectDir, "gradle.properties")
-
-        file.appendText(
+        val gradlePropPath = destinationDir.resolve("gradle.properties")
+        gradlePropPath.writeText(
             propList.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
         )
     }
 
-    private fun createLocalProp(destinationDir: File) {
+    private fun createLocalProp(destinationDir: Path) {
         val localProp = ProjectPropertiesWorkingCopy.create(
-            destinationDir.absolutePath, ProjectPropertiesWorkingCopy.PropertyType.LOCAL
+            destinationDir.toString(), ProjectPropertiesWorkingCopy.PropertyType.LOCAL
         )
 
         ruleOptionBuilder.sdkConfiguration.sdkDir?.let {
@@ -336,16 +315,18 @@ internal class GradleRuleImpl internal constructor(
                 if (description.methodName == null)
                     throw RuntimeException("Class level rule application is not supported.")
 
-                if (mutableProjectLocation == null) {
-                    mutableProjectLocation = initializeProjectLocation(
+                locations = GradleRuleLocation(initializeProjectLocation(
                         description.testClass,
                         description.methodName,
-                        name
+                        // this is supposed to be the name of the project, but we really want the main folder
+                        // that will contain the build and other elements like the maven repo. therefore we
+                        // pass null instead
+                        projectName = null
                     )
-                }
+                )
 
                 // log the location to help with debugging if needed
-                println("Project location for ${description}: ${mutableProjectLocation!!.projectDir}")
+                println("Project location for ${description}: ${locations.testFiles}")
 
                 var testFailed = false
                 try {
@@ -372,9 +353,6 @@ internal class GradleRuleImpl internal constructor(
         }
     }
 
-    private val location: ProjectLocation
-        get() = mutableProjectLocation ?: error("Project location has not been initialized yet")
-
     private val projectConnection: ProjectConnection by lazy {
 
         val connector = GradleConnector.newConnector()
@@ -385,8 +363,8 @@ internal class GradleRuleImpl internal constructor(
             )
 
         connector
-            .useGradleUserHomeDir(location.testLocation.gradleUserHome.toFile())
-            .forProjectDirectory(location.projectDir)
+            .useGradleUserHomeDir(locations.testSupportLocations.gradleUserHome.toFile())
+            .forProjectDirectory(locations.testFiles.resolve(buildDefinition.rootFolderName).toFile())
 
         val gradleLocation = ruleOptionBuilder.gradleLocation
 

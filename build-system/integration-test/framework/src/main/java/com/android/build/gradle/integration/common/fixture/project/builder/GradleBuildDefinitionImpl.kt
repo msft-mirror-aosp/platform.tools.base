@@ -32,19 +32,32 @@ import com.android.build.gradle.integration.common.fixture.project.GenericProjec
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
-internal class GradleBuildDefinitionImpl(override var name: String): GradleBuildDefinition {
+internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
     internal val rootProject = GenericProjectDefinitionImpl(":")
     internal val subProjects = mutableMapOf<String, GradleProjectDefinitionImpl>()
+
+    private val propertiesDelegate = GradlePropertiesDelegate()
+
+    override var name: String = buildName
+        set(value) {
+            field = value
+            rootFolderName = value
+        }
+    override var rootFolderName: String = buildName
+    override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
@@ -250,6 +263,10 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
         return project
     }
 
+    override fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
+        action(propertiesDelegate)
+    }
+
     private fun errorOnWrongType(
         project: GradleProjectDefinition,
         path: String,
@@ -269,7 +286,6 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
     internal fun write(
         location: Path,
         repositories: Collection<Path>?,
-        buildWriter: () -> BuildWriter,
     ) {
         location.createDirectories()
 
@@ -280,30 +296,30 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
         // gather all the plugins and all their versions so that the settings file can declare them as needed.
         val allPlugins = computeAllPluginMap()
 
-        writeSetting(location, repositories, buildWriter)
+        writeSetting(location, repositories, buildFileType.getNewWriter())
 
         // write all the projects
-        rootProject.writeRoot(location, allPlugins, customPluginMap, buildWriter)
+        rootProject.writeRoot(location, allPlugins, customPluginMap, buildFileType.getNewWriter())
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
                 allPlugins,
                 customPluginMap,
-                buildWriter
+                buildFileType.getNewWriter()
             )
         }
 
         // and the included builds
         includedBuilds.values.forEach {
-            it.write(location.resolve(it.name), repositories, buildWriter)
+            it.write(location.resolve(it.name), repositories)
         }
     }
 
     internal fun writeSetting(
         location: Path,
         repositories: Collection<Path>?,
-        buildWriter: () -> BuildWriter
+        buildWriter: BuildWriter
     ) {
         settings.write(
             name = name,
@@ -313,6 +329,23 @@ internal class GradleBuildDefinitionImpl(override var name: String): GradleBuild
             subProjectPaths = subProjects.values.map { it.path },
             buildWriter = buildWriter,
         )
+    }
+
+    /**
+     * Recursively write the local proper for this build and all included builds.
+     *
+     * This calls the provided action with the location of this build, and do the same for included builds
+     *
+     * @param parentFolder the root folder this build is in. this does not include the folder for the build itself.
+     * @param writeAction the action that write the prop file, once provided with the folder of the build
+     */
+    internal fun createAncillaryBuildFiles(parentFolder: Path, writeAction: (Path, List<String>) -> Unit) {
+        val buildFolder = parentFolder.resolve(rootFolderName)
+        writeAction(buildFolder, propertiesDelegate.properties)
+
+        includedBuilds.values.forEach {
+            it.createAncillaryBuildFiles(buildFolder, writeAction)
+        }
     }
 
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> {

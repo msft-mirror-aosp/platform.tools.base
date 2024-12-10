@@ -238,7 +238,6 @@ class GradleBuildDefinitionTest {
         build.write(
             location = folder,
             repositories = repositories,
-            buildWriter = { GroovyBuildWriter() }
         )
 
         return folder

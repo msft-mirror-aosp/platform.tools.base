@@ -43,8 +43,7 @@ interface GradlePropertiesBuilder {
     fun add(option: StringOption, value: String)
 }
 
-internal class GradlePropertiesDelegate : GradlePropertiesBuilder,
-    MergeableOptions<GradlePropertiesDelegate> {
+internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
 
     private val mutableProperties = mutableMapOf<String, String>()
     private val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
@@ -60,12 +59,6 @@ internal class GradlePropertiesDelegate : GradlePropertiesBuilder,
 
     override fun add(option: StringOption, value: String) {
         mutableStrings[option] = value
-    }
-
-    override fun mergeWith(other: GradlePropertiesDelegate) {
-        mutableProperties += other.mutableProperties
-        mutableBooleans += other.mutableBooleans
-        mutableStrings += other.mutableStrings
     }
 
     internal val properties: List<String>

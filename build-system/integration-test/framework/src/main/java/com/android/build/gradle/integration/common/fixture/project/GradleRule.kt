@@ -48,12 +48,15 @@ interface GradleRule: TestRule {
     }
 
     /**
-     * The directory where the build will be written.
+     * The directory where the root build will be written.
      *
      * This can safely be queried before a call to [build]. This is the same value as
-     * [GradleBuild.directory]
+     * [GradleBuild.directory].
+     *
+     * Calls to [GradleBuildDefinition.name] or [GradleBuildDefinition.rootFolderName] will
+     * impact the returned value
      */
-    val directory: Path
+    fun getMainBuildDirectory(): Path
 
     /**
      * The generated [GradleBuild].
