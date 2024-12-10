@@ -40,6 +40,7 @@ import java.security.InvalidParameterException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.io.path.Path
 
 class AdbLibAndroidDebugBridge(
@@ -49,6 +50,8 @@ class AdbLibAndroidDebugBridge(
 ) : AndroidDebugBridgeBase() {
 
     var iDeviceManager: IDeviceManager? = null
+
+    val lock = ReentrantLock()
 
     /**
      * Creates a [AndroidDebugBridge] that is not linked to any particular executable.
@@ -63,38 +66,41 @@ class AdbLibAndroidDebugBridge(
      * @return a connected bridge, or null if there were errors while creating or connecting to the
      * bridge
      */
-    @Synchronized
     override fun createBridge(timeout: Long, unit: TimeUnit): AndroidDebugBridge? {
-        var localThis: AndroidDebugBridge
-        if (sThis != null) {
-            return sThis
-        }
-        try {
-            localThis = AndroidDebugBridge()
-            if (!start(localThis, timeout, unit)) {
+        // TODO: Rewrite this code to remove non-local returns
+        val newBridgeInstance = withLock {
+            if (sThis != null) {
+                return sThis
+            }
+            var newBridgeInstance: AndroidDebugBridge
+            try {
+                newBridgeInstance = AndroidDebugBridge()
+                if (!start(newBridgeInstance, timeout, unit)) {
+                    // We return without notifying listeners, since there were no changes
+                    return null
+                }
+            } catch (_: InvalidParameterException) {
                 // We return without notifying listeners, since there were no changes
                 return null
             }
-        } catch (_: InvalidParameterException) {
-            // We return without notifying listeners, since there were no changes
-            return null
-        }
 
-        // Success, store static instance
-        sThis = localThis
+            // Success, store static instance
+            sThis = newBridgeInstance
+            newBridgeInstance
+        }
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
         for (listener in sBridgeListeners) {
             // we attempt to catch any exception so that a bad listener doesn't kill our thread
             try {
-                listener.bridgeChanged(localThis)
+                listener.bridgeChanged(newBridgeInstance)
             } catch (t: Throwable) {
                 Log.e(ADB, t)
             }
         }
 
-        return localThis
+        return newBridgeInstance
     }
 
     /**
@@ -112,63 +118,66 @@ class AdbLibAndroidDebugBridge(
      * @return a connected bridge, or null if there were errors while creating or connecting to the
      * bridge
      */
-    @Synchronized
     override fun createBridge(
         osLocation: String,
         forceNewBridge: Boolean,
         timeout: Long,
         unit: TimeUnit
     ): AndroidDebugBridge? {
-        var localThis: AndroidDebugBridge?
-        val rem = TimeoutRemainder(timeout, unit)
-        if (!sUnitTestMode) {
-            if (sThis != null) {
-                if (mAdbOsLocation != null && mAdbOsLocation.equals(osLocation)
-                    && !forceNewBridge
-                ) {
-                    // We return without notifying listeners, since there were no changes
-                    return sThis
-                } else {
-                    // stop the current server
-                    if (!stop(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+        // TODO: Rewrite this code to remove non-local returns
+        val newBridgeInstance = withLock {
+            val rem = TimeoutRemainder(timeout, unit)
+            if (!sUnitTestMode) {
+                if (sThis != null) {
+                    if (mAdbOsLocation != null && mAdbOsLocation.equals(osLocation)
+                        && !forceNewBridge
+                    ) {
                         // We return without notifying listeners, since there were no changes
-                        return null
+                        return sThis
+                    } else {
+                        // stop the current server
+                        if (!stop(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+                            // We return without notifying listeners, since there were no changes
+                            return null
+                        }
                     }
+
+                    // We are successfully stopped. We need to notify listeners in all code paths
+                    // past this point.
+                    sThis = null
                 }
-
-                // We are successfully stopped. We need to notify listeners in all code paths
-                // past this point.
-                sThis = null
             }
-        }
 
-        try {
-            localThis = AndroidDebugBridge()
-            initOsLocationAndCheckVersion(osLocation)
-            if (!start(localThis, rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+            var newBridgeInstance: AndroidDebugBridge?
+            try {
+                newBridgeInstance = AndroidDebugBridge()
+                initOsLocationAndCheckVersion(osLocation)
+                if (!start(newBridgeInstance, rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+                    // Note: Don't return here, as we want to notify listeners
+                    newBridgeInstance = null
+                }
+            } catch (_: InvalidParameterException) {
                 // Note: Don't return here, as we want to notify listeners
-                localThis = null
+                newBridgeInstance = null
             }
-        } catch (_: InvalidParameterException) {
-            // Note: Don't return here, as we want to notify listeners
-            localThis = null
-        }
 
-        // Success, store static instance
-        sThis = localThis
+            // Success, store static instance
+            sThis = newBridgeInstance
+            newBridgeInstance
+        }
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
         for (listener in sBridgeListeners) {
             // we attempt to catch any exception so that a bad listener doesn't kill our thread
             try {
-                listener.bridgeChanged(localThis)
+                listener.bridgeChanged(newBridgeInstance)
             } catch (t: Throwable) {
                 Log.e(ADB, t)
             }
         }
 
-        return localThis
+        return newBridgeInstance
     }
 
     /**
@@ -177,6 +186,8 @@ class AdbLibAndroidDebugBridge(
      * @return `true` if success within the specified timeout
      */
     private fun stop(timeout: Long, unit: TimeUnit): Boolean {
+        assert(lock.isHeldByCurrentThread)
+
         // if we haven't started we return true (i.e. success)
         if (!mStarted) {
             return true
@@ -202,16 +213,17 @@ class AdbLibAndroidDebugBridge(
      * @return true if success.
      */
     private fun start(
-        localThis: AndroidDebugBridge,
+        bridgeInstance: AndroidDebugBridge,
         timeout: Long,
         unit: TimeUnit
     ): Boolean {
-        // Skip server start check if using user managed ADB server
+        assert(lock.isHeldByCurrentThread)
 
         updateAdbServerConfiguration()
 
         // TODO: these checks are duplicated inside startAdb, so they could be removed
         //  here once figure out what to do with mVersionCheck
+        // Skip server start check if using user managed ADB server
         if (!sUserManagedAdbMode) {
             // If we are configured correctly, check if we need to start ADB
             if (mAdbOsLocation != null && sAdbServerPort != 0) {
@@ -231,7 +243,7 @@ class AdbLibAndroidDebugBridge(
         mStarted = true
 
         // Start the underlying services.
-        startMonitoringServices(localThis)
+        startMonitoringServices(bridgeInstance)
 
         return true
     }
@@ -348,15 +360,19 @@ class AdbLibAndroidDebugBridge(
         return InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort)
     }
 
-    private fun startMonitoringServices(localThis: AndroidDebugBridge) {
+    private fun startMonitoringServices(bridgeInstance: AndroidDebugBridge) {
+        assert(lock.isHeldByCurrentThread)
+
         iDeviceManager =
             AdbLibIDeviceManagerFactory(session).createIDeviceManager(
-                localThis,
+                bridgeInstance,
                 IDeviceManagerUtils.createIDeviceManagerListener()
             )
     }
 
     private fun killMonitoringServices() {
+        assert(lock.isHeldByCurrentThread)
+
         iDeviceManager?.let {
             try {
                 it.close()
@@ -381,15 +397,16 @@ class AdbLibAndroidDebugBridge(
         }
     }
 
-    @Synchronized
     override fun terminate() {
-        if (sThis != null) {
-            killMonitoringServices()
-        }
+        withLock {
+            if (sThis != null) {
+                killMonitoringServices()
+            }
 
-        sInitialized = false
-        sThis = null
-        sLastKnownGoodAddress = null
+            sInitialized = false
+            sThis = null
+            sLastKnownGoodAddress = null
+        }
     }
 
     /**
@@ -401,15 +418,16 @@ class AdbLibAndroidDebugBridge(
      *
      * @return `true` if the method succeeds within the specified timeout.
      */
-    @Synchronized
     override fun disconnectBridge(timeout: Long, unit: TimeUnit): Boolean {
-        if (sThis != null) {
-            if (!stop(timeout, unit)) {
-                // We could not stop ADB. Assume we are still running.
-                return false
+        withLock {
+            if (sThis != null) {
+                if (!stop(timeout, unit)) {
+                    // We could not stop ADB. Assume we are still running.
+                    return false
+                }
+                // Success, store our local instance
+                sThis = null
             }
-            // Success, store our local instance
-            sThis = null
         }
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
@@ -497,21 +515,21 @@ class AdbLibAndroidDebugBridge(
             }
         }
 
-        var isSuccessful: Boolean
-        synchronized(this) {
-            isSuccessful = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
-            if (!isSuccessful) {
+        val isSuccessful = withLock {
+            var success = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
+            if (!success) {
                 Log.w(ADB, "Error stopping ADB without specified timeout")
             }
 
-            if (isSuccessful) {
+            if (success) {
                 // TODO: handle exceptions thrown from `start` and return a correct value
-                isSuccessful = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
+                success = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
             }
-            if (isSuccessful && iDeviceManager == null) {
+            if (success && iDeviceManager == null) {
                 checkNotNull(sThis)
                 startMonitoringServices(sThis)
             }
+            success
         }
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
@@ -526,5 +544,14 @@ class AdbLibAndroidDebugBridge(
         }
 
         return isSuccessful
+    }
+
+    private inline fun <R> withLock(block: () -> R): R {
+        return try {
+            lock.lock()
+            block()
+        } finally {
+            lock.unlock()
+        }
     }
 }
