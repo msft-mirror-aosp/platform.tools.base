@@ -52,7 +52,6 @@ public class SeparateTestModuleWithMinifiedAppTest {
                         .expectFailure()
                         .run("clean", ":test:assembleDebug");
         assertThat(result.getFailureMessage())
-                .contains("Mapping file found in tested application.");
-
+                .contains("Mapping file found in tested application:");
     }
 }
