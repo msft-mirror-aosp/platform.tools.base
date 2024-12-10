@@ -21,6 +21,7 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
@@ -175,6 +176,15 @@ interface GradleBuildDefinition {
         path: String,
         action: AssetPackDefinition.() -> Unit
     ): AssetPackDefinition
+
+    /**
+     * Configures a subProject with the Android Asset Pack plugin, creating it if needed.
+     */
+    fun assetPackBundle(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: AssetPackBundleDefinition.() -> Unit
+    ): AssetPackBundleDefinition
 
     /**
      * configures the Gradle properties for this build

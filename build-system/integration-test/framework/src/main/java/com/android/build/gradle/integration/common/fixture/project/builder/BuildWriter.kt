@@ -175,10 +175,18 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                 }
             }
             is File -> {
-                "project.file(\"$this\")"
+                "project.file(\"${this.toFormatted()}\")"
             }
             else -> toString()
 
+        }
+    }
+
+    private fun File.toFormatted(): String {
+        return if (this.isAbsolute){
+            toURI().toString()
+        } else {
+            toString()
         }
     }
 

@@ -26,6 +26,8 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidApplic
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidTestDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
@@ -262,6 +264,25 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
 
         project as? AssetPackDefinition
             ?: errorOnWrongType(project, path, "Asset Pack")
+
+        action(project)
+
+        return project
+    }
+
+    override fun assetPackBundle(
+        path: String,
+        createMinimumProject: Boolean,
+        action: AssetPackBundleDefinition.() -> Unit
+    ): AssetPackBundleDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be an asset pack bundle")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AssetPackBundleDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? AssetPackBundleDefinition
+            ?: errorOnWrongType(project, path, "Asset Pack Bundle")
 
         action(project)
 

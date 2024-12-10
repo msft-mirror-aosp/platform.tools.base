@@ -176,6 +176,11 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
+                is AssetPackBundleDefinitionImpl -> AssetPackBundleImpl(
+                    subProjectLocation,
+                    definition,
+                )
+
                 is AiPackDefinitionImpl -> AiPackImpl(
                     subProjectLocation,
                     definition,

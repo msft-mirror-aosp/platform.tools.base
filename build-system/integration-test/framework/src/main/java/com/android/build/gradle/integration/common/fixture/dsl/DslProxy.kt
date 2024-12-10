@@ -26,6 +26,7 @@ import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.provider.Property
+import java.io.File
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -133,7 +134,9 @@ class DslProxy private constructor(
         // nullable primitive types are showing up as java types, not Kotlin types, so need to check
         // for both
         when (param.type) {
-            java.lang.Integer::class.java, Int::class.java -> {
+            java.lang.Integer::class.java,
+            Int::class.java,
+            File::class.java -> {
                 contentHolder.set(propName, value)
             }
             java.lang.Boolean::class.java, Boolean::class.java -> {

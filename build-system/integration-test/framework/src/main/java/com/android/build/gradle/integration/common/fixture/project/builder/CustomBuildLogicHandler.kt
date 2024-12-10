@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.gradle.integration.common.fixture.project.builder.bytecode.ReferenceFinderVisitor
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
@@ -77,6 +79,9 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
             PluginData(LibraryComponentCallback::class, LibraryCallbackPlugin::class, "com/android/build/api/variant/LibraryAndroidComponentsExtension"),
             PluginData(DynamicFeatureComponentCallback::class, DynamicFeatureComponentCallback::class, "com/android/build/api/variant/DynamicFeatureAndroidComponentsExtension"),
             PluginData(TestComponentCallback::class, TestCallbackPlugin::class, "com/android/build/api/variant/TestAndroidComponentsExtension"),
+
+            // other plugin callbacks
+            PluginData(AssetPackBundleCallback::class, AssetPackBundleCallbackPlugin::class, "com/android/build/api/dsl/AssetPackBundleExtension"),
 
             // legacy DSL callbacks
             PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),

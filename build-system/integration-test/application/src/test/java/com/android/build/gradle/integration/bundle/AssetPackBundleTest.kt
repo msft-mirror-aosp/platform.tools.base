@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.integration.bundle
 
+import com.android.build.api.dsl.AssetPackBundleExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.bundle.Config
 import com.android.ide.common.signing.KeystoreHelper
@@ -28,124 +30,104 @@ import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_V
 import com.android.tools.build.bundletool.model.AppBundle
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
-import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
+import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
+import java.nio.file.Path
 import java.util.Optional
 import java.util.zip.ZipFile
 
+private const val APP_ID = "com.test.assetpack.bundle"
+private const val VERSION_TAG = "20210319.patch1"
+private val VERSION_CODES = listOf(10, 20, 99034)
+
+private val assetFileOneContent = "This is an asset file from asset pack one."
+private val assetFileTwoContent = "This is an asset file from asset pack two."
+private val onDemandAiPackContent = "This is a state-of-the-art machine learning model."
+private val deviceGroupConfig = "This is a device group config."
+
 class AssetPackBundleTest {
+    @get:Rule
+    val rule = GradleRule.from {
+        assetPackBundle(":assetPackBundle") {
+            bundle {
+                applicationId = APP_ID
+                compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
 
-    private val packageName = "com.test.assetpack.bundle"
-    private val versionTag = "20210319.patch1"
-    private val versionCodes = listOf(10, 20, 99034)
+                versionTag = VERSION_TAG
+                versionCodes += VERSION_CODES
+                assetPacks += listOf(":assetPackOne", ":assetPackTwo", ":onDemandAiPack")
 
-    private val assetFileOneContent = "This is an asset file from asset pack one."
-    private val assetFileTwoContent = "This is an asset file from asset pack two."
-    private val onDemandAiPackContent = "This is a state-of-the-art machine learning model."
-    private val deviceGroupConfig = "This is a device group config."
-
-    private val assetPackBundleTestApp = MultiModuleTestProject.builder().apply {
-        val bundle = MinimalSubProject.assetPackBundle()
-            .appendToBuild(
-                """
-                    bundle {
-                      applicationId = '$packageName'
-                      compileSdk = ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-
-                      versionTag = '$versionTag'
-                      versionCodes = $versionCodes
-                      assetPacks = [':assetPackOne', ':assetPackTwo', ':onDemandAiPack']
-
-                      deviceTier {
-                        enableSplit = true
-                        defaultTier = 'medium'
-                      }
-
-                      countrySet {
-                        enableSplit = true
-                        defaultSet = 'latam'
-                      }
-
-                      aiModelVersion {
-                        enableSplit = true
-                      }
-                    }
-
-                project.ext {
-                  android_experimental_bundle_deviceGroup_enableSplit = true
-                  android_experimental_bundle_deviceGroup_defaultGroup = "highRam"
-                  android_experimental_bundle_deviceGroupConfig = file('src/main/device_group_config.json')
+                deviceTier {
+                    enableSplit = true
+                    defaultTier = "medium"
                 }
 
-                """.trimIndent()
-            )
-            .withFile("src/main/device_group_config.json", deviceGroupConfig)
+                countrySet {
+                    enableSplit = true
+                    defaultSet = "latam"
+                }
 
-        val assetPackOne = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """
-                    assetPack {
-                      packName = "assetPackOne"
-                      dynamicDelivery {
-                        deliveryType = "on-demand"
-                        instantDeliveryType = "on-demand"
-                      }
-                    }
-                """.trimIndent()
-            )
-            .withFile("src/main/assets/assetFileOne.txt", assetFileOneContent)
-
-        val assetPackTwo = MinimalSubProject.assetPack()
-            .appendToBuild(
-                """
-                    assetPack {
-                      packName = "assetPackTwo"
-                      dynamicDelivery {
-                        deliveryType = "fast-follow"
-                      }
-                    }
-                """.trimIndent()
-            )
-            .withFile("src/main/assets/assetFileTwo.txt", assetFileTwoContent)
-
-        val onDemandAiPack = MinimalSubProject.aiPack()
-            .appendToBuild(
-                """
-                    aiPack {
-                      packName = "onDemandAiPack"
-                      dynamicDelivery {
-                        deliveryType = "on-demand"
-                      }
-                    }
-                """.trimIndent()
-            )
-            .withFile("src/main/assets/customModel.tflite", onDemandAiPackContent)
-
-        subproject(":assetPackBundle", bundle)
-        subproject(":assetPackOne", assetPackOne)
-        subproject(":assetPackTwo", assetPackTwo)
-        subproject(":onDemandAiPack", onDemandAiPack)
+                aiModelVersion {
+                    enableSplit = true
+                }
+            }
+            files.add("src/main/device_group_config.json", deviceGroupConfig)
+            pluginCallback = MyCallback::class.java
+        }
+        assetPack(":assetPackOne") {
+            assetPack {
+                packName.set("assetPackOne")
+                dynamicDelivery {
+                    deliveryType.set("on-demand")
+                    instantDeliveryType.set("on-demand")
+                }
+            }
+            files.add("src/main/assets/assetFileOne.txt", assetFileOneContent)
+        }
+        assetPack(":assetPackTwo") {
+            assetPack {
+                packName.set("assetPackTwo")
+                dynamicDelivery {
+                    deliveryType.set("fast-follow")
+                }
+            }
+            files.add("src/main/assets/assetFileTwo.txt", assetFileTwoContent)
+        }
+        aiPack(":onDemandAiPack") {
+            aiPack {
+                packName.set("onDemandAiPack")
+                dynamicDelivery {
+                    deliveryType.set("on-demand")
+                }
+            }
+            files.add("src/main/assets/customModel.tflite", onDemandAiPackContent)
+        }
     }
-        .build()
 
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(assetPackBundleTestApp)
-        .create()
+    class MyCallback: AssetPackBundleCallback {
+        override fun handleExtension(project: Project, extension: AssetPackBundleExtension) {
+            project.extensions.getByType(ExtraPropertiesExtension::class.java).apply {
+                set("android_experimental_bundle_deviceGroup_enableSplit", true)
+                set("android_experimental_bundle_deviceGroup_defaultGroup", "highRam")
+                set("android_experimental_bundle_deviceGroupConfig", project.file("src/main/device_group_config.json"))
+            }
+        }
+    }
 
     @get:Rule
     val tmpFile = TemporaryFolder()
 
     @Test
     fun `should build asset pack bundle successfully`() {
-        project.executor().run(":assetPackBundle:bundle")
+        val build = rule.build
+        build.executor.run(":assetPackBundle:bundle")
 
-        val bundleFile = getResultBundle()
-        assertThat(bundleFile.toPath()).exists()
+        val bundleFile = build.getResultBundle()
+        assertThat(bundleFile).exists()
         assertThat(bundleFile) {
             it.containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
             it.containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
@@ -165,7 +147,7 @@ class AssetPackBundleTest {
             it.doesNotContain("META-INF/KEY0.RSA")
         }
 
-        ZipFile(bundleFile).use { zip ->
+        ZipFile(bundleFile.toFile()).use { zip ->
             val appBundle = AppBundle.buildFromZip(zip)
             assertThat(appBundle.bundleConfig.type).isEqualTo(
                 Config.BundleConfig.BundleType.ASSET_ONLY
@@ -201,8 +183,8 @@ class AssetPackBundleTest {
 
             assertThat(appBundle.bundleConfig.assetModulesConfig).isEqualTo(
                 Config.AssetModulesConfig.newBuilder()
-                    .setAssetVersionTag(versionTag)
-                    .addAllAppVersion(versionCodes.map { it.toLong() })
+                    .setAssetVersionTag(VERSION_TAG)
+                    .addAllAppVersion(VERSION_CODES.map { it.toLong() })
                     .build()
             )
 
@@ -218,7 +200,7 @@ class AssetPackBundleTest {
             assertThat(assetPackOneManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
-            assertThat(assetPackOneManifest.packageName).isEqualTo(packageName)
+            assertThat(assetPackOneManifest.packageName).isEqualTo(APP_ID)
             assertThat(assetPackOneManifest.manifestDeliveryElement.get().hasOnDemandElement())
                 .isTrue()
 
@@ -227,7 +209,7 @@ class AssetPackBundleTest {
             assertThat(assetPackTwoManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
-            assertThat(assetPackTwoManifest.packageName).isEqualTo(packageName)
+            assertThat(assetPackTwoManifest.packageName).isEqualTo(APP_ID)
             assertThat(assetPackTwoManifest.manifestDeliveryElement.get().hasFastFollowElement())
                 .isTrue()
 
@@ -239,7 +221,7 @@ class AssetPackBundleTest {
             assertThat(onDemandAiPackManifest.optionalModuleTypeAttributeValue).isEqualTo(
                 Optional.of(MODULE_TYPE_AI_VALUE)
             )
-            assertThat(onDemandAiPackManifest.packageName).isEqualTo(packageName)
+            assertThat(onDemandAiPackManifest.packageName).isEqualTo(APP_ID)
             assertThat(
                 onDemandAiPackManifest.manifestDeliveryElement.get()
                     .hasOnDemandElement()
@@ -265,23 +247,23 @@ class AssetPackBundleTest {
             100
         )
 
-        project.getSubproject("assetPackBundle").buildFile.appendText(
-            """
+        val build = rule.build {
+            assetPackBundle(":assetPackBundle") {
                 bundle {
-                  signingConfig {
-                    storeFile = file('${keyStoreFile.absolutePath.replace("\\", "\\\\")}')
-                    storePassword = '$storePassword'
-                    keyAlias = '$keyAlias'
-                    keyPassword = '$keyPassword'
-                  }
+                    signingConfig {
+                        storeFile = keyStoreFile
+                        this.storePassword = storePassword
+                        this.keyAlias = keyAlias
+                        this.keyPassword = keyPassword
+                    }
                 }
-            """.trimIndent()
-        )
+            }
+        }
 
-        project.executor().run(":assetPackBundle:bundle")
+        build.executor.run(":assetPackBundle:bundle")
 
-        val bundleFile = getResultBundle()
-        assertThat(bundleFile.toPath()).exists()
+        val bundleFile = build.getResultBundle()
+        assertThat(bundleFile).exists()
         assertThat(bundleFile) {
             it.containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
             it.containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
@@ -295,19 +277,18 @@ class AssetPackBundleTest {
 
     @Test
     fun `should fail if asset pack bundle is misconfigured`() {
-        project.getSubproject("assetPackBundle").buildFile
-            .appendText(
-                """
+        val build = rule.build {
+            assetPackBundle(":assetPackBundle") {
                 bundle {
-                  applicationId = ""
-                  versionTag = ""
-                  versionCodes = []
-                  assetPacks = []
+                    applicationId = ""
+                    versionTag = ""
+                    versionCodes.clear()
+                    assetPacks.clear()
                 }
-                """
-            )
+            }
+        }
 
-        val failure = project.executor().expectFailure().run(":assetPackBundle:bundle")
+        val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
         failure.stdout.use {
             assertThat(it).contains("'applicationId' must be specified for asset pack bundle.")
             assertThat(it).contains("'versionTag' must be specified for asset pack bundle.")
@@ -318,10 +299,15 @@ class AssetPackBundleTest {
 
     @Test
     fun `should fail if requested asset pack is not available in project`() {
-        project.getSubproject("assetPackBundle").buildFile
-            .appendText("bundle.assetPacks += ':notAvailable'")
+        val build = rule.build {
+            assetPackBundle(":assetPackBundle") {
+                bundle {
+                    assetPacks += ":notAvailable"
+                }
+            }
+        }
 
-        val failure = project.executor().expectFailure().run(":assetPackBundle:bundle")
+        val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
         failure.stderr.use {
             assertThat(it)
                 .contains("Unable to find matching projects for Asset Packs: [:notAvailable]")
@@ -330,10 +316,15 @@ class AssetPackBundleTest {
 
     @Test
     fun `should fail if requested compileSdk is not available`() {
-        project.getSubproject("assetPackBundle").buildFile
-            .appendText("bundle.compileSdk = 128")
+        val build = rule.build {
+            assetPackBundle(":assetPackBundle") {
+                bundle {
+                     compileSdk = 128
+                }
+            }
+        }
 
-        val failure = project.executor().expectFailure().run(":assetPackBundle:bundle")
+        val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
         failure.stderr.use {
             assertThat(it)
                 .contains(
@@ -346,10 +337,16 @@ class AssetPackBundleTest {
 
     @Test
     fun `should fail if install-time asset pack is included in asset pack bundle`() {
-        project.getSubproject("assetPackTwo").buildFile
-            .appendText("assetPack.dynamicDelivery.deliveryType = 'install-time'")
+        val build = rule.build {
+            assetPack(":assetPackTwo") {
+                assetPack {
+                    dynamicDelivery.deliveryType.set("install-time")
 
-        val failure = project.executor().expectFailure().run(":assetPackBundle:bundle")
+                }
+            }
+        }
+
+        val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
         failure.stderr.use {
             assertThat(it)
                 .contains("bundle contains an install-time asset module 'assetPackTwo'")
@@ -358,30 +355,29 @@ class AssetPackBundleTest {
 
     @Test
     fun `should fail if keystore file is signing config is invalid`() {
-        project.getSubproject("assetPackBundle").buildFile.appendText(
-            """
-                bundle {
-                  signingConfig {
-                    storeFile = file('./keystore.jks')
-                    storePassword = ''
-                    keyAlias = 'key'
-                    keyPassword = ''
-                  }
-                }
-            """.trimIndent()
-        )
+        val build = rule.build
+        val bundle = build.assetPackBundle(":assetPackBundle")
 
-        val failure = project.executor().expectFailure().run(":assetPackBundle:bundle")
+        val keystore = bundle.location.resolve("keystore.jks")
+
+        bundle.reconfigure(buildFileOnly = true) {
+            bundle {
+                signingConfig {
+                    storeFile = keystore.toFile()
+                    storePassword = ""
+                    keyAlias = "key"
+                    keyPassword = ""
+                }
+            }
+        }
+
+        val failure = build.executor.expectFailure().run(":assetPackBundle:bundle")
         failure.stderr.use {
-            val expectedKeystoreFile =
-                File(project.getSubproject("assetPackBundle").projectDir, "keystore.jks")
             assertThat(it)
-                .contains("Keystore file '${expectedKeystoreFile.absolutePath}' not found")
+                .contains("Keystore file '${keystore}' not found")
         }
     }
 
-    private fun getResultBundle(): File {
-        val buildDir = project.getSubproject("assetPackBundle").buildDir
-        return FileUtils.join(buildDir, "outputs", "bundle", "assetPackBundle.aab")
-    }
+    private fun GradleBuild.getResultBundle(): Path =
+        assetPackBundle(":assetPackBundle").buildDir.resolve("outputs/bundle/assetPackBundle.aab")
 }

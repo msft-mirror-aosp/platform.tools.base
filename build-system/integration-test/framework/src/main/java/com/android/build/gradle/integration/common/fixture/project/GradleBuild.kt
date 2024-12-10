@@ -77,6 +77,11 @@ interface GradleBuild {
      * The project must exist and be an AI Pack project
      */
     fun assetPack(path: String): AssetPackProject
+    /**
+     * Queries for an Asset pack project via its gradle path.
+     * The project must exist and be an Asset Pack project
+     */
+    fun assetPackBundle(path: String): AssetPackBundleProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -212,6 +217,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not an Asset Pack project.
                 Possible options are ${getProjectListByType<AssetPackImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun assetPackBundle(path: String): AssetPackBundleProject {
+        val project = subProject(path)
+        if (project is AssetPackBundleProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Asset Pack project.
+                Possible options are ${getProjectListByType<AssetPackBundleImpl>()}
             """.trimIndent()
         )
     }

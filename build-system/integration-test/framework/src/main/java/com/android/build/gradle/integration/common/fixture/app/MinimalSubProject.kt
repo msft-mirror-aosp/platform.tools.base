@@ -186,17 +186,6 @@ class MinimalSubProject private constructor(
             )
         }
 
-        fun assetPackBundle(): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.asset-pack-bundle",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = null,
-            )
-        }
-
         fun fusedLibrary(namespace: String): MinimalSubProject {
             return MinimalSubProject(
                 path = null,
