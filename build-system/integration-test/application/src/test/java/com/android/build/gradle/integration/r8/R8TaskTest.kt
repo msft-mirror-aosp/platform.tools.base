@@ -16,73 +16,86 @@
 
 package com.android.build.gradle.integration.r8
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.TestClassesGenerator
 import com.android.testutils.truth.PathSubject.assertThat
-import com.google.common.truth.Truth.assertThat
-import junit.framework.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+/** Integration test for the R8 task. */
 class R8TaskTest {
 
     @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
-
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(project.buildFile,
-                """
-                android {
-                    buildTypes {
-                        debug {
-                            minifyEnabled true
-                            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                        }
+    val rule = GradleRule.from {
+        androidJavaApplication {
+            android {
+                buildTypes {
+                    named("release") {
+                        it.isMinifyEnabled = true
+                        it.proguardFiles += File("proguard-rules.pro")
                     }
                 }
-            """.trimIndent()
-        )
+                testBuildType = "release"
+            }
+        }
     }
+
+    private fun adhocSetup() {
+        // The test infra (DslProxy) does not support getDefaultProguardFile() yet, so we need to
+        // append the following text.
+        // TODO(b/384016091): Clean this up (remove the adhocSetup() method) once the issue is fixed
+        app.files.update("build.gradle") {
+            it + "\n" +
+            """
+            android {
+                buildTypes {
+                    release {
+                        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+                    }
+                }
+            }
+            """.trimIndent()
+        }
+    }
+
+    private val executor
+        get() = rule.build.executor
+
+    private val app
+        get() = rule.build.androidApplication()
 
     @Test
     fun testCheckDuplicateClassesTaskDidWork() {
-        val buildResult =
-                project.executor().run(":minifyDebugWithR8")
-        assertThat(buildResult.didWorkTasks).contains(":checkDebugDuplicateClasses")
+        adhocSetup()
+        val buildResult = executor.run(":app:minifyReleaseWithR8")
+        assertThat(buildResult.getTask(":app:checkReleaseDuplicateClasses")).didWork()
     }
 
     @Test
     fun testTestedClassesPassedAsClasspathToR8() {
-        val buildResult =
-                project.executor()
-                        .withLoggingLevel(LoggingLevel.DEBUG)
-                        .run(":assembleDebugAndroidTest")
-        val appClasses = project.getIntermediateFile(
-                InternalArtifactType.COMPILE_APP_CLASSES_JAR.getFolderName() + "/debug/bundleDebugClassesToCompileJar/classes.jar"
-        );
-        buildResult.stdout.use {
-            ScannerSubject.assertThat(it)
-                    .contains("[R8] Classpath classes: [$appClasses]")
-        }
+        adhocSetup()
+        val buildResult = executor.withLoggingLevel(LoggingLevel.DEBUG)
+            .run(":app:assembleReleaseAndroidTest")
+        val appClasses = app.getIntermediateFile(
+            InternalArtifactType.COMPILE_APP_CLASSES_JAR.getFolderName() + "/release/bundleReleaseClassesToCompileJar/classes.jar"
+        )
+        buildResult.assertOutputContains("[R8] Classpath classes: [$appClasses]")
     }
 
     @Test
     fun testMissingKeepRules() {
-        project.projectDir.resolve("lib.jar").also {
+        adhocSetup()
+        app.location.toFile().resolve("lib.jar").also {
             val classToWrite = TestClassesGenerator.classWithEmptyMethods(
                     "A", "foo:()Ltest/B;", "bar:()Ltest/C;")
             ZipOutputStream(it.outputStream()).use { zip ->
@@ -91,16 +104,20 @@ class R8TaskTest {
                 zip.closeEntry()
             }
         }
-        project.buildFile.appendText("""
-
+        // TODO(b/384016091): Rewrite this code once we have support for adding non-empty local jars
+        // with DSL-aware test fixtures.
+        app.files.update("build.gradle") {
+            it + "\n" +
+            """
             dependencies {
-                implementation files("lib.jar")
+                implementation(files("lib.jar"))
             }
-        """.trimIndent())
-        project.file("proguard-rules.pro").appendText("-keep class test.A { *; }")
+            """.trimIndent()
+        }
+        app.files.add("proguard-rules.pro", "-keep class test.A { *; }")
 
-        project.executor().expectFailure().run(":assembleDebug")
-        val missingRules = project.buildDir.resolve("outputs/mapping/debug/missing_rules.txt")
+        executor.expectFailure().run(":app:assembleRelease")
+        val missingRules = app.outputsDir.resolve("mapping/release/missing_rules.txt")
         assertThat(missingRules).contentWithUnixLineSeparatorsIsExactly(
                 """
                     # Please add these rules to your existing keep rules in order to suppress warnings.
@@ -110,106 +127,103 @@ class R8TaskTest {
                 """.trimIndent()
         )
 
-        val result =
-                project.executor()
-                        .expectFailure()
-                        .run(":assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it)
-                    .contains("Missing classes detected while running R8.")
-        }
+        val result = executor.expectFailure().run(":app:assembleRelease")
+        result.assertErrorContains("Missing classes detected while running R8.")
     }
 
     @Test
     fun testOutputMainDexList() {
         enableMultiDex()
-        project.executor().run(":assembleDebug")
+        adhocSetup()
+
+        executor.run(":app:assembleRelease")
         val mainDexListFile = InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST
-            .getOutputDir(project.buildDir)
-            .resolve("debug/minifyDebugWithR8/mainDexList.txt")
+            .getOutputDir(app.buildDir.toFile())
+            .resolve("release/minifyReleaseWithR8/mainDexList.txt")
         assertThat(mainDexListFile).exists()
     }
 
     @Test
     fun testMultiDexKeepFileDeprecation() {
         enableMultiDex()
-
-        project.buildFile.resolveSibling("multidex-keep-file.txt").createNewFile()
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android.buildTypes.debug.multiDexKeepFile file('multidex-keep-file.txt')
-            """.trimIndent()
-        )
-
-        val result = project.executor().run(":assembleDebug")
-        result.stdout.use { scanner ->
-            ScannerSubject.assertThat(scanner).contains(
-                "WARNING: Using multiDexKeepFile property with R8 is deprecated and will be fully " +
-                        "removed in AGP 8.0. Please migrate to use multiDexKeepProguard instead.")
+        app.files.add("multidex-keep-file.txt", "")
+        app.reconfigure(buildFileOnly = true) {
+            android.buildTypes {
+                named("release") {
+                    it.multiDexKeepFile = File("multidex-keep-file.txt")
+                }
+            }
         }
+        adhocSetup()
+
+        val result = executor.run(":app:assembleRelease")
+        result.assertOutputContains(
+                "WARNING: Using multiDexKeepFile property with R8 is deprecated and will be fully " +
+                        "removed in AGP 8.0. Please migrate to use multiDexKeepProguard instead."
+        )
     }
 
     @Test
     fun testInjectedDeviceApi() {
-        project.buildFile.appendText("""
-
-            android.defaultConfig.minSdkVersion 21
-        """.trimIndent())
-        project.mainSrcDir.resolve("example/MyInterface.java").also {
-            it.parentFile.mkdirs()
-            it.resolveSibling("MyInterface.java").writeText("""
-                package example;
-
-                interface MyInterface {
-                    static void printContent() { System.out.println("hello"); }
-                }
-            """.trimIndent())
+        rule.build {
+            androidApplication {
+                android.defaultConfig.minSdk = 21
+            }
         }
-        project.file("proguard-rules.pro").appendText("""
+        adhocSetup()
+        app.files.add(
+            "src/main/java/example/MyInterface.java",
+            """
+            package example;
+
+            interface MyInterface {
+                static void printContent() { System.out.println("hello"); }
+            }
+            """.trimIndent()
+        )
+        app.files.add(
+            "proguard-rules.pro",
+            """
             -keep class example.MyInterface* { *; }
             -dontobfuscate
-        """.trimIndent())
+            """.trimIndent()
+        )
 
-        project.executor()
-                .with(IntegerOption.IDE_TARGET_DEVICE_API, 24)
-                .run("assembleDebug")
-        val apkApi24 = project.getApk(
-                GradleTestProject.ApkType.DEBUG,
-                GradleTestProject.ApkLocation.Intermediates)
-        assertThatApk(apkApi24).doesNotContainClass("Lexample/MyInterface$-CC;")
+        executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
+        app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
+            doesNotContainClass("Lexample/MyInterface$-CC;")
+        }
 
-        project.executor()
-                .with(IntegerOption.IDE_TARGET_DEVICE_API, 23)
-                .run("assembleDebug")
-        val apkApi23 = project.getApk(
-                GradleTestProject.ApkType.DEBUG,
-                GradleTestProject.ApkLocation.Intermediates)
-        assertThatApk(apkApi23).hasClass("Lexample/MyInterface$-CC;")
+        executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleRelease")
+        app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
+            hasClass("Lexample/MyInterface$-CC;")
+        }
     }
 
     // regression test for b/210573363
     @Test
     fun testDefaultProguardRules() {
-        project.executor().run("assembleDebug")
+        adhocSetup()
+        executor.run(":app:assembleRelease")
         TestFileUtils.searchAndReplace(
-                project.buildFile,
-                "getDefaultProguardFile('proguard-android-optimize.txt'),",
-                ""
+            app.location.resolve("build.gradle"),
+            "proguardFiles(getDefaultProguardFile(\"proguard-android-optimize.txt\"))",
+            ""
         )
-        val result = project.executor().run("assembleDebug")
-        assertTrue(result.didWorkTasks.contains(":minifyDebugWithR8"))
+        val result = executor.run(":app:assembleRelease")
+        assertThat(result.getTask(":app:minifyReleaseWithR8")).didWork()
     }
 
     private fun enableMultiDex() {
-        TestFileUtils.appendToFile(project.buildFile,
-            """
+        rule.build {
+            androidApplication {
                 android {
                     defaultConfig {
-                       multiDexEnabled true
+                        minSdk = 20
+                        multiDexEnabled = true
                     }
                 }
-            """.trimIndent()
-        )
+            }
+        }
     }
 }
