@@ -56,8 +56,7 @@ class R8TaskTest {
         // The test infra (DslProxy) does not support getDefaultProguardFile() yet, so we need to
         // append the following text.
         // TODO(b/384016091): Clean this up (remove the adhocSetup() method) once the issue is fixed
-        app.files.update("build.gradle") {
-            it + "\n" +
+        app.files.update("build.gradle").append(
             """
             android {
                 buildTypes {
@@ -67,7 +66,7 @@ class R8TaskTest {
                 }
             }
             """.trimIndent()
-        }
+        )
     }
 
     private val executor
@@ -108,14 +107,13 @@ class R8TaskTest {
         }
         // TODO(b/384016091): Rewrite this code once we have support for adding non-empty local jars
         // with DSL-aware test fixtures.
-        app.files.update("build.gradle") {
-            it + "\n" +
+        app.files.update("build.gradle").append(
             """
+
             dependencies {
                 implementation(files("lib.jar"))
             }
-            """.trimIndent()
-        }
+            """.trimIndent())
         app.files.add("proguard-rules.pro", "-keep class test.A { *; }")
 
         executor.expectFailure().run(":app:assembleRelease")

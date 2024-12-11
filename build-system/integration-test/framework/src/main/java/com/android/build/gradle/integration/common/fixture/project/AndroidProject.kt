@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -107,7 +107,7 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
     projectDefinition,
 ), AndroidProject<ProjectDefinitionT> {
 
-    override val files: AndroidProjectFiles = DirectAndroidProjectFilesImpl(location, namespace)
+    override val files: AndroidProjectFiles = DirectAndroidProjectFiles(location, namespace)
 
     /**
      * Implementation of apk related function in the base class so it can be shared by

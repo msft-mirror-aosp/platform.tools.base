@@ -21,6 +21,12 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.TestLo
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import java.nio.file.Path
 
+/**
+ * Location information for tests using [GradleRule]
+ *
+ * This is used internally by the fixture to handle location, and not meant to be used
+ * directly by test implementations.
+ */
 internal class GradleRuleLocation private constructor(
     /**
      * The location created specifically for a given test to write its own files.

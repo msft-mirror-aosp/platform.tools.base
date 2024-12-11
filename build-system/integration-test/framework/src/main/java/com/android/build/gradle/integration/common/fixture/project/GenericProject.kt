@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -113,7 +113,7 @@ internal class GenericProjectImpl(
 ), GenericProject {
 
 
-    override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
+    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
         ReversibleGenericProject(this, projectModification.delegate(this))

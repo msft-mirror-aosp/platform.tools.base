@@ -379,7 +379,7 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
     }
 
     /**
-     * Recursively write the local proper for this build and all included builds.
+     * Recursively write the local properties for this build and all included builds.
      *
      * This calls the provided action with the location of this build, and do the same for included builds
      *

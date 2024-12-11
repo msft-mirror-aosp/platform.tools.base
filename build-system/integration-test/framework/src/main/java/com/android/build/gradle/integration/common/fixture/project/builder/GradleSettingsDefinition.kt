@@ -51,6 +51,8 @@ interface GradleSettingsDefinition {
     fun android(action: SettingsExtension.() -> Unit)
 
     fun enableFeaturePreview(name: String)
+
+    fun enableLocalCache(location: Path)
 }
 
 internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
@@ -61,6 +63,8 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
     // cache or the repositories as we need to keep this around for reconfiguration.
     private var repositoriesCache: Collection<Path>? = null
+
+    private var localCacheLocation: Path? = null
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
         if (!type.isSettings) {
@@ -105,6 +109,10 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
     override fun enableFeaturePreview(name: String) {
         featurePreviews += name
+    }
+
+    override fun enableLocalCache(location: Path) {
+        localCacheLocation = location
     }
 
     internal fun write(
@@ -155,6 +163,18 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
                 for (name in featurePreviews) {
                     method("enableFeaturePreview", name)
                 }
+                emptyLine()
+            }
+
+            localCacheLocation?.let { location ->
+                block("buildCache") {
+                    block("local") {
+                        // have to write the raw method manually, as handling of File in the
+                        // writer expects a project.file method to be present
+                        set("directory", location)
+                    }
+                }
+
                 emptyLine()
             }
 

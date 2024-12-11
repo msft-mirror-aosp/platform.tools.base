@@ -234,17 +234,13 @@ class NamespaceAndApplicationIdTest {
                 android.namespace = "com.example.namespace"
                 files {
                     // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-                    update("src/main/java/com/example/app/MyClass.java") {
-                        it?.replace("R", "com.example.namespace.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
-                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
-                        it?.replace("com.example.app.R", "com.example.namespace.R")
-                            ?.replace("com.example.app.test.R", "com.example.namespace.test.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
+                    update("src/main/java/com/example/app/MyClass.java")
+                        .searchAndReplace("R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java")
+                        .searchAndReplace("com.example.app.R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.test.R", "com.example.namespace.test.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
                 }
             }
         }
@@ -271,11 +267,9 @@ class NamespaceAndApplicationIdTest {
                 android.namespace = "com.example.namespace"
                 files {
                     // Update the R and BuildConfig class namespaces in MyClass.java
-                    update("src/main/java/com/example/test/MyClass.java") {
-                        it?.replace("R", "com.example.namespace.R")
-                            ?.replace("com.example.test.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
+                    update("src/main/java/com/example/test/MyClass.java")
+                        .searchAndReplace("R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.test.BuildConfig", "com.example.namespace.BuildConfig")
                 }
             }
         }
@@ -293,10 +287,8 @@ class NamespaceAndApplicationIdTest {
                 android.testNamespace = "com.example.testNamespace"
                 files {
                     // Update the test R class namespaces in MyTestClass.java
-                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
-                        it?.replace("com.example.app.test.R", "com.example.testNamespace.R")
-                            ?: error("unexpected missing file")
-                    }
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java")
+                        .searchAndReplace("com.example.app.test.R", "com.example.testNamespace.R")
                 }
             }
         }
@@ -326,17 +318,14 @@ class NamespaceAndApplicationIdTest {
                 }
                 files {
                     // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-                    update("src/main/java/com/example/app/MyClass.java") {
-                        it?.replace("R", "com.example.namespace.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
-                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
-                        it?.replace("com.example.app.R", "com.example.namespace.R")
-                            ?.replace("com.example.app.test.R", "com.example.testNamespace.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
+                    update("src/main/java/com/example/app/MyClass.java")
+                        .searchAndReplace("R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java")
+                        .searchAndReplace("com.example.app.R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.test.R", "com.example.testNamespace.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
                 }
             }
         }
@@ -370,17 +359,14 @@ class NamespaceAndApplicationIdTest {
                 }
                 files {
                     // Update the R and BuildConfig class namespaces in MyClass.java and MyTestClass.java
-                    update("src/main/java/com/example/app/MyClass.java") {
-                        it?.replace("R", "com.example.namespace.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
-                    update("src/androidTest/java/com/example/app/test/MyTestClass.java") {
-                        it?.replace("com.example.app.R", "com.example.namespace.R")
-                            ?.replace("com.example.app.test.R", "com.example.testNamespace.R")
-                            ?.replace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
-                            ?: error("unexpected missing file")
-                    }
+                    update("src/main/java/com/example/app/MyClass.java")
+                        .searchAndReplace("R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
+
+                    update("src/androidTest/java/com/example/app/test/MyTestClass.java")
+                        .searchAndReplace("com.example.app.R", "com.example.namespace.R")
+                        .searchAndReplace("com.example.app.test.R", "com.example.testNamespace.R")
+                        .searchAndReplace("com.example.app.BuildConfig", "com.example.namespace.BuildConfig")
                 }
             }
         }

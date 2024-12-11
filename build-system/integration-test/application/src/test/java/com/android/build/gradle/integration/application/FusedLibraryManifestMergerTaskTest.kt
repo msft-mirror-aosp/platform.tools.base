@@ -70,7 +70,7 @@ internal class FusedLibraryManifestMergerTaskTest {
                     namespace = "com.example.androidLib1"
                     defaultConfig.minSdk = 12
                 }
-                files.update("src/main/AndroidManifest.xml") {
+                files.update("src/main/AndroidManifest.xml").replaceWith(
                     //language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
@@ -82,7 +82,7 @@ internal class FusedLibraryManifestMergerTaskTest {
                             </intent-filter>
                         </manifest>
                     """.trimIndent()
-                }
+                )
             }
             // Library dependency at depth 0 with a dependency on androidLib1.
             androidLibrary(":androidLib2") {

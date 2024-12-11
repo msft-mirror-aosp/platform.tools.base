@@ -32,16 +32,16 @@ class LibWithNavigationTest {
     @get:Rule
     val rule = GradleRule.from {
         androidLibrary {
-            files.update("src/main/AndroidManifest.xml") {
-                    """
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                            <application android:name="library">
-                                <activity android:name=".MainActivity">
-                                    <nav-graph android:value="@navigation/nav1" />
-                                </activity>
-                             </application>
-                        </manifest>""".trimIndent()
-            }
+            files.update("src/main/AndroidManifest.xml").replaceWith(
+                """
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                        <application android:name="library">
+                            <activity android:name=".MainActivity">
+                                <nav-graph android:value="@navigation/nav1" />
+                            </activity>
+                         </application>
+                    </manifest>""".trimIndent()
+            )
         }
     }
 

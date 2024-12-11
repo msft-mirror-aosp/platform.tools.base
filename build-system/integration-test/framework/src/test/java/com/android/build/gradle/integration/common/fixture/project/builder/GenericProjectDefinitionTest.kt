@@ -22,6 +22,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import org.junit.rules.TemporaryFolder
+import java.nio.file.NoSuchFileException
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
@@ -81,9 +82,7 @@ class GenericProjectDefinitionTest {
 
         project.files {
             add("foo.txt", "some content")
-            update("foo.txt") {
-                it?.replace("some", "more") ?: "error"
-            }
+            update("foo.txt").searchAndReplace("some", "more")
         }
 
         val location = temporaryFolder.newFolder().toPath()
@@ -114,7 +113,7 @@ class GenericProjectDefinitionTest {
     fun removeMissingFile() {
         val project = GenericProjectDefinitionImpl("name")
 
-        expected.expect(RuntimeException::class.java)
+        expected.expect(NoSuchFileException::class.java)
         project.files.remove("foo.txt")
     }
 
@@ -122,9 +121,7 @@ class GenericProjectDefinitionTest {
     fun updateMissingFile() {
         val project = GenericProjectDefinitionImpl("name")
 
-        project.files.update("foo.txt") {
-            "new content"
-        }
+        project.files.update("foo.txt").replaceWith("new content")
 
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(

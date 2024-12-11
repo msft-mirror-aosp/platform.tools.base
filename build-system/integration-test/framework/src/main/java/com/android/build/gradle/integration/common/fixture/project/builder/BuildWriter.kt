@@ -186,7 +186,6 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                 "file(${quoteString(this.toFile().toFormatted())})"
             }
             else -> toString()
-
         }
     }
 

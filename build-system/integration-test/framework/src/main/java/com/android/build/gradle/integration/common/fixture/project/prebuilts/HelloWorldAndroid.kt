@@ -79,7 +79,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                update("src/main/AndroidManifest.xml") {
+                update("src/main/AndroidManifest.xml").replaceWith(
                     // language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
@@ -98,7 +98,7 @@ class HelloWorldAndroid {
                             </application>
                         </manifest>
                     """.trimIndent()
-                }
+                )
             }
         }
 
@@ -154,7 +154,7 @@ class HelloWorldAndroid {
                     """.trimIndent()
                 )
 
-                update("src/main/AndroidManifest.xml") {
+                update("src/main/AndroidManifest.xml").replaceWith(
                     // language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
@@ -173,7 +173,7 @@ class HelloWorldAndroid {
                             </application>
                         </manifest>
                     """.trimIndent()
-                }
+                )
             }
         }
     }
