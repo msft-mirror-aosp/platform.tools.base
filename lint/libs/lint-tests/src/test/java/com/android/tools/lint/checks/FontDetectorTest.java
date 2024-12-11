@@ -475,9 +475,9 @@ public class FontDetectorTest extends AbstractCheckTest {
         //noinspection all // Sample code
         String expected =
                 ""
-                        + "res/font/font1.xml:6: Error: Unexpected keyword: size expected one of: width, weight, italic, besteffort [FontValidation]\n"
-                        + "    app:fontProviderQuery=\"name=Monserrat&amp;size=15\">\n"
-                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "res/font/font1.xml:6: Error: Invalid numerical parameter [FontValidation]\n"
+                        + "    app:fontProviderQuery=\"name=Monserrat&amp;width=1hundred\">\n"
+                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings";
         lint().files(
                         manifest().minSdk(28),
@@ -489,7 +489,7 @@ public class FontDetectorTest extends AbstractCheckTest {
                                         + "    app:fontProviderAuthority=\"com.google.android.gms.fonts\"\n"
                                         + "    app:fontProviderPackage=\"com.google.android.gms\"\n"
                                         + "    app:fontProviderCerts=\"@array/certs\"\n"
-                                        + "    app:fontProviderQuery=\"name=Monserrat&amp;size=15\">\n"
+                                        + "    app:fontProviderQuery=\"name=Monserrat&amp;width=1hundred\">\n"
                                         + "</font-family>"
                                         + "\n"))
                 .run()
@@ -500,7 +500,7 @@ public class FontDetectorTest extends AbstractCheckTest {
         //noinspection all // Sample code
         String expected =
                 ""
-                        + "res/font/font1.xml:6: Error: Unexpected keyword: Aladin expected one of: wght, wdth, ital, bold, exact, nearest [FontValidation]\n"
+                        + "res/font/font1.xml:6: Error: query contains invalid value (aladin) [FontValidation]\n"
                         + "    app:fontProviderQuery=\"Monserrat:300i,Aladin:200\">\n"
                         + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings";
@@ -580,7 +580,7 @@ public class FontDetectorTest extends AbstractCheckTest {
                 .expectFixDiffs(expectedFix);
     }
 
-    public void testQueryNearMatchWarning() throws Exception {
+    public void testQueryNearMatchWarningV11() throws Exception {
         //noinspection all // Sample code
         String expected =
                 ""
@@ -613,7 +613,40 @@ public class FontDetectorTest extends AbstractCheckTest {
                 .expectFixDiffs(expectedFix);
     }
 
-    private static File getMockSdkWithFontProviders() throws IOException {
+  public void testQueryNearMatchWarningV12() throws Exception {
+    //noinspection all // Sample code
+    String expected =
+        ""
+            + "res/font/font1.xml:6: Warning: No exact match found for: Montserrat [FontValidation]\n"
+            + "    app:fontProviderQuery=\"Montserrat:wght600:nearest\">\n"
+            + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "0 errors, 1 warnings";
+    String expectedFix =
+        ""
+            + "Fix for res/font/font1.xml line 6: Replace with closest font: Montserrat:wght700:nearest:\n"
+            + "@@ -6 +6\n"
+            + "-     app:fontProviderQuery=\"Montserrat:wght600:nearest\" >\n"
+            + "+     app:fontProviderQuery=\"Montserrat:wght700:nearest\" >\n";
+    lint().files(
+            manifest().minSdk(28),
+            xml(
+                "res/font/font1.xml",
+                ""
+                    + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<font-family xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                    + "    app:fontProviderAuthority=\"com.google.android.gms.fonts\"\n"
+                    + "    app:fontProviderPackage=\"com.google.android.gms\"\n"
+                    + "    app:fontProviderCerts=\"@array/certs\"\n"
+                    + "    app:fontProviderQuery=\"Montserrat:wght600:nearest\">\n"
+                    + "</font-family>"
+                    + "\n"))
+        .sdkHome(getMockSdkWithFontProviders())
+        .run()
+        .expect(expected)
+        .expectFixDiffs(expectedFix);
+  }
+
+  private static File getMockSdkWithFontProviders() throws IOException {
         if (ourMockSdk == null) {
             ourMockSdk = createMockSdkWithFontProviders();
         }
@@ -754,7 +787,7 @@ public class FontDetectorTest extends AbstractCheckTest {
                                         + "    app:fontProviderAuthority=\"com.google.android.gms.fonts\"\n"
                                         + "    app:fontProviderPackage=\"com.google.android.gms\"\n"
                                         + "    app:fontProviderCerts=\"@array/certs\"\n"
-                                        + "    app:fontProviderQuery=\"name=Monserrat&amp;size=15\">\n"
+                                        + "    app:fontProviderQuery=\"name=Monserrat&amp;width=1hundred\">\n"
                                         + "</font-family>"
                                         + "\n"),
                         xml(
@@ -814,9 +847,9 @@ public class FontDetectorTest extends AbstractCheckTest {
         MainTest.checkDriver(
                 ""
                         + "baseline.xml: Information: 1 error and 1 warning were filtered out because they are listed in the baseline file, baseline.xml [LintBaseline]\n"
-                        + "res/font/font3.xml:6: Error: Unexpected keyword: size expected one of: width, weight, italic, besteffort [FontValidation]\n"
-                        + "    app:fontProviderQuery=\"name=Monserrat&amp;size=15\">\n"
-                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "res/font/font3.xml:6: Error: Invalid numerical parameter [FontValidation]\n"
+                        + "    app:fontProviderQuery=\"name=Monserrat&amp;width=1hundred\">\n"
+                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings (1 error, 1 warning filtered by baseline baseline.xml)",
                 "",
 

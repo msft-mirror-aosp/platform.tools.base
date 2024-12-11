@@ -71,6 +71,23 @@ class FontDetail {
         return MutableFontDetail(family.name, weight, width, italics, exact, fontUrl, styleName, hasExplicitStyle)
     }
 
+    fun generateQueryV12(): String {
+        val query = StringBuilder().append(family.name)
+        if (weight != DEFAULT_WEIGHT) {
+            query.append(":wght").append(weight)
+        }
+        if (italics != NORMAL) {
+            query.append(":ital").append(italics.floatAsString())
+        }
+        if (width != DEFAULT_WIDTH) {
+            query.append(":wdth").append(width.floatAsString())
+        }
+        if (!exact) {
+            query.append(":nearest")
+        }
+        return query.toString()
+    }
+
     fun generateQuery(): String {
         if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && italics == NORMAL && exact == DEFAULT_EXACT) {
             return family.name

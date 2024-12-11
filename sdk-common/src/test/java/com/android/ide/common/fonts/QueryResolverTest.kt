@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,34 +15,14 @@
  */
 package com.android.ide.common.fonts
 
-import com.android.ide.common.fonts.QueryParserTest.FontMatching.BEST_EFFORT
-import com.android.ide.common.fonts.QueryParserTest.FontMatching.EXACT
+import com.android.ide.common.fonts.FontMatching.BEST_EFFORT
+import com.android.ide.common.fonts.FontMatching.EXACT
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-internal class QueryParserTest {
-    enum class FontMatching {EXACT, BEST_EFFORT }
+internal enum class FontMatching {EXACT, BEST_EFFORT }
 
-    @Test
-    fun openSansV11() {
-        val result = parse("name=Open Sans&weight=600&width=110&italic=1")
-        assertThat(result.fonts.keys()).hasSize(1)
-        assertFontEqual(result.fonts["Open Sans"].first(), 600, 110f, ITALICS, EXACT)
-    }
-
-    @Test
-    fun openSansWithExactMatchV11() {
-        val result = parse("name=Open Sans&weight=600&italic=1.0&besteffort=false")
-        assertThat(result.fonts.keys()).hasSize(1)
-        assertFontEqual(result.fonts["Open Sans"].first(), 600, 100f, ITALICS, EXACT)
-    }
-
-    @Test
-    fun openSansWithBestEffortMatchV11() {
-        val result = parse("name=Open Sans&weight=800&width=90.0&besteffort=true")
-        assertThat(result.fonts.keys()).hasSize(1)
-        assertFontEqual(result.fonts["Open Sans"].first(), 800, 90f, NORMAL, BEST_EFFORT)
-    }
+class QueryResolverTest {
 
     @Test
     fun allWeightSpecifications() {
@@ -57,7 +37,7 @@ internal class QueryParserTest {
     @Test
     fun allWeight100Synonyms() {
         val result = parse("Roboto:thin,extralight,extra-light,ultralight,ultra-light,l,light,r,regular,book,medium,semibold,semi-bold," +
-                "demibold,demi-bold,b,bold,extrabold,extra-bold,ultrabold,ultra-bold,black,heavy")
+                                   "demibold,demi-bold,b,bold,extrabold,extra-bold,ultrabold,ultra-bold,black,heavy")
         assertThat(result.fonts.keys()).hasSize(23)
         assertFontEqual(result.fonts["Roboto"].elementAt(0), 100, 100f, NORMAL, EXACT)  // thin
         assertFontEqual(result.fonts["Roboto"].elementAt(1), 200, 100f, NORMAL, EXACT)  // extralight
@@ -212,26 +192,28 @@ internal class QueryParserTest {
 
     @Test
     fun nearestVersusExact() {
-        val result = parse("Tangerine:600:nearest,800:exact")
+        val result = parse("Tangerine:600:nearest,800")
         assertThat(result.fonts.keys()).hasSize(2)
         assertFontEqual(result.fonts["Tangerine"].elementAt(0), 600, 100f, NORMAL, BEST_EFFORT)
         assertFontEqual(result.fonts["Tangerine"].elementAt(1), 800, 100f, NORMAL, EXACT)
     }
+}
 
-    private fun parse(query: String): QueryParser.DownloadableParseResult {
-        val result = QueryParser.parseDownloadableFont(GOOGLE_FONT_AUTHORITY, query)
-        assertThat(result.authority).isEqualTo(GOOGLE_FONT_AUTHORITY)
-        return result
-    }
+internal fun parse(query: String): DownloadableParseResult {
+    val result = QueryResolver.parseDownloadableFont(GOOGLE_FONT_AUTHORITY, query)
+    assertThat(result.authority).isEqualTo(GOOGLE_FONT_AUTHORITY)
+    return result
+}
 
-    private fun assertFontEqual(font: MutableFontDetail,
-                                expectedWeight: Int,
-                                expectedWidth: Float,
-                                expectedItalics: Float,
-                                expectedMatching: FontMatching) {
-        assertThat(font.weight).isEqualTo(expectedWeight)
-        assertThat(font.width).isEqualTo(expectedWidth)
-        assertThat(font.italics).isEqualTo(expectedItalics)
-        assertThat(font.exact).isEqualTo(expectedMatching == EXACT)
-    }
+internal fun assertFontEqual(
+    font: MutableFontDetail,
+    expectedWeight: Int,
+    expectedWidth: Float,
+    expectedItalics: Float,
+    expectedMatching: FontMatching
+) {
+    assertThat(font.weight).isEqualTo(expectedWeight)
+    assertThat(font.width).isEqualTo(expectedWidth)
+    assertThat(font.italics).isEqualTo(expectedItalics)
+    assertThat(font.exact).isEqualTo(expectedMatching == EXACT)
 }

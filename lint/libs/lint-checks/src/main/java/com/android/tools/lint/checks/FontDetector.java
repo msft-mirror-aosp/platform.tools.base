@@ -32,12 +32,14 @@ import static com.android.tools.lint.detector.api.Lint.coalesce;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.fonts.DownloadableParseResult;
 import com.android.ide.common.fonts.FontDetail;
 import com.android.ide.common.fonts.FontFamily;
 import com.android.ide.common.fonts.FontLoader;
 import com.android.ide.common.fonts.FontProvider;
+import com.android.ide.common.fonts.FontQueryParserError;
 import com.android.ide.common.fonts.MutableFontDetail;
-import com.android.ide.common.fonts.QueryParser;
+import com.android.ide.common.fonts.QueryResolver;
 import com.android.ide.common.gradle.Module;
 import com.android.ide.common.gradle.Version;
 import com.android.resources.ResourceFolderType;
@@ -506,8 +508,8 @@ public class FontDetector extends ResourceXmlDetector {
             return;
         }
         try {
-            QueryParser.DownloadableParseResult result =
-                    QueryParser.parseDownloadableFont(
+            DownloadableParseResult result =
+                    QueryResolver.parseDownloadableFont(
                             provider.getAuthority(), XmlUtils.fromXmlAttributeValue(query));
             if (!mFontLoader.fontsLoaded()) {
                 return;
@@ -533,7 +535,8 @@ public class FontDetector extends ResourceXmlDetector {
                                   builder.setExact(false);
                                   best = new FontDetail(best.getFamily(), builder);
                                 }
-                                String better = best.generateQuery();
+                                boolean isV11 = query.startsWith("name=");
+                                String better = isV11 ? best.generateQuery() : best.generateQueryV12();
 
                                 fix =
                                         fix().name("Replace with closest font: " + better)
@@ -562,7 +565,7 @@ public class FontDetector extends ResourceXmlDetector {
                     }
                 }
             }
-        } catch (QueryParser.FontQueryParserError ex) {
+        } catch (FontQueryParserError ex) {
             reportError(
                     context, queryAttr, ex.getMessage(), context.getValueLocation(queryAttr), null);
         }
