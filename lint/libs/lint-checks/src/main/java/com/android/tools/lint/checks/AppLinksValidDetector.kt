@@ -407,7 +407,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           context,
           node,
           context.getValueLocation(node),
-          "Host matching is case sensitive and should only " + "use lower-case characters",
+          "Host matching is case sensitive and should only use lower-case characters",
+        )
+      }
+      if (
+        intentFilterData.autoVerify == VALUE_TRUE && !isSubstituted(value) && !value.contains(".")
+      ) {
+        reportUrlError(
+          context,
+          node,
+          context.getValueLocation(node),
+          "Android App Links' `host` attributes must be valid web domains",
         )
       }
     }
