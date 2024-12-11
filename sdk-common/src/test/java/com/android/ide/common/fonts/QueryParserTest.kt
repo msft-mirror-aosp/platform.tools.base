@@ -27,7 +27,7 @@ internal class QueryParserTest {
     fun openSansV11() {
         val result = parse("name=Open Sans&weight=600&width=110&italic=1")
         assertThat(result.fonts.keys()).hasSize(1)
-        assertFontEqual(result.fonts["Open Sans"].first(), 600, 110f, ITALICS, BEST_EFFORT)
+        assertFontEqual(result.fonts["Open Sans"].first(), 600, 110f, ITALICS, EXACT)
     }
 
     @Test

@@ -547,14 +547,14 @@ public class FontDetectorTest extends AbstractCheckTest {
                 .expect(expected);
     }
 
-    public void testQueryNearMatchWarning() throws Exception {
+    public void testQueryNearMatchError() throws Exception {
         //noinspection all // Sample code
         String expected =
                 ""
-                        + "res/font/font1.xml:6: Warning: No exact match found for: Montserrat [FontValidation]\n"
+                        + "res/font/font1.xml:6: Error: No exact match found for: Montserrat [FontValidation]\n"
                         + "    app:fontProviderQuery=\"name=Montserrat&amp;weight=600\">\n"
                         + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "0 errors, 1 warnings";
+                        + "1 errors, 0 warnings";
         String expectedFix =
                 ""
                         + "Fix for res/font/font1.xml line 5: Replace with closest font: name=Montserrat&weight=700:\n"
@@ -580,20 +580,20 @@ public class FontDetectorTest extends AbstractCheckTest {
                 .expectFixDiffs(expectedFix);
     }
 
-    public void testQueryNearMatchError() throws Exception {
+    public void testQueryNearMatchWarning() throws Exception {
         //noinspection all // Sample code
         String expected =
                 ""
-                        + "res/font/font1.xml:6: Error: No exact match found for: Montserrat [FontValidation]\n"
-                        + "    app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=false\">\n"
-                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings";
+                        + "res/font/font1.xml:6: Warning: No exact match found for: Montserrat [FontValidation]\n"
+                        + "    app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=true\">\n"
+                        + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings";
         String expectedFix =
                 ""
-                        + "Fix for res/font/font1.xml line 5: Replace with closest font: name=Montserrat&weight=700&besteffort=false:\n"
+                        + "Fix for res/font/font1.xml line 6: Replace with closest font: name=Montserrat&weight=700&besteffort=true:\n"
                         + "@@ -6 +6\n"
-                        + "-     app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=false\" >\n"
-                        + "+     app:fontProviderQuery=\"name=Montserrat&amp;weight=700&amp;besteffort=false\" >\n";
+                        + "-     app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=true\" >\n"
+                        + "+     app:fontProviderQuery=\"name=Montserrat&amp;weight=700&amp;besteffort=true\" >\n";
         lint().files(
                         manifest().minSdk(28),
                         xml(
@@ -604,7 +604,7 @@ public class FontDetectorTest extends AbstractCheckTest {
                                         + "    app:fontProviderAuthority=\"com.google.android.gms.fonts\"\n"
                                         + "    app:fontProviderPackage=\"com.google.android.gms\"\n"
                                         + "    app:fontProviderCerts=\"@array/certs\"\n"
-                                        + "    app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=false\">\n"
+                                        + "    app:fontProviderQuery=\"name=Montserrat&amp;weight=600&amp;besteffort=true\">\n"
                                         + "</font-family>"
                                         + "\n"))
                 .sdkHome(getMockSdkWithFontProviders())

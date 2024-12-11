@@ -60,17 +60,20 @@ import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelMavenName;
 import com.android.tools.lint.model.LintModelVariant;
 import com.android.utils.XmlUtils;
+
 import com.google.common.base.Joiner;
 import com.intellij.openapi.util.text.StringUtil;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 public class FontDetector extends ResourceXmlDetector {
     // TODO: Change this to the API version where we don't have to rely on appcompat for
@@ -524,7 +527,13 @@ public class FontDetector extends ResourceXmlDetector {
                         if (best != null && detail.match(best) != 0) {
                             LintFix fix = null;
                             if (result.getFonts().size() == 1) {
-                                String better = best.generateQuery(detail.getExact());
+                                if (!detail.getExact()) {
+                                  // Propagate best effort
+                                  MutableFontDetail builder = best.toMutableFontDetail();
+                                  builder.setExact(false);
+                                  best = new FontDetail(best.getFamily(), builder);
+                                }
+                                String better = best.generateQuery();
 
                                 fix =
                                         fix().name("Replace with closest font: " + better)

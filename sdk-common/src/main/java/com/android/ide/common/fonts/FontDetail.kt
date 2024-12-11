@@ -20,6 +20,7 @@ import java.util.Objects
 
 const val DEFAULT_WEIGHT = 400
 const val DEFAULT_WIDTH = 100f
+const val DEFAULT_EXACT = true
 const val ITALICS = 1f
 const val NORMAL = 0f
 
@@ -32,6 +33,7 @@ class FontDetail {
     val weight: Int
     val width: Float
     val italics: Float
+    val exact: Boolean
     val fontUrl: String
     val styleName: String
     val hasExplicitStyle: Boolean
@@ -44,6 +46,7 @@ class FontDetail {
         weight = font.weight
         width = font.width
         italics = font.italics
+        exact = font.exact
         fontUrl = font.fontUrl
         hasExplicitStyle = font.hasExplicitStyle
         styleName = generateStyleName(font)
@@ -57,6 +60,7 @@ class FontDetail {
         weight = withStyle.weight
         width = withStyle.width
         italics = withStyle.italics
+        exact = withStyle.exact
         fontUrl = detail.fontUrl
         hasExplicitStyle = detail.hasExplicitStyle
         styleName = generateStyleName(withStyle)
@@ -64,11 +68,11 @@ class FontDetail {
 
 
     fun toMutableFontDetail(): MutableFontDetail {
-        return MutableFontDetail(weight, width, italics, fontUrl, styleName, false, hasExplicitStyle)
+        return MutableFontDetail(family.name, weight, width, italics, exact, fontUrl, styleName, hasExplicitStyle)
     }
 
-    fun generateQuery(exact: Boolean): String {
-        if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && italics == NORMAL && !exact) {
+    fun generateQuery(): String {
+        if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && italics == NORMAL && exact == DEFAULT_EXACT) {
             return family.name
         }
         val query = StringBuilder().append("name=").append(family.name)
@@ -81,8 +85,8 @@ class FontDetail {
         if (width != DEFAULT_WIDTH) {
             query.append("&width=").append(width.floatAsString())
         }
-        if (exact) {
-            query.append("&besteffort=false")
+        if (!exact) {
+            query.append("&besteffort=true")
         }
         return query.toString()
     }

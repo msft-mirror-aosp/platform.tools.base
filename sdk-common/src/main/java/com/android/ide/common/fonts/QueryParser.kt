@@ -177,7 +177,7 @@ class QueryParser {
     }
 
     private fun parseV11(authority: String): DownloadableParseResult {
-        fontDetail.exact = false  // default in v11
+        fontDetail.exact = true  // default in v11
 
         symbol = scanner.next()
         expect(Symbol.EQUALS)

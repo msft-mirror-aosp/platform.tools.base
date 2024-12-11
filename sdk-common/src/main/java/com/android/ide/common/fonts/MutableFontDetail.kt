@@ -17,22 +17,23 @@
 package com.android.ide.common.fonts
 
 class MutableFontDetail(
+    var name: String,
     var weight: Int,
     var width: Float,
     var italics: Float,
+    var exact: Boolean,
     var fontUrl: String,
     var styleName: String,
-    var exact: Boolean,
-    var hasExplicitStyle: Boolean) {
+    var hasExplicitStyle: Boolean,
+) {
+    constructor(name: String, weight: Int, width: Float, italics: Float, exact: Boolean)
+            : this(name, weight, width, italics, exact, "", "", false)
 
-    constructor(weight: Int, width: Float, italics: Float, hasExplicitStyle: Boolean)
-            : this(weight, width, italics, "", "", false, hasExplicitStyle)
-
-    constructor(weight: Int, width: Float, italics: Float)
-            : this(weight, width, italics, false)
+    constructor(name: String, exact: Boolean)
+            : this(name, DEFAULT_WEIGHT, DEFAULT_WIDTH, NORMAL, exact)
 
     constructor()
-            : this(DEFAULT_WEIGHT, DEFAULT_WIDTH, NORMAL)
+            : this("", DEFAULT_EXACT)
 
     fun findBestMatch(fonts: Collection<FontDetail>): FontDetail? {
         var best: FontDetail? = null

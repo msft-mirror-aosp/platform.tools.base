@@ -18,6 +18,8 @@ package com.android.ide.common.fonts
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
+private const val FONT_NAME = "San Serif"
+
 class FontDetailTest {
 
     @Test
@@ -71,7 +73,7 @@ class FontDetailTest {
     @Test
     fun testDerivedConstructor() {
         val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
-        val derived = FontDetail(font, MutableFontDetail(700, 100f, NORMAL, "whatever", "", false, false))
+        val derived = FontDetail(font, MutableFontDetail(FONT_NAME, 700, 100f, NORMAL, DEFAULT_EXACT, "whatever", "", false))
         assertThat(derived.family).isSameAs(font.family)
         assertThat(derived.weight).isEqualTo(700)
         assertThat(derived.width).isEqualTo(100f)
@@ -83,8 +85,7 @@ class FontDetailTest {
     @Test
     fun testGenerateQuery() {
         val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
-        assertThat(font.generateQuery(true)).isEqualTo("name=MyFont&weight=800&italic=1&width=110&besteffort=false")
-        assertThat(font.generateQuery(false)).isEqualTo("name=MyFont&weight=800&italic=1&width=110")
+        assertThat(font.generateQuery()).isEqualTo("name=MyFont&weight=800&italic=1&width=110")
     }
 
     companion object {
@@ -95,12 +96,12 @@ class FontDetailTest {
 
         private fun createFontFamily(weight: Int, width: Float, italics: Float, url: String, styleName: String): FontFamily {
             return FontFamily(FontProvider.GOOGLE_PROVIDER, FontSource.DOWNLOADABLE, "MyFont", "http://someurl.com/mymenufont.ttf", "myMenu",
-                    listOf(MutableFontDetail(weight, width, italics, url, styleName, false, false)))
+                    listOf(MutableFontDetail(FONT_NAME, weight, width, italics, DEFAULT_EXACT, url, styleName, false)))
         }
 
         private fun generateStyleName(weight: Int, italics: Float): String {
-            val family = FontFamily(FontProvider.GOOGLE_PROVIDER, "San Serif")
-            val font = MutableFontDetail(weight, DEFAULT_WIDTH, italics)
+            val family = FontFamily(FontProvider.GOOGLE_PROVIDER, FONT_NAME)
+            val font = MutableFontDetail(FONT_NAME, weight, DEFAULT_WIDTH, italics, false)
             val detail = FontDetail(family, font)
             return detail.styleName
         }
