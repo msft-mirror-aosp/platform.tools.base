@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.utils.getFusedLibraryAar
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.symbols.SymbolTableBuilder
@@ -30,10 +31,8 @@ import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.JavaVersion
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.zip.ZipFile
@@ -168,7 +167,7 @@ class FusedLibraryMergeResourcesTaskTest {
 
     @Test
     fun testMerge() {
-        val fusedLibraryAar = getFusedLibraryAar()
+        val fusedLibraryAar = project.getSubproject("fusedLib1").getFusedLibraryAar()
         ZipFile(fusedLibraryAar).use { aar ->
             val mergedValues = aar.getEntry("res/values/values.xml")
             val mergedLayout = aar.getEntry("res/layout/layout.xml")
@@ -208,7 +207,8 @@ class FusedLibraryMergeResourcesTaskTest {
 
     @Test
     fun testAppResourceMergingWithFusedLib() {
-        val publishedFusedLibrary = getFusedLibraryAar()
+
+        val publishedFusedLibrary = project.getSubproject("fusedLib1").getFusedLibraryAar()
         val appSubproject = project.getSubproject("app")
         appSubproject.buildFile.appendText(
                 "dependencies {" +
@@ -251,7 +251,8 @@ class FusedLibraryMergeResourcesTaskTest {
 
         project.executor().run(":app:assembleDebug")
 
-        val rTxtContent = Aar(getFusedLibraryAar()).getEntryAsFile("R.txt").inputStream()
+        val fusedLibraryAar = project.getSubproject("fusedLib1").getFusedLibraryAar()
+        val rTxtContent = Aar(fusedLibraryAar).getEntryAsFile("R.txt").inputStream()
         val symbolTableFromRTxt = SymbolTableBuilder("com.example.fusedLib1")
         rTxtContent.bufferedReader().use {
             readAarRTxt(it.lines().iterator(), symbolTableFromRTxt)
@@ -279,13 +280,5 @@ class FusedLibraryMergeResourcesTaskTest {
                 "string_overridden"
             )
         }
-    }
-
-    private fun getFusedLibraryAar(): File {
-        project.getSubproject("fusedLib1").execute(":fusedLib1:bundle")
-        val fusedLibAar =
-                FileUtils.join(project.getSubproject("fusedLib1").buildDir, "bundle", "bundle.aar")
-        assertThat(fusedLibAar.exists()).isTrue()
-        return fusedLibAar
     }
 }

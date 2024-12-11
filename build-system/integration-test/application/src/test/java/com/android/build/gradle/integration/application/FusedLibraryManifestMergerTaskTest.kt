@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.integration.common.utils.getFusedLibraryAar
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
@@ -34,7 +35,6 @@ import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.nio.charset.Charset
 import kotlin.io.path.readText
 
@@ -199,7 +199,7 @@ internal class FusedLibraryManifestMergerTaskTest {
         fusedLibBuildFile.readText().replace("minSdk = 19", "minSdk = 20").also {
             FileUtils.writeToFile(fusedLibBuildFile, it)
         }
-        val publishedFusedLibrary = getFusedLibraryAar()
+        val publishedFusedLibrary = project.getSubproject("fusedLib1").getFusedLibraryAar()
         project.getSubproject("app").buildFile.appendText(
                 "dependencies {" +
                         "implementation(files(\'${publishedFusedLibrary.invariantSeparatorsPath}\'))" +
@@ -208,7 +208,7 @@ internal class FusedLibraryManifestMergerTaskTest {
         val result = project.executor().expectFailure().run(":app:processDebugMainManifest")
         result.stderr.use { scanner ->
             assertThat(scanner).contains(
-                    "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [bundle.aar]"
+                    "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [fusedLib1.aar]"
             )
         }
     }
@@ -236,8 +236,7 @@ internal class FusedLibraryManifestMergerTaskTest {
         project.executor().run(":fusedLib1:assemble")
 
         Aar(
-            project.getSubproject("fusedLib1")
-                .buildDir.resolve("bundle/bundle.aar")
+            project.getSubproject("fusedLib1").getFusedLibraryAar()
         ).use {
             val manifest = it.getEntryAsFile(SdkConstants.ANDROID_MANIFEST_XML).readText()
             assertThat(manifest).contains("""android:host="injected-value-for-hostName"""")
@@ -251,11 +250,6 @@ internal class FusedLibraryManifestMergerTaskTest {
                 "logs", "manifest-merger-mergeManifest-report.txt")
         assertThat(manifestBlameFile).isNotNull()
         assertThat(manifestBlameFile.length()).isGreaterThan(0)
-    }
-
-    private fun getFusedLibraryAar(): File {
-        project.getSubproject("fusedLib1").executor().run(":fusedLib1:bundle")
-        return FileUtils.join(project.getSubproject("fusedLib1").buildDir, "bundle", "bundle.aar")
     }
 }
 

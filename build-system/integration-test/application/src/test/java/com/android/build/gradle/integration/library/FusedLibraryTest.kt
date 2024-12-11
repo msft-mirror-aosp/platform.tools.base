@@ -149,7 +149,7 @@ class FusedLibraryTest {
     fun checkAarNoPublishing() {
         executor().run(":fusedLib1:assemble")
         val fusedLib1BuildDir = project.getSubproject(":fusedLib1").buildDir
-        File(fusedLib1BuildDir, "bundle/bundle.aar").also { aarFile ->
+        File(fusedLib1BuildDir, "outputs/aar/fusedLib1.aar").also { aarFile ->
             Truth.assertThat(aarFile.exists()).isTrue()
         }
     }

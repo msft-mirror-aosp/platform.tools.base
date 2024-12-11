@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.testprojects.PluginTy
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.getFusedLibraryAar
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
@@ -132,11 +133,11 @@ internal class FusedLibraryMergeArtifactTaskTest {
     @Test
     fun testAarMetadataMerging() {
         val fusedLib1 = project.getSubproject("fusedLib1")
-        var fusedLibraryAar = getFusedLibraryAar()
-        fusedLibraryAar?.let { aarFile ->
+        var fusedLibraryAar = fusedLib1.getFusedLibraryAar()
+        fusedLibraryAar.let { aarFile ->
             ZipFile(aarFile).use {
                 val mergedAarMetadata =
-                        it.getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
+                    it.getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
                 assertThat(mergedAarMetadata).isNotNull()
                 val metadataContents = it.getInputStream(mergedAarMetadata)
                 val aarMetadataReader = AarMetadataReader(metadataContents)
@@ -158,25 +159,23 @@ internal class FusedLibraryMergeArtifactTaskTest {
             "androidFusedLibrary {\n aarMetadata.minAgpVersion = \"8.4-alpha02\"\naarMetadata.minCompileSdk=9"
         )
 
-        fusedLibraryAar = getFusedLibraryAar()
-        fusedLibraryAar?.let { aarFile ->
-            ZipFile(aarFile).use {
-                val mergedAarMetadata =
-                    it.getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
-                assertThat(mergedAarMetadata).isNotNull()
-                val metadataContents = it.getInputStream(mergedAarMetadata)
-                val aarMetadataReader = AarMetadataReader(metadataContents)
-                // Value constant from AGP
-                assertThat(aarMetadataReader.aarFormatVersion).isEqualTo("1.0")
-                // Value constant from AGP
-                assertThat(aarMetadataReader.aarMetadataVersion).isEqualTo("1.0")
-                // Value from aarMetadata DSL
-                assertThat(aarMetadataReader.minAgpVersion).isEqualTo("8.4-alpha02")
-                // Value from aarMetadata DSL
-                assertThat(aarMetadataReader.minCompileSdk).isEqualTo("9")
-                // Default value
-                assertThat(aarMetadataReader.minCompileSdkExtension).isEqualTo("0")
-            }
+        fusedLibraryAar = fusedLib1.getFusedLibraryAar()
+        ZipFile(fusedLibraryAar).use {
+            val mergedAarMetadata =
+                it.getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
+            assertThat(mergedAarMetadata).isNotNull()
+            val metadataContents = it.getInputStream(mergedAarMetadata)
+            val aarMetadataReader = AarMetadataReader(metadataContents)
+            // Value constant from AGP
+            assertThat(aarMetadataReader.aarFormatVersion).isEqualTo("1.0")
+            // Value constant from AGP
+            assertThat(aarMetadataReader.aarMetadataVersion).isEqualTo("1.0")
+            // Value from aarMetadata DSL
+            assertThat(aarMetadataReader.minAgpVersion).isEqualTo("8.4-alpha02")
+            // Value from aarMetadata DSL
+            assertThat(aarMetadataReader.minCompileSdk).isEqualTo("9")
+            // Default value
+            assertThat(aarMetadataReader.minCompileSdkExtension).isEqualTo("0")
         }
     }
 
@@ -193,61 +192,59 @@ internal class FusedLibraryMergeArtifactTaskTest {
                         "assets",
                         "android_lib_one_asset.txt")
         FileUtils.createFile(duplicateFile, "androidLib3")
-        val fusedLibraryAar = getFusedLibraryAar()
-        fusedLibraryAar?.let { aarFile ->
-            ZipFile(aarFile).use { zip ->
-                val mergedEntry = zip.getEntry("assets/android_lib_one_asset.txt")
-                val mergedEntryContents = zip.getInputStream(mergedEntry)
-                assertThat(String(mergedEntryContents.readBytes())).isEqualTo("androidLib3")
-                assertThat(zip.entries()
-                        .toList()
-                        .map(ZipEntry::getName)).containsAtLeastElementsIn(
-                        listOf(
-                                "assets/android_lib_one_asset.txt",
-                                "assets/android_lib_two_asset.txt",
-                                "assets/subdir/android_lib_one_asset_in_subdir.txt"
-                        )
+        val fusedLibraryAar = project.getSubproject("fusedLib1").getFusedLibraryAar()
+        ZipFile(fusedLibraryAar).use { zip ->
+            val mergedEntry = zip.getEntry("assets/android_lib_one_asset.txt")
+            val mergedEntryContents = zip.getInputStream(mergedEntry)
+            assertThat(String(mergedEntryContents.readBytes())).isEqualTo("androidLib3")
+            assertThat(
+                zip.entries()
+                    .toList()
+                    .map(ZipEntry::getName)
+            ).containsAtLeastElementsIn(
+                listOf(
+                    "assets/android_lib_one_asset.txt",
+                    "assets/android_lib_two_asset.txt",
+                    "assets/subdir/android_lib_one_asset_in_subdir.txt"
                 )
-            }
+            )
         }
     }
 
     @Test
     fun testRenderscriptCreatedJniCopiesToFusedLibrary() {
-        val fusedLibraryAar = getFusedLibraryAar()
-        fusedLibraryAar?.let { aarFile ->
-            ZipFile(aarFile).use { zip ->
-                val jniEntries = zip.entries().toList()
-                        .map { it.name }
-                        .filter { it.startsWith("jni/") }
-                        .filterNot { it.endsWith('/') }
-                assertThat(jniEntries).containsAtLeastElementsIn(
-                        listOf(
-                                "jni/armeabi-v7a/librsjni_androidx.so",
-                                "jni/armeabi-v7a/libRSSupport.so",
-                                "jni/armeabi-v7a/librsjni.so",
-                                "jni/armeabi-v7a/librs.copy.so",
-                                "jni/x86_64/librsjni_androidx.so",
-                                "jni/x86_64/libRSSupport.so",
-                                "jni/x86_64/librsjni.so",
-                                "jni/arm64-v8a/librsjni_androidx.so",
-                                "jni/arm64-v8a/libRSSupport.so",
-                                "jni/arm64-v8a/librsjni.so",
-                                "jni/x86/librsjni_androidx.so",
-                                "jni/x86/libRSSupport.so",
-                                "jni/x86/librsjni.so",
-                                "jni/x86/librs.copy.so"
-                        )
+        val fusedLibraryAar = project.getSubproject("fusedLib1").getFusedLibraryAar()
+        ZipFile(fusedLibraryAar).use { zip ->
+            val jniEntries = zip.entries().toList()
+                .map { it.name }
+                .filter { it.startsWith("jni/") }
+                .filterNot { it.endsWith('/') }
+            assertThat(jniEntries).containsAtLeastElementsIn(
+                listOf(
+                    "jni/armeabi-v7a/librsjni_androidx.so",
+                    "jni/armeabi-v7a/libRSSupport.so",
+                    "jni/armeabi-v7a/librsjni.so",
+                    "jni/armeabi-v7a/librs.copy.so",
+                    "jni/x86_64/librsjni_androidx.so",
+                    "jni/x86_64/libRSSupport.so",
+                    "jni/x86_64/librsjni.so",
+                    "jni/arm64-v8a/librsjni_androidx.so",
+                    "jni/arm64-v8a/libRSSupport.so",
+                    "jni/arm64-v8a/librsjni.so",
+                    "jni/x86/librsjni_androidx.so",
+                    "jni/x86/libRSSupport.so",
+                    "jni/x86/librsjni.so",
+                    "jni/x86/librs.copy.so"
                 )
-            }
+            )
         }
     }
 
     @Test
     fun testJavaResourcesMerge() {
-        val aar = getFusedLibraryAar()
+        val aar = project.getSubproject("fusedLib1").getFusedLibraryAar()
         val fusedLibraryClassesJar = File(temporaryFolder.newFolder(), SdkConstants.FN_CLASSES_JAR)
-        ZipFile(aar!!).use {
+        ZipFile(aar).use {
             fusedLibraryClassesJar.writeBytes(
                 it.getInputStream(ZipEntry(SdkConstants.FN_CLASSES_JAR)).readAllBytes())
         }
@@ -276,11 +273,5 @@ internal class FusedLibraryMergeArtifactTaskTest {
             throw e
         }
 
-    }
-
-    private fun getFusedLibraryAar(): File? {
-        project.executor().run(":fusedLib1:bundle")
-        val fusedLib1 = project.getSubproject("fusedLib1")
-        return FileUtils.join(fusedLib1.bundleDir, "bundle.aar")
     }
 }

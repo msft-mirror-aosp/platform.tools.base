@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.SdkConstants
 import com.android.SdkConstants.EXT_AAR
+import com.android.build.gradle.integration.common.utils.getFusedLibraryAar
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -438,7 +439,7 @@ class FusedLibraryClassesVerificationTest {
         addDependenciesToFusedLibProject(dependenciesBlock)
         project.execute(":$FUSED_LIBRARY_PROJECT_NAME:bundle")
 
-        val aar = FileUtils.join(fusedLib1Project.buildDir, "bundle", "bundle.aar")
+        val aar = fusedLib1Project.getFusedLibraryAar()
         ZipFileSubject.assertThat(aar) {
             it.contains("libs/testClass.jar")
         }
@@ -586,7 +587,7 @@ class FusedLibraryClassesVerificationTest {
     }
 
     private fun extractClassesJar(fusedLib1Project: GradleTestProject): File {
-        val aar = FileUtils.join(fusedLib1Project.buildDir, "bundle", "bundle.aar")
+        val aar = fusedLib1Project.getFusedLibraryAar()
         val tempFolder = temporaryFolder.newFolder()
         val classesJar = File(tempFolder, SdkConstants.FN_CLASSES_JAR)
 

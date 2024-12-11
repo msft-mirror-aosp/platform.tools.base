@@ -17,8 +17,10 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.SdkConstants.EXT_AAR
 import com.android.SdkConstants.EXT_JAR
 import com.android.SdkConstants.FD_AAR_LIBS
+import com.android.SdkConstants.FD_OUTPUTS
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants.VALIDATE_DEPENDENCIES_TASK_NAME
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
@@ -107,7 +109,9 @@ abstract class FusedLibraryBundleAar: FusedLibraryBundle() {
 
         override fun configure(task: FusedLibraryBundleAar) {
             super.configure(task)
-            task.archiveFileName.set("bundle.aar")
+            task.destinationDirectory.set(
+                creationConfig.projectLayout.buildDirectory.dir("$FD_OUTPUTS/$EXT_AAR"))
+            task.archiveFileName.set("${task.project.name}${SdkConstants.DOT_AAR}")
             task.from(
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.CLASSES_JAR),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_MANIFEST),
