@@ -15,10 +15,13 @@
  */
 package com.android.ide.common.fonts
 
+import java.util.Locale
 import java.util.Objects
 
 const val DEFAULT_WEIGHT = 400
-const val DEFAULT_WIDTH = 100
+const val DEFAULT_WIDTH = 100f
+const val ITALICS = 1f
+const val NORMAL = 0f
 
 /**
  * A [FontDetail] is a reference to a specific font with weight, width, and italics attributes.
@@ -27,14 +30,14 @@ const val DEFAULT_WIDTH = 100
 class FontDetail {
     val family: FontFamily
     val weight: Int
-    val width: Int
-    val italics: Boolean
+    val width: Float
+    val italics: Float
     val fontUrl: String
     val styleName: String
     val hasExplicitStyle: Boolean
 
     val fontStyle: String
-        get() = if (italics) "italic" else "normal"
+        get() = if (italics != NORMAL) "italic" else "normal"
 
     constructor(fontFamily: FontFamily, font: MutableFontDetail) {
         family = fontFamily
@@ -65,18 +68,18 @@ class FontDetail {
     }
 
     fun generateQuery(exact: Boolean): String {
-        if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && !italics && !exact) {
+        if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && italics == NORMAL && !exact) {
             return family.name
         }
         val query = StringBuilder().append("name=").append(family.name)
         if (weight != DEFAULT_WEIGHT) {
             query.append("&weight=").append(weight)
         }
-        if (italics) {
-            query.append("&italic=1")
+        if (italics != NORMAL) {
+            query.append("&italic=").append(italics.floatAsString())
         }
         if (width != DEFAULT_WIDTH) {
-            query.append("&width=").append(width)
+            query.append("&width=").append(width.floatAsString())
         }
         if (exact) {
             query.append("&besteffort=false")
@@ -121,7 +124,12 @@ class FontDetail {
         }
     }
 
-    private fun getItalicStyleNameSuffix(italics: Boolean): String {
-        return if (italics) " Italic" else ""
+    private fun getItalicStyleNameSuffix(italics: Float): String {
+        return if (italics != NORMAL) " Italic" else ""
+    }
+
+    /** Formats a float without trailing zeros and uses period for the decimal separator */
+    private fun Float.floatAsString(): String {
+        return String.format(Locale.ROOT, if (this % 1f != 0f) "%s" else "%.0f", this)
     }
 }
