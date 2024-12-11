@@ -114,6 +114,10 @@
           {
             "flag": "DATA_BINDING_ENABLED",
             "value": false
+          },
+          {
+            "flag": "GENERATE_MANIFEST_CLASS",
+            "value": false
           }
         ]
       },
