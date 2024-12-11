@@ -26,6 +26,8 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Fused
 import com.android.build.gradle.integration.common.fixture.project.plugins.FusedLibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
@@ -88,6 +90,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
             // legacy DSL callbacks
             PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),
+            PluginData(LegacyLibraryCallback::class, LegacyLibraryCallbackPlugin::class, "com/android/build/gradle/LibraryExtension"),
         )
     }
 

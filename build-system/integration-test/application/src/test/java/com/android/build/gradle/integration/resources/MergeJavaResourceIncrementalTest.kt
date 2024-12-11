@@ -16,80 +16,57 @@
 
 package com.android.build.gradle.integration.resources
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
-import com.android.build.gradle.internal.CompileOptions
-import com.google.common.truth.Truth
-import com.google.common.truth.Truth.assertThat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.appendText
-import kotlin.io.path.deleteExisting
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 /**
  * Tests related to the incremental behavior of [MergeJavaResourceTask].
  */
 class MergeJavaResourceIncrementalTest {
-
     @get:Rule
-    val project =
-            createGradleProject {
-                withKotlinPlugin = true
-                subProject(":foo:lib") {
-                    useNewPluginsDsl = true
-                    plugins += PluginType.ANDROID_LIB
-                    plugins += PluginType.KOTLIN_ANDROID
-                    android {
-                        defaultCompileSdk()
-                        kotlinOptions {
-                            jvmTarget = CompileOptions.DEFAULT_JAVA_VERSION.toString()
-                        }
-                    }
-                    addFile("src/main/resources/res1.txt", "res 1 from foo")
+    val rule = GradleRule.from {
+        androidLibrary(":foo:lib") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
-                subProject(":bar:lib") {
-                    useNewPluginsDsl = true
-                    plugins += PluginType.ANDROID_LIB
-                    plugins += PluginType.KOTLIN_ANDROID
-                    android {
-                        defaultCompileSdk()
-                        kotlinOptions {
-                            jvmTarget = CompileOptions.DEFAULT_JAVA_VERSION.toString()
-                        }
-                    }
-                    addFile("src/main/resources/res1.txt", "res 1 from bar")
+            }
+            files.add("src/main/resources/res1.txt", "res 1 from foo")
+        }
+        androidLibrary(":bar:lib") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
-                subProject(":app") {
-                    useNewPluginsDsl = true
-                    plugins += PluginType.ANDROID_APP
-                    plugins += PluginType.KOTLIN_ANDROID
-                    android {
-                        defaultCompileSdk()
-                        kotlinOptions {
-                            jvmTarget = CompileOptions.DEFAULT_JAVA_VERSION.toString()
-                        }
-                        appendToBuildFile { //language=groovy
-                            """
-                                android {
-                                    packagingOptions {
-                                        resources {
-                                            pickFirsts += "res1.txt"
-                                        }
-                                    }
-                                }
-                            """.trimIndent()
-                        }
-                    }
-                    dependencies {
-                        implementation(project(":foo:lib"))
-                        implementation(project(":bar:lib"))
+            }
+            files.add("src/main/resources/res1.txt", "res 1 from bar")
+        }
+        androidApplication {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            android {
+                packaging {
+                    resources {
+                        pickFirsts += "res1.txt"
                     }
                 }
             }
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
+                }
+            }
+            dependencies {
+                implementation(project(":foo:lib"))
+                implementation(project(":bar:lib"))
+            }
+        }
+    }
 
 
     /**
@@ -104,26 +81,30 @@ class MergeJavaResourceIncrementalTest {
      */
     @Test
     fun testIncrementalChanges() {
-        project.execute(":app:assembleDebug")
-        project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk).containsJavaResource("res1.txt")
-            assertThat(apk.getJavaResource("res1.txt").readText().trim()).isEqualTo("res 1 from foo")
+        val build = rule.build
+        val app = build.androidApplication()
+        val fooLib = build.androidLibrary(":foo:lib")
+        val barLib = build.androidLibrary(":bar:lib")
+
+        build.executor.run(":app:assembleDebug")
+        app.assertApk(ApkSelector.DEBUG) {
+            containsJavaResourceWithContent("res1.txt", "res 1 from foo")
         }
-        val fooRes = project.file("foo/lib/src/main/resources/res1.txt").toPath()
-        val barRes = project.file("bar/lib/src/main/resources/res1.txt").toPath()
-        fooRes.deleteExisting()
-        barRes.appendText(" edited")
-        project.execute(":app:assembleDebug")
-        project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk).containsJavaResource("res1.txt")
-            assertThat(apk.getJavaResource("res1.txt").readText().trim()).isEqualTo("res 1 from bar edited")
+
+        fooLib.files.remove("src/main/resources/res1.txt")
+        barLib.files.update("src/main/resources/res1.txt").append(" edited")
+
+        build.executor.run(":app:assembleDebug")
+        app.assertApk(ApkSelector.DEBUG) {
+            containsJavaResourceWithContent("res1.txt", "res 1 from bar edited")
         }
-        fooRes.writeText("res 1 from foo added back")
-        barRes.appendText(" twice")
-        project.execute(":app:assembleDebug")
-        project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk).containsJavaResource("res1.txt")
-            assertThat(apk.getJavaResource("res1.txt").readText().trim()).isEqualTo("res 1 from foo added back")
+
+        fooLib.files.add("src/main/resources/res1.txt", "res 1 from foo added back")
+        barLib.files.update("src/main/resources/res1.txt").append(" twice")
+
+        build.executor.run(":app:assembleDebug")
+        app.assertApk(ApkSelector.DEBUG) {
+            containsJavaResourceWithContent("res1.txt", "res 1 from foo added back")
         }
     }
 }

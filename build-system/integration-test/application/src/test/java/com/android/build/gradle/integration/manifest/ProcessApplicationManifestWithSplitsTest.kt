@@ -16,11 +16,14 @@
 
 package com.android.build.gradle.integration.manifest
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.VariantOutput
+import com.android.build.gradle.api.ApkVariantOutput
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject.assertThat
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,12 +33,51 @@ import kotlin.test.assertTrue
 @RunWith(Parameterized::class)
 class ProcessApplicationManifestWithSplitsTest(private val abi: String, private val expectedVersion: Int) {
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                minSdk = 33
-                setUpHelloWorld()
+                defaultConfig {
+                    minSdk = 33
+                    versionCode = 1
+                }
+                splits {
+                    // Configures multiple APKs based on ABI.
+                    abi {
+                        // Enables building multiple APKs per ABI.
+                        isEnable = true
+
+                        // By default all ABIs are included, so use reset() and include to specify that you only
+                        // want APKs for x86 and x86_64.
+
+                        // Resets the list of ABIs for Gradle to create APKs for to none.
+                        reset()
+
+                        // Specifies a list of ABIs for Gradle to create APKs for.
+                        include("x86_64", "x86", "arm64-v8a", "armeabi-v7a")
+
+                        // Specifies that you don't want to also generate a universal APK that includes all ABIs.
+                        isUniversalApk = false
+                    }
+                }
+            }
+            pluginCallback = MyAppCallback::class.java
+        }
+    }
+
+    class MyAppCallback: LegacyApplicationCallback {
+        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+            val abiCodes = mapOf("armeabi-v7a" to 2, "arm64-v8a" to 3, "x86" to 8, "x86_64" to 9)
+
+            extension.applicationVariants.all { variant ->
+                variant.outputs.forEach { output ->
+                    // need to force this as the API does not return the right thing.
+                    output as ApkVariantOutput
+                    val baseAbiVersionCode =
+                        abiCodes[output.getFilter(VariantOutput.FilterType.ABI)]
+                    if (baseAbiVersionCode != null) {
+                        output.versionCodeOverride = baseAbiVersionCode * 1000 + variant.versionCode
+                    }
+                }
             }
         }
     }
@@ -50,58 +92,19 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
                 arrayOf("x86", 8001),
                 arrayOf("x86_64", 9001)
         )
-
-        private val BUILD_FILE_CONTENT_WITH_ABI_SPECIFIC_VERSIONS =
-                """
-            android {
-              splits {
-
-                // Configures multiple APKs based on ABI.
-                abi {
-
-                  // Enables building multiple APKs per ABI.
-                  enable true
-
-                  // By default all ABIs are included, so use reset() and include to specify that you only
-                  // want APKs for x86 and x86_64.
-
-                  // Resets the list of ABIs for Gradle to create APKs for to none.
-                  reset()
-
-                  // Specifies a list of ABIs for Gradle to create APKs for.
-                  include "x86_64", "x86", "arm64-v8a", "armeabi-v7a"
-
-                  // Specifies that you don't want to also generate a universal APK that includes all ABIs.
-                  universalApk false
-                }
-              }
-          }
-
-          ext.abiCodes = ['armeabi-v7a':2, 'arm64-v8a':3, x86:8, x86_64:9]
-
-          import com.android.build.OutputFile
-
-          android.applicationVariants.all { variant ->
-            variant.outputs.each { output ->
-              def baseAbiVersionCode =
-                      project.ext.abiCodes.get(output.getFilter(OutputFile.ABI))
-              if (baseAbiVersionCode != null) {
-                output.versionCodeOverride =
-                        baseAbiVersionCode * 1000 + variant.versionCode
-              }
-            }
-          }
-        """.trimIndent()
     }
 
     @Test
     fun testAppManifestContainsAbiSpecificVersionCode() {
-        project.getSubproject(":app").buildFile.appendText(BUILD_FILE_CONTENT_WITH_ABI_SPECIFIC_VERSIONS)
-        val result = project.executor()
+        val build = rule.build
+        val app = build.androidApplication()
+
+        val result = build.executor
                 .with(StringOption.IDE_BUILD_TARGET_ABI, abi)
                 .run(":app:assembleDebug")
         assertTrue { result.failedTasks.isEmpty()}
-        val manifestFile =  project.getSubproject(":app").file("build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
+
+        val manifestFile = app.intermediatesDir.resolve("merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
         assertThat(manifestFile).contains("android:versionCode=\"$expectedVersion\"")
     }
 }

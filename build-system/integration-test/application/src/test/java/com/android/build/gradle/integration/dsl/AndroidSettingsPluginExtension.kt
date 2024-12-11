@@ -16,42 +16,39 @@
 
 package com.android.build.gradle.integration.dsl
 
-import com.android.Version
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * Regression for b/260899876
+ *
+ * (lack of settings.android accessor in KTS)
+ */
 class AndroidSettingsPluginExtension {
 
-  @get:Rule
-  val project =
-    createGradleProject {
-      rootProject {
-        addFile("settings.gradle.kts",
-                """
-                  pluginManagement {
-                      apply(from="../commonLocalRepo.gradle", to=pluginManagement)
-                  }
+    @get:Rule
+    val rule = GradleRule.from {
+        settings {
+            applyPlugin(PluginType.ANDROID_SETTINGS)
+            android {
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION.toInt()
+                minSdk = 23
+                execution {
+                }
+            }
+        }
 
-                  plugins {
-                      id("com.android.settings") version "${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
-                  }
-
-                  android {
-                      println(compileSdk)
-                      execution {
-                          println(defaultProfile)
-                      }
-                  }
-                """.trimIndent()
-        )
-      }
+        buildFileType = BuildFileType.KTS
     }
 
-  @Test
-  fun testConfigures() {
-    val result = project.executor().run("tasks")
-    Truth.assertThat(result.failureMessage).isNull()
-  }
+    @Test
+    fun testConfigures() {
+        val result = rule.build.executor.run("tasks")
+        Truth.assertThat(result.failureMessage).isNull()
+    }
 }

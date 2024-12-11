@@ -16,16 +16,15 @@
 
 package com.android.build.gradle.integration.r8
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
-import com.android.build.gradle.internal.CompileOptions.Companion.DEFAULT_JAVA_VERSION
 import com.android.build.gradle.internal.r8.TargetedShrinkRules
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithClasses
 import com.android.testutils.ZipContents
 import com.android.testutils.generateAarWithContent
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,16 +32,20 @@ import org.junit.Test
 class TargetedShrinkRulesIntegrationTest {
 
     @get:Rule
-    val project = createGradleProject {
-        withKotlinPlugin = true
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+    val rule = GradleRule.from {
+        androidApplication {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
-                defaultCompileSdk()
-                minSdk = 24
-                kotlinOptions {
-                    jvmTarget = DEFAULT_JAVA_VERSION.toString()
+                defaultConfig.minSdk = 24
+                buildTypes {
+                    named("release") {
+                        it.isMinifyEnabled = true
+                    }
+                }
+            }
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
             }
             dependencies {
@@ -51,60 +54,58 @@ class TargetedShrinkRulesIntegrationTest {
                 implementation(getExternalAndroidLib())
                 implementation(getExternalJavaLib())
             }
-            appendToBuildFile {
-                """
-                android.buildTypes.release.minifyEnabled = true
-                """.trimIndent()
-            }
         }
-        subProject(":androidLib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+        androidLibrary(":androidLib") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
-                defaultCompileSdk()
-                minSdk = 24
-                kotlinOptions {
-                    jvmTarget = DEFAULT_JAVA_VERSION.toString()
+                defaultConfig {
+                    minSdk = 24
+                    consumerProguardFiles("consumer-rules.pro")
                 }
             }
-            appendToBuildFile {
-                """
-                android.defaultConfig.consumerProguardFiles("consumer-rules.pro")
-                """.trimIndent()
-            }
-            addFile(
-                "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
-                """
-                package com.example.androidlib
-                class ClassInAndroidLib {
-                    fun methodToKeep() {}
-                    fun methodToRemove() {}
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
-                """.trimIndent()
-            )
-            addFile(
-                "consumer-rules.pro",
-                """
-                -keep class **.ClassInAndroidLib { void methodToKeep(); }
-                """.trimIndent()
-            )
+            }
+            files {
+                add(
+                    "src/main/java/com/example/androidlib/ClassInAndroidLib.kt",
+                    //language=kotlin
+                    """
+                        package com.example.androidlib
+                        class ClassInAndroidLib {
+                            fun methodToKeep() {}
+                            fun methodToRemove() {}
+                        }
+                    """.trimIndent()
+                )
+                add("consumer-rules.pro",
+                    """
+                        -keep class **.ClassInAndroidLib { void methodToKeep(); }
+                    """.trimIndent()
+                )
+            }
         }
-        subProject(":javaLib") {
-            plugins.add(PluginType.JAVA_LIBRARY)
-            plugins.add(PluginType.KOTLIN_JVM)
-            addFile(
-                "src/main/java/com/example/javalib/ClassInJavaLib.kt",
-                """
-                package com.example.javalib
-                class ClassInJavaLib {
-                    fun methodToKeep() {}
-                    fun methodToRemove() {}
-                }
-                """.trimIndent()
-            )
-            createShrinkRules("-keep class **.ClassInJavaLib { void methodToKeep(); }", forJar = true).apply {
-                (versionedShrinkRules + legacyProguardRules).forEach { (path, contents) ->
-                    addFile("src/main/resources/$path", contents)
+        genericProject(":javaLib") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            applyPlugin(PluginType.KOTLIN_JVM)
+            files {
+                add(
+                    "src/main/java/com/example/javalib/ClassInJavaLib.kt",
+                    //language=kotlin
+                    """
+                    package com.example.javalib
+                    class ClassInJavaLib {
+                        fun methodToKeep() {}
+                        fun methodToRemove() {}
+                    }
+                """.trimIndent())
+
+                createShrinkRules("-keep class **.ClassInJavaLib { void methodToKeep(); }", forJar = true).apply {
+                    (versionedShrinkRules + legacyProguardRules).forEach { (path, contents) ->
+                        add("src/main/resources/$path", contents)
+                    }
                 }
             }
         }
@@ -139,21 +140,23 @@ class TargetedShrinkRulesIntegrationTest {
 
     @Test
     fun `test targeted shrinking rules are processed correctly`() {
-        project.execute(":app:assembleRelease")
-        project.getSubproject(":app").getApk(GradleTestProject.ApkType.RELEASE).use { apk ->
-            assertThat(apk).hasClass("Lcom/example/androidlib/ClassInAndroidLib;").that().apply {
+        val build = rule.build
+
+        build.executor.run(":app:assembleRelease")
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            hasClass("Lcom/example/androidlib/ClassInAndroidLib;").that().apply {
                 hasMethods("methodToKeep")
                 doesNotHaveMethod("methodToRemove")
             }
-            assertThat(apk).hasClass("Lcom/example/javalib/ClassInJavaLib;").that().apply {
+            hasClass("Lcom/example/javalib/ClassInJavaLib;").that().apply {
                 hasMethods("methodToKeep")
                 doesNotHaveMethod("methodToRemove")
             }
-            assertThat(apk).hasClass(ClassInExternalAndroidLib::class.java).that().apply {
+            hasClass(ClassInExternalAndroidLib::class.java).that().apply {
                 hasMethods("methodToKeep")
                 doesNotHaveMethod("methodToRemove")
             }
-            assertThat(apk).hasClass(ClassInExternalJavaLib::class.java).that().apply {
+            hasClass(ClassInExternalJavaLib::class.java).that().apply {
                 hasMethods("methodToKeep")
                 doesNotHaveMethod("methodToRemove")
             }
