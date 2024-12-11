@@ -18,14 +18,16 @@ package com.android.backup
 
 import com.android.backup.BackupResult.Success
 import com.android.backup.BackupService.Companion.APP_DATA_FILE
-import com.android.backup.BackupService.Companion.APP_ID
 import com.android.backup.BackupService.Companion.BACKUP_FILES
+import com.android.backup.BackupService.Companion.METADATA_FILE
 import com.android.backup.BackupService.Companion.PM_DATA_FILE
+import com.android.backup.BackupService.Companion.PROPERTY_APPLICATION_ID
+import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
 import com.android.backup.BackupService.Companion.TOKEN_FILE
-import com.android.backup.BackupService.Companion.getApplicationId
+import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
-import io.ktor.utils.io.core.toByteArray
 import java.nio.file.Path
+import java.util.Properties
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -61,7 +63,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               reportProgress("Running backup")
               adbServices.backupNow(applicationId, type)
               reportProgress("Fetching backup")
-              pullBackup(adbServices, applicationId, backupFile)
+              pullBackup(adbServices, BackupMetadata(applicationId, type), backupFile)
             }
           } finally {
             reportProgress("Cleaning up")
@@ -72,6 +74,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       Success
     } catch (e: Throwable) {
       backupFile.deleteIfExists()
+
       e.toBackupResult()
     }
   }
@@ -88,7 +91,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         withSetup(TRANSPORT_CLOUD) {
           ZipFile(backupFile.pathString).use { zip ->
             val token = zip.getRestoreToken()
-            val applicationId = zip.getApplicationId()
+            val applicationId = zip.getMetaData().applicationId
             withTestApplicationId(applicationId) {
               reportProgress("Initializing backup transport")
               initializeTransport(TRANSPORT_CLOUD)
@@ -126,15 +129,14 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
 
   private suspend fun pullBackup(
     adbServices: AdbServices,
-    applicationId: String,
+    metadata: BackupMetadata,
     backupFile: Path,
   ) {
     ZipOutputStream(backupFile.outputStream()).use { zip ->
       zip.putContent(adbServices, TOKEN_FILE)
       zip.putContent(adbServices, PM_DATA_FILE)
       zip.putContent(adbServices, APP_DATA_FILE)
-      zip.putNextEntry(ZipEntry(APP_ID))
-      zip.write(applicationId.toByteArray())
+      zip.putMetadata(adbServices, metadata)
     }
   }
 
@@ -149,7 +151,21 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     adbServices.readContent(this@putContent, CONTENT_URI + name)
   }
 
+  private suspend fun ZipOutputStream.putMetadata(
+    adbServices: AdbServices,
+    metadata: BackupMetadata,
+  ) {
+    withContext(adbServices.ioContext) {
+      putNextEntry(ZipEntry(METADATA_FILE))
+      val properties = Properties()
+      properties[PROPERTY_APPLICATION_ID] = metadata.applicationId
+      properties[PROPERTY_BACKUP_TYPE] = metadata.backupType.name
+      properties.store(this@putMetadata, null)
+    }
+  }
+
   companion object {
+
     const val BACKUP_STEPS = 12
     const val RESTORE_STEPS = 11
   }

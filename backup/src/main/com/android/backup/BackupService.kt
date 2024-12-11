@@ -21,6 +21,7 @@ import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.tools.environment.Logger
 import java.math.BigInteger
 import java.nio.file.Path
+import java.util.Properties
 import java.util.zip.ZipFile
 import kotlin.io.path.pathString
 
@@ -47,10 +48,13 @@ interface BackupService {
   suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean
 
   companion object {
+
     const val TOKEN_FILE = "restore_token_file"
     const val PM_DATA_FILE = "pm_backup_data"
     const val APP_DATA_FILE = "app_backup_data"
-    const val APP_ID = "app_id"
+    const val METADATA_FILE = "metadata.txt"
+    const val PROPERTY_APPLICATION_ID = "application-id"
+    const val PROPERTY_BACKUP_TYPE = "backup-type"
     val BACKUP_FILES = setOf(PM_DATA_FILE, TOKEN_FILE, APP_DATA_FILE)
 
     fun getInstance(adbSession: AdbSession, logger: Logger, minGmsVersion: Int): BackupService =
@@ -60,12 +64,12 @@ interface BackupService {
      * Verifies a backup file is valid and returns the application id of the associated app
      *
      * @param backupFile The path of a backup file to validate
-     * @return The application id of the associated app
+     * @return The backup metadata from the backup file
      * @throws Exception `backupFile` is not valid
      */
-    fun validateBackupFile(backupFile: Path): String {
+    fun validateBackupFile(backupFile: Path): BackupMetadata {
       ZipFile(backupFile.pathString).use { zip ->
-        val applicationId = zip.getApplicationId()
+        val metadata = zip.getMetaData()
         zip.getRestoreToken()
         val filenames = zip.entries().asSequence().mapTo(mutableSetOf()) { it.name }
         if (!filenames.containsAll(BACKUP_FILES)) {
@@ -74,7 +78,7 @@ interface BackupService {
             "File is not a valid backup file: ${backupFile.pathString} ($filenames)",
           )
         }
-        return applicationId
+        return metadata
       }
     }
 
@@ -90,19 +94,24 @@ interface BackupService {
       }
     }
 
-    internal fun ZipFile.getApplicationId(): String {
+    internal fun ZipFile.getMetaData(): BackupMetadata {
       return try {
-        getInputStream(getEntry(APP_ID)).reader().readText()
+        val properties = Properties()
+        properties.load(getInputStream(getEntry(METADATA_FILE)))
+        BackupMetadata(
+          properties.getProperty(PROPERTY_APPLICATION_ID),
+          BackupType.valueOf(properties.getProperty(PROPERTY_BACKUP_TYPE)),
+        )
       } catch (e: Exception) {
         throw BackupException(
           INVALID_BACKUP_FILE,
-          "Backup file does not contain a valid application id: $name",
+          "Backup file does not contain metadata: $name",
           e,
         )
       }
     }
 
-    fun getApplicationId(backupFile: Path): String {
+    fun getMetadata(backupFile: Path): BackupMetadata {
       val zipFile =
         try {
           ZipFile(backupFile.toFile())
@@ -113,7 +122,7 @@ interface BackupService {
             e,
           )
         }
-      return zipFile.getApplicationId()
+      return zipFile.use { it.getMetaData() }
     }
   }
 }
