@@ -111,6 +111,16 @@ public class SdkVersionInfo {
     public static final int LOWEST_ACTIVE_API_TV = 21;
 
     /**
+     * The highest known API level for XR.
+     */
+    public static final int HIGHEST_KNOWN_API_XR = 34;
+
+    /**
+     * The lowest active API for XR, minimum required by libraries.
+     */
+    public static final int LOWEST_ACTIVE_API_XR = 30;
+
+    /**
      * The lowest api level we can accept for compileSdkVersion for
      * a new project. Make sure design and appcompat is supported.
      */
