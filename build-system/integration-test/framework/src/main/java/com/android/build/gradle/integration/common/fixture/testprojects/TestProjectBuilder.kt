@@ -293,6 +293,17 @@ interface DependenciesBuilder {
     fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
+     * adds a dependency to the [configurationName] configuration.
+     *
+     * See [implementation] for details
+     */
+    fun add(
+        configurationName: String,
+        dependency: Any,
+        action: (DependencyBuilder.() -> Unit)? = null
+    )
+
+    /**
      * adds a dependency in the implementation scope.
      *
      * The instance being passed as a parameter must be:

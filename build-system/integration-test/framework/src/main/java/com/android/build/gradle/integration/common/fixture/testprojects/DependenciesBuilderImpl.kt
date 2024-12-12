@@ -64,8 +64,8 @@ class DependenciesBuilderImpl : DependenciesBuilder {
         }
     }
 
-    private fun handleDependency(
-        scope: String,
+    override fun add(
+        configurationName: String,
         dependency: Any,
         action: (DependencyBuilder.() -> Unit)?
     ) {
@@ -75,81 +75,81 @@ class DependenciesBuilderImpl : DependenciesBuilder {
             DependencyData(dependency, builder.capability)
         } ?: DependencyData(dependency)
 
-        dependencies.add(scope to data)
+        dependencies.add(configurationName to data)
     }
 
     override fun implementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("implementation", dependency, action)
+        add("implementation", dependency, action)
     }
 
     override fun api(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("api", dependency, action)
+        add("api", dependency, action)
     }
 
     override fun compileOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("compileOnly", dependency, action)
+        add("compileOnly", dependency, action)
     }
 
     override fun compileOnlyApi(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("compileOnlyApi", dependency, action)
+        add("compileOnlyApi", dependency, action)
     }
 
     override fun runtimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("runtimeOnly", dependency, action)
+        add("runtimeOnly", dependency, action)
     }
 
     override fun testImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("testImplementation", dependency, action)
+        add("testImplementation", dependency, action)
     }
 
     override fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("testRuntimeOnly", dependency, action)
+        add("testRuntimeOnly", dependency, action)
     }
 
     override fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("testFixturesImplementation", dependency, action)
+        add("testFixturesImplementation", dependency, action)
     }
 
     override fun androidTestImplementation(
         dependency: Any,
         action: (DependencyBuilder.() -> Unit)?
     ) {
-        handleDependency("androidTestImplementation", dependency, action)
+        add("androidTestImplementation", dependency, action)
     }
 
     override fun include(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("include", dependency, action)
+        add("include", dependency, action)
     }
 
     override fun requiredSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("requiredSdk", dependency, action)
+        add("requiredSdk", dependency, action)
     }
 
     override fun optionalSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("optionalSdk", dependency, action)
+        add("optionalSdk", dependency, action)
     }
 
     override fun lintPublish(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("lintPublish", dependency, action)
+        add("lintPublish", dependency, action)
     }
 
     override fun lintChecks(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("lintChecks", dependency, action)
+        add("lintChecks", dependency, action)
     }
 
     override fun screenshotTestImplementation(
         dependency: Any,
         action: (DependencyBuilder.() -> Unit)?
     ) {
-        handleDependency("screenshotTestImplementation", dependency, action)
+        add("screenshotTestImplementation", dependency, action)
     }
 
     override fun coreLibraryDesugaring(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("coreLibraryDesugaring", dependency, action)
+        add("coreLibraryDesugaring", dependency, action)
     }
 
     override fun ksp(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        handleDependency("ksp", dependency, action)
+        add("ksp", dependency, action)
     }
 
     override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {

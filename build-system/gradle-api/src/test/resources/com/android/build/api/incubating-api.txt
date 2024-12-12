@@ -749,3 +749,7 @@ https://issuetracker.google.com/384516080
 https://issuetracker.google.com/385406230
   * com.android.build.api.dsl.ManagedVirtualDevice.getSdkExtensionVersion: java.lang.Integer ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setSdkExtensionVersion: void (java.lang.Integer)
+https://issuetracker.google.com/387328291
+  * com.android.build.api.variant.AndroidComponentsExtension.addKspConfigurations: void (boolean)
+  * com.android.build.api.variant.AndroidComponentsExtension.addSourceSetConfigurations: void (java.lang.String)
+  * com.android.build.api.variant.Component.getResolvableConfiguration: org.gradle.api.artifacts.Configuration (java.lang.String)

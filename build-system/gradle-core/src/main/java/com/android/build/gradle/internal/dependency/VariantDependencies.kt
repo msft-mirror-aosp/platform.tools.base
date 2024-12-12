@@ -72,6 +72,7 @@ import org.gradle.api.specs.Spec
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import java.io.File
 import java.util.concurrent.Callable
+import java.util.function.Function
 import java.util.function.Predicate
 
 interface ResolutionResultProvider {
@@ -104,6 +105,7 @@ class VariantDependencies internal constructor(
     private val projectOptions: ProjectOptions,
     val isLibraryConstraintsApplied: Boolean,
     isSelfInstrumenting: Boolean,
+    val sourceSetConfigurationsMap: Map<String, Function<String, String>>,
 ): ResolutionResultProvider {
 
     // Never exclude artifacts for self-instrumenting, test-only modules.
@@ -547,7 +549,8 @@ class VariantDependencies internal constructor(
                 project = project,
                 projectOptions = projectOptions,
                 isLibraryConstraintsApplied = false,
-                isSelfInstrumenting = false
+                isSelfInstrumenting = false,
+                sourceSetConfigurationsMap = emptyMap() // TODO(b/317215060) - implement for KMP
             )
         }
 

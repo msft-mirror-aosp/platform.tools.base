@@ -2505,6 +2505,7 @@ package com.android.build.api.variant {
   }
 
   public interface AndroidComponentsExtension<DslExtensionT extends com.android.build.api.dsl.CommonExtension<?, ?, ?, ?, ?, ?>, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
+    method @org.gradle.api.Incubating public void addSourceSetConfigurations(String suffix);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantBuilderT,kotlin.Unit> callback);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantBuilderT> callback);
     method @Deprecated public void finalizeDSl(org.gradle.api.Action<DslExtensionT> callback);
@@ -2720,6 +2721,7 @@ package com.android.build.api.variant {
     method @org.gradle.api.Incubating public com.android.build.api.variant.JavaCompilation getJavaCompilation();
     method @org.gradle.api.Incubating public com.android.build.api.variant.LifecycleTasks getLifecycleTasks();
     method public org.gradle.api.provider.Provider<java.lang.String> getNamespace();
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getResolvableConfiguration(String sourceSetConfigurationsAffix);
     method public org.gradle.api.artifacts.Configuration getRuntimeConfiguration();
     method public com.android.build.api.variant.Sources getSources();
     method @Deprecated public void setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode mode);
