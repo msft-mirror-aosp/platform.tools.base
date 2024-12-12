@@ -723,6 +723,11 @@ abstract class R8Task @Inject constructor(
             workerExecutor.processIsolation { spec ->
                 spec.forkOptions { forkOptions ->
                     forkOptions.jvmArgs(executionOptions.get().jvmArgs)
+                    // Also copy over system properties (see b/380110863).
+                    // Once we have a list of R8-specific system properties (tracked at b/383727630),
+                    // we'll copy over those properties only (and also define those properties as
+                    // task inputs).
+                    forkOptions.systemProperties(System.getProperties().mapKeys { it.key.toString() })
                 }
             }.submit(R8Runnable::class.java, workerAction)
         } else {

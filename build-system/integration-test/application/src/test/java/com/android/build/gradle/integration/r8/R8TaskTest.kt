@@ -19,7 +19,9 @@ package com.android.build.gradle.integration.r8
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
+import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
@@ -212,6 +214,29 @@ class R8TaskTest {
         )
         val result = executor.run(":app:assembleRelease")
         assertThat(result.getTask(":app:minifyReleaseWithR8")).didWork()
+    }
+
+    /** Regression test for b/380110863. */
+    @Test
+    fun `test system properties are passed to forked process`() {
+        rule.build.reconfigureSettings {
+            applyPlugin(PluginType.ANDROID_SETTINGS)
+            android.execution {
+                profiles {
+                    create("runInSeparateProcess") {
+                        it.r8.runInSeparateProcess = true
+                    }
+                }
+                defaultProfile = "runInSeparateProcess"
+            }
+        }
+        val result = executor
+            .withArgument("-Dcom.android.tools.r8.experimental.enablewhyareyounotinlining=invalid_value")
+            .expectFailure()
+            .run(":app:minifyReleaseWithR8")
+        TruthHelper.assertThat(result.failureMessage).contains(
+            "Expected value of com.android.tools.r8.experimental.enablewhyareyounotinlining to be a boolean, but was: invalid_value"
+        )
     }
 
     private fun enableMultiDex() {
