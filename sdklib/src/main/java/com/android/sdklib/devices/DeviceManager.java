@@ -526,6 +526,15 @@ public class DeviceManager {
                 getBooleanVal(sensors.contains(Sensor.ACCELEROMETER)));
         props.put(HardwareProperties.HW_ORIENTATION_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
+        props.put(HardwareProperties.HW_GYROSCOPE,
+                getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
+        props.put(HardwareProperties.HW_MAGNETIC_FIELD_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.COMPASS)));
+        props.put(HardwareProperties.HW_PRESSURE_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.BAROMETER)));
+        props.put(HardwareProperties.HW_LIGHT_SENSOR,
+                getBooleanVal(sensors.contains(Sensor.LIGHT_SENSOR)));
+
         props.put(HardwareProperties.HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
         props.put(HardwareProperties.HW_SDCARD, getBooleanVal(hw.hasSdCard()));
         props.put(HardwareProperties.HW_LCD_DENSITY,

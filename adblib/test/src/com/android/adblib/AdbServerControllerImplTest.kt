@@ -15,11 +15,11 @@
  */
 package com.android.adblib
 
+import com.android.adblib.testing.FakeAdbSessionHost
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
-import com.android.adblib.testingutils.TestingAdbSessionHost
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.test.assertContentEquals
@@ -33,10 +33,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.nio.file.Path
 import java.nio.file.Paths
 
 class AdbServerControllerImplTest {
@@ -68,7 +68,8 @@ class AdbServerControllerImplTest {
         registerCloseable(
             FakeAdbServerProvider().also { it.installDefaultCommandHandlers() }.build().start()
         )
-    private val host = registerCloseable(TestingAdbSessionHost())
+    private val host = registerCloseable(FakeAdbSessionHost())
+    private val processRunner = host.processRunner
 
     @Test
     fun testNotStarted() {
@@ -105,13 +106,12 @@ class AdbServerControllerImplTest {
     fun testCreateChannelThrowsTimeoutException_whenTimesOutOnRestart(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            val processRunner = FakeProcessRunner(100)
+            processRunner.delayByMs = 100
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
                         host,
-                        configFlow,
-                        processRunner = processRunner
+                        configFlow
                     )
                 )
             configFlow.update {
@@ -190,13 +190,11 @@ class AdbServerControllerImplTest {
     @Test
     fun testCanStartAndStopAdbServerFromFile(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner()
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -225,13 +223,12 @@ class AdbServerControllerImplTest {
     @Test
     fun testRestartIsNoop_whenStartIsInProgress(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner(50)
+        processRunner.delayByMs = 50
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -260,13 +257,12 @@ class AdbServerControllerImplTest {
     @Test
     fun testRestartIsNoop_whenStopIsInProgress(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner(50)
+        processRunner.delayByMs = 50
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -298,13 +294,12 @@ class AdbServerControllerImplTest {
     fun testOnlyOneAdbServerRestartIsTriggered_whenConcurrentRestarts(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            val processRunner = FakeProcessRunner(50)
+            processRunner.delayByMs = 50
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
                         host,
-                        configFlow,
-                        processRunner = processRunner
+                        configFlow
                     )
                 )
             configFlow.update {
@@ -326,13 +321,12 @@ class AdbServerControllerImplTest {
     fun testOnlyOneAdbServerStartIsTriggered_whenStartIsCalledConcurrently(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            val processRunner = FakeProcessRunner(50)
+            processRunner.delayByMs = 50
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
                         host,
-                        configFlow,
-                        processRunner = processRunner
+                        configFlow
                     )
                 )
             configFlow.update {
@@ -352,13 +346,12 @@ class AdbServerControllerImplTest {
     fun testOnlyOneAdbServerStopIsTriggered_whenStopIsCalledConcurrently(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            val processRunner = FakeProcessRunner(50)
+            processRunner.delayByMs = 50
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
                         host,
-                        configFlow,
-                        processRunner = processRunner
+                        configFlow
                     )
                 )
             configFlow.update {
@@ -380,13 +373,11 @@ class AdbServerControllerImplTest {
     fun testCallingRestartAfterAnotherRestartCompleted_shouldRestartAgain(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            val processRunner = FakeProcessRunner()
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
                         host,
-                        configFlow,
-                        processRunner = processRunner
+                        configFlow
                     )
                 )
             configFlow.update {
@@ -410,13 +401,11 @@ class AdbServerControllerImplTest {
     @Test
     fun testCanStartAfterTheFirstStartFails(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner()
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -433,6 +422,7 @@ class AdbServerControllerImplTest {
                 IllegalStateException("Exception in a first call to `controller.start()`")
             try {
                 controller.start()
+                fail("Should not reach")
             } catch (_: IllegalStateException) {
                 // Ignore: This exception is expected
             }
@@ -455,13 +445,11 @@ class AdbServerControllerImplTest {
     @Test
     fun testCanStopAfterTheFirstStopFails(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner()
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -480,6 +468,7 @@ class AdbServerControllerImplTest {
                 IllegalStateException("Exception in a first call to `controller.start()`")
             try {
                 controller.stop()
+                fail("Should not reach")
             } catch (_: IllegalStateException) {
                 // Ignore: This exception is expected
             }
@@ -502,13 +491,11 @@ class AdbServerControllerImplTest {
     @Test
     fun testStartDoesNotSpecifyPortParamWhenUsingDefaultAdbPort(): Unit = runBlockingWithTimeout {
         // Prepare
-        val processRunner = FakeProcessRunner()
         val controller =
             registerCloseable(
                 AdbServerControllerImpl(
                     host,
-                    configFlow,
-                    processRunner = processRunner
+                    configFlow
                 )
             )
         configFlow.update {
@@ -525,34 +512,6 @@ class AdbServerControllerImplTest {
         // Assert
         assertTrue(controller.isStarted)
         assertEquals(listOf(ADB_FILE_PATH.toString(), "start-server"), processRunner.lastCommand)
-    }
-
-    private class FakeProcessRunner(private val delayByMs: Long = 0) :
-        AdbServerControllerImpl.ProcessRunner {
-
-        var lastDirectory: String? = null
-        var lastCommand: List<String>? = null
-        val allCommands: MutableList<List<String>> = mutableListOf()
-        var throwOnNextCommand: Throwable? = null
-
-        override suspend fun runProcess(
-            executable: Path,
-            args: List<String>,
-            envVars: Map<String, String>
-        ) {
-            delay(delayByMs)
-            throwOnNextCommand?.let { throw it }
-            val command = listOf(executable.toString()) + args
-            lastDirectory = executable.parent.toString()
-            lastCommand = command
-            allCommands.add(command)
-        }
-
-        fun reset() {
-            lastDirectory = null
-            lastCommand = null
-            allCommands.clear()
-        }
     }
 
     companion object {

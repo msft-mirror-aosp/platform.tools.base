@@ -16,41 +16,54 @@
 
 package com.android.build.gradle.integration.model
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.builder.model.v2.ide.SyncIssue
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 class FlavoredAppModelTest: ModelComparator() {
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += listOf("model")
                 productFlavors {
-                    named("basic") { dimension = "model" }
-                    named("pro") { dimension = "model" }
+                    create("basic") { it.dimension = "model" }
+                    create("pro") { it.dimension = "model" }
                 }
             }
+            pluginCallback = DisableSomeVariantCallback::class.java
+        }
+    }
 
-            // we don't need all the variants. We just want to see the content of one variant in
-            // the model, so we disable the rest
-            androidComponents {
-                disableVariant("basicDebug")
-                disableVariant("basicRelease")
-                disableVariant("proRelease")
+    class DisableSomeVariantCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withName("basicDebug")) {
+                    it.enable = false
+                }
+                beforeVariants(selector().withName("basicRelease")) {
+                    it.enable = false
+                }
+                beforeVariants(selector().withName("proRelease")) {
+                    it.enable = false
+                }
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -62,36 +75,48 @@ class FlavoredAppModelTest: ModelComparator() {
 
 class MultiFlavoredAppModelTest: ModelComparator() {
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += listOf("model", "market")
                 productFlavors {
-                    named("basic") { dimension = "model" }
-                    named("pro") { dimension = "model" }
-                    named("play") { dimension = "market" }
-                    named("other") { dimension = "market" }
+                    create("basic") { it.dimension = "model" }
+                    create("pro") { it.dimension = "model" }
+                    create("play") { it.dimension = "market" }
+                    create("other") { it.dimension = "market" }
                 }
             }
+            pluginCallback = DisableBunchOfVariantCallback::class.java
+        }
+    }
 
-            // we don't need all the variants. We just want to see the content of one variant in
-            // the model, so we disable the rest
-            androidComponents {
-                disableVariant("basicPlayDebug")
-                disableVariant("proOtherDebug")
-                disableVariant("basicOtherDebug")
-                disableVariant("proPlayRelease")
-                disableVariant("basicPlayRelease")
-                disableVariant("proOtherRelease")
-                disableVariant("basicOtherRelease")
+    class DisableBunchOfVariantCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                // disable all but proPlayDebug
+                beforeVariants(selector().withBuildType("release")) {
+                    it.enable = false
+                }
+                beforeVariants(selector().withName("basicPlayDebug")) {
+                    it.enable = false
+                }
+                beforeVariants(selector().withName("proOtherDebug")) {
+                    it.enable = false
+                }
+                beforeVariants(selector().withName("basicOtherDebug")) {
+                    it.enable = false
+                }
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -106,24 +131,29 @@ class MultiFlavoredAppModelTest: ModelComparator() {
  */
 class DisabledVariantInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidApplication { }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableVariant("debug")
-            }
+        androidApplication {
+            pluginCallback = DisableDebugVariantCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableDebugVariantCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withBuildType("debug")) {
+                    it.enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -146,24 +176,29 @@ class DisabledVariantInAppModelTest: ReferenceModelComparator(
  */
 class DisabledAndroidTestInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidApplication { }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableAndroidTest("debug")
-            }
+        androidApplication {
+            pluginCallback = DisableDebugAndroidTestCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableDebugAndroidTestCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withName("debug")) {
+                    it.androidTest.enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -187,24 +222,30 @@ class DisabledAndroidTestInAppModelTest: ReferenceModelComparator(
  */
 class DisabledUnitTestInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+        androidApplication {
         }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableUnitTest("debug")
-            }
+        androidApplication {
+            pluginCallback = DisableDebugUnitTestCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableDebugUnitTestCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withName("debug")) {
+                    it.hostTests.values.first().enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -227,32 +268,41 @@ class DisabledUnitTestInAppModelTest: ReferenceModelComparator(
  */
 class DisabledSingleVariantInFlavorAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += "foo"
                 productFlavors {
-                    named("one") {
-                        dimension = "foo"
+                    create("one") {
+                        it.dimension = "foo"
                     }
-                    named("two") {
-                        dimension = "foo"
+                    create("two") {
+                        it.dimension = "foo"
                     }
                 }
             }
         }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableVariant("oneDebug")
-            }
+        androidApplication {
+            pluginCallback = DisableOneDebugVariantCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableOneDebugVariantCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withName("oneDebug")) {
+                    it.enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -276,33 +326,41 @@ class DisabledSingleVariantInFlavorAppModelTest: ReferenceModelComparator(
  */
 class DisabledVariantByBuildTypeInFlavorAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += "foo"
                 productFlavors {
-                    named("one") {
-                        dimension = "foo"
+                    create("one") {
+                        it.dimension = "foo"
                     }
-                    named("two") {
-                        dimension = "foo"
+                    create("two") {
+                        it.dimension = "foo"
                     }
                 }
             }
         }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableVariant("oneDebug")
-                disableVariant("twoDebug")
-            }
+        androidApplication {
+            pluginCallback = DisableAllDebugVariantsCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableAllDebugVariantsCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withBuildType("debug")) {
+                    it.enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -326,33 +384,41 @@ class DisabledVariantByBuildTypeInFlavorAppModelTest: ReferenceModelComparator(
  */
 class DisabledVariantByFlavorInFlavorAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication {
             android {
-                setUpHelloWorld()
+                flavorDimensions += "foo"
                 productFlavors {
-                    named("one") {
-                        dimension = "foo"
+                    create("one") {
+                        it.dimension = "foo"
                     }
-                    named("two") {
-                        dimension = "foo"
+                    create("two") {
+                        it.dimension = "foo"
                     }
                 }
             }
         }
     },
     deltaConfig = {
-        rootProject {
-            androidComponents {
-                disableVariant("oneDebug")
-                disableVariant("oneRelease")
-            }
+        androidApplication {
+            pluginCallback = DisableAllOneVariantsCallback::class.java
         }
     },
     syncOptions = {
         ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
     }
 ) {
+    class DisableAllOneVariantsCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().withFlavor("foo" to "one")) {
+                    it.enable = false
+                }
+            }
+        }
+    }
 
     @Test
     fun `test BasicAndroidProject model`() {
@@ -370,26 +436,31 @@ class DisabledVariantByFlavorInFlavorAppModelTest: ReferenceModelComparator(
     }
 }
 
-
 class NoVariantModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                defaultCompileSdk()
-            }
-            androidComponents {
-                disableVariant("debug")
-                disableVariant("release")
+    val rule = GradleRule.from {
+        androidApplication {
+            pluginCallback = DisableAllVariantsCallback::class.java
+        }
+    }
+
+    class DisableAllVariantsCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                beforeVariants(selector().all()) {
+                    it.enable = false
+                }
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels()
 

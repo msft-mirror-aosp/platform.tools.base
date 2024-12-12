@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.TestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
@@ -29,7 +30,7 @@ import org.junit.Test
 /** Integration test for the dependency checker.  */
 class DependencyCheckerTest {
 
-    private val testProject =
+    private val testProject: TestProject =
         MinimalSubProject.app("com.example.app").apply {
             appendToBuild("afterEvaluate { configurations.debugRuntimeClasspath." +
                     "incoming.getArtifacts().getArtifactFiles().getFiles() }")

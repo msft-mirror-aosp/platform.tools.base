@@ -17,22 +17,20 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AssetPackExtension
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
 /*
- * Support for Android AI Pack in the [GradleRule] fixture
+ * Support for Android Asset Pack in the [GradleRule] fixture
  */
 
 /**
@@ -49,14 +47,16 @@ interface AssetPackDefinition: GradleProjectDefinition {
 /**
  * Implementation of [AssetPackDefinition]
  */
-internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path),
+internal class AssetPackDefinitionImpl(
+    path: String,
+) : GradleProjectDefinitionImpl(path),
     AssetPackDefinition {
 
     init {
         applyPlugin(PluginType.ANDROID_ASSET_PACK)
     }
 
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
@@ -74,11 +74,13 @@ internal class AssetPackDefinitionImpl(path: String) : GradleProjectDefinitionIm
         action(assetPack)
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("assetPack") {
                 contentHolder.writeContent(this)
             }
+
+            emptyLine()
         }
     }
 }
@@ -97,15 +99,9 @@ interface AssetPackProject: GradleProject<AssetPackDefinition> {
 internal class AssetPackImpl(
     location: Path,
     projectDefinition: AssetPackDefinition,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : GradleProjectImpl<AssetPackDefinition>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder
 ),
     AssetPackProject {
 
@@ -124,5 +120,5 @@ internal class ReversibleAssetPackProject(
 ) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
     parentProject,
 ), AssetPackProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }

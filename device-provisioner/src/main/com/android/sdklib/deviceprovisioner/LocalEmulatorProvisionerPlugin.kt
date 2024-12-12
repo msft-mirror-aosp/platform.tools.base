@@ -40,6 +40,7 @@ import com.android.sdklib.internal.avd.HardwareProperties
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.intellij.icons.AllIcons
+import java.awt.Component
 import java.io.IOException
 import java.nio.file.Path
 import java.time.Duration
@@ -139,10 +140,10 @@ internal constructor(
     suspend fun rescanAvds(): List<AvdInfo>
 
     /** Prompts the user to create an AVD. Returns true if an AVD was created. */
-    suspend fun createAvd(): Boolean
+    suspend fun createAvd(parent: Component?): Boolean
 
     /** Prompts the user to edit the given AVD. Returns true if the AVD was changed. */
-    suspend fun editAvd(avdInfo: AvdInfo): Boolean
+    suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean
 
     suspend fun startAvd(avdInfo: AvdInfo)
 
@@ -154,7 +155,7 @@ internal constructor(
 
     suspend fun showOnDisk(avdInfo: AvdInfo)
 
-    suspend fun duplicateAvd(avdInfo: AvdInfo)
+    suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo)
 
     suspend fun wipeData(avdInfo: AvdInfo)
 
@@ -282,8 +283,8 @@ internal constructor(
         MutableStateFlow(defaultPresentation.fromContext().copy(label = "Create Virtual Device"))
           .asStateFlow()
 
-      override suspend fun create() {
-        if (avdManager.createAvd() != null) {
+      override suspend fun create(parent: Component?) {
+        if (avdManager.createAvd(parent) != null) {
           refreshDevices()
         }
       }
@@ -654,8 +655,8 @@ internal constructor(
     object : EditAction {
       override val presentation = MutableStateFlow(defaultPresentation.fromContext()).asStateFlow()
 
-      override suspend fun edit() {
-        if (avdManager.editAvd(onDiskAvdInfo)) {
+      override suspend fun edit(parent: Component?) {
+        if (avdManager.editAvd(parent, onDiskAvdInfo)) {
           refreshDevices()
         }
       }
@@ -728,8 +729,8 @@ internal constructor(
     object : DuplicateAction {
       override val presentation = MutableStateFlow(defaultPresentation.fromContext())
 
-      override suspend fun duplicate() {
-        avdManager.duplicateAvd(onDiskAvdInfo)
+      override suspend fun duplicate(parent: Component?) {
+        avdManager.duplicateAvd(parent, onDiskAvdInfo)
         refreshDevices()
       }
     }

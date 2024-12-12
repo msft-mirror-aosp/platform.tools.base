@@ -27,7 +27,7 @@ class BuiltInKotlinAutomaticStdlibTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)
@@ -48,7 +48,7 @@ class BuiltInKotlinAutomaticStdlibTest {
     @Test
     fun testKotlinStdlibAddedByUser() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 dependencies {
                     // This version number should not be changed when upgrading Kotlin. If it must
                     // be changed, it should be set to a version other than KOTLIN_VERSION_FOR_TESTS
@@ -69,7 +69,7 @@ class BuiltInKotlinAutomaticStdlibTest {
     @Test
     fun testKotlinCoreLibrariesVersion() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 kotlin {
                     // This version number should not be changed when upgrading Kotlin. If it must
                     // be changed, it should be set to a version other than KOTLIN_VERSION_FOR_TESTS
@@ -90,9 +90,11 @@ class BuiltInKotlinAutomaticStdlibTest {
     @Test
     fun testKotlinStdlibDefaultDependencyFalse() {
         val build =
-            rule.configure()
-                .withProperties { add("kotlin.stdlib.default.dependency", "false") }
-                .build {}
+            rule.build {
+                gradleProperties {
+                    add("kotlin.stdlib.default.dependency", "false")
+                }
+            }
         val result =
             build.executor
                 .run(":app:dependencies", "--configuration", "debugCompileClasspath")

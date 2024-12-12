@@ -2,32 +2,32 @@
    > defaultConfig:
       - sourceProvider:
          - renderscriptDirectories:
-            * {PROJECT}/src/main/rs{!}{ADDED}
+            * {PROJECT}/app/src/main/rs{!}{ADDED}
       - androidTestSourceProvider:
          - renderscriptDirectories:
-            * {PROJECT}/src/androidTest/rs{!}{ADDED}
+            * {PROJECT}/app/src/androidTest/rs{!}{ADDED}
       - unitTestSourceProvider:
          - renderscriptDirectories:
-            * {PROJECT}/src/test/rs{!}{ADDED}
+            * {PROJECT}/app/src/test/rs{!}{ADDED}
    < defaultConfig
    > buildTypes:
       > debug:
          - sourceProvider:
             - renderscriptDirectories:
-               * {PROJECT}/src/debug/rs{!}{ADDED}
+               * {PROJECT}/app/src/debug/rs{!}{ADDED}
          - androidTestSourceProvider:
             - renderscriptDirectories:
-               * {PROJECT}/src/androidTestDebug/rs{!}{ADDED}
+               * {PROJECT}/app/src/androidTestDebug/rs{!}{ADDED}
          - unitTestSourceProvider:
             - renderscriptDirectories:
-               * {PROJECT}/src/testDebug/rs{!}{ADDED}
+               * {PROJECT}/app/src/testDebug/rs{!}{ADDED}
       < debug
       - release:
          - sourceProvider:
             - renderscriptDirectories:
-               * {PROJECT}/src/release/rs{!}{ADDED}
+               * {PROJECT}/app/src/release/rs{!}{ADDED}
          - unitTestSourceProvider:
             - renderscriptDirectories:
-               * {PROJECT}/src/testRelease/rs{!}{ADDED}
+               * {PROJECT}/app/src/testRelease/rs{!}{ADDED}
    < buildTypes
 < BasicAndroidProject

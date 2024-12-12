@@ -31,75 +31,75 @@ import kotlin.io.path.isRegularFile
 internal class PrivacySandboxSdkLinkAndroidResourcesTaskTest {
 
     @get:Rule
-    val rule = GradleRule.configure()
-        .withProperties {
-            add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
-        }.from{
-            androidLibrary(":androidLib1") {
-                android {
-                    namespace = "com.example.androidLib1"
-                    defaultConfig.minSdk = 12
-                }
-                files {
-                    add(
-                        "src/main/res/values/strings.xml",
-                        //language=xml
-                        """
-                            <resources>
-                                <string name="string_from_androidLib1">androidLib1</string>
-                                <string name="permission_name">androidLib1 permission</string>
-                                <string name="permission_label">androidLib1 label</string>
-                            </resources>
-                        """.trimIndent()
-                    )
-
-                    add(
-                        "src/main/res/layout/layout.xml",
-                        //language=xml
-                        """
-                            <?xml version="1.0" encoding="utf-8"?>
-                            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent">
-
-                                <TextView
-                                    android:id="@+id/string_from_androidLib1"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:text="TextView" />
-                            </LinearLayout>
-                        """.trimIndent()
-                    )
-                    add(
-                        "src/main/AndroidManifest.xml",
-                        //language=xml
-                        """
-                            <?xml version="1.0" encoding="utf-8"?>
-                            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                                      <permission
-                                      android:name = "@string/permission_name"
-                                      android:protectionLevel = "dangerous" />    <application />
-                            </manifest>
-                        """.trimIndent()
-                    )
-                }
+    val rule = GradleRule.from{
+        androidLibrary(":androidLib1") {
+            android {
+                namespace = "com.example.androidLib1"
+                defaultConfig.minSdk = 12
             }
-            privacySandboxSdk(":privacySdkSandbox1") {
-                android {
-                    buildToolsVersion = ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION.toString()
-                    minSdk = 19
-                    bundle {
-                        applicationId = "com.example.privacysandboxsdk"
-                        sdkProviderClassName = "Test"
-                        setVersion(major = 1, minor = 2, patch = 3)
-                    }
-                }
-                dependencies {
-                    include(project(":androidLib1"))
-                }
+            files {
+                add(
+                    "src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="string_from_androidLib1">androidLib1</string>
+                            <string name="permission_name">androidLib1 permission</string>
+                            <string name="permission_label">androidLib1 label</string>
+                        </resources>
+                    """.trimIndent()
+                )
+
+                add(
+                    "src/main/res/layout/layout.xml",
+                    //language=xml
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:id="@+id/string_from_androidLib1"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="TextView" />
+                        </LinearLayout>
+                    """.trimIndent()
+                )
+                add(
+                    "src/main/AndroidManifest.xml",
+                    //language=xml
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                                  <permission
+                                  android:name = "@string/permission_name"
+                                  android:protectionLevel = "dangerous" />    <application />
+                        </manifest>
+                    """.trimIndent()
+                )
             }
         }
+        privacySandboxSdk(":privacySdkSandbox1") {
+            android {
+                buildToolsVersion = ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION.toString()
+                minSdk = 19
+                bundle {
+                    applicationId = "com.example.privacysandboxsdk"
+                    sdkProviderClassName = "Test"
+                    setVersion(major = 1, minor = 2, patch = 3)
+                }
+            }
+            dependencies {
+                include(project(":androidLib1"))
+            }
+        }
+        gradleProperties {
+            add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
+        }
+    }
 
     @Test
     fun testGeneratesLinkedBundledResources() {

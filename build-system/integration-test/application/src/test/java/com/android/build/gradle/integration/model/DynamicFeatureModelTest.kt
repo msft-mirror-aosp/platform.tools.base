@@ -19,44 +19,39 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldDynamicFeatureModelTest : ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
-                dynamicFeatures += listOf(":feature")
+                dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
             }
         }
-        subProject(":feature") {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
-            android {
-                setUpHelloWorld()
-            }
+        androidFeature {
             dependencies {
-                implementation(project(":app"))
+                implementation(project(DEFAULT_APP_PATH))
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
         val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":app") }
+            { getProject(DEFAULT_APP_PATH) }
 
         with(result).compareAndroidProject(
             projectAction = appModelAction,
@@ -68,7 +63,7 @@ class HelloWorldDynamicFeatureModelTest : ModelComparator() {
         )
 
         val featureModelAction:  ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":feature") }
+            { getProject(DEFAULT_FEATURE_PATH) }
 
         with(result).compareAndroidProject(
             projectAction = featureModelAction,
@@ -86,44 +81,32 @@ class HelloWorldDynamicFeatureModelTest : ModelComparator() {
  * Similar to [HelloWorldDynamicFeatureModelTest], but with an app -> lib dependency
  */
 class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
-                dynamicFeatures += listOf(":feature")
+                dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
             }
             dependencies {
-                implementation(project(":lib"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":feature") {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
-            android {
-                setUpHelloWorld()
-            }
+        androidFeature {
             dependencies {
-                implementation(project(":app"))
+                implementation(project(DEFAULT_APP_PATH))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
         val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":app") }
+            { getProject(DEFAULT_APP_PATH) }
 
         with(result).compareVariantDependencies(
             projectAction = appModelAction,
@@ -131,7 +114,7 @@ class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
         )
 
         val featureModelAction:  ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":feature") }
+            { getProject(DEFAULT_FEATURE_PATH) }
 
         with(result).compareVariantDependencies(
             projectAction = featureModelAction,
@@ -142,24 +125,25 @@ class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
 
 class CompileSdkViaSettingsInDynamicFeatureModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
+        androidFeature(createMinimumProject = false) {
             android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
+                namespace = "com.example.feature"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test compileTarget`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -174,24 +158,20 @@ class CompileSdkViaSettingsInDynamicFeatureModelTest {
 
 class MinSdkViaSettingsInDynamicFeatureModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 minSdk = 23
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_DYNAMIC_FEATURE)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidFeature { }
     }
 
     @Test
     fun `test minSdkVersion`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

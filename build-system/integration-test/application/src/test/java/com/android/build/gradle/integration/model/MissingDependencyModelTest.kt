@@ -18,10 +18,7 @@ package com.android.build.gradle.integration.model
 
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.internal.ide.v2.UnresolvedDependencyImpl
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
@@ -32,8 +29,7 @@ class MissingDependencyModelTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
-            HelloWorldAndroid.setupJava(files)
+        androidApplication {
             dependencies {
                 implementation("foo:bar:1.1")
             }
@@ -55,32 +51,24 @@ class MissingDependencyModelTest {
 }
 
 class UnresolvedVariantDependencyModelTest {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                setUpHelloWorld()
                 buildTypes {
-                    named("staging") {}
+                    create("staging") { }
                 }
             }
             dependencies {
-                implementation(project(":lib"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "staging")
 

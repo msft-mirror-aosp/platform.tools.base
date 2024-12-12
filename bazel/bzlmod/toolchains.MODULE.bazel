@@ -4,6 +4,8 @@ msvc_tools_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_ru
 
 windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "windows_sdk_repository")
 
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
 macos_sdk_repository(
     name = "macos_sdk",
     build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
@@ -18,6 +20,11 @@ windows_sdk_repository(
     name = "windows_sdk",
     build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
+)
+
+local_repository(
+    name = "windows_toolchains",
+    path = "tools/base/bazel/toolchains/windows",
 )
 
 # CC toolchains
@@ -35,6 +42,9 @@ register_toolchains(
 register_toolchains(
     "//tools/base/bazel/toolchains/darwin:python_toolchain",
     "//prebuilts/python/linux-x86:python_toolchain",
+    # Bazel cannot auto-detect python on Windows yet
+    # See: https://github.com/bazelbuild/bazel/issues/7844
+    "@windows_toolchains//:python_toolchain",
 )
 
 # Java toolchains

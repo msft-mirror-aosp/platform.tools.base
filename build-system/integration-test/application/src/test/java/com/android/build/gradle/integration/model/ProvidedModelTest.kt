@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.integration.model
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.builder.model.v2.ide.GraphItem
 import com.android.builder.model.v2.ide.Library
 import com.android.builder.model.v2.ide.LibraryType
@@ -31,14 +29,9 @@ import org.junit.Test
  * This compares the list of provided libraries returned by v1 and v2.
  */
 class ProvidedModelTest {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 api("com.android.support:appcompat-v7:+")
                 api("com.google.guava:guava:19.0")
@@ -92,8 +85,7 @@ class ProvidedModelTest {
 
     @Test
     fun `test v2 isProvided`() {
-        val result = project
-            .modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

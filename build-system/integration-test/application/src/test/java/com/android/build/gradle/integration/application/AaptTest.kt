@@ -4,7 +4,6 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
@@ -21,9 +20,11 @@ class AaptTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
+            android {
+                defaultConfig.versionCode = 1
+            }
             files {
-                HelloWorldAndroid.setupJava(this)
                 add("src/main/assets/ignored", "ignored")
                 add("src/main/assets/kept", "kept")
             }
@@ -38,7 +39,7 @@ class AaptTest {
         val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         additionalParameters += listOf("--trace-folder", windowsFriendlyFilePath)
@@ -54,7 +55,7 @@ class AaptTest {
         Truth.assertThat(tracesFolder.listFiles()!!.size).isEqualTo(1)
         FileUtils.deleteDirectoryContents(tracesFolder)
 
-        build.androidApplication(":app").reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure(buildFileOnly = true) {
             android.androidResources.additionalParameters.clear()
         }
 
@@ -65,7 +66,7 @@ class AaptTest {
     }
 
     class TraceFolderCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -84,11 +85,12 @@ class AaptTest {
         val traceFolderPath = tracesFolder.absolutePath
         val windowsFriendlyFilePath = traceFolderPath.replace("\\", "\\\\")
 
-        val build = rule.configure().withProperties {
-            add("_aaptTest_", windowsFriendlyFilePath)
-        }.build {
-            androidApplication(":app") {
-                componentCallback = TraceFolderCallback::class.java
+        val build = rule.build {
+            androidApplication {
+                pluginCallback = TraceFolderCallback::class.java
+            }
+            gradleProperties {
+                add("_aaptTest_", windowsFriendlyFilePath)
             }
         }
 
@@ -100,7 +102,7 @@ class AaptTest {
     @Test
     fun emptyNoCompressList() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         noCompress("")
@@ -112,7 +114,7 @@ class AaptTest {
         build.executor.run("clean", "assembleDebug")
 
         // Check that APK entries are uncompressed
-        build.androidApplication(":app").withApk(ApkSelector.DEBUG) {
+        build.androidApplication().withApk(ApkSelector.DEBUG) {
             // TODO (Issue 70118728) res/layout/main.xml should be uncompressed too.
             val entry = ZipArchive.listEntries(file)["classes.dex"]
             Truth.assertThat(entry?.compressionFlag).isEqualTo(ZipEntry.STORED)
@@ -122,14 +124,14 @@ class AaptTest {
     @Test
     fun testIgnoreAssetsPatterns_dsl() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android.androidResources.ignoreAssetsPattern = "ignored"
             }
         }
 
         build.executor.run("clean", "assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsFile("assets/kept")
             doesNotContain("assets/ignored")
         }
@@ -137,7 +139,7 @@ class AaptTest {
 
     class IgnorePatternCallback: ApplicationComponentCallback {
 
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -151,14 +153,14 @@ class AaptTest {
     @Test
     fun testIgnoreAssetsPatterns_variantApi() {
         val build = rule.build {
-            androidApplication(":app") {
-                componentCallback = IgnorePatternCallback::class.java
+            androidApplication {
+                pluginCallback = IgnorePatternCallback::class.java
             }
         }
 
         build.executor.run("clean", "assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             contains("assets/kept")
             doesNotContain("assets/ignored")
         }
@@ -197,7 +199,7 @@ class AaptTest {
 
     class IgnorePatternCallback2 : ApplicationComponentCallback {
 
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -219,20 +221,20 @@ class AaptTest {
         expectedTasksThatDidWorkOnANoIgnoreAssetsChange: List<String>
     ) {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 android {
                     androidResources {
                         noCompress += "noCompressDsl"
                         ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
                     }
                 }
-                componentCallback = IgnorePatternCallback2::class.java
+                pluginCallback = IgnorePatternCallback2::class.java
             }
         }
 
         build.executor.run("clean", assembleTask)
 
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
 
         // test that tasks run when aapt options changed via the DSL
         app.reconfigure(buildFileOnly = true) {

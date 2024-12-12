@@ -52,6 +52,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULocalVariable
+import org.jetbrains.uast.ULocalVariableEx
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
@@ -373,7 +374,10 @@ class SamDetector : Detector(), SourceCodeScanner {
       override fun visitLambdaExpression(node: ULambdaExpression) {
         val parent = node.uastParent ?: return
         if (parent is ULocalVariable) {
-          val psiVar = parent.sourcePsi as? PsiLocalVariable ?: parent.psi ?: return
+          val psiVar =
+            parent.sourcePsi as? PsiLocalVariable
+              ?: (parent as? ULocalVariableEx)?.javaPsi
+              ?: return
           checkCalls(context, node, psiVar)
         } else if (parent.isAssignment()) {
           val v = (parent as UBinaryExpression).leftOperand.tryResolve() ?: return

@@ -25,6 +25,8 @@ class FakeAdbSessionHost : AdbSessionHost() {
 
     override val usageTracker: FakeAdbUsageTracker = FakeAdbUsageTracker()
 
+    override val processRunner: FakeProcessRunner = FakeProcessRunner()
+
     override fun close() {
     }
 }

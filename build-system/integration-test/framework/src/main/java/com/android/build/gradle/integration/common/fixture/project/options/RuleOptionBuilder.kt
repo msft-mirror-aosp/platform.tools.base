@@ -34,24 +34,12 @@ interface RuleOptionBuilder {
      * configures the Android SDK/NDK
      */
     fun withSdk(action: SdkConfigurationBuilder.() -> Unit): RuleOptionBuilder
-
-    /**
-     * configures the Gradle properties
-     */
-    fun withProperties(action: GradlePropertiesBuilder.() -> Unit): RuleOptionBuilder
-
-    /**
-     * configures the options for project creations
-     */
-    fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): RuleOptionBuilder
 }
 
 internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
     private val gradleLocationDelegate = GradleLocationDelegate()
     private val sdkConfigurationDelegate = SdkConfigurationDelegate()
     private val gradleOptionsDelegate = GradleOptionsDelegate(null)
-    private val propertiesDelegate = GradlePropertiesDelegate()
-    private val creationDelegate = CreationOptionsDelegate()
 
     val gradleLocation: GradleLocation
         get() = gradleLocationDelegate.asGradleLocation
@@ -61,12 +49,6 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
 
     val gradleOptions: GradleOptions
         get() = gradleOptionsDelegate.asGradleOptions
-
-    val gradleProperties: List<String>
-        get() = propertiesDelegate.properties
-
-    val creationOptions: CreationOptions
-        get() = creationDelegate.asCreationOptions
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
         action(gradleLocationDelegate)
@@ -83,21 +65,9 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
         return this
     }
 
-    override fun withProperties(action: GradlePropertiesBuilder.() -> Unit): RuleOptionBuilder {
-        action(propertiesDelegate)
-        return this
-    }
-
-    override fun withCreationOptions(action: CreationOptionsBuilder.() -> Unit): RuleOptionBuilder {
-        action(creationDelegate)
-        return this
-    }
-
     internal fun mergeWith(other: DefaultRuleOptionBuilder) {
         gradleLocationDelegate.mergeWith(other.gradleLocationDelegate)
         sdkConfigurationDelegate.mergeWith(other.sdkConfigurationDelegate)
         gradleOptionsDelegate.mergeWith(other.gradleOptionsDelegate)
-        propertiesDelegate.mergeWith(other.propertiesDelegate)
-        creationDelegate.mergeWith(other.creationDelegate)
     }
 }

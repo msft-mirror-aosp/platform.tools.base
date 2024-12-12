@@ -327,6 +327,14 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             }
           }
         }
+      } else if (curr is UPolyadicExpression && curr.operator == UastBinaryOperator.LOGICAL_AND) {
+        for (operand in curr.operands) {
+          if (operand === curr) {
+            break
+          } else if (isFlagExpression(operand, flagClass, flagMethodName)) {
+            return true
+          }
+        }
       } else if (curr is UMethod) {
         // See if there's an early return. We *only* handle a very simple canonical format here;
         // must be first statement in method.

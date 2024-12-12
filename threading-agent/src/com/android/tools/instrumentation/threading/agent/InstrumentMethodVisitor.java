@@ -77,7 +77,7 @@ public class InstrumentMethodVisitor extends AdviceAdapter {
         if (threadingAnnotations == null && classThreadingAnnotation == null) {
             return;
         }
-        if ((methodAccess & ACC_SYNTHETIC) != 0) {
+        if ((methodAccess & ACC_SYNTHETIC) != 0 || methodName.contains("$lambda$")) {
             // Do not process synthetic methods such as synthetic accessors, lambdas, and bridge
             // methods.
             if (threadingAnnotations != null && (methodAccess & ACC_BRIDGE) == 0) {

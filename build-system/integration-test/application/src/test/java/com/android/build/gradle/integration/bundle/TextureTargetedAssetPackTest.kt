@@ -33,7 +33,7 @@ class TextureTargetedAssetPackTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidJavaApplication {
             android {
                 assetPacks += listOf(":level1")
                 bundle {
@@ -42,7 +42,6 @@ class TextureTargetedAssetPackTest {
                         defaultFormat = "etc2"
                     }
                 }
-                HelloWorldAndroid.setupJava(files)
             }
         }
         assetPack(":level1") {
@@ -72,7 +71,7 @@ class TextureTargetedAssetPackTest {
     @Test
     fun buildDebugApksForRecentAstcDevice() {
         val build = rule.build
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
 
         val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(27, true)
@@ -112,7 +111,7 @@ class TextureTargetedAssetPackTest {
     @Test
     fun buildDebugApksForRecentEtc2Device() {
         val build = rule.build
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
 
         val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(27, false)
@@ -152,7 +151,7 @@ class TextureTargetedAssetPackTest {
     @Test
     fun buildStandaloneDebugApksForPreLDevice() {
         val build = rule.build
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
 
         val apkFromBundleTaskName = app.getApkFromBundleTaskName("debug")
         val jsonFile = getJsonFile(18, false)

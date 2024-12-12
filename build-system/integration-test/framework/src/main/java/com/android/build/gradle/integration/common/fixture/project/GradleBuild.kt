@@ -19,7 +19,15 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
 /**
@@ -29,6 +37,7 @@ import java.nio.file.Path
  * and query for the content of their output folder
  */
 interface GradleBuild {
+    val directory: Path
 
     /** Queries for a project via its gradle path. The project must exist. */
     fun genericProject(path: String): GenericProject
@@ -37,17 +46,22 @@ interface GradleBuild {
      * Queries for an application project via its gradle path.
      * The project must exist and be an Android Application project
      */
-    fun androidApplication(path: String): AndroidApplicationProject
+    fun androidApplication(path: String = DEFAULT_APP_PATH): AndroidApplicationProject
     /**
      * Queries for a library project via its gradle path.
      * The project must exist and be an Android Library project
      */
-    fun androidLibrary(path: String): AndroidLibraryProject
+    fun androidLibrary(path: String = DEFAULT_LIB_PATH): AndroidLibraryProject
     /**
      * Queries for a feature project via its gradle path.
      * The project must exist and be an Android Dynamic Feature project
      */
-    fun androidFeature(path: String): AndroidDynamicFeatureProject
+    fun androidFeature(path: String = DEFAULT_FEATURE_PATH): AndroidDynamicFeatureProject
+    /**
+     * Queries for an android test project via its gradle path.
+     * The project must exist and be an Android Test project
+     */
+    fun androidTest(path: String = DEFAULT_TEST_PATH): AndroidTestProject
     /**
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.
@@ -71,6 +85,13 @@ interface GradleBuild {
     val executor: GradleTaskExecutor
     /** The [ModelBuilderV2] that can be used to query for models */
     val modelBuilder: ModelBuilderV2
+
+    /**
+     * Allows reconfiguring the settings
+     *
+     * This only rewrites the setting file, and does not change anything else
+     */
+    fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit)
 
     /**
      * Allows making modifications that are reverted.
@@ -147,6 +168,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
+    override fun androidTest(path: String): AndroidTestProject {
+        val project = subProject(path)
+        if (project is AndroidTestProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Android project.
+                Possible options are ${getProjectListByType<AndroidTestImpl>()}
+            """.trimIndent()
+        )
+    }
+
     override fun privacySandboxSdk(path: String): PrivacySandboxSdkProject {
         val project = subProject(path)
         if (project is PrivacySandboxSdkProject) return project
@@ -193,9 +226,10 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
  * Internal default implementation of [GradleBuild]
  */
 internal class GradleBuildImpl(
-    val directory: Path,
+    override val directory: Path,
     private val subProjects: Map<String, GradleProject<*>> = mapOf(),
     private val includedBuilds: Map<String, GradleBuild> = mapOf(),
+    private val definition: GradleBuildDefinitionImpl,
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
 ): BaseGradleBuildImpl() {
@@ -226,6 +260,14 @@ internal class GradleBuildImpl(
             )
     }
 
+    override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
+        action(definition.settings)
+        definition.writeSetting(directory, null, getNewWriter())
+    }
+
+    internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =
+        definition.computeAllPluginMap()
+
     /**
      * Runs the provided action with this build. At the end of the action, all file changes made
      * via [GradleProjectFiles] are reversed so that the build is the same as before this method
@@ -241,4 +283,6 @@ internal class GradleBuildImpl(
 
     override val modelBuilder: ModelBuilderV2
         get() = modelBuilderProvider()
+
+    internal fun getNewWriter(): BuildWriter = definition.buildFileType.getNewWriter()
 }

@@ -381,12 +381,6 @@ abstract class R8Task @Inject constructor(
                     creationConfig.artifacts
                         .use(taskProvider).wiredWith(R8Task::outputDex)
                         .toAppendTo(InternalMultipleArtifactType.DEX)
-
-                    if (creationConfig.runResourceShrinkingWithR8()) {
-                        creationConfig.artifacts.setInitialProvider(taskProvider) {
-                            it.resourceShrinkingParams.shrunkResourcesOutputDir
-                        }.on(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT)
-                    }
                 }
 
                 else -> error("Unexpected component type: $componentType")
@@ -396,10 +390,17 @@ abstract class R8Task @Inject constructor(
                 .wiredWithFiles(R8Task::resourcesJar, R8Task::outputResources)
                 .toTransform(InternalArtifactType.MERGED_JAVA_RES)
 
-            if ((creationConfig as? ApplicationCreationConfig)?.consumesDynamicFeatures == true) {
+            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+                creationConfig.artifacts.setInitialProvider(taskProvider) {
+                    it.resourceShrinkingParams.shrunkResourcesOutputDir
+                }.on(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT)
+            }
+
+            if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
                 creationConfig.artifacts
                     .setInitialProvider(taskProvider, R8Task::featureDexDir)
                     .on(InternalArtifactType.FEATURE_DEX)
+
                 creationConfig.artifacts
                     .setInitialProvider(taskProvider, R8Task::featureJavaResourceOutputDir)
                     .on(InternalArtifactType.FEATURE_SHRUNK_JAVA_RES)
@@ -512,7 +513,7 @@ abstract class R8Task @Inject constructor(
                     creationConfig.dexing.multiDexKeepFile
                 )
 
-                if ((creationConfig as? ApplicationCreationConfig)?.consumesDynamicFeatures == true) {
+                if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
                     creationConfig.artifacts.setTaskInputToFinalProduct(
                         InternalArtifactType.MODULE_AND_RUNTIME_DEPS_CLASSES,
                         task.baseJar
@@ -541,7 +542,7 @@ abstract class R8Task @Inject constructor(
             task.featureClassJars.disallowChanges()
             task.featureJavaResourceJars.disallowChanges()
 
-            if (creationConfig.runResourceShrinkingWithR8()) {
+            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
                 task.resourceShrinkingParams.initialize(creationConfig, task.mappingFile)
             } else {
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)

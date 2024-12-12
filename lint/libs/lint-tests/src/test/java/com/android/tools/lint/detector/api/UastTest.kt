@@ -2091,6 +2091,45 @@ class UastTest : TestCase() {
     )
   }
 
+  fun testRecord() {
+    val source =
+      java(
+        """
+          public record Record(int x) {
+          }
+        """
+      )
+    var count = 0
+    check(
+      source,
+      javaLanguageLevel = LanguageLevel.JDK_16,
+      android = false,
+      check = { file ->
+        file.accept(
+          object : AbstractUastVisitor() {
+            override fun visitClass(node: UClass): Boolean {
+              assertFalse(node.sourcePsi?.text, node.isRecord)
+              assertTrue((node.sourcePsi as? PsiClass)?.isRecord == true)
+              count++
+              return super.visitClass(node)
+            }
+
+            override fun visitMethod(node: UMethod): Boolean {
+              if (node.isConstructor) {
+                assertEquals(node.sourcePsi?.text, "Record", node.name)
+              } else {
+                assertEquals(node.sourcePsi?.text, "x", node.name)
+              }
+              count++
+              return super.visitMethod(node)
+            }
+          }
+        )
+      },
+    )
+    assertEquals(3, count)
+  }
+
   fun test125138962() {
     // Regression test for https://issuetracker.google.com/125138962
     val source =

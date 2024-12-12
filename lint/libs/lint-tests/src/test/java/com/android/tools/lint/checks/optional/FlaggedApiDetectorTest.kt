@@ -642,11 +642,13 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             package test.pkg;
 
             import android.annotation.FlaggedApi;
+            import static test.pkg.Flags.myFlag;
 
+            /** @noinspection InstantiationOfUtilityClass, AccessStaticViaInstance , ResultOfMethodCallIgnored , StatementWithEmptyBody */
             public class JavaTest {
                 @FlaggedApi(Flags.FLAG_MY_FLAG)
-                class Foo {
-                    public void someMethod() { }
+                public static class Foo {
+                    public static boolean someMethod() { return true; }
                 }
 
                 public void testValid1(boolean something) {
@@ -661,6 +663,16 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
                     } else {
                         Foo f = new Foo(); // OK 3
                         f.someMethod();    // OK 4
+                    }
+                }
+
+                public void testValid3(Foo f, boolean something) {
+                    // b/b/383061307
+                    if (Flags.myFlag() && f.someMethod()) { // OK 5
+                    }
+                    if (myFlag() && f.someMethod()) { // OK 6
+                    }
+                    if (Flags.myFlag() && something && f.someMethod()) { // OK 7
                     }
                 }
             }

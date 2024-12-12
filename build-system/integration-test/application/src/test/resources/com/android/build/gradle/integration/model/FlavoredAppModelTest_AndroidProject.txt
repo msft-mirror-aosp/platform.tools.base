@@ -1,6 +1,6 @@
 > AndroidProject:
-   - namespace             = "pkg.name"
-   - androidTestNamespace  = "pkg.name.test"
+   - namespace             = "pkg.name.app"
+   - androidTestNamespace  = "pkg.name.app.test"
    - testFixturesNamespace = (null)
    - resourcePrefix        = (null)
    - dynamicFeatures       = []
@@ -13,11 +13,11 @@
             - compileTaskName               = "compileProDebugSources"
             - assembleTaskName              = "assembleProDebug"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/proDebug/compileProDebugJavaWithJavac/classes{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/javac/proDebug/compileProDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProDebugSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/proDebug/out{!}
+               * {PROJECT}/app/build/generated/ap_generated_sources/proDebug/out{!}
             - minSdkVersion:
                - apiLevel = 1
                - codename = (null)
@@ -25,20 +25,20 @@
             - maxSdkVersion                 = (null)
             - isSigned                      = true
             - signingConfigName             = "debug"
-            - applicationId                 = "pkg.name"
+            - applicationId                 = "pkg.name.app"
             - sourceGenTaskName             = "generateProDebugSources"
             - resGenTaskName                = "generateProDebugResources"
             - generatedResourceFolders:
-               * {PROJECT}/build/generated/res/resValues/pro/debug{!}
+               * {PROJECT}/app/build/generated/res/resValues/pro/debug{!}
             - generatedAssetsFolders        = []
             - abiFilters                    = []
-            - assembleTaskOutputListingFile = {PROJECT}/build/intermediates/apk_ide_redirect_file/proDebug/createProDebugApkListingFileRedirect/redirect.txt{!}
+            - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebug/createProDebugApkListingFileRedirect/redirect.txt{!}
             - testInfo                      = (null)
             - bundleInfo:
                - bundleTaskName                     = "bundleProDebug"
-               - bundleTaskOutputListingFile        = {PROJECT}/build/intermediates/bundle_ide_redirect_file/proDebug/createProDebugBundleListingFileRedirect/redirect.txt{!}
+               - bundleTaskOutputListingFile        = {PROJECT}/app/build/intermediates/bundle_ide_redirect_file/proDebug/createProDebugBundleListingFileRedirect/redirect.txt{!}
                - apkFromBundleTaskName              = "extractApksForProDebug"
-               - apkFromBundleTaskOutputListingFile = {PROJECT}/build/intermediates/apk_from_bundle_ide_redirect_file/proDebug/createProDebugApksFromBundleListingFileRedirect/redirect.txt{!}
+               - apkFromBundleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_from_bundle_ide_redirect_file/proDebug/createProDebugApksFromBundleListingFileRedirect/redirect.txt{!}
             - codeShrinker                  = (null)
             - privacySandboxSdkInfo         = (null)
          < mainArtifact
@@ -46,11 +46,11 @@
             - compileTaskName               = "compileProDebugAndroidTestSources"
             - assembleTaskName              = "assembleProDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebugAndroidTest/processProDebugAndroidTestResources/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/proDebugAndroidTest/compileProDebugAndroidTestJavaWithJavac/classes{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebugAndroidTest/processProDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/javac/proDebugAndroidTest/compileProDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProDebugAndroidTestSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/proDebugAndroidTest/out{!}
+               * {PROJECT}/app/build/generated/ap_generated_sources/proDebugAndroidTest/out{!}
             - minSdkVersion:
                - apiLevel = 1
                - codename = (null)
@@ -58,14 +58,14 @@
             - maxSdkVersion                 = (null)
             - isSigned                      = true
             - signingConfigName             = "debug"
-            - applicationId                 = "pkg.name.test"
+            - applicationId                 = "pkg.name.app.test"
             - sourceGenTaskName             = "generateProDebugAndroidTestSources"
             - resGenTaskName                = "generateProDebugAndroidTestResources"
             - generatedResourceFolders:
-               * {PROJECT}/build/generated/res/resValues/androidTest/pro/debug{!}
+               * {PROJECT}/app/build/generated/res/resValues/androidTest/pro/debug{!}
             - generatedAssetsFolders        = []
             - abiFilters                    = []
-            - assembleTaskOutputListingFile = {PROJECT}/build/intermediates/apk_ide_redirect_file/proDebugAndroidTest/createProDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
+            - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebugAndroidTest/createProDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
                - animationsDisabled       = false
                - execution                = HOST
@@ -79,13 +79,13 @@
             - compileTaskName       = "compileProDebugUnitTestSources"
             - assembleTaskName      = "assembleProDebugUnitTest"
             - classesFolders:
-               * {PROJECT}/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
-               * {PROJECT}/build/intermediates/javac/proDebugUnitTest/compileProDebugUnitTestJavaWithJavac/classes{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/javac/proDebugUnitTest/compileProDebugUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/proDebugUnitTest/out{!}
+               * {PROJECT}/app/build/generated/ap_generated_sources/proDebugUnitTest/out{!}
             - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {PROJECT}/build/intermediates/java_res/proDebugUnitTest/processProDebugUnitTestJavaRes/out{!}
+            - runtimeResourceFolder = {PROJECT}/app/build/intermediates/java_res/proDebugUnitTest/processProDebugUnitTestJavaRes/out{!}
          < unitTestArtifact
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)

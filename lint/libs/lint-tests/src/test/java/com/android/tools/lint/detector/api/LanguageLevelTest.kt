@@ -23,6 +23,7 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiRecordHeader
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
+import org.jetbrains.uast.UMethod
 
 @Suppress("LintDocExample")
 class LanguageLevelTest : AbstractCheckTest() {
@@ -39,14 +40,23 @@ class LanguageLevelTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .javaLanguageLevel("17")
+      .javaLanguageLevel("16")
       .run()
       .expect(
         """
+          src/Person.java:1: Warning: Java record augmented member found [_TestIssueId]
+          record Person(String name, int age) {
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/Person.java:1: Warning: Java record augmented member found [_TestIssueId]
+          record Person(String name, int age) {
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/Person.java:1: Warning: Java record augmented member found [_TestIssueId]
+          record Person(String name, int age) {
+          ^
           src/Person.java:1: Warning: Java record found [_TestIssueId]
           record Person(String name, int age) {
                        ~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 1 warnings
+          0 errors, 4 warnings
           """
       )
   }
@@ -106,7 +116,7 @@ class LanguageLevelTest : AbstractCheckTest() {
 
   class TestDetector : Detector(), SourceCodeScanner {
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
-      return listOf(UFile::class.java)
+      return listOf(UFile::class.java, UMethod::class.java)
     }
 
     override fun createUastHandler(context: JavaContext): UElementHandler {
@@ -127,6 +137,17 @@ class LanguageLevelTest : AbstractCheckTest() {
               }
             )
           }
+        }
+
+        override fun visitMethod(node: UMethod) {
+          val psi = node.javaPsi
+          if (psi.containingClass?.isRecord != true) return
+          context.report(
+            TEST_ISSUE,
+            psi,
+            context.getLocation(psi),
+            "Java record augmented member found",
+          )
         }
       }
     }

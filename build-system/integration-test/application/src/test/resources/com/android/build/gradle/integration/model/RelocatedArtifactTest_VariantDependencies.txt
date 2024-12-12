@@ -85,7 +85,7 @@
    < mainArtifact
    > androidTestArtifact:
       > compileDependencies:
-         - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:project:unspecified:
+         - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
          > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2:
@@ -132,7 +132,7 @@
    < androidTestArtifact
    > unitTestArtifact:
       > compileDependencies:
-         - :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:project:unspecified:
+         - :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
          > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2:
@@ -175,7 +175,7 @@
          < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2
       < compileDependencies
       > runtimeDependencies:
-         > :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:project:unspecified:
+         > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|project:app:unspecified:
             - requestedCoordinates = (null)
             > dependencies:
                > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2:
@@ -217,7 +217,7 @@
                   < dependencies
                < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2
             < dependencies
-         < :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:project:unspecified
+         < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|project:app:unspecified
          - org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2:
             - dependencies = "*visited*"
       < runtimeDependencies
@@ -225,12 +225,12 @@
    < unitTestArtifact
    - testFixturesArtifact = (null)
    > libraries:
-      > :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:project:unspecified:
+      > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified:
          - type               = PROJECT
          - artifact           = (null)
          > projectInfo:
             - buildId        = ":"
-            - projectPath    = ":"
+            - projectPath    = ":app"
             - isTestFixtures = false
             - buildType      = "debug"
             - productFlavors = []
@@ -239,18 +239,18 @@
                * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * ":project:unspecified"
+               * "project:app:unspecified"
          < projectInfo
          - libraryInfo        = (null)
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|:project:unspecified
-      > :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:project:unspecified:
+      < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified
+      > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|project:app:unspecified:
          - type               = PROJECT
          - artifact           = (null)
          > projectInfo:
             - buildId        = ":"
-            - projectPath    = ":"
+            - projectPath    = ":app"
             - isTestFixtures = false
             - buildType      = "debug"
             - productFlavors = []
@@ -259,12 +259,12 @@
                * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
                * "org.gradle.usage -> java-runtime"
             - capabilities:
-               * ":project:unspecified"
+               * "project:app:unspecified"
          < projectInfo
          - libraryInfo        = (null)
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < :|:|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|:project:unspecified
+      < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|project:app:unspecified
       > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.5.2|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>6, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.localToProject>public, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/org/jetbrains/kotlinx/kotlinx-coroutines-android/1.5.2/kotlinx-coroutines-android-1.5.2.jar{F}

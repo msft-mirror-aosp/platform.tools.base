@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,6 +41,7 @@ class AgpVersionConsistencyTest {
             )
         ).create()
 
+    @Ignore("b/382773586")
     @Test
     fun testBuildConfiguration() {
         // do not add any buildscript dependencies, those are added per project

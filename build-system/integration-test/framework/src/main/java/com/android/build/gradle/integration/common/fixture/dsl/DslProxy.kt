@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
@@ -306,7 +307,20 @@ class DslProxy private constructor(
                     (args[0] as Function1<Any,*>).invoke(this)
                 }
             }
+            "profiles" -> {
+                @Suppress("UNCHECKED_CAST")
+                contentHolder.executionProfiles(blockTypeClass as Class<ExecutionProfile>) {
+                    // calls into the function configuring the container.
+                    // `this` here is the nested block (container)
+                    @Suppress("UNCHECKED_CAST")
+                    (args[0] as Function1<Any,*>).invoke(this)
+                }
+            }
             else -> {
+                if (blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
+                    // this another container. we need specific support for it.
+                    throw RuntimeException("Unsupported container configuration: ${method.name}(${blockTypeClass.name})")
+                }
                 // Normal nested block. the provided type is the direct nested block type.
                 contentHolder.runNestedBlock(method.name, listOf(), blockTypeClass) {
                     // calls into the function configuring the nested block
@@ -316,7 +330,6 @@ class DslProxy private constructor(
                 }
             }
         }
-
 
         return true
     }

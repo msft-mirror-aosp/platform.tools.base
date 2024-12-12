@@ -20,6 +20,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import java.nio.file.Path
 
 /**
  * A version of [GradleBuild] that can reverse the changes made during a test.
@@ -39,6 +41,8 @@ internal class ReversibleGradleBuild(
     private val modifiableSubProject = mutableMapOf<String, GradleProject<*>>()
     private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
 
+    override val directory: Path
+        get() = parentBuild.directory
 
     /**
      * For validation, we use the parent list which is more complete because the local list
@@ -69,6 +73,10 @@ internal class ReversibleGradleBuild(
 
     override val modelBuilder: ModelBuilderV2
         get() = parentBuild.modelBuilder
+
+    override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
+        throw RuntimeException("Cannot reconfigure settings inside withReversibleModifications")
+    }
 
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
         throw RuntimeException("Cannot nest withReversibleModifications")

@@ -29,6 +29,8 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.ClasspathNormalizer
+import org.gradle.api.tasks.TaskInputs
 import java.io.File
 
 class DefaultDeviceApkOutput(
@@ -47,7 +49,7 @@ class DefaultDeviceApkOutput(
         if (InstallUtils.checkDeviceApiLevel(deviceSpec.name, deviceSpec.apiLevel, deviceSpec.codeName,
                 minSdkVersion, iLogger, projectPath, variantName)
         ) {
-            val mainApks = getMainApks(apkSources.mainApkArtifact.get(), deviceSpec)
+            val mainApks = getMainApks(apkSources.mainApkArtifact.get(), supportedAbis, deviceSpec)
             if (mainApks.isNotEmpty()) {
                 apkFiles.addAll(mainApks)
             }
@@ -77,15 +79,9 @@ class DefaultDeviceApkOutput(
         return apkInstallGroups
     }
 
-    private fun getMainApks(mainApkDirectory: Directory, deviceSpec: DeviceSpec): List<File> {
-        val builtArtifactsLoader = BuiltArtifactsLoaderImpl()
-        val builtArtifacts: BuiltArtifactsImpl? = builtArtifactsLoader.load(mainApkDirectory)
-        if (builtArtifacts != null) {
-            return computeBestOutput(deviceSpec.abis, builtArtifacts, supportedAbis ?: setOf())
-        }
-        return listOf()
+    override fun setInputs(inputs: TaskInputs, deviceSpec: DeviceSpec) {
+        inputs.files(*getApkInputs(apkSources, deviceSpec).toTypedArray()).withNormalizer(ClasspathNormalizer::class.java)
     }
-
 
     data class DefaultApkInstallGroup(override val apks: List<RegularFile>,
         override val description: String) : ApkInstallGroup
@@ -108,6 +104,14 @@ class DefaultDeviceApkOutput(
                 apkSources.privacySandboxSdkSplitApksForLegacy?.let { taskInputs.add(it) }
             }
             return taskInputs
+        }
+        fun getMainApks(mainApkDirectory: Directory, supportedAbis: Set<String>?, deviceSpec: DeviceSpec): List<File> {
+            val builtArtifactsLoader = BuiltArtifactsLoaderImpl()
+            val builtArtifacts: BuiltArtifactsImpl? = builtArtifactsLoader.load(mainApkDirectory)
+            if (builtArtifacts != null) {
+                return computeBestOutput(deviceSpec.abis, builtArtifacts, supportedAbis ?: setOf())
+            }
+            return listOf()
         }
     }
 }

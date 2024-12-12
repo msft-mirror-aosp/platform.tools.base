@@ -17,13 +17,30 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.api.dsl.SettingsExtension
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
 interface GradleSettingsDefinition {
 
-    val plugins: MutableList<PluginType>
+    /**
+     * Applies a plugin with an optional version string. If null, the default version is used.
+     *
+     * For core gradle plugin, the version should always be null.
+     *
+     * @param type the type of the plugin to apply
+     * @param version the version of the plugin.
+     * @param applyFirst if true, applies this plugin first, before other plugins
+     */
+    fun applyPlugin(type: PluginType, version: String? = null, applyFirst: Boolean = false)
+    /**
+     * Replaces an applied plugin, with a provided version
+     *
+     * This replaces the plugin in the same place as the previous one.
+     */
+    fun replaceAppliedPlugin(type: PluginType, version: String)
 
     val android: SettingsExtension
     /**
@@ -32,61 +49,127 @@ interface GradleSettingsDefinition {
      * This will fails if no android plugins were added.
      */
     fun android(action: SettingsExtension.() -> Unit)
+
+    fun enableFeaturePreview(name: String)
 }
 
 internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
+    private val featurePreviews = mutableListOf<String>()
 
-    override val plugins = mutableListOf<PluginType>()
+    private val plugins = mutableListOf<AppliedPlugin>()
+    private val androidContentHolder = DefaultDslContentHolder()
 
-    override val android: SettingsExtension
-        get() = throw RuntimeException("todo")
+    // cache or the repositories as we need to keep this around for reconfiguration.
+    private var repositoriesCache: Collection<Path>? = null
 
+    override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        if (!type.isSettings) {
+            throw RuntimeException("Cannot apply project plugin to a project")
+        }
+        // search for existing one
+        plugins.firstOrNull { it.plugin == type }?.let {
+            throw RuntimeException("Plugin $type is already applied! (version: ${it.version}")
+        }
 
-    override fun android(action: SettingsExtension.() -> Unit) {
-        if (!plugins.contains(PluginType.ANDROID_SETTINGS)) {
+        val appliedPlugin = AppliedPlugin(type, version ?: type.version ?: INTERNAL_PLUGIN_VERSION)
+        if (applyFirst) {
+            plugins.add(0, appliedPlugin)
+        } else {
+            plugins += appliedPlugin
+        }
+    }
+
+    override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        if (!type.isSettings) {
+            throw RuntimeException("Cannot apply project plugin to a project")
+        }
+        val match = plugins.firstOrNull { it.plugin == type }
+            ?: throw RuntimeException("Plugin $type not yet applied")
+
+        val appliedPlugin = AppliedPlugin(type, version)
+        val index = plugins.indexOf(match)
+        plugins[index] = appliedPlugin
+    }
+
+    override val android: SettingsExtension by lazy {
+        if (!hasAndroid()) {
             throw RuntimeException("Settings must contain ANDROID_SETTINGS to configure the android extension")
         }
+
+        DslProxy.createProxy(SettingsExtension::class.java, androidContentHolder,)
+    }
+
+    override fun android(action: SettingsExtension.() -> Unit) {
         action(android)
     }
 
+    override fun enableFeaturePreview(name: String) {
+        featurePreviews += name
+    }
+
     internal fun write(
+        name: String,
         location: Path,
-        repositories: Collection<Path>,
+        repositories: Collection<Path>?,
         includedBuildNames: Collection<String>,
         subProjectPaths: Collection<String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
-        buildWriter().apply {
+        val repos = repositories ?: repositoriesCache ?: error("No repositories provided")
+
+        repositoriesCache = repos
+
+        buildWriter.apply {
             block("pluginManagement") {
                 block("repositories") {
-                    for (repository in repositories) {
+                    for (repository in repos) {
                         mavenSnippet(repository)
                     }
                 }
             }
 
+            emptyLine()
+
             block("plugins") {
                 for (plugin in plugins.toSet()) {
-                    pluginId(plugin.id, plugin.version)
+                    pluginId(plugin.plugin.id, plugin.version)
                 }
             }
+
+            emptyLine()
 
             block("dependencyResolutionManagement") {
                 method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
                 block("repositories") {
-                    for (repository in repositories) {
+                    for (repository in repos) {
                         mavenSnippet(repository)
                     }
-
                 }
             }
+            emptyLine()
 
-            for (build in includedBuildNames) {
-                method("includeBuild", build)
+            set("rootProject.name", name)
+            emptyLine()
+
+            if (featurePreviews.isNotEmpty()) {
+                for (name in featurePreviews) {
+                    method("enableFeaturePreview", name)
+                }
+                emptyLine()
             }
 
-            if (plugins.contains(PluginType.ANDROID_SETTINGS)) {
+            if (includedBuildNames.isNotEmpty()) {
+                for (build in includedBuildNames) {
+                    method("includeBuild", build)
+                }
+                emptyLine()
+            }
 
+            if (hasAndroid()) {
+                block("android") {
+                    androidContentHolder.writeContent(this)
+                }
+                emptyLine()
             }
 
             for (project in subProjectPaths) {
@@ -96,9 +179,11 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             val file = location.resolve(it.settingsFileName)
             file.writeText(it.toString())
         }
-
     }
+
+    private fun hasAndroid(): Boolean = plugins.map { it.plugin }.contains(PluginType.ANDROID_SETTINGS)
 }
+
 
 private fun BuildWriter.mavenSnippet(repo: Path) {
     block("maven") {

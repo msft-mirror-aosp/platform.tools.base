@@ -17,22 +17,15 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
 class LintChecksInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidApplication { }
     },
     deltaConfig = {
-        rootProject {
+        androidApplication {
             dependencies {
                 lintChecks(localJar {
                     name = "lint-checks.jar"

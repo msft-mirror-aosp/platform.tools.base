@@ -212,8 +212,8 @@ maven_repository(
         "@maven//:org.hamcrest.hamcrest-library_1.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.4.1",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-common_1.3.6",
-        "@maven//:org.tensorflow.tensorflow-lite-metadata_0.1.0",
-        "@maven//:org.tensorflow.tensorflow-lite-support_0.1.0",
+        "@maven//:org.tensorflow.tensorflow-lite-metadata_0.2.0",
+        "@maven//:org.tensorflow.tensorflow-lite-support_0.2.0",
     ],
     visibility = ["__subpackages__"],
 )

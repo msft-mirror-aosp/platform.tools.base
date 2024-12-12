@@ -75,6 +75,12 @@ class VersionCatalogNamingUtilTest {
         // Special handling for androidx: if any libraries use androidx- as a prefix, use that too
         libraryName("test-foo", "androidx.test:foo:1.0", "foo")
         libraryName("androidx-foo", "androidx.test:foo:1.0", "foo", "androidx-recyclerview")
+
+        // Reserved words
+        libraryName("foo-class1", "com.google:foo-class:1.0")
+        libraryName("foo-object1", "com.google:foo-object:1.0")
+        libraryName("class1-foo", "com.google:class-foo:1.0")
+        libraryName("object1-foo", "com.google:object-foo:1.0")
     }
 
     @Test
@@ -106,6 +112,17 @@ class VersionCatalogNamingUtilTest {
             "androidx-lifecycle-runtime-ktx",
             "androidx-lifecycle-lifecycle-runtime-ktx",
             "androidx-lifecycle-lifecycle-runtime-ktx2"
+        )
+        libraryName(
+            "androidx-material3-window-size-class1",
+            "androidx.compose.material3:material3-window-size-class:1.3.1"
+        )
+        libraryName(
+            "androidx-compose-material3-material3-window-size-class2",
+            "androidx.compose.material3:material3-window-size-class:1.3.1",
+            "androidx-material3-window-size-class1",
+            "androidx-compose-material3-material3-window-size-class1",
+            "material3-window-size-class1",
         )
     }
 
@@ -163,6 +180,12 @@ class VersionCatalogNamingUtilTest {
         // Special handling for androidx: if any libraries use androidx- as a prefix, use that too
         libraryName("testFoo", "androidx.test:foo:1.0", "foo", "aFoo")
         libraryName("androidxFoo", "androidx.test:foo:1.0", "foo", "testFoo")
+
+        // Reserved words
+        libraryName("fooClass", "com.google:foo-class:1.0", "aFoo")
+        libraryName("fooObject", "com.google:foo-object:1.0", "aFoo")
+        libraryName("classFoo", "com.google:class-foo:1.0", "aFoo")
+        libraryName("objectFoo", "com.google:object-foo:1.0", "aFoo")
     }
 
     @Test

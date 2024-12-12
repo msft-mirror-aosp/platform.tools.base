@@ -74,6 +74,7 @@ import java.util.logging.Logger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.writeText
 
 fun isProguardRule(name: String): Boolean {
@@ -293,58 +294,6 @@ fun runR8(
 
     r8CommandBuilder.addProgramResourceProvider(r8ProgramResourceProvider)
 
-    val featureClassJarMap =
-        featureClassJars.associateBy({ it.toFile().nameWithoutExtension }, { it })
-    val featureJavaResourceJarMap =
-        featureJavaResourceJars.associateBy({ it.toFile().nameWithoutExtension }, { it })
-    // Check that each feature class jar has a corresponding feature java resources jar, and vice
-    // versa.
-    check(
-        featureClassJarMap.keys.containsAll(featureJavaResourceJarMap.keys)
-                && featureJavaResourceJarMap.keys.containsAll(featureClassJarMap.keys)
-    ) {
-        """
-            featureClassJarMap and featureJavaResourceJarMap must have the same keys.
-
-            featureClassJarMap keys:
-            ${featureClassJarMap.keys.sorted()}
-
-            featureJavaResourceJarMap keys:
-            ${featureJavaResourceJarMap.keys.sorted()}
-            """.trimIndent()
-    }
-    if (featureClassJarMap.isNotEmpty()) {
-        check(featureDexDir != null && featureJavaResourceOutputDir != null) {
-            "featureDexDir == null || featureJavaResourceOutputDir == null."
-        }
-        Files.createDirectories(featureJavaResourceOutputDir)
-        check(toolConfig.r8OutputType == R8OutputType.DEX) {
-            "toolConfig.r8OutputType != R8OutputType.DEX."
-        }
-        for (featureKey in featureClassJarMap.keys) {
-            r8CommandBuilder.addFeatureSplit {
-                it.addProgramResourceProvider(
-                    ArchiveProgramResourceProvider.fromArchive(featureClassJarMap[featureKey])
-                )
-                it.addProgramResourceProvider(
-                    ArchiveResourceProvider.fromArchive(featureJavaResourceJarMap[featureKey], true)
-                )
-                val javaResConsumer = JavaResourcesConsumer(
-                    featureJavaResourceOutputDir.resolve("$featureKey$DOT_JAR")
-                )
-                it.setProgramConsumer(
-                    object : DexIndexedConsumer.DirectoryConsumer(
-                        Files.createDirectories(featureDexDir.resolve(featureKey))
-                    ) {
-                        override fun getDataResourceConsumer(): DataResourceConsumer {
-                            return javaResConsumer
-                        }
-                    }
-                )
-                return@addFeatureSplit it.build()
-            }
-        }
-    }
     // handle art-profile rewriting if enabled
     inputArtProfile?.let {input ->
         if (input.exists() && outputArtProfile != null) {
@@ -362,6 +311,11 @@ fun runR8(
     r8CommandBuilder.setEnableExperimentalMissingLibraryApiModeling(true);
 
     resourceShrinkingConfig?.let { setupResourceShrinkingForApks(r8CommandBuilder, it) }
+
+    setupFeatureSplits(
+        r8CommandBuilder, toolConfig, featureClassJars, featureDexDir,
+        featureJavaResourceJars, featureJavaResourceOutputDir
+    )
 
     ClassFileProviderFactory(libraries).use { libraryClasses ->
         ClassFileProviderFactory(classpath).use { classpathClasses ->
@@ -452,6 +406,59 @@ private class KeepRulesAndroidResourceInput(
     override fun getKind() = AndroidResourceInput.Kind.KEEP_RULE_FILE
 
     override fun getByteStream() = ByteArrayInputStream(resourceKeepRulesXmlFile.readBytes())
+}
+
+private fun setupFeatureSplits(
+    r8CommandBuilder: R8Command.Builder,
+    toolConfig: ToolConfig,
+    featureClassJars: Collection<Path>,
+    featureDexOutputDir: Path?,
+    featureJavaResourceJars: Collection<Path>,
+    featureJavaResourceOutputDir: Path?
+) {
+    if (featureClassJars.isEmpty()) return
+
+    check(toolConfig.r8OutputType == R8OutputType.DEX) {
+        "Unexpected toolConfig.r8OutputType: ${toolConfig.r8OutputType}"
+    }
+    val featureFileNamesWithoutExtension = featureClassJars.map { it.toFile().nameWithoutExtension }.distinct()
+    check(featureJavaResourceJars.map { it.toFile().nameWithoutExtension } == featureFileNamesWithoutExtension) {
+        "Inconsistent featureFileNames:\n" +
+                "  featureClassJars: $featureClassJars\n" +
+                "  featureJavaResourceJars: $featureJavaResourceJars\n"
+    }
+    check(
+        featureDexOutputDir != null
+                && featureJavaResourceOutputDir != null
+    ) {
+        "Expected not null but received:\n" +
+                "  featureDexDir=$featureDexOutputDir\n" +
+                "  featureJavaResourceOutputDir=$featureJavaResourceOutputDir"
+    }
+
+    featureFileNamesWithoutExtension.forEach { featureFileNameWithoutExtension ->
+        val featureClassJar = featureClassJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
+        val featureJavaResourceJar = featureJavaResourceJars.single { it.nameWithoutExtension == featureFileNameWithoutExtension }
+
+        val featureDexOutputDirectory = Files.createDirectories(featureDexOutputDir.resolve(featureFileNameWithoutExtension))
+        val featureJavaResourceOutputDirectory = featureJavaResourceOutputDir.resolve("$featureFileNameWithoutExtension$DOT_JAR")
+
+        r8CommandBuilder.addFeatureSplit {
+            it.addProgramResourceProvider(ArchiveProgramResourceProvider.fromArchive(featureClassJar))
+            it.addProgramResourceProvider(ArchiveResourceProvider.fromArchive(featureJavaResourceJar, true))
+
+            val javaResourcesConsumer = JavaResourcesConsumer(featureJavaResourceOutputDirectory)
+            it.setProgramConsumer(
+                object : DexIndexedConsumer.DirectoryConsumer(featureDexOutputDirectory) {
+                    override fun getDataResourceConsumer(): DataResourceConsumer {
+                        return javaResourcesConsumer
+                    }
+                }
+            )
+
+            it.build()
+        }
+    }
 }
 
 fun wireArtProfileRewriting(

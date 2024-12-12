@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.model
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
-import com.android.build.gradle.integration.common.fixture.testprojects.RootTestProjectBuilderImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.options.RuleOptionBuilder
 import org.junit.Rule
 
 /**
@@ -32,12 +32,21 @@ abstract class ReferenceModelComparator(
     /**
      * A lambda that configures the base project state to be compared against
      */
-    referenceConfig: TestProjectBuilder.() -> Unit,
+    referenceConfig: GradleBuildDefinition.() -> Unit,
     /**
      * A lambda that configures the project with the modification.
      * This is applied on top of [referenceConfig]
      */
-    deltaConfig: TestProjectBuilder.() -> Unit,
+    deltaConfig: GradleBuildDefinition.() -> Unit,
+    /**
+     * an optional configuration for the reference project
+     */
+    referenceOptions: (RuleOptionBuilder.() -> Unit)? = null,
+    /**
+     * an optional configuration for the delta project.
+     * this is applied on top of the `referenceOptions`
+     */
+    deltaOptions: (RuleOptionBuilder.() -> Unit)? = null,
     /**
      * Sync options to be used when syncing both the base state and the modified project state.
      */
@@ -48,29 +57,40 @@ abstract class ReferenceModelComparator(
     private val variantName: String? = null
 ) : BaseModelComparator {
 
-    private val referenceBuilder = createBaseProject(referenceConfig)
-    private val deltaBuilder = createBaseProject(referenceConfig).also(deltaConfig)
+    @get:Rule
+    val referenceRule = GradleRule.configure().run {
+        referenceOptions?.let { optionAction ->
+            optionAction(this)
+        }
+        from {
+            rootFolderName = "referenceProject"
+            referenceConfig(this)
+        }
+    }
 
     @get:Rule
-    val referenceProject = GradleTestProject.builder()
-        .withName("referenceProject")
-        .withRootProjectName("project")
-        .fromTestApp(referenceBuilder)
-        .withAdditionalMavenRepo(referenceBuilder.mavenRepoGenerator)
-        .create()
+    val deltaRule = GradleRule.configure().run {
+        referenceOptions?.let { optionAction ->
+            optionAction(this)
+        }
 
-    @get:Rule
-    val deltaProject = GradleTestProject.builder()
-        .fromTestApp(deltaBuilder)
-        .withAdditionalMavenRepo(deltaBuilder.mavenRepoGenerator)
-        .create()
+        deltaOptions?.let { optionAction ->
+            optionAction(this)
+        }
+
+        from {
+            rootFolderName = "deltaProject"
+            referenceConfig(this)
+            deltaConfig(this)
+        }
+    }
 
     private val referenceResult: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        syncOptions(referenceProject.modelV2()).fetchModels(variantName)
+        syncOptions(referenceRule.build.modelBuilder).fetchModels(variantName)
     }
 
     private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        syncOptions(deltaProject.modelV2()).fetchModels(variantName)
+        syncOptions(deltaRule.build.modelBuilder).fetchModels(variantName)
     }
 
     fun compareBasicAndroidProjectWith(
@@ -128,15 +148,6 @@ abstract class ReferenceModelComparator(
     fun ensureVariantDependenciesDeltaIsEmpty(projectPath: String? = null) {
         Comparator(this, result, referenceResult).ensureVariantDependenciesIsEmpty {
             getProject(projectPath)
-        }
-    }
-
-    companion object {
-        private fun createBaseProject(action: TestProjectBuilder.() -> Unit): RootTestProjectBuilderImpl {
-            val builder = RootTestProjectBuilderImpl()
-            action(builder)
-
-            return builder
         }
     }
 }

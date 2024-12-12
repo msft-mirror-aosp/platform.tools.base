@@ -18,7 +18,8 @@ package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProjectWithDynamicFeature
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTask
+import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForAppVariant
+import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForDynamicFeatureVariant
 import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.viaBundleVerificationString
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
@@ -41,9 +42,49 @@ class PrivacySandboxAppWithDynamicFeatureApkOutputTest {
     @Test
     fun getApkOutputForAppWithDynamicFeature() {
         project.getSubproject("example-app").buildFile.appendText(
-            getBuildFileContentWithFetchTask(viaBundleVerificationString)
+            getBuildFileContentWithFetchTaskForAppVariant(viaBundleVerificationString)
         )
 
         executor().run(":example-app:fetchApks")
     }
+
+    @Test
+    fun getApkOutputForDynamicFeature() {
+        project.getSubproject("feature").buildFile.appendText(
+            getBuildFileContentWithFetchTaskForDynamicFeatureVariant(
+                """
+                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
+                    if (apkInstall.size() != 4 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1
+                        || apkInstall[2].apks.size() != 1 || apkInstall[3].apks.size() != 1) {
+                        throw new GradleException("Unexpected number of apks")
+                    }
+                    assert apkInstall[0].apks.first().getAsFile().name.contains("standalone.apk")
+                    assert apkInstall[0].description.contains("Source Sdk: com.example.privacysandboxsdk_10002")
+
+                    assert apkInstall[1].apks.first().getAsFile().name.contains("standalone.apk")
+                    assert apkInstall[1].description.contains("Source Sdk: com.example.privacysandboxsdkb_10002")
+
+                    assert apkInstall[2].apks.first().asFile.name.contains("base-master_3.apk")
+                    assert apkInstall[2].description.contains("Apks from Main Bundle")
+
+                    assert apkInstall[3].apks.any { it.getAsFile().name.contains("feature-debug.apk") }
+                    assert apkInstall[3].description.contains("Dynamic feature Apk Group")
+
+                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
+                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 3 || apkInstall[1].apks.size() != 1) {
+                        throw new GradleException("Unexpected number of apks")
+                    }
+                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("base-master_2.apk") }
+                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("comexampleprivacysandboxsdk-master.apk") }
+                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("comexampleprivacysandboxsdkb-master.apk") }
+
+                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("feature-debug.apk") }
+                    assert apkInstall[1].description.contains("Dynamic feature Apk Group")
+        """.trimIndent()
+            )
+        )
+
+        executor().run(":feature:fetchApks")
+    }
+
 }

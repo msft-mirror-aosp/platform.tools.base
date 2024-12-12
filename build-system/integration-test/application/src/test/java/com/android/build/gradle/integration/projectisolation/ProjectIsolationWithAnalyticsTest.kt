@@ -16,43 +16,31 @@
 
 package com.android.build.gradle.integration.projectisolation
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class ProjectIsolationWithAnalyticsTest {
 
-    private val app = MinimalSubProject.app("com.app")
-    private val lib = MinimalSubProject.lib("com.lib")
-
-    @JvmField
-    @Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .subproject(":lib", lib)
-                .subproject(
-                    ":test",
-                    MinimalSubProject
-                        .test("com.test")
-                        .appendToBuild("android.targetProjectPath ':app'")
-                )
-                .build()
-        )
-        .enableProfileOutput()
-        .create()
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withProfileOutput()
+        .from {
+            androidApplication {  }
+            androidLibrary {  }
+            androidTest {
+                android.targetProjectPath = ":app"
+            }
+    }
 
     @Before
     fun setUp() {
-        project.projectDir.resolve(".gradle/configuration-cache").deleteRecursively()
+        rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
     }
 
     @Test
     fun testWithProjectIsolation() {
-        project.executor().run("assemble")
+        rule.build.executor.run("assemble")
     }
 }

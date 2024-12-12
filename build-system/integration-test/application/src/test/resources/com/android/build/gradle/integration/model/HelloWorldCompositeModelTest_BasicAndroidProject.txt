@@ -7,18 +7,18 @@
    > defaultConfig:
       > sourceProvider:
          - name                    = "main"
-         - manifestFile            = {INCLUDED_BUILD(:other-build)}/lib/src/main/AndroidManifest.xml{F}
+         - manifestFile            = {INCLUDED_BUILD(:other-build)}/lib/src/main/AndroidManifest.xml{!}
          - javaDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/main/java{D}
+            * {INCLUDED_BUILD(:other-build)}/lib/src/main/java{!}
          - kotlinDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/main/java{D}
+            * {INCLUDED_BUILD(:other-build)}/lib/src/main/java{!}
             * {INCLUDED_BUILD(:other-build)}/lib/src/main/kotlin{!}
          - resourcesDirectories:
             * {INCLUDED_BUILD(:other-build)}/lib/src/main/resources{!}
          - aidlDirectories         = (null)
          - renderscriptDirectories = (null)
          - resDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/main/res{D}
+            * {INCLUDED_BUILD(:other-build)}/lib/src/main/res{!}
          - assetsDirectories:
             * {INCLUDED_BUILD(:other-build)}/lib/src/main/assets{!}
          - jniLibsDirectories:

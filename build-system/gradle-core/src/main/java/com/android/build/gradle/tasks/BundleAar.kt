@@ -195,7 +195,7 @@ abstract class BundleAar : Zip(), VariantTask {
             if (creationConfig !is KmpCreationConfig) {
                 task.from(artifacts.get(InternalArtifactType.ANNOTATIONS_ZIP))
                 task.from(
-                    creationConfig.artifacts.get(InternalArtifactType.LIBRARY_ASSETS),
+                    creationConfig.artifacts.get(SingleArtifact.ASSETS),
                     prependToCopyPath(SdkConstants.FD_ASSETS)
                 )
             }
@@ -442,7 +442,7 @@ abstract class BundleAar : Zip(), VariantTask {
 
             if (creationConfig.buildFeatures.androidResources) {
                 task.from(
-                    creationConfig.artifacts.get(InternalArtifactType.LIBRARY_ASSETS),
+                    creationConfig.artifacts.get(SingleArtifact.ASSETS),
                     prependToCopyPath(SdkConstants.FD_ASSETS)
                 )
             }

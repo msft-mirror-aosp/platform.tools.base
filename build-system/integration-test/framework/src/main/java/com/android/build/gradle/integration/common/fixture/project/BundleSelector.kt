@@ -30,12 +30,7 @@ import com.android.utils.combineAsCamelCase
  * Creation of an instance can be done via [of] or by making a modified copy of an existing
  * instance, for example with [withFlavor]
  */
-interface BundleSelector: OutputSelector {
-
-    val testName: String?
-    val isSigned: Boolean
-    val filter: String?
-    val suffix: String?
+sealed interface BundleSelector: OutputSelector {
 
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): ApkSelector
@@ -94,12 +89,12 @@ interface BundleSelector: OutputSelector {
 }
 
 internal data class BundleSelectorImp(
-    override val buildType: String,
-    override val testName: String?,
-    override val flavors: List<String>,
-    override val isSigned: Boolean,
-    override val filter: String? = null,
-    override val suffix: String? = null,
+    private val buildType: String,
+    private val testName: String?,
+    private val flavors: List<String>,
+    private val isSigned: Boolean,
+    private val filter: String? = null,
+    private val suffix: String? = null,
     override val fromIntermediates: Boolean = false,
 ): BundleSelector {
 

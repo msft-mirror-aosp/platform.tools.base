@@ -370,7 +370,7 @@ abstract class TaskManager(
         // dynamic-features.
         // The main dex list calculation for the bundle also needs the feature classes for reference
         // only
-        if ((creationConfig as? ApplicationCreationConfig)?.consumesDynamicFeatures == true ||
+        if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true ||
             (creationConfig as? ApkCreationConfig)?.dexing?.needsMainDexListForBundle == true) {
             creationConfig.artifacts.forScope(InternalScopedArtifacts.InternalScope.FEATURES)
                 .setInitialContent(
@@ -546,8 +546,11 @@ abstract class TaskManager(
         return mergeResourcesTask
     }
 
-    fun createMergeAssetsTask(creationConfig: ComponentCreationConfig) {
-        taskFactory.register(MergeSourceSetFolders.MergeAppAssetCreationAction(creationConfig))
+    fun createMergeAssetsTask(
+        creationConfig: ComponentCreationConfig,
+        includeDependencies: Boolean = true,
+    ) {
+        taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(creationConfig, includeDependencies))
     }
 
     fun createMergeJniLibFoldersTasks(creationConfig: ConsumableCreationConfig) {
@@ -599,7 +602,7 @@ abstract class TaskManager(
         val packageOutputType: InternalArtifactType<Directory>? =
                 if (componentType.isApk && !componentType.isForTesting) FEATURE_RESOURCE_PKG else null
         createApkProcessResTask(creationConfig, packageOutputType)
-        if ((creationConfig as? ApplicationCreationConfig)?.consumesDynamicFeatures == true) {
+        if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
             taskFactory.register(MergeAaptProguardFilesCreationAction(creationConfig))
         }
     }
@@ -759,8 +762,8 @@ abstract class TaskManager(
                     // produces LINKED_RESOURCES_PROTO_FORMAT instead of
                     // LINKED_RESOURCES_BINARY_FORMAT. Because we'll still need the binary format
                     // (see below), we'll have to convert the proto format to binary format.
-                    if (creationConfig.runResourceShrinking()) {
-                        taskFactory.register(ConvertLinkedResourcesToBinaryTask.CreationAction(creationConfig as ApkCreationConfig))
+                    if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
+                        taskFactory.register(ConvertLinkedResourcesToBinaryTask.CreationAction(creationConfig))
                     }
                     // Publish binary format instead of proto format because when linking resources
                     // for a dynamic feature module, the `-I` argument of `aapt2 link` expects APKs,
@@ -1266,7 +1269,7 @@ abstract class TaskManager(
         // or a base module consuming feature jars. Merged runtime classes are needed if code
         // minification is enabled in a project with features or dynamic-features.
         if (creationConfig.componentType.isDynamicFeature
-                || (creationConfig as? ApplicationCreationConfig)?.consumesDynamicFeatures == true) {
+                || (creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
             taskFactory.register(MergeClassesTask.CreationAction(creationConfig))
         }
 
@@ -1788,6 +1791,11 @@ abstract class TaskManager(
                     taskFactory.register(CheckProguardFiles.CreationAction(creationConfig))
             task.dependsOn(checkFilesTask)
         }
+        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+            // Also convert shrunk resources from proto format to binary format so it can be
+            // included in an APK
+            taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
+        }
     }
 
     private fun createR8Task(
@@ -1891,19 +1899,16 @@ abstract class TaskManager(
     private fun maybeCreateResourcesShrinkerTasks(
         creationConfig: ApkCreationConfig
     ) {
-        if (!creationConfig.runResourceShrinking()) return
+        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
+            // For the APK
+            if (!creationConfig.runResourceShrinkingWithR8()) {
+                taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
+                taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
+            }
 
-        // Shrink resources in APK with a new resource shrinker and produce stripped res
-        // package.
-        if (!creationConfig.runResourceShrinkingWithR8()) {
-            taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))
+            // For the bundle
+            taskFactory.register(ShrinkAppBundleResourcesTask.CreationAction(creationConfig))
         }
-        // After shrinking, we'll need to convert the proto format back to binary format so it can
-        // be included in the APK
-        taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
-
-        // Shrink resources in bundles with new resource shrinker.
-        taskFactory.register(ShrinkAppBundleResourcesTask.CreationAction(creationConfig))
     }
 
     protected fun createAnchorTasks(creationConfig: ComponentCreationConfig) {

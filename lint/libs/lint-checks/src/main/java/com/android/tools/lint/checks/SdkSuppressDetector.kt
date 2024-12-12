@@ -29,7 +29,6 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_API_ANNOTATION
-import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_EXTENSION_ANNOTATION
 import com.intellij.psi.PsiModifierListOwner
 import java.util.EnumSet
 import org.jetbrains.uast.UClass
@@ -72,7 +71,9 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
     listOf(
       REQUIRES_API_ANNOTATION.oldName(),
       REQUIRES_API_ANNOTATION.newName(),
+      /* Not enforced yet since @SdkSuppress doesn't support extensions yet;see b/257429573
       REQUIRES_EXTENSION_ANNOTATION,
+       */
     )
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == DEFINITION

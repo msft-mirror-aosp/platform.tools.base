@@ -32,6 +32,7 @@ sealed class PluginType(
     val isJava: Boolean = false,
     val useNewDsl: Boolean = true,
     val last: Boolean = false,
+    val isSettings: Boolean = false,
     val version: String? = null
 ) {
     object JAVA_LIBRARY: PluginType(
@@ -144,6 +145,7 @@ sealed class PluginType(
         id = "com.android.settings",
         isAndroid = true,
         useNewDsl = true,
+        isSettings = true,
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
     object JAVA_TEST_FIXTURES: PluginType(

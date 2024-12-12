@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.utils;
 
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,8 +25,10 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -187,6 +190,18 @@ public class TestFileUtils {
                 (System.lineSeparator() + content).getBytes(StandardCharsets.UTF_8),
                 StandardOpenOption.APPEND,
                 StandardOpenOption.CREATE);
+    }
+
+    public static void prependToFile(@NonNull File file, @NonNull String content)
+            throws IOException {
+        String originalContent = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        String newContent = content + System.lineSeparator() + originalContent;
+
+        Files.write(
+                file.toPath(),
+                (newContent + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                StandardOpenOption.WRITE,
+                StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     /**

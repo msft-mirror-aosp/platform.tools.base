@@ -20,13 +20,20 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import java.nio.file.Path
 
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
 interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
+    companion object {
+        const val DEFAULT_APP_PATH = ":app"
+        const val DEFAULT_LIB_PATH = ":lib"
+        const val DEFAULT_FEATURE_PATH = ":feature"
+        const val DEFAULT_TEST_PATH = ":test"
+    }
+
     val android: ExtensionT
     fun android(action: ExtensionT.() -> Unit)
 
@@ -34,8 +41,6 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
 
     override val files: AndroidProjectFiles
     fun files(action: AndroidProjectFiles.() -> Unit)
-
-    var componentCallback: Class<out AndroidComponentCallback>?
 }
 
 /**
@@ -45,8 +50,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
     path: String
 ): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
 
-    override val files: AndroidProjectFiles = AndroidProjectFilesImpl(this::namespace)
-    override var componentCallback: Class<out AndroidComponentCallback>? = null
+    override val files: AndroidProjectFiles = DelayedAndroidProjectFiles(this::namespace)
 
     override fun files(action: AndroidProjectFiles.() -> Unit) {
         action(files)
@@ -95,11 +99,13 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)
             }
+
+            emptyLine()
         }
     }
 }

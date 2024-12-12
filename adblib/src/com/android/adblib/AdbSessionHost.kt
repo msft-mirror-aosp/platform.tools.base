@@ -15,6 +15,7 @@
  */
 package com.android.adblib
 
+import com.android.adblib.impl.ProcessRunnerImpl
 import com.android.adblib.utils.JdkLoggerFactory
 import com.android.adblib.utils.SystemNanoTime
 import kotlinx.coroutines.CoroutineDispatcher
@@ -60,6 +61,11 @@ open class AdbSessionHost : AutoCloseable {
      */
     val logger: AdbLogger
         get() = loggerFactory.logger
+
+    /**
+     * The [ProcessRunner] for this host.
+     */
+    open val processRunner: ProcessRunner = ProcessRunnerImpl(this)
 
     /**
      * The [AsynchronousChannelGroup] used for running [java.nio.channels.AsynchronousSocketChannel] completions.

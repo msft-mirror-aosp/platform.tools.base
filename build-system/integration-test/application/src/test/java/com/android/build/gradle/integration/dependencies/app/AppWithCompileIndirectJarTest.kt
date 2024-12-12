@@ -17,9 +17,9 @@
 package com.android.build.gradle.integration.dependencies.app
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -27,21 +27,13 @@ import org.junit.Test
 class AppWithCompileIndirectJarTest : ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":library"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":library") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+        androidLibrary {
             dependencies {
                 api("com.google.guava:guava:18.0")
             }
@@ -50,16 +42,18 @@ class AppWithCompileIndirectJarTest : ModelComparator() {
 
     @Test
     fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+        val result = rule.build
+            .modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies"
         )
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies"
+            projectAction = { getProject(DEFAULT_LIB_PATH) },
+            goldenFile = "library_VariantDependencies"
         )
     }
 }

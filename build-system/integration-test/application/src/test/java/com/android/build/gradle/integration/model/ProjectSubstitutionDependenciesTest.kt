@@ -16,57 +16,47 @@
 
 package com.android.build.gradle.integration.model
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 class ProjectSubstitutionDependenciesTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
                 runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
                 implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
             }
-            appendToBuildFile {
-                """
-                    configurations.all {
-                        resolutionStrategy.dependencySubstitution {
-                          substitute module("com.example:lib:1.0") using project(":lib")
-                          substitute module("com.example:lib2:1.0") using project(":lib2")
-                        }
-                    }
-                """.trimIndent()
-            }
+            pluginCallback = AppCallback::class.java
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
-        subProject(":lib2") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
+        androidLibrary(":lib") { }
+        androidLibrary(":lib2") {  }
+    }
+
+    class AppCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            project.configurations.all {
+                it.resolutionStrategy.dependencySubstitution {
+                    it.substitute(it.module("com.example:lib:1.0")).using(it.project(":lib"))
+                    it.substitute(it.module("com.example:lib2:1.0")).using(it.project(":lib2"))
+                }
             }
         }
     }
 
-
     @Test
     fun checkAllDependencies() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

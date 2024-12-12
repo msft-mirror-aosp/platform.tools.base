@@ -31,7 +31,7 @@ class BuiltInKotlinForAppTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)
@@ -41,7 +41,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testKotlinClassesInApk() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add("src/main/java/com/foo/application/AppFoo.kt",
                         //language=kotlin
@@ -61,7 +61,7 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:assembleDebug")
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             hasClass("Lcom/foo/application/AppFoo;")
             hasClass("Lcom/foo/application/KotlinAppFoo;")
         }
@@ -70,7 +70,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testKotlinClassesInTestApk() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add("src/androidTest/java/AppFooTest.kt",
                         //language=kotlin
@@ -90,7 +90,7 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:assembleDebugAndroidTest")
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG.forTestSuite("androidTest")) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG.forTestSuite("androidTest")) {
             hasClass("Lcom/foo/application/AppFooTest;")
             hasClass("Lcom/foo/application/KotlinAppFooTest;")
         }
@@ -99,7 +99,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testUnitTests() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 dependencies {
                     testImplementation("junit:junit:4.12")
                 }
@@ -121,7 +121,7 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:testDebug")
-        val app = build.androidApplication(":app")
+        val app = build.androidApplication()
         val testResults =
             app.location
                 .resolve(
@@ -137,33 +137,33 @@ class BuiltInKotlinForAppTest {
      */
     @Test
     fun testWithScreenshotTestEnabled() {
-        val build = rule.configure()
-            .withProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }.build {
-                androidApplication(":app") {
-                    android.experimentalProperties[SCREENSHOT_TEST.key] = true
+        val build = rule.build {
+            androidApplication {
+                android.experimentalProperties[SCREENSHOT_TEST.key] = true
 
-                    files {
-                        add(
-                            "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
-                            //language=kotlin
-                            """
-                                package com.foo.application
-                                class AppScreenshotTestFoo
-                            """.trimIndent()
-                        )
-                        add(
-                            "src/main/java/com/foo/application/AppFoo.kt",
-                            //language=kotlin
-                            """
-                                package com.foo.application
-                                class AppFoo
-                            """.trimIndent()
-                        )
-                    }
+                files {
+                    add(
+                        "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppScreenshotTestFoo
+                        """.trimIndent()
+                    )
+                    add(
+                        "src/main/java/com/foo/application/AppFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFoo
+                        """.trimIndent()
+                    )
                 }
             }
+            gradleProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }
+        }
 
         build.executor.run(":app:compileDebugScreenshotTestKotlin")
         build.executor.run(":app:assembleDebug")
@@ -172,7 +172,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testInternalModifierAccessibleFromTests() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add("src/main/java/com/foo/application/AppFoo.kt",
                         //language=kotlin
@@ -202,7 +202,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testAppCompilesAgainstKotlinClassesFromDependency() {
         val build = rule.build {
-            androidLibrary(":lib") {
+            androidLibrary {
                 applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
                 HelloWorldAndroid.setupKotlin(files)
@@ -216,7 +216,7 @@ class BuiltInKotlinForAppTest {
                         """.trimIndent())
                 }
             }
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add(
                         "src/main/kotlin/com/foo/application/AppFoo.kt",
@@ -234,7 +234,7 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:assembleDebug")
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             hasClass("Lcom/foo/application/AppFoo;")
             hasClass("Lcom/foo/library/LibFoo;")
         }
@@ -243,7 +243,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testKotlinAndJavaCrossReferences() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add("src/main/java/com/foo/application/AppJavaFoo.java",
                         //language=java
@@ -275,18 +275,17 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:assembleDebug")
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             hasClass("Lcom/foo/application/AppJavaFoo;")
             hasClass("Lcom/foo/application/AppKotlinFoo;")
             hasClass("Lcom/foo/application/AppKotlinBar;")
         }
     }
 
-
     @Test
     fun testErrorWhenBuiltInKotlinSupportAndKagpUsedInSameModule() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
         }
@@ -300,7 +299,7 @@ class BuiltInKotlinForAppTest {
     @Test
     fun testKotlinDsl() {
         val build = rule.build {
-            androidApplication(":app") {
+            androidApplication {
                 files {
                     add("src/main/kotlin/com/foo/application/KotlinAppFoo.kt",
                         //language=kotlin
@@ -321,5 +320,37 @@ class BuiltInKotlinForAppTest {
         val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
         ScannerSubject.assertThat(result.stderr)
             .contains("Visibility must be specified in explicit API mode")
+    }
+
+    /**
+     * Regression test for b/338596003
+     */
+    @Test
+    fun testKotlinAttributeSetup() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    defaultConfig {
+                        minSdk = 21
+                    }
+                    dependencies {
+                        implementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
+                    }
+                }
+            }
+        }
+
+        // First test that kotlin compilation completes successfully.
+        build.executor
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .run(":app:compileDebugKotlin")
+
+        // Then test that the build fails if Kotlin attribute setup is disabled
+        val result = build.executor
+            .expectFailure()
+            .with(BooleanOption.USE_ANDROID_X, true)
+            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+            .run(":app:compileDebugKotlin")
+        ScannerSubject.assertThat(result.stderr).contains("Could not find androidx.compose.ui")
     }
 }

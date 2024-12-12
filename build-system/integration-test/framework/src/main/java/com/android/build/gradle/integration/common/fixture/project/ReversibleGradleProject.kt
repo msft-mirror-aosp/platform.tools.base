@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.isRegularFile
 
 /**
  * Base Class for all reversible projects
@@ -32,8 +33,11 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     override val location: Path
         get() = parentProject.location
 
+    override val buildDir: Path
+        get() = parentProject.buildDir
+
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
-        throw RuntimeException("Cannot reconfigure inside a reconfiguration")
+        throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
     }
 
     override fun file(path: String): File? {
@@ -44,13 +48,19 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
 
 internal open class ReversibleProjectFiles(
     private val projectModification: TemporaryProjectModification,
+    private val location: Path,
 ): GradleProjectFiles {
     override fun add(relativePath: String, content: String) {
         projectModification.addFile(relativePath, content)
     }
 
-    override fun update(relativePath: String, action: (String) -> String) {
-        projectModification.modifyFile(relativePath, action)
+    override fun update(relativePath: String, action: (String?) -> String) {
+        val file = location.resolve(relativePath)
+        if (file.isRegularFile()) {
+            projectModification.modifyFile(relativePath, action)
+        } else {
+            projectModification.addFile(relativePath, action(null))
+        }
     }
 
     override fun remove(relativePath: String) {

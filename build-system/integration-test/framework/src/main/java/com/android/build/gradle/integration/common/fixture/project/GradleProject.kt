@@ -16,10 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -33,6 +30,9 @@ import java.nio.file.Path
 interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition>: TemporaryProjectModification.FileProvider {
     /** the location on disk of the project */
     val location: Path
+
+    /** The build folder for the project. This does NOT support build dir relocation */
+    val buildDir: Path
 
     /**
      * Reconfigure the project, and writes the result on disk right away
@@ -55,10 +55,19 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition>: Tempo
 internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     final override val location: Path,
     protected val projectDefinition: ProjectDefinitionT,
-    private val buildWriter: () -> BuildWriter,
-    protected val parentBuild: GradleBuildDefinitionImpl,
-    protected val modelBuilder: () -> ModelBuilderV2,
 ) : GradleProject<ProjectDefinitionT> {
+
+    /**
+     * the build that contains this project.
+     *
+     * This relationship is bidirectional and therefore cannot be implemented by constructor
+     * parameters in both classes. Here this is set after the constructor once the build
+     * object has been created. This is not meant to be really mutable.
+     */
+    internal lateinit var build: GradleBuildImpl
+
+    override val buildDir: Path
+        get() = location.resolve("build")
 
     override fun file(path: String): File? {
         return location.resolve(path).toFile()
@@ -71,10 +80,10 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         action(projectDefinition)
 
         // we need to query the other projects for their plugins
-        val allPlugins = parentBuild.computeAllPluginMap()
+        val allPlugins = build.computeAllPluginMap()
 
         (projectDefinition as GradleProjectDefinitionImpl)
-            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), buildWriter)
+            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), build.getNewWriter())
     }
 
     abstract fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject<ProjectDefinitionT>

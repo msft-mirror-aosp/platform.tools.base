@@ -17,13 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -41,9 +38,13 @@ import kotlin.io.path.isRegularFile
 
 /**
  * Implementation of [AndroidProjectDefinition] for [ApplicationExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
 internal class AndroidApplicationDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean,
 ): AndroidProjectDefinitionImpl<ApplicationExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_APP)
@@ -54,7 +55,9 @@ internal class AndroidApplicationDefinitionImpl(
             ApplicationExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 
@@ -87,17 +90,11 @@ interface AndroidApplicationProject: AndroidProject<AndroidProjectDefinition<App
 internal class AndroidApplicationImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<ApplicationExtension>,
-    namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
-    ) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
+    namespace: String
+) : AndroidProjectImpl<AndroidProjectDefinition<ApplicationExtension>>(
     location,
     projectDefinition,
     namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder
 ), AndroidApplicationProject {
 
     override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R {
@@ -122,7 +119,7 @@ internal class AndroidApplicationImpl(
 
     override fun getApkFromBundleTaskName(variantName: String): String {
         val projectPath = projectDefinition.path
-        val model = modelBuilder().fetchModels().container.getProject(projectPath).androidProject
+        val model = build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject
             ?: throw RuntimeException("Failed to get sync model for $projectPath module")
 
         val variantMainArtifact = model.getVariantByName(variantName).mainArtifact
@@ -133,7 +130,7 @@ internal class AndroidApplicationImpl(
     override fun locateApkFolderViaModel(variantName: String): File {
         val projectPath = projectDefinition.path
 
-        val apkFiles = modelBuilder().fetchModels().container.getProject(projectPath).androidProject
+        val apkFiles = build.modelBuilder.fetchModels().container.getProject(projectPath).androidProject
             ?.getVariantByName(variantName)
             ?.getApkLocations()
 

@@ -110,7 +110,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidHardwareQemuIniLockScannerHasNextLong() throws IOException {
+    public void getPidHardwareQemuIniLockScannerHasNextLong() throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
@@ -126,7 +126,6 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        assert avd != null;
         Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
@@ -140,7 +139,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidHardwareQemuIniLockIsEmpty() throws IOException {
+    public void getPidHardwareQemuIniLockIsEmpty() throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
@@ -156,7 +155,6 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        assert avd != null;
         Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
@@ -170,7 +168,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidHardwareQemuIniLockScannerDoesntHaveNextLong() throws IOException {
+    public void getPidHardwareQemuIniLockScannerDoesntHaveNextLong() throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
@@ -186,7 +184,6 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        assert avd != null;
         Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
@@ -200,7 +197,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidUserdataQemuImgLockScannerHasNextLong() throws IOException {
+    public void getPidUserdataQemuImgLockScannerHasNextLong() throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
@@ -216,7 +213,6 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        assert avd != null;
         Path file = mAvdManager.resolve(avd, "userdata-qemu.img.lock");
 
         Files.createDirectories(file.getParent());
@@ -230,7 +226,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPid() throws IOException {
+    public void getPid() throws AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
@@ -246,8 +242,6 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        assert avd != null;
-
         // Act
         Object pid = mAvdManager.getPid(avd);
 
@@ -256,8 +250,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdWithoutSnapshot() {
-        MockLog log = new MockLog();
+    public void createAvdWithoutSnapshot() throws AvdManagerException {
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
@@ -292,8 +285,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdWithUserdata() {
-        MockLog log = new MockLog();
+    public void createAvdWithUserdata() throws AvdManagerException {
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
@@ -328,7 +320,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdWithNullValueUserSettings() {
+    public void createAvdWithNullValueUserSettings() throws AvdManagerException {
         Map<String, String> userSettings = new HashMap<>();
         userSettings.put(PREFERRED_ABI, null);
         mAvdManager.createAvd(
@@ -368,8 +360,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdWithBootProps() {
-        MockLog log = new MockLog();
+    public void createAvdWithBootProps() throws AvdManagerException {
         Map<String, String> expected = Maps.newTreeMap();
         expected.put("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
         expected.put("ro.board.platform",   "");
@@ -398,9 +389,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createChromeOsAvd() {
-        MockLog log = new MockLog();
-
+    public void createChromeOsAvd() throws AvdManagerException {
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
@@ -423,9 +412,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createNonChromeOsAvd() {
-        MockLog log = new MockLog();
-
+    public void createNonChromeOsAvd() throws AvdManagerException {
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
@@ -448,8 +435,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdForGradleManagedDevice() throws AndroidLocationsException {
-        MockLog log = new MockLog();
+    public void createAvdForGradleManagedDevice() throws AndroidLocationsException, AvdManagerException {
         mGradleManagedDeviceAvdManager.createAvd(
                 mGradleManagedDeviceAvdFolder,
                 name.getMethodName(),
@@ -472,7 +458,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createTabletAvd() {
+    public void createTabletAvd() throws AvdManagerException {
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
@@ -497,7 +483,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdWithSkin() {
+    public void createAvdWithSkin() throws AvdManagerException {
         MockLog log = new MockLog();
         DeviceManager deviceManager = DeviceManager.createInstance(mAndroidSdkHandler, log);
         Device device = deviceManager.getDevice("medium_phone", "Generic");
@@ -520,7 +506,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void moveAvd() {
+    public void moveAvd() throws AvdManagerException {
         Map<String, String> hardwareConfig =
                 ImmutableMap.of("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
         Map<String, String> userSettings = ImmutableMap.of("abi.type.preferred", "x86");
@@ -549,7 +535,7 @@ public final class AvdManagerTest {
         // Move the AVD, updating its name and data folder path
         String newAvdName = avdInfo.getName() + "_2";
         Path newAvdFolder = avdInfo.getDataFolderPath().resolveSibling(newAvdName + ".avd");
-        assertThat(mAvdManager.moveAvd(avdInfo, newAvdName, newAvdFolder)).isTrue();
+        mAvdManager.moveAvd(avdInfo, newAvdName, newAvdFolder);
 
         // The locations of the metadata .ini and the data folder are updated
         assertFalse(Files.exists(metadataIniFile));
@@ -586,8 +572,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void renameAvd() {
-        MockLog log = new MockLog();
+    public void renameAvd() throws AvdManagerException {
         // Create an AVD
         AvdInfo origAvd =
                 mAvdManager.createAvd(
@@ -662,7 +647,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void editAvdViaBuilder() {
+    public void editAvdViaBuilder() throws AvdManagerException {
         MockLog log = new MockLog();
         DeviceManager deviceManager = DeviceManager.createInstance(mAndroidSdkHandler, log);
         Device device = deviceManager.getDevice("medium_phone", "Generic");
@@ -691,7 +676,6 @@ public final class AvdManagerTest {
 
     @Test
     public void duplicateAvd() throws Exception {
-        MockLog log = new MockLog();
         // Create an AVD
         HashMap<String, String> origAvdConfig = new HashMap<>();
         origAvdConfig.put("testKey1", "originalValue1");
@@ -913,8 +897,7 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void playStoreProperty() {
-        MockLog log = new MockLog();
+    public void playStoreProperty() throws AvdManagerException {
         Map<String, String> expected = Maps.newTreeMap();
         expected.put("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
         expected.put("ro.board.platform",   "");
@@ -1073,7 +1056,6 @@ public final class AvdManagerTest {
 
     @Test
     public void parseAvdInfo() throws Exception {
-        MockLog log = new MockLog();
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),

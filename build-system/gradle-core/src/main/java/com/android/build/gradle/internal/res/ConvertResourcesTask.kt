@@ -21,12 +21,12 @@ import com.android.build.api.artifact.ArtifactTransformationRequest
 import com.android.build.api.variant.BuiltArtifact
 import com.android.build.api.variant.MultiOutputHandler
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT
-import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_BINARY_FORMAT
+import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.services.Aapt2Input
 import com.android.build.gradle.internal.services.getLeasingAapt2
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -110,8 +110,8 @@ sealed class ConvertResourcesTask<TaskT: ConvertResourcesTask<TaskT>> : NonIncre
         }
     }
 
-    sealed class CreationAction<TaskT: ConvertResourcesTask<TaskT>>(creationConfig: ApkCreationConfig)
-        : VariantTaskCreationAction<TaskT, ApkCreationConfig>(creationConfig) {
+    sealed class CreationAction<TaskT: ConvertResourcesTask<TaskT>>(creationConfig: ApplicationCreationConfig)
+        : VariantTaskCreationAction<TaskT, ApplicationCreationConfig>(creationConfig) {
 
         lateinit var transformationRequest: ArtifactTransformationRequest<TaskT>
 
@@ -155,7 +155,7 @@ abstract class ConvertLinkedResourcesToBinaryTask : ConvertResourcesTask<Convert
     override val convertToProto = false
     override val outputArtifactType = LINKED_RESOURCES_BINARY_FORMAT
 
-    class CreationAction(creationConfig: ApkCreationConfig)
+    class CreationAction(creationConfig: ApplicationCreationConfig)
         : ConvertResourcesTask.CreationAction<ConvertLinkedResourcesToBinaryTask>(creationConfig) {
 
         override val type = ConvertLinkedResourcesToBinaryTask::class.java
@@ -181,7 +181,7 @@ abstract class ConvertShrunkResourcesToBinaryTask : ConvertResourcesTask<Convert
     override val convertToProto = false
     override val outputArtifactType = SHRUNK_RESOURCES_BINARY_FORMAT
 
-    class CreationAction(creationConfig: ApkCreationConfig)
+    class CreationAction(creationConfig: ApplicationCreationConfig)
         : ConvertResourcesTask.CreationAction<ConvertShrunkResourcesToBinaryTask>(creationConfig) {
 
         override val type = ConvertShrunkResourcesToBinaryTask::class.java

@@ -19,42 +19,37 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.builder.model.v2.ide.SyncIssue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class LibWithLocalJarModelTest : ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":lib"))
+                implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary {
             dependencies {
                 implementation(localJar {
                     name = "foo.jar"
                     addClass("com/example/MainClass")
                 })
             }
-            android {
-                setUpHelloWorld()
-            }
         }
     }
 
-    private val result: ModelBuilderV2.FetchResult<ModelContainerV2> by lazy {
-        project.modelV2()
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
     }
@@ -62,7 +57,7 @@ class LibWithLocalJarModelTest : ModelComparator() {
     @Test
     fun `test app dependency model`() {
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") },
+            projectAction = { getProject(DEFAULT_APP_PATH) },
             goldenFile = "app"
         )
     }
@@ -70,7 +65,7 @@ class LibWithLocalJarModelTest : ModelComparator() {
     @Test
     fun `test lib dependency model`() {
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":lib") },
+            projectAction = { getProject(DEFAULT_LIB_PATH) },
             goldenFile = "lib"
         )
     }

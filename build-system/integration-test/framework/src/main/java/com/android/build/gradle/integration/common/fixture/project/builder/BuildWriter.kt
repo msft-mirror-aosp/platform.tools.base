@@ -64,6 +64,8 @@ interface BuildWriter: BooleanNameHandler {
     /** Writes a block without an item or parameters */
     fun block(name: String, action: BuildWriter.() -> Unit): BuildWriter
 
+    fun emptyLine(): BuildWriter
+
     /** Returns the file name of the build file for this writer */
     val buildFileName: String
     /** Returns the file name of the settings file for this writer */
@@ -350,6 +352,11 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         indent().put('}').endLine()
         return this
     }
+
+    override fun emptyLine(): BuildWriter {
+        put('\n')
+        return this
+    }
 }
 
 internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -430,7 +437,11 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
         return "[$mapDeclarationContent]"
     }
 
-    override fun toIsBooleanName(name: String): String = name
+    override fun toIsBooleanName(name: String): String {
+        // special case because Groovy is stupid
+        if (name == "default") return "isDefault"
+        return name
+    }
 
     override val buildFileName: String
         get() = "build.gradle"

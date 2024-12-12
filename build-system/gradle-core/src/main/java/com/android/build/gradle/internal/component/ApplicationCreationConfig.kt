@@ -25,13 +25,12 @@ interface ApplicationCreationConfig: ApkCreationConfig, VariantCreationConfig, P
     val profileable: Boolean
 
     /**
-     * Whether this is the base module in a bundle, and the base module needs to consume dynamic
-     * feature modules (i.e., the bundle has dynamic features and shrinking is enabled).
+     * Whether this application has shrinking enabled AND has dynamic features.
      *
      * This property is needed because under the above condition, AGP has a different pipeline for
-     * publishing/consuming artifacts between the base module and the dynamic feature modules.
+     * publishing/consuming artifacts between the base module and dynamic feature modules.
      */
-    val consumesDynamicFeatures: Boolean
+    val shrinkingWithDynamicFeatures: Boolean
 
     val needAssetPackTasks: Boolean
     val isWearAppUnbundled: Boolean?

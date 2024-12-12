@@ -16,6 +16,7 @@
 package com.android.sdklib.deviceprovisioner
 
 import com.android.sdklib.deviceprovisioner.DeviceAction.DefaultPresentation
+import java.awt.Component
 import java.time.Duration
 import java.time.Instant
 import javax.swing.Icon
@@ -72,8 +73,10 @@ interface CreateDeviceAction : DeviceAction {
    *
    * If creation is successful, this should have the side effect of adding the device to the
    * provisioner's list of devices.
+   *
+   * @param parent the parent component to use for any dialog that is created
    */
-  suspend fun create()
+  suspend fun create(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = createDeviceAction
 }
@@ -84,8 +87,10 @@ interface CreateDeviceTemplateAction : DeviceAction {
    *
    * If creation is successful, this should have the side effect of adding the device to the
    * provisioner's list of templates.
+   *
+   * @param parent the parent component to use for any dialog that is created
    */
-  suspend fun create()
+  suspend fun create(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = createDeviceTemplateAction
 }
@@ -121,7 +126,12 @@ interface DeactivationAction : DeviceAction {
 }
 
 interface EditAction : DeviceAction {
-  suspend fun edit()
+  /**
+   * Invokes a UI to make edits to the device.
+   *
+   * @param parent the parent component to use for any dialog that is created
+   */
+  suspend fun edit(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = editAction
 }
@@ -130,14 +140,21 @@ interface EditTemplateAction : DeviceAction {
   /**
    * Invokes a UI to make edits to the template. If the edits are accepted, returns the new template
    * that was created.
+   *
+   * @param parent the parent component to use for any dialog that is created
    */
-  suspend fun edit(): DeviceTemplate?
+  suspend fun edit(parent: Component?): DeviceTemplate?
 
   override fun DefaultPresentation.fromContext() = editTemplateAction
 }
 
 interface DuplicateAction : DeviceAction {
-  suspend fun duplicate()
+  /**
+   * Creates a new device based on this device, potentially showing a UI to customize it.
+   *
+   * @param parent the parent component to use for any dialog that is created
+   */
+  suspend fun duplicate(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = duplicateAction
 }

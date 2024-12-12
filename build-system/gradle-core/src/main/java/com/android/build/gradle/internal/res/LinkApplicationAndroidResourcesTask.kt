@@ -545,7 +545,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
         private val linkedResourcesArtifactType: InternalArtifactType<Directory>
             // Resource shrinker only works with proto format, so we produce the proto format
             // directly in that case.
-            get() = if (creationConfig.runResourceShrinking()) {
+            get() = if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
                 InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT
             } else {
                 InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT

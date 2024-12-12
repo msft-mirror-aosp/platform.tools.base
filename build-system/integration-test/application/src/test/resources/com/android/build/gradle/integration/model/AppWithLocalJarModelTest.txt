@@ -1,33 +1,33 @@
 > VariantDependencies:
    - mainArtifact:
       - compileDependencies:
-         - __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+         - __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
             - requestedCoordinates = (null)
             - dependencies         = []
       - runtimeDependencies:
-         - __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+         - __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
             - dependencies = "*visited*"
    - androidTestArtifact:
       - compileDependencies:
-         - __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+         - __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
             - requestedCoordinates = (null)
             - dependencies         = []
    - unitTestArtifact:
       - compileDependencies:
-         - __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+         - __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
             - requestedCoordinates = (null)
             - dependencies         = []
       - runtimeDependencies:
-         - __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+         - __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
             - dependencies = "*visited*"
    > libraries:
-      > __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}:
+      > __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}:
          - type               = JAVA_LIBRARY
-         - artifact           = {PROJECT}/libs/foo.jar{F}
+         - artifact           = {PROJECT}/app/libs/foo.jar{F}
          - projectInfo        = (null)
          - libraryInfo:
             - group          = "__local_aars__"
-            - name           = {PROJECT}/libs/foo.jar{F}
+            - name           = {PROJECT}/app/libs/foo.jar{F}
             - version        = "unspecified"
             - isTestFixtures = false
             - buildType      = (null)
@@ -36,6 +36,6 @@
             - capabilities   = []
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < __local_aars__|{PROJECT}/libs/foo.jar{F}|unspecified||{ADDED}
+      < __local_aars__|{PROJECT}/app/libs/foo.jar{F}|unspecified||{ADDED}
    < libraries
 < VariantDependencies

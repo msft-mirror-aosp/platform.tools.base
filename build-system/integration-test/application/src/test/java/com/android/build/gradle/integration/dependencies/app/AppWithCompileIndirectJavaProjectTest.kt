@@ -16,12 +16,13 @@
 
 package com.android.build.gradle.integration.dependencies.app
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -29,70 +30,67 @@ import org.junit.Test
 class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
 
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":library"))
+                implementation(project(DEFAULT_LIB_PATH))
                 runtimeOnly("com.google.guava:guava:19.0")
             }
         }
-        subProject(":library") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
+        androidLibrary {
             dependencies {
                 api(project(":jar"))
             }
-            addFile(
-                "src/main/java/com/example/android/multiproject/library/PersonView.java", """
-                package com.example.android.multiproject.library;
-
-                public class PersonView {}
-            """.trimIndent()
+            files.add(
+                "src/main/java/com/example/android/multiproject/library/PersonView.java",
+                //language=java
+                """
+                    package com.example.android.multiproject.library;
+                    public class PersonView {}
+                """.trimIndent()
             )
         }
-        subProject(":jar") {
-            plugins.add(PluginType.JAVA_LIBRARY)
+        genericProject(":jar") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
             dependencies {
                 api("com.google.guava:guava:19.0")
             }
-            addFile(
-                "src/main/java/com/example/android/multiproject/person/People.java", """
-                package com.example.android.multiproject.person;
-
-                public class People {}
-            """.trimIndent()
+            files.add(
+                "src/main/java/com/example/android/multiproject/person/People.java",
+                //language=java
+                """
+                    package com.example.android.multiproject.person;
+                    public class People {}
+                """.trimIndent()
             )
         }
     }
 
     @Test
     fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+        val result = rule.build
+            .modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
 
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
+            projectAction = { getProject(DEFAULT_APP_PATH) },
+            goldenFile = "app_VariantDependencies"
         )
         with(result).compareVariantDependencies(
-            projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies"
+            projectAction = { getProject(DEFAULT_LIB_PATH) },
+            goldenFile = "library_VariantDependencies"
         )
     }
 
     @Test
     fun checkPackagedJar() {
-        project.execute(":app:assembleDebug")
+        val build = rule.build
+        build.executor.run(":app:assembleDebug")
 
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/person/People;")
-        assertThat(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            containsClass("Lcom/example/android/multiproject/person/People;")
+            containsClass("Lcom/example/android/multiproject/library/PersonView;")
+        }
     }
 }

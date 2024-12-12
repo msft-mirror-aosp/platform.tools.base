@@ -122,7 +122,7 @@ class ResourceReference(
 
       val declaration =
         when (element) {
-          is UVariable -> element.psi
+          is UVariable -> element.javaPsi
           is UResolvable -> (element as UResolvable).resolve()
           else -> return null
         }

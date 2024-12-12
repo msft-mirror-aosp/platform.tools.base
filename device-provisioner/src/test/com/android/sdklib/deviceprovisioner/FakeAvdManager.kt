@@ -29,6 +29,7 @@ import com.android.sdklib.SystemImageTags
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
+import java.awt.Component
 import java.nio.file.Path
 
 class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
@@ -44,7 +45,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
 
   override suspend fun rescanAvds(): List<AvdInfo> = synchronized(avds) { avds.toList() }
 
-  override suspend fun createAvd(): Boolean {
+  override suspend fun createAvd(parent: Component?): Boolean {
     createAvd(makeAvdInfo(avdIndex++))
     return true
   }
@@ -61,7 +62,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     synchronized(avds) { avds += avdInfo }
   }
 
-  override suspend fun editAvd(avdInfo: AvdInfo): Boolean =
+  override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
     synchronized(avds) {
       avds.remove(avdInfo)
       val newAvdInfo = avdEditor(avdInfo)
@@ -111,7 +112,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     // no-op
   }
 
-  override suspend fun duplicateAvd(avdInfo: AvdInfo) {
+  override suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo) {
     // not used
   }
 

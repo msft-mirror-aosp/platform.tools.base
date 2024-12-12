@@ -138,6 +138,7 @@ class MinimalSubProject private constructor(
             )
         }
 
+        @Deprecated("Use GradleRule instead")
         fun test(namespace: String): MinimalSubProject {
             return MinimalSubProject(
                 path = null,

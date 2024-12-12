@@ -21,6 +21,9 @@ import com.android.build.api.dsl.CompileOptions
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.TestProject
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 
@@ -53,8 +56,15 @@ fun createGradleProjectBuilder(
         .withAdditionalMavenRepo(builder.mavenRepoGenerator)
 }
 
-enum class BuildFileType(val extension: String) {
-    GROOVY(""), KTS(".kts")
+sealed class BuildFileType(val extension: String) {
+    abstract fun getNewWriter(): BuildWriter
+
+    data object GROOVY: BuildFileType(extension = "") {
+        override fun getNewWriter(): BuildWriter = GroovyBuildWriter()
+    }
+    data object KTS: BuildFileType(".kts") {
+        override fun getNewWriter(): BuildWriter = KtsBuildWriter()
+    }
 }
 
 interface TestProjectBuilder {

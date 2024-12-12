@@ -1,15 +1,15 @@
 > AndroidProject:
-   - testFixturesNamespace = "pkg.name.testFixtures"
+   - testFixturesNamespace = "pkg.name.lib.testFixtures"
    > variants:
       > debug:
          > testFixturesArtifact{ADDED}:
             - compileTaskName               = "compileDebugTestFixturesSources"
             - assembleTaskName              = "assembleDebugTestFixtures"
             - classesFolders:
-               * {PROJECT}/build/intermediates/javac/debugTestFixtures/compileDebugTestFixturesJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/javac/debugTestFixtures/compileDebugTestFixturesJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugTestFixturesSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/debugTestFixtures/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/debugTestFixtures/out{!}
             - minSdkVersion:
                - apiLevel = 1
                - codename = (null)
@@ -35,10 +35,10 @@
             - compileTaskName               = "compileReleaseTestFixturesSources"
             - assembleTaskName              = "assembleReleaseTestFixtures"
             - classesFolders:
-               * {PROJECT}/build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes{!}
+               * {PROJECT}/lib/build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateReleaseTestFixturesSources"]
             - generatedSourceFolders:
-               * {PROJECT}/build/generated/ap_generated_sources/releaseTestFixtures/out{!}
+               * {PROJECT}/lib/build/generated/ap_generated_sources/releaseTestFixtures/out{!}
             - minSdkVersion:
                - apiLevel = 1
                - codename = (null)

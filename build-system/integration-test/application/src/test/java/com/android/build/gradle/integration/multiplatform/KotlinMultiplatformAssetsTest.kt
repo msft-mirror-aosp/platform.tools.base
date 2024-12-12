@@ -73,7 +73,7 @@ class KotlinMultiplatformAssetsTest {
         val result = project.executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).doesNotContain(
             listOf(
-                ":kmpFirstLib:packageAndroidMainAssets"
+                ":kmpFirstLib:mergeAndroidMainAssets"
             )
         )
     }
@@ -83,7 +83,7 @@ class KotlinMultiplatformAssetsTest {
         val result = project.executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
-                ":kmpFirstLib:packageAndroidMainAssets"
+                ":kmpFirstLib:mergeAndroidMainAssets"
             )
         )
 

@@ -38,8 +38,14 @@ import kotlin.io.path.isRegularFile
 
 /**
  * Implementation of [AndroidProjectDefinition] for [LibraryExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
-internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
+internal class AndroidLibraryDefinitionImpl(
+    path: String,
+    createMinimumProject: Boolean,
+): AndroidProjectDefinitionImpl<LibraryExtension>(path) {
     init {
         applyPlugin(PluginType.ANDROID_LIB)
     }
@@ -49,7 +55,9 @@ internal class AndroidLibraryDefinitionImpl(path: String): AndroidProjectDefinit
             LibraryExtension::class.java,
             contentHolder,
         ).also {
-            initDefaultValues(it)
+            if (createMinimumProject) {
+                initDefaultValues(it)
+            }
         }
 }
 
@@ -88,34 +96,28 @@ internal class AndroidLibraryImpl(
     location: Path,
     projectDefinition: AndroidProjectDefinition<LibraryExtension>,
     namespace: String,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : AndroidProjectImpl<AndroidProjectDefinition<LibraryExtension>>(
     location,
     projectDefinition,
     namespace,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), AndroidLibraryProject {
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         return super.withApk(apkSelector, action)
     }
 
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         super.assertApk(apkSelector, action)
     }
 
     override fun hasApk(apkSelector: ApkSelector): Boolean {
-        if (apkSelector.testName == null) {
+        if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
         return super.hasApk(apkSelector)

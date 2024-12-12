@@ -258,7 +258,8 @@ class StableResourceIDsTest {
     private fun dumpProtoApkRes(): List<String> {
         val bundleRes = InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT
             .getOutputDir(project.getSubproject(":app").buildDir)
-            .resolve("debug/bundleDebugResources/linked-resources-proto-format.ap_")
+            .resolve("debug/bundleDebugResources/linked-resources-for-bundle-proto-format.ap_")
+        assertThat(bundleRes).exists()
         val protoApkDump = AaptInvoker(TestUtils.getAapt2(), StdLogger(StdLogger.Level.VERBOSE)).dumpResources(bundleRes)
         return protoApkDump.map { it.trim().removeSuffix(" PUBLIC") }.filter { it.startsWith("resource") }
     }

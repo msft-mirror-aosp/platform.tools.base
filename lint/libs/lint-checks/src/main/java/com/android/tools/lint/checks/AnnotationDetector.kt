@@ -1363,7 +1363,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
         val clz = node.getParentOfType(UClass::class.java, true)
         if (clz != null) {
           val containingClass = field.containingClass
-          if (containingClass != null && !containingClass.isEquivalentTo(clz.psi)) {
+          if (containingClass != null && !containingClass.isEquivalentTo(clz.javaPsi)) {
             name = containingClass.qualifiedName + '.' + field.name
           }
         }

@@ -17,25 +17,21 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
 class NewTestDslAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication {
             android {
-                setUpHelloWorld()
-
+                flavorDimensions += "cost"
                 productFlavors {
-                    named("free") {
-                        dimension = "cost"
+                    create("free") {
+                        it.dimension = "cost"
                     }
-                    named("paid") {
-                        dimension = "cost"
+                    create("paid") {
+                        it.dimension = "cost"
                     }
                 }
             }
@@ -43,7 +39,7 @@ class NewTestDslAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         gradleProperties {
-            set(BooleanOption.ENABLE_NEW_TEST_DSL, true)
+            add(BooleanOption.ENABLE_NEW_TEST_DSL, true)
         }
     },
     syncOptions = {

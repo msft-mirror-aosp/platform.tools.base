@@ -16,60 +16,59 @@
 
 package com.android.build.gradle.integration.model
 
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.builder.model.v2.ide.SyncIssue
+import org.gradle.api.Project
+import org.gradle.jvm.tasks.Jar
 import org.junit.Rule
 import org.junit.Test
 
 class CustomConfigPublishingModelTest : ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
+    val rule = GradleRule.from {
+        androidApplication {
             dependencies {
-                implementation(project(":library", configuration = "custom"))
+                implementation(project(DEFAULT_LIB_PATH, configuration = "custom"))
             }
         }
-        subProject(":library") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
+        androidLibrary {
+            pluginCallback = LibCallback::class.java
+
+        }
+    }
+
+    class LibCallback: LibraryComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: LibraryAndroidComponentsExtension
+        ) {
+            project.configurations.maybeCreate("custom")
+
+            val customTask = project.tasks.register("customJar", Jar::class.java) {
+                it.archiveBaseName.set("custom")
             }
 
-            appendToBuildFile {
-                """
-                    configurations {
-                        maybeCreate("custom")
-                    }
-
-                    def customTask = tasks.register("customTask", Jar) {
-                        getArchiveBaseName().set("custom")
-                    }
-
-                    artifacts {
-                        add("custom", customTask)
-                    }
-                """.trimIndent()
+            project.artifacts {
+                it.add("custom", customTask)
             }
         }
     }
 
+
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
         val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":app") }
+            { getProject(DEFAULT_APP_PATH) }
 
         with(result).compareVariantDependencies(
             projectAction = appModelAction,

@@ -4,17 +4,17 @@
          - custom:
             - toml{ADDED}:
                - sourceTypeName = "toml"
-               - directory      = {PROJECT}/src/main/toml{!}
+               - directory      = {PROJECT}/lib/src/main/toml{!}
       - androidTestSourceProvider:
          - custom:
             - toml{ADDED}:
                - sourceTypeName = "toml"
-               - directory      = {PROJECT}/src/androidTest/toml{!}
+               - directory      = {PROJECT}/lib/src/androidTest/toml{!}
       - unitTestSourceProvider:
          - custom:
             - toml{ADDED}:
                - sourceTypeName = "toml"
-               - directory      = {PROJECT}/src/test/toml{!}
+               - directory      = {PROJECT}/lib/src/test/toml{!}
    < defaultConfig
    > buildTypes:
       > debug:
@@ -22,29 +22,29 @@
             - custom:
                - toml{ADDED}:
                   - sourceTypeName = "toml"
-                  - directory      = {PROJECT}/src/debug/toml{!}
+                  - directory      = {PROJECT}/lib/src/debug/toml{!}
          - androidTestSourceProvider:
             - custom:
                - toml{ADDED}:
                   - sourceTypeName = "toml"
-                  - directory      = {PROJECT}/src/androidTestDebug/toml{!}
+                  - directory      = {PROJECT}/lib/src/androidTestDebug/toml{!}
          - unitTestSourceProvider:
             - custom:
                - toml{ADDED}:
                   - sourceTypeName = "toml"
-                  - directory      = {PROJECT}/src/testDebug/toml{!}
+                  - directory      = {PROJECT}/lib/src/testDebug/toml{!}
       < debug
       > release:
          - sourceProvider:
             - custom:
                - toml{ADDED}:
                   - sourceTypeName = "toml"
-                  - directory      = {PROJECT}/src/release/toml{!}
+                  - directory      = {PROJECT}/lib/src/release/toml{!}
          - unitTestSourceProvider:
             - custom:
                - toml{ADDED}:
                   - sourceTypeName = "toml"
-                  - directory      = {PROJECT}/src/testRelease/toml{!}
+                  - directory      = {PROJECT}/lib/src/testRelease/toml{!}
       < release
    < buildTypes
 < BasicAndroidProject

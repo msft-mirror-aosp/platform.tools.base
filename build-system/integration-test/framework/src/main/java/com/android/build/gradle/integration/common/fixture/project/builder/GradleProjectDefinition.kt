@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
@@ -59,11 +60,14 @@ interface GradleProjectDefinition {
     fun dependencies(action: DependenciesBuilder.() -> Unit)
     val dependencies: DependenciesBuilder
 
-    /**
-     * Wraps a library binary with a module
-     */
-    fun wrap(library: ByteArray, fileName: String)
+    /** Provides a callback to use with a binary plugin */
+    var pluginCallback: Class<out PluginCallback>?
 }
+
+internal data class AppliedPlugin(
+    val plugin: PluginType,
+    val version: String
+)
 
 /**
  * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
@@ -71,14 +75,10 @@ interface GradleProjectDefinition {
 internal abstract class GradleProjectDefinitionImpl(
     override val path: String
 ): GradleProjectDefinition {
-    data class AppliedPlugin(
-        val plugin: PluginType,
-        val version: String
-    )
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
-    // right now we don't support changing the componentCallback during a reconfigure. However,
+    // right now we don't support changing the pluginCallback during a reconfigure. However,
     // we still need to rewrite the plugin application during a rewrite.
     // Because we only reconfigure a single project and not the whole build (reason we don't yet
     // support changing the callback), the custom plugin map passed to the write function is going
@@ -86,10 +86,15 @@ internal abstract class GradleProjectDefinitionImpl(
     // Here we cache the first non null plugin and always rewrite it on the next reconfigure.
     private var cachedCustomPlugin: String? = null
 
+    override var pluginCallback: Class<out PluginCallback>? = null
+
     override var group: String? = null
     override var version: String? = null
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
+        if (type.isSettings) {
+            throw RuntimeException("Cannot apply settings plugin to a project")
+        }
         // search for existing one
         plugins.firstOrNull { it.plugin == type }?.let {
             throw RuntimeException("Plugin $type is already applied! (version: ${it.version}")
@@ -104,6 +109,9 @@ internal abstract class GradleProjectDefinitionImpl(
     }
 
     override fun replaceAppliedPlugin(type: PluginType, version: String) {
+        if (type.isSettings) {
+            throw RuntimeException("Cannot apply settings plugin to a project")
+        }
         val match = plugins.firstOrNull { it.plugin == type }
             ?: throw RuntimeException("Plugin $type not yet applied")
 
@@ -120,16 +128,12 @@ internal abstract class GradleProjectDefinitionImpl(
         action(dependencies)
     }
 
-    override fun wrap(library: ByteArray, fileName: String) {
-        throw RuntimeException("todo")
-    }
-
     internal fun writeSubProject(
         location: Path,
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         write(
             location,
@@ -145,7 +149,7 @@ internal abstract class GradleProjectDefinitionImpl(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, String>,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         write(
             location,
@@ -157,7 +161,7 @@ internal abstract class GradleProjectDefinitionImpl(
         )
     }
 
-    protected open fun writeExtension(writer: BuildWriter) {
+    protected open fun writeExtension(writer: BuildWriter, location: Path) {
         // nothing to do here
     }
 
@@ -167,11 +171,11 @@ internal abstract class GradleProjectDefinitionImpl(
         customPluginMap: Map<String, String>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
-        buildWriter: () -> BuildWriter,
+        buildWriter: BuildWriter,
     ) {
         location.createDirectories()
 
-        buildWriter().apply {
+        buildWriter.apply {
             if (isRoot && customPluginMap.isNotEmpty()) {
                 block("buildscript") {
                     block("dependencies") {
@@ -213,23 +217,30 @@ internal abstract class GradleProjectDefinitionImpl(
                 }
             }
 
+            emptyLine()
+
             val pluginToApply = cachedCustomPlugin ?: customPluginMap[path]
             pluginToApply?.let {
                 // cache it for next time
                 cachedCustomPlugin = it
                 // If there is a plugin class, apply it.
                 applyPluginFromClass(it)
+                emptyLine()
             }
 
-            group?.let {
-                set("group", it)
-            }
-            version?.let {
-                set("version", it)
+            if (group != null || version != null) {
+                group?.let {
+                    set("group", it)
+                }
+                version?.let {
+                    set("version", it)
+                }
+
+                emptyLine()
             }
 
             // write the Android extension if it exist
-            writeExtension(this)
+            writeExtension(this, location)
 
             dependencies.write(this, location)
         }.also {
@@ -239,7 +250,7 @@ internal abstract class GradleProjectDefinitionImpl(
 
         // write the rest of the content.
         if (!buildFileOnly) {
-            (files as GradleProjectFilesImpl).write(location)
+            (files as DelayedGradleProjectFiles).write(location)
         }
     }
 }

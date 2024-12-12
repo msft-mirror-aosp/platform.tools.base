@@ -21,7 +21,6 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -37,15 +36,14 @@ import java.io.File
  * A test that validates injecting custom plugins into a test project via the
  * [GradleRule] fixture.
  */
-class PluginTest {
+class AppPluginTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
-            componentCallback = AppCallback::class.java
+        androidApplication {
+            pluginCallback = AppCallback::class.java
 
             files {
-                HelloWorldAndroid.setupJava(this)
                 add("src/main/assets/FileToTransform.txt", "initial content")
             }
         }
@@ -66,13 +64,13 @@ class PluginTest {
 
         build.executor.run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             containsFileWithContent("assets/FileToTransform.txt", "transformed content")
         }
     }
 
     class AppCallback: ApplicationComponentCallback {
-        override fun handleComponents(
+        override fun handleExtension(
             project: Project,
             androidComponents: ApplicationAndroidComponentsExtension
         ) {
@@ -84,14 +82,14 @@ class PluginTest {
                     // only debug should be here now
                     val taskProvider = project.tasks.register(
                         "transformAssets",
-                        PluginTestTransformAssetsTask::class.java
+                        AppPluginTestTransformAssetsTask::class.java
                     )
 
                     // TransformAssetsTask will change the assets directory
                     variant.artifacts.use(taskProvider)
                         .wiredWithDirectories(
-                            PluginTestTransformAssetsTask::inputDir,
-                            PluginTestTransformAssetsTask::outputDir
+                            AppPluginTestTransformAssetsTask::inputDir,
+                            AppPluginTestTransformAssetsTask::outputDir
                         ).toTransform(SingleArtifact.ASSETS)
                 }
             }
@@ -99,7 +97,7 @@ class PluginTest {
     }
 }
 
-abstract class PluginTestTransformAssetsTask: DefaultTask() {
+abstract class AppPluginTestTransformAssetsTask: DefaultTask() {
 
     @get:InputDirectory
     abstract val inputDir: DirectoryProperty

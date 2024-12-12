@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.res
 import com.android.SdkConstants
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.AndroidJarInput
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
@@ -240,11 +241,13 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
             taskProvider: TaskProvider<LinkAndroidResForBundleTask>
         ) {
             super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                LinkAndroidResForBundleTask::linkedResourcesOutputFile
-            ).withName("linked-resources-proto-format${SdkConstants.DOT_RES}")
-                .on(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT)
+
+            val artifactType = InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT
+            val fileName = artifactType.name().lowercase().replace("_", "-") + SdkConstants.DOT_RES
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider, LinkAndroidResForBundleTask::linkedResourcesOutputFile)
+                .withName(fileName)
+                .on(artifactType)
         }
 
         override fun configure(

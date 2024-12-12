@@ -18,18 +18,15 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFilesImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFilesImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -50,16 +47,20 @@ interface PrivacySandboxSdkDefinition: GradleProjectDefinition {
 
 /**
  *  Implementation of [GradleProjectDefinition] for [PrivacySandboxSdkExtension]
+ *
+ * @param path the Gradle path of the project
+ * @param createMinimumProject whether to initialized default values on required properties
  */
 internal class PrivacySandboxSdkDefinitionImpl(
-    path: String
+    path: String,
+    createMinimumProject: Boolean
 ) : GradleProjectDefinitionImpl(path), PrivacySandboxSdkDefinition {
     init {
         applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
     }
 
     private val contentHolder = DefaultDslContentHolder()
-    override val files: GradleProjectFiles = GradleProjectFilesImpl()
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
@@ -70,14 +71,16 @@ internal class PrivacySandboxSdkDefinitionImpl(
             PrivacySandboxSdkExtension::class.java,
             contentHolder,
         ).also {
-            it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+            if (createMinimumProject) {
+                it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+            }
         }
 
     override fun android(action: PrivacySandboxSdkExtension.() -> Unit) {
         action(android)
     }
 
-    override fun writeExtension(writer: BuildWriter) {
+    override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)
@@ -87,7 +90,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
 }
 
 /**
- * Specialized interface for application [AndroidProject] to use in the test
+ * Specialized interface for privacy sandbox SDK [AndroidProject] to use in the test
  */
 interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition> {
     /** the object that allows to add/update/remove files from the project */
@@ -100,15 +103,9 @@ interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefiniti
 internal class PrivacySandboxSdkImpl(
     location: Path,
     projectDefinition: PrivacySandboxSdkDefinition,
-    buildWriter: () -> BuildWriter,
-    parentBuild: GradleBuildDefinitionImpl,
-    modelBuilder: () -> ModelBuilderV2,
 ) : BaseAndroidProjectImpl<PrivacySandboxSdkDefinition>(
     location,
     projectDefinition,
-    buildWriter,
-    parentBuild,
-    modelBuilder,
 ), PrivacySandboxSdkProject {
 
     override val files: GradleProjectFiles = DirectGradleProjectFilesImpl(location)
@@ -126,6 +123,5 @@ internal class ReversiblePrivacySandboxSdkProject(
 ) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
     parentProject
 ), PrivacySandboxSdkProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification)
+    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }
-

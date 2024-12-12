@@ -19,30 +19,26 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldLibModelTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+    val rule = GradleRule.from {
+        androidLibrary {
             android {
-                minSdk = 14
-                setUpHelloWorld()
+                defaultConfig.minSdk = 14
             }
         }
     }
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build.modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -56,15 +52,10 @@ class HelloWorldLibModelTest: ModelComparator() {
 
 class DisabledAndroidResourcesInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 buildFeatures {
                     androidResources = false
@@ -95,15 +86,10 @@ class DisabledAndroidResourcesInLibModelTest: ReferenceModelComparator(
 
 class EnabledDataBindingInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 buildFeatures {
                     dataBinding = true
@@ -134,15 +120,10 @@ class EnabledDataBindingInLibModelTest: ReferenceModelComparator(
 
 class EnabledTestFixturesInLibModelTest: ReferenceModelComparator(
     referenceConfig = {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                setUpHelloWorld()
-            }
-        }
+        androidLibrary { }
     },
     deltaConfig = {
-        rootProject {
+        androidLibrary {
             android {
                 testFixtures {
                     enable = true
@@ -167,24 +148,25 @@ class EnabledTestFixturesInLibModelTest: ReferenceModelComparator(
 
 class CompileSdkViaSettingsInLibModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(createMinimumProject = false) {
             android {
-                setUpHelloWorld(setupDefaultCompileSdk = false)
+                namespace = "com.example.library"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test compileTarget`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -200,24 +182,26 @@ class CompileSdkViaSettingsInLibModelTest {
 
 class MinSdkViaSettingsInLibModelTest {
     @get:Rule
-    val project = createGradleProject {
+    val rule = GradleRule.from {
         settings {
-            plugins.add(PluginType.ANDROID_SETTINGS)
+            applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
                 minSdk = 23
             }
         }
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
+        androidLibrary(createMinimumProject = false) {
             android {
-                setUpHelloWorld()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                namespace = "com.example.library"
             }
+            files.setupMinimumManifest()
         }
     }
 
     @Test
     fun `test minSdkVersion`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

@@ -20,8 +20,10 @@ import com.android.SdkConstants.ANDROID_MANIFEST_XML
 import com.android.SdkConstants.ATTR_PACKAGE
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth
@@ -33,25 +35,21 @@ class DynamicFeatureNamespaceTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication(":app") {
+        androidJavaApplication {
             android {
                 defaultConfig {
                     applicationId = "com.example.test"
                 }
-                dynamicFeatures.add(":feature")
+                dynamicFeatures.add(DEFAULT_FEATURE_PATH)
             }
-
-            HelloWorldAndroid.setupJava(files)
         }
-        androidFeature(":feature") {
+        androidFeature {
             android {
                 namespace = "com.example.test.feature"
             }
 
-            HelloWorldAndroid.setupJava(files)
-
             dependencies {
-                implementation(project(":app"))
+                implementation(project(DEFAULT_APP_PATH))
             }
         }
     }
@@ -63,7 +61,7 @@ class DynamicFeatureNamespaceTest {
         build.executor.run(":feature:processManifestDebugForFeature")
 
         val manifestFile =
-            build.androidFeature(":feature")
+            build.androidFeature()
                 .getIntermediateFile(
                     "metadata_feature_manifest",
                     "debug",
@@ -86,7 +84,7 @@ class DynamicFeatureNamespaceTest {
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true)
             .run(":app:assembleDebug")
 
-        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
             hasApplicationId("com.example.test")
         }
     }
