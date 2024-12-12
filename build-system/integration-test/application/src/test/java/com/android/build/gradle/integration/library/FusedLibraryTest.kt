@@ -16,17 +16,12 @@
 
 package com.android.build.gradle.integration.library
 
-import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.FusedLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.generateAarWithContent
 import com.google.common.truth.Truth
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
@@ -34,8 +29,6 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.internal.impldep.org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import java.nio.charset.Charset
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
@@ -111,8 +104,8 @@ class FusedLibraryTest {
             }
         }
 
-    class FusedLibCallback: FusedLibraryCallback {
-        override fun handleExtension(project: Project, extension: FusedLibraryExtension) {
+    class FusedLibCallback: GenericCallback {
+        override fun handleProject(project: Project) {
             project.plugins.apply("maven-publish")
 
             val publishing = project.extensions.findByType(PublishingExtension::class.java)

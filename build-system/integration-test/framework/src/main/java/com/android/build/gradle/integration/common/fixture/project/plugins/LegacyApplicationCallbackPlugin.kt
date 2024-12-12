@@ -17,20 +17,18 @@
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.AppExtension
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [ApplicationComponentCallback] in projects created
+ * A Custom plugin to be used with [LegacyApplicationCallback] in projects created
  * by [GradleRule].
  *
- * Do not extend this. Instead, implement [ApplicationComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.pluginCallback]
+ * Do not extend this. Instead, implement [LegacyApplicationCallback] and register the implementation
+ * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
@@ -53,7 +51,9 @@ abstract class LegacyApplicationCallbackPlugin: Plugin<Project> {
 
 /**
  * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Application
+ * of type Android Application.
+ *
+ * This allows using the legacy DSL using internal types rather than the public extension
  */
 interface LegacyApplicationCallback: PluginCallback {
     fun handleExtension(

@@ -284,6 +284,10 @@ interface NdkBuilder {
     var abiFilters: List<String>
 }
 
+interface DependencyBuilder {
+    fun requireCapability(capability: String)
+}
+
 interface DependenciesBuilder {
 
     fun clear()
@@ -297,76 +301,84 @@ interface DependenciesBuilder {
      * - result of [localJar] for on-the-fly created local jars
      * - a [MavenRepoGenerator.Library] for on-the-fly created external AARs.
      */
-    fun implementation(dependency: Any)
+    fun implementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the api scope.
      *
      * See [implementation] for details
      */
-    fun api(dependency: Any)
+    fun api(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /** Adds a dependency to the compileOnly configuration. See [implementation] for details. */
-    fun compileOnly(dependency: Any)
+    fun compileOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /** Adds a dependency to the compileOnlyApi configuration. See [implementation] for details. */
-    fun compileOnlyApi(dependency: Any)
+    fun compileOnlyApi(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /** Adds a dependency to the runtimeOnly configuration. See [implementation] for details. */
-    fun runtimeOnly(dependency: Any)
+    fun runtimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the testImplementation scope.
      *
      * See [implementation] for details
      */
-    fun testImplementation(dependency: Any)
+    fun testImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /** Adds a dependency to the testRuntimeOnly configuration. See [implementation] for details. */
-    fun testRuntimeOnly(dependency: Any)
+    fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the androidTestImplementation scope.
      *
      * See [implementation] for details
      */
-    fun androidTestImplementation(dependency: Any)
+    fun androidTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency
      */
-    fun include(dependency: Any)
+    fun include(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * Adds a dependency (to privacy sandbox sdk) declaring dependent sdk modules should be 'installed'.
      */
-    fun requiredSdk(dependency: Any)
+    fun requiredSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * Adds a dependency to (to privacy sandbox sdk) declaring its dependent sdks are optional.
      */
-    fun optionalSdk(dependency: Any)
+    fun optionalSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the lintPublish scope.
      *
      * See [implementation] for details
      */
-    fun lintPublish(dependency: Any)
+    fun lintPublish(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the lintCheck scope.
      *
      * See [implementation] for details
      */
-    fun lintChecks(dependency: Any)
+    fun lintChecks(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the screenshotTest scope.
      *
      * See [implementation] for details
      */
-    fun screenshotTestImplementation(dependency: Any)
+    fun screenshotTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
+
+    /**
+     * Adds a dependency in the coreLibraryDesugaring scope.
+     */
+    fun coreLibraryDesugaring(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
+
+    /** Adds a dependency that using KSP's configuration. */
+    fun ksp(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope
@@ -389,6 +401,10 @@ interface DependenciesBuilder {
         testFixtures: Boolean = false,
         configuration: String? = null): ProjectDependencyBuilder
 
+    fun platform(
+        path: Any
+    ): PlatformDependency
+
     /**
      * Creates a [ExternalDependencyBuilder] to be passed to [implementation] or any other scope
      *
@@ -397,13 +413,6 @@ interface DependenciesBuilder {
      */
     fun externalLibrary(coordinate: String, testFixtures: Boolean = false): ExternalDependencyBuilder
 
-    /**
-     * Adds a dependency in the coreLibraryDesugaring scope.
-     */
-    fun coreLibraryDesugaring(dependency: Any)
-
-    /** Adds a dependency that using KSP's configuration. */
-    fun ksp(dependency: Any)
 }
 
 interface LocalJarDependency {
@@ -424,6 +433,10 @@ interface ProjectDependencyBuilder {
      * for the case that pre-dates variant-aware publishing.
      */
     val configuration: String?
+}
+
+interface PlatformDependency {
+    val path: Any
 }
 
 interface ExternalDependencyBuilder {

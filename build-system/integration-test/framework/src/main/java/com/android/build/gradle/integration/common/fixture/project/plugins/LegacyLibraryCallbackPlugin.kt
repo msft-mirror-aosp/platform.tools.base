@@ -19,16 +19,15 @@ package com.android.build.gradle.integration.common.fixture.project.plugins
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [ApplicationComponentCallback] in projects created
+ * A Custom plugin to be used with [LegacyLibraryCallback] in projects created
  * by [GradleRule].
  *
- * Do not extend this. Instead, implement [ApplicationComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.pluginCallback]
+ * Do not extend this. Instead, implement [LegacyLibraryCallback] and register the implementation
+ * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
@@ -50,7 +49,9 @@ abstract class LegacyLibraryCallbackPlugin: Plugin<Project> {
 
 /**
  * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Application
+ * of type Android Library
+ *
+ * This allows using the legacy DSL using internal types rather than the public extension
  */
 interface LegacyLibraryCallback: PluginCallback {
     fun handleExtension(

@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.api.dsl.AssetPackBundleExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.AssetPackBundleCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.bundle.Config
 import com.android.ide.common.signing.KeystoreHelper
@@ -108,8 +107,8 @@ class AssetPackBundleTest {
         }
     }
 
-    class MyCallback: AssetPackBundleCallback {
-        override fun handleExtension(project: Project, extension: AssetPackBundleExtension) {
+    class MyCallback: GenericCallback {
+        override fun handleProject(project: Project) {
             project.extensions.getByType(ExtraPropertiesExtension::class.java).apply {
                 set("android_experimental_bundle_deviceGroup_enableSplit", true)
                 set("android_experimental_bundle_deviceGroup_defaultGroup", "highRam")

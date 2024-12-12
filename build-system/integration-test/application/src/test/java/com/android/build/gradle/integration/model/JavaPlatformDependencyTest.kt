@@ -18,50 +18,47 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
+import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPlatformExtension
 import org.junit.Rule
 import org.junit.Test
 
 class JavaPlatformDependencyTest : ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-            appendToBuildFile {
-                """
-                    dependencies {
-                      implementation platform(project(":lib"))
-                    }
-                """.trimIndent()
+    val rule = GradleRule.from {
+        androidApplication {
+            dependencies {
+                implementation(platform(project(":lib")))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.JAVA_PLATFORM)
-
-            appendToBuildFile {
-                """
-                    javaPlatform {
-                      allowDependencies()
-                    }
-                """.trimIndent()
-            }
+        genericProject(":lib") {
+            applyPlugin(PluginType.JAVA_PLATFORM)
+            pluginCallback = PlatformCallback::class.java
             dependencies {
                 api(MavenRepoGenerator.Library("com.bar:foo:1.0"))
             }
         }
     }
 
+    class PlatformCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val javaPlatform = project.extensions.findByType(JavaPlatformExtension::class.java)
+                ?: throw RuntimeException("Unable to find JavaPlatformExtension")
+            javaPlatform.apply {
+                allowDependencies()
+            }
+        }
+    }
+
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

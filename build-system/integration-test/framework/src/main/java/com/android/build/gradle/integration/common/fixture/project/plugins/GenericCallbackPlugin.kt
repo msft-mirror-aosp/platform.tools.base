@@ -16,44 +16,40 @@
 
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
-import com.android.build.api.dsl.FusedLibraryExtension
-import com.android.build.gradle.api.FusedLibraryPlugin
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [FusedLibraryExtension] in projects created
+ * A Custom plugin to be used with [GenericCallback] in projects created
  * by [GradleRule].
  *
- * Do not extend this. Instead, implement [FusedLibraryExtension] and register the implementation
+ * Do not extend this. Instead, implement [GenericCallback] and register the implementation
  * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class FusedLibraryCallbackPlugin: Plugin<Project> {
-    override fun apply(target: Project) {
-        target.plugins.withType(FusedLibraryPlugin::class.java) {
-            val androidExtension = target.extensions.getByType(FusedLibraryExtension::class.java)
+abstract class GenericCallbackPlugin: Plugin<Project> {
 
-            handleExtension(target, androidExtension)
-        }
+    override fun apply(target: Project) {
+        handleProject(target)
     }
 
-    abstract fun handleExtension(
+    abstract fun handleProject(
         project: Project,
-        extension: FusedLibraryExtension
     )
 }
 
 /**
  * interface to implement to provide custom plugin logic to a [GradleRule] project
- * of type Android Application
+ * of any type.
+ *
+ * Unlike other [PluginCallback], this one does not handle any extension. This also means that
+ * the plugin is always active and does not response to any other specific plugin being
+ * applied
  */
-interface FusedLibraryCallback: PluginCallback {
-    fun handleExtension(
+interface GenericCallback: PluginCallback {
+    fun handleProject(
         project: Project,
-        extension: FusedLibraryExtension
     )
 }

@@ -46,7 +46,7 @@ interface BuildWriter: BooleanNameHandler {
     fun applyPluginFromClass(pluginClass: String)
 
     /** Adds a dependency */
-    fun dependency(scope: String, value:Any)
+    fun dependency(scope: String, value:Any, capability: String?)
 
     fun writeCollectionAddAll(name: String, items: Collection<*>)
     fun writeCollectionAdd(name:String, value: Any?)
@@ -249,8 +249,16 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         writer.endLine()
     }
 
-    override fun dependency(scope: String, value: Any) {
-        method(scope, value)
+    override fun dependency(scope: String, value: Any, capability: String?) {
+        if (capability != null) {
+            block(scope, listOf(value), capability) {
+                block("capabilities") {
+                    method("requireCapability", capability)
+                }
+            }
+        } else {
+            method(scope, value)
+        }
     }
 
     abstract fun listOf(value: String): String

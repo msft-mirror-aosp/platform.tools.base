@@ -18,17 +18,16 @@ package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.variant.TestAndroidComponentsExtension
 import com.android.build.gradle.TestPlugin
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 
 /**
  * A Custom plugin to be used with [TestComponentCallback] in projects created
  * by [GradleRule].
  *
- * Do not extend this. Instead, implement [LibraryComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.pluginCallback]
+ * Do not extend this. Instead, implement [TestComponentCallback] and register the implementation
+ * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */

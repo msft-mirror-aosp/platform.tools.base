@@ -46,13 +46,20 @@ interface GradleSettingsDefinition {
     /**
      * Configures the android section of the project.
      *
-     * This will fails if no android plugins were added.
+     * This will fail if no android plugins were added.
      */
     fun android(action: SettingsExtension.() -> Unit)
 
     fun enableFeaturePreview(name: String)
 
     fun enableLocalCache(location: Path)
+
+    /**
+     * Adds a new repository to the settings configuration.
+     *
+     * The path must be relative to the build folder.
+     */
+    fun addRepository(location: String)
 }
 
 internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
@@ -65,6 +72,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     private var repositoriesCache: Collection<Path>? = null
 
     private var localCacheLocation: Path? = null
+    private val extraRepositories = mutableListOf<String>()
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
         if (!type.isSettings) {
@@ -115,6 +123,10 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         localCacheLocation = location
     }
 
+    override fun addRepository(location: String) {
+        extraRepositories.add(location)
+    }
+
     internal fun write(
         name: String,
         location: Path,
@@ -123,14 +135,20 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         subProjectPaths: Collection<String>,
         buildWriter: BuildWriter,
     ) {
-        val repos = repositories ?: repositoriesCache ?: error("No repositories provided")
+        val finalRepositoryList = if (repositories == null) {
+            // this is a reconfigure
+            repositoriesCache ?: error("No repositories provided but cache is missing")
+        } else {
+            // cache the external list, not included the ones added via the DSL on settings.
+            repositoriesCache = repositories
 
-        repositoriesCache = repos
+            repositories
+        } + extraRepositories.map { location.resolve(it) }
 
         buildWriter.apply {
             block("pluginManagement") {
                 block("repositories") {
-                    for (repository in repos) {
+                    for (repository in finalRepositoryList) {
                         mavenSnippet(repository)
                     }
                 }
@@ -149,7 +167,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             block("dependencyResolutionManagement") {
                 method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
                 block("repositories") {
-                    for (repository in repos) {
+                    for (repository in finalRepositoryList) {
                         mavenSnippet(repository)
                     }
                 }

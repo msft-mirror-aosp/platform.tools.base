@@ -18,89 +18,83 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.ANDROIDX_VERSION
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
-import org.junit.Before
+import org.gradle.api.Project
+import org.gradle.api.attributes.java.TargetJvmEnvironment
+import org.gradle.api.component.AdhocComponentWithVariants
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.junit.Rule
 import org.junit.Test
 
 /** Regression test for http://b/229298359. */
 class DependencyWithoutFileWithDependenciesTest: ModelComparator() {
-
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-            appendToBuildFile {
-                """
-                      dependencies {
-                        testImplementation("com.foo:bar:1.0") {
-                          capabilities {
-                            requireCapability("com.foo:bar-custom:1.0")
-                          }
-                        }
-                      }
-                """.trimIndent()
+    val rule = GradleRule.from {
+        androidApplication {
+            dependencies{
+                testImplementation("com.foo:bar:1.0") {
+                    requireCapability("com.foo:bar-custom:1.0")
+                }
             }
         }
-        subProject(":bar") {
-            plugins.add(PluginType.JAVA_LIBRARY)
-            plugins.add(PluginType.MAVEN_PUBLISH)
-            appendToBuildFile {
-                """
-                    group = "com.foo"
-                    version = "1.0"
 
-                    Configuration customCapability = configurations.create("customCapability")
-                    customCapability.setCanBeConsumed(true)
-                    customCapability.setCanBeResolved(false)
-                    customCapability.attributes.attribute(
-                      TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                      objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM)
-                    )
-                    customCapability.outgoing.capability("com.foo:bar-custom:1.0")
-                    dependencies.add("customCapability", 'androidx.annotation:annotation:$ANDROIDX_VERSION')
-                    components.java.addVariantsFromConfiguration(customCapability) { mapToOptional() }
+        genericProject(":bar") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            applyPlugin(PluginType.MAVEN_PUBLISH)
 
-                    publishing {
-                      repositories {
-                        maven { url = '../repo' }
-                      }
-                      publications {
-                        mavenJava(MavenPublication) {
-                          from components.java
-                        }
-                      }
-                    }
-                """.trimIndent()
-            }
+            group = "com.foo"
+            version = "1.0"
+
+            pluginCallback = TestCallback::class.java
+        }
+
+        settings {
+            addRepository("repo")
         }
     }
 
-    @Before
-    fun setUpRepo( ) {
-        project.settingsFile.appendText("""
+    class TestCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val customCapability = project.configurations.create("customCapability")
+            customCapability.isCanBeConsumed = true
+            customCapability.isCanBeResolved = false
+            customCapability.attributes.attribute(
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM)
+            )
+            customCapability.outgoing.capability("com.foo:bar-custom:1.0")
+            project.dependencies.add("customCapability", "androidx.annotation:annotation:$ANDROIDX_VERSION")
+            val javaComponent = project.components.getByName("java") as AdhocComponentWithVariants
+            javaComponent.addVariantsFromConfiguration(customCapability) {
+                it.mapToOptional()
+            }
 
-            dependencyResolutionManagement {
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+
+            publishing.apply {
                 repositories {
-                    maven {
-                      url { 'repo' }
+                    it.maven {
+                        it.url = project.uri(project.projectDir.parentFile.resolve("repo"))
                     }
                 }
+                publications.create("mavenJava", MavenPublication::class.java) {
+                    it.from(javaComponent)
+                }
             }
-        """.trimIndent())
+        }
     }
 
     @Test
     fun `test models`() {
-        project.executor().run(":bar:publish")
-        val result = project.modelV2()
+        rule.build.executor.run(":bar:publish")
+        val result = rule.build
+            .modelBuilder
             .with(BooleanOption.USE_ANDROID_X, true)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
