@@ -28,10 +28,10 @@ dependencies {
     implementation libs.kotlin_stdlib
     implementation libs.kotlin_coroutines_core
     implementation libs.gson
-    implementation libs.grpc_core
-    implementation libs.grpc_protobuf
-    implementation libs.grpc_stub
-    implementation libs.grpc_netty
+    implementation libs.unified_test_platform_grpc_core
+    implementation libs.unified_test_platform_grpc_protobuf
+    implementation libs.unified_test_platform_grpc_stub
+    implementation libs.unified_test_platform_grpc_netty
     implementation libs.protobuf
     implementation libs.guava
     implementation libs.unified_test_platform

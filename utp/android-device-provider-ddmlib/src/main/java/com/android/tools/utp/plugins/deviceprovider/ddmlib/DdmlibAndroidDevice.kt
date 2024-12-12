@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice
 import com.android.ddmlib.InstallException
 import com.android.ddmlib.MultiLineReceiver
 import com.google.testing.platform.api.device.Device
+import com.google.testing.platform.proto.api.config.DeviceProto
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
 import java.io.File
 
@@ -27,6 +28,7 @@ import java.io.File
  * An implementation of [Device] using DDMLIB [IDevice].
  */
 class DdmlibAndroidDevice(val ddmlibDevice: IDevice) : Device, IDevice by ddmlibDevice {
+    override val id: DeviceProto.DeviceId = DeviceProto.DeviceId.getDefaultInstance()
     override val port: Int? = null
     override val properties: AndroidDeviceProperties by lazy {
         val devicePropertyMap = mutableMapOf<String, String>()

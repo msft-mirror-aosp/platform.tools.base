@@ -21,9 +21,13 @@ import com.google.testing.platform.api.config.Environment
 import com.google.testing.platform.api.config.Setup
 import com.google.testing.platform.api.context.Context
 import com.google.testing.platform.api.device.DeviceController
+import com.google.testing.platform.lib.adb.command.inject.AdbConfig
+import com.google.testing.platform.lib.adb.command.inject.DaggerAdbCommandComponent
+import com.google.testing.platform.lib.adb.command.monitor.NoopDeviceMonitor
 import com.google.testing.platform.proto.api.config.AdbConfigProto
 import com.google.testing.platform.proto.api.config.RuntimeProto
 import com.google.testing.platform.runtime.android.AndroidDeviceProvider
+import com.google.testing.platform.runtime.android.device.AndroidDevice
 import com.google.testing.platform.runtime.android.provider.ext.loadAndConfigureAndroidDeviceController
 
 /**
@@ -37,12 +41,33 @@ class DeviceControllerFactoryImpl : DeviceControllerFactory {
             androidSdk: AndroidSdk,
             adbConfig: AdbConfigProto.AdbConfig,
             context: Context,
-    ): DeviceController = provider.loadAndConfigureAndroidDeviceController(
-            environment,
-            testSetup,
-            androidSdk,
-            adbConfig,
-            RuntimeProto.AndroidInstrumentationRuntime.newBuilder().build(),
-            context
-    )
+            device: AndroidDevice,
+    ): DeviceController {
+            val adbCommandsConfig =
+                    AdbConfig(
+                            outputDirectory = environment.outputDirectory,
+                            adbPath = androidSdk.adbPath,
+                            adbServerPort = device.serverPort,
+                            adbServerHost = device.host,
+                            adbPort = device.port,
+                            deviceSerial = device.serial,
+                    )
+            val adbCommands = DaggerAdbCommandComponent.builder()
+                    .androidSdk(androidSdk)
+                    .adbConfig(adbCommandsConfig)
+                    .deviceMonitor(NoopDeviceMonitor())
+                    .build()
+            val controller = provider.loadAndConfigureAndroidDeviceController(
+                    environment,
+                    testSetup,
+                    androidSdk,
+                    adbConfig,
+                    RuntimeProto.AndroidInstrumentationRuntime.newBuilder().build(),
+                    adbCommands.adbCommands,
+                    context
+            ).apply {
+                setDevice(device)
+            }
+            return controller
+    }
 }
