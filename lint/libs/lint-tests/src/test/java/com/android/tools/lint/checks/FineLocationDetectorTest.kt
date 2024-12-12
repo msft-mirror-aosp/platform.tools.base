@@ -99,6 +99,7 @@ class FineLocationDetectorTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
+                    <uses-sdk android:targetSdkVersion="31"/>
                     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
                     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
                     <application
@@ -107,6 +108,30 @@ class FineLocationDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testMaxLevel() {
+    lint()
+      .files(
+        manifest(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="test.pkg">
+                <uses-sdk android:targetSdkVersion="31"/>
+                <uses-permission
+                  android:name="android.permission.ACCESS_FINE_LOCATION"
+                  android:maxSdkVersion="30" />
+                <application
+                    android:icon="@drawable/ic_launcher"
+                    android:label="@string/app_name" >
+                </application>
+            </manifest>
+            """
           )
           .indented()
       )

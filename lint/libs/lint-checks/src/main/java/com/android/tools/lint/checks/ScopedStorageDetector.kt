@@ -162,7 +162,7 @@ class ScopedStorageDetector : Detector(), XmlScanner {
   }
 
   companion object {
-    private const val ATTR_MAX_SDK_VERSION = "maxSdkVersion"
+    const val ATTR_MAX_SDK_VERSION = "maxSdkVersion"
     private const val ATTR_READ = "read"
     private const val READ_STORAGE = "android.permission.READ_EXTERNAL_STORAGE"
     private const val WRITE_STORAGE = "android.permission.WRITE_EXTERNAL_STORAGE"
