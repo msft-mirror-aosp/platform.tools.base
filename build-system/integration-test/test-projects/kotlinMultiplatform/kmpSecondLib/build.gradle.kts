@@ -5,6 +5,10 @@ plugins {
 }
 
 kotlin {
+  jvmToolchain {
+    languageVersion.set(JavaLanguageVersion.of(21))
+  }
+
   sourceSets {
     val commonMain by getting {
       dependencies {

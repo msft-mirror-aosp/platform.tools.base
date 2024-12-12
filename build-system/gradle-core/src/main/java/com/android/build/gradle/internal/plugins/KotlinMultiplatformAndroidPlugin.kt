@@ -111,7 +111,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 @Incubating
-class KotlinMultiplatformAndroidPlugin @Inject constructor(
+open class KotlinMultiplatformAndroidPlugin @Inject constructor(
     listenerRegistry: BuildEventsListenerRegistry,
     private val buildFeatures: BuildFeatures,
 ): AndroidPluginBaseServices(listenerRegistry, buildFeatures), Plugin<Project> {
@@ -399,6 +399,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         )
 
         updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))
+        wireJvmToolchain(listOfNotNull(mainVariant, unitTest, androidTest), project)
         finalizeAllComponents(listOfNotNull(mainVariant, unitTest, androidTest))
         kotlinMultiplatformHandler.finalize(mainVariant)
     }
@@ -412,6 +413,21 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
                     it.services.fileCollection(
                         mainVariant.artifacts.get(InternalArtifactType.COMPILE_LIBRARY_CLASSES_JAR)
                     )
+                )
+            }
+        }
+    }
+
+    private fun wireJvmToolchain(components: List<KmpComponentImpl<out KmpComponentDslInfo>>, project: Project) {
+        val toolchain =
+            project.extensions.getByType(org.gradle.api.plugins.JavaPluginExtension::class.java).toolchain
+        val service =
+            project.extensions.getByType(org.gradle.jvm.toolchain.JavaToolchainService::class.java)
+        val javaLauncher = service.launcherFor(toolchain)
+        components.forEach {
+            it.androidKotlinCompilation.compileTaskProvider.configure { task ->
+                (task as KotlinJvmCompile).kotlinJavaToolchain.toolchain.use(
+                    javaLauncher
                 )
             }
         }
