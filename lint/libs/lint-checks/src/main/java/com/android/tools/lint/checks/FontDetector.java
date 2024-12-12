@@ -536,7 +536,7 @@ public class FontDetector extends ResourceXmlDetector {
                                   best = new FontDetail(best.getFamily(), builder);
                                 }
                                 boolean isV11 = query.startsWith("name=");
-                                String better = isV11 ? best.generateQuery() : best.generateQueryV12();
+                                String better = isV11 ? best.generateQueryV11() : best.generateQueryV12();
 
                                 fix =
                                         fix().name("Replace with closest font: " + better)

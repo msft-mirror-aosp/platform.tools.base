@@ -85,7 +85,7 @@ class FontDetailTest {
     @Test
     fun testGenerateQuery() {
         val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
-        assertThat(font.generateQuery()).isEqualTo("name=MyFont&weight=800&italic=1&width=110")
+        assertThat(font.generateQueryV12()).isEqualTo("MyFont:wght800:ital1:wdth110")
     }
 
     companion object {

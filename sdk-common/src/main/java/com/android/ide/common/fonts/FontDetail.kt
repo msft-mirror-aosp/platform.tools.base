@@ -88,7 +88,7 @@ class FontDetail {
         return query.toString()
     }
 
-    fun generateQuery(): String {
+    fun generateQueryV11(): String {
         if (weight == DEFAULT_WEIGHT && width == DEFAULT_WIDTH && italics == NORMAL && exact == DEFAULT_EXACT) {
             return family.name
         }
