@@ -19,6 +19,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.ProcessRunner
 import com.android.adblib.adbLogger
+import com.android.adblib.impl.channels.runInterruptibleIO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -31,7 +32,6 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 /**
  * A coroutine friendly implementation of executing a process and collecting its
@@ -108,14 +108,9 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
     }
 
     private suspend fun waitForProcessEnd(process: Process): Int {
-        return withContext(host.blockingIoDispatcher) {
-          while (process.isAlive) {
-            coroutineContext.ensureActive()
-            process.waitFor(10, TimeUnit.MILLISECONDS)
-          }
-
-          // Return the process exit code
-          process.exitValue()
+        return runInterruptibleIO(host.blockingIoDispatcher) {
+            val exitCode = process.waitFor()
+            exitCode
         }
     }
 
