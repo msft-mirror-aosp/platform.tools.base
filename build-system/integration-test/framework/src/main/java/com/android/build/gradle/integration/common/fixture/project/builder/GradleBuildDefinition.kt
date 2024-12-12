@@ -42,16 +42,10 @@ interface GradleBuildDefinition {
     }
 
     /**
-     * The name of the build. This impacts both the logical name and the folder in which the build
-     * is created
+     * The name of the build. This is the value set in the settings.gradle files as the logical
+     * name of the build in gradle
      */
-    var name: String
-
-    /**
-     * The root folder name. This only impacts the folder and not the logical name.
-     * If you wish to change the logical name only, use [name]
-     */
-    var rootFolderName: String
+    val name: String
 
     /**
      * The type of files to use when generating gradle files.
@@ -179,7 +173,7 @@ interface GradleBuildDefinition {
     ): AssetPackDefinition
 
     /**
-     * Configures a subProject with the Android Asset Pack plugin, creating it if needed.
+     * Configures a subProject with the Android Asset Pack Bundle plugin, creating it if needed.
      */
     fun assetPackBundle(
         path: String,

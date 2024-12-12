@@ -78,7 +78,7 @@ interface GradleBuild {
      */
     fun assetPack(path: String): AssetPackProject
     /**
-     * Queries for an Asset pack project via its gradle path.
+     * Queries for an Asset pack bundle project via its gradle path.
      * The project must exist and be an Asset Pack project
      */
     fun assetPackBundle(path: String): AssetPackBundleProject
@@ -232,7 +232,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Asset Pack project.
+                Project with path '$path' is not an Asset Pack Bundle project.
                 Possible options are ${getProjectListByType<AssetPackBundleImpl>()}
             """.trimIndent()
         )

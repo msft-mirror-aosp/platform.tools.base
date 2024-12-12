@@ -229,7 +229,7 @@ class GradleBuildDefinitionTest {
     }
 
     private fun writeBuild(repositories: List<Path> = listOf(), action: GradleBuildDefinition.() -> Unit): Path {
-        val build = GradleBuildDefinitionImpl("root").also {
+        val build = GradleBuildDefinitionImpl("root", "root").also {
             action(it)
         }
 

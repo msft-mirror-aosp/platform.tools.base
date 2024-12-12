@@ -93,7 +93,7 @@ internal class AssetPackBundleDefinitionImpl(
 }
 
 /**
- * Specialized interface for AssetPack [GradleProject] to use in the test
+ * Specialized interface for AssetPackBundle [GradleProject] to use in the test
  */
 interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition> {
     /** the object that allows to add/update/remove files from the project */
@@ -101,7 +101,7 @@ interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition> {
 }
 
 /**
- * Implementation of [AndroidProject]
+ * Implementation of [AssetPackBundleProject]
  */
 internal class AssetPackBundleImpl(
     location: Path,
@@ -121,7 +121,7 @@ internal class AssetPackBundleImpl(
 }
 
 /**
- * Reversible version of [AssetPackProject]
+ * Reversible version of [AssetPackBundleProject]
  */
 internal class ReversibleAssetPackBundleProject(
     parentProject: AssetPackBundleProject,

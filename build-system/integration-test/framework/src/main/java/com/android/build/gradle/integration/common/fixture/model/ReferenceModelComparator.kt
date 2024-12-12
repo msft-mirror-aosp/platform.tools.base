@@ -62,8 +62,7 @@ abstract class ReferenceModelComparator(
         referenceOptions?.let { optionAction ->
             optionAction(this)
         }
-        from {
-            rootFolderName = "referenceProject"
+        from(folderName = "referenceProject", logicalName = "project") {
             referenceConfig(this)
         }
     }
@@ -78,8 +77,7 @@ abstract class ReferenceModelComparator(
             optionAction(this)
         }
 
-        from {
-            rootFolderName = "deltaProject"
+        from(folderName = "deltaProject", logicalName = "project") {
             referenceConfig(this)
             deltaConfig(this)
         }

@@ -37,9 +37,22 @@ interface GradleRule: TestRule {
          * Returns a [GradleRule] for a project configured with the [TestProjectBuilder].
          *
          * To configure the rule, use [configure] instead
+         *
+         * @param folderName the name of the folder containing the build.
+         * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
+         * @param action the action to configure the build
          */
-        fun from(action: GradleBuildDefinition.() -> Unit): GradleRule =
-            GradleRuleBuilderImpl().create(GradleBuildDefinitionImpl(CreationOptions.DEFAULT_BUILD_NAME).also { action(it) })
+        fun from(
+            folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+            logicalName: String? = null,
+            action: GradleBuildDefinition.() -> Unit
+        ): GradleRule =
+            GradleRuleBuilderImpl().create(
+                GradleBuildDefinitionImpl(
+                    name = logicalName ?: folderName, rootFolderName = folderName
+                ).also {
+                    action(it)
+                })
 
         /**
          * Returns a [GradleRuleBuilder] that can be configured before calling [GradleRuleBuilder.from]

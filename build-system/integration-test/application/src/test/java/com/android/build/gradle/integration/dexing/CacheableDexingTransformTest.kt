@@ -29,17 +29,16 @@ class CacheableDexingTransformTest {
     val buildCacheDir = TemporaryFolder()
 
     @get:Rule
-    val rule1 = GradleRule.from {
-        createProject("projectCopy1")
+    val rule1 = GradleRule.from(folderName = "projectCopy1") {
+        createProject()
     }
 
     @get:Rule
-    val rule2 = GradleRule.from {
-        createProject("projectCopy2")
+    val rule2 = GradleRule.from(folderName = "projectCopy2") {
+        createProject()
     }
 
-    private fun GradleBuildDefinition.createProject(name: String) {
-        this.name = name
+    private fun GradleBuildDefinition.createProject() {
         androidApplication {
             android {
                 defaultConfig.minSdk = 24

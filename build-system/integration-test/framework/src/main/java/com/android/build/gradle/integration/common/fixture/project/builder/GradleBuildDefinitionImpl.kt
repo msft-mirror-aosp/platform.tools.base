@@ -46,7 +46,10 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
-internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefinition {
+internal class GradleBuildDefinitionImpl(
+    override val name: String,
+    internal val rootFolderName: String,
+): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
@@ -55,12 +58,6 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
 
     private val propertiesDelegate = GradlePropertiesDelegate()
 
-    override var name: String = buildName
-        set(value) {
-            field = value
-            rootFolderName = value
-        }
-    override var rootFolderName: String = buildName
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
@@ -72,7 +69,8 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
         action: GradleBuildDefinition.() -> Unit
     ): GradleBuildDefinition {
         val build = includedBuilds.computeIfAbsent(name) {
-            GradleBuildDefinitionImpl(it)
+            // for included builds, name and rootFolderName is always the same.
+            GradleBuildDefinitionImpl(it, it)
         }
         action(build)
 
