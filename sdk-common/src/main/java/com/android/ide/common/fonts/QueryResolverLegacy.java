@@ -52,7 +52,7 @@ public class QueryResolverLegacy {
 
     private static MutableFontDetail getSpecForQuery(String query) {
         if (!query.contains("=")) {
-            return new MutableFontDetail(query, DEFAULT_EXACT);
+            return new MutableFontDetail(query, FontType.SINGLE, NORMAL, DEFAULT_EXACT);
         }
 
         Map<String, String> parameters =

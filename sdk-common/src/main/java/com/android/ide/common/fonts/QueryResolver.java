@@ -19,6 +19,8 @@ package com.android.ide.common.fonts;
 // Changes to this file should be coordinated with the gmscore fonts team (fonts-team@google.com).
 
 import static com.android.ide.common.fonts.FontDetailKt.DEFAULT_EXACT;
+import static com.android.ide.common.fonts.FontDetailKt.ITALICS;
+import static com.android.ide.common.fonts.FontDetailKt.NORMAL;
 
 import com.android.utils.Pair;
 
@@ -150,7 +152,7 @@ public class QueryResolver {
 
         // If the query does not contain a colon, then it's just the default style of that font.
         if (!query.contains(":")) {
-            finalSpecs.add(new MutableFontDetail(query.replace('+', ' '), DEFAULT_EXACT));
+            finalSpecs.add(new MutableFontDetail(query.replace('+', ' '), FontType.SINGLE, NORMAL, DEFAULT_EXACT));
             return finalSpecs;
         }
         // Get family name from beginning of query, and then remove it and its trailing colon.
@@ -161,6 +163,21 @@ public class QueryResolver {
         // Generate the final list of specs. First separate font requests by comma, and then
         // separate individual styles per request by colon.
         List<String> queries = Splitter.on(',').omitEmptyStrings().trimResults().splitToList(query);
+
+        // Handle vf queries. If the query is "vf", then it's a vf request for regular style. If the
+        // query is "vf:italic", then it's a vf request for italic.
+        if (queries.size() == 1) {
+            if (queries.get(0).toLowerCase(Locale.ENGLISH).equals("vf")) {
+                finalSpecs.add(new MutableFontDetail(familyName, FontType.VARIABLE, NORMAL, DEFAULT_EXACT));
+                return finalSpecs;
+            } else if (queries.get(0).toLowerCase(Locale.ENGLISH).equals("vf:italic")) {
+                finalSpecs.add(new MutableFontDetail(familyName, FontType.VARIABLE, ITALICS, DEFAULT_EXACT));
+                return finalSpecs;
+            } else if (queries.get(0).toLowerCase(Locale.ENGLISH).startsWith("vf")) {
+                throw new IllegalArgumentException("invalid vf query (" + queries.get(0) + ")");
+            }
+        }
+
         for (String q : queries) {
             List<String> components =
                     Splitter.on(':').omitEmptyStrings().trimResults().splitToList(q);

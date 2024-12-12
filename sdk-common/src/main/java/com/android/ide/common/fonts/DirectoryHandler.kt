@@ -25,6 +25,7 @@ private const val ATTR_FONT_NAME = "name"
 private const val ATTR_STYLE_NAME = "styleName"
 private const val ATTR_MENU = "menu"
 private const val ATTR_MENU_NAME = "menuName"
+private const val ATTR_IS_VF = "isVf"
 private const val ATTR_WEIGHT = "weight"
 private const val ATTR_WIDTH = "width"
 private const val ATTR_ITALIC = "italic"
@@ -48,6 +49,7 @@ internal class DirectoryHandler(private val provider: FontProvider) : DefaultHan
             }
             FONT -> {
                 val font = MutableFontDetail()
+                font.type = attributes.getValue(ATTR_IS_VF).parseType()
                 font.weight = attributes.getValue(ATTR_WEIGHT).parseIntOrDefault(DEFAULT_WEIGHT)
                 font.width = attributes.getValue(ATTR_WIDTH).parseFloatOrDefault(DEFAULT_WIDTH)
                 font.italics = attributes.getValue(ATTR_ITALIC).parseFloatOrDefault(NORMAL)
@@ -67,6 +69,13 @@ internal class DirectoryHandler(private val provider: FontProvider) : DefaultHan
             }
             fontDetails.clear()
         }
+    }
+
+    private fun String?.parseType(): FontType {
+        if (this == null) {
+            return FontType.SINGLE
+        }
+        return if (this.equals("true", ignoreCase = true)) FontType.VARIABLE else FontType.SINGLE
     }
 
     private fun String?.parseIntOrDefault(defaultValue: Int): Int {

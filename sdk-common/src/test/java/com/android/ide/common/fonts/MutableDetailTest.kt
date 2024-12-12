@@ -16,6 +16,7 @@
 
 package com.android.ide.common.fonts
 
+import com.android.ide.common.fonts.FontType.SINGLE
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -23,7 +24,7 @@ class MutableDetailTest {
     @Test
     fun testMatch() {
         val font1 = FontDetailTest.createFontDetail(
-                400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
+            SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
 
 
         val name = font1.family.name
@@ -40,13 +41,13 @@ class MutableDetailTest {
     @Test
     fun testFindBestMatch() {
         val font1 = FontDetailTest.createFontDetail(
-                400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
+                SINGLE, 400, 100f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
         val font2 = FontDetailTest.createFontDetail(
-                400, 100f, ITALICS, "http://someurl.com/myfont2.ttf", "MyStyle")
+                SINGLE, 400, 100f, ITALICS, "http://someurl.com/myfont2.ttf", "MyStyle")
         val font3 = FontDetailTest.createFontDetail(
-                700, 100f, NORMAL, "http://someurl.com/myfont3.ttf", "MyStyle")
+                SINGLE, 700, 100f, NORMAL, "http://someurl.com/myfont3.ttf", "MyStyle")
         val font4 = FontDetailTest.createFontDetail(
-                700, 100f, ITALICS, "http://someurl.com/myfont4.ttf", "MyStyle")
+                SINGLE, 700, 100f, ITALICS, "http://someurl.com/myfont4.ttf", "MyStyle")
         val fonts = listOf(font1, font2, font3, font4)
 
         val name = font1.family.name

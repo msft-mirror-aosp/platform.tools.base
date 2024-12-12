@@ -18,6 +18,7 @@ package com.android.ide.common.fonts
 
 class MutableFontDetail(
     var name: String,
+    var type: FontType,
     var weight: Int,
     var width: Float,
     var italics: Float,
@@ -27,13 +28,13 @@ class MutableFontDetail(
     var hasExplicitStyle: Boolean,
 ) {
     constructor(name: String, weight: Int, width: Float, italics: Float, exact: Boolean)
-            : this(name, weight, width, italics, exact, "", "", false)
+            : this(name, FontType.SINGLE, weight, width, italics, exact, "", "", false)
 
-    constructor(name: String, exact: Boolean)
-            : this(name, DEFAULT_WEIGHT, DEFAULT_WIDTH, NORMAL, exact)
+    constructor(name: String, type: FontType, italics: Float, exact: Boolean)
+            : this(name, type, DEFAULT_WEIGHT, DEFAULT_WIDTH, italics, exact, "", "", false)
 
     constructor()
-            : this("", DEFAULT_EXACT)
+            : this("", FontType.SINGLE, NORMAL, DEFAULT_EXACT)
 
     fun findBestMatch(fonts: Collection<FontDetail>): FontDetail? {
         var best: FontDetail? = null
@@ -54,6 +55,7 @@ class MutableFontDetail(
     fun match(other: FontDetail): Float {
         return Math.abs(weight - other.weight) +
                 Math.abs(width - other.width) +
-                Math.abs(italics - other.italics) * 50f
+                Math.abs(italics - other.italics) * 50f +
+                if (type != other.type) 500f else 0f
     }
 }

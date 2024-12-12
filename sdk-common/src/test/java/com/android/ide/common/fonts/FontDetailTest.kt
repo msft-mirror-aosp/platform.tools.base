@@ -15,6 +15,8 @@
  */
 package com.android.ide.common.fonts
 
+import com.android.ide.common.fonts.FontType.SINGLE
+import com.android.ide.common.fonts.FontType.VARIABLE
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -54,7 +56,7 @@ class FontDetailTest {
 
     @Test
     fun testConstructorAndGetters() {
-        val family = createFontFamily(800, 120f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
+        val family = createFontFamily(SINGLE, 800, 120f, NORMAL, "http://someurl.com/myfont1.ttf", "MyStyle")
         val font = family.fonts[0]
         assertThat(font.family).isSameAs(family)
         assertThat(font.weight).isEqualTo(800)
@@ -66,14 +68,15 @@ class FontDetailTest {
 
     @Test
     fun testConstructorWithGeneratedStyleName() {
-        val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
+        val font = createFontDetail(SINGLE, 800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
         assertThat(font.styleName).isEqualTo("Extra-Bold Italic")
     }
 
     @Test
     fun testDerivedConstructor() {
-        val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
-        val derived = FontDetail(font, MutableFontDetail(FONT_NAME, 700, 100f, NORMAL, DEFAULT_EXACT, "whatever", "", false))
+        val font = createFontDetail(SINGLE, 800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
+        val derived = FontDetail(font, MutableFontDetail(FONT_NAME,
+                                                         SINGLE, 700, 100f, NORMAL, DEFAULT_EXACT, "whatever", "", false))
         assertThat(derived.family).isSameAs(font.family)
         assertThat(derived.weight).isEqualTo(700)
         assertThat(derived.width).isEqualTo(100f)
@@ -84,19 +87,34 @@ class FontDetailTest {
 
     @Test
     fun testGenerateQuery() {
-        val font = createFontDetail(800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
-        assertThat(font.generateQueryV12()).isEqualTo("MyFont:wght800:ital1:wdth110")
+        val font1 = createFontDetail(SINGLE, 800, 110f, ITALICS, "http://someurl.com/myfont2.ttf", "")
+        assertThat(font1.generateQueryV12()).isEqualTo("MyFont:wght800:ital1:wdth110")
+        val font2 = createFontDetail(VARIABLE)
+        assertThat(font2.generateQueryV12()).isEqualTo("MyFont:vf")
+        val font3 = createFontDetail(VARIABLE, italics = ITALICS)
+        assertThat(font3.generateQueryV12()).isEqualTo("MyFont:vf:italic")
+        val font4 = createFontDetail(SINGLE)
+        assertThat(font4.generateQueryV12()).isEqualTo("MyFont")
+        val font5 = createFontDetail(VARIABLE)
+        assertThat(font5.generateQueryV12()).isEqualTo("MyFont:vf")
     }
 
     companion object {
-        internal fun createFontDetail(weight: Int, width: Float, italics: Float, url: String, styleName: String): FontDetail {
-            val family = createFontFamily(weight, width, italics, url, styleName)
+        internal fun createFontDetail(
+            type: FontType,
+            weight: Int = DEFAULT_WEIGHT,
+            width: Float = DEFAULT_WIDTH,
+            italics: Float = NORMAL,
+            url: String = "http://someurl.com/myfont2.ttf",
+            styleName: String = ""
+        ): FontDetail {
+            val family = createFontFamily(type, weight, width, italics, url, styleName)
             return family.fonts[0]
         }
 
-        private fun createFontFamily(weight: Int, width: Float, italics: Float, url: String, styleName: String): FontFamily {
+        private fun createFontFamily(type: FontType, weight: Int, width: Float, italics: Float, url: String, styleName: String): FontFamily {
             return FontFamily(FontProvider.GOOGLE_PROVIDER, FontSource.DOWNLOADABLE, "MyFont", "http://someurl.com/mymenufont.ttf", "myMenu",
-                    listOf(MutableFontDetail(FONT_NAME, weight, width, italics, DEFAULT_EXACT, url, styleName, false)))
+                    listOf(MutableFontDetail(FONT_NAME, type, weight, width, italics, DEFAULT_EXACT, url, styleName, false)))
         }
 
         private fun generateStyleName(weight: Int, italics: Float): String {

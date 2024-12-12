@@ -24,12 +24,18 @@ const val DEFAULT_EXACT = true
 const val ITALICS = 1f
 const val NORMAL = 0f
 
+enum class FontType {
+    SINGLE,
+    VARIABLE
+}
+
 /**
  * A [FontDetail] is a reference to a specific font with weight, width, and italics attributes.
  * Each instance refers to a possibly remote (*.ttf) font file.
  */
 class FontDetail {
     val family: FontFamily
+    val type: FontType
     val weight: Int
     val width: Float
     val italics: Float
@@ -43,6 +49,7 @@ class FontDetail {
 
     constructor(fontFamily: FontFamily, font: MutableFontDetail) {
         family = fontFamily
+        type = font.type
         weight = font.weight
         width = font.width
         italics = font.italics
@@ -57,6 +64,7 @@ class FontDetail {
      */
     constructor(detail: FontDetail, withStyle: MutableFontDetail) {
         family = detail.family
+        type = withStyle.type
         weight = withStyle.weight
         width = withStyle.width
         italics = withStyle.italics
@@ -68,11 +76,18 @@ class FontDetail {
 
 
     fun toMutableFontDetail(): MutableFontDetail {
-        return MutableFontDetail(family.name, weight, width, italics, exact, fontUrl, styleName, hasExplicitStyle)
+        return MutableFontDetail(family.name, type, weight, width, italics, exact, fontUrl, styleName, hasExplicitStyle)
     }
 
     fun generateQueryV12(): String {
         val query = StringBuilder().append(family.name)
+        if (type == FontType.VARIABLE) {
+            query.append(":vf")
+            if (italics != 0f) {
+                query.append(":italic")
+            }
+            return query.toString()
+        }
         if (weight != DEFAULT_WEIGHT) {
             query.append(":wght").append(weight)
         }
