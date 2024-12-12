@@ -18,11 +18,19 @@ package com.android.adblib.ddmlibcompatibility
 import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
+import com.android.adblib.ProcessRunner.ProcessResult
 import com.android.adblib.testing.FakeAdbSession
+import com.android.ddmlib.IDevice.DeviceState.ONLINE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
+import java.nio.file.Paths
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 class AdbLibAndroidDebugBridgeTest {
@@ -45,6 +53,76 @@ class AdbLibAndroidDebugBridgeTest {
         // Assert
         assertFalse(result)
 
+    }
+
+    @Test
+    fun getRawDeviceList_returnsEmptyListWhenAdbLocationIsNotSet() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.getRawDeviceList()
+
+        // Assert
+        assertTrue(result.isDone)
+        assertTrue(result.get().isEmpty())
+    }
+
+    @Test
+    fun getRawDeviceList_canParseProcessBuilderOutput() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        config.update { it -> it.copy(adbPath = Paths.get("dir1", "adb")) }
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        session.host.processRunner.resultToReturn =
+            ProcessResult(
+                listOf(
+                    "List of devices attached",
+                    "012345678         device usb:0-2 product:sunfish"
+                ), listOf("Empty"), 0
+            )
+
+        // Act
+        val result = bridge.getRawDeviceList()
+
+        // Assert
+        val adbDevices = result.get()
+        assertEquals(1, adbDevices.size)
+        assertEquals("012345678", adbDevices.first().serial)
+        assertEquals(ONLINE, adbDevices.first().state)
+    }
+
+    @Test
+    fun getRawDeviceList_transparentToExceptions() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        config.update { it -> it.copy(adbPath = Paths.get("dir1", "adb")) }
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        val exception = RuntimeException("abc")
+        session.host.processRunner.throwOnNextCommand = exception
+
+        // Act
+        val result = bridge.getRawDeviceList()
+
+        // Assert
+        try {
+            result.get()
+            fail("Should not reach")
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            assertEquals(exception, cause)
+        }
     }
 
     // TODO: Add many more tests

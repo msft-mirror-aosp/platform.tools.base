@@ -19,12 +19,28 @@ import java.nio.file.Path
 
 interface ProcessRunner {
 
-    /**
-     * Executes a command and waits for it to complete.
-     *
-     * @param executable The absolute path to the executable.
-     * @param args  A list of arguments to pass to the executable.
-     * @param envVars  A map of environment variables to set for the process.
-     */
-    suspend fun runProcess(executable: Path, args: List<String>, envVars: Map<String, String>)
+  /**
+   * Captures the results of running a command.
+   */
+  class ProcessResult(
+    val stdout: List<String>,
+    val stderr: List<String>,
+    val exitCode: Int,
+  )
+
+  /**
+   * Executes a command and waits for it to complete.
+   *
+   * The implementation of this method relies on `java.lang.ProcessBuilder.start()`.
+   * As a result, it can throw an `IOException`. Additionally, you should check
+   * if the ProcessResult.exitCode value is non-zero, which indicates an error
+   * occurred during the process execution.
+   *
+   * @param executable The absolute path to the executable.
+   * @param args  A list of arguments to pass to the executable.
+   * @param envVars  A map of environment variables to set for the process.
+   */
+  suspend fun runProcess(
+    executable: Path, args: List<String>, envVars: Map<String, String>
+  ): ProcessResult
 }
