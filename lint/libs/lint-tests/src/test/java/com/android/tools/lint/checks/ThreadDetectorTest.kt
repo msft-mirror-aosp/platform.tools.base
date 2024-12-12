@@ -719,7 +719,7 @@ class ThreadDetectorTest : AbstractCheckTest() {
             "\n" +
             "        @WorkerThread\n" +
             "        void worker() {\n" +
-            "            /*Method threadSafe must be called from the UI thread, currently inferred thread is worker thread*/threadSafe()/**/; // OK\n" +
+            "            /*Method threadSafe must be called from the UI thread, currently inferred thread is worker thread*/threadSafe()/**/; // ERROR\n" +
             "        }\n" +
             "\n" +
             "        // Multi thread test\n" +
