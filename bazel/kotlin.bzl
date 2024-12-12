@@ -229,7 +229,6 @@ def kotlin_library(
         **kwargs: arguments to pass through to _kotlin_library
     """
 
-    javacopts = ["--release", jvm_target] + javacopts
     kotlinc_opts = ["-jvm-target", jvm_target] + kotlinc_opts
 
     # b/382592220: various AGP-related targets are not ready for lambdas compiled with invokedynamic.
@@ -305,6 +304,20 @@ def _kotlin_library_impl(ctx):
     ijars = []
     kotlin_providers = []
 
+    jvm_target = ctx.attr.jvm_target
+    if jvm_target == "8":
+        javac_opts = ["--release", "8"] + ctx.attr.javacopts
+        kt_java_runtime = ctx.attr._kt_java_runtime_8[java_common.JavaRuntimeInfo]
+    elif jvm_target == "11":
+        javac_opts = ["--release", "11"] + ctx.attr.javacopts
+        kt_java_runtime = ctx.attr._kt_java_runtime_11[java_common.JavaRuntimeInfo]
+    elif jvm_target == "17":
+        javac_opts = ctx.attr.javacopts  # prebuilts/studio/jdk/jdk17/linux/lib/ct.sym does not include "17".
+        kt_java_runtime = ctx.attr._kt_java_runtime_17[java_common.JavaRuntimeInfo]
+    else:
+        # NOTE: Update javac_opts for 17 when adding 21.
+        fail("JVM target " + jvm_target + " is not currently supported in kotlin_library")
+
     if kotlin_srcs:
         if ctx.attr.stdlib:
             deps.append(ctx.attr.stdlib[JavaInfo])
@@ -356,7 +369,7 @@ def _kotlin_library_impl(ctx):
             source_jars = source_jars,
             output = java_jar,
             deps = deps + kotlin_providers,
-            javac_opts = java_common.default_javac_opts(java_toolchain = java_toolchain) + ctx.attr.javacopts,
+            javac_opts = java_common.default_javac_opts(java_toolchain = java_toolchain) + javac_opts,
             java_toolchain = java_toolchain,
             plugins = [plugin[JavaPluginInfo] for plugin in ctx.attr.plugins],
         )
