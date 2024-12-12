@@ -414,25 +414,25 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
                 subProjects.values.flatMap { it.dependencies.externalLibraries }
 
     /**
-     * This method handles project with custom plugins applied to them via [AndroidComponentCallback]
+     * This method handles project with custom plugins applied to them via
+     * [com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback]
      */
-    private fun handleCustomBuildLogic(location: Path): Map<String, String> {
+    private fun handleCustomBuildLogic(location: Path): Map<String, List<String>> {
         // gather all the custom callbacks. This returns a map from each callback class
         // to a list of all projects using this callback.
         val callbackMap = subProjects.values.asSequence()
-            .map { definition ->
-                definition.pluginCallback?.let {
+            .flatMap { definition ->
+                definition.pluginCallbacks.map {
                     it to definition.path
                 }
             }
-            .filterNotNull()
             .groupBy(keySelector = { it.first }, valueTransform = { it.second })
 
         if (callbackMap.isEmpty()) return mapOf()
 
         // result to be used by the projects to apply their plugins.
-        // The map is from the project path to the plugin class name.
-        val pluginClassMap = mutableMapOf<String, String>()
+        // The map is from the project path to the plugin class names.
+        val pluginClassMap = mutableMapOf<String, List<String>>()
 
         val handler = CustomBuildLogicHandler(location.resolve("build-logic.jar"))
         handler.use {
@@ -443,7 +443,10 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
                 // record this association, using the paths as keys since it'll be used
                 // by each subproject
                 paths.forEach { path ->
-                    pluginClassMap[path] = pluginClassName
+                    val nameList = pluginClassMap.computeIfAbsent(path) {
+                        mutableListOf()
+                    } as MutableList<String>
+                    nameList.add(pluginClassName)
                 }
             }
         }

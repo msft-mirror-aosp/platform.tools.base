@@ -16,183 +16,134 @@
 
 package com.android.build.gradle.integration.api
 
-import com.android.Version
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.testutils.TestUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.google.common.truth.Truth
-import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Before
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import kotlin.io.path.readText
 
 class SourceSetsTest {
-    @JvmField
-    @Rule
-    var project = createGradleProject {
-        val customPlugin = PluginType.Custom("com.example.generate.jni")
-        subProject(":api-use") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(customPlugin)
-            useNewPluginsDsl = true
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
                 namespace = "com.example.api.use"
-                applicationId = "com.example.api.use"
-            }
-        }
-
-        settings {
-            includedBuild("build-logic") {
-                rootProject {
-                    plugins.add(PluginType.JAVA_GRADLE_PLUGIN)
-                    appendToBuildFile {
-                        //language=groovy
-                        """
-                        group = "com.example.generate"
-                        version = "0.1-SNAPSHOT"
-                        gradlePlugin {
-                            plugins {
-                                // A plugin that generates .so files to add to jniLibs in the legacy variant API
-                                generateJni {
-                                    id = "${customPlugin.id}"
-                                    implementationClass = "com.example.generate.SourceProducerPlugin"
-                                }
-                            }
-                        }
-
-                        """.trimIndent()
-                    }
-                    dependencies {
-                        implementation("com.android.tools.build:gradle:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                    }
-
-                    addFile(
-                        "src/main/java/com/example/generate/ReproducerTask.java",
-                        // language=java
-                        """
-                        package com.example.generate;
-
-                        import org.gradle.api.DefaultTask;
-                        import org.gradle.api.file.DirectoryProperty;
-                        import org.gradle.api.tasks.OutputDirectory;
-                        import org.gradle.api.tasks.TaskAction;
-
-                        /** Task to  generate a placeholder JNI lib */
-                        public abstract class ReproducerTask extends DefaultTask {
-
-                            @OutputDirectory
-                            public abstract DirectoryProperty getOutputDirectory();
-
-                            @TaskAction
-                            public final void generate() {
-                                System.out.println("ReproducerTask called !");
-                            }
-                        }
-                        """.trimIndent()
-                    )
-
-                    addFile("src/main/java/com/example/generate/SourceProducerPlugin.java",
-                        //language=java
-                        """
-                        package com.example.generate;
-
-                        import org.gradle.api.Plugin;
-                        import org.gradle.api.Project;
-                        import org.gradle.api.provider.Provider;
-                        import org.gradle.api.tasks.TaskProvider;
-                        import com.android.build.api.variant.ApplicationAndroidComponentsExtension;
-
-
-                        /* A Plugin that demonstrates adding generated res from a task using new variant API */
-                        class SourceProducerPlugin implements Plugin<Project> {
-                            @Override public void apply(Project project) {
-                                project.getPluginManager()
-                                        .withPlugin(
-                                            "com.android.application",
-                                            androidPlugin -> {
-                                                registerGenerationTask(project);
-                                            });
-                            }
-
-                            private void registerGenerationTask(Project project) {
-                                ApplicationAndroidComponentsExtension extension = project.getExtensions().getByType(ApplicationAndroidComponentsExtension.class);
-
-                                extension.onVariants(extension.selector().withBuildType("debug"), variant -> {
-                                    TaskProvider<ReproducerTask> reproTask = project.getTasks().register(
-                                            variant.getName() + "ReproTask",
-                                            ReproducerTask.class,
-                                            task -> {
-                                                System.out.println("ReproTask configured.");
-                                            }
-                                    );
-                                    variant.getSources().getRes().addGeneratedSourceDirectory(reproTask, ReproducerTask::getOutputDirectory);
-                                });
-                            }
-                        }
-                        """.trimIndent()
-                    )
+                defaultConfig {
+                    applicationId = "com.example.api.use"
                 }
             }
+            pluginCallback = MyAppCallback::class.java
         }
     }
 
-    @Before
-    fun copyJdkPathToIncludedBuild() {
-        project.projectDir.resolve("build-logic/gradle.properties").let { file ->
-            file.parentFile.mkdirs()
-            file.writeText(project.gradlePropertiesFile.readLines().first {
-                it.contains("org.gradle.java.installations.paths") }
-            )
+    class MyAppCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+                val reproTask = project.tasks.register(
+                    "${variant.name}ReproTask",
+                    ReproducerTask::class.java
+                ) {
+                    println("ReproTask configured.");
+                }
+
+                variant.sources.res?.addGeneratedSourceDirectory(reproTask, ReproducerTask::outputDirectory);
+            }
         }
     }
 
     @Test
     fun sourceRegistrationShouldBeSuccessful() {
-        val result = project.executor()
+        val result = rule.build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":api-use:assembleDebug")
-        Truth.assertThat(result.didWorkTasks.contains(":api-use:debugReproTask")).isTrue()
+            .run(":app:assembleDebug")
+        Truth.assertThat(result.didWorkTasks.contains(":app:debugReproTask")).isTrue()
         Truth.assertThat(result.stdout.findAll("ReproducerTask called !").count())
             .isEqualTo(1)
     }
+
+    class AssetCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                onVariants(selector().all(), {
+                    // do nothing, just request it
+                    it.sources.assets
+                })
+            }
+        }
+    }
+
+    class AssetViaOldApiCallback: LegacyApplicationCallback {
+        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+            extension.applicationVariants.all {
+                extension.sourceSets.getByName(it.name).assets.srcDir(
+                    project.layout.projectDirectory.dir(
+                        java.nio.file.Paths.get(
+                            "extra-assets",
+                            it.name
+                        ).toString()
+                    )
+                )
+            }
+        }
+    }
+
     @Test
     fun testOldAndNewVariantApiSourcesAccess() {
-
-        val subProject = project.getSubproject("api-use")
-
-        File(subProject.projectDir, "extra-assets/debug").mkdirs()
-        File(subProject.projectDir, "extra-assets/debug/file.txt").writeText(
-            "some asset"
-        )
-        subProject.buildFile.appendText(
-            """
-               androidComponents {
-                    onVariants(selector().all(), {
-                        // do nothing, just request it
-                        it.sources.assets
-                    })
+        val build = rule.build {
+            androidApplication {
+                files {
+                    add("extra-assets/debug/file.txt",  "some asset")
                 }
+                // add more plugins
+                pluginCallbacks.add(AssetCallback::class.java)
+                pluginCallbacks.add(AssetViaOldApiCallback::class.java)
+            }
+        }
 
-                android.applicationVariants.all {
-                    android.sourceSets.getByName(name).assets.srcDir(
-                        layout.projectDirectory.dir(java.nio.file.Paths.get("extra-assets", name).toString())
-                    )
-                }
-            """.trimIndent()
-        )
-        val result = project.executor()
+        val app = build.androidApplication()
+
+        val result = build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("clean", ":api-use:mergeDebugAssets")
+            .run("clean", ":app:mergeDebugAssets")
         Truth.assertThat(result.failedTasks).isEmpty()
         // check the file got merged
         Truth.assertThat(
-            File(project.projectDir,
-                "api-use/build/intermediates/assets/debug/mergeDebugAssets/file.txt").exists()
+            build.androidApplication().intermediatesDir.resolve("assets/debug/mergeDebugAssets/file.txt").toFile().exists()
         ).isTrue()
+    }
+
+    class RegisterTaskViaOldApi: LegacyApplicationCallback {
+        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+            extension.applicationVariants.all { variant ->
+                val reproTask = project.tasks.register(
+                    "${variant.name}ReproTask",
+                    ReproducerTask::class.java
+                ) { task ->
+                       task.outputDirectory.set(File(project.projectDir, "tmp_test"))
+                }
+
+                val variantSourceSet = extension.sourceSets.getByName(variant.name)
+                val outputDir = reproTask.flatMap(ReproducerTask::outputDirectory);
+                variantSourceSet.res.srcDir(outputDir);
+            }
+        }
     }
 
     /**
@@ -201,59 +152,33 @@ class SourceSetsTest {
      */
     @Test
     fun testOldVariantApiWithEarlyTaskRealization() {
-        File(project.getSubproject("build-logic").projectDir,
-            "src/main/java/com/example/generate/SourceProducerPlugin.java").writeText(
-            """
-                        package com.example.generate;
+        val build = rule.build {
+            androidApplication {
+                // replace previous plugin
+                pluginCallback = RegisterTaskViaOldApi::class.java
+            }
+        }
 
-                        import java.io.File;
-                        import org.gradle.api.Plugin;
-                        import org.gradle.api.Project;
-                        import org.gradle.api.provider.Provider;
-                        import org.gradle.api.file.Directory;
-                        import org.gradle.api.tasks.TaskProvider;
-                        import com.android.build.gradle.api.AndroidSourceSet;
-                        import com.android.build.gradle.AppExtension;
-
-
-                        /* A Plugin that demonstrates adding generated res from a task using new variant API */
-                        class SourceProducerPlugin implements Plugin<Project> {
-                            @Override public void apply(Project project) {
-                                project.getPluginManager()
-                                        .withPlugin(
-                                            "com.android.application",
-                                            androidPlugin -> {
-                                                registerGenerationTask(project);
-                                            });
-                            }
-
-                            private void registerGenerationTask(Project project) {
-                                AppExtension extension = project.getExtensions().getByType(AppExtension.class);
-                                project.getTasks().all(task -> { System.out.println("Task : " + task.getName());});
-                                extension.getApplicationVariants().all(variant -> {
-                                    TaskProvider<ReproducerTask> reproTask = project.getTasks().register(
-                                            variant.getName() + "ReproTask",
-                                            ReproducerTask.class,
-                                            task -> {
-                                                task.getOutputDirectory().set(new File(project.getProjectDir(), "tmp_test"));
-                                            }
-                                    );
-                                    AndroidSourceSet variantSourceSet = extension.getSourceSets().getByName(variant.getName());
-                                    Provider<Directory> outputDir = reproTask.flatMap(ReproducerTask::getOutputDirectory);
-                                    variantSourceSet.getRes().srcDir(outputDir);
-                                });
-                            }
-                        }
-                """.trimIndent()
-        )
-        project.executor()
+        build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":api-use:mapDebugSourceSetPaths")
-        val content = File(
-            project.projectDir,
-            "./api-use/build/intermediates/source_set_path_map/debug/mapDebugSourceSetPaths/file-map.txt"
-        ).readText()
+            .run(":app:mapDebugSourceSetPaths")
+
+        val content = build.androidApplication().intermediatesDir
+            .resolve("source_set_path_map/debug/mapDebugSourceSetPaths/file-map.txt")
+            .readText()
 
         Truth.assertThat(content).contains("tmp_test")
+    }
+}
+
+/** Task to  generate a placeholder JNI lib */
+abstract class ReproducerTask: DefaultTask() {
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        System.out.println("ReproducerTask called !")
     }
 }

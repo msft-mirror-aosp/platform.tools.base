@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
+import org.jetbrains.kotlin.gradle.utils.toSetOrEmpty
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
@@ -134,14 +135,14 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
         computeOutputPath(apkSelector).isRegularFile()
 
     override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
-        val previousPlugin = (projectDefinition as AndroidProjectDefinition<*>).pluginCallback
+        val previousPlugins = (projectDefinition as AndroidProjectDefinition<*>).pluginCallbacks.toSet()
 
         super.reconfigure(buildFileOnly, action)
 
-        val newPlugin = (projectDefinition as AndroidProjectDefinition<*>).pluginCallback
+        val newPlugins = (projectDefinition as AndroidProjectDefinition<*>).pluginCallbacks.toSet()
 
-        if (previousPlugin != newPlugin) {
-            throw RuntimeException("Cannot change pluginCallback in reconfigure")
+        if (previousPlugins.size != newPlugins.size || !previousPlugins.containsAll(newPlugins)) {
+            throw RuntimeException("Cannot change pluginCallbacks in reconfigure")
         }
     }
 }
