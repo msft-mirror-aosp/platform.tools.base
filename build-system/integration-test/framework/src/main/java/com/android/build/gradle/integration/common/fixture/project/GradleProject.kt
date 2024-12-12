@@ -17,9 +17,11 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
 
@@ -77,6 +79,13 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         buildFileOnly: Boolean,
         action: ProjectDefinitionT.() -> Unit
     ) {
+        // gather previous data
+        val previousPlugins = projectDefinition.pluginCallbacks.toSet()
+
+        val previousDependencies = (projectDefinition as GradleProjectDefinitionImpl).dependencies
+            .externalLibraries
+            .map { it.mavenCoordinate }
+
         action(projectDefinition)
 
         // we need to query the other projects for their plugins
@@ -84,6 +93,22 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
 
         (projectDefinition as GradleProjectDefinitionImpl)
             .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), build.getNewWriter())
+
+        // we also need to write new inline dependencies
+        val newDependencies = projectDefinition.dependencies
+            .externalLibraries
+            .associateBy { it.mavenCoordinate }
+            .toMutableMap()
+        // remove existing dependencies
+        previousDependencies.forEach { newDependencies.remove(it) }
+        // write the rest to the repo.
+        MavenRepoGenerator(newDependencies.values.toList()).generate(build.mavenRepoPath)
+
+        val newPlugins = projectDefinition.pluginCallbacks.toSet()
+
+        if (previousPlugins.size != newPlugins.size || !previousPlugins.containsAll(newPlugins)) {
+            throw RuntimeException("Cannot change pluginCallbacks in reconfigure")
+        }
     }
 
     abstract fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject<ProjectDefinitionT>

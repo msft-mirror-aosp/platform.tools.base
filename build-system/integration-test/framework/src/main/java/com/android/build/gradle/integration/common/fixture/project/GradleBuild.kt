@@ -266,6 +266,7 @@ internal class GradleBuildImpl(
     private val definition: GradleBuildDefinitionImpl,
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
+    internal val mavenRepoPath: Path,
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {

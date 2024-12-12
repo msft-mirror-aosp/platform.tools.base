@@ -133,16 +133,4 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
 
     open fun hasApk(apkSelector: ApkSelector): Boolean =
         computeOutputPath(apkSelector).isRegularFile()
-
-    override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
-        val previousPlugins = (projectDefinition as AndroidProjectDefinition<*>).pluginCallbacks.toSet()
-
-        super.reconfigure(buildFileOnly, action)
-
-        val newPlugins = (projectDefinition as AndroidProjectDefinition<*>).pluginCallbacks.toSet()
-
-        if (previousPlugins.size != newPlugins.size || !previousPlugins.containsAll(newPlugins)) {
-            throw RuntimeException("Cannot change pluginCallbacks in reconfigure")
-        }
-    }
 }
