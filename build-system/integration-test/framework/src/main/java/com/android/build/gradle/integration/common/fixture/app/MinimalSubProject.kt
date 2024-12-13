@@ -162,30 +162,6 @@ class MinimalSubProject private constructor(
             )
         }
 
-        @Deprecated("Use GradleRule instead")
-        fun aiPack(): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.ai-pack",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = null,
-            )
-        }
-
-        @Deprecated("Use GradleRule instead")
-        fun assetPack(): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.asset-pack",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = null,
-            )
-        }
-
         fun kotlinMultiplatformAndroid(namespace: String): MinimalSubProject {
             return MinimalSubProject(
                 path = null,

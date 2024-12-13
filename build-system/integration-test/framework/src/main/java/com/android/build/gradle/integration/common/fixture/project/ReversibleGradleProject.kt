@@ -34,7 +34,7 @@ import kotlin.io.path.writeText
  */
 abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     protected open val parentProject: ProjectT,
-) : GradleProject<ProjectDefinitionT> {
+) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider  {
 
     override val location: Path
         get() = parentProject.location
@@ -47,7 +47,7 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     }
 
     override fun file(path: String): File? {
-        return parentProject.file(path)
+        return (parentProject as GradleProjectImpl<*>).file(path)
     }
 }
 

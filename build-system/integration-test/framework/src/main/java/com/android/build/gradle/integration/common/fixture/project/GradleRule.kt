@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.from
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.options.CreationOptions
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule

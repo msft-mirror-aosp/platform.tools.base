@@ -29,7 +29,7 @@ import java.nio.file.Path
  * Base interface for all projects, including but not limited to
  * [GenericProject] and [AndroidProject].
  */
-interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition>: TemporaryProjectModification.FileProvider {
+interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
     /** the location on disk of the project */
     val location: Path
 
@@ -57,7 +57,7 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition>: Tempo
 internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     final override val location: Path,
     protected val projectDefinition: ProjectDefinitionT,
-) : GradleProject<ProjectDefinitionT> {
+) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider {
 
     /**
      * the build that contains this project.
