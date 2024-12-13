@@ -1,0 +1,192 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.lint.checks
+
+import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
+import com.android.tools.lint.detector.api.Detector
+
+class PageAlignmentDetectorTest : AbstractCheckTest() {
+  override fun getDetector(): Detector {
+    return PageAlignmentDetector()
+  }
+
+  fun testDocumentationExample() {
+    lint()
+      .files(
+        gradle(
+            "build.gradle",
+            """
+            dependencies {
+                implementation("org.tensorflow:tensorflow-lite:2.16.1")
+            }
+            """,
+          )
+          .indented(),
+        jniLibArm64v8a,
+        jniLibx86_64,
+        jniLibArmeAbiv7a,
+        jniLibX86,
+      )
+      .run()
+      .expect(
+        """
+        build.gradle:2: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite:2.16.1) is not 16 KB aligned [Aligned16KB]
+            implementation("org.tensorflow:tensorflow-lite:2.16.1")
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  fun testAlignmentOk() {
+    lint()
+      .files(
+        gradle(
+            "build.gradle",
+            """
+            dependencies {
+                implementation("org.tensorflow:tensorflow-lite:2.16.1")
+            }
+            """,
+          )
+          .indented(),
+        jniLibArmeAbiv7a,
+        jniLibX86,
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testVersionCatalog() {
+    lint()
+      .files(
+        gradle(
+            "build.gradle",
+            """
+            dependencies {
+                implementation(libs.tensorflow.lite)
+            }
+            """,
+          )
+          .indented(),
+        gradleToml(
+          """
+          [versions]
+          agp = "8.9.0-alpha07"
+          tensorflowLite = "2.16.1"
+
+          [libraries]
+          tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
+          """
+        ),
+        jniLibArm64v8a,
+        jniLibx86_64,
+        jniLibArmeAbiv7a,
+        jniLibX86,
+      )
+      .run()
+      .expect(
+        """
+        ../gradle/libs.versions.toml:7: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite:2.16.1) is not 16 KB aligned [Aligned16KB]
+                  tensorflow-lite = { module = "org.tensorflow:tensorflow-lite", version.ref = "tensorflowLite" }
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  fun testTransitiveDependency() {
+    lint()
+      .projects(
+        project(
+            gradle(
+                "build.gradle",
+                """
+            dependencies {
+                implementation 'my.indirect.dependency:myname:1.2.3'
+            }
+            """,
+              )
+              .indented(),
+            jniLibArm64v8a,
+            jniLibx86_64,
+            jniLibArmeAbiv7a,
+            jniLibX86,
+          )
+          .withDependencyGraph(
+            """
+            +--- my.indirect.dependency:myname:1.2.3
+            |    \--- org.tensorflow:tensorflow-lite:2.16.1
+            +--- commons-logging:commons-logging:1.2
+            """
+              .trimIndent()
+          )
+      )
+      .run()
+      .expect(
+        """
+        build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/arm64-v8a/libtensorflowlite_jni.so: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite:2.16.1) is not 16 KB aligned [Aligned16KB]
+        0 errors, 1 warnings
+        """
+      )
+  }
+
+  private val jniLibArm64v8a =
+    base64gzip(
+      "build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/arm64-v8a/libtensorflowlite_jni.so",
+      // truncated to just the first 568 bytes (base64 and gzipped) --
+      // that's all the alignment utility will look at
+      """
+      H4sIAAAAAAAA/6t39XFjYmRkgAFmhu0MCB4DgwOUPvHAGEnMgoETSMowSDOw
+      AfksSOrQ6R+MqDQHVBzEZWXADSbYGaPQDAIIfWxgC6DiaHRFMgMKja6vYjFU
+      3WZUusEaou4FOyOKPiaovoLJEHXo9Aeo8g9o/gt6WpLCQoQ7GQoQ7gOBAKg+
+      i5nMYD46/eYUAwrNAtUXCNTHxkA6YIFiCyYIH53ewYBKw+wDAE9kGSg4AgAA
+      """,
+    )
+
+  private val jniLibx86_64 =
+    base64gzip(
+      "build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/x86_64/libtensorflowlite_jni.so",
+      // truncated to just the first 624 bytes (base64 and gzipped) --
+      // that's all the alignment utility will look at
+      """
+      H4sIAAAAAAAA/6t39XFjYmRkgAFmBjsGBI+BwQFKv/B1RRKzYOACkjIM0gxs
+      QD4Lkjp02oAJleaAioPsYGXADRSWuKDQDAIIfSA7GTZAxdHoigQGFBpdX4UA
+      xB8VCqj0Amuo+zJQ9TFB9a3ggKhDpz9AAwtGw/wX9LQkhYUIdzIUINwHAgFQ
+      fRwPmSHmodE1FxlQaBaovkCgPjYG0gELFBdA4wednsGASjOh6eOAOAuDVmBA
+      pWHuBABUNm+wcAIAAA==
+      """,
+    )
+
+  private val jniLibArmeAbiv7a =
+    base64gzip(
+      "build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/armeabi-v7a/libtensorflowlite_jni.so",
+      // Just the first 6 bytes -- that's all the alignment utility will look at
+      """
+      H4sIAAAAAAAA/6t39XFjZAQArt5sEAYAAAA=
+      """,
+    )
+
+  private val jniLibX86 =
+    base64gzip(
+      "build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/x86/libtensorflowlite_jni.so",
+      // Just the first 6 bytes -- that's all the alignment utility will look at
+      """
+      H4sIAAAAAAAA/6t39XFjZAQArt5sEAYAAAA=
+      """,
+    )
+}

@@ -350,6 +350,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           OverrideDetector.ISSUE,
           PackageVisibilityDetector.QUERY_ALL_PACKAGES_PERMISSION,
           PackageVisibilityDetector.QUERY_PERMISSIONS_NEEDED,
+          PageAlignmentDetector.ISSUE,
           ParcelDetector.ISSUE,
           PendingIntentMutableFlagDetector.ISSUE,
           PendingIntentMutableImplicitDetector.ISSUE,
