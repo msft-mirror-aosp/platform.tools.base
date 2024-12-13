@@ -46,12 +46,8 @@ class LibraryClassVerificationTest {
                 implementation(MavenRepoGenerator.Library("com.example.base:base:0.1",
                         jarWithClasses(listOf(BaseClass::class.java)),
                 ))
-                implementation(localJar {
-                    name = "embedded.jar"
-                    addClass("com/example/EmbeddedJarClass") })
-                compileOnly(localJar {
-                    name = "compileOnly.jar"
-                    addClass("com/example/CompileOnlyJarClass") })
+                implementation(localJar("embedded.jar") { setEmptyClasses("com/example/EmbeddedJarClass") })
+                compileOnly(localJar("compileOnly.jar") { setEmptyClasses("com/example/CompileOnlyJarClass") })
             }
             addFile("src/main/java/com/example/lib/Use.kt",
                     //language=kotlin

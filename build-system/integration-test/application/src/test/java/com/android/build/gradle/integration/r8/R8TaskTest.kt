@@ -95,26 +95,21 @@ class R8TaskTest {
 
     @Test
     fun testMissingKeepRules() {
-        adhocSetup()
-        app.location.toFile().resolve("lib.jar").also {
-            val classToWrite = TestClassesGenerator.classWithEmptyMethods(
-                    "A", "foo:()Ltest/B;", "bar:()Ltest/C;")
-            ZipOutputStream(it.outputStream()).use { zip ->
-                zip.putNextEntry(ZipEntry("test/A.class"))
-                zip.write(classToWrite)
-                zip.closeEntry()
+        rule.build {
+            androidApplication {
+                dependencies {
+                    implementation(localJar("lib.jar") {
+                        createJar {
+                            addClassWithEmptyMethods(
+                                "test/A",
+                                "foo:()Ltest/B;", "bar:()Ltest/C;")
+                        }
+                    })
+                }
+                files.add("proguard-rules.pro", "-keep class test.A { *; }")
             }
         }
-        // TODO(b/384016091): Rewrite this code once we have support for adding non-empty local jars
-        // with DSL-aware test fixtures.
-        app.files.update("build.gradle").append(
-            """
-
-            dependencies {
-                implementation(files("lib.jar"))
-            }
-            """.trimIndent())
-        app.files.add("proguard-rules.pro", "-keep class test.A { *; }")
+        adhocSetup()
 
         executor.expectFailure().run(":app:assembleRelease")
         val missingRules = app.outputsDir.resolve("mapping/release/missing_rules.txt")

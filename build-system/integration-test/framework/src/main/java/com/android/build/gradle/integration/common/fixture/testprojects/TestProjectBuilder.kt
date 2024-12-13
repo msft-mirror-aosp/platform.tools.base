@@ -20,9 +20,9 @@ import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.dsl.CompileOptions
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
-import com.android.build.gradle.integration.common.fixture.TestProject
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.JarBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
@@ -370,7 +370,7 @@ interface DependenciesBuilder {
     /**
      * Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope
      */
-    fun localJar(action: LocalJarBuilder.() -> Unit) : LocalJarBuilder
+    fun localJar(name: String, action: JarBuilder.() -> Unit) : LocalJarDependency
 
     /**
      *  Creates a [LocalFiles] to be passed to the [implementation] or any other scope.
@@ -405,9 +405,9 @@ interface DependenciesBuilder {
     fun ksp(dependency: Any)
 }
 
-interface LocalJarBuilder {
-    var name: String
-    fun addClass(className: String)
+interface LocalJarDependency {
+    val name: String
+    val content: ByteArray
 }
 
 interface LocalFiles {

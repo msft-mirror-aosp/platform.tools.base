@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.testprojects.JarContentBuilderImpl
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.MavenRepoGenerator.Library
 import com.android.testutils.TestInputsGenerator
@@ -221,6 +222,12 @@ internal open class JarBuilderImpl(private val mavenCoordinate: String): JarBuil
         content = TestInputsGenerator.jarWithClasses(classes)
         return this
     }
+
+    override fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder {
+        val builder = JarContentBuilderImpl()
+        action(builder)
+        return setJar(builder.close())
+    }
 }
 
 internal class JarWithDependenciesBuilderImpl(
@@ -229,6 +236,26 @@ internal class JarWithDependenciesBuilderImpl(
 
     override fun withDependencies(list: List<String>): JarBuilder {
         dependencies += list
+        return this
+    }
+
+    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder {
+        super.setEmptyClasses(classBinaryNames)
+        return this
+    }
+
+    override fun setEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder {
+        super.setEmptyClasses(*classBinaryNames)
+        return this
+    }
+
+    override fun setJar(jar: ByteArray): JarWithDependenciesBuilder {
+        super.setJar(jar)
+        return this
+    }
+
+    override fun setClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder {
+        super.setClasses(classes)
         return this
     }
 }

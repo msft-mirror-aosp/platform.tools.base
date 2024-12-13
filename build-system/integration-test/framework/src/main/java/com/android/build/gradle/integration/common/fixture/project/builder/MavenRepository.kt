@@ -153,6 +153,14 @@ interface JarBuilder {
      * Sets the jar content to be the provided classes
      */
     fun setClasses(classes: Collection<Class<*>>): JarBuilder
+    /**
+     * Creates a jar
+     */
+    fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder
+}
+
+interface JarContentBuilder {
+    fun addClassWithEmptyMethods(binaryClassName: String, vararg namesAndDescriptors: String)
 }
 
 interface JarWithDependenciesBuilder: JarBuilder {
@@ -161,4 +169,9 @@ interface JarWithDependenciesBuilder: JarBuilder {
      * Sets the dependencies of the Jar
      */
     fun withDependencies(list: List<String>): JarBuilder
+
+    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder
+    override fun setEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder
+    override fun setJar(jar: ByteArray): JarWithDependenciesBuilder
+    override fun setClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder
 }
