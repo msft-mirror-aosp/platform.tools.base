@@ -176,13 +176,26 @@ class DeviceState internal constructor(
     fun startClient(
         pid: Int, userId: Int, packageName: String, isWaiting: Boolean
     ): ClientState {
-        return startClient(pid, userId, packageName, packageName, isWaiting)
+        return startClient(
+            pid = pid,
+            userId = userId,
+            processName = packageName,
+            packageName = packageName,
+            isWaiting = isWaiting
+        )
     }
 
     fun startClient(
         pid: Int, userId: Int, processName: String, packageName: String, isWaiting: Boolean
     ): ClientState {
-        return startClient(pid, userId, 0, processName, packageName, isWaiting)
+        return startClient(
+            pid = pid,
+            userId = userId,
+            uid = 0,
+            processName = processName,
+            packageName = packageName,
+            isWaiting = isWaiting
+        )
     }
 
     fun startClient(
@@ -194,7 +207,16 @@ class DeviceState internal constructor(
         isWaiting: Boolean
     ): ClientState {
         synchronized(mProcessStates) {
-            val clientState = ClientState(pid, userId, uid, processName, packageName, isWaiting, cpuAbi)
+            val clientState = ClientState(
+                device = this,
+                pid = pid,
+                userId = userId,
+                uid = uid,
+                processName = processName,
+                packageName = packageName,
+                waitingForDebugger = isWaiting,
+                architecture = cpuAbi
+            )
             mProcessStates[pid] = clientState
             clientChangeHub.clientListChanged()
             clientChangeHub.appProcessListChanged()
@@ -227,7 +249,14 @@ class DeviceState internal constructor(
     fun startProfileableProcess(
         pid: Int, architecture: String, commandLine: String
     ): ProfileableProcessState {
-        return startProfileableProcess(pid, architecture, 0, 10, commandLine, commandLine)
+        return startProfileableProcess(
+            pid = pid,
+            architecture = architecture,
+            userId = 0,
+            uid = 10,
+            processName = commandLine,
+            packageName = commandLine
+        )
     }
 
     fun startProfileableProcess(
@@ -239,11 +268,14 @@ class DeviceState internal constructor(
         packageName: String,
     ): ProfileableProcessState {
         synchronized(mProcessStates) {
-            val process = ProfileableProcessState(pid, architecture,
-                                                  commandLine = processName,
-                                                  userId = userId,
-                                                  uid = uid,
-                                                  packageName = packageName)
+            val process = ProfileableProcessState(
+                device = this,
+                pid = pid,
+                architecture = architecture,
+                commandLine = processName,
+                userId = userId,
+                uid = uid,
+                packageName = packageName)
             mProcessStates[pid] = process
             clientChangeHub.appProcessListChanged()
             return process

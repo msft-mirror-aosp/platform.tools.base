@@ -479,7 +479,17 @@ data class AppProcessEntry(
      * Note: Only ever set if [AdbFeatures.APP_INFO] is supported  by the device (API 36+)
      */
     val uid: Long?,
-    )
+) {
+
+    val userId32: Int?
+        get() = userId?.toInt()
+
+    val uid32: Int?
+        get() = uid?.toInt()
+
+    val pid32: Int
+        get() = pid
+}
 
 
 /**

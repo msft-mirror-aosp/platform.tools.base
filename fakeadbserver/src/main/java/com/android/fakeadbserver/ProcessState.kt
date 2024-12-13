@@ -18,7 +18,10 @@ package com.android.fakeadbserver
 /**
  * Base class for JDWP processes [ClientState] and profileable processes [ProfileableProcessState]
  */
-abstract class ProcessState(val pid: Int) {
+abstract class ProcessState(
+    val device: DeviceState,
+    val pid: Int
+) {
 
     abstract val debuggable: Boolean
 
@@ -43,13 +46,14 @@ abstract class ProcessState(val pid: Int) {
  * An [ProcessState] that is [profileable] but not [debuggable]
  */
 class ProfileableProcessState(
+    device: DeviceState,
     pid: Int,
     override val architecture: String,
     override var commandLine: String,
     override val userId: Int,
     override val uid: Int,
     val packageName: String
-) : ProcessState(pid) {
+) : ProcessState(device, pid) {
 
     override val debuggable: Boolean
         get() = false

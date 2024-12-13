@@ -16,12 +16,15 @@
 package com.android.adblib.tools
 
 import com.android.adblib.AdbDeviceServices
+import com.android.adblib.AdbFeatures
 import com.android.adblib.AdbSessionHost
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.AppProcessImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
+import com.android.adblib.tools.debugging.trackAppStateFlow
 import java.time.Duration
 
 /**
@@ -121,6 +124,15 @@ object AdbLibToolsProperties {
         name = "$NAME_PREFIX.process.properties.collector.delay.use.short",
         defaultValue = false,
         isVolatile = true
+    )
+
+    /**
+     * Where to use [ConnectedDevice.trackAppStateFlow] when collecting JDWP process properties,
+     * if the [AdbFeatures.APP_INFO] feature is supported by the device.
+     */
+    val PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE = AdbSessionHost.BooleanProperty(
+        name = "$NAME_PREFIX.process.properties.collector.use.app.info.if.available",
+        defaultValue = true
     )
 
     /**

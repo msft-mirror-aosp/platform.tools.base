@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * @param waitingForDebugger whether this client is waiting for a debugger connection or not.
  */
 class ClientState internal constructor(
+    device: DeviceState,
     pid: Int,
     override val userId: Int,
     override val uid: Int,
@@ -33,7 +34,7 @@ class ClientState internal constructor(
     val packageName: String,
     override val waitingForDebugger: Boolean,
     override val architecture: String
-) : ProcessState(pid) {
+) : ProcessState(device, pid) {
 
     val viewsState = ClientViewsState()
     val profilerState = ProfilerState()
@@ -61,8 +62,14 @@ class ClientState internal constructor(
         if (waitingForDebugger) {
             sendWaitCommandAfterHelo = Duration.ZERO
         }
-        mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
-        mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
+        val capabilities = device.deviceCapabilities
+        if (capabilities != null && capabilities.vmCapabilities.isNotEmpty()) {
+            mFeatures.addAll(capabilities.vmCapabilities)
+            mFeatures.addAll(capabilities.frameworkCapabilities)
+        } else {
+            mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
+            mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
+        }
     }
 
     override val debuggable: Boolean

@@ -27,6 +27,7 @@ import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
+import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
@@ -130,6 +131,25 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         // Assert
         val properties = process.properties
         assertProcessPropertiesComplete(properties)
+    }
+
+
+    @Test
+    fun startMonitoringWorksWithAppInfo() = runBlockingWithTimeout {
+        // Prepare
+        val (_, _, process) = createJdwpProcess(
+            // Note: 36 is required for `app_info` support
+            deviceApi = 36
+        )
+
+        // Act
+        process.startMonitoring()
+        yieldUntil { process.properties.completed }
+
+        // Assert
+        assertTrue(process.device.isAppInfoSupported())
+        val properties = process.properties
+        assertProcessPropertiesComplete(properties, isFromAppInfo = true)
     }
 
     @Test
@@ -465,29 +485,59 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         return fakeAdb.device(serialNumber).startClient(pid, 2, "p1", "pkg", waitForDebugger)
     }
 
-    private fun assertProcessPropertiesComplete(properties: JdwpProcessProperties) {
+    private fun assertProcessPropertiesComplete(
+        properties: JdwpProcessProperties,
+        isFromAppInfo: Boolean = false
+    ) {
         assertEquals(10, properties.pid)
         assertEquals("p1", properties.processName)
         assertEquals(2, properties.userId)
         assertEquals("pkg", properties.packageName)
-        assertEquals("FakeVM", properties.vmIdentifier)
+        if (isFromAppInfo) {
+            assertEquals("Dalvik 2.1.0", properties.vmIdentifier)
+        } else {
+            assertEquals("FakeVM", properties.vmIdentifier)
+        }
         assertEquals("x86_64", properties.abi)
-        assertEquals("-jvmflag=true", properties.jvmFlags)
+        if (isFromAppInfo) {
+            // When using `app_info`, there is no equivalent of "jvmFlag" available
+            assertNull(properties.jvmFlags)
+        } else {
+            assertEquals("-jvmflag=true", properties.jvmFlags)
+        }
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
         assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
         assertNotNull(properties.jdwpSessionProxyStatus.socketAddress)
-        assertEquals(
-            listOf(
-                "hprof-heap-dump",
-                "method-sample-profiling",
-                "view-hierarchy",
-                "method-trace-profiling",
-                "hprof-heap-dump-streaming",
-                "method-trace-profiling-streaming",
-                "opengl-tracing"
-            ), properties.features
-        )
+        if (isFromAppInfo) {
+            // When using `app_info`, the list of features comes from
+            // `am capabilities`
+            assertEquals(
+                listOf(
+                    "method-trace-profiling",
+                    "method-trace-profiling-streaming",
+                    "method-sample-profiling",
+                    "hprof-heap-dump",
+                    "hprof-heap-dump-streaming",
+                    "app_info",
+                    "opengl-tracing",
+                    "view-hierarchy",
+                    "support_boot_stages",
+                ), properties.features
+            )
+        } else {
+            assertEquals(
+                listOf(
+                    "hprof-heap-dump",
+                    "method-sample-profiling",
+                    "view-hierarchy",
+                    "method-trace-profiling",
+                    "hprof-heap-dump-streaming",
+                    "method-trace-profiling-streaming",
+                    "opengl-tracing"
+                ), properties.features
+            )
+        }
         assertNull(properties.exception)
         assertTrue(properties.completed)
     }
