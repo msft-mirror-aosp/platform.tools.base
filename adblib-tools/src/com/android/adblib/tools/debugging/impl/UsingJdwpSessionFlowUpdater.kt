@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AdbFailResponseException
-import com.android.adblib.AdbFeatures
 import com.android.adblib.AdbSession
 import com.android.adblib.AdbUsageTracker
 import com.android.adblib.ByteBufferAdbOutputChannel
@@ -26,7 +25,6 @@ import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_SHORT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT
-import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
@@ -34,7 +32,6 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
-import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -608,61 +605,3 @@ private fun Throwable.toAdbUsageTrackerFailureType(): AdbUsageTracker.JdwpProces
     }
 }
 
-/**
- * A [JdwpProcessPropertiesCollector] is responsible for collecting properties of a given JDWP
- * process [pid] running on a given [device].
- *
- * * [processScope] is a [CoroutineScope] this [JdwpProcessPropertiesCollector] can use
- * to launch asynchronous coroutines, and is guaranteed to be cancelled when the
- * process [pid] is terminated on the device.
- * * [jdwpSessionProvider] provides access to a JDWP session for the process if needed.
- */
-internal class JdwpProcessPropertiesCollector(
-    private val device: ConnectedDevice,
-    private val processScope: CoroutineScope,
-    private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider
-) {
-
-    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
-
-    /**
-     * Collects [JdwpProcessProperties] for the process [pid] emits them to [stateFlow],
-     * retrying as many times as necessary if there is contention on acquiring JDWP sessions
-     * to the process.
-     */
-    suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
-        createFlowUpdater().execute(processScope, stateFlow)
-    }
-
-    private suspend fun createFlowUpdater(): JdwpProcessPropertiesFlowUpdater {
-        val useAppInfo =
-            device.session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&
-                    device.isAppInfoSupported()
-        return if (useAppInfo) {
-            logger.debug { "${AdbFeatures.APP_INFO} is supported, using TRACK_APP collector" }
-            return UsingAppInfoFlowUpdater(device, pid)
-        } else {
-            logger.debug { "${AdbFeatures.APP_INFO} is not supported or active, using JDWP collector" }
-            UsingJdwpSessionFlowUpdater(device, pid, jdwpSessionProvider)
-        }
-    }
-
-    companion object {
-
-        /**
-         * The process name (and package name) can be set to this value when the process is not yet fully
-         * initialized. We should ignore this value to make sure we only return "valid" process/package name.
-         * Note that sometimes the process name (or package name) can also be empty.
-         */
-        private val EARLY_PROCESS_NAMES = arrayOf("<pre-initialized>", "")
-
-        fun filterFakeName(processOrPackageName: String?): String? {
-            return if (EARLY_PROCESS_NAMES.contains(processOrPackageName)) {
-                return null
-            } else {
-                processOrPackageName
-            }
-        }
-    }
-}
