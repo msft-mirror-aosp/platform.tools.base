@@ -49,7 +49,7 @@ sealed class PluginType(
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KOTLIN_ANDROID: PluginType(
-        id = "org.jetbrains.kotlin.android",
+        id = KOTLIN_ANDROID_PLUGIN_ID,
         isAndroid = true,
         artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
@@ -148,11 +148,6 @@ sealed class PluginType(
         isAndroid = true,
         artifact = "com.android.tools.build:gradle",
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object JETBRAINS_KOTLIN_ANDROID: PluginType(
-        id = KOTLIN_ANDROID_PLUGIN_ID,
-        isAndroid = true,
-        version = TestUtils.KSP_VERSION_FOR_TESTS,
     )
     object COMPOSE_COMPILER_PLUGIN: PluginType(
         id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,

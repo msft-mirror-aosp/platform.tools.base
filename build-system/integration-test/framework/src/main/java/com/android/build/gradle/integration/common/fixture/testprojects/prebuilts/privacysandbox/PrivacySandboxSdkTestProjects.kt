@@ -1019,7 +1019,7 @@ fun SubProjectBuilder.buildExampleSdkSandboxSdkBundle() {
 }
 fun SubProjectBuilder.buildExampleSdkSandboxSdk() {
     plugins.add(PluginType.ANDROIDX_PRIVACY_SANDBOX_LIBRARY)
-    plugins.add(PluginType.JETBRAINS_KOTLIN_ANDROID)
+    plugins.add(PluginType.KOTLIN_ANDROID)
     android {
         namespace = "com.example"
         minSdk = 21
