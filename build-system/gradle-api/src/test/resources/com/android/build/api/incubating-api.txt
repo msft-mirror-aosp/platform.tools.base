@@ -743,6 +743,8 @@ https://issuetracker.google.com/382716517
 https://issuetracker.google.com/382716889
   * com.android.build.api.dsl.ManagedVirtualDevice.getSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
+https://issuetracker.google.com/383567956
+  * com.android.build.api.variant.LifecycleTasks.registerApkInstallation: void (java.lang.Object[])
 https://issuetracker.google.com/384516080
   * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment extends java.lang.Enum
   * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.getEntries: kotlin.enums.EnumEntries<com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment> ()
