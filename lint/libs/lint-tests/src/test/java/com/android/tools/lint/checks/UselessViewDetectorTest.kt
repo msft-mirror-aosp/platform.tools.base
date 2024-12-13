@@ -420,4 +420,30 @@ class UselessViewDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testFitsSystemWindowsNotMiddle() {
+    // b/383595384
+    lint()
+      .files(
+        xml(
+            "res/layout/layout.xml",
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fitsSystemWindows="true">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="16dp">
+                    <!-- Content here that uses RelativeLayout "align" tags -->
+                </RelativeLayout>
+            </FrameLayout>
+            """,
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }
