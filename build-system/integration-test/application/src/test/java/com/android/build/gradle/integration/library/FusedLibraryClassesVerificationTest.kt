@@ -70,7 +70,12 @@ class FusedLibraryClassesVerificationTest {
             MavenRepoGenerator.Library(
                 "com.externaldep:depwithdep:1",
                 "com.externaldep:externalaar:1"
-            )
+            ),
+            MavenRepoGenerator.Library(
+                "this.dependency:has-a-dependency-that-does-not-exist:1",
+                // The dependencies listed do not exist
+                "this.dependency:doesnotexist:1"
+            ),
         )
     )
 
@@ -487,11 +492,7 @@ class FusedLibraryClassesVerificationTest {
 
             val expectedFailure = "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
                     "   [Databinding is not supported by Fused Library modules]:\n" +
-                    "    * androidx.databinding:viewbinding is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-common is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-runtime is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-adapters is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-ktx is not a permitted dependency."
+                    "    * androidx.databinding:databinding-runtime is not a permitted dependency."
 
             listOf(
                 "generatePomFileForMavenPublication",
@@ -553,6 +554,30 @@ class FusedLibraryClassesVerificationTest {
             """"android.experimental.fusedlibrary.validateDependencies":false"""
         )
         project.executor().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+    }
+
+    //Regression test for b/383184394
+    @Test
+    fun checkUnresolvedDependencyFailures() {
+        val dependenciesBlock = """
+            include("this.dependency:has-a-dependency-that-does-not-exist:1")
+        """.trimIndent()
+
+        addDependenciesToFusedLibProject(dependenciesBlock)
+        val failure = project.executor().expectFailure()
+            .run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        failure.assertErrorContains(
+            "> Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
+                    "   [Unresolved Dependencies]:\n" +
+                    "    * Could not find this.dependency:doesnotexist:1.\n" +
+                    "  Searched in the following locations:")
+        failure.assertErrorContains(
+            "  The following checks did not finish:\n" +
+                    "   [Databinding is not supported by Fused Library modules]:\n" +
+                    "    * class org.gradle.api.internal.artifacts.result.DefaultUnresolvedDependencyResult is not supported by this check.\n" +
+                    "   [Require transitive dependency inclusion]:\n" +
+                    "    * class org.gradle.api.internal.artifacts.result.DefaultUnresolvedDependencyResult is not supported by this check."
+        )
     }
 
     private fun checkFusedLibReportContents(
