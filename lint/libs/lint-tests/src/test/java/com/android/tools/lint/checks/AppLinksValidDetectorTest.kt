@@ -2530,12 +2530,12 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                 <data
         +                     android:host="example.com"
         +                     android:scheme="http[TODO]|" />
-        Autofix for AndroidManifest.xml line 80: Add `host` attribute:
+        Fix for AndroidManifest.xml line 80: Add `host` attribute:
         @@ -80 +80
         -             <intent-filter android:autoVerify="true"> <!-- Missing host -->
         +             <intent-filter android:autoVerify="true">
         +                 <data android:host="[TODO]|" /> <!-- Missing host -->
-        Autofix for AndroidManifest.xml line 89: Add `http(s)` scheme and `host` attribute:
+        Fix for AndroidManifest.xml line 89: Add `http(s)` scheme and `host` attribute:
         @@ -89 +89
         -             <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
         +             <intent-filter android:autoVerify="true">
@@ -2634,14 +2634,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 29: Delete:
+        Autofix for AndroidManifest.xml line 29: Delete:
         @@ -29 +29
         -                 <data android:mimeType="application/json" />
-        Fix for AndroidManifest.xml line 40: Delete:
+        Autofix for AndroidManifest.xml line 40: Delete:
         @@ -40 +40
         -                 <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
         +                 <data android:host="example.com"  android:pathPrefix="/gizmos" />
-        Fix for AndroidManifest.xml line 51: Delete:
+        Autofix for AndroidManifest.xml line 51: Delete:
         @@ -51 +51
         -                 <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
         +                 <data android:host='example.com'  android:pathPrefix='/gizmos' />
@@ -2813,7 +2813,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
         @@ -7 +7
         +                 <action android:name="android.intent.action.VIEW" />
         +                 <category android:name="android.intent.category.BROWSABLE" />
@@ -2856,7 +2856,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Autofix for AndroidManifest.xml line 6: Add missing elements/attributes:
+        Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
         @@ -7 +7
         +                 <action android-ns:name="android.intent.action.VIEW" />
         +                 <category android-ns:name="android.intent.category.BROWSABLE" />
