@@ -47,6 +47,7 @@ import com.android.SdkConstants.PREFIX_THEME_REF
 import com.android.SdkConstants.TAG_ACTION
 import com.android.SdkConstants.TAG_ACTIVITY
 import com.android.SdkConstants.TAG_ACTIVITY_ALIAS
+import com.android.SdkConstants.TAG_APPLICATION
 import com.android.SdkConstants.TAG_CATEGORY
 import com.android.SdkConstants.TAG_DATA
 import com.android.SdkConstants.TAG_INTENT_FILTER
@@ -68,12 +69,15 @@ import com.android.tools.lint.checks.AppLinksValidDetector.Companion.ElementWrap
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.ResourceRepositoryScope
 import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.LintFix.Companion.TODO
 import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
@@ -668,100 +672,125 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         it != ATTR_MIME_TYPE
       }
 
-      /* else {
-        // If intent filter contains both web and non-web schemes
-        val webSchemes = intentFilterData.dataTags.schemes.filter { isWebScheme(it) }
-        val customSchemes = intentFilterData.dataTags.schemes.filterNot { isWebScheme(it) }
-        if (webSchemes.isNotEmpty() && customSchemes.isNotEmpty()) {
-          val parentIndent = context.getLocation(activity).start?.column ?: 0
-          val intentFilterIndent =
-            context.getLocation(intentFilter).start?.column ?: DEFAULT_INDENT_AMOUNT
-          val indentDiff = intentFilterIndent - parentIndent
-          val startIndent = indentation(intentFilterIndent)
-          val intentFilterChildIndent = indentation(intentFilterIndent + indentDiff)
-          val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
+      // --- Check for splitting web and non-web schemes ---
+      val webSchemes = intentFilterData.dataTags.schemes.filter { isWebScheme(it) }
+      val customSchemes = intentFilterData.dataTags.schemes.filterNot { isWebScheme(it) }
+      if (
+        webSchemes.isNotEmpty() &&
+          customSchemes.isNotEmpty() &&
+          intentFilterData.dataTags.hostPortPairs.isNotEmpty()
+      ) {
+        // Intent filter contains both web and non-web schemes
+        val intentFilterIndentAmount = context.getLocation(intentFilter).start?.column ?: 0
+        val intentFilterChildIndentAmount =
+          ((intentFilterData.dataTags.dataTagElements.first() as? ElementWrapper)?.element)?.let {
+            context.getLocation(it).start?.column
+          } ?: DEFAULT_INDENT_AMOUNT
+        val indentDiff = intentFilterChildIndentAmount - intentFilterIndentAmount
+        val startIndent = indentation(intentFilterIndentAmount)
+        val intentFilterChildIndent = indentation(intentFilterChildIndentAmount)
+        val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
 
-          val webSchemeIntentFilterText = StringBuilder("<")
-          // We know that this intentFilter has autoVerify, so copy it over
-          copyTagWithAttributes(intentFilter, webSchemeIntentFilterText)
-          webSchemeIntentFilterText.append(">")
-          val customSchemeIntentFilterText = StringBuilder("<$TAG_INTENT_FILTER")
-          for (i in 0 until intentFilter.attributes.length) {
-            val item = intentFilter.attributes.item(i)
-            if (item.nodeName.endsWith(ATTR_AUTO_VERIFY)) continue
-            customSchemeIntentFilterText.append(" ")
-            customSchemeIntentFilterText.append(item.nodeName)
-            customSchemeIntentFilterText.append("=\"")
-            customSchemeIntentFilterText.append(item.nodeValue)
-            customSchemeIntentFilterText.append('"')
-          }
-          customSchemeIntentFilterText.append(">")
-          for (subTag in intentFilter) {
-            // If the tag is a data tag, IntentFilterData already has all the needed information.
-            // Therefore, we only copy non-data tags.
-            if (subTag.tagName != TAG_DATA) {
-              for (sb in sequenceOf(webSchemeIntentFilterText, customSchemeIntentFilterText)) {
-                sb.append("\n")
-                sb.append(intentFilterChildIndent)
-                recursivelyCopy(subTag, intentFilterIndent + indentDiff, indentDiff, sb)
-              }
+        val webSchemeIntentFilterText = StringBuilder("<")
+        // We know that this intentFilter has autoVerify, so copy it over
+        copyTagWithAttributes(intentFilter, webSchemeIntentFilterText)
+        webSchemeIntentFilterText.append(">")
+        val customSchemeIntentFilterText = StringBuilder("<$TAG_INTENT_FILTER")
+        for (i in 0 until intentFilter.attributes.length) {
+          val item = intentFilter.attributes.item(i)
+          if (item.nodeName.endsWith(ATTR_AUTO_VERIFY)) continue
+          customSchemeIntentFilterText.append(" ")
+          customSchemeIntentFilterText.append(item.nodeName)
+          customSchemeIntentFilterText.append("=\"")
+          customSchemeIntentFilterText.append(item.nodeValue)
+          customSchemeIntentFilterText.append('"')
+        }
+        customSchemeIntentFilterText.append(">")
+        for (subTag in intentFilter) {
+          // If the tag is a data tag, IntentFilterData already has all the needed information.
+          // Therefore, we only copy non-data tags.
+          if (subTag.tagName != TAG_DATA) {
+            for (sb in sequenceOf(webSchemeIntentFilterText, customSchemeIntentFilterText)) {
+              sb.append("\n")
+              sb.append(intentFilterChildIndent)
+              recursivelyCopy(subTag, intentFilterChildIndentAmount, indentDiff, sb)
             }
           }
-          for (scheme in webSchemes.sorted()) {
-            webSchemeIntentFilterText.append("\n")
-            webSchemeIntentFilterText.append(intentFilterChildIndent)
-            webSchemeIntentFilterText.append("""<data $namespace:scheme="$scheme" />""")
-          }
-          for (scheme in customSchemes.sorted()) {
-            customSchemeIntentFilterText.append("\n")
-            customSchemeIntentFilterText.append(intentFilterChildIndent)
-            customSchemeIntentFilterText.append("""<data $namespace:scheme="$scheme" />""")
-          }
-          val intentFilterTextAfterSchemes = StringBuilder()
-          for ((host, port) in
-            intentFilterData.dataTags.hostPortPairs.sortedWith(
-              compareBy<Pair<String?, String?>> { it.first }.thenBy { it.second }
-            )) {
-            intentFilterTextAfterSchemes.append("\n")
-            intentFilterTextAfterSchemes.append(intentFilterChildIndent)
-            intentFilterTextAfterSchemes.append("""<data $namespace:host="$host"""")
-            if (!port.isNullOrBlank()) {
-              intentFilterTextAfterSchemes.append(""" $namespace:port="$port"""")
-            }
-            intentFilterTextAfterSchemes.append(" />")
-          }
-          for (path in intentFilterData.dataTags.rawPaths.sorted()) {
-            intentFilterTextAfterSchemes.append("\n")
-            intentFilterTextAfterSchemes.append(intentFilterChildIndent)
-            intentFilterTextAfterSchemes.append(
-              """<data $namespace:${path.attributeName}="${path.attributeValue}" />"""
-            )
-          }
-          for (mimeType in intentFilterData.dataTags.rawMimeTypes.sorted()) {
-            intentFilterTextAfterSchemes.append("\n")
-            intentFilterTextAfterSchemes.append(intentFilterChildIndent)
-            intentFilterTextAfterSchemes.append("""<data $namespace:mimeType="$mimeType" />""")
-          }
+        }
+        for (scheme in webSchemes.sorted()) {
+          webSchemeIntentFilterText.append("\n")
+          webSchemeIntentFilterText.append(intentFilterChildIndent)
+          webSchemeIntentFilterText.append("""<data $namespace:scheme="$scheme" />""")
+        }
+        for (scheme in customSchemes.sorted()) {
+          customSchemeIntentFilterText.append("\n")
+          customSchemeIntentFilterText.append(intentFilterChildIndent)
+          customSchemeIntentFilterText.append("""<data $namespace:scheme="$scheme" />""")
+        }
+        val intentFilterTextAfterSchemes = StringBuilder()
+        for ((host, port) in
+          intentFilterData.dataTags.hostPortPairs.sortedWith(
+            compareBy<Pair<String?, String?>> { it.first }.thenBy { it.second }
+          )) {
           intentFilterTextAfterSchemes.append("\n")
-          intentFilterTextAfterSchemes.append(startIndent)
-          intentFilterTextAfterSchemes.append("</$TAG_INTENT_FILTER>")
-
-          // Check that web schemes and custom schemes are not used together in intent filters with
-          // autoVerify
-          val replacementText = webSchemeIntentFilterText
-          replacementText.append(intentFilterTextAfterSchemes)
-          replacementText.append("\n")
-          replacementText.append(startIndent)
-          replacementText.append(customSchemeIntentFilterText)
-          replacementText.append(intentFilterTextAfterSchemes)
-          context.report(
-            APP_LINK_SPLIT_TO_WEB_AND_CUSTOM,
-            context.getLocation(intentFilter),
-            "Split your `http(s)` and custom schemes into separate intent filters",
-            fix().replace().with(replacementText.toString()).build(),
+          intentFilterTextAfterSchemes.append(intentFilterChildIndent)
+          intentFilterTextAfterSchemes.append("""<data $namespace:host="$host"""")
+          if (!port.isNullOrBlank()) {
+            intentFilterTextAfterSchemes.append(""" $namespace:port="$port"""")
+          }
+          intentFilterTextAfterSchemes.append(" />")
+        }
+        for (path in intentFilterData.dataTags.rawPaths.sorted()) {
+          intentFilterTextAfterSchemes.append("\n")
+          intentFilterTextAfterSchemes.append(intentFilterChildIndent)
+          intentFilterTextAfterSchemes.append(
+            """<data $namespace:${path.attributeName}="${path.attributeValue}" />"""
           )
         }
-      } */
+        for (mimeType in intentFilterData.dataTags.rawMimeTypes.sorted()) {
+          intentFilterTextAfterSchemes.append("\n")
+          intentFilterTextAfterSchemes.append(intentFilterChildIndent)
+          intentFilterTextAfterSchemes.append("""<data $namespace:mimeType="$mimeType" />""")
+        }
+        intentFilterTextAfterSchemes.append("\n")
+        intentFilterTextAfterSchemes.append(startIndent)
+        intentFilterTextAfterSchemes.append("</$TAG_INTENT_FILTER>")
+
+        val replacementText = webSchemeIntentFilterText
+        replacementText.append(intentFilterTextAfterSchemes)
+        replacementText.append("\n")
+        replacementText.append(startIndent)
+        replacementText.append(customSchemeIntentFilterText)
+        replacementText.append(intentFilterTextAfterSchemes)
+        // We store the incidents in partial results so that we can check the merged manifest before
+        // reporting them.
+        // Because we report the incidents in checkPartialResults, automatic suppression doesn't
+        // work.
+        if (!context.driver.isSuppressed(context, APP_LINK_SPLIT_TO_WEB_AND_CUSTOM, intentFilter)) {
+          // Make a string of comma-separated hosts.
+          // We extract the hosts and put them in a set so that host1 will not appear twice if it
+          // appears in both (host1, port1) and (host1, port2). This is because ports do not matter
+          // for domain verification.
+          // Also note that commas cannot appear in valid domain names.
+          val hosts =
+            intentFilterData.dataTags.hostPortPairs
+              .mapTo(mutableSetOf()) { it.first }
+              .joinToString(",")
+
+          val map = context.getPartialResults(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM).map()
+          map.put(
+            "${map.size}",
+            map()
+              // Serialization and deserialization of Incidents is not allowed, so we store all the
+              // information that we'll need to create and report the Incident (from
+              // checkPartialResults).
+              .put(KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION, context.getNameLocation(intentFilter))
+              .put(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE, context.getLocation(intentFilter))
+              .put(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT, replacementText.toString())
+              .put(KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS, hosts),
+          )
+        }
+      }
     }
 
     val showMissingSchemeCheck =
@@ -1057,6 +1086,70 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     }
   }
 
+  override fun checkPartialResults(context: Context, partialResults: PartialResult) {
+    if (context.project.isLibrary) return
+    if (partialResults.issue != APP_LINK_SPLIT_TO_WEB_AND_CUSTOM) return
+
+    // Analyze the merged manifest to see which hosts request autoVerify
+    val mergedManifestDocumentElement =
+      context.mainProject.mergedManifest?.documentElement ?: return
+
+    val hostsThatRequestAutoVerify = mutableSetOf<String>()
+    for (node in mergedManifestDocumentElement) {
+      if (node.tagName == TAG_APPLICATION) {
+        for (applicationChild in node) {
+          if (applicationChild.tagName !in setOf(TAG_ACTIVITY, TAG_ACTIVITY_ALIAS)) continue
+          // Note: even activities which are not exported or enabled count for domain verification:
+          // b/271035636
+          for (activityChild in applicationChild) {
+            if (activityChild.tagName != TAG_INTENT_FILTER) continue
+            val data = getIntentFilterData(ElementWrapper(activityChild, context))
+            if (isValidAppLink(data)) {
+              hostsThatRequestAutoVerify.addAll(data.dataTags.hostPortPairs.map { it.first })
+            }
+          }
+        }
+      }
+    }
+
+    for (lintMap in partialResults.maps()) {
+      for (incidentIdx in lintMap) {
+        val partialResult = lintMap.getMap(incidentIdx) ?: continue
+        val hosts =
+          partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS)?.split(",") ?: continue
+        if (hosts.any { it !in hostsThatRequestAutoVerify }) {
+          val nameLocation =
+            partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION) ?: continue
+          val replacementRange =
+            partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE) ?: continue
+          val replacementText =
+            partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT) ?: continue
+          context.report(
+            Incident(context)
+              .issue(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+              .location(nameLocation)
+              .message("Split your `http(s)` and custom schemes into separate intent filters")
+              .fix(
+                fix()
+                  .replace()
+                  .with(replacementText.toString())
+                  .range(replacementRange)
+                  .robot(true)
+                  .independent(false)
+                  .build()
+              )
+          )
+        }
+      }
+    }
+  }
+
+  override fun checkMergedProject(context: Context) {
+    if (context.isGlobalAnalysis()) {
+      checkPartialResults(context, context.getPartialResults(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM))
+    }
+  }
+
   companion object {
     internal const val ACTION_VIEW = "android.intent.action.VIEW"
     internal const val CATEGORY_BROWSABLE = "android.intent.category.BROWSABLE"
@@ -1263,7 +1356,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       val substitutedValue: String?
     }
 
-    class ElementWrapper(val element: Element, private val context: XmlContext) : TagWrapper {
+    class ElementWrapper(val element: Element, private val context: Context) : TagWrapper {
       override val name: String = element.tagName
 
       // Use asSequence for performance improvement
@@ -1278,12 +1371,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         element.getAttributeNodeNS(ANDROID_URI, attrName)?.let { AttrWrapper(it, context) }
     }
 
-    class AttrWrapper(val attr: Attr, private val context: XmlContext) : AttributeWrapper {
-      override val name: String = attr.localName // Exclude the namespace prefix.
+    class AttrWrapper(val attr: Attr, private val context: Context) : AttributeWrapper {
+      override val name: String =
+        attr.localName /* Exclude the namespace prefix */ ?: attr.name ?: ""
 
       override val rawValue: String? by
         lazy(LazyThreadSafetyMode.NONE) {
           val fallbackReturnValue = attr.value ?: return@lazy null
+          if (fallbackReturnValue.isEmpty()) return@lazy "" // Empty attributes aren't handled well.
+          // If we're not in an XML Context, just return the fallback.
+          // The most common scenario for this is that we're looking at the merged manifest.
+          if (context !is XmlContext) return@lazy fallbackReturnValue
           // The below can actually be null, so the ?: return is needed.
           val location =
             try {
@@ -1299,6 +1397,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       override val substitutedValue: String? by
         lazy(LazyThreadSafetyMode.NONE) {
           val value = attr.value ?: return@lazy null
+          // If we're not in an XML Context, just return the fallback.
+          // The most common scenario for this is that we're looking at the merged manifest.
+          if (context !is XmlContext) return@lazy value
           if (value.startsWith(PREFIX_RESOURCE_REF) || value.startsWith(PREFIX_THEME_REF)) {
             return@lazy replaceUrlWithValue(context, value)
           }
@@ -1646,13 +1747,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
     fun hasAutoVerifyButInvalidAppLink(data: IntentFilterData): Boolean {
       return data.autoVerify == VALUE_TRUE &&
-        // Is the intent filter missing anything that we expect from an app link?
-        (!hasElementsRequiredForAppLinks(data) ||
-          // Does the intent filter include anything that we wouldn't expect from an app link?
-          // Such as a non-web scheme, which should be split out into a different intent filter, or
-          // a MIME type.
-          data.dataTags.schemes.any { !isSubstituted(it) && !isWebScheme(it) } ||
-          data.dataTags.mimeTypes.isNotEmpty())
+        (!hasElementsRequiredForAppLinks(data) || !hasNoElementsForbiddenForAppLinks(data))
     }
 
     private fun hasElementsRequiredForAppLinks(data: IntentFilterData): Boolean {
@@ -1661,6 +1756,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         data.categorySet.contains(CATEGORY_BROWSABLE) &&
         data.dataTags.schemes.any { isSubstituted(it) || isWebScheme(it) } &&
         data.dataTags.hostPortPairs.isNotEmpty()
+    }
+
+    private fun hasNoElementsForbiddenForAppLinks(data: IntentFilterData): Boolean {
+      return data.dataTags.schemes.all { isSubstituted(it) || isWebScheme(it) } &&
+        data.dataTags.mimeTypes.isEmpty()
+    }
+
+    private fun isValidAppLink(data: IntentFilterData): Boolean {
+      return data.autoVerify == VALUE_TRUE &&
+        hasElementsRequiredForAppLinks(data) &&
+        hasNoElementsForbiddenForAppLinks(data)
     }
 
     private fun concatenateWithIndent(
@@ -1848,7 +1954,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         implementation = IMPLEMENTATION,
       )
 
-    /** Intent filter with autoVerify uses both web and custom schemes */
+    /**
+     * Intent filter with autoVerify uses both web and custom schemes, and there is at least one
+     * host where no other intent filters trigger domain verification (i.e. there are no other
+     * intent filters with autoVerify, only web schemes, and the host).
+     */
     @JvmField
     val APP_LINK_SPLIT_TO_WEB_AND_CUSTOM =
       Issue.create(
@@ -1872,6 +1982,13 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
     private const val TAG_VALIDATION = "validation"
 
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION =
+      "SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE =
+      "SPLIT_TO_WEB_AND_CUSTOM_RANGE"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT =
+      "SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS = "SPLIT_TO_WEB_AND_CUSTOM_HOSTS"
     const val KEY_SHOW_APP_LINKS_ASSISTANT = "SHOW_APP_LINKS_ASSISTANT"
 
     // Path matchers use the order used in
