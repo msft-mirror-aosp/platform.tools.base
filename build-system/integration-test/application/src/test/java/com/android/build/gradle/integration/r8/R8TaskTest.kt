@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.integration.r8
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper
@@ -26,17 +28,13 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.IntegerOption
-import com.android.testutils.TestClassesGenerator
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 /** Integration test for the R8 task. */
 class R8TaskTest {
-
     @get:Rule
     val rule = GradleRule.from {
         androidJavaApplication {
@@ -44,7 +42,10 @@ class R8TaskTest {
                 buildTypes {
                     named("release") {
                         it.isMinifyEnabled = true
-                        it.proguardFiles += File("proguard-rules.pro")
+                        it.proguardFiles += listOf(
+                            File("proguard-rules.pro"),
+                            getDefaultProguardFile("proguard-android-optimize.txt")
+                        )
                     }
                 }
                 testBuildType = "release"
@@ -52,40 +53,20 @@ class R8TaskTest {
         }
     }
 
-    private fun adhocSetup() {
-        // The test infra (DslProxy) does not support getDefaultProguardFile() yet, so we need to
-        // append the following text.
-        // TODO(b/384016091): Clean this up (remove the adhocSetup() method) once the issue is fixed
-        app.files.update("build.gradle").append(
-            """
-            android {
-                buildTypes {
-                    release {
-                        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-                    }
-                }
-            }
-            """.trimIndent()
-        )
-    }
-
-    private val executor
-        get() = rule.build.executor
-
-    private val app
-        get() = rule.build.androidApplication()
-
     @Test
     fun testCheckDuplicateClassesTaskDidWork() {
-        adhocSetup()
-        val buildResult = executor.run(":app:minifyReleaseWithR8")
+        val build = rule.build
+
+        val buildResult = build.executor.run(":app:minifyReleaseWithR8")
         assertThat(buildResult.getTask(":app:checkReleaseDuplicateClasses")).didWork()
     }
 
     @Test
     fun testTestedClassesPassedAsClasspathToR8() {
-        adhocSetup()
-        val buildResult = executor.withLoggingLevel(LoggingLevel.DEBUG)
+        val build = rule.build
+        val app = build.androidApplication()
+
+        val buildResult = build.executor.withLoggingLevel(LoggingLevel.DEBUG)
             .run(":app:assembleReleaseAndroidTest")
         val appClasses = app.getIntermediatePath(
             InternalArtifactType.COMPILE_APP_CLASSES_JAR.getFolderName() + "/release/bundleReleaseClassesToCompileJar/classes.jar"
@@ -95,7 +76,7 @@ class R8TaskTest {
 
     @Test
     fun testMissingKeepRules() {
-        rule.build {
+        val build = rule.build {
             androidApplication {
                 dependencies {
                     implementation(localJar("lib.jar") {
@@ -109,9 +90,10 @@ class R8TaskTest {
                 files.add("proguard-rules.pro", "-keep class test.A { *; }")
             }
         }
-        adhocSetup()
+        val app = build.androidApplication()
 
-        executor.expectFailure().run(":app:assembleRelease")
+
+        build.executor.expectFailure().run(":app:assembleRelease")
         val missingRules = app.outputsDir.resolve("mapping/release/missing_rules.txt")
         assertThat(missingRules).contentWithUnixLineSeparatorsIsExactly(
                 """
@@ -122,16 +104,20 @@ class R8TaskTest {
                 """.trimIndent()
         )
 
-        val result = executor.expectFailure().run(":app:assembleRelease")
+        val result = build.executor.expectFailure().run(":app:assembleRelease")
         result.assertErrorContains("Missing classes detected while running R8.")
     }
 
     @Test
     fun testOutputMainDexList() {
-        enableMultiDex()
-        adhocSetup()
+        val build = rule.build {
+            androidApplication {
+                enableMultiDex()
+            }
+        }
+        val app = build.androidApplication()
 
-        executor.run(":app:assembleRelease")
+        build.executor.run(":app:assembleRelease")
         val mainDexListFile = InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST
             .getOutputDir(app.buildDir.toFile())
             .resolve("release/minifyReleaseWithR8/mainDexList.txt")
@@ -140,18 +126,19 @@ class R8TaskTest {
 
     @Test
     fun testMultiDexKeepFileDeprecation() {
-        enableMultiDex()
-        app.files.add("multidex-keep-file.txt", "")
-        app.reconfigure(buildFileOnly = true) {
-            android.buildTypes {
-                named("release") {
-                    it.multiDexKeepFile = File("multidex-keep-file.txt")
+        val build = rule.build {
+            androidApplication {
+                enableMultiDex()
+                android.buildTypes {
+                    named("release") {
+                        it.multiDexKeepFile = File("multidex-keep-file.txt")
+                    }
                 }
+                files.add("multidex-keep-file.txt", "")
             }
         }
-        adhocSetup()
 
-        val result = executor.run(":app:assembleRelease")
+        val result = build.executor.run(":app:assembleRelease")
         result.assertOutputContains(
                 "WARNING: Using multiDexKeepFile property with R8 is deprecated and will be fully " +
                         "removed in AGP 8.0. Please migrate to use multiDexKeepProguard instead."
@@ -160,36 +147,40 @@ class R8TaskTest {
 
     @Test
     fun testInjectedDeviceApi() {
-        rule.build {
+        val build = rule.build {
             androidApplication {
-                android.defaultConfig.minSdk = 21
+                android {
+                    defaultConfig.minSdk = 21
+                }
+                files.add(
+                    "src/main/java/example/MyInterface.java",
+                    //language=java
+                    """
+                        package example;
+
+                        interface MyInterface {
+                            static void printContent() { System.out.println("hello"); }
+                        }
+                    """.trimIndent()
+                )
+                files.add(
+                    "proguard-rules.pro",
+                    """
+                        -keep class example.MyInterface* { *; }
+                        -dontobfuscate
+                    """.trimIndent()
+                )
             }
         }
-        adhocSetup()
-        app.files.add(
-            "src/main/java/example/MyInterface.java",
-            """
-            package example;
+        val app = build.androidApplication()
 
-            interface MyInterface {
-                static void printContent() { System.out.println("hello"); }
-            }
-            """.trimIndent()
-        )
-        app.files.add(
-            "proguard-rules.pro",
-            """
-            -keep class example.MyInterface* { *; }
-            -dontobfuscate
-            """.trimIndent()
-        )
 
-        executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
+        build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
             doesNotContainClass("Lexample/MyInterface$-CC;")
         }
 
-        executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleRelease")
+        build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
             hasClass("Lexample/MyInterface$-CC;")
         }
@@ -198,32 +189,45 @@ class R8TaskTest {
     // regression test for b/210573363
     @Test
     fun testDefaultProguardRules() {
-        adhocSetup()
-        executor.run(":app:assembleRelease")
-        TestFileUtils.searchAndReplace(
-            app.location.resolve("build.gradle"),
-            "proguardFiles(getDefaultProguardFile(\"proguard-android-optimize.txt\"))",
-            ""
-        )
-        val result = executor.run(":app:assembleRelease")
+        val build = rule.build
+        val app = build.androidApplication()
+
+        build.executor.run(":app:assembleRelease")
+
+        app.reconfigure {
+            android {
+                buildTypes {
+                    named("release") {
+                        it.proguardFiles.clear()
+                        // have to put back the original file
+                        it.proguardFiles += File("proguard-rules.pro")
+                    }
+                }
+            }
+        }
+
+        val result = build.executor.run(":app:assembleRelease")
         assertThat(result.getTask(":app:minifyReleaseWithR8")).didWork()
     }
 
     /** Regression test for b/380110863. */
     @Test
     fun `test system properties are passed to forked process`() {
-        rule.build.reconfigureSettings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android.execution {
-                profiles {
-                    create("runInSeparateProcess") {
-                        it.r8.runInSeparateProcess = true
+        val build = rule.build {
+            settings {
+                applyPlugin(PluginType.ANDROID_SETTINGS)
+                android.execution {
+                    profiles {
+                        create("runInSeparateProcess") {
+                            it.r8.runInSeparateProcess = true
+                        }
                     }
+                    defaultProfile = "runInSeparateProcess"
                 }
-                defaultProfile = "runInSeparateProcess"
             }
         }
-        val result = executor
+
+        val result = build.executor
             .withArgument("-Dcom.android.tools.r8.experimental.enablewhyareyounotinlining=invalid_value")
             .expectFailure()
             .run(":app:minifyReleaseWithR8")
@@ -231,17 +235,13 @@ class R8TaskTest {
             "Expected value of com.android.tools.r8.experimental.enablewhyareyounotinlining to be a boolean, but was: invalid_value"
         )
     }
+}
 
-    private fun enableMultiDex() {
-        rule.build {
-            androidApplication {
-                android {
-                    defaultConfig {
-                        minSdk = 20
-                        multiDexEnabled = true
-                    }
-                }
-            }
+private fun AndroidProjectDefinition<ApplicationExtension>.enableMultiDex() {
+    android {
+        defaultConfig {
+            minSdk = 20
+            multiDexEnabled = true
         }
     }
 }

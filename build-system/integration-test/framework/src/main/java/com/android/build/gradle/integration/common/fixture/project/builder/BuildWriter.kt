@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import org.gradle.api.JavaVersion
 import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
@@ -158,7 +159,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         if (enum) {
             return when (this) {
                 is JavaVersion -> "JavaVersion.${this.name}"
-                else -> "${this.javaClass.typeName}.$this"
+                else -> "${this?.javaClass?.typeName}.$this"
             }
         }
 
@@ -178,6 +179,9 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                 } else {
                     allItems
                 }
+            }
+            is MethodReturnedFile -> {
+                "${methodName}(${quoteString(parameter)})"
             }
             is File -> {
                 "file(${quoteString(toFormatted())})"
