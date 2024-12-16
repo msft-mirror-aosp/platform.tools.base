@@ -27,7 +27,7 @@ class LintChecksInAppModelTest: ReferenceModelComparator(
     deltaConfig = {
         androidApplication {
             dependencies {
-                lintChecks(localJar("lint-checks.jar") { setEmptyClasses("com/example/MainClass") })
+                lintChecks(localJar("lint-checks.jar") { addEmptyClasses("com/example/MainClass") })
             }
         }
     },

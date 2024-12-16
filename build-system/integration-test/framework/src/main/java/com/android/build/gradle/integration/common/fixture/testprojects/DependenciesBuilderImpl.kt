@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.testprojects
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
-import com.android.build.gradle.integration.common.dependencies.LocalJarBuilderImpl
+import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.testutils.MavenRepoGenerator
 import com.android.utils.FileUtils
@@ -92,10 +92,18 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         dependencies.add("screenshotTestImplementation" to dependency)
     }
 
-    override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency =
-            LocalJarBuilderImpl(name).also {
-                action(it)
-            }.toDependency()
+    private class LocalJarDependencyImpl(
+        override val name: String,
+        override val content: ByteArray
+    ): LocalJarDependency
+
+    override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
+        val builder = JarBuilderImpl().also {
+            action(it)
+        }
+
+        return LocalJarDependencyImpl(name, builder.getContent())
+    }
 
     override fun files(path: Path): LocalFiles {
         return LocalFilesImpl(path)

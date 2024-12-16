@@ -29,7 +29,11 @@ class LocalJarTest {
     val rule = GradleRule.from {
         androidApplication {
             dependencies {
-                implementation(localJar("libfoo.jar") { setClasses(listOf(Foo::class.java)) })
+                implementation(localJar("libfoo.jar") {
+                    addClasses(Foo::class.java)
+                    addEmptyClasses("com/example/Bar")
+                    addTextFile("com/example/foo.txt", "content")
+                })
             }
         }
     }
@@ -44,6 +48,8 @@ class LocalJarTest {
 
         ZipFileSubject.assertThat(jar) {
             it.contains("com/android/build/gradle/integration/fixture/Foo.class")
+            it.contains("com/example/Bar.class")
+            it.containsFileWithContent("com/example/foo.txt", "content")
         }
     }
 }

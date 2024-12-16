@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.IntegerOption
@@ -80,11 +79,9 @@ class R8TaskTest {
             androidApplication {
                 dependencies {
                     implementation(localJar("lib.jar") {
-                        createJar {
-                            addClassWithEmptyMethods(
-                                "test/A",
-                                "foo:()Ltest/B;", "bar:()Ltest/C;")
-                        }
+                        addClassWithEmptyMethods(
+                            "test/A",
+                            "foo()Ltest/B;", "bar()Ltest/C;")
                     })
                 }
                 files.add("proguard-rules.pro", "-keep class test.A { *; }")

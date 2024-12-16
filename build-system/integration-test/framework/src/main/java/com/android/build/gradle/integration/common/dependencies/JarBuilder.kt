@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.dependencies
 
-import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependency
 import com.android.testutils.MavenRepoGenerator.Library
 import com.android.testutils.TestInputsGenerator
 import org.objectweb.asm.ClassWriter
@@ -26,6 +25,7 @@ import org.objectweb.asm.Opcodes.ALOAD
 import org.objectweb.asm.Opcodes.INVOKESPECIAL
 import org.objectweb.asm.Opcodes.RETURN
 import org.objectweb.asm.Opcodes.V1_6
+import org.objectweb.asm.Type
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -35,92 +35,108 @@ import java.util.zip.ZipOutputStream
  */
 interface JarBuilder {
     /**
-     * Sets the jar content to be a collection of empty classes
+     * adds empty classes to the Jar
+     * @param classBinaryNames the binary class names to add
      */
-    fun setEmptyClasses(classBinaryNames: Collection<String>): JarBuilder
+    fun addEmptyClasses(classBinaryNames: Collection<String>): JarBuilder
     /**
-     * Sets the jar content to be a collection of empty classes
+     * adds empty classes to the Jar
+     * @param classBinaryNames the binary class names to add
      */
-    fun setEmptyClasses(vararg classBinaryNames: String): JarBuilder
+    fun addEmptyClasses(vararg classBinaryNames: String): JarBuilder
 
     /**
-     * Sets the jar content to be the provided byte array
+     * adds existing classes to the Jar
+     * @param classBinaryNames the binary class names to add
      */
-    fun setJar(jar: ByteArray): JarBuilder
+    fun addClasses(classes: Collection<Class<*>>): JarBuilder
     /**
-     * Sets the jar content to be the provided classes
+     * adds existing classes to the Jar
+     * @param classBinaryNames the binary class names to add
      */
-    fun setClasses(classes: Collection<Class<*>>): JarBuilder
-    /**
-     * Creates a jar
-     */
-    fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder
-}
+    fun addClasses(vararg classes: Class<*>): JarBuilder
 
-/**
- * A builder to create the content of a jar
- */
-interface JarContentBuilder {
-    fun addClassWithEmptyMethods(binaryClassName: String, vararg namesAndDescriptors: String)
+    /**
+     * adds a single class to the Jar
+     * @param classBinaryName the binary class name to add
+     * @param namesAndDescriptors a list of method to add using the descriptor format
+     */
+    fun addClassWithEmptyMethods(classBinaryName: String, vararg namesAndDescriptors: String): JarBuilder
+
+    /**
+     * adds a text file with the provided content
+     */
+    fun addTextFile(path: String, content: String): JarBuilder
+
+    /**
+     * adds multiple text files with the provided content
+     */
+    fun addTextFiles(entries: List<Pair<String, String>>): JarBuilder
 }
 
 /**
  * A jar with dependencies
  */
 interface JarWithDependenciesBuilder: JarBuilder {
-
     /**
      * Sets the dependencies of the Jar
      */
-    fun withDependencies(list: List<String>): JarBuilder
+    fun withDependencies(vararg list: String): JarWithDependenciesBuilder
 
-    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder
-    override fun setEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder
-    override fun setJar(jar: ByteArray): JarWithDependenciesBuilder
-    override fun setClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder
+    // redefine these methods to provide new return type
+
+    override fun addEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder
+    override fun addEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder
+    override fun addClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder
+    override fun addClasses(vararg classes: Class<*>): JarWithDependenciesBuilder
+    override fun addClassWithEmptyMethods(classBinaryName: String, vararg namesAndDescriptors: String): JarWithDependenciesBuilder
+    override fun addTextFile(path: String, content: String): JarWithDependenciesBuilder
+    override fun addTextFiles(entries: List<Pair<String, String>>): JarWithDependenciesBuilder
 }
 
 // ----------
 
 /**
- * Implementation of [JarBuilder] specifically for
- * [com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository.jar]
+ * Base Implementation of [JarBuilder]
  */
-internal open class JarBuilderImpl(private val mavenCoordinate: String): JarBuilder {
-    internal var content: ByteArray? = null
-    protected val dependencies = mutableListOf<String>()
+internal open class JarBuilderImpl: JarBuilder {
+    private val jarContentBuilder = JarContentBuilder()
 
-    internal fun toLibrary(): Library = Library(
-        mavenCoordinate,
-        "jar",
-        content ?: emptyJar(),
-        *dependencies.toTypedArray()
-    )
+    internal fun getContent(): ByteArray = jarContentBuilder.getContent()
 
-    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames)
+    override fun addEmptyClasses(classBinaryNames: Collection<String>): JarBuilder {
+        classBinaryNames.forEach(jarContentBuilder::addEmptyClass)
         return this
     }
 
-    override fun setEmptyClasses(vararg classBinaryNames: String): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames.toList())
+    override fun addEmptyClasses(vararg classBinaryNames: String): JarBuilder {
+        return addEmptyClasses(classBinaryNames.toList())
+    }
+
+    override fun addClasses(classes: Collection<Class<*>>): JarBuilder {
+        classes.forEach(jarContentBuilder::addClass)
         return this
     }
 
-    override fun setJar(jar: ByteArray): JarBuilder {
-        content = jar
+    override fun addClasses(vararg classes: Class<*>): JarBuilder {
+        return addClasses(classes.toList())
+    }
+
+    override fun addClassWithEmptyMethods(classBinaryName: String, vararg namesAndDescriptors: String): JarBuilder {
+        jarContentBuilder.addClassWithEmptyMethods(classBinaryName, *namesAndDescriptors)
         return this
     }
 
-    override fun setClasses(classes: Collection<Class<*>>): JarBuilder {
-        content = TestInputsGenerator.jarWithClasses(classes)
+    override fun addTextFile(path: String, content: String): JarBuilder {
+        jarContentBuilder.addTextEntry(path, content)
         return this
     }
 
-    override fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder {
-        val builder = JarContentBuilderImpl()
-        action(builder)
-        return setJar(builder.close())
+    override fun addTextFiles(entries: List<Pair<String, String>>): JarBuilder {
+        entries.forEach {
+            addTextFile(it.first, it.second)
+        }
+        return this
     }
 }
 
@@ -129,124 +145,129 @@ internal open class JarBuilderImpl(private val mavenCoordinate: String): JarBuil
  * [com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository.jar]
  */
 internal class JarWithDependenciesBuilderImpl(
-    mavenCoordinate: String
-): JarBuilderImpl(mavenCoordinate), JarWithDependenciesBuilder {
+    private val mavenCoordinate: String
+): JarBuilderImpl(), JarWithDependenciesBuilder {
 
-    override fun withDependencies(list: List<String>): JarBuilder {
+    protected val dependencies = mutableListOf<String>()
+
+    internal fun toLibrary(): Library = Library(
+        mavenCoordinate,
+        "jar",
+        getContent(),
+        *dependencies.toTypedArray()
+    )
+
+    override fun withDependencies(vararg list: String): JarWithDependenciesBuilderImpl {
         dependencies += list
         return this
     }
 
-    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder {
-        super.setEmptyClasses(classBinaryNames)
+    override fun addEmptyClasses(classBinaryNames: Collection<String>): JarWithDependenciesBuilder {
+        super.addEmptyClasses(classBinaryNames)
         return this
     }
 
-    override fun setEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder {
-        super.setEmptyClasses(*classBinaryNames)
+    override fun addEmptyClasses(vararg classBinaryNames: String): JarWithDependenciesBuilder {
+        super.addEmptyClasses(*classBinaryNames)
         return this
     }
 
-    override fun setJar(jar: ByteArray): JarWithDependenciesBuilder {
-        super.setJar(jar)
+    override fun addClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder {
+        super.addClasses(classes)
         return this
     }
 
-    override fun setClasses(classes: Collection<Class<*>>): JarWithDependenciesBuilder {
-        super.setClasses(classes)
+    override fun addClasses(vararg classes: Class<*>): JarWithDependenciesBuilder {
+        super.addClasses(*classes)
+        return this
+    }
+
+    override fun addClassWithEmptyMethods(classBinaryName: String, vararg namesAndDescriptors: String): JarWithDependenciesBuilder {
+        super.addClassWithEmptyMethods(classBinaryName, *namesAndDescriptors)
+        return this
+    }
+
+    override fun addTextFile(path: String, content: String): JarWithDependenciesBuilder {
+        super.addTextFile(path, content)
+        return this
+    }
+
+    override fun addTextFiles(entries: List<Pair<String, String>>): JarWithDependenciesBuilder {
+        super.addTextFiles(entries)
         return this
     }
 }
 
 
-/**
- * Implementation of [JarBuilder] specifically for use with
- * [com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder.localJar]
- */
-internal class LocalJarBuilderImpl(
-    private val name: String = "foo.jar"
-): JarBuilder {
-    private var content: ByteArray? = null
-
-    fun toDependency(): LocalJarDependency {
-        return object : LocalJarDependency {
-            override val name: String
-                get() = this@LocalJarBuilderImpl.name
-            override val content: ByteArray
-                get() = this@LocalJarBuilderImpl.content ?: throw RuntimeException("no content set on localJar")
-        }
-    }
-
-    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames)
-        return this
-    }
-
-    override fun setEmptyClasses(vararg classBinaryNames: String): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames.toList())
-        return this
-    }
-
-    override fun setJar(jar: ByteArray): JarBuilder {
-        content = jar
-        return this
-    }
-
-    override fun setClasses(classes: Collection<Class<*>>): JarBuilder {
-        content = TestInputsGenerator.jarWithClasses(classes)
-        return this
-    }
-
-    override fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder {
-        val builder = JarContentBuilderImpl()
-        action(builder)
-        return setJar(builder.close())
-    }
-}
-
-internal class JarContentBuilderImpl(): JarContentBuilder {
+private class JarContentBuilder {
     private val byteArray = ByteArrayOutputStream()
     private val zip = ZipOutputStream(byteArray)
+    private var closed = false
 
-    internal fun close(): ByteArray {
-        zip.close()
-        return byteArray.toByteArray()
-    }
-
-    override fun addClassWithEmptyMethods(
-        binaryClassName: String,
-        vararg namesAndDescriptors: String
-    ) {
+    internal fun addEmptyClass(binaryClassName: String) {
+        if (closed) throw RuntimeException("cannot call addClass after getContent")
         zip.putNextEntry(ZipEntry("$binaryClassName.class"))
-        zip.write(classWithEmptyMethods(binaryClassName, *namesAndDescriptors))
+        zip.write(createClass(binaryClassName))
         zip.closeEntry()
     }
 
-    private fun classWithEmptyMethods(
+    internal fun addClassWithEmptyMethods(
         binaryClassName: String,
         vararg namesAndDescriptors: String
+    ) {
+        if (closed) throw RuntimeException("cannot call addClass after getContent")
+        zip.putNextEntry(ZipEntry("$binaryClassName.class"))
+        zip.write(createClass(binaryClassName) {
+            for (nameAndDescriptor: String in namesAndDescriptors) {
+                val colon = nameAndDescriptor.indexOf('(')
+                val methodName = nameAndDescriptor.substring(0, colon)
+                val descriptor: String = nameAndDescriptor.substring(colon, nameAndDescriptor.length)
+
+                val mv = visitMethod(ACC_PUBLIC, methodName, descriptor, null, null)
+                mv.visitCode()
+                // This bytecode is only valid for some signatures (void methods). This class is used
+                // for testing the parser, we don't ever load these classes to a running VM anyway.
+                mv.visitInsn(RETURN)
+                mv.visitMaxs(0, 1)
+                mv.visitEnd()
+            }
+        })
+        zip.closeEntry()
+    }
+
+    internal fun addClass(theClass: Class<*>) {
+        if (closed) throw RuntimeException("cannot call addClass after getContent")
+
+        val binaryName = Type.getInternalName(theClass)
+        val classPath = "$binaryName.class"
+        val content = theClass.getClassLoader().getResourceAsStream(classPath)?.use { it ->
+            it.readAllBytes()
+        } ?: throw RuntimeException("Unable to load content of  $binaryName")
+
+        zip.putNextEntry(ZipEntry(classPath))
+        zip.write(content)
+        zip.closeEntry()
+    }
+
+    internal fun addTextEntry(path: String, content: String) {
+        if (closed) throw RuntimeException("cannot call addClass after getContent")
+        zip.putNextEntry(ZipEntry(path))
+        zip.write(content.toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+    }
+
+    private fun createClass(
+        binaryClassName: String,
+        action: (ClassWriter.() -> Unit)? = null
     ): ByteArray {
         val cw = ClassWriter(0)
 
-        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, binaryClassName, null, "java/lang/Object", null);
+        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, binaryClassName, null, "java/lang/Object", null)
+        addDefaultConstructor(cw)
 
-        addDefaultConstructor(cw);
+        action?.let { it(cw) }
 
-        for (nameAndDescriptor: String in namesAndDescriptors) {
-            val colon = nameAndDescriptor.indexOf(':')
-            val methodName = nameAndDescriptor.substring(0, colon)
-            val descriptor: String = nameAndDescriptor.substring(colon + 1, nameAndDescriptor.length)
-
-            val mv = cw.visitMethod(ACC_PUBLIC, methodName, descriptor, null, null)
-            mv.visitCode()
-            // This bytecode is only valid for some signatures (void methods). This class is used
-            // for testing the parser, we don't ever load these classes to a running VM anyway.
-            mv.visitInsn(RETURN)
-            mv.visitMaxs(0, 1)
-            mv.visitEnd()
-        }
         cw.visitEnd();
-
         return cw.toByteArray();
     }
 
@@ -258,6 +279,12 @@ internal class JarContentBuilderImpl(): JarContentBuilder {
         mv.visitInsn(RETURN)
         mv.visitMaxs(1, 1)
         mv.visitEnd()
+    }
+
+    internal fun getContent(): ByteArray {
+        closed = true
+        zip.close()
+        return byteArray.toByteArray()
     }
 }
 

@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.builder.merge.DuplicateRelativeFileException
-import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -120,8 +119,7 @@ class JavaResPackagingConflictWithExternalLibrariesTest {
     @get:Rule
     val rule = GradleRule.configure()
         .withMavenRepository {
-            jar("com.example:jar:1.0")
-                .setJar(TestInputsGenerator.jarWithTextEntries("foo.txt" to "blah"))
+            jar("com.example:jar:1.0").addTextFile("foo.txt", "blah")
         }.from {
             basicSetupAction()
             androidApplication {

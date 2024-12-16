@@ -43,11 +43,6 @@ interface AarBuilder {
      */
     fun setMainEmptyClasses(vararg classBinaryNames: String): AarBuilder
     /**
-     * Sets the main jar content to be the provided byte array
-     * Shortcut to use instead of [withMainJar]
-     */
-    fun setMainJar(jar: ByteArray): AarBuilder
-    /**
      * Sets the jar content to be the provided classes
      * Shortcut to use instead of [withMainJar]
      */
@@ -159,49 +154,44 @@ internal class AarBuilderImpl(
     }
 
     override fun withMainJar(action: JarBuilder.() -> Unit): AarBuilder {
-        val builder = JarBuilderImpl("")
+        val builder = JarBuilderImpl()
         action(builder)
-        mainJar = builder.content ?:emptyJar()
+        mainJar = builder.getContent()
         return this
     }
 
     override fun setMainEmptyClasses(classBinaryNames: Collection<String>): AarBuilder {
-        mainJar = JarBuilderImpl("").also {
-            it.setEmptyClasses(classBinaryNames)
-        }.content // should not be null
+        mainJar = JarBuilderImpl().also {
+            it.addEmptyClasses(classBinaryNames)
+        }.getContent()
         return this
     }
 
     override fun setMainEmptyClasses(vararg classBinaryNames: String): AarBuilder {
-        mainJar = JarBuilderImpl("").also {
-            it.setEmptyClasses(classBinaryNames.toList())
-        }.content // should not be null
-        return this
-    }
-
-    override fun setMainJar(jar: ByteArray): AarBuilder {
-        mainJar = jar
+        mainJar = JarBuilderImpl().also {
+            it.addEmptyClasses(classBinaryNames.toList())
+        }.getContent()
         return this
     }
 
     override fun setMainClasses(classes: Collection<Class<*>>): AarBuilder {
-        mainJar = JarBuilderImpl("").also {
-            it.setClasses(classes)
-        }.content // should not be null
+        mainJar = JarBuilderImpl().also {
+            it.addClasses(classes)
+        }.getContent()
         return this
     }
 
     override fun addSecondaryJar(name: String, action: JarBuilder.() -> Unit): AarBuilder {
-        val builder = JarBuilderImpl("")
+        val builder = JarBuilderImpl()
         action(builder)
-        secondaryJars[name] = builder.content ?: emptyJar()
+        secondaryJars[name] = builder.getContent()
         return this
     }
 
     override fun withApiJar(action: JarBuilder.() -> Unit): AarBuilder {
-        val builder = JarBuilderImpl("")
+        val builder = JarBuilderImpl()
         action(builder)
-        apiJar = builder.content
+        apiJar = builder.getContent()
         return this
     }
 
@@ -228,9 +218,9 @@ internal class AarBuilderImpl(
     }
 
     override fun withLintJar(action: JarBuilder.() -> Unit): AarBuilder {
-        val builder = JarBuilderImpl("")
+        val builder = JarBuilderImpl()
         action(builder)
-        lintJar = builder.content
+        lintJar = builder.getContent()
         return this
     }
 

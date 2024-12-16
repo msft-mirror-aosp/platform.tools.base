@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.AarBuilder
 import com.android.build.gradle.integration.common.dependencies.AarBuilderImpl
-import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.dependencies.JarWithDependenciesBuilder
 import com.android.build.gradle.integration.common.dependencies.JarWithDependenciesBuilderImpl
 import com.android.testutils.MavenRepoGenerator.Library
@@ -27,7 +26,7 @@ internal class MavenRepositoryImpl: MavenRepository {
     private val libraryList = mutableListOf<Library>()
 
     private val aarBuilders = mutableListOf<AarBuilderImpl>()
-    private val jarBuilders = mutableListOf<JarBuilderImpl>()
+    private val jarBuilders = mutableListOf<JarWithDependenciesBuilderImpl>()
 
     internal val libraries: List<Library>
         get() {

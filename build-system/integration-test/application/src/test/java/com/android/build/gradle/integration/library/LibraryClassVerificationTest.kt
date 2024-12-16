@@ -45,8 +45,8 @@ class LibraryClassVerificationTest {
                 implementation(MavenRepoGenerator.Library("com.example.base:base:0.1",
                     jarWithClasses(listOf(BaseClass::class.java)),
                 ))
-                implementation(localJar("embedded.jar") { setEmptyClasses("com/example/EmbeddedJarClass") })
-                compileOnly(localJar("compileOnly.jar") { setEmptyClasses("com/example/CompileOnlyJarClass") })
+                implementation(localJar("embedded.jar") { addEmptyClasses("com/example/EmbeddedJarClass") })
+                compileOnly(localJar("compileOnly.jar") { addEmptyClasses("com/example/CompileOnlyJarClass") })
             }
             files {
                 add(

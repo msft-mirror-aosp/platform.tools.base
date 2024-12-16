@@ -28,7 +28,7 @@ class AppWithLocalJarModelTest : ReferenceModelComparator(
     deltaConfig = {
         androidApplication {
             dependencies {
-                implementation(localJar("foo.jar") { setEmptyClasses("com/example/MainClass") })
+                implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") })
             }
         }
     },
