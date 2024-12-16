@@ -17,7 +17,7 @@
 package com.android.tools.screenshot
 
 import org.junit.Test
-import com.android.tools.render.compose.ComposeScreenshotResult
+import com.android.tools.render.common.PreviewScreenshotResult
 import com.google.testing.platform.proto.api.core.TestArtifactProto
 import kotlin.test.assertEquals
 
@@ -31,7 +31,7 @@ class UtpProtoUtilTest {
         val end = 4000L
 
         val testCase = createTestCase(
-            ComposeScreenshotResult(
+            PreviewScreenshotResult(
                 "${packageName}.${className}.$displayName",
                 "${packageName}.${className}.myTestMethod",
                 "imagePath", null),

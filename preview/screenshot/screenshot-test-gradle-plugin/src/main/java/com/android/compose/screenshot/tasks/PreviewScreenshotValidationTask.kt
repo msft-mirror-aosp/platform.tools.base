@@ -17,7 +17,7 @@
 package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.services.AnalyticsService
-import com.android.tools.render.compose.readComposeScreenshotsJson
+import com.android.tools.render.common.readComposeScreenshotsJson
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.android.tools.render.compose
-
-data class ComposeRenderingResult(
-    // Exception that is not bound to a particular screenshot
-    val globalError: String?,
-    val screenshotResults: List<ComposeScreenshotResult>
-)
+package com.android.tools.render.common
+/**
+ * In case of empty image path, the message will contain the text to be displayed instead
+ */
+sealed class ImagePathOrMessage {
+    data class ImagePath(val path: String) : ImagePathOrMessage()
+    data class ErrorMessage(val message: String) : ImagePathOrMessage()
+}

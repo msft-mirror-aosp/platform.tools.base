@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
 /**
  * Data class that provider information about the problems happened during a single screenshot

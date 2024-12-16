@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
 /**
- * Information required to run standalone rendering for compose previews defined in [screenshots].
+ * Information required to run standalone rendering for previews defined in [screenshots].
  */
-data class ComposeRendering(
+data class PreviewRendering(
     val fontsPath: String?,
     val layoutlibPath: String,
     val outputFolder: String,
@@ -28,6 +28,6 @@ data class ComposeRendering(
     val projectClassPath: List<String>,
     val namespace: String,
     val resourceApkPath: String,
-    val screenshots: List<ComposeScreenshot>,
+    val screenshots: List<PreviewScreenshot>,
     val resultsFilePath: String
 )

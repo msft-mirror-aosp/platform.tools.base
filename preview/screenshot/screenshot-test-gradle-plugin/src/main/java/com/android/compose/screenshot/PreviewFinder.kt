@@ -21,20 +21,18 @@ import com.android.tools.preview.multipreview.MethodRepresentation
 import com.android.tools.preview.multipreview.PreviewMethodFinder
 import com.android.tools.preview.multipreview.ParameterRepresentation
 import com.android.tools.preview.multipreview.PreviewMethod
-import com.android.tools.render.compose.ComposeRendering
+import com.android.tools.render.common.PreviewRendering
+import com.android.tools.render.common.readComposeScreenshotsJson
+import com.android.tools.render.common.writePreviewRenderingToJson
+import com.android.tools.render.common.writeComposeScreenshotsToJson
 import com.android.tools.render.compose.ComposeScreenshot
-import com.android.tools.render.compose.readComposeScreenshotsJson
-import com.android.tools.render.compose.writeComposeRenderingToJson
-import com.android.tools.render.compose.writeComposeScreenshotsToJson
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import org.objectweb.asm.Type
 import java.util.SortedMap
-import java.util.logging.Level
 import java.util.logging.Logger
 
 private val logger = Logger.getLogger("PreviewFinder")
@@ -57,7 +55,7 @@ fun configureInput (
         Files.createDirectories(Path.of(outputFolder))
     }
     val previews = readComposeScreenshotsJson(previewsFile.reader())
-    val composeRendering = ComposeRendering(
+    val previewRendering = PreviewRendering(
         fontsPath,
         layoutlibPath,
         outputFolder,
@@ -69,7 +67,7 @@ fun configureInput (
         previews,
         resultsFilePath
     )
-    writeComposeRenderingToJson(cliToolArgumentsFile.writer(), composeRendering)
+    writePreviewRenderingToJson(cliToolArgumentsFile.writer(), previewRendering)
 }
 
 fun discoverPreviews(

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
+import com.android.tools.render.compose.ComposeScreenshot
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import java.io.Reader
 import java.io.Writer
-import java.lang.IllegalArgumentException
 
 private const val FONTS_PATH = "fontsPath"
 private const val LAYOUTLIB_PATH = "layoutlibPath"
@@ -50,8 +50,8 @@ private const val CLASS_NAME = "className"
 private const val BROKEN_CLASSES = "brokenClasses"
 private const val MISSING_CLASSES = "missingClasses"
 
-/** Reads JSON text from [jsonReader] containing serialized [ComposeRendering]. */
-fun readComposeRenderingJson(jsonReader: Reader): ComposeRendering {
+/** Reads JSON text from [jsonReader] containing serialized [PreviewRendering]. */
+fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
     var fontsPath: String? = null
     var layoutlibPath: String? = null
     var outputFolder: String? = null
@@ -60,7 +60,7 @@ fun readComposeRenderingJson(jsonReader: Reader): ComposeRendering {
     val projectClassPath = mutableListOf<String>()
     var namespace: String? = null
     var resourceApkPath: String? = null
-    var screenshots: List<ComposeScreenshot>? = null
+    var screenshots: List<PreviewScreenshot>? = null
     var resultsFilePath: String? = null
     JsonReader(jsonReader).use {  reader ->
         reader.beginObject()
@@ -102,7 +102,7 @@ fun readComposeRenderingJson(jsonReader: Reader): ComposeRendering {
         reader.endObject()
     }
 
-    return ComposeRendering(
+    return PreviewRendering(
         fontsPath,
         layoutlibPath ?: throw IllegalArgumentException("Layoutlib path is missing"),
         outputFolder ?: throw IllegalArgumentException("Output folder path is missing"),
@@ -181,31 +181,31 @@ fun readComposeScreenshotsJson(jsonReader: Reader): List<ComposeScreenshot> {
     }
 }
 
-/** Serializes [composeRendering] to [jsonWriter] in JSON format. */
-fun writeComposeRenderingToJson(
+/** Serializes [previewRendering] to [jsonWriter] in JSON format. */
+fun writePreviewRenderingToJson(
     jsonWriter: Writer,
-    composeRendering: ComposeRendering,
+    previewRendering: PreviewRendering,
 ) {
     JsonWriter(jsonWriter).use { writer ->
         writer.setIndent("  ")
         writer.beginObject()
-        composeRendering.fontsPath?.let { writer.name(FONTS_PATH).value(it) }
-        writer.name(LAYOUTLIB_PATH).value(composeRendering.layoutlibPath)
-        writer.name(OUTPUT_FOLDER).value(composeRendering.outputFolder)
-        writer.name(META_DATA_FOLDER).value(composeRendering.metaDataFolder)
+        previewRendering.fontsPath?.let { writer.name(FONTS_PATH).value(it) }
+        writer.name(LAYOUTLIB_PATH).value(previewRendering.layoutlibPath)
+        writer.name(OUTPUT_FOLDER).value(previewRendering.outputFolder)
+        writer.name(META_DATA_FOLDER).value(previewRendering.metaDataFolder)
         writer.name(CLASS_PATH)
         writer.beginArray()
-        composeRendering.classPath.forEach { writer.value(it) }
+        previewRendering.classPath.forEach { writer.value(it) }
         writer.endArray()
         writer.name(PROJECT_CLASS_PATH)
         writer.beginArray()
-        composeRendering.projectClassPath.forEach { writer.value(it) }
+        previewRendering.projectClassPath.forEach { writer.value(it) }
         writer.endArray()
-        writer.name(NAMESPACE).value(composeRendering.namespace)
-        writer.name(RESOURCE_APK_PATH).value(composeRendering.resourceApkPath)
+        writer.name(NAMESPACE).value(previewRendering.namespace)
+        writer.name(RESOURCE_APK_PATH).value(previewRendering.resourceApkPath)
         writer.name(SCREENSHOTS)
-        writeComposeScreenshots(writer, composeRendering.screenshots)
-        writer.name(RESULTS_FILE_PATH).value(composeRendering.resultsFilePath)
+        writeComposeScreenshots(writer, previewRendering.screenshots.filterIsInstance<ComposeScreenshot>())
+        writer.name(RESULTS_FILE_PATH).value(previewRendering.resultsFilePath)
         writer.endObject()
     }
 }
@@ -333,7 +333,7 @@ private fun readScreenshotError(reader: JsonReader): ScreenshotError {
     )
 }
 
-private fun readComposeScreenshotResult(reader: JsonReader): ComposeScreenshotResult {
+private fun readPreviewScreenshotResult(reader: JsonReader): PreviewScreenshotResult {
     var screenshotError: ScreenshotError? = null
     var previewId: String? = null
     var methodFQN: String? = null
@@ -350,7 +350,7 @@ private fun readComposeScreenshotResult(reader: JsonReader): ComposeScreenshotRe
         }
     }
     reader.endObject()
-    return ComposeScreenshotResult(
+    return PreviewScreenshotResult(
         previewId ?: throw IllegalArgumentException("Preview Id is missing"),
         methodFQN ?: throw IllegalArgumentException("Method FQN is missing"),
         imagePath ?: throw IllegalArgumentException("Image path missing"),
@@ -358,10 +358,10 @@ private fun readComposeScreenshotResult(reader: JsonReader): ComposeScreenshotRe
     )
 }
 
-/** Reads JSON text from [jsonReader] containing serialized [ComposeRenderingResult]. */
-fun readComposeRenderingResultJson(jsonReader: Reader): ComposeRenderingResult {
+/** Reads JSON text from [jsonReader] containing serialized [PreviewRenderingResult]. */
+fun readPreviewRenderingResultJson(jsonReader: Reader): PreviewRenderingResult {
     var globalError: String? = null
-    val screenshotResults = mutableListOf<ComposeScreenshotResult>()
+    val screenshotResults = mutableListOf<PreviewScreenshotResult>()
     JsonReader(jsonReader).use { reader ->
         reader.beginObject()
         while (reader.hasNext()) {
@@ -374,7 +374,7 @@ fun readComposeRenderingResultJson(jsonReader: Reader): ComposeRenderingResult {
                     reader.beginArray()
                     while (reader.hasNext()) {
                         screenshotResults.add(
-                            readComposeScreenshotResult(reader)
+                            readPreviewScreenshotResult(reader)
                         )
                     }
                     reader.endArray()
@@ -383,12 +383,12 @@ fun readComposeRenderingResultJson(jsonReader: Reader): ComposeRenderingResult {
         }
         reader.endObject()
     }
-    return ComposeRenderingResult(globalError, screenshotResults)
+    return PreviewRenderingResult(globalError, screenshotResults)
 }
 
-private fun writeComposeScreenshotResultToJson(
+private fun writePreviewScreenshotResultToJson(
     writer: JsonWriter,
-    screenshotResult: ComposeScreenshotResult,
+    screenshotResult: PreviewScreenshotResult,
 ) {
     writer.beginObject()
     writer.name(PREVIEW_ID).value(screenshotResult.previewId)
@@ -429,21 +429,21 @@ private fun writeComposeScreenshotResultToJson(
     writer.endObject()
 }
 
-/** Serializes [ComposeRenderingResult] to a [jsonWriter] in JSON format. */
-fun writeComposeRenderingResult(
+/** Serializes [PreviewRenderingResult] to a [jsonWriter] in JSON format. */
+fun writePreviewRenderingResult(
     jsonWriter: Writer,
-    composeRenderingResult: ComposeRenderingResult,
+    previewRenderingResult: PreviewRenderingResult,
 ) {
     JsonWriter(jsonWriter).use { writer ->
         writer.setIndent("  ")
         writer.beginObject()
-        composeRenderingResult.globalError?.let {
+        previewRenderingResult.globalError?.let {
             writer.name(GLOBAL_ERROR).value(it)
         }
         writer.name(SCREENSHOT_RESULTS)
         writer.beginArray()
-        composeRenderingResult.screenshotResults.forEach { screenshotResult ->
-            writeComposeScreenshotResultToJson(writer, screenshotResult)
+        previewRenderingResult.screenshotResults.forEach { screenshotResult ->
+            writePreviewScreenshotResultToJson(writer, screenshotResult)
         }
         writer.endArray()
         writer.endObject()

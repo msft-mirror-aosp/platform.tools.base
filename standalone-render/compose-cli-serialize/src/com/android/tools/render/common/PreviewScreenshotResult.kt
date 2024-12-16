@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
 /**
  * Result of a screenshot creation. It will contain
@@ -27,7 +27,7 @@ package com.android.tools.render.compose
  * and [error] contains info about issues encountered during rendering. It is possible that we managed to render an image, but we found a number of
  * problems during its rendering that might have affected the fidelity of the result; so image and error would both exist
  */
-data class ComposeScreenshotResult(
+data class PreviewScreenshotResult(
     val previewId: String,
     val methodFQN: String,
     val imagePath: String,

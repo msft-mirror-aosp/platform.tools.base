@@ -16,8 +16,8 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.compose.ImagePathOrMessage
-import com.android.tools.render.compose.ScreenshotError
+import com.android.tools.render.common.ImagePathOrMessage
+import com.android.tools.render.common.ScreenshotError
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.kxml2.io.KXmlSerializer
 import java.io.BufferedOutputStream

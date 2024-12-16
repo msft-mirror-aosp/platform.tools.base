@@ -17,8 +17,8 @@
 package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.services.AnalyticsService
-import com.android.tools.render.compose.ComposeScreenshotResult
-import com.android.tools.render.compose.readComposeRenderingResultJson
+import com.android.tools.render.common.PreviewScreenshotResult
+import com.android.tools.render.common.readPreviewRenderingResultJson
 import com.android.utils.FileUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
@@ -72,7 +72,7 @@ abstract class PreviewScreenshotUpdateTask : DefaultTask() {
     @TaskAction
     fun run() = analyticsService.get().recordTaskAction(path) {
         val resultFile = renderTaskResultFile.get().asFile
-        val results = readComposeRenderingResultJson(resultFile.reader()).screenshotResults
+        val results = readPreviewRenderingResultJson(resultFile.reader()).screenshotResults
         verifyRender(results)
         removeUnusedRefImages()
         if (results.isNotEmpty()) {
@@ -100,7 +100,7 @@ abstract class PreviewScreenshotUpdateTask : DefaultTask() {
      * For example:
      * - The wildcard pattern "ab*cd*ef" is converted to the regular expression "ab.*cd.*ef".
      * - The wildcard pattern "*com.example*" is converted to the regular expression ".*com\.example.*".
-     * 
+     *
      * Reference from https://github.com/gradle/gradle/blob/2afedb20b3ba147a16c82a0221399fbf0527a21b/platforms/software/testing-base-infrastructure/src/main/java/org/gradle/api/internal/tasks/testing/filter/TestSelectionMatcher.java#L167
      */
     private fun wildcardToRegex(input: String): Regex {
@@ -136,7 +136,7 @@ abstract class PreviewScreenshotUpdateTask : DefaultTask() {
 
     }
 
-    private fun verifyRender(results: List<ComposeScreenshotResult>) {
+    private fun verifyRender(results: List<PreviewScreenshotResult>) {
         if (results.isNotEmpty()) {
             for (result in results) {
                 if (!Paths.get(renderTaskOutputDir.get().asFile.absolutePath, result.imagePath).exists())
@@ -146,15 +146,15 @@ abstract class PreviewScreenshotUpdateTask : DefaultTask() {
         }
     }
 
-    private fun saveReferenceImage(composeScreenshot: ComposeScreenshotResult) {
-        val renderedPath = Paths.get(renderTaskOutputDir.get().asFile.absolutePath, composeScreenshot.imagePath)
+    private fun saveReferenceImage(previewScreenshot: PreviewScreenshotResult) {
+        val renderedPath = Paths.get(renderTaskOutputDir.get().asFile.absolutePath, previewScreenshot.imagePath)
         if (renderedPath.exists()) {
-            if (composeScreenshot.error != null) {
-                logger.warn("Rendering preview ${composeScreenshot.imagePath.substringBeforeLast(".")} encountered some problems: ${composeScreenshot.error!!.message}. " +
+            if (previewScreenshot.error != null) {
+                logger.warn("Rendering preview ${previewScreenshot.imagePath.substringBeforeLast(".")} encountered some problems: ${previewScreenshot.error!!.message}. " +
                         "Check ${renderTaskResultFile.get().asFile.absolutePath} for additional info")
             }
 
-            val referenceImagePath = Paths.get(referenceImageDir.asFile.get().absolutePath, composeScreenshot.imagePath)
+            val referenceImagePath = Paths.get(referenceImageDir.asFile.get().absolutePath, previewScreenshot.imagePath)
             Files.createDirectories(referenceImagePath.parent)
             FileUtils.copyFile(renderedPath.toFile(), referenceImagePath.toFile())
         }

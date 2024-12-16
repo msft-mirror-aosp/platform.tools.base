@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
 import com.android.ide.common.rendering.api.Result
 import com.android.sdklib.devices.screenShape
@@ -22,6 +22,8 @@ import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
 import com.android.tools.render.RenderRequest
 import com.android.tools.render.Renderer
+import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.compose.toPreviewElement
 import com.android.tools.render.framework.IJFramework
 import com.android.tools.rendering.RenderResult
 import com.intellij.openapi.util.Disposer
@@ -35,48 +37,48 @@ import javax.imageio.ImageIO
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
-        println("Path to the Compose rendering settings file is missing.")
+        println("Path to the preview rendering settings file is missing.")
         return
     }
     try {
-        renderCompose(File(args[0]))
+        renderPreview(File(args[0]))
     } finally {
         Disposer.dispose(IJFramework)
     }
 }
 
-fun renderCompose(composeRenderingJson: File) {
-    val composeRendering = readComposeRenderingJson(composeRenderingJson.reader())
-    val composeRenderingResult = try {
-        renderCompose(composeRendering)
+fun renderPreview(previewRenderingJson: File) {
+    val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
+    val previewRenderingResult = try {
+        renderPreview(previewRendering)
     } catch (t: Throwable) {
-        ComposeRenderingResult(t.stackTraceToString(), emptyList())
+        PreviewRenderingResult(t.stackTraceToString(), emptyList())
     }
 
-    writeComposeRenderingResult(
-        File(composeRendering.resultsFilePath).writer(),
-        composeRenderingResult,
+    writePreviewRenderingResult(
+        File(previewRendering.resultsFilePath).writer(),
+        previewRenderingResult,
     )
 }
 
-fun renderCompose(composeRendering: ComposeRendering): ComposeRenderingResult {
+fun renderPreview(previewRendering: PreviewRendering): PreviewRenderingResult {
     return Renderer(
-        composeRendering.fontsPath,
-        composeRendering.resourceApkPath,
-        composeRendering.namespace,
-        composeRendering.classPath,
-        composeRendering.projectClassPath,
-        composeRendering.layoutlibPath,
+        previewRendering.fontsPath,
+        previewRendering.resourceApkPath,
+        previewRendering.namespace,
+        previewRendering.classPath,
+        previewRendering.projectClassPath,
+        previewRendering.layoutlibPath,
     ).use { renderer ->
-        val screenshotResults = composeRendering.screenshots.flatMap {
-            render(it, composeRendering.outputFolder, renderer)
+        val screenshotResults = previewRendering.screenshots.filterIsInstance<ComposeScreenshot>().flatMap {
+            render(it, previewRendering.outputFolder, renderer)
         }.sortedBy { it.imagePath }
-        ComposeRenderingResult(globalError = null, screenshotResults)
+        PreviewRenderingResult(globalError = null, screenshotResults)
     }
 }
 
 private fun render(screenshot: ComposeScreenshot, outputFolderPath: String, renderer: Renderer):
-        Sequence<ComposeScreenshotResult> {
+        Sequence<PreviewScreenshotResult> {
     val previewElement = screenshot.toPreviewElement(renderer.module)
     val renderRequest = RenderRequest(
         configurationModifier = previewElement::applyTo,
@@ -104,9 +106,9 @@ private fun render(screenshot: ComposeScreenshot, outputFolderPath: String, rend
             }
 
             val screenshotError = extractError(renderResult, imageRendered)
-            ComposeScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
+            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, screenshotError)
         } catch (t: Throwable) {
-            ComposeScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
+            PreviewScreenshotResult(previewId, methodFQN, relativeImagePath, ScreenshotError(t))
         }
         screenshotResult
     }

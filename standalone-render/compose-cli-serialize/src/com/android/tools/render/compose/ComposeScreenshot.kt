@@ -16,10 +16,12 @@
 
 package com.android.tools.render.compose
 
+import com.android.tools.render.common.PreviewScreenshot
+
 /** Information required to render a screenshot of a compose preview.  */
 data class ComposeScreenshot(
-    val methodFQN: String,
+    override val methodFQN: String,
     val methodParams: List<Map<String, String>>,
-    val previewParams: Map<String, String>,
-    val previewId: String
-)
+    override val previewParams: Map<String, String>,
+    override val previewId: String
+) : PreviewScreenshot

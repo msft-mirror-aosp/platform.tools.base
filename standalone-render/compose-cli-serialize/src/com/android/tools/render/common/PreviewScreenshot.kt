@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.render.compose
-/**
- * In case of empty image path, the message will contain the text to be displayed instead
- */
-sealed class ImagePathOrMessage {
-    data class ImagePath(val path: String) : ImagePathOrMessage()
-    data class ErrorMessage(val message: String) : ImagePathOrMessage()
+
+package com.android.tools.render.common
+
+/** Information required to render a screenshot of a preview. */
+interface PreviewScreenshot {
+    val methodFQN: String
+    val previewParams: Map<String, String>
+    val previewId: String
 }

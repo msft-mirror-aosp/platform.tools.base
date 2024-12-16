@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.android.tools.render.compose
+package com.android.tools.render.common
 
+import com.android.tools.render.compose.ComposeScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.StringWriter
 
 class JsonSerializationTest {
     @Test
-    fun testJsonToComposeRendering() {
+    fun testJsonToPreviewRendering() {
         // language=json
         val jsonString = """
             {
@@ -54,9 +55,9 @@ class JsonSerializationTest {
             }
         """.trimIndent()
 
-        val composeRendering = readComposeRenderingJson(jsonString.reader())
+        val previewRendering = readPreviewRenderingJson(jsonString.reader())
 
-        val expectedComposeRendering = ComposeRendering(
+        val expectedPreviewRendering = PreviewRendering(
             "/path/to/fonts",
             "/path/to/layout/lib",
             "/path/to/output/folder",
@@ -76,7 +77,7 @@ class JsonSerializationTest {
             "/path/to/my_results.json"
         )
 
-        assertEquals(expectedComposeRendering, composeRendering)
+        assertEquals(expectedPreviewRendering, previewRendering)
     }
 
     @Test
@@ -150,14 +151,14 @@ class JsonSerializationTest {
     }
 
     @Test
-    fun testComposeRenderingToJsonAndBack() {
+    fun testPreviewRenderingToJsonAndBack() {
         val screenshot = ComposeScreenshot(
             "com.my.package.ClKt.Method1",
             emptyList(),
             emptyMap(),
             "/path/to/image/pattern/name",
         )
-        val composeRendering = ComposeRendering(
+        val previewRendering = PreviewRendering(
             "/path/to/fonts",
             "/path/to/layout/lib",
             "/path/to/output/folder",
@@ -172,11 +173,11 @@ class JsonSerializationTest {
 
         val stringWriter = StringWriter()
 
-        writeComposeRenderingToJson(stringWriter, composeRendering)
+        writePreviewRenderingToJson(stringWriter, previewRendering)
 
-        val restoredComposeRendering = readComposeRenderingJson(stringWriter.toString().reader())
+        val restoredPreviewRendering = readPreviewRenderingJson(stringWriter.toString().reader())
 
-        assertEquals(composeRendering, restoredComposeRendering)
+        assertEquals(previewRendering, restoredPreviewRendering)
     }
 
     @Test
@@ -211,7 +212,7 @@ class JsonSerializationTest {
     }
 
     @Test
-    fun testJsonToComposeRenderingResult_GlobalError() {
+    fun testJsonToPreviewRenderingResult_GlobalError() {
         // language=json
         val jsonString = """
             {
@@ -219,9 +220,9 @@ class JsonSerializationTest {
             }
         """.trimIndent()
 
-        val composeRenderingResult = readComposeRenderingResultJson(jsonString.reader())
+        val previewRenderingResult = readPreviewRenderingResultJson(jsonString.reader())
 
-        val expectedComposeRenderingResult = ComposeRenderingResult(
+        val expectedPreviewRenderingResult = PreviewRenderingResult(
             """
                 Error message
                 Stack trace line 1
@@ -230,11 +231,11 @@ class JsonSerializationTest {
             emptyList()
         )
 
-        assertEquals(expectedComposeRenderingResult, composeRenderingResult)
+        assertEquals(expectedPreviewRenderingResult, previewRenderingResult)
     }
 
     @Test
-    fun testJsonToComposeRenderingResult_ScreenshotResults() {
+    fun testJsonToPreviewRenderingResult_ScreenshotResults() {
         // language=json
         val jsonString = """
             {
@@ -287,55 +288,62 @@ class JsonSerializationTest {
             }
         """.trimIndent()
 
-        val composeRenderingResult = readComposeRenderingResultJson(jsonString.reader())
+        val previewRenderingResult = readPreviewRenderingResultJson(jsonString.reader())
 
-        val expectedComposeRenderingResult = ComposeRenderingResult(
+        val expectedPreviewRenderingResult = PreviewRenderingResult(
             null,
             listOf(
-                ComposeScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null),
-                ComposeScreenshotResult("previewId2", "methodFQN2", "pkg/class/image2.png", ScreenshotError(
-                    "ERROR_RENDER_TASK",
-                    "Error message",
-                    """
+                PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image1.png", null),
+                PreviewScreenshotResult(
+                    "previewId2", "methodFQN2", "pkg/class/image2.png", ScreenshotError(
+                        "ERROR_RENDER_TASK",
+                        "Error message",
+                        """
                         Error message
                         Stack trace line 1
                         StackTrace line 2
                     """.trimIndent(),
-                    emptyList(),
-                    emptyList(),
-                    emptyList(),
-                )),
-                ComposeScreenshotResult("previewId3", "methodFQN3", "pkg/class/image3.png", ScreenshotError(
-                    "SUCCESS", "", "",
-                    listOf(
-                        RenderProblem("<html>Some error description</html>", null),
-                        RenderProblem(
-                            "<html>Some other error description</html>",
-                            """
+                        emptyList(),
+                        emptyList(),
+                        emptyList(),
+                    )
+                ),
+                PreviewScreenshotResult(
+                    "previewId3", "methodFQN3", "pkg/class/image3.png", ScreenshotError(
+                        "SUCCESS", "", "",
+                        listOf(
+                            RenderProblem("<html>Some error description</html>", null),
+                            RenderProblem(
+                                "<html>Some other error description</html>",
+                                """
                                 Other error message
                                 Stack trace line 1
                                 StackTrace line 2
-                            """.trimIndent())
-                    ),
-                    listOf(BrokenClass(
-                        "com.baz.Qwe",
-                        """
+                            """.trimIndent()
+                            )
+                        ),
+                        listOf(
+                            BrokenClass(
+                                "com.baz.Qwe",
+                                """
                             Error message
                             Stack trace line 1
                             StackTrace line 2
                         """.trimIndent(),
-                    )),
-                    listOf("com.foo.Bar"),
-                )),
+                            )
+                        ),
+                        listOf("com.foo.Bar"),
+                    )
+                ),
             )
         )
 
-        assertEquals(expectedComposeRenderingResult, composeRenderingResult)
+        assertEquals(expectedPreviewRenderingResult, previewRenderingResult)
     }
 
     @Test
-    fun testComposeRenderingResultToJsonAndBack_GlobalError() {
-        val composeRenderingResult = ComposeRenderingResult(
+    fun testPreviewRenderingResultToJsonAndBack_GlobalError() {
+        val previewRenderingResult = PreviewRenderingResult(
             """
                 Error message
                 Stack trace line 1
@@ -345,62 +353,71 @@ class JsonSerializationTest {
         )
 
         val stringWriter = StringWriter()
-        writeComposeRenderingResult(stringWriter, composeRenderingResult)
+        writePreviewRenderingResult(stringWriter, previewRenderingResult)
 
-        val restoredComposeRenderingResult = readComposeRenderingResultJson(stringWriter.toString().reader())
+        val restoredPreviewRenderingResult =
+            readPreviewRenderingResultJson(stringWriter.toString().reader())
 
-        assertEquals(composeRenderingResult, restoredComposeRenderingResult)
+        assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
     }
 
     @Test
-    fun testComposeRenderingResultToJsonAndBack_ScreenshotResults() {
-        val composeRenderingResult = ComposeRenderingResult(
+    fun testPreviewRenderingResultToJsonAndBack_ScreenshotResults() {
+        val previewRenderingResult = PreviewRenderingResult(
             null,
             listOf(
-                ComposeScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null),
-                ComposeScreenshotResult("previewId2", "methodFQN2", "pkg/class/image2.png", ScreenshotError(
-                    "ERROR_RENDER_TASK",
-                    "Error message",
-                    """
+                PreviewScreenshotResult("previewId1", "methodFQN1", "pkg/class/image.png", null),
+                PreviewScreenshotResult(
+                    "previewId2", "methodFQN2", "pkg/class/image2.png", ScreenshotError(
+                        "ERROR_RENDER_TASK",
+                        "Error message",
+                        """
                         Error message
                         Stack trace line 1
                         StackTrace line 2
                     """.trimIndent(),
-                    emptyList(),
-                    emptyList(),
-                    emptyList(),
-                )),
-                ComposeScreenshotResult("previewId3", "methodFQN3", "pkg/class/image3.png", ScreenshotError(
-                    "SUCCESS", "", "",
-                    listOf(
-                        RenderProblem("<html>Some error description</html>", null),
-                        RenderProblem(
-                            "<html>Some other error description</html>",
-                            """
+                        emptyList(),
+                        emptyList(),
+                        emptyList(),
+                    )
+                ),
+                PreviewScreenshotResult(
+                    "previewId3", "methodFQN3", "pkg/class/image3.png", ScreenshotError(
+                        "SUCCESS", "", "",
+                        listOf(
+                            RenderProblem("<html>Some error description</html>", null),
+                            RenderProblem(
+                                "<html>Some other error description</html>",
+                                """
                                 Other error message
                                 Stack trace line 1
                                 StackTrace line 2
-                            """.trimIndent())
-                    ),
-                    listOf(BrokenClass(
-                        "com.baz.Qwe",
-                        """
+                            """.trimIndent()
+                            )
+                        ),
+                        listOf(
+                            BrokenClass(
+                                "com.baz.Qwe",
+                                """
                             Error message
                             Stack trace line 1
                             StackTrace line 2
                         """.trimIndent(),
-                    )),
-                    listOf("com.foo.Bar"),
-                )),
+                            )
+                        ),
+                        listOf("com.foo.Bar"),
+                    )
+                ),
             )
         )
 
         val stringWriter = StringWriter()
-        writeComposeRenderingResult(stringWriter, composeRenderingResult)
+        writePreviewRenderingResult(stringWriter, previewRenderingResult)
 
-        val restoredComposeRenderingResult = readComposeRenderingResultJson(stringWriter.toString().reader())
+        val restoredPreviewRenderingResult =
+            readPreviewRenderingResultJson(stringWriter.toString().reader())
 
 
-        assertEquals(composeRenderingResult, restoredComposeRenderingResult)
+        assertEquals(previewRenderingResult, restoredPreviewRenderingResult)
     }
 }
