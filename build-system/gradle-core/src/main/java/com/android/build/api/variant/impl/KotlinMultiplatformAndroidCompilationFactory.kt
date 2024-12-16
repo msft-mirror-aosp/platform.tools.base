@@ -64,20 +64,25 @@ internal class KotlinMultiplatformAndroidCompilationFactory(
 
         val isTestComponent = compilationType != KmpAndroidCompilationType.MAIN
 
-        return target.createCompilation {
+        return target.createCompilation<KotlinMultiplatformAndroidCompilationImpl> {
             compilationName = name
             defaultSourceSet = kotlinExtension.sourceSets.getByName(
                 compilationBuilder.defaultSourceSetName
             )
             compilationFactory = ExternalKotlinCompilationDescriptor.CompilationFactory { delegate ->
                 when(compilationType) {
-                    KmpAndroidCompilationType.MAIN -> KotlinMultiplatformAndroidCompilationImpl(delegate)
-                    KmpAndroidCompilationType.HOST_TEST -> KotlinMultiplatformAndroidHostTestCompilationImpl(
-                        androidExtension.androidTestOnJvmOptions!!, delegate
-                    )
-                    KmpAndroidCompilationType.DEVICE_TEST -> KotlinMultiplatformAndroidDeviceTestCompilationImpl(
-                        androidExtension.androidTestOnDeviceOptions!!, delegate
-                    )
+                    KmpAndroidCompilationType.MAIN ->
+                        KotlinMultiplatformAndroidCompilationImpl(delegate)
+
+                    KmpAndroidCompilationType.HOST_TEST ->
+                        KotlinMultiplatformAndroidHostTestCompilationImpl(
+                            androidExtension.androidTestOnJvmOptions!!, delegate
+                        )
+
+                    KmpAndroidCompilationType.DEVICE_TEST ->
+                        KotlinMultiplatformAndroidDeviceTestCompilationImpl(
+                            androidExtension.androidTestOnDeviceOptions!!, delegate
+                        )
                 }
             }
             compileTaskName = "compile".appendCapitalized(
@@ -106,6 +111,10 @@ internal class KotlinMultiplatformAndroidCompilationFactory(
                 }
             }
             sourceSetTreeClassifierV2 = compilationBuilder.getSourceSetTreeClassifier()
+        }.also {
+            it.compilerOptions.options.jvmTarget.set(
+                JvmTarget.fromTarget(CompileOptions.DEFAULT_JAVA_VERSION.toString())
+            )
         }
     }
 
