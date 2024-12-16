@@ -16,24 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.testprojects
 
+import com.android.build.gradle.integration.common.dependencies.JarBuilder
+import com.android.build.gradle.integration.common.dependencies.LocalJarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.JarBuilder
-import com.android.build.gradle.integration.common.fixture.project.builder.JarContentBuilder
 import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.TestInputsGenerator
 import com.android.utils.FileUtils
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes.ACC_PUBLIC
-import org.objectweb.asm.Opcodes.ACC_SUPER
-import org.objectweb.asm.Opcodes.ALOAD
-import org.objectweb.asm.Opcodes.INVOKESPECIAL
-import org.objectweb.asm.Opcodes.RETURN
-import org.objectweb.asm.Opcodes.V1_6
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Path
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 class DependenciesBuilderImpl() : DependenciesBuilder {
     private val dependencies = mutableListOf<Pair<String, Any>>()
@@ -236,104 +225,6 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         jarFile.writeBytes(localJarDependency.content)
 
         return "libs/${localJarDependency.name}"
-    }
-}
-
-private class LocalJarBuilderImpl(
-    private val name: String = "foo.jar"
-): JarBuilder {
-    private var content: ByteArray? = null
-
-    fun toDependency(): LocalJarDependency {
-        return object : LocalJarDependency {
-            override val name: String
-                get() = this@LocalJarBuilderImpl.name
-            override val content: ByteArray
-                get() = this@LocalJarBuilderImpl.content ?: throw RuntimeException("no content set on localJar")
-        }
-    }
-
-    override fun setEmptyClasses(classBinaryNames: Collection<String>): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames)
-        return this
-    }
-
-    override fun setEmptyClasses(vararg classBinaryNames: String): JarBuilder {
-        content = TestInputsGenerator.jarWithEmptyClasses(classBinaryNames.toList())
-        return this
-    }
-
-    override fun setJar(jar: ByteArray): JarBuilder {
-        content = jar
-        return this
-    }
-
-    override fun setClasses(classes: Collection<Class<*>>): JarBuilder {
-        content = TestInputsGenerator.jarWithClasses(classes)
-        return this
-    }
-
-    override fun createJar(action: JarContentBuilder.() -> Unit): JarBuilder {
-        val builder = JarContentBuilderImpl()
-        action(builder)
-        return setJar(builder.close())
-    }
-}
-
-internal class JarContentBuilderImpl(): JarContentBuilder {
-    private val byteArray = ByteArrayOutputStream()
-    private val zip = ZipOutputStream(byteArray)
-
-    internal fun close(): ByteArray {
-        zip.close()
-        return byteArray.toByteArray()
-    }
-
-    override fun addClassWithEmptyMethods(
-        binaryClassName: String,
-        vararg namesAndDescriptors: String
-    ) {
-        zip.putNextEntry(ZipEntry("$binaryClassName.class"))
-        zip.write(classWithEmptyMethods(binaryClassName, *namesAndDescriptors))
-        zip.closeEntry()
-    }
-
-    private fun classWithEmptyMethods(
-        binaryClassName: String,
-        vararg namesAndDescriptors: String
-    ): ByteArray {
-        val cw = ClassWriter(0)
-
-        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, binaryClassName, null, "java/lang/Object", null);
-
-        addDefaultConstructor(cw);
-
-        for (nameAndDescriptor: String in namesAndDescriptors) {
-            val colon = nameAndDescriptor.indexOf(':')
-            val methodName = nameAndDescriptor.substring(0, colon)
-            val descriptor: String = nameAndDescriptor.substring(colon + 1, nameAndDescriptor.length)
-
-            val mv = cw.visitMethod(ACC_PUBLIC, methodName, descriptor, null, null)
-            mv.visitCode()
-            // This bytecode is only valid for some signatures (void methods). This class is used
-            // for testing the parser, we don't ever load these classes to a running VM anyway.
-            mv.visitInsn(RETURN)
-            mv.visitMaxs(0, 1)
-            mv.visitEnd()
-        }
-        cw.visitEnd();
-
-        return cw.toByteArray();
-    }
-
-    private fun  addDefaultConstructor(cw: ClassWriter) {
-        val mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
-        mv.visitCode()
-        mv.visitVarInsn(ALOAD, 0)
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
-        mv.visitInsn(RETURN)
-        mv.visitMaxs(1, 1)
-        mv.visitEnd()
     }
 }
 

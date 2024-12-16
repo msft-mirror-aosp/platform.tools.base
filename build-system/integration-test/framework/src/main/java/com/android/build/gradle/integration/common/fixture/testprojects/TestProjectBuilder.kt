@@ -18,11 +18,11 @@ package com.android.build.gradle.integration.common.fixture.testprojects
 
 import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.dsl.CompileOptions
+import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.JarBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
