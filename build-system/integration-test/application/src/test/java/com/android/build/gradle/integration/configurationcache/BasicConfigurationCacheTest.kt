@@ -52,10 +52,7 @@ class BasicConfigurationCacheTest {
         assertThat(rule.build.directory.resolve(".gradle/configuration-cache")).isDirectory()
         val result = executor().run("assemble")
         // AndroidLintTextOutputTask always run
-        Truth.assertThat(result.didWorkTasks).containsExactly(
-            ":app:lintVitalRelease",
-            ":app:assembleRelease",
-            ":app:assemble")
+        Truth.assertThat(result.didWorkTasks).containsExactly(":app:lintVitalRelease")
     }
 
     @Test

@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 /** Checks if fatal lint errors stop the release build. */
 public class LintVitalTest {
@@ -96,13 +97,17 @@ public class LintVitalTest {
     }
 
     @Test
-    public void fatalLintCheckFailsBuild() throws IOException, InterruptedException {
+    public void fatalLintCheckFailsBuild() {
         GradleBuildResult result = project.executor().expectFailure().run("assembleRelease");
-        assertThat(result.getFailureMessage()).contains("fatal errors");
-        assertThat(result.findTask(":lintVitalAnalyzeRelease")).didWork();
+        TruthHelper.assertThat(result.getFailureMessage()).contains("fatal errors");
+        TruthHelper.assertThat(Objects.requireNonNull(result.findTask(":lintVitalAnalyzeRelease")))
+                .didWork();
         TruthHelper.assertThat(result.getTask(":lintVitalRelease")).failed();
         TruthHelper.assertThat(result.getTask(":lintVitalReportRelease")).didWork();
-        assertThat(result.getFailedTasks()).doesNotContain(":lintVitalReportRelease");
+        TruthHelper.assertThat(result.getFailedTasks()).doesNotContain(":lintVitalReportRelease");
+        result = project.executor().expectFailure().run("bundleRelease"); // b/383661626
+        TruthHelper.assertThat(result.getFailureMessage()).contains("fatal errors");
+        TruthHelper.assertThat(result.getTask(":lintVitalRelease")).failed();
     }
 
     @Test
