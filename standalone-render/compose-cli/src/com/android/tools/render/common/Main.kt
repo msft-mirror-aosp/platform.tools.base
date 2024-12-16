@@ -22,8 +22,6 @@ import com.android.tools.configurations.Configuration
 import com.android.tools.preview.applyTo
 import com.android.tools.render.RenderRequest
 import com.android.tools.render.Renderer
-import com.android.tools.render.compose.ComposeScreenshot
-import com.android.tools.render.compose.toPreviewElement
 import com.android.tools.render.framework.IJFramework
 import com.android.tools.rendering.RenderResult
 import com.intellij.openapi.util.Disposer
@@ -70,21 +68,19 @@ fun renderPreview(previewRendering: PreviewRendering): PreviewRenderingResult {
         previewRendering.projectClassPath,
         previewRendering.layoutlibPath,
     ).use { renderer ->
-        val screenshotResults = previewRendering.screenshots.filterIsInstance<ComposeScreenshot>().flatMap {
+        val screenshotResults = previewRendering.screenshots.flatMap {
             render(it, previewRendering.outputFolder, renderer)
         }.sortedBy { it.imagePath }
         PreviewRenderingResult(globalError = null, screenshotResults)
     }
 }
 
-private fun render(screenshot: ComposeScreenshot, outputFolderPath: String, renderer: Renderer):
+private fun render(screenshot: PreviewScreenshot, outputFolderPath: String, renderer: Renderer):
         Sequence<PreviewScreenshotResult> {
     val previewElement = screenshot.toPreviewElement(renderer.module)
     val renderRequest = RenderRequest(
         configurationModifier = previewElement::applyTo,
-        xmlLayoutsProvider = {
-            previewElement.resolve().map { it.toPreviewXml().buildString() }
-        }
+        xmlLayoutsProvider = { previewElement.resolveXmlLayouts() }
     )
 
     return renderer.render(renderRequest).withIndex().map { (index, value) ->

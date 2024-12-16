@@ -16,14 +16,10 @@
 
 package com.android.tools.render.common
 
-import com.android.tools.render.StandaloneRenderModelModule
+import com.android.tools.preview.ConfigurablePreviewElement
 
-/** Information required to render a screenshot of a preview. */
-interface PreviewScreenshot {
-    val methodFQN: String
-    val previewParams: Map<String, String>
-    val previewId: String
-
-    /** Creates a [ScreenshotPreviewElement]. */
-    fun toPreviewElement(module: StandaloneRenderModelModule): ScreenshotPreviewElement
+/** Interface required to be implemented for a [PreviewScreenshot] to be rendered. */
+interface ScreenshotPreviewElement : ConfigurablePreviewElement<Unit> {
+    /** This method returns a sequence of XML layouts for each preview. */
+    fun resolveXmlLayouts(): Sequence<String>
 }

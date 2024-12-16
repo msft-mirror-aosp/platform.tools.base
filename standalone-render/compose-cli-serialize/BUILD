@@ -11,7 +11,8 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
-        "@maven//:com.google.code.gson.gson",
+        "//tools/adt/idea/preview-elements:tools.preview-elements",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
     ],
 )
 
@@ -33,10 +34,10 @@ kotlin_test(
 
 maven_library(
     name = "compose-preview-renderer-model",
-    srcs = glob([
-        "src/**/*.java",
-        "src/**/*.kt",
-    ]),
+    srcs = [],
+    bundled_deps = [
+        ":tools.compose-preview-renderer-model",
+    ],
     coordinates = "com.android.tools.compose:compose-preview-renderer-model",
     description = "Library to serialize and deserialize data to and from Compose rendering CLI",
     module_name = "compose-preview-renderer-model",
