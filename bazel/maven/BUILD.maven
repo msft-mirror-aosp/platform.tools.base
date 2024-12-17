@@ -54239,6 +54239,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.apis.google-api-services-drive_v3-rev20241027-2.0.0",
+    pom = "repository/com/google/apis/google-api-services-drive/v3-rev20241027-2.0.0/google-api-services-drive-v3-rev20241027-2.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/apis/google-api-services-drive/v3-rev20241027-2.0.0",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.api-client.google-api-client_2.7.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.apis.google-api-services-oauth2_v2-rev150-1.22.0",
     pom = "repository/com/google/apis/google-api-services-oauth2/v2-rev150-1.22.0/google-api-services-oauth2-v2-rev150-1.22.0.pom",
     repo_root_path = "repository",

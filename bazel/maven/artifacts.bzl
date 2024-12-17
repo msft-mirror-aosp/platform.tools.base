@@ -792,6 +792,7 @@ DATA = [
     "com.google.android.support:wearable:2.9.0",
     "com.google.android.wearable:wearable:2.9.0",
     "com.google.apis:google-api-services-cloudresourcemanager:v1beta1-rev20240128-2.0.0",
+    "com.google.apis:google-api-services-drive:v3-rev20241027-2.0.0",
     "com.google.apis:google-api-services-oauth2:v2-rev150-1.22.0",
     "com.google.apis:google-api-services-oauth2:v2-rev157-1.25.0",
     "com.google.apis:google-api-services-storage:v1-rev82-1.22.0",
