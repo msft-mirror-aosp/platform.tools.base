@@ -58,10 +58,10 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.1.0-RC";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.1.0";
 
     /** KSP version used by AGP integration tests. */
-    public static final String KSP_VERSION_FOR_TESTS = "2.1.0-RC-1.0.26";
+    public static final String KSP_VERSION_FOR_TESTS = "2.1.0-1.0.29";
 
     /**
      * Kotlin version used in AGP integration tests for Compose.
