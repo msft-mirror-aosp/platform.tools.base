@@ -81,7 +81,7 @@ class BuiltArtifactsLoaderImplTest {
         val updatedBuiltArtifact = updatedBuiltArtifacts.elements.first()
         val updatedOutputFile = File(updatedBuiltArtifact.outputFile)
         assertThat(updatedOutputFile.name).isEqualTo("file1.xml.new")
-        assertThat(updatedBuiltArtifact.outputFilePath.absolutePathString()).isEqualTo(updatedOutputFile.toPath().absolutePathString())
+        assertThat(updatedBuiltArtifact.path.absolutePathString()).isEqualTo(updatedOutputFile.toPath().absolutePathString())
         assertThat(updatedBuiltArtifact.versionCode).isEqualTo(123)
         assertThat(updatedBuiltArtifact.versionName).isEqualTo("version_name")
         assertThat(updatedBuiltArtifact.outputType).isEqualTo(VariantOutputConfiguration.OutputType.SINGLE)
