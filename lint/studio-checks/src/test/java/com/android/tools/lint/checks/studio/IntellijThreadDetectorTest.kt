@@ -90,9 +90,10 @@ class IntellijThreadDetectorTest {
                     package test.pkg;
                     import com.android.annotations.concurrency.UiThread;
 
-                    @UiThread
+
                     public class UiThreadClass {
-                        public void method() {
+                        @UiThread
+                        public static void method() {
                         }
                     }
                 """
