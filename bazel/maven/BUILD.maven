@@ -62552,64 +62552,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-declarative-dsl-api_8.9-20240529002035+0000",
-    pom = "repository/org/gradle/gradle-declarative-dsl-api/8.9-20240529002035+0000/gradle-declarative-dsl-api-8.9-20240529002035+0000.pom",
-    repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-declarative-dsl-api/8.9-20240529002035+0000",
-    deps = [
-        "org.gradle.gradle-java-language-extensions_8.9-20240529002035+0000",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.gradle.gradle-declarative-dsl-core_8.9-20240529002035+0000",
-    pom = "repository/org/gradle/gradle-declarative-dsl-core/8.9-20240529002035+0000/gradle-declarative-dsl-core-8.9-20240529002035+0000.pom",
-    repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-declarative-dsl-core/8.9-20240529002035+0000",
-    deps = [
-        "org.gradle.gradle-declarative-dsl-tooling-models_8.9-20240529002035+0000",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_1.9.23",
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
-        "org.gradle.gradle-declarative-dsl-api_8.9-20240529002035+0000",
-        "org.jetbrains.kotlin.kotlin-reflect_1.9.23",
-        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.6.2",
-        "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.6.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.gradle.gradle-declarative-dsl-tooling-models_8.9-20240529002035+0000",
-    pom = "repository/org/gradle/gradle-declarative-dsl-tooling-models/8.9-20240529002035+0000/gradle-declarative-dsl-tooling-models-8.9-20240529002035+0000.pom",
-    repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-declarative-dsl-tooling-models/8.9-20240529002035+0000",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.gradle.gradle-java-language-extensions_8.9-20240529002035+0000",
-    pom = "repository/org/gradle/gradle-java-language-extensions/8.9-20240529002035+0000/gradle-java-language-extensions-8.9-20240529002035+0000.pom",
-    repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-java-language-extensions/8.9-20240529002035+0000",
-    deps = [
-        "com.google.code.findbugs.jsr305_3.0.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.gradle.gradle-tooling-api_8.12",
-    pom = "repository/org/gradle/gradle-tooling-api/8.12/gradle-tooling-api-8.12.pom",
-    repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/8.12",
-    deps = [
-        "org.slf4j.slf4j-api_1.7.36",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.hamcrest.hamcrest-core_2.2",
     pom = "repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.pom",
     repo_root_path = "repository",
@@ -65334,9 +65276,6 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/1.9.23",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
-        "org.jetbrains.kotlin.kotlin-script-runtime_1.9.23",
-        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.kotlin.kotlin-daemon-embeddable_1.9.23",
         "org.jetbrains.intellij.deps.trove4j_1.0.20200330",
     ],
@@ -70063,14 +70002,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.21",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.21/kotlin-stdlib-common-1.9.21.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.9.21",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.22",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.22/kotlin-stdlib-common-1.9.22.pom",
     repo_root_path = "repository",
@@ -73203,14 +73134,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.2",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.6.2/kotlinx-serialization-bom-1.6.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-bom/1.6.2",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.3",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.6.3/kotlinx-serialization-bom-1.6.3.pom",
     repo_root_path = "repository",
@@ -73252,19 +73175,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.0",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.0",
         "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.6.2",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.6.2/kotlinx-serialization-core-jvm-1.6.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.6.2",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.21",
-        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73353,20 +73263,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.0",
         "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.6.0",
         "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.6.2",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.6.2/kotlinx-serialization-json-jvm-1.6.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.6.2",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.21",
-        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.6.2",
-        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.2",
     ],
     visibility = ["//visibility:public"],
 )
