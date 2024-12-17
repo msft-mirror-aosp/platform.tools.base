@@ -87,7 +87,7 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
                 NAMESPACE -> { namespace = reader.nextString() }
                 RESOURCE_APK_PATH -> { resourceApkPath = reader.nextString() }
                 SCREENSHOTS -> {
-                    screenshots = readComposeScreenshots(reader)
+                    screenshots = readPreviewScreenshots(reader)
                 }
                 RESULTS_FILE_PATH -> {
                     resultsFilePath = reader.nextString()
@@ -157,8 +157,8 @@ private fun readComposeScreenshot(reader: JsonReader): ComposeScreenshot {
     )
 }
 
-private fun readComposeScreenshots(reader: JsonReader): List<ComposeScreenshot> {
-    val screenshots = mutableListOf<ComposeScreenshot>()
+private fun readPreviewScreenshots(reader: JsonReader): List<PreviewScreenshot> {
+    val screenshots = mutableListOf<PreviewScreenshot>()
     reader.beginArray()
     while (reader.hasNext()) {
         screenshots.add(readComposeScreenshot(reader))
@@ -167,15 +167,15 @@ private fun readComposeScreenshots(reader: JsonReader): List<ComposeScreenshot> 
     return screenshots
 }
 
-/** Reads a list of [ComposeScreenshot] from a [JsonReader]. */
-fun readComposeScreenshotsJson(jsonReader: Reader): List<ComposeScreenshot> {
+/** Reads a list of [PreviewScreenshot] from a [JsonReader]. */
+fun readPreviewScreenshotsJson(jsonReader: Reader): List<PreviewScreenshot> {
     return JsonReader(jsonReader).use { reader ->
         reader.beginObject()
         val screenshotsEntryName = reader.nextName()
         if (screenshotsEntryName != SCREENSHOTS) {
             throw IllegalArgumentException("$SCREENSHOTS entry is missing")
         }
-        val results = readComposeScreenshots(reader)
+        val results = readPreviewScreenshots(reader)
         reader.endObject()
         results
     }
@@ -204,7 +204,7 @@ fun writePreviewRenderingToJson(
         writer.name(NAMESPACE).value(previewRendering.namespace)
         writer.name(RESOURCE_APK_PATH).value(previewRendering.resourceApkPath)
         writer.name(SCREENSHOTS)
-        writeComposeScreenshots(writer, previewRendering.screenshots.filterIsInstance<ComposeScreenshot>())
+        writePreviewScreenshots(writer, previewRendering.screenshots)
         writer.name(RESULTS_FILE_PATH).value(previewRendering.resultsFilePath)
         writer.endObject()
     }
@@ -233,24 +233,27 @@ private fun writeComposeScreenshot(writer: JsonWriter, screenshot: ComposeScreen
     writer.endObject()
 }
 
-private fun writeComposeScreenshots(writer: JsonWriter, screenshots: List<ComposeScreenshot>) {
+private fun writePreviewScreenshots(writer: JsonWriter, screenshots: List<PreviewScreenshot>) {
     writer.beginArray()
     screenshots.forEach {
-        writeComposeScreenshot(writer, it)
+        when (it) {
+            is ComposeScreenshot -> writeComposeScreenshot(writer, it)
+            else -> throw IllegalArgumentException("Serialization of $it is not yet supported.")
+        }
     }
     writer.endArray()
 }
 
-/** Writes a list of [ComposeScreenshot] to a [Writer] as a json array. */
-fun writeComposeScreenshotsToJson(
+/** Writes a list of [PreviewScreenshot] to a [Writer] as a json array. */
+fun writePreviewScreenshotsToJson(
     jsonWriter: Writer,
-    screenshots: List<ComposeScreenshot>
+    screenshots: List<PreviewScreenshot>
 ) {
     JsonWriter(jsonWriter).use { writer ->
         writer.setIndent("  ")
         writer.beginObject()
         writer.name(SCREENSHOTS)
-        writeComposeScreenshots(writer, screenshots)
+        writePreviewScreenshots(writer, screenshots)
         writer.endObject()
     }
 }

@@ -22,9 +22,9 @@ import com.android.tools.preview.multipreview.PreviewMethodFinder
 import com.android.tools.preview.multipreview.ParameterRepresentation
 import com.android.tools.preview.multipreview.PreviewMethod
 import com.android.tools.render.common.PreviewRendering
-import com.android.tools.render.common.readComposeScreenshotsJson
+import com.android.tools.render.common.readPreviewScreenshotsJson
 import com.android.tools.render.common.writePreviewRenderingToJson
-import com.android.tools.render.common.writeComposeScreenshotsToJson
+import com.android.tools.render.common.writePreviewScreenshotsToJson
 import com.android.tools.render.compose.ComposeScreenshot
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
@@ -54,7 +54,7 @@ fun configureInput (
     if (!File(outputFolder).exists()) {
         Files.createDirectories(Path.of(outputFolder))
     }
-    val previews = readComposeScreenshotsJson(previewsFile.reader())
+    val previews = readPreviewScreenshotsJson(previewsFile.reader())
     val previewRendering = PreviewRendering(
         fontsPath,
         layoutlibPath,
@@ -97,7 +97,7 @@ private fun serializePreviewMethods(
                 )
             }
         }
-        writeComposeScreenshotsToJson(fileWriter, composeScreenshots.sortedBy { it.previewId })
+        writePreviewScreenshotsToJson(fileWriter, composeScreenshots.sortedBy { it.previewId })
     }
 }
 

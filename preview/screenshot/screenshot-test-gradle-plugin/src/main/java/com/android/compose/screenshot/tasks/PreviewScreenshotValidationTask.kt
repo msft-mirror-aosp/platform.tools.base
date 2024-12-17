@@ -17,7 +17,7 @@
 package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.services.AnalyticsService
-import com.android.tools.render.common.readComposeScreenshotsJson
+import com.android.tools.render.common.readPreviewScreenshotsJson
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -72,7 +72,7 @@ abstract class PreviewScreenshotValidationTask : Test() {
     @TaskAction
     override fun executeTests() {
         analyticsService.get().recordTaskAction(path) {
-            val screenshots = readComposeScreenshotsJson(previewFile.get().asFile.reader())
+            val screenshots = readPreviewScreenshotsJson(previewFile.get().asFile.reader())
             if (screenshots.isNotEmpty()) {
                 analyticsService.get().recordPreviewScreenshotTestRun(
                     totalTestCount = screenshots.size,

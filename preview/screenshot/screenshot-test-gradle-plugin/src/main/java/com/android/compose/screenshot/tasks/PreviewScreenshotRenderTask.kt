@@ -19,7 +19,7 @@ package com.android.compose.screenshot.tasks
 import com.android.compose.screenshot.configureInput
 import com.android.compose.screenshot.services.AnalyticsService
 import com.android.tools.render.common.PreviewRenderingResult
-import com.android.tools.render.common.readComposeScreenshotsJson
+import com.android.tools.render.common.readPreviewScreenshotsJson
 import com.android.tools.render.common.writePreviewRenderingResult
 import com.android.utils.FileUtils
 import org.gradle.api.DefaultTask
@@ -130,7 +130,7 @@ abstract class PreviewScreenshotRenderTask : DefaultTask(), VerificationTask {
     fun run() = analyticsService.get().recordTaskAction(path) {
         FileUtils.cleanOutputDir(outputDir.get().asFile)
         FileUtils.deleteIfExists(resultsFile.get().asFile)
-        if (readComposeScreenshotsJson(previewsDiscovered.get().asFile.reader()).isEmpty()) {
+        if (readPreviewScreenshotsJson(previewsDiscovered.get().asFile.reader()).isEmpty()) {
             // No previews discovered to render
             writePreviewRenderingResult(resultsFile.get().asFile.writer(), PreviewRenderingResult(null, listOf()))
             return@recordTaskAction

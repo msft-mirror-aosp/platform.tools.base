@@ -122,7 +122,7 @@ class JsonSerializationTest {
         """.trimIndent()
 
 
-        val screenshots = readComposeScreenshotsJson(jsonString.reader())
+        val screenshots = readPreviewScreenshotsJson(jsonString.reader())
 
         assertEquals(
             listOf(
@@ -204,9 +204,9 @@ class JsonSerializationTest {
         )
 
         val stringWriter = StringWriter()
-        writeComposeScreenshotsToJson(stringWriter, screenshots)
+        writePreviewScreenshotsToJson(stringWriter, screenshots)
 
-        val restoredScreenshots = readComposeScreenshotsJson(stringWriter.toString().reader())
+        val restoredScreenshots = readPreviewScreenshotsJson(stringWriter.toString().reader())
 
         assertEquals(screenshots, restoredScreenshots)
     }

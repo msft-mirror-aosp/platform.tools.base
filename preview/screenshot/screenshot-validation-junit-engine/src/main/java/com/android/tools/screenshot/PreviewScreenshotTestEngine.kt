@@ -16,8 +16,9 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.common.readComposeScreenshotsJson
+import com.android.tools.render.common.readPreviewScreenshotsJson
 import com.android.tools.render.common.readPreviewRenderingResultJson
+import com.android.tools.render.common.PreviewScreenshot
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.render.common.ImagePathOrMessage
 import com.android.tools.render.compose.ComposeScreenshot
@@ -70,7 +71,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
         val engineDescriptor = EngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
-        val screenshots: List<ComposeScreenshot> = readComposeScreenshotsJson(File(parameters.previewsDiscovered).reader())
+        val screenshots = readPreviewScreenshotsJson(File(parameters.previewsDiscovered).reader())
         val screenshotResults = readPreviewRenderingResultJson(File(parameters.renderResultsFilePath).reader()).screenshotResults
         val testMap = mutableMapOf<String, MutableSet<Tests.TestMethod>>()
         for (screenshot in screenshots) {
@@ -120,7 +121,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         val resultFile = File(parameters.renderResultsFilePath)
         val screenshotResults = readPreviewRenderingResultJson(resultFile.reader()).screenshotResults
-        val composeScreenshots: List<ComposeScreenshot> = readComposeScreenshotsJson(File(parameters.previewsDiscovered).reader())
+        val previewScreenshots = readPreviewScreenshotsJson(File(parameters.previewsDiscovered).reader())
         val listener = request.engineExecutionListener
         val resultsToSave = mutableListOf<PreviewResult>()
         val testSuiteResultsToSave = mutableListOf<TestSuiteResult>()
@@ -145,7 +146,7 @@ class PreviewScreenshotTestEngine : TestEngine {
                     val previewResults = runTestMethodThatGeneratesMultipleScreenshotTests(
                         methodDescriptor,
                         listener,
-                        composeScreenshots,
+                        previewScreenshots,
                         screenshotResults
                     )
                     resultsToSave.addAll(previewResults)
@@ -339,7 +340,7 @@ class PreviewScreenshotTestEngine : TestEngine {
     private fun runTestMethodThatGeneratesMultipleScreenshotTests(
         methodDescriptor: TestMethodDescriptor,
         listener: EngineExecutionListener,
-        composeScreenshots: List<ComposeScreenshot>,
+        previewScreenshots: List<PreviewScreenshot>,
         screenshotResults: List<PreviewScreenshotResult>): List<PreviewResult> {
         val results = mutableListOf<PreviewResult>()
         listener.executionStarted(methodDescriptor)
@@ -350,24 +351,26 @@ class PreviewScreenshotTestEngine : TestEngine {
                 it.methodFQN == "$className.${methodName}"
             }
         for ((run, screenshot) in screenshots.withIndex()) {
-            val currentComposePreview = composeScreenshots.single {
+            val currentPreviewScreenshot = previewScreenshots.single {
                 it.methodFQN == "$className.$methodName" && screenshot.previewId == it.previewId
             }
             var suffix = ""
-            if (currentComposePreview.previewParams.containsKey("name")) {
-                suffix += "_${currentComposePreview.previewParams["name"]}"
-            }
-            val previewParamsSuffix = currentComposePreview.previewParams.filter { it.key != "name" }
-            if (previewParamsSuffix.isNotEmpty()) {
-                // Skip "name" parameter because it is added to the suffix above
-                suffix += "_${previewParamsSuffix}"
-            }
-            if (currentComposePreview.methodParams.isNotEmpty()) {
-                // Method parameters can generate multiple screenshots from one preview,
-                // add the method parameters and the count indicated by the previewId
-                suffix += "_${currentComposePreview.methodParams}"
-                val paramIndex = screenshot.imagePath.substringBeforeLast(".").substringAfterLast("_")
-                suffix += "_$paramIndex"
+            if (currentPreviewScreenshot is ComposeScreenshot) {
+                if (currentPreviewScreenshot.previewParams.containsKey("name")) {
+                    suffix += "_${currentPreviewScreenshot.previewParams["name"]}"
+                }
+                val previewParamsSuffix = currentPreviewScreenshot.previewParams.filter { it.key != "name" }
+                if (previewParamsSuffix.isNotEmpty()) {
+                    // Skip "name" parameter because it is added to the suffix above
+                    suffix += "_${previewParamsSuffix}"
+                }
+                if (currentPreviewScreenshot.methodParams.isNotEmpty()) {
+                    // Method parameters can generate multiple screenshots from one preview,
+                    // add the method parameters and the count indicated by the previewId
+                    suffix += "_${currentPreviewScreenshot.methodParams}"
+                    val paramIndex = screenshot.imagePath.substringBeforeLast(".").substringAfterLast("_")
+                    suffix += "_$paramIndex"
+                }
             }
             val previewTestDescriptor = PreviewTestDescriptor(methodDescriptor, methodName, run, suffix)
             methodDescriptor.addChild(previewTestDescriptor)
