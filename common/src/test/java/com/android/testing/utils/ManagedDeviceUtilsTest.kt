@@ -31,6 +31,10 @@ class ManagedDeviceUtilsTest {
             true,
             isGradleManagedDevice("dev32_default_arm64-v8a_Pixel_3_snapshot")
         )
+        assertEquals(
+            true,
+            isGradleManagedDevice("dev34_ext12_google_apis_ps16k_x86_Pixel_3_snapshot")
+        )
 
         assertEquals(
             true,

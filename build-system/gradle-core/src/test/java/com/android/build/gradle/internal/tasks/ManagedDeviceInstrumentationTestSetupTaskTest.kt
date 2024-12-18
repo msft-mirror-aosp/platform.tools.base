@@ -115,6 +115,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             .whenever(task).buildToolsRevision
         doReturn(realPropertyFor("x86_64")).whenever(task).abi
         doReturn(realPropertyFor(29)).whenever(task).sdkVersion
+        doReturn(realEmptyPropertyFor<Int>()).whenever(task).sdkExtensionVersion
         doReturn(realPropertyFor("")).whenever(task).pageAlignmentSuffix
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
         doReturn(realPropertyFor("Pixel 2")).whenever(task).hardwareProfile
@@ -127,6 +128,9 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             .whenever(task).workerExecutor
         return task
     }
+
+    private inline fun <reified ValueClass> realEmptyPropertyFor(): Property<ValueClass> =
+        project.objects.property(ValueClass::class.java)
 
     private inline fun <reified ValueClass> realPropertyFor(
         providedValue: ValueClass): Property<ValueClass> {
@@ -452,6 +456,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val result = ManagedDeviceInstrumentationTestSetupTask.generateSystemImageErrorMessage(
             "test_device_name",
             28,
+            null,
             "aosp",
             "",
             true,
@@ -474,6 +479,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val result = ManagedDeviceInstrumentationTestSetupTask.generateSystemImageErrorMessage(
             "some_test_device",
             28,
+            null,
             "aosp",
             "",
             true,

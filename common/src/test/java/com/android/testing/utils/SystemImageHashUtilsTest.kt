@@ -24,22 +24,22 @@ class SystemImageHashUtilsTest {
     @Test
     fun testComputeSystemImageHashFromDsl() {
         var expectedHash = "system-images;android-29;default;x86"
-        var computedHash = computeSystemImageHashFromDsl(29, "aosp", "", "x86")
+        var computedHash = computeSystemImageHashFromDsl(29, null, "aosp", "", "x86")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-30;google_apis;x86_64"
-        computedHash = computeSystemImageHashFromDsl(30, "google", "", "x86_64")
+        computedHash = computeSystemImageHashFromDsl(30, null, "google", "", "x86_64")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-31;android-wear;x86_64"
-        computedHash = computeSystemImageHashFromDsl(31, "android-wear", "", "x86_64")
+        computedHash = computeSystemImageHashFromDsl(31, null,"android-wear", "", "x86_64")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-31;google_apis_ps16k;arm64-v8a"
-        computedHash = computeSystemImageHashFromDsl(31, "google", "_ps16k", "arm64-v8a")
+        computedHash = computeSystemImageHashFromDsl(31, null, "google", "_ps16k", "arm64-v8a")
 
         assertEquals(expectedHash, computedHash)
     }

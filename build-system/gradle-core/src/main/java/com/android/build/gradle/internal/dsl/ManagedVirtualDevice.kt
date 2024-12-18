@@ -11,6 +11,7 @@ import java.io.Serializable
 import javax.inject.Inject
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 
 const val PAGE_16KB_SUFFIX = "_ps16k"
 const val PAGE_EMPTY_SUFFIX = ""
@@ -44,6 +45,10 @@ open class ManagedVirtualDevice @Inject constructor(private val name: String) :
         set(value) {
             apiVersion = apiVersionFromString(value)
         }
+
+    @get: Optional
+    @get: Input
+    override var sdkExtensionVersion: Int? = null
 
     @get: Input
     override var systemImageSource = "google"

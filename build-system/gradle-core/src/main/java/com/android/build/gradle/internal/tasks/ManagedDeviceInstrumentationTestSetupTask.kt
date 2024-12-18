@@ -39,6 +39,7 @@ import com.android.utils.osArchitecture
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.Internal
 import org.gradle.work.DisableCachingByDefault
 
@@ -78,6 +79,10 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
     abstract val systemImageVendor: Property<String>
 
     @get: Input
+    @get: Optional
+    abstract val sdkExtensionVersion: Property<Int>
+
+    @get: Input
     abstract val pageAlignmentSuffix: Property<String>
 
     @get: Input
@@ -106,6 +111,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             it.deviceName.set(
                 computeAvdName(
                     sdkVersion.get(),
+                    sdkExtensionVersion.orNull,
                     systemImageVendor.get(),
                     pageAlignmentSuffix.get(),
                     abi.get(),
@@ -116,6 +122,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             it.systemImageVendor.set(systemImageVendor)
             it.pageAlignmentSuffix.set(pageAlignmentSuffix)
             it.sdkVersion.set(sdkVersion)
+            it.sdkExtensionVersion.set(sdkExtensionVersion)
             it.require64Bit.set(require64Bit)
             it.abi.set(abi)
         }
@@ -157,6 +164,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 error(generateSystemImageErrorMessage(
                     parameters.managedDeviceName.get(),
                     parameters.sdkVersion.get(),
+                    parameters.sdkExtensionVersion.orNull,
                     parameters.systemImageVendor.get(),
                     parameters.pageAlignmentSuffix.get(),
                     parameters.require64Bit.get(),
@@ -181,6 +189,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         private fun computeImageHash(): String =
             computeSystemImageHashFromDsl(
                 parameters.sdkVersion.get(),
+                parameters.sdkExtensionVersion.orNull,
                 parameters.systemImageVendor.get(),
                 parameters.pageAlignmentSuffix.get(),
                 parameters.abi.get())
@@ -198,6 +207,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         abstract val systemImageVendor: Property<String>
         abstract val pageAlignmentSuffix: Property<String>
         abstract val sdkVersion: Property<Int>
+        abstract val sdkExtensionVersion: Property<Int>
         abstract val require64Bit: Property<Boolean>
         abstract val abi: Property<String>
     }
@@ -207,6 +217,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         private val systemImageSource: String,
         private val pageAlignmentSuffix: String,
         private val sdkVersion: Int,
+        private val sdkExtensionVersion: Int?,
         private val abi: String,
         private val hardwareProfile: String,
         private val managedDeviceName: String,
@@ -223,6 +234,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             managedDevice.systemImageSource,
             managedDevice.pageAlignmentSuffix,
             managedDevice.sdkVersion,
+            managedDevice.sdkExtensionVersion,
             computeAbiFromArchitecture(managedDevice),
             managedDevice.device,
             managedDevice.name,
@@ -246,6 +258,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             task.systemImageVendor.setDisallowChanges(systemImageSource)
             task.pageAlignmentSuffix.setDisallowChanges(pageAlignmentSuffix)
             task.sdkVersion.setDisallowChanges(sdkVersion)
+            task.sdkExtensionVersion.setDisallowChanges(sdkExtensionVersion)
             task.abi.setDisallowChanges(abi)
             task.hardwareProfile.setDisallowChanges(hardwareProfile)
 
@@ -263,6 +276,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         fun generateSystemImageErrorMessage(
             deviceName: String,
             sdkVersion: Int,
+            extensionVersion: Int?,
             systemImageSource: String,
             pageAlignmentSuffix: String,
             require64Bit: Boolean,
@@ -282,6 +296,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 osArchitecture,
                 deviceName,
                 sdkVersion,
+                extensionVersion,
                 systemImageSource,
                 pageAlignmentSuffix,
                 require64Bit,

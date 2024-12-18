@@ -1740,6 +1740,7 @@ package com.android.build.api.dsl {
     method public String getDevice();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment getPageAlignment();
     method public boolean getRequire64Bit();
+    method @org.gradle.api.Incubating public Integer? getSdkExtensionVersion();
     method @org.gradle.api.Incubating public String? getSdkPreview();
     method @org.gradle.api.Incubating public int getSdkVersion();
     method public String getSystemImageSource();
@@ -1748,6 +1749,7 @@ package com.android.build.api.dsl {
     method public void setDevice(String);
     method @org.gradle.api.Incubating public void setPageAlignment(com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment);
     method public void setRequire64Bit(boolean);
+    method @org.gradle.api.Incubating public void setSdkExtensionVersion(Integer?);
     method @org.gradle.api.Incubating public void setSdkPreview(String?);
     method @org.gradle.api.Incubating public void setSdkVersion(int);
     method public void setSystemImageSource(String);
@@ -1756,6 +1758,7 @@ package com.android.build.api.dsl {
     property public abstract String device;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment pageAlignment;
     property public abstract boolean require64Bit;
+    property @org.gradle.api.Incubating public abstract Integer? sdkExtensionVersion;
     property @org.gradle.api.Incubating public abstract String? sdkPreview;
     property @org.gradle.api.Incubating public abstract int sdkVersion;
     property public abstract String systemImageSource;

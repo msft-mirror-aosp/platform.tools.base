@@ -86,6 +86,15 @@ interface ManagedVirtualDevice : Device {
     var sdkPreview: String?
 
     /**
+     * The extension version of the system image to be run on the device.
+     *
+     * By default, the basic system image will be chosen for the given [sdkVersion].
+     */
+    @get: Incubating
+    @set: Incubating
+    var sdkExtensionVersion: Int?
+
+    /**
      * Which source the system image should come from. Either "google", "google-atd", "aosp", or
      * "aosp-atd". You can also specify an explicit source such as "google_apis_playstore".
      *

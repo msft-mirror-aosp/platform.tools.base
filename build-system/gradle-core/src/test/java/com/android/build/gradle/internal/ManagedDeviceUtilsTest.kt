@@ -29,6 +29,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_sameAvdSameVendor() {
         val google = computeAvdName(
             30,
+            null,
             "google",
             "",
             "x86",
@@ -36,6 +37,7 @@ class ManagedDeviceUtilsTest {
         )
         val googleApis = computeAvdName(
             30,
+            null,
             "google_apis",
             "",
             "x86",
@@ -49,6 +51,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_pageAlignmentWorks() {
         val pageSize4k = computeAvdName(
             36,
+            null,
             "google_apis",
             "",
             "x86",
@@ -59,6 +62,7 @@ class ManagedDeviceUtilsTest {
 
         val pageSize16k =computeAvdName(
             36,
+            null,
             "google_apis",
             "_ps16k",
             "x86",
@@ -69,9 +73,35 @@ class ManagedDeviceUtilsTest {
     }
 
     @Test
+    fun computAvdName_extensionVersionWorks() {
+        var noExtension = computeAvdName(
+            34,
+            null,
+            "google_apis",
+            "",
+            "x86_64",
+            "Pixel 3"
+        )
+
+        assertThat(noExtension).isEqualTo("dev34_google_apis_x86_64_Pixel_3")
+
+        val extension = computeAvdName(
+            34,
+            12,
+            "google_apis",
+            "",
+            "x86_64",
+            "Pixel 3"
+        )
+
+        assertThat(extension).isEqualTo("dev34_ext12_google_apis_x86_64_Pixel_3")
+    }
+
+    @Test
     fun computeAvdName_worksWithParenthesis() {
         val computedName = computeAvdName(
             29,
+            null,
             "google_apis",
             "",
             "x86",
@@ -85,6 +115,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_worksWitQuotations() {
         val computedName = computeAvdName(
             33,
+            null,
             "google_apis",
             "",
             "x86",
