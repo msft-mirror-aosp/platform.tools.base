@@ -48,6 +48,7 @@ import org.gradle.api.provider.Provider
 const val NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED = false
 
 object FusedLibraryConstants {
+    const val EXTENSION_NAME = "androidFusedLibrary"
     const val INCLUDE_CONFIGURATION_NAME = "include"
     const val VALIDATE_DEPENDENCIES_TASK_NAME = "validateDependencies"
 }

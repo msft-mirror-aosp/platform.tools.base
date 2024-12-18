@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.truth.AarSubject
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.testutils.apk.Aar
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
@@ -84,7 +85,7 @@ internal class FusedLibraryDefinitionImpl(
 
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
-            block("androidFusedLibrary") {
+            block(FusedLibraryConstants.EXTENSION_NAME) {
                 contentHolder.writeContent(this)
             }
 

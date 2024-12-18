@@ -56,6 +56,41 @@ class FusedLibraryGlobalScopeImpl(
             false
         )
 
+    override val namespace: String
+        get() = extension.namespace ?: error(
+            """
+                Namespace is not defined.
+
+                Please add the `namespace` field to the :${projectServices.projectInfo.name} build file.
+
+                For example:
+                ```
+                ${FusedLibraryConstants.EXTENSION_NAME} {
+                    namespace = "com.example.mylibrary"
+                }
+                ```
+            """.trimIndent()
+        )
+
+    override val manifestPlaceholders: MutableMap<String, String>
+        get() = extension.manifestPlaceholders
+
+    override val minSdk: Int
+        get() = extension.minSdk ?: error(
+            """
+                Minimum Sdk is not defined.
+
+                Please add the `minSdk` field to the :${projectServices.projectInfo.name} build file.
+
+                For example:
+                ```
+                ${FusedLibraryConstants.EXTENSION_NAME} {
+                    minSdk = 34
+                }
+                ```
+            """.trimIndent()
+        )
+
     override val projectLayout: ProjectLayout = project.layout
     override val services: TaskCreationServices
         get() = TaskCreationServicesImpl(projectServices)

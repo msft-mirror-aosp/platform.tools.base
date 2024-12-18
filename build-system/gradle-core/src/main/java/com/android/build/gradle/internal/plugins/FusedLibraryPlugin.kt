@@ -128,7 +128,7 @@ class FusedLibraryPlugin @Inject constructor(
 
         return project.extensions.create(
                 FusedLibraryExtension::class.java,
-                "androidFusedLibrary",
+                FusedLibraryConstants.EXTENSION_NAME,
                 Extension::class.java,
                 fusedLibraryExtensionImpl
         )

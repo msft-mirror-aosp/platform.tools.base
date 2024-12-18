@@ -30,11 +30,12 @@ interface FusedLibraryGlobalScope {
     val artifacts: ArtifactsImpl
     val experimentalProperties: MapProperty<String, Any>
     val extension: FusedLibraryExtension
+    val manifestPlaceholders: MutableMap<String, String>
+    val minSdk: Int
+    val namespace: String
     val projectLayout: ProjectLayout
     val services: TaskCreationServices
-
     val dependencies: FusedLibraryDependencies
     val incomingConfigurations: PluginConfigurations
-
     fun getLocalJars(): FileCollection
 }
