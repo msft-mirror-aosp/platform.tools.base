@@ -141,7 +141,7 @@ class ApplicationTaskManager(
         handleMicroApp(variant)
 
         // This should match the implementation in [PackageAndroidArtifact] configure: vcsTaskRan
-        if ((variant.includeVcsInfo == null && !variantInfo.variantBuilder.debuggable) ||
+        if ((variant.includeVcsInfo == null && !variantInfo.variant.debuggable) ||
             variant.includeVcsInfo == true) {
             taskFactory.register(ExtractVersionControlInfoTask.CreationAction(variant))
         }
@@ -291,7 +291,7 @@ class ApplicationTaskManager(
 
         taskFactory.register(PerModuleBundleTask.CreationAction(variant))
 
-        val debuggable = variantInfo.variantBuilder.debuggable
+        val debuggable = variantInfo.variant.debuggable
         val includeSdkInfoInApk = variantInfo.variantBuilder.dependenciesInfo.includeInApk
         val includeSdkInfoInBundle = variantInfo.variantBuilder.dependenciesInfo.includeInBundle
         if (!debuggable) {

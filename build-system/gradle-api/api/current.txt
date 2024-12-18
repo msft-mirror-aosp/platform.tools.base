@@ -2633,12 +2633,10 @@ package com.android.build.api.variant {
 
   public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
     method public com.android.build.api.variant.ApplicationAndroidResourcesBuilder getAndroidResources();
-    method public boolean getDebuggable();
     method public com.android.build.api.variant.DependenciesInfoBuilder getDependenciesInfo();
     method @Deprecated @org.gradle.api.Incubating public boolean getProfileable();
     method @Deprecated @org.gradle.api.Incubating public void setProfileable(boolean);
     property public abstract com.android.build.api.variant.ApplicationAndroidResourcesBuilder androidResources;
-    property public abstract boolean debuggable;
     property public abstract com.android.build.api.variant.DependenciesInfoBuilder dependenciesInfo;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean profileable;
   }
@@ -2968,12 +2966,15 @@ package com.android.build.api.variant {
   }
 
   public interface GeneratesApkBuilder {
+    method @Deprecated public boolean getDebuggable();
     method @Deprecated @org.gradle.api.Incubating public Boolean? getEnableMultiDex();
     method public Integer? getTargetSdk();
     method public String? getTargetSdkPreview();
+    method @Deprecated public void setDebuggable(boolean);
     method @Deprecated @org.gradle.api.Incubating public void setEnableMultiDex(Boolean?);
     method public void setTargetSdk(Integer?);
     method public void setTargetSdkPreview(String?);
+    property @Deprecated public abstract boolean debuggable;
     property @Deprecated @org.gradle.api.Incubating public abstract Boolean? enableMultiDex;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
@@ -2992,10 +2993,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.Property<java.lang.String> testLabel;
   }
 
-  @org.gradle.api.Incubating public interface GeneratesTestApkBuilder extends com.android.build.api.variant.GeneratesApkBuilder {
-    method @Deprecated @org.gradle.api.Incubating public boolean getDebuggable();
-    method @Deprecated @org.gradle.api.Incubating public void setDebuggable(boolean);
-    property @Deprecated @org.gradle.api.Incubating public abstract boolean debuggable;
+  public interface GeneratesTestApkBuilder extends com.android.build.api.variant.GeneratesApkBuilder {
   }
 
   public interface HasAndroidResources {

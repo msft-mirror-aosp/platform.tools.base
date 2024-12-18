@@ -676,9 +676,6 @@ https://issuetracker.google.com/357083708
   * com.android.build.api.variant.HasDeviceTestsBuilder.getDeviceTests: java.util.Map<java.lang.String, com.android.build.api.variant.DeviceTestBuilder> ()
 https://issuetracker.google.com/361880963
   * com.android.build.api.variant.DeviceTestBuilder implements com.android.build.api.variant.GeneratesTestApkBuilder
-  * com.android.build.api.variant.GeneratesTestApkBuilder implements com.android.build.api.variant.GeneratesApkBuilder
-  * com.android.build.api.variant.GeneratesTestApkBuilder.getDebuggable: boolean ()
-  * com.android.build.api.variant.GeneratesTestApkBuilder.setDebuggable: void (boolean)
 https://issuetracker.google.com/362870092
   * com.android.build.api.variant.GeneratesApk.getMinSdk: com.android.build.api.variant.AndroidVersion ()
 https://issuetracker.google.com/362941219
