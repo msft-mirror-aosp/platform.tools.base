@@ -32,6 +32,6 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib_repo//:zlib",
+        "@zlib//:zlib",
     ],
 )
