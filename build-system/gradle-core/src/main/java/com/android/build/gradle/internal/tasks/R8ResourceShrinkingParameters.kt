@@ -143,8 +143,11 @@ fun ApplicationCreationConfig.runResourceShrinking(): Boolean {
  * a separate task.
  */
 fun ApplicationCreationConfig.runResourceShrinkingWithR8(): Boolean {
+    // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
+    // Once that bug is fixed, we should remove that condition.
     return runResourceShrinking()
             && services.projectOptions[BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING]
+            && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
 }
 
 fun R8ResourceShrinkingParameters.initialize(

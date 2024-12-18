@@ -57,10 +57,10 @@ class ResourceShrinkerTest(
         @Parameterized.Parameters(name = "nonFinalResIds_{0}_r8IntegratedResourceShrinking_{1}")
         @JvmStatic
         fun parameters() = listOf(
-            arrayOf(true, false),
             arrayOf(true, true),
-            // Testing nonFinalResIds=false once is enough
-            arrayOf(false, BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING.defaultValue),
+            arrayOf(true, false),
+            arrayOf(false, true),
+            arrayOf(false, false),
         )
     }
 
@@ -252,7 +252,9 @@ class ResourceShrinkerTest(
         project: GradleTestProject,
         unusedResources: List<String>
     ) {
-        if (r8IntegratedResourceShrinking) {
+        // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
+        // Once that bug is fixed, we should remove that condition.
+        if (r8IntegratedResourceShrinking && nonFinalResIds) {
             assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
         } else {
             assertThat(getZipPaths(project.getOriginalBundle())).containsAtLeastElementsIn(unusedResources)
@@ -485,7 +487,9 @@ class ResourceShrinkerTest(
                 "res/layout/unused14.xml",
                 "res/layout/unused2.xml",
                 "res/menu/unused12.xml",
-            ) + if (r8IntegratedResourceShrinking) {
+            ) + if (r8IntegratedResourceShrinking && nonFinalResIds) {
+                // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
+                // Once that bug is fixed, we should remove that condition.
                 emptyList()
             } else {
                 // This resource is used by a feature module, so the fact that it appears in this
@@ -632,7 +636,9 @@ class ResourceShrinkerTest(
     }
 
     private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
-        val task = if (r8IntegratedResourceShrinking) {
+        // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
+        // Once that bug is fixed, we should remove that condition.
+        val task = if (r8IntegratedResourceShrinking && nonFinalResIds) {
             "minifyReleaseWithR8"
         } else {
             "shrinkReleaseRes"
