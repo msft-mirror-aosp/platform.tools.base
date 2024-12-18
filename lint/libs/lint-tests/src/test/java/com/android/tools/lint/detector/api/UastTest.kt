@@ -69,6 +69,7 @@ import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
+import org.jetbrains.uast.UCatchClause
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UClassLiteralExpression
 import org.jetbrains.uast.UDeclaration
@@ -1901,6 +1902,42 @@ class UastTest : TestCase() {
           .trimIndent()
           .trim(),
         file.asSourceString().dos2unix().trim().replace("\n        \n", "\n"),
+      )
+    }
+  }
+
+  fun testErroneousTypeAliasInCatchClause() {
+    // Regression test from b/376130268
+    // https://youtrack.jetbrains.com/issue/KT-73156
+    val source =
+      kotlin(
+          """
+          // Intentionally commented out to trigger type error
+          // import kotlin.coroutines.cancellation.CancellationException
+
+          typealias MyException = CancellationException
+
+          fun test(flag: Boolean) = runBlocking {
+            try {
+              foo()
+            } catch (e: MyException) {
+            }
+          }
+
+          suspend fun foo() {}
+        """
+        )
+        .indented()
+
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCatchClause(node: UCatchClause): Boolean {
+            val exceptionType = node.types.singleOrNull()
+            assertEquals(node.sourcePsi?.text, "<ErrorType>", exceptionType?.canonicalText)
+            return super.visitCatchClause(node)
+          }
+        }
       )
     }
   }
