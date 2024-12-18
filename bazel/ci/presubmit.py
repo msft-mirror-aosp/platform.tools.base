@@ -23,7 +23,6 @@ _HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _MAX_RUNS_PER_TEST = 200
 _LOCAL_REPOSITORIES = [
     'intellij',
-    'native_toolchain',
 ]
 
 
