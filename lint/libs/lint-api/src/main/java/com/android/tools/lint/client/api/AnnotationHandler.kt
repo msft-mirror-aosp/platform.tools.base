@@ -216,6 +216,11 @@ internal class AnnotationHandler(
             override fun visitSimpleNameReferenceExpression(
               node: USimpleNameReferenceExpression
             ): Boolean {
+              // Bail out early if this name reference is
+              // definitely not the variable we're looking for.
+              if (node.identifier != variable.name) {
+                return super.visitSimpleNameReferenceExpression(node)
+              }
               val referencedVariable = node.resolve()
               if (variablePsi == referencedVariable) {
                 val expression = node.getParentOfType(UExpression::class.java, true)
@@ -1077,9 +1082,9 @@ internal class AnnotationHandler(
 
   fun visitVariable(context: JavaContext, variable: UVariable) {
     val evaluator = context.evaluator
-    val methodAnnotations = getRelevantAnnotations(evaluator, variable as UAnnotated, VARIABLE)
-    if (methodAnnotations.isNotEmpty()) {
-      checkContextAnnotations(context, variable, methodAnnotations, variable)
+    val variableAnnotations = getRelevantAnnotations(evaluator, variable as UAnnotated, VARIABLE)
+    if (variableAnnotations.isNotEmpty()) {
+      checkContextAnnotations(context, variable, variableAnnotations, variable)
     }
 
     // Handle type annotations--the explicitly specified types of declarations--separately
