@@ -186,7 +186,7 @@ class GradleAdbManagerTest {
 
                 override fun exitCode(): Int = 0
 
-                override fun destroy() {
+                override fun destroy(forciblyAfter: Duration?) {
                     isRunning = false
                 }
 

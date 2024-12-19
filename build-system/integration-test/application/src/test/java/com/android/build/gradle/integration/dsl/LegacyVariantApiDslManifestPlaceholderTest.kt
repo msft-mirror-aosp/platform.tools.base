@@ -17,17 +17,20 @@
 package com.android.build.gradle.integration.dsl
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.utils.XmlUtils
 import com.google.common.io.Files
 import com.google.common.truth.Truth
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 class LegacyVariantApiDslManifestPlaceholderTest {
     companion object {
@@ -41,103 +44,111 @@ class LegacyVariantApiDslManifestPlaceholderTest {
         }
     }
 
+    // A Gradle project with 3 modules: app, lib1 and lib2. lib2 has a manifest with a placeholder.
+    // lib1 depends on lib2. We use legacy variant API to specify substitutions for lib2's placeholder
+    // for lib1's unit test and android test variants in lib1's build file.
+    // app depends on lib2. We use legacy variant API to specify substitutions for lib2's placeholder
+    // for app's application variant in app's build file.
     @get:Rule
-    val project = createGradleProject {
-        // A Gradle project with 3 modules: app, lib1 and lib2. lib2 has a manifest with a placeholder.
-        // lib1 depends on lib2. We use legacy variant API to specify substitutions for lib2's placeholder
-        // for lib1's unit test and android test variants in lib1's build file.
-        // app depends on lib2. We use legacy variant API to specify substitutions for lib2's placeholder
-        // for app's application variant in app's build file.
-        subProject("app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                minSdk = 14
-                setUpHelloWorld(true)
+                defaultConfig.minSdk = 14
             }
+            pluginCallback = AppCallback::class.java
             dependencies {
                 implementation(project(":lib2"))
             }
-            appendToBuildFile {
-                """
-                    android.applicationVariants.configureEach { variant ->
-                        variant.mergedFlavor.manifestPlaceholders += [
-                                "permissionSuffix" : "$mainPermissionSuffix",
-                        ]
-                    }
+        }
+        androidLibrary(":lib1") {
+            android {
+                defaultConfig {
+                    minSdk = 14
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                dependencies {
+                    androidTestImplementation(project(":lib2"))
+                    testImplementation(project(":lib2"))
+                }
+            }
+            pluginCallback = LibCallback::class.java
+        }
+        androidLibrary(":lib2") {
+            files.update("src/main/AndroidManifest.xml").replaceWith(libraryManifest)
+        }
+    }
 
-                """.trimIndent()
+    class AppCallback: LegacyApplicationCallback {
+        override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+            extension.applicationVariants.configureEach { variant ->
+                variant.mergedFlavor.manifestPlaceholders += mapOf("permissionSuffix" to mainPermissionSuffix)
             }
         }
-        subProject(":lib1") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                minSdk = 14
-                hasInstrumentationTests = true
-                defaultCompileSdk()
-            }
-            dependencies {
-                androidTestImplementation(project(":lib2"))
-                testImplementation(project(":lib2"))
-            }
-            appendToBuildFile {
-                """
-                     android.testVariants.configureEach {
-                        mergedFlavor.manifestPlaceholders += [
-                                "permissionSuffix" : "$androidTestPermissionSuffix",
-                        ]
-                    }
-                    android.unitTestVariants.configureEach {
-                        mergedFlavor.manifestPlaceholders += [
-                                "permissionSuffix" : "$unitTestPermissionSuffix",
-                        ]
-                    }
-                    android.testOptions {
-                        unitTests.includeAndroidResources = true
-                    }
+    }
 
-                """.trimIndent()
+    class LibCallback: LegacyLibraryCallback {
+        override fun handleExtension(project: Project, extension: LibraryExtension) {
+            extension.testVariants.configureEach { variant ->
+                variant.mergedFlavor.manifestPlaceholders += mapOf(
+                    "permissionSuffix" to androidTestPermissionSuffix,
+                )
             }
-        }
-        subProject(":lib2") {
-            plugins.add(PluginType.ANDROID_LIB)
-            addFile("src/main/AndroidManifest.xml", libraryManifest)
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                hasInstrumentationTests = false
+            extension.unitTestVariants.configureEach { variant ->
+                variant.mergedFlavor.manifestPlaceholders += mapOf(
+                    "permissionSuffix" to unitTestPermissionSuffix,
+                )
+            }
+            extension.testOptions {
+                unitTests.isIncludeAndroidResources = true
             }
         }
     }
 
     @Test
     fun applicationVariantManifestPlaceholder() {
-        project.execute(":app:processDebugManifest")
+        val build = rule.build
+        build.executor.run(":app:processDebugManifest")
+
         verifyPermissionAddedToManifest(
-                "app/build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml",
-                mainPermissionSuffix)
+            build.androidApplication()
+                .intermediatesDir
+                .resolve("merged_manifests/debug/processDebugManifest/AndroidManifest.xml"),
+            mainPermissionSuffix
+        )
     }
 
     @Test
     fun androidTestManifestPlaceholder() {
-        project.execute(":lib1:processDebugAndroidTestManifest")
+        val build = rule.build
+        build.executor.run(":lib1:processDebugAndroidTestManifest")
+
         verifyPermissionAddedToManifest(
-                "lib1/build/intermediates/packaged_manifests/debugAndroidTest/processDebugAndroidTestManifest/AndroidManifest.xml",
-                androidTestPermissionSuffix)
+            build.androidLibrary(":lib1")
+                .intermediatesDir
+                .resolve("packaged_manifests/debugAndroidTest/processDebugAndroidTestManifest/AndroidManifest.xml"),
+            androidTestPermissionSuffix
+        )
     }
 
     @Test
     fun unitTestManifestPlaceholder() {
-        project.execute(":lib1:processDebugUnitTestManifest")
+        val build = rule.build
+        build.executor.run(":lib1:processDebugUnitTestManifest")
+
         verifyPermissionAddedToManifest(
-                "lib1/build/intermediates/packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml",
-                unitTestPermissionSuffix)
+            build.androidLibrary(":lib1")
+                .intermediatesDir
+                .resolve("packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml"),
+            unitTestPermissionSuffix
+        )
     }
 
-    private fun verifyPermissionAddedToManifest(manifestPath: String, permissionSuffix: String) {
-        val manifestFile =
-                project.file(manifestPath)
-
-        val document = XmlUtils.parseDocument(
-                Files.asCharSource(manifestFile, StandardCharsets.UTF_8).read(), false)
+    private fun verifyPermissionAddedToManifest(manifestPath: Path, permissionSuffix: String) {
+        val document =
+            XmlUtils.parseDocument(
+                Files.asCharSource(manifestPath.toFile(), StandardCharsets.UTF_8)
+                    .read(), false
+            )
         val nodeList = document.getElementsByTagName(SdkConstants.TAG_USES_PERMISSION)
 
         var found = false

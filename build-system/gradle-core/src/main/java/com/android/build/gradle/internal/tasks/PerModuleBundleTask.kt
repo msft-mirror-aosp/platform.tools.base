@@ -105,9 +105,29 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val featureJavaResFiles: ConfigurableFileCollection
 
+    @get:Input
+    @get:Optional // Set if baseModule == true
+    abstract val runResourceShrinkingWithR8: Property<Boolean>
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Optional // Set iff baseModule == true && runResourceShrinkingWithR8 == true
+    abstract val shrunkResourcesDirectory: DirectoryProperty
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:Optional // Set iff baseModule == true && runResourceShrinkingWithR8 == false
     abstract val linkedResourcesFile: RegularFileProperty
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:Optional // Set iff baseModule == false
+    abstract val featureShrunkResourcesFiles: ConfigurableFileCollection
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:Optional // Set iff baseModule == false
+    abstract val featureLinkedResourcesFile: RegularFileProperty
 
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -267,7 +287,7 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     private fun getJavaResourcesFiles(): Set<File> {
         // we check isDynamicFeatureAndShrinkingEnabledInBase() instead of checking if
         // featureJavaResFiles.files.isNotEmpty() because we want to use featureJavaResFiles
-        // even if it's empty (which will be the case when using proguard)
+        // even if it's empty (which will be the case when using proguard) -- see commit 65bc57f
         return if (isDynamicFeatureAndShrinkingEnabledInBase()) {
             featureJavaResFiles.files
         } else {
@@ -276,7 +296,20 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     }
 
     private fun getResourcesFile(): File {
-        return linkedResourcesFile.get().asFile
+        return if (baseModule.get()) {
+            if (runResourceShrinkingWithR8.get()) {
+                shrunkResourcesDirectory.get().asFile.walk()
+                    .single { it.path.endsWith(SdkConstants.DOT_RES) }
+            } else {
+                linkedResourcesFile.get().asFile
+            }
+        } else {
+            if (featureShrunkResourcesFiles.files.isNotEmpty()) {
+                featureShrunkResourcesFiles.files.single()
+            } else {
+                featureLinkedResourcesFile.get().asFile
+            }
+        }
     }
 
     class PrivacySandboxSdkCreationAction(
@@ -318,6 +351,10 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
             // Not applicable
             task.featureDexDirectories.fromDisallowChanges()
             task.featureJavaResFiles.fromDisallowChanges()
+            task.runResourceShrinkingWithR8.setDisallowChanges(false)
+            task.shrunkResourcesDirectory.disallowChanges()
+            task.featureShrunkResourcesFiles.disallowChanges()
+            task.featureLinkedResourcesFile.disallowChanges()
             task.nativeLibsFiles.fromDisallowChanges()
             task.abiFilters.setDisallowChanges(emptySet())
         }
@@ -406,8 +443,28 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                 )
             )
 
-            task.linkedResourcesFile.setDisallowChanges(
-                artifacts.get(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT))
+            if (componentType.isBaseModule) {
+                task.runResourceShrinkingWithR8.setDisallowChanges(
+                    (creationConfig as ApplicationCreationConfig).runResourceShrinkingWithR8())
+                if (creationConfig.runResourceShrinkingWithR8()) {
+                    task.shrunkResourcesDirectory.setDisallowChanges(
+                        artifacts.get(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT))
+                } else {
+                    task.linkedResourcesFile.setDisallowChanges(
+                        artifacts.get(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT))
+                }
+            } else {
+                task.featureShrunkResourcesFiles.fromDisallowChanges(
+                    creationConfig.variantDependencies.getArtifactFileCollection(
+                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                        AndroidArtifacts.ArtifactScope.PROJECT,
+                        AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT,
+                        AndroidAttributes(MODULE_PATH to task.project.path)
+                    )
+                )
+                task.featureLinkedResourcesFile.setDisallowChanges(
+                    artifacts.get(InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT))
+            }
 
             task.assetsFilesDirectory.setDisallowChanges(creationConfig.artifacts.get(SingleArtifact.ASSETS))
             task.nativeLibsFiles.from(creationConfig.artifacts.get(STRIPPED_NATIVE_LIBS))

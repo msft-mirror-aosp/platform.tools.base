@@ -1,8 +1,7 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
+load("//tools/base/bazel:proto.bzl", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "fileset")
-load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 fileset(
     name = "resources",
@@ -21,9 +20,9 @@ fileset(
     },
 )
 
-android_java_proto_library(
+java_proto_library(
     name = "common_proto",
-    srcs = glob(["src/main/proto/version_control_metadata.proto"]),
+    srcs = ["src/main/proto/version_control_metadata.proto"],
     resource_strip_prefix = "tools/base/build-system/gradle-core/",
     visibility = ["//visibility:public"],
 )

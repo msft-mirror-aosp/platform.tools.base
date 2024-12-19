@@ -277,7 +277,7 @@ class CompileLibraryResourcesTest {
 
         val compressed = InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
             .getOutputDir(project.getSubproject(":app").buildDir)
-            .resolve("release/shrinkReleaseRes/shrunk-resources-proto-format-release.ap_")
+            .resolve("release/minifyReleaseWithR8/shrunk-resources-proto-format-release.ap_")
 
         assertThat(compressed.isFile).isTrue()
 

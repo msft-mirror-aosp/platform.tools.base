@@ -243,7 +243,13 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
             super.handleProvider(taskProvider)
 
             val artifactType = InternalArtifactType.LINKED_RESOURCES_FOR_BUNDLE_PROTO_FORMAT
-            val fileName = artifactType.name().lowercase().replace("_", "-") + SdkConstants.DOT_RES
+            val fileName = when {
+                creationConfig.componentType.isBaseModule ->
+                    artifactType.name().lowercase().replace("_", "-") + SdkConstants.DOT_RES
+                creationConfig.componentType.isDynamicFeature ->
+                    TaskManager.getFeatureFileName(creationConfig.services.projectInfo.path, SdkConstants.DOT_RES)
+                else -> error("Unexpected component type: ${creationConfig.componentType}")
+            }
             creationConfig.artifacts
                 .setInitialProvider(taskProvider, LinkAndroidResForBundleTask::linkedResourcesOutputFile)
                 .withName(fileName)

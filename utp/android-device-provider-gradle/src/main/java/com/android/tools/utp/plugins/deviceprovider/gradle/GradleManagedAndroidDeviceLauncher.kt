@@ -29,6 +29,7 @@ import com.google.testing.platform.api.device.Device
 import com.google.testing.platform.api.device.DeviceController
 import com.google.testing.platform.core.device.DeviceProviderErrorSummary
 import com.google.testing.platform.core.device.DeviceProviderException
+import com.google.testing.platform.lib.adb.command.inject.AdbCommands
 import com.google.testing.platform.lib.logging.jvm.getLogger
 import com.google.testing.platform.lib.process.inject.DaggerSubprocessComponent
 import com.google.testing.platform.lib.process.logger.DefaultSubprocessLogger
@@ -70,6 +71,7 @@ class GradleManagedAndroidDeviceLauncher(
     private var enableDisplay: Boolean = false /*lateinit*/
     private var adbServerPort: Int = 0 /*lateinit*/
     private lateinit var device: AndroidDevice
+    private lateinit var adbCommands: AdbCommands
 
     companion object {
         const val MANAGED_DEVICE_NAME_KEY = "gradleManagedDeviceDslName"
@@ -183,7 +185,7 @@ class GradleManagedAndroidDeviceLauncher(
         }
 
         val emulatorPort = targetSerial.substring("emulator-".length).toInt()
-        device = AndroidDevice(
+        return AndroidDevice(
                 host = "localhost",
                 serial = targetSerial,
                 type = Device.DeviceType.VIRTUAL,
@@ -192,7 +194,6 @@ class GradleManagedAndroidDeviceLauncher(
                 serverPort = adbServerPort,
                 properties = AndroidDeviceProperties()
         )
-        return device
     }
 
     /**
@@ -279,6 +280,8 @@ class GradleManagedAndroidDeviceLauncher(
 
     override fun provideDevice(): DeviceController {
         return profileManager.recordDeviceProvision {
+            device = makeDevice()
+
             val deviceController: DeviceController
             try {
                 deviceController = deviceControllerFactory.getController(
@@ -288,6 +291,7 @@ class GradleManagedAndroidDeviceLauncher(
                     androidSdk,
                     AdbConfigProto.AdbConfig.parseFrom(customConfig.adbConfig.value),
                     context,
+                    device,
                 )
             } catch (throwable: Throwable) {
                 throw DeviceProviderException(
@@ -301,12 +305,11 @@ class GradleManagedAndroidDeviceLauncher(
             // As a temporary workaround. We need to add the dslName to the
             // properties here. b/183651101
             // This will be overwritten if setDevice() is called again.
-            val device = makeDevice()
-            deviceController.setDevice(device)
             device.properties = device.properties.copy(
                 map = device.properties.map +
                         mapOf(MANAGED_DEVICE_NAME_KEY to dslName)
             )
+
             deviceController
         }
     }
@@ -335,5 +338,5 @@ class GradleManagedAndroidDeviceLauncher(
         }
     }
 
-    override fun cancel(): Boolean = false
+    override fun cancel(aborted: Boolean): Boolean = false
 }

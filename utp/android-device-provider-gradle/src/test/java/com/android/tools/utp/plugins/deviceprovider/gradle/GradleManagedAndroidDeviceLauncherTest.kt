@@ -47,6 +47,7 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 
 /**
@@ -108,6 +109,7 @@ class GradleManagedAndroidDeviceLauncherTest {
     fun setUp() {
         logDir = tempFolder.newFolder().absolutePath
         androidDevice = null
+        val deviceCaptor = argumentCaptor<AndroidDevice>()
         `when`(
                 deviceControllerFactory.getController(
                         any(),
@@ -116,14 +118,11 @@ class GradleManagedAndroidDeviceLauncherTest {
                         any(),
                         any(),
                         any(),
+                        deviceCaptor.capture(),
                 )
         ).thenReturn(deviceController)
-        `when`(deviceController.setDevice(any())).thenAnswer {
-            androidDevice = it.getArgument(0) as AndroidDevice
-            androidDevice
-        }
         `when`(deviceController.getDevice()).thenAnswer {
-            androidDevice!!
+            deviceCaptor.lastValue
         }
 
         managedDeviceLauncher = GradleManagedAndroidDeviceLauncher(

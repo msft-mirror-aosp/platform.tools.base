@@ -39,6 +39,7 @@ import com.android.adblib.tools.debugging.utils.JobTracker
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.waitForDevice
+import com.android.adblib.withDevicePrefix
 import com.android.adblib.withPrefix
 import com.android.adblib.withScopeContext
 import kotlinx.coroutines.CoroutineScope
@@ -319,8 +320,7 @@ private class JdwpProcessManagerImpl(
          */
         private class JdwpProcessIdTracker(private val device: ConnectedDevice) {
 
-            private val logger = adbLogger(device.session)
-                .withPrefix("session=${device.session} - device=$device - ")
+            private val logger = adbLogger(device.session).withDevicePrefix(device)
 
             private val mutableFlow = MutableStateFlow(JdwpProcessIdsFlowEntry.StartOfFlow)
 

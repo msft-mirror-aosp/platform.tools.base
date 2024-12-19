@@ -159,7 +159,7 @@ class EmulatorHandleTest {
 
                 override fun exitCode(): Int = if (fails) 1 else 0
 
-                override fun destroy() {
+                override fun destroy(forciblyAfter: Duration?) {
                     isRunning = false
                 }
 

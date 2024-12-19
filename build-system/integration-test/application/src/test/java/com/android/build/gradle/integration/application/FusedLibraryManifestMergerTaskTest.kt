@@ -17,144 +17,132 @@
 package com.android.build.gradle.integration.application
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.BaseAndroidProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
-import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.apk.Aar
-import com.android.testutils.generateAarWithContent
-import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import java.nio.charset.Charset
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 
 /* Tests for [FusedLibraryManifestMergerTask] */
 internal class FusedLibraryManifestMergerTaskTest {
-
-    private val testAar = generateAarWithContent("com.externaldep.externalaar",
-            resources = mapOf("values/strings.xml" to
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            aar("com.externaldep.externalaar")
+                .withManifest(
                     // language=XML
-                    """<?xml version="1.0" encoding="utf-8"?>
-                    <resources>
-                    <string name="string_from_external_lib">Remote String</string>
-                    <string name='external_permission_label'>External label</string>
-                    <string name='external_permission_description'>External description</string>
-                    </resources>""".trimIndent().toByteArray(Charset.defaultCharset())
-            ),
-            manifest =
-            // language=XML
-            """<?xml version="1.0" encoding="utf-8"?>
-                <manifest
-                    xmlns:android="http://schemas.android.com/apk/res/android"
-                    package="com.externaldep.externalaar">
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <manifest
+                            xmlns:android="http://schemas.android.com/apk/res/android"
+                            package="com.externaldep.externalaar">
 
-                <permission
-                  android:name="com.externaldep.permission.REMOTE_PERMISSION"
-                  android:label="@string/external_permission_label"
-                  android:description="@string/external_permission_label" />
-                </manifest>
-            """.trimIndent()
-    )
-
-    @JvmField
-    @Rule
-    val project = createGradleProject {
-        // Library dependency at depth 1 with no dependencies.
-        subProject(":androidLib1") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                defaultCompileSdk()
-                namespace = "com.example.androidLib1"
-                minSdk = 12
-            }
-            addFile("src/main/AndroidManifest.xml",
-                    """<?xml version="1.0" encoding="utf-8"?>
+                        <permission
+                          android:name="com.externaldep.permission.REMOTE_PERMISSION"
+                          android:label="@string/external_permission_label"
+                          android:description="@string/external_permission_label" />
+                        </manifest>
+                    """.trimIndent()
+                ).addResource(
+                    "values/strings.xml",
+                    // language=XML
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <resources>
+                            <string name="string_from_external_lib">Remote String</string>
+                            <string name='external_permission_label'>External label</string>
+                            <string name='external_permission_description'>External description</string>
+                        </resources>""".trimIndent()
+                )
+        }.from {
+            // Library dependency at depth 1 with no dependencies.
+            androidLibrary(":androidLib1") {
+                android {
+                    namespace = "com.example.androidLib1"
+                    defaultConfig.minSdk = 12
+                }
+                files.update("src/main/AndroidManifest.xml").replaceWith(
+                    //language=xml
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
                         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                             <uses-permission android:name="android.permission.SEND_SMS"/>
                             <intent-filter>
                                 <data android:scheme="https" android:host="${'$'}{hostName}" />
                                 <data android:scheme="https" android:host="${'$'}{notReplaced}" />
                             </intent-filter>
-                        </manifest>"""
-            )
+                        </manifest>
+                    """.trimIndent()
+                )
+            }
+            // Library dependency at depth 0 with a dependency on androidLib1.
+            androidLibrary(":androidLib2") {
+                android {
+                    namespace = "com.example.androidLib2"
+                    defaultConfig.minSdk = 19
+                }
+                dependencies {
+                    implementation(project(":androidLib1"))
+                }
+            }
+            // Library dependency at depth 0 with no dependencies
+            androidLibrary(":androidLib3") {
+                android {
+                    namespace = "com.example.androidLib3"
+                    defaultConfig.minSdk = 18
+                }
+                dependencies {
+                    implementation(project(":androidLib1"))
+                }
+            }
+            fusedLibrary(":fusedLib1") {
+                androidFusedLibrary {
+                    namespace = "com.example.fusedLib1"
+                    minSdk = 19
+                    manifestPlaceholders["hostName"] = "injected-value-for-hostName"
+                }
+                dependencies {
+                    include(project(":androidLib3"))
+                    include(project(":androidLib2"))
+                    include(project(":androidLib1"))
+                    include("com.externaldep.externalaar:externalaar:1.0")
+                }
+            }
+            androidApplication {
+                android {
+                    namespace = "com.example.app"
+                    defaultConfig.minSdk = 19
+                }
+                // Add a dependency on the fused library aar in the test if needed.
+            }
+            gradleProperties {
+                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+            }
         }
-        // Library dependency at depth 0 with a dependency on androidLib1.
-        subProject(":androidLib2") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                defaultCompileSdk()
-                namespace = "com.example.androidLib2"
-                minSdk = 19
-            }
-            dependencies {
-                implementation(project(":androidLib1"))
-            }
-        }
-        // Library dependency at depth 0 with no dependencies
-        subProject(":androidLib3") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                defaultCompileSdk()
-                namespace = "com.example.androidLib3"
-                minSdk = 18
-            }
-            dependencies {
-                implementation(project(":androidLib1"))
-            }
-        }
-        subProject(":fusedLib1") {
-            plugins.add(PluginType.FUSED_LIBRARY)
-            androidFusedLibrary {
-                namespace = "com.example.fusedLib1"
-                minSdk = 19
-            }
-            appendToBuildFile {
-                """
-                    androidFusedLibrary.manifestPlaceholders.hostName = "injected-value-for-hostName"
-                """.trimIndent()
-            }
-            dependencies {
-                include(project(":androidLib3"))
-                include(project(":androidLib2"))
-                include(project(":androidLib1"))
-                include(MavenRepoGenerator.Library("com.externaldep:externalaar:1", "aar", testAar))
-            }
-        }
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                defaultCompileSdk()
-                namespace = "com.example.app"
-                minSdk = 19
-            }
-            // Add a dependency on the fused library aar in the test if needed.
-        }
-        gradleProperties {
-            set(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-        }
-    }
 
     @Test
     fun checkFusedLibraryManifest() {
-        val fusedLib1Project = project.getSubproject("fusedLib1")
-        project.execute(":fusedLib1:mergeManifest")
+        val build = rule.build
+        val fusedLib1Project = build.fusedLibrary(":fusedLib1")
 
-        val mergedManifestFile = fusedLib1Project.getIntermediateFile(
+        build.executor.run(":fusedLib1:mergeManifest")
+
+        val mergedManifestFile = fusedLib1Project.getIntermediatePath(
                 FusedLibraryInternalArtifactType.MERGED_MANIFEST.getFolderName(),
                 "single",
                 "mergeManifest",
                 "AndroidManifest.xml"
-        )
+        ).toFile()
+
         val parsedManifestFile =
                 parseManifest(
                     manifestFileContent = mergedManifestFile.readText(),
@@ -177,48 +165,64 @@ internal class FusedLibraryManifestMergerTaskTest {
 
     @Test
     fun failWhenLibraryMinSdkVersionConflictWithFusedLibrary() {
-        val androidLib3 = project.getSubproject("androidLib3")
-        TemporaryProjectModification.doTest(
-                androidLib3
-        ) {
-            it.replaceInFile(
-                    androidLib3.buildFile.toRelativeString(androidLib3.projectDir),
-                    "minSdk = 18", "minSdk = 20")
-            val result = project.executor().expectFailure().run(":fusedLib1:mergeManifest")
-            result.stderr.use { scanner ->
-                assertThat(scanner)
-                        .contains(
-                                "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [:androidLib3]")
+        val build = rule.build {
+            androidLibrary(":androidLib3") {
+                android {
+                    defaultConfig.minSdk = 20
+                }
             }
+        }
+
+        val result = build.executor.expectFailure().run(":fusedLib1:mergeManifest")
+        result.stderr.use { scanner ->
+            assertThat(scanner)
+                    .contains(
+                            "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [:androidLib3]")
         }
     }
 
     @Test
     fun failWhenFusedLibraryMinSdkVersionConflictWithApp() {
-        val fusedLibBuildFile = project.getSubproject("fusedLib1").buildFile
-        fusedLibBuildFile.readText().replace("minSdk = 19", "minSdk = 20").also {
-            FileUtils.writeToFile(fusedLibBuildFile, it)
+        val build = rule.build {
+            fusedLibrary(":fusedLib1") {
+                androidFusedLibrary {
+                    minSdk = 20
+                }
+            }
         }
-        val publishedFusedLibrary = getFusedLibraryAar()
-        project.getSubproject("app").buildFile.appendText(
-                "dependencies {" +
-                        "implementation(files(\'${publishedFusedLibrary.invariantSeparatorsPath}\'))" +
-                        "}"
-        )
-        val result = project.executor().expectFailure().run(":app:processDebugMainManifest")
+
+        // build the fused AAR then get its location
+        build.executor.run(":fusedLib1:assemble")
+        val aarFile = build.fusedLibrary(":fusedLib1").withAar(AarSelector.NO_BUILD_TYPE) {
+            file
+        }
+
+        // inject it as a local dependency of the app module
+        build.androidApplication().reconfigure(buildFileOnly = true) {
+            dependencies {
+                implementation(files(aarFile))
+            }
+        }
+
+        val result = build.executor.expectFailure().run(":app:processDebugMainManifest")
         result.stderr.use { scanner ->
             assertThat(scanner).contains(
-                    "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [bundle.aar]"
+                    "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [fusedLib1.aar]"
             )
         }
     }
 
     @Test
     fun testAppManifestMergesFusedLibraryManifest() {
-        project.executor().run(":app:assembleDebug")
-        val mergedManifest =
-                project.getSubproject("app")
-                        .getIntermediateFile("merged_manifest", "debug", "processDebugMainManifest", "AndroidManifest.xml")
+        val build = rule.build
+        build.executor.run(":app:assembleDebug")
+        val mergedManifest = build.androidApplication().getIntermediatePath(
+            "merged_manifest",
+            "debug",
+            "processDebugMainManifest",
+            "AndroidManifest.xml"
+        ).toFile()
+
         val parsedManifest =
                 parseManifest(
                     manifestFileContent = mergedManifest.readText(),
@@ -233,29 +237,20 @@ internal class FusedLibraryManifestMergerTaskTest {
 
     @Test
     fun testManifestPlaceholders() {
-        project.executor().run(":fusedLib1:assemble")
+        val build = rule.build
+        build.executor.run(":fusedLib1:assemble")
 
-        Aar(
-            project.getSubproject("fusedLib1")
-                .buildDir.resolve("bundle/bundle.aar")
-        ).use {
-            val manifest = it.getEntryAsFile(SdkConstants.ANDROID_MANIFEST_XML).readText()
+        build.fusedLibrary(":fusedLib1").withAar(AarSelector.NO_BUILD_TYPE) {
+            val manifest = getEntryAsFile(SdkConstants.ANDROID_MANIFEST_XML).readText()
             assertThat(manifest).contains("""android:host="injected-value-for-hostName"""")
             assertThat(manifest).contains("""android:host="${'$'}{notReplaced}"""")
         }
-
     }
 
-    private fun checkManifestBlameLogIsCreated(builtFusedLibraryProject: GradleTestProject) {
-        val manifestBlameFile = builtFusedLibraryProject.getOutputFile(
-                "logs", "manifest-merger-mergeManifest-report.txt")
-        assertThat(manifestBlameFile).isNotNull()
-        assertThat(manifestBlameFile.length()).isGreaterThan(0)
-    }
-
-    private fun getFusedLibraryAar(): File {
-        project.getSubproject("fusedLib1").executor().run(":fusedLib1:bundle")
-        return FileUtils.join(project.getSubproject("fusedLib1").buildDir, "bundle", "bundle.aar")
+    private fun checkManifestBlameLogIsCreated(project: BaseAndroidProject<*>) {
+        val outputDir = project.outputsDir
+        val manifestBlame = outputDir.resolve("logs/manifest-merger-mergeManifest-report.txt")
+        assertThat(manifestBlame.toFile().length()).isGreaterThan(0)
     }
 }
 

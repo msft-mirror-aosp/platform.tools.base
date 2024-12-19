@@ -112,6 +112,7 @@ fun assertRunnerConfigProto(
             adb_server_port: 5037
           }
         }
+        use_single_class_loader: true
         """
     } else { """
         label {
@@ -133,6 +134,7 @@ fun assertRunnerConfigProto(
             ${if (uninstallIncompatibleApks)  "uninstall_incompatible_apks: true"  else ""}
           }
         }
+        use_single_class_loader: true
         """
     }
 
@@ -151,6 +153,7 @@ fun assertRunnerConfigProto(
               ${"\n" + testCoverageConfig.trimIndent().prependIndent(" ".repeat(14))}
             }
           }
+          use_single_class_loader: true
         }
         """
     } else {
@@ -172,6 +175,7 @@ fun assertRunnerConfigProto(
               ${"\n" + iceboxConfig.trimIndent().prependIndent(" ".repeat(14))}
             }
           }
+          use_single_class_loader: true
         }
         """
     } else {
@@ -193,6 +197,7 @@ fun assertRunnerConfigProto(
               ${"\n" + emulatorControlConfig.trimIndent().prependIndent(" ".repeat(14))}
             }
           }
+          use_single_class_loader: true
         }
         """
     } else {
@@ -214,6 +219,7 @@ fun assertRunnerConfigProto(
               ${"\n" + additionalTestOutputConfig.trimIndent().prependIndent(" ".repeat(14))}
             }
           }
+          use_single_class_loader: true
         }
         """
     } else {
@@ -303,6 +309,7 @@ fun assertRunnerConfigProto(
               }
             }
           }
+          use_single_class_loader: true
         }
     """.trimIndent()
 
@@ -333,6 +340,7 @@ fun assertRunnerConfigProto(
             config {
               type_url: "type.googleapis.com/google.testing.platform.runner.plugin.android.proto.AndroidDevicePlugin"
             }
+            use_single_class_loader: true
           }
           host_plugin {
             label {
@@ -342,6 +350,7 @@ fun assertRunnerConfigProto(
             jar {
               path: "path-to-TestDeviceInfoPlugin.jar"
             }
+            use_single_class_loader: true
           }
           host_plugin {
             label {
@@ -357,6 +366,7 @@ fun assertRunnerConfigProto(
                 target_test_process_name: "com.example.application"
               }
             }
+            use_single_class_loader: true
           }
           ${"\n" + testCoveragePluginProto.trimIndent().prependIndent(" ".repeat(10))}
           ${"\n" + additionalTestOutputConfigProto.trimIndent().prependIndent(" ".repeat(10))}
@@ -422,6 +432,7 @@ fun assertRunnerConfigProto(
                 ${if (useOrchestrator) "use_orchestrator: true" else "" }
               }
             }
+            use_single_class_loader: true
           }
         }
         test_result_listener {
@@ -442,6 +453,7 @@ fun assertRunnerConfigProto(
               deviceId: "${deviceId}"
             }
           }
+          use_single_class_loader: true
         }
         single_device_executor {
           device_execution {

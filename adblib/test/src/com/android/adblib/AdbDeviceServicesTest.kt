@@ -2634,6 +2634,67 @@ class AdbDeviceServicesTest {
     }
 
     @Test
+    fun testTrackAppFlowReturnsAdditionalInfoIfAppInfoSupportedWorks(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 36)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        addProfileableProcess(fakeDevice, 50) // Add a single client to start with
+
+        // Act: Collect 4 times, adding 1 client each time
+        val changeCount = 4
+        val lists = run {
+            val flow = deviceServices.trackApp(deviceSelector)
+            flow.takeSome(changeCount) { index, _ ->
+                if (index == changeCount - 2) {
+                    addProfileableProcess(fakeDevice, pid = 100 + index * 2)
+                } else {
+                    addClient(fakeDevice, pid = 100 + index * 2)
+                }
+            }.toList()
+        }
+
+        // Assert: We should have 4 lists of 1, 2, 3 and 4 elements
+        Assert.assertEquals(changeCount, lists.size)
+        Assert.assertEquals(listOf(50), lists[0].map { it.pid }.toList())
+        Assert.assertEquals(listOf(50, 100), lists[1].map { it.pid }.toList())
+        Assert.assertEquals(listOf(50, 100, 102), lists[2].map { it.pid }.toList())
+        Assert.assertEquals(listOf(50, 100, 102, 104), lists[3].map { it.pid }.toList())
+
+        //
+        lists[3][0].also { process0 ->
+            Assert.assertEquals("process-50", process0.processName)
+            Assert.assertEquals(listOf("package-50"), process0.packageNames)
+            Assert.assertEquals(100L, process0.userId)
+            Assert.assertEquals(false, process0.waitingForDebugger)
+            Assert.assertEquals(101L, process0.uid)
+        }
+
+        lists[3][1].also { process1 ->
+            Assert.assertEquals("package-100", process1.processName)
+            Assert.assertEquals(listOf("app-100"), process1.packageNames)
+            Assert.assertEquals(200L, process1.userId)
+            Assert.assertEquals(true, process1.waitingForDebugger)
+            Assert.assertEquals(0L, process1.uid)
+        }
+
+        lists[3][2].also { process2 ->
+            Assert.assertEquals("package-102", process2.processName)
+            Assert.assertEquals(listOf("app-102"), process2.packageNames)
+            Assert.assertEquals(204L, process2.userId)
+            Assert.assertEquals(true, process2.waitingForDebugger)
+            Assert.assertEquals(0L, process2.uid)
+        }
+
+        lists[3][3].also { process3 ->
+            Assert.assertEquals("process-104", process3.processName)
+            Assert.assertEquals(listOf("package-104"), process3.packageNames)
+            Assert.assertEquals(208L, process3.userId)
+            Assert.assertEquals(false, process3.waitingForDebugger)
+            Assert.assertEquals(209L, process3.uid)
+        }
+    }
+
+    @Test
     fun testTrackAppFlowThrowsOnOlderDevices(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb, sdk = 30)
@@ -3051,15 +3112,22 @@ class AdbDeviceServicesTest {
     private fun addClient(fakeDevice: DeviceState, pid: Int): ClientState {
         return fakeDevice.startClient(
             pid,
-            pid * 2,
-            "package-$pid",
-            "app-$pid",
-            true
+            userId = pid * 2,
+            processName = "package-$pid",
+            packageName = "app-$pid",
+            isWaiting = true
         )
     }
 
     private fun addProfileableProcess(fakeDevice: DeviceState, pid: Int): ProfileableProcessState {
-        return fakeDevice.startProfileableProcess(pid, "x86", "")
+        return fakeDevice.startProfileableProcess(
+            pid,
+            architecture = "x86",
+            userId = pid * 2,
+            uid = (pid * 2) + 1,
+            processName = "process-$pid",
+            packageName = "package-$pid"
+        )
     }
 
     class ByteBufferShellCollector : ShellCollector<ByteBuffer> {

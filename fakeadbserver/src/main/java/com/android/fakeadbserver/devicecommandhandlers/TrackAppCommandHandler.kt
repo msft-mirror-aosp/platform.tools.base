@@ -108,6 +108,15 @@ class TrackAppCommandHandler : DeviceCommandHandler("track-app") {
             entry.debuggable = processState.debuggable
             entry.profileable = processState.profileable
             entry.architecture = processState.architecture
+
+            // "app_info" feature adds 5 new fields
+            if (device.features.contains("app_info")) {
+                entry.userId = processState.userId.toLong()
+                entry.uid = processState.uid.toLong()
+                entry.waitingForDebugger = processState.waitingForDebugger
+                entry.processName = processState.processName
+                entry.addAllPackageNames(processState.packageNames)
+            }
             builder.addProcess(entry.build())
 
         }

@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.APKS_FROM_BUNDLE
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.BASE_MODULE_LINT_MODEL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_DEX
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_NAME
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_JAVA_RES
@@ -272,9 +273,10 @@ class VariantDependencies internal constructor(
             componentType.isDynamicFeature ->
                 artifactType != PACKAGED_DEPENDENCIES
                         && artifactType != APKS_FROM_BUNDLE
-                        && artifactType != FEATURE_DEX
                         && artifactType != FEATURE_NAME
+                        && artifactType != FEATURE_DEX
                         && artifactType != FEATURE_SHRUNK_JAVA_RES
+                        && artifactType != FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT
                         && artifactType != LINT_MODEL
                         && artifactType != BASE_MODULE_LINT_MODEL
             componentType.isSeparateTestProject ->

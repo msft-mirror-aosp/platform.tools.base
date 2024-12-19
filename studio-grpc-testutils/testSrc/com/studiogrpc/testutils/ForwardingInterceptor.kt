@@ -15,11 +15,11 @@
  */
 package com.studiogrpc.testutils
 
-import com.android.tools.idea.io.grpc.CallOptions
-import com.android.tools.idea.io.grpc.Channel
-import com.android.tools.idea.io.grpc.ClientInterceptor
-import com.android.tools.idea.io.grpc.ForwardingClientCall
-import com.android.tools.idea.io.grpc.MethodDescriptor
+import io.grpc.CallOptions
+import io.grpc.Channel
+import io.grpc.ClientInterceptor
+import io.grpc.ForwardingClientCall
+import io.grpc.MethodDescriptor
 
 /** A no-op interceptor. */
 object ForwardingInterceptor : ClientInterceptor {

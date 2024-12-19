@@ -2513,7 +2513,7 @@ package com.android.build.api.variant {
 
   public interface AndroidTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.DeviceTest com.android.build.api.variant.HasAndroidResources {
     property public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
-    property public abstract org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
+    property public abstract org.gradle.api.provider.MapProperty<java.lang.String,com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
     property public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
     property public abstract com.android.build.api.variant.SigningConfig? signingConfig;
   }
@@ -2620,9 +2620,11 @@ package com.android.build.api.variant {
 
   public interface BuiltArtifact extends com.android.build.api.variant.VariantOutputConfiguration {
     method public String getOutputFile();
+    method @org.gradle.api.Incubating public java.nio.file.Path getOutputFilePath();
     method public Integer? getVersionCode();
     method public String? getVersionName();
     property public abstract String outputFile;
+    property @org.gradle.api.Incubating public abstract java.nio.file.Path outputFilePath;
     property public abstract Integer? versionCode;
     property public abstract String? versionName;
   }
@@ -2797,12 +2799,12 @@ package com.android.build.api.variant {
 
   @org.gradle.api.Incubating public interface DeviceTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.HasAndroidResources com.android.build.api.variant.TestComponent {
     method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
-    method @org.gradle.api.Incubating public org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> getBuildConfigFields();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.MapProperty<java.lang.String,com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> getBuildConfigFields();
     method public boolean getCodeCoverageEnabled();
     method @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> getProguardFiles();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SigningConfig? getSigningConfig();
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
-    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.MapProperty<java.lang.String,com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
     property public abstract boolean codeCoverageEnabled;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SigningConfig? signingConfig;

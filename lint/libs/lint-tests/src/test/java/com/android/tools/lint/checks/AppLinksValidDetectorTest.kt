@@ -4174,6 +4174,73 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testHostValidation() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+
+              <application>
+                  <activity android:name=".FullscreenActivity">
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="customscheme" />
+                          <data android:host="customhost" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="example.com" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="@{SubstitutedDomain}" />
+                      </intent-filter>
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" />
+                          <data android:scheme="https" />
+
+                          <data android:host="invalidhost" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:42: Error: Android App Links' host attributes must be valid web domains [AppLinkUrlError]
+                        <data android:host="invalidhost" />
+                                            ~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
   // TODO(b/375352603): Re-enable this test.
   /*fun test_splitToWebAndCustomSchemes() {
     lint()

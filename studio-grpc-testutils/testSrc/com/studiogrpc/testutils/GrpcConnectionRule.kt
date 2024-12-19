@@ -15,12 +15,12 @@
  */
 package com.studiogrpc.testutils
 
-import com.android.tools.idea.io.grpc.BindableService
-import com.android.tools.idea.io.grpc.ManagedChannel
-import com.android.tools.idea.io.grpc.Server
-import com.android.tools.idea.io.grpc.inprocess.InProcessChannelBuilder
-import com.android.tools.idea.io.grpc.inprocess.InProcessServerBuilder
 import com.android.tools.idea.testing.NamedExternalResource
+import io.grpc.BindableService
+import io.grpc.ManagedChannel
+import io.grpc.Server
+import io.grpc.inprocess.InProcessChannelBuilder
+import io.grpc.inprocess.InProcessServerBuilder
 import org.junit.runner.Description
 
 /** JUnit rule for creating an in-process gRPC client/server connection. */

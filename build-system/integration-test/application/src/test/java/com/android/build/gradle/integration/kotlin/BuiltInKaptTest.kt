@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.ANDROIDTEST_DEBUG
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.VERSION_CATALOG
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -33,13 +32,12 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
+import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
-import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
 import com.android.utils.appendCapitalized
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,6 +56,7 @@ class BuiltInKaptTest {
             )
         ).withBuiltInKotlinSupport(true)
             .withKotlinGradlePlugin(true)
+            .withComposeCompilerGradlePlugin(true)
             .create()
 
     @Before
@@ -283,27 +282,24 @@ class BuiltInKaptTest {
     /**
      * Test to ensure that the built-in KaptGenerateStubs task handles basic compose code
      */
-    @Ignore("https://youtrack.jetbrains.com/issue/KT-69967")
     @Test
     fun testBuiltInKaptWithCompose() {
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS}')"
-        )
         val app = project.getSubproject(":app")
+        // Add the Compose Compiler Gradle plugin
+        TestFileUtils.searchAndReplace(
+            app.buildFile,
+            "apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'",
+            """
+                apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
+                apply plugin: '$COMPOSE_COMPILER_PLUGIN_ID'
+                """.trimIndent(),
+        )
         TestFileUtils.appendToFile(
             app.buildFile,
             """
                 android {
                     defaultConfig {
                         minSdk = 24
-                    }
-                    buildFeatures {
-                        compose true
-                    }
-                    composeOptions {
-                        kotlinCompilerExtensionVersion = "${TestUtils.COMPOSE_COMPILER_FOR_TESTS}"
                     }
                 }
 

@@ -451,6 +451,13 @@ class LintBaseline(
             old.regionMatches(0, new, 0, 4)
         ) {
           true
+        } else if (
+          old ==
+            "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35"
+        ) {
+          // Unfortunately the previous message didn't include the symbol name so we can't tell
+          // removeFirst and removeLast apart
+          return new.startsWith(old)
         } else {
           val suffix = " (called from "
           stringsEquivalent(old.substringBeforeLast(suffix), new.substringBeforeLast(suffix)) { s, i

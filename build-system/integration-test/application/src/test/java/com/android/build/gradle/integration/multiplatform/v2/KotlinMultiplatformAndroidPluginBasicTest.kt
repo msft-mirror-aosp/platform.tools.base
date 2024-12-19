@@ -34,6 +34,27 @@ class KotlinMultiplatformAndroidPluginBasicTest {
         .create()
 
     @Test
+    fun testJavaCompilationWithSources9AndAbove() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                kotlin {
+                    androidLibrary {
+                        withJava()
+                        compilations.all {
+                            compilerOptions.configure {
+                                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                            }
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+
+        project.executor().run(":kmpFirstLib:assembleAndroidMain")
+    }
+
+    @Test
     fun applyShouldFailIfAnotherAndroidPluginHasBeenAppliedBefore() {
         TestFileUtils.searchAndReplace(
             project.getSubproject("kmpFirstLib").ktsBuildFile,

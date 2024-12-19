@@ -15,6 +15,8 @@
  */
 package com.android.adblib
 
+import com.android.adblib.AdbLibProperties.AM_SERVICE_RETRY_DELAY
+import com.android.adblib.AdbLibProperties.AM_SERVICE_TIMEOUT
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -22,7 +24,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
@@ -89,6 +93,20 @@ val ConnectedDevice.selector: DeviceSelector
  */
 val ConnectedDevice.isOnline: Boolean
     get() = deviceInfoFlow.value.deviceState == DeviceState.ONLINE
+
+/**
+ * Waits until the device is [DeviceState.ONLINE]
+ */
+suspend fun ConnectedDevice.waitUntilOnline() {
+    return waitUntilState(DeviceState.ONLINE)
+}
+
+/**
+ * Waits until the device state is [state]
+ */
+suspend fun ConnectedDevice.waitUntilState(state: DeviceState) {
+    deviceInfoFlow.first { it.deviceState == state }
+}
 
 /**
  * The current (or last known) [DeviceInfo] for this [ConnectedDevice].
@@ -176,7 +194,7 @@ class WithDeviceScopeContext(
     private val action: suspend CoroutineScope.() -> Unit
 ) {
 
-    private val logger = adbLogger(device.session).withPrefix("device=$device - ")
+    private val logger = adbLogger(device.session).withDevicePrefix(device)
 
     private var retryPredicate: suspend (Throwable) -> Boolean = { false }
     private var finallyAction: () -> Unit = {}
@@ -373,9 +391,14 @@ class ReverseForwardManager(val device: ConnectedDevice) {
 /**
  * Access to various `am` services for a given [ConnectedDevice].
  *
- * See https://developer.android.com/tools/adb#am
+ * See [am command](https://developer.android.com/tools/adb#am)
  */
 class ActivityManager(val device: ConnectedDevice) {
+
+    private val session: AdbSession
+        get() = device.session
+
+    private val logger = adbLogger(session).withDevicePrefix(device)
 
     /**
      * Uses `adb shell am crash` to crash an app.
@@ -385,7 +408,13 @@ class ActivityManager(val device: ConnectedDevice) {
      * @see AdbActivityManagerServices.crash
      */
     suspend fun crash(packageName: String) {
-        device.session.activityManagerServices.crash(device.selector, packageName)
+        retryUntilDeviceReady(
+            amCommandName = "crash",
+            timeout = device.session.property(AM_SERVICE_TIMEOUT),
+            retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+        ) {
+            device.session.activityManagerServices.crash(device.selector, packageName)
+        }
     }
 
     /**
@@ -394,7 +423,78 @@ class ActivityManager(val device: ConnectedDevice) {
      * @see AdbActivityManagerServices.forceStop
      */
     suspend fun forceStop(packageName: String) {
-        device.session.activityManagerServices.forceStop(device.selector, packageName)
+        retryUntilDeviceReady(
+            amCommandName = "force-stop",
+            timeout = device.session.property(AM_SERVICE_TIMEOUT),
+            retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+        ) {
+            device.waitUntilOnline()
+            device.session.activityManagerServices.forceStop(device.selector, packageName)
+        }
+    }
+
+    /**
+     * Returns various device/run-time capabilities in [AmCapabilitiesResult] using
+     * the `adb shell am capabilities` command, or `null` if the device does not support
+     * `am capabilities`
+     *
+     * Note: This method retries the command if the device is not ready, see
+     * [AdbActivityManagerServices.capabilities] for a detailed description of
+     * error conditions.
+     *
+     * Note: The [AmCapabilitiesResult] is stored in the [ConnectedDevice.cache] if
+     * successfully retrieved.
+     */
+    suspend fun capabilities(): AmCapabilitiesResult? {
+        return device.cache.getOrPutSuspending(capabilitiesKey) {
+            retryUntilDeviceReady(
+                amCommandName = "capabilities",
+                timeout = device.session.property(AM_SERVICE_TIMEOUT),
+                retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+            ) {
+                device.waitUntilOnline()
+                logger.debug { "Retrieving device capabilities from activity manager" }
+                device.session.activityManagerServices.capabilities(device.selector)
+            }
+        }
+    }
+
+    private suspend fun <R> retryUntilDeviceReady(
+        amCommandName: String,
+        timeout: Duration,
+        retryDelay: Duration,
+        amCommand: suspend () -> R
+    ): R? {
+        return session.withErrorTimeout(timeout) {
+            // Note: We use a single value flow so we can use the `retryWhen` operator
+            // for the "retry" logic
+            flow<R?> {
+                emit(amCommand())
+            }.retryWhen { cause, _ ->
+                when {
+                    (cause is AdbActivityManagerException) && cause.isServiceNotRunning -> {
+                        logger.debug { "'activity' service is not running, retry after delay" }
+                        delay(retryDelay.toSafeMillis())
+                        true // retry
+                    }
+
+                    (cause is AdbActivityManagerException) && cause.isCommandNotSupported -> {
+                        logger.debug { "`am $amCommandName' is not supported, returning `null`" }
+                        emit(null)
+                        false // Don't retry
+                    }
+
+                    else -> {
+                        false // Don't retry and propagate the exception
+                    }
+                }
+            }.first()
+        }
+    }
+
+
+    companion object {
+        private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
     }
 }
 
@@ -612,4 +712,12 @@ suspend fun ConnectedDevice.availableFeatures(): Set<String> {
  */
 suspend fun ConnectedDevice.hasAvailableFeature(feature: String): Boolean {
     return session.hostServices.hasAvailableFeature(selector, feature)
+}
+
+fun AdbLogger.withDevicePrefix(device: ConnectedDevice): AdbLogger {
+    return withPrefix("${device.session} - $device - ")
+}
+
+fun AdbLogger.withProcessPrefix(device: ConnectedDevice, pid: Int): AdbLogger {
+    return withPrefix("${device.session} - $device - pid=$pid - ")
 }

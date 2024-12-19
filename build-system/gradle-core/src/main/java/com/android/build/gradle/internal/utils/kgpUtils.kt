@@ -37,6 +37,7 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.SourceSet
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
@@ -252,6 +253,26 @@ fun addComposeArgsToKotlinCompile(
     } else {
         task.kotlinOptions.freeCompilerArgs += "-Xallow-unstable-dependencies"
     }
+}
+
+fun maybeUseInlineScopesNumbers(
+    task: KotlinCompile,
+    creationConfig: ComponentCreationConfig,
+    logger: Logger
+) {
+    // Only use -Xuse-inline-scopes-numbers for APKs. If it's used for an AAR (or any kind of
+    // dependency), consumers wouldn't be able to use Kotlin < 2.0.
+    if (!creationConfig.componentType.isApk || !creationConfig.debuggable) {
+        return
+    }
+
+    val kotlinVersion = getProjectKotlinPluginKotlinVersion(task.project)
+    if (kotlinVersion == null || !kotlinVersion.isVersionAtLeast(2, 0)) {
+        return
+    }
+
+    logger.info("Adding -Xuse-inline-scopes-numbers Kotlin compiler flag for task ${task.path}")
+    task.compilerOptions.freeCompilerArgs.add("-Xuse-inline-scopes-numbers")
 }
 
 private fun KotlinCompile.addPluginClasspath(

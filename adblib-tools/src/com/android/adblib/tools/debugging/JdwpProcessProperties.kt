@@ -164,6 +164,10 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
     )
 }
 
+internal fun JdwpProcessProperties.addException(throwable: Throwable): Throwable {
+    return exception?.also { it.addSuppressed(throwable) } ?: throwable
+}
+
 private fun JdwpSessionProxyStatus.mergeWith(other: JdwpSessionProxyStatus): JdwpSessionProxyStatus {
     return JdwpSessionProxyStatus(
         isExternalDebuggerAttached = this.isExternalDebuggerAttached.mergeWith(other.isExternalDebuggerAttached),

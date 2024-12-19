@@ -55,6 +55,7 @@ private const val TRANSPORT_NOT_SET_MESSAGE =
   "Requested transport was not set: Selected transport com.google.android.gms/.backup.BackupTransportService (formerly com.google.android.gms/.backup.BackupTransportService)"
 
 class BackupServiceImplTest {
+
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   @Test
@@ -85,18 +86,25 @@ class BackupServiceImplTest {
         "bmgr enable false",
       )
       .inOrder()
+    val files = backupFile.unzip()
+    assertThat(files.keys)
+      .containsExactly("pm_backup_data", "restore_token_file", "app_backup_data", "metadata.txt")
     assertThat(adbServices.testMode).isEqualTo(0)
     assertThat(backupFile.exists()).isTrue()
-    assertThat(backupFile.unzip())
-      .containsExactly(
-        "pm_backup_data" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/pm_backup_data",
-        "restore_token_file" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/restore_token_file",
-        "app_backup_data" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/app_backup_data",
-        "app_id" to "com.app",
+    assertThat(files["pm_backup_data"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/pm_backup_data"
       )
+    assertThat(files["restore_token_file"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/restore_token_file"
+      )
+    assertThat(files["app_backup_data"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/app_backup_data"
+      )
+    val metadata = BackupService.getMetadata(backupFile)
+    assertThat(metadata).isEqualTo(BackupMetadata("com.app", DEVICE_TO_DEVICE))
   }
 
   @Test
@@ -129,16 +137,23 @@ class BackupServiceImplTest {
       .inOrder()
     assertThat(adbServices.testMode).isEqualTo(0)
     assertThat(backupFile.exists()).isTrue()
-    assertThat(backupFile.unzip())
-      .containsExactly(
-        "pm_backup_data" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/pm_backup_data",
-        "restore_token_file" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/restore_token_file",
-        "app_backup_data" to
-          "content://com.google.android.gms.fileprovider/android_studio_backup_data/app_backup_data",
-        "app_id" to "com.app",
+    val files = backupFile.unzip()
+    assertThat(files.keys)
+      .containsExactly("pm_backup_data", "restore_token_file", "app_backup_data", "metadata.txt")
+    assertThat(files["pm_backup_data"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/pm_backup_data"
       )
+    assertThat(files["restore_token_file"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/restore_token_file"
+      )
+    assertThat(files["app_backup_data"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/android_studio_backup_data/app_backup_data"
+      )
+    val metadata = BackupService.getMetadata(backupFile)
+    assertThat(metadata).isEqualTo(BackupMetadata("com.app", CLOUD))
   }
 
   @Test
@@ -579,12 +594,23 @@ class BackupServiceImplTest {
   }
 
   @Suppress("SameParameterValue")
-  private fun createBackupFile(applicationId: String, token: String) =
+  private fun createBackupFile(
+    applicationId: String,
+    token: String,
+    backupType: BackupType = CLOUD,
+  ) =
     createZipFile(
       FileInfo("pm_backup_data", ""),
       FileInfo("app_backup_data", ""),
       FileInfo("restore_token_file", token),
-      FileInfo("app_id", applicationId),
+      FileInfo(
+        "metadata.txt",
+        """
+          application-id=$applicationId
+          backup-type=${backupType.name}
+      """
+          .trimIndent(),
+      ),
     )
 
   @Suppress("SameParameterValue")
@@ -603,6 +629,7 @@ class BackupServiceImplTest {
 
   private class FakeAdbServicesFactory(private val configure: (FakeAdbServices) -> Unit = {}) :
     AdbServicesFactory {
+
     lateinit var adbServices: FakeAdbServices
 
     override fun createAdbServices(
@@ -617,12 +644,10 @@ class BackupServiceImplTest {
   }
 }
 
-private fun Path.unzip(): List<Pair<String, String>> {
+private fun Path.unzip(): Map<String, String> {
   ZipFile(pathString).use { zip ->
-    return zip
-      .entries()
-      .asSequence()
-      .map { it.name to zip.getInputStream(it).reader().readText() }
-      .toList()
+    return zip.entries().asSequence().associate {
+      it.name to zip.getInputStream(it).reader().readText()
+    }
   }
 }

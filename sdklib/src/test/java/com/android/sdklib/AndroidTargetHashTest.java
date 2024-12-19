@@ -47,6 +47,31 @@ public class AndroidTargetHashTest extends TestCase {
                                                                                 false)));
     }
 
+    public final void testGetPlatformHashStringFromApiString() {
+        assertEquals(
+                "android-10",
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(10, null, null, true).getApiString()));
+
+        // Base SDKs with extension levels are equals to SDKs where the extension level is not
+        // known.
+        assertEquals(
+                "android-10",
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(10, null, 3, true).getApiString()));
+
+        assertEquals(
+                "android-CODE_NAME",
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(10, "CODE_NAME").getApiString()));
+
+        // ignore extension level since AGP ApiVersion does not use extension level.
+        assertEquals(
+                "android-10",
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(10, null, 3, false).getApiString()));
+    }
+
     public final void testGetAddonHashString() {
         assertEquals("The Vendor Inc.:My Addon:10",
                 AndroidTargetHash.getAddonHashString(

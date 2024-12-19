@@ -34,6 +34,7 @@ import com.android.adblib.tools.debugging.utils.NoDdmsPacketFilterFactory
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.debugging.utils.receiveAll
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -65,8 +66,7 @@ internal class JdwpSessionProxy(
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(device.session)
-        .withPrefix("${device.session} - $device - pid=$pid - ")
+    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val proxyStatusStateFlow = MutableStateFlow(JdwpSessionProxyStatus())
 

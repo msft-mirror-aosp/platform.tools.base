@@ -22,12 +22,15 @@ import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.dexing.ResourceShrinkingConfig
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -63,6 +66,11 @@ abstract class R8ResourceShrinkingParameters {
     @get:Optional // Set iff enabled == true
     abstract val mergedNotCompiledResourcesInputDir: DirectoryProperty
 
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:Optional // Set iff enabled == true and the application has dynamic features
+    abstract val featureLinkedResourcesInputFiles: ConfigurableFileCollection
+
     @get:Input
     @get:Optional // Set iff enabled == true
     abstract val usePreciseShrinking: Property<Boolean>
@@ -75,6 +83,10 @@ abstract class R8ResourceShrinkingParameters {
     @get:Optional // Set iff enabled == true
     abstract val shrunkResourcesOutputDir: DirectoryProperty
 
+    @get:OutputDirectory
+    @get:Optional // Set iff enabled == true and the application has dynamic features
+    abstract val featureShrunkResourcesOutputDir: DirectoryProperty
+
     // This is to compute multi-APK file names
     @get:Nested
     @get:Optional // Set iff enabled == true
@@ -86,9 +98,11 @@ abstract class R8ResourceShrinkingParameters {
             ResourceShrinkingConfig(
                 linkedResourcesInputFiles = inputArtifacts.map { File(it.outputFile) },
                 mergedNotCompiledResourcesInputDir = mergedNotCompiledResourcesInputDir.get().asFile,
+                featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
                 usePreciseShrinking = usePreciseShrinking.get(),
                 logFile = logFile.asFile.orNull,
                 shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
+                featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull
             )
         } else null
     }
@@ -129,8 +143,11 @@ fun ApplicationCreationConfig.runResourceShrinking(): Boolean {
  * a separate task.
  */
 fun ApplicationCreationConfig.runResourceShrinkingWithR8(): Boolean {
+    // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
+    // Once that bug is fixed, we should remove that condition.
     return runResourceShrinking()
             && services.projectOptions[BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING]
+            && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
 }
 
 fun R8ResourceShrinkingParameters.initialize(
@@ -146,6 +163,15 @@ fun R8ResourceShrinkingParameters.initialize(
         InternalArtifactType.MERGED_NOT_COMPILED_RES,
         mergedNotCompiledResourcesInputDir
     )
+    if (creationConfig.shrinkingWithDynamicFeatures) {
+        featureLinkedResourcesInputFiles.fromDisallowChanges(
+            creationConfig.variantDependencies.getArtifactFileCollection(
+                AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
+                AndroidArtifacts.ArtifactScope.PROJECT,
+                AndroidArtifacts.ArtifactType.REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT
+            )
+        )
+    }
     usePreciseShrinking.setDisallowChanges(
         creationConfig.services.projectOptions.get(BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE)
     )

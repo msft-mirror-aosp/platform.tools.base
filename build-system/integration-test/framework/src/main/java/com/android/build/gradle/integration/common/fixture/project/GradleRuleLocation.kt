@@ -19,8 +19,15 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.TestLocation
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import java.nio.file.Path
 
+/**
+ * Location information for tests using [GradleRule]
+ *
+ * This is used internally by the fixture to handle location, and not meant to be used
+ * directly by test implementations.
+ */
 internal class GradleRuleLocation private constructor(
     /**
      * The location created specifically for a given test to write its own files.
@@ -37,6 +44,6 @@ internal class GradleRuleLocation private constructor(
         GradleRuleLocation(testFiles.resolve(subFolder), testSupportLocations)
 
     fun toProjectLocation(buildDefinition: GradleBuildDefinition): ProjectLocation {
-        return ProjectLocation(testFiles.resolve(buildDefinition.rootFolderName).toFile(), testSupportLocations)
+        return ProjectLocation(testFiles.resolve((buildDefinition as GradleBuildDefinitionImpl).rootFolderName).toFile(), testSupportLocations)
     }
 }

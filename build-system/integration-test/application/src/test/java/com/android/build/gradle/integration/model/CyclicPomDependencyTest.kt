@@ -17,116 +17,108 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
-import org.junit.Before
+import org.gradle.api.Project
+import org.gradle.api.attributes.java.TargetJvmEnvironment
+import org.gradle.api.component.SoftwareComponentFactory
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.junit.Rule
 import org.junit.Test
 
 /** Regression test for b/232075280. */
 class CyclicPomDependencyTest: ModelComparator() {
 
-    private val buildFileTemplate = { libName: String, dependencyName: String ->
-        """
-            group = "com.foo"
-            version = "1.0"
+    abstract class TestCallback(
+        private val libName: String,
+        private val dependencyName: String
+    ): GenericCallback {
 
-            Configuration customPublishing  = configurations.create("customPublishing")
-            customPublishing.setCanBeConsumed(true)
-            customPublishing.setCanBeResolved(false)
+        override fun handleProject(project: Project) {
+            project.group = "com.foo"
+            project.version = "1.0"
+
+            val customPublishing = project.configurations.create("customPublishing")
+            customPublishing.isCanBeConsumed = true
+            customPublishing.isCanBeResolved = false
             customPublishing.attributes.attribute(
-                    TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                    objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM)
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.STANDARD_JVM)
             )
-            dependencies.add("customPublishing", 'com.foo:$dependencyName:1.0')
-            customPublishing.outgoing.artifact(tasks.getByName("jar"))
+            project.dependencies.add("customPublishing", "com.foo:$dependencyName:1.0")
+            customPublishing.outgoing.artifact(project.tasks.getByName("jar"))
 
             abstract class FactoryAccessor {
                 @javax.inject.Inject
-                abstract SoftwareComponentFactory getFactory();
+                abstract fun getFactory(): SoftwareComponentFactory
             }
-            FactoryAccessor factoryAccessor = project.objects.newInstance(FactoryAccessor.class)
-            AdhocComponentWithVariants component = factoryAccessor.getFactory().adhoc("custom")
+
+            val factoryAccessor = project.objects.newInstance(FactoryAccessor::class.java)
+            val component = factoryAccessor.getFactory().adhoc("custom")
             component.addVariantsFromConfiguration(customPublishing) {}
             project.components.add(component)
 
-            tasks.withType(GenerateModuleMetadata) {
-                enabled = false
+            project.tasks.withType(GenerateModuleMetadata::class.java) {
+                it.enabled = false
             }
 
-            publishing {
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+
+            publishing.apply {
                 repositories {
-                    maven { url = '../repo' }
-                }
-                publications {
-                    mavenJava(MavenPublication) {
-                        artifactId = "$libName"
-                        from components.custom
+                    it.maven {
+                        it.url = project.uri(project.projectDir.parentFile.resolve("repo"))
                     }
                 }
+                publications.create("mavenJava", MavenPublication::class.java) {
+                    it.artifactId = libName
+                    it.from(component)
+                }
             }
-        """.trimIndent()
+        }
     }
 
+    class Bar1Callback: TestCallback(libName = "bar1", dependencyName = "bar2")
+    class Bar2Callback: TestCallback(libName = "bar2", dependencyName = "bar1")
+
     @get:Rule
-    val project = createGradleProject {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                setUpHelloWorld()
-            }
-            appendToBuildFile {
-                """
-                    dependencies {
-                        implementation("com.foo:bar1:1.0")
-                    }
-                """.trimIndent()
+    val rule = GradleRule.from {
+        androidApplication {
+            dependencies {
+                implementation("com.foo:bar1:1.0")
             }
         }
-        subProject(":bar1") {
-            plugins.add(PluginType.JAVA_LIBRARY)
-            plugins.add(PluginType.MAVEN_PUBLISH)
-            appendToBuildFile {
-                buildFileTemplate("bar1", "bar2")
-            }
+        genericProject(":bar1") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            applyPlugin(PluginType.MAVEN_PUBLISH)
+            pluginCallback = Bar1Callback::class.java
         }
-        subProject(":bar2") {
-            plugins.add(PluginType.JAVA_LIBRARY)
-            plugins.add(PluginType.MAVEN_PUBLISH)
-            appendToBuildFile {
-                buildFileTemplate("bar2", "bar1")
-            }
+        genericProject(":bar2") {
+            applyPlugin(PluginType.JAVA_LIBRARY)
+            applyPlugin(PluginType.MAVEN_PUBLISH)
+            pluginCallback = Bar2Callback::class.java
+        }
+        settings {
+            addRepository("repo")
         }
         gradleProperties {
             // b/308936442
-            set(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
+            add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
         }
     }
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.settingsFile,
-            """
-                dependencyResolutionManagement {
-                    repositories {
-                        maven {
-                            url { "repo" }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
 
     @Test
     fun `test models`() {
-        project.executor().run(":bar1:publish", ":bar2:publish")
-        val result = project.modelV2()
+        rule.build.executor.run(":bar1:publish", ":bar2:publish")
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

@@ -95,6 +95,7 @@ java_proto_library(
     # buildifier: disable=java_proto_library-naming
     name = "adb-server-proto",
     srcs = [
+        "proto/am_capabilities.proto",
         "proto/app_processes.proto",
         "proto/devices.proto",
     ],

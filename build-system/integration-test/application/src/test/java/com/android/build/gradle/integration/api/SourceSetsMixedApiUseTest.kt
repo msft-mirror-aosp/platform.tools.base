@@ -17,203 +17,116 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
-import org.junit.Before
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
+import java.io.IOException
+import kotlin.io.path.createParentDirectories
+import kotlin.io.path.writeText
 
 /**
  * Regression test for b/237783279
  */
 class SourceSetsMixedApiUseTest {
 
-    @JvmField
-    @Rule
-    var project = createGradleProject {
-        val customPlugin = PluginType.Custom("com.example.generate.jni")
-        subProject(":api-use") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(customPlugin)
-            useNewPluginsDsl = true
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication {
             android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
                 namespace = "com.example.api.use"
-                applicationId = "com.example.api.use"
+                defaultConfig.applicationId = "com.example.api.use"
             }
-        }
-
-        settings {
-            includedBuild("build-logic") {
-                rootProject {
-                    plugins.add(PluginType.JAVA_GRADLE_PLUGIN)
-                    appendToBuildFile {
-                        //language=groovy
-                        """
-                        group = "com.example.generate"
-                        version = "0.1-SNAPSHOT"
-                        gradlePlugin {
-                            plugins {
-                                // A plugin that generates .so files to add to jniLibs in the legacy variant API
-                                generateJni {
-                                    id = "${customPlugin.id}"
-                                    implementationClass = "com.example.generate.GenerateJniPlugin"
-                                }
-                            }
-                        }
-
-                        """.trimIndent()
-                    }
-                    dependencies {
-                        implementation("com.android.tools.build:gradle:${com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION}")
-                    }
-
-                    addFile(
-                            "src/main/java/com/example/generate/GenerateJniTask.java",
-                            // language=java
-                            """
-                                package com.example.generate;
-
-                                import org.gradle.api.DefaultTask;
-                                import org.gradle.api.file.DirectoryProperty;
-                                import org.gradle.api.provider.Property;
-                                import org.gradle.api.tasks.Input;
-                                import org.gradle.api.tasks.OutputDirectory;
-                                import org.gradle.api.tasks.TaskAction;
-                                import java.io.IOException;
-                                import java.nio.file.Files;
-                                import java.nio.file.Path;
-
-                                /** Task to  generate a placeholder JNI lib */
-                                public abstract class GenerateJniTask extends DefaultTask {
-
-                                    @Input
-                                    public abstract Property<String> getFileName();
-
-                                    @OutputDirectory
-                                    public abstract DirectoryProperty getOutputDirectory();
-
-                                    @TaskAction
-                                    public final void generate() throws IOException {
-                                        Path myLib = getOutputDirectory().get().getAsFile().toPath().resolve("armeabi-v7a").resolve(getFileName().get());
-                                        Files.createDirectories(myLib.getParent());
-                                        Files.writeString(myLib, getFileName().get() + " contents");
-                                    }
-                                }
-
-                            """.trimIndent()
-                    )
-
-                    addFile("src/main/java/com/example/generate/GenerateJniPlugin.java",
-                        //language=java
-                        """
-                                package com.example.generate;
-
-                                import com.android.build.gradle.AppExtension;
-                                import com.android.build.gradle.api.AndroidSourceSet;
-                                import org.gradle.api.Plugin;
-                                import org.gradle.api.Project;
-                                import org.gradle.api.file.Directory;
-                                import org.gradle.api.provider.Provider;
-                                import org.gradle.api.tasks.TaskProvider;
-                                import java.io.File;
-                                import java.io.IOException;
-                                import java.nio.file.Files;
-
-                                /* A Plugin that demonstrates adding generated jnilibs from a task using the legacy variant API */
-                                class GenerateJniPlugin implements Plugin<Project> {
-                                    @Override public void apply(Project project) {
-                                        project.getPluginManager()
-                                                .withPlugin(
-                                                    "com.android.application",
-                                                    androidPlugin -> {
-                                                        registerGenerationTask(project);
-                                                    });
-                                    }
-
-                                    private void registerGenerationTask(Project project) {
-                                        AppExtension extension = project.getExtensions().getByType(AppExtension.class);
-
-                                        // Eager / global registration (for comparison with the variant API registration)
-                                        {
-                                            TaskProvider<GenerateJniTask> generatedJniLib = project.getTasks().register(
-                                                "mainGenerateCustomJniLib",
-                                                GenerateJniTask.class,
-                                                task -> {
-                                                    task.getOutputDirectory().set(project.getLayout().getBuildDirectory().dir("generatedJniLib/main"));
-                                                    task.getFileName().set("main-sourceset-generated.so");
-                                                }
-                                            );
-
-                                            AndroidSourceSet variantSourceSet = extension.getSourceSets().getByName("main");
-                                            Provider<Directory> outputDir = generatedJniLib.flatMap(GenerateJniTask::getOutputDirectory);
-                                            variantSourceSet.getJniLibs().srcDir(outputDir);
-                                            project.getTasks().named("preBuild").configure(task -> task.dependsOn(outputDir));
-                                        }
-
-                                        // Variant API registration (regression test for b/237783279)
-                                        extension.getApplicationVariants().all(variant -> {
-                                            TaskProvider<GenerateJniTask> generatedJniLib = project.getTasks().register(
-                                                variant.getName() + "GenerateCustomJniLib",
-                                                GenerateJniTask.class,
-                                                task -> {
-                                                    task.getOutputDirectory().set(project.getLayout().getBuildDirectory().dir("generatedJniLib/" + variant.getDirName()));
-                                                    task.getFileName().set(variant.getName() + "-sourceset-generated.so");
-                                                }
-                                            );
-
-                                            AndroidSourceSet variantSourceSet = extension.getSourceSets().getByName(variant.getName());
-                                            Provider<Directory> outputDir = generatedJniLib.flatMap(GenerateJniTask::getOutputDirectory);
-                                            variantSourceSet.getJniLibs().srcDir(outputDir);
-                                            variant.getPreBuildProvider().configure(task -> task.dependsOn(outputDir));
-                                        });
-
-                                        // After evaluation late initialization
-                                        project.afterEvaluate(it -> {
-                                            AndroidSourceSet variantSourceSet = extension.getSourceSets().getByName("main");
-                                            File lateFolder = project.getLayout().getBuildDirectory().dir("lateDefinedJavaSources").get().getAsFile();
-                                            variantSourceSet.getJava().srcDir(lateFolder);
-                                            try {
-                                                File dir = project.getLayout().getBuildDirectory().dir("lateDefinedJavaSources/com/example/generated").get().getAsFile();
-                                                dir.mkdirs();
-                                                Files.writeString(new File(dir, "Test.java").toPath(), "package com.example.generated;\n\nclass Test { }");
-                                            } catch (IOException ignored) { }
-                                        });
-
-
-                                    }
-                            }
-                            """.trimIndent()
-                    )
-                }
-
-
-            }
+            pluginCallback = MyCallback::class.java
         }
     }
 
-    @Before
-    fun copyJdkPathToIncludedBuild() {
-        project.projectDir.resolve("build-logic/gradle.properties").let { file ->
-            file.parentFile.mkdirs()
-            file.writeText(project.gradlePropertiesFile.readLines().first {
-                it.contains("org.gradle.java.installations.paths") }
-            )
+    class MyCallback: LegacyApplicationCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: BaseAppModuleExtension
+        ) {
+            // Eager / global registration (for comparison with the variant API registration)
+            val generatedJniLib = project.tasks.register(
+                "mainGenerateCustomJniLib",
+                GenerateJniTask::class.java
+            ) { task ->
+                task.outputDirectory.set(project.layout.buildDirectory.dir("generatedJniLib/main"))
+                task.fileName.set("main-sourceset-generated.so")
+            }
+
+            val variantSourceSet = extension.sourceSets.getByName("main")
+            val outputDir = generatedJniLib.flatMap(GenerateJniTask::outputDirectory)
+            variantSourceSet.jniLibs.srcDir(outputDir)
+            project.tasks.named("preBuild").configure { task -> task.dependsOn(outputDir) }
+
+            // Variant API registration (regression test for b/237783279)
+            extension.applicationVariants.all { variant ->
+                val generatedJniLib = project.tasks.register(
+                    variant.getName() + "GenerateCustomJniLib",
+                    GenerateJniTask::class.java
+                ) { task ->
+                    task.outputDirectory.set(project.layout.buildDirectory.dir("generatedJniLib/" + variant.getDirName()));
+                    task.fileName.set(variant.getName() + "-sourceset-generated.so");
+                }
+
+                val variantSourceSet = extension.sourceSets.getByName(variant.getName());
+                val outputDir = generatedJniLib.flatMap(GenerateJniTask::outputDirectory);
+                variantSourceSet.jniLibs.srcDir(outputDir);
+                variant.getPreBuildProvider().configure { task -> task.dependsOn(outputDir) }
+            }
+
+            // After evaluation late initialization
+            project.afterEvaluate {
+                val variantSourceSet = extension.sourceSets.getByName("main");
+                val lateFolder = project.layout.buildDirectory.dir("lateDefinedJavaSources").get().asFile;
+                variantSourceSet.java.srcDir(lateFolder);
+                try {
+                    val dir = project.layout.buildDirectory.dir("lateDefinedJavaSources/com/example/generated").get().asFile
+                    dir.mkdirs();
+                    File(dir, "Test.java").writeText("package com.example.generated;\n\nclass Test { }")
+                } catch (ignored: IOException) { }
+            }
         }
     }
 
     @Test
     fun sourceRegistrationShouldBeRepresented() {
-        project.executor()
+        val build = rule.build
+        build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":api-use:assembleDebug")
-        project.getSubproject(":api-use").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk).containsFile("lib/armeabi-v7a/main-sourceset-generated.so")
-            assertThat(apk).containsFile("lib/armeabi-v7a/debug-sourceset-generated.so")
-            assertThat(apk).containsClass("Lcom/example/generated/Test;")
+            .run(":app:assembleDebug")
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            containsFile("lib/armeabi-v7a/main-sourceset-generated.so")
+            containsFile("lib/armeabi-v7a/debug-sourceset-generated.so")
+            containsClass("Lcom/example/generated/Test;")
         }
+    }
+}
+
+/** Task to  generate a placeholder JNI lib */
+abstract class GenerateJniTask: DefaultTask() {
+
+    @get:Input
+    abstract val fileName: Property<String>
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val myLib = outputDirectory.get().asFile.toPath().resolve("armeabi-v7a").resolve(fileName.get())
+        myLib.createParentDirectories()
+        myLib.writeText(fileName.get() + " contents")
     }
 }

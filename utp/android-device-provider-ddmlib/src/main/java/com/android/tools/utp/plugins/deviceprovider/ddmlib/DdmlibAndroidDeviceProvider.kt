@@ -137,5 +137,5 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
         profileManager.recordDeviceRelease {}
     }
 
-    override fun cancel(): Boolean = false
+    override fun cancel(aborted: Boolean): Boolean = false
 }

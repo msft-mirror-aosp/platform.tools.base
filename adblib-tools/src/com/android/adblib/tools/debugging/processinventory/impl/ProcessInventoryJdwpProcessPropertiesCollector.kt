@@ -23,6 +23,7 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
@@ -36,8 +37,7 @@ internal class ProcessInventoryJdwpProcessPropertiesCollector(
     private val session: AdbSession
         get() = process.device.session
 
-    private val logger = adbLogger(session)
-        .withPrefix("${process.device.session} - ${process.device} - pid=${process.pid} - ")
+    private val logger = adbLogger(session).withProcessPrefix(process.device, process.pid)
 
     init {
         process.scope.launch {

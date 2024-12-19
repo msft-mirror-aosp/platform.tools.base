@@ -17,12 +17,10 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.internal.aapt.v2.Aapt2Exception
@@ -33,93 +31,98 @@ import junit.framework.TestCase.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.Description
-import org.junit.runners.model.Statement
-import java.io.File
 import kotlin.io.path.readBytes
 import kotlin.reflect.KClass
 
 class SharedLibraryTest {
 
-    @JvmField
-    @Rule
-    val sharedTokenProject = createGradleProject(name = "shared_token_project") {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    @get:Rule
+    val sharedTokenRule = GradleRule.from(folderName = "shared_token_project") {
+        androidApplication {
             android {
                 compileSdk = 34
-                applicationId = "com.android_token_test_lib"
-                addFile(
+                defaultConfig.applicationId = "com.android_token_test_lib"
+            }
+            files {
+                add(
                     "src/main/res/values/strings.xml",
-                    "<resources>\n" +
-                            "<string name=\"oem_token_demo\">TOKEN_DEMO</string>\n" +
-                            "</resources>"
-                )
-                addFile(
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="oem_token_demo">TOKEN_DEMO</string>
+                        </resources>""".trimIndent())
+                add(
                     "src/main/res/values/values.xml",
-                    "<resources></resources>"
+                    //language=xml
+                    "<resources />"
                 )
             }
         }
     }
 
-    private val sharedLibAar: MavenRepoGenerator.Library by lazy {
-        MavenRepoGenerator.Library(
-            mavenCoordinate = "test:name:0.1",
-            packaging = "aar",
-            artifact = generateAarWithContent(
-                packageName = "com.android.tokens_test_lib",
-                extraFiles =
-                listOf(
-                    PATH_SHARED_LIBRARY_RESOURCES_APK to sharedTokenProject.getApk(GradleTestProject.ApkType.DEBUG).file.readBytes()
-                )
+    private fun getSharedLibAsAar(): MavenRepoGenerator.Library = MavenRepoGenerator.Library(
+        mavenCoordinate = "test:name:0.1",
+        packaging = "aar",
+        artifact = generateAarWithContent(
+            packageName = "com.android.tokens_test_lib",
+            extraFiles =
+            listOf(
+                PATH_SHARED_LIBRARY_RESOURCES_APK to sharedTokenRule.build.androidApplication().withApk(ApkSelector.DEBUG) { file.readBytes() }
             )
         )
-    }
+    )
 
-    @JvmField
-    @Rule
-    val consumerProject = createGradleProject("consumer_project_1") {
-        rootProject {
-            plugins.add(PluginType.ANDROID_APP)
+    @get:Rule
+    val consumerRule = GradleRule.from(folderName = "consumer_project_1") {
+        androidApplication {
             android {
-                applicationId = "com.android.token_test"
-                setUpHelloWorld()
-                addFile(
-                    "src/main/res/values/strings.xml",
-                    "<resources>\n" +
-                            "<string name=\"app_name\">Name</string>\n" +
-                            "<string name=\"oem_token_demo_test\">@*com.android_token_test_lib:string/oem_token_demo</string>\n" +
-                            "</resources>"
-                )
+                defaultConfig.applicationId = "com.android.token_test"
             }
+            files.add(
+                "src/main/res/values/strings.xml",
+                //language=xml
+                """
+                    <resources>
+                        <string name="app_name">Name</string>
+                        <string name="oem_token_demo_test">@*com.android_token_test_lib:string/oem_token_demo</string>
+                    </resources>
+                """.trimIndent())
         }
     }
 
     @Before
     fun setup() {
-        sharedTokenProject.execute("assembleDebug")
+        sharedTokenRule.build.executor.run("assembleDebug")
     }
 
     @Test
     fun `token string resource reference is resolved`() {
-        consumerProject.useRepoWithLibrary(sharedLibAar)
-        consumerProject.addDependency(sharedLibAar)
-        consumerProject.setGradleProperty(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true)
-        val result = consumerProject.executor().run("assembleDebug")
+        val build = consumerRule.build {
+            androidApplication {
+                addSharedDependency()
+            }
+            gradleProperties {
+                add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true)
+            }
+        }
+
+        val result = build.executor.run("assembleDebug")
         assertNull(result.exception)
     }
 
     @Test
     fun `token resolution fails when shared library support not enabled`() {
-        consumerProject.useRepoWithLibrary(sharedLibAar)
-        consumerProject.addDependency(sharedLibAar)
-        val result = consumerProject.executor().expectFailure().run("assembleDebug")
+        val build = consumerRule.build {
+            androidApplication {
+                addSharedDependency()
+            }
+        }
+        val result = build.executor.expectFailure().run("assembleDebug")
         result.assertExceptionCause(
             Aapt2Exception::class,
             """
                 Android resource linking failed
-                pkg.name-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
+                pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
                 error: failed linking references.
             """.trimIndent()
         )
@@ -127,48 +130,32 @@ class SharedLibraryTest {
 
     @Test
     fun `token resolution fails when dependency not included`() {
-        consumerProject.setGradleProperty(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true)
-        val result = consumerProject.executor().expectFailure().run("assembleDebug")
+        val build = consumerRule.build {
+            gradleProperties {
+                add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true)
+            }
+        }
+        val result = build.executor.expectFailure().run("assembleDebug")
         result.assertExceptionCause(
             Aapt2Exception::class,
             """
                 Android resource linking failed
-                pkg.name-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
+                pkg.name.app-mergeDebugResources-2:/values/values.xml:4: error: resource com.android_token_test_lib:string/oem_token_demo not found.
                 error: failed linking references.
             """.trimIndent()
         )
-        consumerProject.useRepoWithLibrary(sharedLibAar)
-        consumerProject.addDependency(sharedLibAar)
-        val resultAfter = consumerProject.executor().run("assembleDebug")
+
+        build.androidApplication().reconfigure(buildFileOnly = true) { addSharedDependency() }
+        val resultAfter = build.executor.run("assembleDebug")
         assertThat(resultAfter.exception).isNull()
     }
 
-    private fun GradleTestProject.setGradleProperty(booleanOption: BooleanOption, state: Boolean) {
-        TestFileUtils.appendToFile(gradlePropertiesFile, "${booleanOption.propertyName}=${state}")
-    }
-
-    private fun GradleTestProject.addDependency(library: MavenRepoGenerator.Library) {
-        TestFileUtils.searchAndReplace(
-            buildFile,
-            "dependencies {",
-            "dependencies {\n implementation(\"${library.mavenCoordinate}\")"
-        )
-    }
-
-    private fun GradleTestProject.useRepoWithLibrary(repo: MavenRepoGenerator.Library) {
-        val file = File(buildFile.parent, "maven_repo")
-        MavenRepoGenerator(libraries = listOf(repo)).generate(file.toPath())
-        TestFileUtils.searchAndReplace(
-            settingsFile, "repositories {",
-            "repositories {\n" +
-                    "maven {\n" +
-                    "  url = uri(\"${file.toURI()}\")\n" +
-                    "  metadataSources {\n" +
-                    "    mavenPom()\n" +
-                    "    artifact()\n" +
-                    "  }\n" +
-                    " }\n"
-        )
+    private fun GradleProjectDefinition.addSharedDependency() {
+        apply {
+            dependencies {
+                implementation(getSharedLibAsAar())
+            }
+        }
     }
 
     private fun GradleBuildResult.assertExceptionCause(kClass: KClass<*>, message: String) {

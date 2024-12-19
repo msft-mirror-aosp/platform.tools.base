@@ -17,11 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import java.nio.file.Path
+import kotlin.io.path.name
 
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
@@ -30,7 +28,7 @@ interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition>
     : GradleProject<ProjectDefinitionT> {
 
     /** Return a File under the intermediates directory from Android plugins.  */
-    fun getIntermediateFile(vararg paths: String?): Path
+    fun getIntermediatePath(vararg paths: String?): Path
 
     /** Return the intermediates directory from Android plugins.  */
     val intermediatesDir: Path
@@ -52,8 +50,18 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
     override val outputsDir: Path
         get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 
-    override fun getIntermediateFile(vararg paths: String?): Path {
+    override fun getIntermediatePath(vararg paths: String?): Path {
         return intermediatesDir.resolve(paths.joinToString(separator = "/"))
+    }
+
+    protected fun computeOutputPath(outputSelector: OutputSelector): Path {
+        val root = if (outputSelector.fromIntermediates) {
+            intermediatesDir
+        } else {
+            outputsDir
+        }
+
+        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
     }
 }
 
@@ -63,7 +71,7 @@ internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidP
 ) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
     parentProject,
 ), BaseAndroidProject<ProjectDefinitionT> {
-    override fun getIntermediateFile(vararg paths: String?): Path = parentProject.getIntermediateFile(*paths)
+    override fun getIntermediatePath(vararg paths: String?): Path = parentProject.getIntermediatePath(*paths)
 
     override val intermediatesDir: Path
         get() = parentProject.intermediatesDir

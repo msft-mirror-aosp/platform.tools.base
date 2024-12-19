@@ -20,6 +20,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.utils.ReferenceCountedFactory
 import com.android.adblib.withPrefix
+import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.StateFlow
 
 internal class SharedJdwpSessionProviderImpl(
@@ -28,8 +29,7 @@ internal class SharedJdwpSessionProviderImpl(
     private val sharedJdwpSessionRef: ReferenceCountedFactory<SharedJdwpSessionImpl>
 ) : SharedJdwpSessionProvider {
 
-    private val logger = adbLogger(device.session)
-        .withPrefix("${device.session} - $device - pid=$pid - ")
+    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val withSharedJdwpSessionTracker = BlockActivationTracker()
 

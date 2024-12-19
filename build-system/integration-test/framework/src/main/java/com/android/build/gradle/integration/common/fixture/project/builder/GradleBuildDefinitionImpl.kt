@@ -26,8 +26,12 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidApplic
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidTestDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
@@ -42,7 +46,10 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
-internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefinition {
+internal class GradleBuildDefinitionImpl(
+    override val name: String,
+    internal val rootFolderName: String,
+): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
     internal val includedBuilds = mutableMapOf<String, GradleBuildDefinitionImpl>()
@@ -51,12 +58,6 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
 
     private val propertiesDelegate = GradlePropertiesDelegate()
 
-    override var name: String = buildName
-        set(value) {
-            field = value
-            rootFolderName = value
-        }
-    override var rootFolderName: String = buildName
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
@@ -68,7 +69,8 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
         action: GradleBuildDefinition.() -> Unit
     ): GradleBuildDefinition {
         val build = includedBuilds.computeIfAbsent(name) {
-            GradleBuildDefinitionImpl(it)
+            // for included builds, name and rootFolderName is always the same.
+            GradleBuildDefinitionImpl(it, it)
         }
         action(build)
 
@@ -268,6 +270,44 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
         return project
     }
 
+    override fun assetPackBundle(
+        path: String,
+        createMinimumProject: Boolean,
+        action: AssetPackBundleDefinition.() -> Unit
+    ): AssetPackBundleDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be an asset pack bundle")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AssetPackBundleDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? AssetPackBundleDefinition
+            ?: errorOnWrongType(project, path, "Asset Pack Bundle")
+
+        action(project)
+
+        return project
+    }
+
+    override fun fusedLibrary(
+        path: String,
+        createMinimumProject: Boolean,
+        action: FusedLibraryDefinition.() -> Unit
+    ): FusedLibraryDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be a fused library")
+
+        val project = subProjects.computeIfAbsent(path) {
+            FusedLibraryDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? FusedLibraryDefinition
+            ?: errorOnWrongType(project, path, "Fused Library")
+
+        action(project)
+
+        return project
+    }
+
     override fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
         action(propertiesDelegate)
     }
@@ -337,7 +377,7 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
     }
 
     /**
-     * Recursively write the local proper for this build and all included builds.
+     * Recursively write the local properties for this build and all included builds.
      *
      * This calls the provided action with the location of this build, and do the same for included builds
      *
@@ -372,25 +412,25 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
                 subProjects.values.flatMap { it.dependencies.externalLibraries }
 
     /**
-     * This method handles project with custom plugins applied to them via [AndroidComponentCallback]
+     * This method handles project with custom plugins applied to them via
+     * [com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback]
      */
-    private fun handleCustomBuildLogic(location: Path): Map<String, String> {
+    private fun handleCustomBuildLogic(location: Path): Map<String, List<String>> {
         // gather all the custom callbacks. This returns a map from each callback class
         // to a list of all projects using this callback.
         val callbackMap = subProjects.values.asSequence()
-            .map { definition ->
-                definition.pluginCallback?.let {
+            .flatMap { definition ->
+                definition.pluginCallbacks.map {
                     it to definition.path
                 }
             }
-            .filterNotNull()
             .groupBy(keySelector = { it.first }, valueTransform = { it.second })
 
         if (callbackMap.isEmpty()) return mapOf()
 
         // result to be used by the projects to apply their plugins.
-        // The map is from the project path to the plugin class name.
-        val pluginClassMap = mutableMapOf<String, String>()
+        // The map is from the project path to the plugin class names.
+        val pluginClassMap = mutableMapOf<String, List<String>>()
 
         val handler = CustomBuildLogicHandler(location.resolve("build-logic.jar"))
         handler.use {
@@ -401,7 +441,10 @@ internal class GradleBuildDefinitionImpl(buildName: String): GradleBuildDefiniti
                 // record this association, using the paths as keys since it'll be used
                 // by each subproject
                 paths.forEach { path ->
-                    pluginClassMap[path] = pluginClassName
+                    val nameList = pluginClassMap.computeIfAbsent(path) {
+                        mutableListOf()
+                    } as MutableList<String>
+                    nameList.add(pluginClassName)
                 }
             }
         }

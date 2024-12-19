@@ -15,15 +15,21 @@
  */
 package com.android.adblib.impl
 
+import com.android.adblib.AdbActivityManagerException
 import com.android.adblib.AdbActivityManagerServices
 import com.android.adblib.AdbSession
+import com.android.adblib.AmCapabilitiesResult
 import com.android.adblib.DeviceSelector
 import com.android.adblib.adbLogger
 import com.android.adblib.shellCommand
+import com.android.adblib.utils.ByteArrayShellCollector
 import com.android.adblib.withTextCollector
+import com.android.server.adb.protos.AmCapabilitiesProto
 import java.io.IOException
 
-class AdbActivityManagerServicesImpl(private val session: AdbSession) : AdbActivityManagerServices {
+class AdbActivityManagerServicesImpl(
+    override val session: AdbSession
+) : AdbActivityManagerServices {
     private val logger = adbLogger(session.host)
 
     override suspend fun forceStop(device: DeviceSelector, packageName: String) {
@@ -33,7 +39,7 @@ class AdbActivityManagerServicesImpl(private val session: AdbSession) : AdbActiv
             .withTextCollector()
             .executeAsSingleOutput { result ->
                 if (result.stderr.isNotEmpty()) {
-                    val shortenedMessage = result.stderr.substring(0, 100)
+                    val shortenedMessage = result.stderr.left(100)
                     logger.warn("`am force-stop $packageName`: stderr: $shortenedMessage")
                     throw IOException(result.stderr)
                 }
@@ -48,11 +54,41 @@ class AdbActivityManagerServicesImpl(private val session: AdbSession) : AdbActiv
             .executeAsSingleOutput { result ->
                 if (result.stderr.isNotEmpty()) {
                     // stderr is not empty, e.g. for unsupported API level
-                    val shortenedMessage = result.stderr.substring(0, 100)
+                    val shortenedMessage = result.stderr.left(100)
                     logger.warn("`am crash $packageName`: stderr: $shortenedMessage")
                     throw IOException(result.stderr)
                 }
             }
+    }
+
+    override suspend fun capabilities(device: DeviceSelector): AmCapabilitiesResult {
+        // See Android platform implementation here:
+        // https://cs.android.com/android/platform/superproject/main/+/1b409eb6cacc9508e6f415353ddcacdcb6bdaf26:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShellCommand.java;l=480
+        val result = session.deviceServices
+            .shellCommand(device, "am capabilities --protobuf")
+            .withCollector(ByteArrayShellCollector())
+            .executeAsSingleOutput { result ->
+                if (result.stderr.isNotEmpty()) {
+                    val shortenedMessage = result.stderr.left(100)
+                    logger.debug { "`am capabilities --protobuf`: stderr: $shortenedMessage" }
+                    throw AdbActivityManagerException("capabilities", result.stderr)
+                }
+                result
+            }
+
+        val protoCapabilities = AmCapabilitiesProto.Capabilities.parseFrom(result.stdout)
+        return AmCapabilitiesResult(
+            capabilities = protoCapabilities.valuesList.map { it.name },
+            vmCapabilities = protoCapabilities.vmCapabilitiesList.map { it.name },
+            frameworkCapabilities = protoCapabilities.frameworkCapabilitiesList.map { it.name },
+            vmInfo = if (protoCapabilities.vmInfo == AmCapabilitiesProto.VMInfo.getDefaultInstance()) {
+                null
+            } else {
+                AmCapabilitiesResult.VmInfo(
+                    name = protoCapabilities.vmInfo.name, version = protoCapabilities.vmInfo.version
+                )
+            },
+        )
     }
 
     /**
@@ -61,6 +97,19 @@ class AdbActivityManagerServicesImpl(private val session: AdbSession) : AdbActiv
     private fun validatePackageName(packageName: String) {
         if (!packageName.matches(PACKAGE_NAME_REGEX)) {
             throw IllegalArgumentException("packageName `$packageName` contains illegal characters")
+        }
+    }
+
+    /**
+     * Returns **at most** the first [maxLength] characters of this string.
+     */
+    private fun String.left(maxLength: Int): String {
+        return if (maxLength < 0) {
+            ""
+        } else if (maxLength > length) {
+            substring(0, length)
+        } else {
+            substring(0, maxLength)
         }
     }
 }

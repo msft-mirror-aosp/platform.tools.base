@@ -102,7 +102,7 @@ class GrpcTest {
             }
             request_headers {
               key: "user-agent"
-              values: "grpc-java-inprocess/1.57.0"
+              values: "grpc-java-inprocess"
             }
             trace: "com.android.tools.appinspection.network.GrpcTest.testEventContent(GrpcTest.kt)"
           }
@@ -185,6 +185,7 @@ class GrpcTest {
         else -> this
       }
       .toString()
+      .replace("grpc-java-inprocess/\\d+\\.\\d+\\.\\d+".toRegex(), "grpc-java-inprocess")
       .trim()
   }
 

@@ -310,11 +310,11 @@ fun runR8(
     // Enable workarounds for missing library APIs in R8 (see b/231547906).
     r8CommandBuilder.setEnableExperimentalMissingLibraryApiModeling(true);
 
-    resourceShrinkingConfig?.let { setupResourceShrinkingForApks(r8CommandBuilder, it) }
+    resourceShrinkingConfig?.let { setupResourceShrinking(r8CommandBuilder, it) }
 
     setupFeatureSplits(
         r8CommandBuilder, toolConfig, featureClassJars, featureDexDir,
-        featureJavaResourceJars, featureJavaResourceOutputDir
+        featureJavaResourceJars, featureJavaResourceOutputDir, resourceShrinkingConfig
     )
 
     ClassFileProviderFactory(libraries).use { libraryClasses ->
@@ -333,12 +333,7 @@ fun runR8(
     }
 }
 
-/**
- * Sets up resource shrinking in R8 when building APK(s).
- *
- * (Resource shrinking in R8 when building bundles will be supported later.)
- */
-private fun setupResourceShrinkingForApks(
+private fun setupResourceShrinking(
     r8CommandBuilder: R8Command.Builder,
     config: ResourceShrinkingConfig
 ) {
@@ -414,7 +409,8 @@ private fun setupFeatureSplits(
     featureClassJars: Collection<Path>,
     featureDexOutputDir: Path?,
     featureJavaResourceJars: Collection<Path>,
-    featureJavaResourceOutputDir: Path?
+    featureJavaResourceOutputDir: Path?,
+    resourceShrinkingConfig: ResourceShrinkingConfig?,
 ) {
     if (featureClassJars.isEmpty()) return
 
@@ -422,18 +418,22 @@ private fun setupFeatureSplits(
         "Unexpected toolConfig.r8OutputType: ${toolConfig.r8OutputType}"
     }
     val featureFileNamesWithoutExtension = featureClassJars.map { it.toFile().nameWithoutExtension }.distinct()
-    check(featureJavaResourceJars.map { it.toFile().nameWithoutExtension } == featureFileNamesWithoutExtension) {
+    check(featureJavaResourceJars.map { it.toFile().nameWithoutExtension } == featureFileNamesWithoutExtension
+            && (resourceShrinkingConfig == null || resourceShrinkingConfig.featureLinkedResourcesInputFiles.map { it.nameWithoutExtension } == featureFileNamesWithoutExtension)) {
         "Inconsistent featureFileNames:\n" +
                 "  featureClassJars: $featureClassJars\n" +
-                "  featureJavaResourceJars: $featureJavaResourceJars\n"
+                "  featureJavaResourceJars: $featureJavaResourceJars\n" +
+                "  featureLinkedResourcesInputFiles: ${resourceShrinkingConfig?.featureLinkedResourcesInputFiles}"
     }
     check(
         featureDexOutputDir != null
                 && featureJavaResourceOutputDir != null
+                && (resourceShrinkingConfig == null || resourceShrinkingConfig.featureShrunkResourcesOutputDir != null)
     ) {
         "Expected not null but received:\n" +
                 "  featureDexDir=$featureDexOutputDir\n" +
-                "  featureJavaResourceOutputDir=$featureJavaResourceOutputDir"
+                "  featureJavaResourceOutputDir=$featureJavaResourceOutputDir\n" +
+                "  featureShrunkResourcesOutputDir=${resourceShrinkingConfig?.featureShrunkResourcesOutputDir}"
     }
 
     featureFileNamesWithoutExtension.forEach { featureFileNameWithoutExtension ->
@@ -455,6 +455,14 @@ private fun setupFeatureSplits(
                     }
                 }
             )
+
+            if (resourceShrinkingConfig != null) {
+                val inputFile = resourceShrinkingConfig.featureLinkedResourcesInputFiles
+                    .single { file -> file.nameWithoutExtension == featureFileNameWithoutExtension }
+                val outputFile = resourceShrinkingConfig.featureShrunkResourcesOutputDir!!.resolve(inputFile.name)
+                it.setAndroidResourceProvider(ArchiveProtoAndroidResourceProvider(inputFile.toPath()))
+                it.setAndroidResourceConsumer(ArchiveProtoAndroidResourceConsumer(outputFile.toPath()))
+            }
 
             it.build()
         }
@@ -565,9 +573,11 @@ data class ToolConfig(
 data class ResourceShrinkingConfig(
     val linkedResourcesInputFiles: List<File>,
     val mergedNotCompiledResourcesInputDir: File,
+    val featureLinkedResourcesInputFiles: List<File>,
     val usePreciseShrinking: Boolean,
     val logFile: File?,
-    val shrunkResourcesOutputFiles: List<File>
+    val shrunkResourcesOutputFiles: List<File>,
+    val featureShrunkResourcesOutputDir: File?
 ) : java.io.Serializable { // Serializable so it can be used in Gradle workers
 
     companion object {

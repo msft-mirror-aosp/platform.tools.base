@@ -137,6 +137,8 @@ class DeviceState internal constructor(
             mServer.deviceChangeHub.deviceStatusChanged(this, status)
         }
 
+    val deviceCapabilities = DeviceCapabilities.forApi(apiLevel)
+
     override fun toString(): String {
         return "${this::class.simpleName}(deviceId=$deviceId, deviceStatus=$deviceStatus, apiLevel=$apiLevel, transportId=$transportId)"
     }
@@ -172,20 +174,49 @@ class DeviceState internal constructor(
     }
 
     fun startClient(
-        pid: Int, uid: Int, packageName: String, isWaiting: Boolean
+        pid: Int, userId: Int, packageName: String, isWaiting: Boolean
     ): ClientState {
-        return startClient(pid, uid, packageName, packageName, isWaiting)
+        return startClient(
+            pid = pid,
+            userId = userId,
+            processName = packageName,
+            packageName = packageName,
+            isWaiting = isWaiting
+        )
+    }
+
+    fun startClient(
+        pid: Int, userId: Int, processName: String, packageName: String, isWaiting: Boolean
+    ): ClientState {
+        return startClient(
+            pid = pid,
+            userId = userId,
+            uid = 0,
+            processName = processName,
+            packageName = packageName,
+            isWaiting = isWaiting
+        )
     }
 
     fun startClient(
         pid: Int,
+        userId: Int,
         uid: Int,
         processName: String,
         packageName: String,
         isWaiting: Boolean
     ): ClientState {
         synchronized(mProcessStates) {
-            val clientState = ClientState(pid, uid, processName, packageName, isWaiting, cpuAbi)
+            val clientState = ClientState(
+                device = this,
+                pid = pid,
+                userId = userId,
+                uid = uid,
+                processName = processName,
+                packageName = packageName,
+                waitingForDebugger = isWaiting,
+                architecture = cpuAbi
+            )
             mProcessStates[pid] = clientState
             clientChangeHub.clientListChanged()
             clientChangeHub.appProcessListChanged()
@@ -218,8 +249,33 @@ class DeviceState internal constructor(
     fun startProfileableProcess(
         pid: Int, architecture: String, commandLine: String
     ): ProfileableProcessState {
+        return startProfileableProcess(
+            pid = pid,
+            architecture = architecture,
+            userId = 0,
+            uid = 10,
+            processName = commandLine,
+            packageName = commandLine
+        )
+    }
+
+    fun startProfileableProcess(
+        pid: Int,
+        architecture: String,
+        userId: Int,
+        uid: Int,
+        processName: String,
+        packageName: String,
+    ): ProfileableProcessState {
         synchronized(mProcessStates) {
-            val process = ProfileableProcessState(pid, architecture, commandLine)
+            val process = ProfileableProcessState(
+                device = this,
+                pid = pid,
+                architecture = architecture,
+                commandLine = processName,
+                userId = userId,
+                uid = uid,
+                packageName = packageName)
             mProcessStates[pid] = process
             clientChangeHub.appProcessListChanged()
             return process
@@ -450,6 +506,76 @@ class DeviceState internal constructor(
         val mLogcatContents: List<String>
     )
 
+    data class DeviceCapabilities(
+        val capabilities: List<String>,
+        val vmCapabilities: List<String>,
+        val frameworkCapabilities: List<String>,
+        val vmInfo: VmInfo?
+    ) {
+
+        data class VmInfo(
+            val name: String,
+            val version: String
+        )
+
+        companion object {
+            private val api35VmCapabilities = """
+                            method-trace-profiling
+                            method-trace-profiling-streaming
+                            method-sample-profiling
+                            hprof-heap-dump
+                            hprof-heap-dump-streaming
+                            app_info
+                            """.trimIndent().lines()
+
+            private val api35FrameworkCapabilities = """
+                            opengl-tracing
+                            view-hierarchy
+                            support_boot_stages
+                            """.trimIndent().lines()
+
+            private val api35VmInfo = VmInfo(name = "Dalvik", version = "2.1.0")
+
+            private val api36VmCapabilities = api35VmCapabilities
+
+            private val api36FrameworkCapabilities = api35FrameworkCapabilities + "app_info"
+
+            private val api36VmInfo = api35VmInfo
+
+            fun forApi(apiLevel: Int): DeviceCapabilities? {
+                return when {
+                    apiLevel <= 33 -> {
+                        null
+                    }
+                    apiLevel <= 34 -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = emptyList(),
+                            frameworkCapabilities = emptyList(),
+                            vmInfo = null
+                        )
+                    }
+                    apiLevel <= 35 -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = api35VmCapabilities,
+                            frameworkCapabilities = api35FrameworkCapabilities,
+                            vmInfo = api35VmInfo
+                        )
+                    }
+                    else -> {
+                        DeviceCapabilities(
+                            capabilities = listOf("start.suspend"),
+                            vmCapabilities = api36VmCapabilities,
+                            frameworkCapabilities = api36FrameworkCapabilities,
+                            vmInfo = api36VmInfo
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     companion object {
 
         private fun initFeatures(sdk: String): Set<String> {
@@ -471,6 +597,9 @@ class DeviceState internal constructor(
                 }
                 if (api >= 34) {
                     features.add("support_boot_stages")
+                }
+                if (api >= 36) {
+                    features.add("app_info")
                 }
             } catch (e: NumberFormatException) {
                 // Cannot add more features based on API level since it is not the expected integer

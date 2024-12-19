@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint
 
+import com.android.SdkConstants.DOT_KTS
 import com.android.tools.lint.UastEnvironment.Companion.getKlibPaths
 import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.android.tools.lint.UastEnvironment.Module.Variant.Companion.toTargetPlatform
@@ -237,7 +238,7 @@ internal fun configureAnalysisApiProjectStructure(
       }
     }
 
-    val scripts = sourceFilePaths.filter<KtFile>(kotlinCoreProjectEnvironment, KtFile::isScript)
+    val scripts = sourceFilePaths.filter<KtFile>(kotlinCoreProjectEnvironment, KtFile::isKts)
     // TODO: https://youtrack.jetbrains.com/issue/KT-62161
     //   This must be [KtScriptModule], but until the above YT resolved
     //   add this fake [KtSourceModule] to suppress errors from module lookup.
@@ -293,7 +294,7 @@ internal fun configureAnalysisApiProjectStructure(
               sourceFilePaths.filter<PsiFile>(kotlinCoreProjectEnvironment) { file ->
                 // If it's [KtFile], filter out (build) script files
                 // since they were already created as a separate module
-                file !is KtFile || !file.isScript()
+                file !is KtFile || !file.isKts()
               }
             )
           }
@@ -405,4 +406,11 @@ private class IdeaLoggerForLint(category: String) : DefaultLogger(category) {
       }
     }
   }
+}
+
+private fun KtFile.isKts(): Boolean {
+  // [KtFile#isScript] may go deeper into building stub (which triggers parsing file)
+  // while file extension would be good enough.
+  // See http://b/384754095 and/or https://youtrack.jetbrains.com/issue/KT-43885
+  return name.endsWith(DOT_KTS)
 }

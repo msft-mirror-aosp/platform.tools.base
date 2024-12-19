@@ -17,6 +17,9 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AppProcess
+import com.android.adblib.tools.debugging.architecture
+import com.android.adblib.tools.debugging.debuggable
+import com.android.adblib.tools.debugging.profileable
 import com.android.adblib.tools.debugging.retrieveProcessName
 import com.android.adblib.tools.debugging.scope
 import com.android.ddmlib.ProfileableClient

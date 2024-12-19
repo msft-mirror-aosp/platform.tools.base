@@ -70,12 +70,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
 
     protected open fun initDefaultValues(extension: T) {
         if (extension is CommonExtension<*,*,*,*,*,*>) {
-            val pkgName = if (path == ":") {
-                "pkg.name"
-            } else {
-                "pkg.name${path.replace(':', '.')}"
-            }
-            extension.namespace = pkgName
+            extension.namespace = "pkg.name${path.replace(':', '.')}"
             extension.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
         } else {
             throw RuntimeException("Unsupported android extension type. Override initDefaultValues() in the specific AndroidProjectDefinition implementation!")

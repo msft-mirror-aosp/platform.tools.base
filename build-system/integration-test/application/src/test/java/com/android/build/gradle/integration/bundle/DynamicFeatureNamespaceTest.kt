@@ -20,10 +20,8 @@ import com.android.SdkConstants.ANDROID_MANIFEST_XML
 import com.android.SdkConstants.ATTR_PACKAGE
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
 import com.google.common.truth.Truth
@@ -62,7 +60,7 @@ class DynamicFeatureNamespaceTest {
 
         val manifestFile =
             build.androidFeature()
-                .getIntermediateFile(
+                .getIntermediatePath(
                     "metadata_feature_manifest",
                     "debug",
                     "processManifestDebugForFeature",

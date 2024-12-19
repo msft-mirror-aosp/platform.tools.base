@@ -23,6 +23,7 @@ import com.google.testing.platform.api.context.Context
 import com.google.testing.platform.api.device.DeviceController
 import com.google.testing.platform.proto.api.config.AdbConfigProto
 import com.google.testing.platform.runtime.android.AndroidDeviceProvider
+import com.google.testing.platform.runtime.android.device.AndroidDevice
 
 /**
  * Means to provide a device controller to the [AndroidGradleDeviceLauncher]
@@ -36,5 +37,6 @@ interface DeviceControllerFactory {
             androidSdk: AndroidSdk,
             adbConfig: AdbConfigProto.AdbConfig,
             context: Context,
+            device: AndroidDevice,
     ): DeviceController
 }

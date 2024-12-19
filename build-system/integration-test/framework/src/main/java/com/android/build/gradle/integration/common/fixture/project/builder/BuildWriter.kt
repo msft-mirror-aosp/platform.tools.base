@@ -16,8 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
+import org.gradle.api.JavaVersion
 import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
+import java.nio.file.Path
 
 /**
  * An object that can write a Gradle build file.
@@ -43,7 +46,7 @@ interface BuildWriter: BooleanNameHandler {
     fun applyPluginFromClass(pluginClass: String)
 
     /** Adds a dependency */
-    fun dependency(scope: String, value:Any)
+    fun dependency(scope: String, value:Any, capability: String?)
 
     fun writeCollectionAddAll(name: String, items: Collection<*>)
     fun writeCollectionAdd(name:String, value: Any?)
@@ -154,7 +157,10 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         // this for this method and the this of the builder.
         val enum = this?.javaClass?.isEnum ?: false
         if (enum) {
-            return "${this?.javaClass?.typeName}.$this"
+            return when (this) {
+                is JavaVersion -> "JavaVersion.${this.name}"
+                else -> "${this?.javaClass?.typeName}.$this"
+            }
         }
 
         return when (this) {
@@ -174,11 +180,24 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                     allItems
                 }
             }
+            is MethodReturnedFile -> {
+                "${methodName}(${quoteString(parameter)})"
+            }
             is File -> {
-                "project.file(\"$this\")"
+                "file(${quoteString(toFormatted())})"
+            }
+            is Path -> {
+                "file(${quoteString(this.toFile().toFormatted())})"
             }
             else -> toString()
+        }
+    }
 
+    private fun File.toFormatted(): String {
+        return if (this.isAbsolute){
+            toURI().toString()
+        } else {
+            toString()
         }
     }
 
@@ -230,8 +249,16 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         writer.endLine()
     }
 
-    override fun dependency(scope: String, value: Any) {
-        method(scope, value)
+    override fun dependency(scope: String, value: Any, capability: String?) {
+        if (capability != null) {
+            block(scope, listOf(value), capability) {
+                block("capabilities") {
+                    method("requireCapability", capability)
+                }
+            }
+        } else {
+            method(scope, value)
+        }
     }
 
     abstract fun listOf(value: String): String

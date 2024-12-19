@@ -37,10 +37,7 @@ class PrebuiltLintChecksModelTest {
     val rule = GradleRule.from {
         androidLibrary {
             dependencies {
-                lintChecks(localJar {
-                    name = "lint-check.jar"
-                    addClass("com/example/MainClass")
-                })
+                lintChecks(localJar("lint-check.jar") { addEmptyClasses("com/example/MainClass") })
             }
         }
     }
@@ -71,10 +68,7 @@ class SubProjectLintChecksModelTest {
         genericProject(":lint-check") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             dependencies {
-                implementation(localJar {
-                    name = "local-lint.jar"
-                    addClass("com/example/MainClass")
-                })
+                implementation(localJar("local-lint.jar") { addEmptyClasses("com/example/MainClass") })
                 implementation(project(":lint-check-dependency"))
             }
         }
@@ -112,10 +106,7 @@ class AppAndLibWithLintPublishModelTest {
         }
         androidLibrary {
             dependencies {
-                lintPublish(localJar {
-                    name = "lint-publish.jar"
-                    addClass("com/example/MainClass")
-                })
+                lintPublish(localJar("lint-publish.jar") { addEmptyClasses("com/example/MainClass") })
             }
         }
     }

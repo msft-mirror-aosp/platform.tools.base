@@ -21,7 +21,9 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
@@ -40,16 +42,10 @@ interface GradleBuildDefinition {
     }
 
     /**
-     * The name of the build. This impacts both the logical name and the folder in which the build
-     * is created
+     * The name of the build. This is the value set in the settings.gradle files as the logical
+     * name of the build in gradle
      */
-    var name: String
-
-    /**
-     * The root folder name. This only impacts the folder and not the logical name.
-     * If you wish to change the logical name only, use [name]
-     */
-    var rootFolderName: String
+    val name: String
 
     /**
      * The type of files to use when generating gradle files.
@@ -175,6 +171,24 @@ interface GradleBuildDefinition {
         path: String,
         action: AssetPackDefinition.() -> Unit
     ): AssetPackDefinition
+
+    /**
+     * Configures a subProject with the Android Asset Pack Bundle plugin, creating it if needed.
+     */
+    fun assetPackBundle(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: AssetPackBundleDefinition.() -> Unit
+    ): AssetPackBundleDefinition
+
+    /**
+     * Configures a subProject with the Android Fused Library plugin, creating it if needed.
+     */
+    fun fusedLibrary(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: FusedLibraryDefinition.() -> Unit
+    ): FusedLibraryDefinition
 
     /**
      * configures the Gradle properties for this build

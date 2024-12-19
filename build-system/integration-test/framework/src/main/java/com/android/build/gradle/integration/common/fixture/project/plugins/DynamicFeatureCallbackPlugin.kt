@@ -18,17 +18,16 @@ package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.variant.DynamicFeatureAndroidComponentsExtension
 import com.android.build.gradle.DynamicFeaturePlugin
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 
 /**
  * A Custom plugin to be used with [DynamicFeatureComponentCallback] in projects created
  * by [GradleRule].
  *
  * Do not extend this. Instead, implement [DynamicFeatureComponentCallback] and register the implementation
- * class to [AndroidProjectDefinition.pluginCallback]
+ * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
  *
  * This class is automatically decorated to call the callback at runtime.
  */

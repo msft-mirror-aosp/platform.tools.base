@@ -23,16 +23,18 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * JDWP processes state.
  *
- * @param isWaiting whether this client is waiting for a debugger connection or not.
+ * @param waitingForDebugger whether this client is waiting for a debugger connection or not.
  */
 class ClientState internal constructor(
+    device: DeviceState,
     pid: Int,
-    val uid: Int,
-    val processName: String,
+    override val userId: Int,
+    override val uid: Int,
+    override val processName: String,
     val packageName: String,
-    isWaiting: Boolean,
+    override val waitingForDebugger: Boolean,
     override val architecture: String
-) : ProcessState(pid) {
+) : ProcessState(device, pid) {
 
     val viewsState = ClientViewsState()
     val profilerState = ProfilerState()
@@ -57,17 +59,27 @@ class ClientState internal constructor(
     private val nextDdmsCommandId = AtomicInteger(0x70000000)
 
     init {
-        if (isWaiting) {
+        if (waitingForDebugger) {
             sendWaitCommandAfterHelo = Duration.ZERO
         }
-        mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
-        mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
+        val capabilities = device.deviceCapabilities
+        if (capabilities != null && capabilities.vmCapabilities.isNotEmpty()) {
+            mFeatures.addAll(capabilities.vmCapabilities)
+            mFeatures.addAll(capabilities.frameworkCapabilities)
+        } else {
+            mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
+            mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
+        }
     }
 
     override val debuggable: Boolean
         get() = true
+
     override val profileable: Boolean
         get() = false
+
+    override val packageNames: List<String>
+        get() = listOf(packageName)
 
     @Synchronized
     fun startJdwpSession(socket: Socket): Boolean {

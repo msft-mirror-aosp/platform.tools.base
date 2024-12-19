@@ -156,8 +156,9 @@ def java_proto_library(
         **kwargs):
     """Compiles protobuf into a .jar file and optionally creates a maven artifact.
 
-    NOTE: Be cautious to use this rule. You may need to use android_java_proto_library instead.
-    See the comments in android_java_proto_library rule before using it.
+    NOTE: Be cautious to use this rule. You may need to use android_java_proto_library or
+    studio_java_proto_library instead.  See the comments in android_java_proto_library rule
+    before using it.
 
     Args:
       name: Name of the rule.
@@ -212,6 +213,20 @@ def java_proto_library(
         deps = java_deps,
         javacopts = kwargs.pop("javacopts", []) + ["--release", "8"],
         visibility = visibility,
+        **kwargs
+    )
+
+def studio_java_proto_library(**kwargs):
+    """A convenience wrapper around java_proto_library for usage in Studio.
+
+    It uses the runtime included in the IJ platform and the appropriate protoc version.
+    """
+
+    java_proto_library(
+        proto_java_runtime_library = [
+            "@intellij//:intellij-sdk",
+        ],
+        protoc_version = INTELLIJ_PLATFORM_PROTO_VERSION,
         **kwargs
     )
 

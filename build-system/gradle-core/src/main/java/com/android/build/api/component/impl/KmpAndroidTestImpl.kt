@@ -213,7 +213,7 @@ open class KmpAndroidTestImpl @Inject constructor(
         )
     }
 
-    override val buildConfigFields: MapProperty<String, out BuildConfigField<out Serializable>> by lazy {
+    override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>> by lazy {
         warnAboutAccessingVariantApiValueForDisabledFeature(
             featureName = FeatureNames.BUILD_CONFIG,
             apiName = "buildConfigFields",

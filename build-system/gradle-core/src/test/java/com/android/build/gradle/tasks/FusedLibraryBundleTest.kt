@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.SdkConstants.EXT_AAR
+import com.android.SdkConstants.FD_OUTPUTS
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.SingleInitialProviderRequestImpl
 import com.android.build.gradle.internal.dependency.PluginConfigurations
@@ -52,7 +54,7 @@ internal class FusedLibraryBundleTest {
     @Test
     fun testAarBundle() {
         testCreationConfig<FusedLibraryBundleAar, FusedLibraryBundleAar.CreationAction>(
-            "bundle.aar"
+            "test.aar"
         )
     }
 
@@ -98,7 +100,7 @@ internal class FusedLibraryBundleTest {
         creationAction.configure(task)
 
         Truth.assertThat(task.destinationDirectory.get().asFile.absolutePath).isEqualTo(
-            project.layout.buildDirectory.dir(task.name).get().asFile.absolutePath
+            project.layout.buildDirectory.dir("$FD_OUTPUTS/$EXT_AAR").get().asFile.absolutePath
         )
         Truth.assertThat(task.archiveFileName.get()).isEqualTo(archiveFileName)
     }

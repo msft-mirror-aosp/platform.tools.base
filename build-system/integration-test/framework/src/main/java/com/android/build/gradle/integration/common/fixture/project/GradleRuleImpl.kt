@@ -66,10 +66,9 @@ internal class GradleRuleImpl internal constructor(
     private var lastBuildResult: GradleBuildResult? = null
 
     override val build: GradleBuild by lazy {
-        if (status != Status.WRITTEN) {
-            doWriteBuild()
-        }
+        status = Status.WRITTEN
 
+        doWriteBuild()
         computeGradleBuild(buildDefinition, locations.testFiles, locations.testSupportLocations)
     }
 
@@ -96,8 +95,12 @@ internal class GradleRuleImpl internal constructor(
         FileUtils.deleteRecursivelyIfExists(rootBuildPath.toFile())
         rootBuildPath.createDirectories()
 
+        // always create the maven repo as new items can be added during reconfiguration
+        val repoPath = computeMavenRepoLocation()
+
         val localRepositories = mutableListOf<Path>().also {
             it += BuildSystem.get().localRepositories
+            it.add(repoPath)
         }
 
         // Libraries can also be added inline during dependencies. We need to go through all
@@ -105,20 +108,16 @@ internal class GradleRuleImpl internal constructor(
         val allLibraries = buildDefinition.gatherInlineLibraries() + externalLibraries
 
         if (allLibraries.isNotEmpty()) {
-            val repoPath = computeMavenRepoLocation(rootBuildPath)
             MavenRepoGenerator(allLibraries).generate(repoPath)
-
-            localRepositories.add(repoPath)
         }
 
         buildDefinition.write(rootBuildPath, localRepositories)
 
         createAncillaryBuildFiles()
-
-        status = Status.WRITTEN
     }
 
-    private fun computeMavenRepoLocation(rootBuildPath: Path): Path = rootBuildPath.resolve("_maven_repo")
+    private fun computeMavenRepoLocation(): Path =
+        locations.testFiles.resolve(buildDefinition.rootFolderName).resolve("_maven_repo")
 
     /**
      * compute a [GradleBuild].
@@ -176,7 +175,17 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
+                is AssetPackBundleDefinitionImpl -> AssetPackBundleImpl(
+                    subProjectLocation,
+                    definition,
+                )
+
                 is AiPackDefinitionImpl -> AiPackImpl(
+                    subProjectLocation,
+                    definition,
+                )
+
+                is FusedLibraryDefinitionImpl -> FusedLibraryImpl(
                     subProjectLocation,
                     definition,
                 )
@@ -202,6 +211,7 @@ internal class GradleRuleImpl internal constructor(
             definition = buildDefinition,
             executorProvider = { instantiateExecutor() },
             modelBuilderProvider = { instantiateModelBuilder() },
+            mavenRepoPath = computeMavenRepoLocation()
         ).also { build ->
             subProjects.values.forEach {
                 it.build = build
@@ -246,7 +256,7 @@ internal class GradleRuleImpl internal constructor(
         override val androidNdkSxSRootSymlink: File
             get() = locations.testSupportLocations.buildDir.resolve(".").canonicalFile.resolve(SdkConstants.FD_NDK_SIDE_BY_SIDE) // FIXME
         override val additionalMavenRepoDir: Path
-            get() = computeMavenRepoLocation(getMainBuildDirectory())
+            get() = computeMavenRepoLocation()
         override val profileDirectory: Path?
             get() = if (enableProfileOutput) GradleTestProjectBuilder.DEFAULT_PROFILE_DIR else null
     }

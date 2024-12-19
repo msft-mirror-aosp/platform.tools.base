@@ -27,7 +27,7 @@ class AndroidTestClasspathTest {
     @get:Rule
     val rule = GradleRule.configure()
         .withMavenRepository {
-            jar("com.test:lib:1.0").setEmptyClasses("com/test/MyClass")
+            jar("com.test:lib:1.0").addEmptyClasses("com/test/MyClass")
         }.from {
             androidApplication {
                 android {

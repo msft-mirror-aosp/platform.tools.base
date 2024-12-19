@@ -345,14 +345,11 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, the R8 task will perform resource shrinking in addition to code shrinking.
-     * When disabled, resource shrinking will be performed in a separate task after the R8 task has
-     * run.
-     *
-     * Note: If resource shrinking is not enabled, this flag has no effect.
+     * Whether to disable AGP's addition of the -Xuse-inline-scopes-numbers flag for KotlinCompile
+     * tasks.
      */
-    R8_INTEGRATED_RESOURCE_SHRINKING(
-        "android.r8.integratedResourceShrinking",
+    DISABLE_INLINE_SCOPES_NUMBERS(
+        "android.kotlin.disableInlineScopesNumbers",
         false,
         FeatureStage.Experimental
     ),
@@ -404,6 +401,19 @@ enum class BooleanOption(
      * by a plugin by implementing ManagedDeviceTestRunner APIs.
      */
     GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE("android.experimental.testOptions.managedDevices.customDevice", true, FeatureStage.SoftlyEnforced(VERSION_9_0)),
+
+    /**
+     * When enabled, the R8 task will perform resource shrinking in addition to code shrinking.
+     * When disabled, resource shrinking will be performed in a separate task after the R8 task has
+     * run.
+     *
+     * Note: If resource shrinking is not enabled, this flag has no effect.
+     */
+    R8_INTEGRATED_RESOURCE_SHRINKING(
+        "android.r8.integratedResourceShrinking",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0)
+    ),
 
     /* -------------------
      * DEPRECATED FEATURES

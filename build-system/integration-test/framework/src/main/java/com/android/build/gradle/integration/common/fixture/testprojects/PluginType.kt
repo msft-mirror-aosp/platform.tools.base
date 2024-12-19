@@ -141,6 +141,12 @@ sealed class PluginType(
         useNewDsl = true,
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
     )
+    object ANDROID_ASSET_PACK_BUNDLE: PluginType(
+        id = "com.android.asset-pack-bundle",
+        isAndroid = true,
+        useNewDsl = true,
+        version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
+    )
     object ANDROID_SETTINGS: PluginType(
         id = "com.android.settings",
         isAndroid = true,

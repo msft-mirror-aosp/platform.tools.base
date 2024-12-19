@@ -18,12 +18,15 @@ package com.android.build.gradle.integration.library
 
 import com.android.SdkConstants
 import com.android.SdkConstants.EXT_AAR
+import com.android.build.gradle.integration.common.utils.getFusedLibraryAar
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
+import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryReport
@@ -31,6 +34,7 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.ZipFileSubject
+import com.android.tools.build.gradle.internal.profile.ModulePropertyKeys
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.gradle.api.JavaVersion
@@ -66,7 +70,12 @@ class FusedLibraryClassesVerificationTest {
             MavenRepoGenerator.Library(
                 "com.externaldep:depwithdep:1",
                 "com.externaldep:externalaar:1"
-            )
+            ),
+            MavenRepoGenerator.Library(
+                "this.dependency:has-a-dependency-that-does-not-exist:1",
+                // The dependencies listed do not exist
+                "this.dependency:doesnotexist:1"
+            ),
         )
     )
 
@@ -292,6 +301,8 @@ class FusedLibraryClassesVerificationTest {
             androidFusedLibrary {
                 namespace = "com.example.fusedLib1"
                 minSdk = 34
+                experimentalProperties[BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] =
+                    true
             }
             // Use addDependenciesToFusedLibProject() for setting dependencies.
             dependencies {}
@@ -438,7 +449,7 @@ class FusedLibraryClassesVerificationTest {
         addDependenciesToFusedLibProject(dependenciesBlock)
         project.execute(":$FUSED_LIBRARY_PROJECT_NAME:bundle")
 
-        val aar = FileUtils.join(fusedLib1Project.buildDir, "bundle", "bundle.aar")
+        val aar = fusedLib1Project.getFusedLibraryAar()
         ZipFileSubject.assertThat(aar) {
             it.contains("libs/testClass.jar")
         }
@@ -481,11 +492,7 @@ class FusedLibraryClassesVerificationTest {
 
             val expectedFailure = "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
                     "   [Databinding is not supported by Fused Library modules]:\n" +
-                    "    * androidx.databinding:viewbinding is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-common is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-runtime is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-adapters is not a permitted dependency.\n" +
-                    "    * androidx.databinding:databinding-ktx is not a permitted dependency."
+                    "    * androidx.databinding:databinding-runtime is not a permitted dependency."
 
             listOf(
                 "generatePomFileForMavenPublication",
@@ -539,6 +546,38 @@ class FusedLibraryClassesVerificationTest {
                     "   [Require transitive dependency inclusion]:\n" +
                     "    * com.externaldep:externalaar:1 is included in the fused library .aar, " +
                     "however its parent dependency com.externaldep:depwithdep:1 was not.")
+
+        // Check validation can be disabled.
+        TestFileUtils.searchAndReplace(
+            project.getSubproject(FUSED_LIBRARY_PROJECT_NAME).buildFile,
+            """"android.experimental.fusedlibrary.validateDependencies":true""",
+            """"android.experimental.fusedlibrary.validateDependencies":false"""
+        )
+        project.executor().run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+    }
+
+    //Regression test for b/383184394
+    @Test
+    fun checkUnresolvedDependencyFailures() {
+        val dependenciesBlock = """
+            include("this.dependency:has-a-dependency-that-does-not-exist:1")
+        """.trimIndent()
+
+        addDependenciesToFusedLibProject(dependenciesBlock)
+        val failure = project.executor().expectFailure()
+            .run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        failure.assertErrorContains(
+            "> Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
+                    "   [Unresolved Dependencies]:\n" +
+                    "    * Could not find this.dependency:doesnotexist:1.\n" +
+                    "  Searched in the following locations:")
+        failure.assertErrorContains(
+            "  The following checks did not finish:\n" +
+                    "   [Databinding is not supported by Fused Library modules]:\n" +
+                    "    * class org.gradle.api.internal.artifacts.result.DefaultUnresolvedDependencyResult is not supported by this check.\n" +
+                    "   [Require transitive dependency inclusion]:\n" +
+                    "    * class org.gradle.api.internal.artifacts.result.DefaultUnresolvedDependencyResult is not supported by this check."
+        )
     }
 
     private fun checkFusedLibReportContents(
@@ -586,7 +625,7 @@ class FusedLibraryClassesVerificationTest {
     }
 
     private fun extractClassesJar(fusedLib1Project: GradleTestProject): File {
-        val aar = FileUtils.join(fusedLib1Project.buildDir, "bundle", "bundle.aar")
+        val aar = fusedLib1Project.getFusedLibraryAar()
         val tempFolder = temporaryFolder.newFolder()
         val classesJar = File(tempFolder, SdkConstants.FN_CLASSES_JAR)
 

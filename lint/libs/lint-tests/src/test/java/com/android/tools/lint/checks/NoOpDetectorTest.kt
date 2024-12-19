@@ -19,6 +19,8 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.useFirUast
+import com.intellij.pom.java.LanguageLevel
 
 class NoOpDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector {
@@ -971,6 +973,109 @@ class NoOpDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      .run()
+      .expectClean()
+  }
+
+  fun testStaticMethodInRecord_before16() {
+    lint()
+      .files(
+        java(
+            """
+            package some.pkg;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+            public @interface MyAnno {
+                enum Kind { KIND_1, KIND_2 }
+            }
+          """
+          )
+          .indented(),
+        java(
+            """
+            import some.pkg.MyAnno;
+
+            public record MyRecord(@MyAnno String p1, @MyAnno int p2) {
+                public static MyRecord create(String p1, int p2) {
+                    return new MyRecord(p1, p2);
+                }
+            }
+          """
+          )
+          .indented(),
+      )
+      .allowCompilationErrors()
+      .javaLanguageLevel(LanguageLevel.JDK_15)
+      .run()
+      .apply {
+        if (useFirUast()) {
+          // K2 gracefully(?) parses Java record?!
+          expectClean()
+        } else {
+          // On the other hand, in K1, broken at PSI level:
+          /*
+          { // MyRecord body as the enclosing block
+          public static var create: MyRecord
+          (String)
+          p1
+          var p2: int
+          {
+            return MyRecord(p1, p2)
+          }
+          } // end of MyRecord body
+          */
+          expect(
+            """
+src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
+    public static MyRecord create(String p1, int p2) {
+                                         ~~
+0 errors, 1 warnings
+        """
+          )
+        }
+      }
+  }
+
+  fun testStaticMethodInRecord() {
+    lint()
+      .files(
+        java(
+            """
+            package some.pkg;
+
+            import java.lang.annotation.ElementType;
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+            import java.lang.annotation.Target;
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+            public @interface MyAnno {
+                enum Kind { KIND_1, KIND_2 }
+            }
+          """
+          )
+          .indented(),
+        java(
+            """
+            import some.pkg.MyAnno;
+
+            public record MyRecord(@MyAnno String p1, @MyAnno int p2) {
+                public static MyRecord create(String p1, int p2) {
+                    return new MyRecord(p1, p2);
+                }
+            }
+          """
+          )
+          .indented(),
+      )
+      .javaLanguageLevel(LanguageLevel.JDK_16)
       .run()
       .expectClean()
   }

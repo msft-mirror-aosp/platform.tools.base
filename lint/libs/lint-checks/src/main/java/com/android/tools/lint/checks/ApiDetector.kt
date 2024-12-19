@@ -1229,10 +1229,21 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       var suggestedFix = fix ?: apiLevelFix(missing, minSdk)
 
-      if (owner == "java.util.List" && (name == "removeFirst" || name == "removeLast")) {
+      var location = location
+      if (
+        owner == "java.util.List" &&
+          (name == "removeFirst" || name == "removeLast") &&
+          node is UCallExpression
+      ) {
+        location = context.getCallLocation(node, includeReceiver = false, includeArguments = true)
+        val replacement = getRemoveReplacementSource(name, node)
+        val display = getRemoveReplacementSourceDisplay(replacement)
         formatString +=
-          " (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `remove(`*index*`)` instead.)"
-        suggestedFix = fix().alternatives(createRemoveFirstFix(context, node, name), suggestedFix)
+          " (Prior to API level 35, this call would resolve to a Kotlin stdlib extension function. You can use `$display` instead.)"
+
+        suggestedFix =
+          fix()
+            .alternatives(createRemoveFirstFix(location, name, replacement, display), suggestedFix)
       }
 
       report(
@@ -2485,13 +2496,19 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           owner == "kotlin.collections.CollectionsKt") &&
           (name == "removeFirst" || name == "removeLast") &&
           !call.isAliased() -> {
+          val replacement = getRemoveReplacementSource(name, call)
+          val display = getRemoveReplacementSourceDisplay(replacement)
+          val location =
+            context.getCallLocation(call, includeReceiver = false, includeArguments = true)
           val incident =
             Incident(
               UNSUPPORTED,
               call,
-              context.getLocation(call),
-              "This Kotlin extension function will be hidden by `java.util.SequencedCollection` starting in API 35",
-              createRemoveFirstFix(context, call, name),
+              location,
+              "This Kotlin extension function will be hidden by `java.util.SequencedCollection` starting in API 35: `$name`. " +
+                "When this source code is recompiled against API level 35, it will crash on older levels. " +
+                "You can avoid this by using `$display` instead.\n",
+              createRemoveFirstFix(location, name, replacement, display),
             )
           context.report(incident.overrideSeverity(Severity.WARNING))
         }
@@ -3481,22 +3498,48 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       return LintFix.create().data(KEY_REQUIRES_API, api, KEY_MIN_API, minSdk)
     }
 
-    private fun createRemoveFirstFix(context: JavaContext, node: UElement, name: String?): LintFix {
-      val replacement =
-        if (name == "removeFirst") {
-          "removeAt(0"
+    private fun getRemoveReplacementSource(name: String?, node: UElement): String {
+      return if (name == "removeFirst") {
+        "removeAt(0)"
+      } else {
+        val receiver = (node as? UCallExpression)?.receiver?.sourcePsi?.text
+        if (receiver != null) {
+          "removeAt($receiver.lastIndex)"
         } else {
-          val receiver = (node as? UCallExpression)?.receiver?.sourcePsi?.text ?: ""
-          "removeAt($receiver.lastIndex"
+          "removeAt(lastIndex)"
         }
+      }
+    }
+
+    private fun getRemoveReplacementSourceDisplay(source: String): String {
+      val max = 50
+      if (source.contains("\n") || source.length > max) {
+        val start = source.indexOf('(') + 1
+        val end = source.lastIndexOf('.')
+        var receiver = source.substring(start, end).lines().joinToString("") { it.trim() }
+        if (receiver.length > max - 10) {
+          receiver = "list"
+        }
+        return source.substring(0, start) + receiver + source.substring(end)
+      }
+      return source
+    }
+
+    private fun createRemoveFirstFix(
+      range: Location,
+      name: String?,
+      replacement: String,
+      replacementDisplay: String,
+    ): LintFix {
       val replaceFix =
         LintFix.create()
           // the replacement is missing ")", so manually create the display name
-          .name("Replace with $replacement)")
+          .name("Replace with $replacementDisplay")
           .replace()
           .pattern("$name\\s*\\(")
-          .with(replacement)
-          .range(context.getLocation(node))
+          .with(replacement.removeSuffix(")"))
+          .range(range)
+          .reformat(replacement.contains("\n"))
           .build()
       return replaceFix
     }

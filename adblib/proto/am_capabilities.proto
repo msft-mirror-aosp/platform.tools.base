@@ -1,0 +1,38 @@
+// This is a copy of the proto declaration found in Android OS
+// framework/base/proto/src/am_capabilities.proto which is what
+// am use to generate its outputs in protocol buffer mode
+// (am capabilities --protobuf)
+// See https://cs.android.com/android/platform/superproject/main/+/1b409eb6cacc9508e6f415353ddcacdcb6bdaf26:frameworks/base/proto/src/am_capabilities.proto
+
+syntax = "proto3";
+
+option java_package = "com.android.server.adb.protos";
+option java_outer_classname = "AmCapabilitiesProto";
+
+package com.android.server.am;
+
+message Capability {
+  string name = 1;
+}
+
+message VMCapability {
+  string name  = 1;
+}
+
+message FrameworkCapability {
+  string name  = 1;
+}
+
+message VMInfo {
+  // The value of the "java.vm.name" system property
+  string name = 1;
+  // The value of the "java.vm.version" system property
+  string version = 2;
+}
+
+message Capabilities {
+  repeated Capability values = 1;
+  repeated VMCapability vm_capabilities = 2;
+  repeated FrameworkCapability framework_capabilities = 3;
+  VMInfo vm_info = 4;
+}

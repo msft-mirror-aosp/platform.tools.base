@@ -16,16 +16,12 @@
 
 package com.android.build.gradle.integration.dexing
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
-import org.gradle.api.JavaVersion
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class CacheableDexingTransformTest {
 
@@ -33,33 +29,28 @@ class CacheableDexingTransformTest {
     val buildCacheDir = TemporaryFolder()
 
     @get:Rule
-    val projectCopy1 = createProject("projectCopy1")
+    val rule1 = GradleRule.from(folderName = "projectCopy1") {
+        createProject()
+    }
 
     @get:Rule
-    val projectCopy2 = createProject("projectCopy2")
+    val rule2 = GradleRule.from(folderName = "projectCopy2") {
+        createProject()
+    }
 
-    private fun createProject(name: String) = createGradleProject(name) {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    private fun GradleBuildDefinition.createProject() {
+        androidApplication {
             android {
-                defaultCompileSdk()
-                minSdk = 24
+                defaultConfig.minSdk = 24
             }
             dependencies {
                 implementation(project(":lib"))
             }
         }
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            android {
-                defaultCompileSdk()
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_11
-                    targetCompatibility = JavaVersion.VERSION_11
-                }
-            }
-            addFile(
+        androidLibrary {
+            files.add(
                 "src/main/java/com/example/lib/JavaClassWithNestedClass.java",
+                //language=java
                 """
                 package com.example.lib;
                 public class JavaClassWithNestedClass {
@@ -72,49 +63,49 @@ class CacheableDexingTransformTest {
         }
     }
 
-    @Before
-    fun setUp() {
-        listOf(projectCopy1, projectCopy2).forEach { project ->
-            project.settingsFile.appendText("\n" +
-                """
-                |buildCache {
-                |    local {
-                |        directory = "${buildCacheDir.root.path.replace("\\", "\\\\")}"
-                |    }
-                |}
-                """.trimMargin()
-            )
-        }
-    }
-
     @Test
     fun `Bug 266599585 - test incremental build after cache hit`() {
-        val result1 =
-            projectCopy1.executor().withArgument("--build-cache").run(":app:mergeLibDexDebug")
+        val build1 = rule1.build {
+            // this must be done here, otherwise the temporary folder has not been prepared
+            settings {
+                enableLocalCache(buildCacheDir.root.toPath())
+            }
+        }
+        val result1 = build1.executor
+            .withArgument("--build-cache")
+            .run(":app:mergeLibDexDebug")
+
         assertThat(result1.getTask(":app:mergeLibDexDebug")).didWork()
         result1.assertOutputContains("Running dexing transform non-incrementally")
 
         // Building the same project from a different location should get a cache hit
-        val result2 =
-            projectCopy2.executor().withArgument("--build-cache").run(":app:mergeLibDexDebug")
+        val build2 = rule2.build {
+            // this must be done here, otherwise the temporary folder has not been prepared
+            settings {
+                enableLocalCache(buildCacheDir.root.toPath())
+            }
+        }
+        val result2 = build2.executor
+            .withArgument("--build-cache")
+            .run(":app:mergeLibDexDebug")
+
         assertThat(result2.getTask(":app:mergeLibDexDebug")).wasFromCache()
         result2.assertOutputDoesNotContain("Running dexing transform")
 
         // Make a change to a nested class (regression test for bug 266599585)
-        searchAndReplace(
-            File(
-                projectCopy2.getSubproject(":lib").mainSrcDir,
-                "com/example/lib/JavaClassWithNestedClass.java"
-            ),
+        build2.androidLibrary().files.update(
+            "src/main/java/com/example/lib/JavaClassWithNestedClass.java"
+        ).searchAndReplace(
             "// This line will be changed later",
             "public void newMethodInNestedClass() { }"
         )
 
         // The next build after cache hit should be incremental
-        val result3 =
-            projectCopy2.executor().withArgument("--build-cache").run(":app:mergeLibDexDebug")
+        val result3 = build2.executor
+            .withArgument("--build-cache")
+            .run(":app:mergeLibDexDebug")
+
         assertThat(result3.getTask(":app:mergeLibDexDebug")).didWork()
         result3.assertOutputContains("Running dexing transform incrementally")
     }
-
 }

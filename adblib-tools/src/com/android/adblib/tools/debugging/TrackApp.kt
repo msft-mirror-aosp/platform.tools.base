@@ -22,6 +22,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.activityManager
 import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.hasAvailableFeature
@@ -156,4 +157,27 @@ suspend fun ConnectedDevice.isTrackAppSupported(): Boolean {
     // Note: "track-app" is only supported on API 31+ (Android "S"), but there
     // is an official feature for it.
     return hasAvailableFeature(AdbFeatures.TRACK_APP)
+}
+
+/**
+ * Whether [trackAppStateFlow] **and** [AdbFeatures.APP_INFO] are supported
+ */
+suspend fun ConnectedDevice.isAppInfoSupported(): Boolean {
+    // Note: In theory, `app_info` implies `track_app`, but we check anyways
+    // `track_app` was introduced around API 31, whereas `app_info` was introduced
+    // around API 36.
+    return if (!isTrackAppSupported()) {
+        false
+    }
+    // "adbd" needs to support `app_info`...
+    else if (!hasAvailableFeature(AdbFeatures.APP_INFO)) {
+        false
+    } else {
+        val capabilitiesResult = activityManager.capabilities() ?: return false
+
+        // ...as well as the Android VM...
+        // ...and the Android Framework
+        capabilitiesResult.vmCapabilities.contains(AdbFeatures.APP_INFO) &&
+                capabilitiesResult.frameworkCapabilities.contains(AdbFeatures.APP_INFO)
+    }
 }

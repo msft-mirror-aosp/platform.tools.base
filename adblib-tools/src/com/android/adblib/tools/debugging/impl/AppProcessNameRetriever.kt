@@ -15,13 +15,18 @@
  */
 package com.android.adblib.tools.debugging.impl
 
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
+import com.android.adblib.property
 import com.android.adblib.selector
 import com.android.adblib.shellCommand
+import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.tools.debugging.scope
+import com.android.adblib.withProcessPrefix
 import com.android.adblib.withTextCollector
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -32,14 +37,31 @@ import java.time.Duration
 
 internal class AppProcessNameRetriever(private val process: AppProcess) {
 
-    val logger = adbLogger(process.device.session)
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val logger = adbLogger(process.device.session).withProcessPrefix(device, process.pid)
 
     suspend fun retrieve(retryCount: Int, retryDelay: Duration): String {
-        return process.jdwpProcess?.let {
-            retrieveProcessNameFromJdwpProcess(it)
-        } ?: run {
-            retrieveProcessNameFromProc(retryCount, retryDelay)
+        val useAppInfo =
+            device.session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&
+                    device.isAppInfoSupported()
+        return if (useAppInfo) {
+            retrieveProcessNameUsingAppProcessEntryFlow()
+        } else {
+            process.jdwpProcess?.let {
+                retrieveProcessNameFromJdwpProcess(it)
+            } ?: run {
+                retrieveProcessNameFromProc(retryCount, retryDelay)
+            }
         }
+    }
+
+    private suspend fun retrieveProcessNameUsingAppProcessEntryFlow(): String {
+        logger.debug { "Retrieve process name using `appProcessEntryFlow`" }
+        // If the `app_info` feature is supported, the process name will eventually
+        // be set as part of the `track_app` service
+        return process.appProcessEntryFlow.mapNotNull { it.processName }.first()
     }
 
     private suspend fun retrieveProcessNameFromJdwpProcess(jdwpProcess: JdwpProcess): String {
@@ -84,7 +106,7 @@ internal class AppProcessNameRetriever(private val process: AppProcess) {
                     lastValidName = name
                     // We got a valid name, but need to quickly recheck it.
                     // Don't count it as a retry
-                    delay (100)
+                    delay(100)
                 }
             }
 

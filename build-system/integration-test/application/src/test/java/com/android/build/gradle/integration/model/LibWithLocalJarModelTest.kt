@@ -37,10 +37,7 @@ class LibWithLocalJarModelTest : ModelComparator() {
         }
         androidLibrary {
             dependencies {
-                implementation(localJar {
-                    name = "foo.jar"
-                    addClass("com/example/MainClass")
-                })
+                implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") })
             }
         }
     }

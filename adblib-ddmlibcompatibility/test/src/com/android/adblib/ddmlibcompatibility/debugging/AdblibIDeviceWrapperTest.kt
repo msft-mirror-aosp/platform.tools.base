@@ -252,7 +252,7 @@ class AdblibIDeviceWrapperTest {
     fun executeShellCommand() = runBlockingWithTimeout {
         // Prepare
         val (connectedDevice, _) = createConnectedDevice(
-            "device1", DeviceState.DeviceStatus.BOOTLOADER
+            "device1", DeviceState.DeviceStatus.DEVICE
         )
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
         val listReceiver = ListReceiver()
@@ -326,7 +326,7 @@ class AdblibIDeviceWrapperTest {
     fun executeShellCommand_throwsIOException_whenInterrupted() = runBlockingWithTimeout {
         // Prepare
         val (connectedDevice, deviceState) = createConnectedDevice(
-            "device1", DeviceState.DeviceStatus.BOOTLOADER
+            "device1", DeviceState.DeviceStatus.DEVICE
         )
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
         val listReceiver = ListReceiver()
@@ -354,7 +354,7 @@ class AdblibIDeviceWrapperTest {
         runBlockingWithTimeout {
             // Prepare
             val (connectedDevice, _) = createConnectedDevice(
-                "device1", DeviceState.DeviceStatus.BOOTLOADER
+                "device1", DeviceState.DeviceStatus.DEVICE
             )
             val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
             exceptionRule.expect(AdbCommandRejectedException::class.java)
@@ -371,7 +371,7 @@ class AdblibIDeviceWrapperTest {
     fun executeRemoteCommandCanHandleAbbExec() = runBlockingWithTimeout {
         // Prepare
         val (connectedDevice, _) = createConnectedDevice(
-            "device1", DeviceState.DeviceStatus.BOOTLOADER
+            "device1", DeviceState.DeviceStatus.DEVICE
         )
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
         val listReceiver = ListReceiver()

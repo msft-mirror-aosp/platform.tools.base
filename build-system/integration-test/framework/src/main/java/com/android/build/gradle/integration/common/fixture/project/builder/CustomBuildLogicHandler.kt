@@ -20,8 +20,12 @@ import com.android.build.gradle.integration.common.fixture.project.builder.bytec
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureComponentCallback
-import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
@@ -64,7 +68,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     private data class PluginData(
         val callbackClass: KClass<out PluginCallback>,
         val pluginClass: KClass<*>,
-        val extensionTypeClassName: String
+        val extensionTypeClassName: String?
     )
 
     companion object {
@@ -80,6 +84,10 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
             // legacy DSL callbacks
             PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),
+            PluginData(LegacyLibraryCallback::class, LegacyLibraryCallbackPlugin::class, "com/android/build/gradle/LibraryExtension"),
+
+            // generic plugin with no extension
+            PluginData(GenericCallback::class, GenericCallbackPlugin::class, null)
         )
     }
 
@@ -99,12 +107,20 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         val newPluginBinaryName = "${callbackBinaryName}_Plugin"
         val newPluginClassName = "${callbackClass.typeName}_Plugin"
 
-        val newPluginClass = writePluginClass(
-            newPluginBinaryName,
-            basePluginBinaryName,
-            callbackBinaryName,
-            pluginData.extensionTypeClassName
-        )
+        val newPluginClass = if (pluginData.extensionTypeClassName != null) {
+            writePluginClass(
+                newPluginBinaryName,
+                basePluginBinaryName,
+                callbackBinaryName,
+                pluginData.extensionTypeClassName
+            )
+        } else {
+            writeGenericPluginClass(
+                newPluginBinaryName,
+                basePluginBinaryName,
+                callbackBinaryName,
+            )
+        }
 
         zipOutputStream.write(newPluginBinaryName, newPluginClass)
 
@@ -126,7 +142,6 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     /**
      * Returns information about the plugin as a [PluginData] based on the type of the callback
      */
-
     private fun getPluginData(callbackClass: Class<out PluginCallback>): PluginData  {
         for (pluginData in pluginMapping) {
             if (pluginData.callbackClass.java.isAssignableFrom(callbackClass)) {
@@ -139,13 +154,13 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     /**
      * Writes the custom plugin task from scratch using ASM.
      *
-     * The class will extend a base case based on the type of the android component extension.
+     * The class will extend a base case based on the type of the extension.
      * It will only implement the `handleComponents` method.
      *
      * @param className the (binary) name of the class to generate
      * @param baseClassName the (binary) name of the plugin class to extend
-     * @param callbackName the (binary) name of the callback to call in `handleComponents`
-     * @param extensionType the class name (w/o package) of the extension handled in the callback
+     * @param callbackName the (binary) name of the callback to call in `handleExtension`
+     * @param extensionType the (binary) name of the extension handled in the callback
      */
     private fun writePluginClass(
         className: String,
@@ -205,6 +220,79 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
             callbackName,
             "handleExtension",
             "(Lorg/gradle/api/Project;L${extensionType};)V",
+            false
+        )
+        method.visitInsn(RETURN)
+        method.visitEnd()
+
+        writer.visitEnd()
+        return writer.toByteArray()
+    }
+
+    /**
+     * Writes the custom plugin task from scratch using ASM, for generic plugins that don't
+     * handle any extension.
+     *
+     * @param className the (binary) name of the class to generate
+     * @param baseClassName the (binary) name of the plugin class to extend
+     * @param callbackName the (binary) name of the callback to call in `handleProject`
+     */
+    private fun writeGenericPluginClass(
+        className: String,
+        baseClassName: String,
+        callbackName: String,
+    ): ByteArray {
+        val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+        writer.visit(
+            Opcodes.V11,
+            ACC_PUBLIC + ACC_SUPER,
+            className,
+            null,
+            baseClassName,
+            arrayOf()
+        )
+        val constructor = writer.visitMethod(
+            ACC_PUBLIC,
+            "<init>",
+            "()V",
+            null,
+            null
+        )
+        constructor.visitCode();
+        constructor.visitVarInsn(ALOAD, 0)
+        constructor.visitMethodInsn(
+            INVOKESPECIAL,
+            baseClassName,
+            "<init>",
+            "()V",
+            false
+        )
+        constructor.visitInsn(RETURN)
+        constructor.visitEnd()
+
+        val method = writer.visitMethod(
+            ACC_PUBLIC,
+            "handleProject",
+            "(Lorg/gradle/api/Project;)V",
+            null,
+            null
+        )
+        method.visitCode()
+        method.visitTypeInsn(NEW, callbackName)
+        method.visitInsn(DUP)
+        method.visitMethodInsn(
+            INVOKESPECIAL,
+            callbackName,
+            "<init>",
+            "()V",
+            false
+        )
+        method.visitVarInsn(ALOAD, 1)
+        method.visitMethodInsn(
+            INVOKEVIRTUAL,
+            callbackName,
+            "handleProject",
+            "(Lorg/gradle/api/Project;)V",
             false
         )
         method.visitInsn(RETURN)

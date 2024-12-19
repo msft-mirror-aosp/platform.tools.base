@@ -74,9 +74,19 @@ interface GradleBuild {
     fun aiPack(path: String): AiPackProject
     /**
      * Queries for an Asset pack project via its gradle path.
-     * The project must exist and be an AI Pack project
+     * The project must exist and be an Asset Pack project
      */
     fun assetPack(path: String): AssetPackProject
+    /**
+     * Queries for an Asset pack bundle project via its gradle path.
+     * The project must exist and be an Asset Pack project
+     */
+    fun assetPackBundle(path: String): AssetPackBundleProject
+    /**
+     * Queries for a Fused Library project via its gradle path.
+     * The project must exist and be a Fused Library project
+     */
+    fun fusedLibrary(path: String): FusedLibraryProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -216,6 +226,30 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
+    override fun assetPackBundle(path: String): AssetPackBundleProject {
+        val project = subProject(path)
+        if (project is AssetPackBundleProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Asset Pack Bundle project.
+                Possible options are ${getProjectListByType<AssetPackBundleImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun fusedLibrary(path: String): FusedLibraryProject {
+        val project = subProject(path)
+        if (project is FusedLibraryProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not a Fused Library project.
+                Possible options are ${getProjectListByType<FusedLibraryImpl>()}
+            """.trimIndent()
+        )
+    }
+
     internal inline fun <reified T> getProjectListByType(): String {
         return subProjectsForValidation.filter { it.key.javaClass == T::class.java }.map { it.key }.joinToString()
     }
@@ -232,6 +266,7 @@ internal class GradleBuildImpl(
     private val definition: GradleBuildDefinitionImpl,
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
+    internal val mavenRepoPath: Path,
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {

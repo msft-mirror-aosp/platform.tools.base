@@ -23,6 +23,7 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Publ
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig;
 
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
@@ -152,12 +153,13 @@ public class AndroidArtifacts {
     private static final String TYPE_BASE_MODULE_METADATA = "android-base-module-metadata";
     private static final String TYPE_FEATURE_RESOURCE_PKG = "android-feature-res-ap_";
     private static final String TYPE_FEATURE_DEX = "android-feature-dex";
+    private static final String TYPE_FEATURE_SHRUNK_JAVA_RES = "android-feature-shrunk-java-res";
+    private static final String TYPE_FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT = "android-feature-shrunk-resources-proto-format";
     private static final String TYPE_FEATURE_SIGNING_CONFIG_DATA =
             "android-feature-signing-config-data";
     private static final String TYPE_FEATURE_SIGNING_CONFIG_VERSIONS =
             "android-feature-signing-config-versions";
     private static final String TYPE_FEATURE_NAME = "android-feature-name";
-    private static final String TYPE_FEATURE_SHRUNK_JAVA_RES = "android-feature-shrunk-java-res";
 
     // types for reverse metadata content.
     private static final String TYPE_REVERSE_METADATA_FEATURE_DECLARATION =
@@ -167,6 +169,8 @@ public class AndroidArtifacts {
     private static final String TYPE_REVERSE_METADATA_CLASSES = "android-reverse-metadata-classes";
     private static final String TYPE_REVERSE_METADATA_JAVA_RES =
             "android-reverse-metadata-java-res";
+    private static final String TYPE_REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT =
+            "android-reverse-metadata-linked-resources-proto-format";
     private static final String TYPE_REVERSE_METADATA_NATIVE_DEBUG_METADATA =
             "android-reverse-metadata-native-debug-metadata";
     private static final String TYPE_REVERSE_METADATA_NATIVE_SYMBOL_TABLES =
@@ -532,9 +536,16 @@ public class AndroidArtifacts {
         // The feature dex files output by R8 or DexSplitter from the base. The base produces and
         // publishes these files when the base has dynamic features and code shrinking occurs.
         FEATURE_DEX(TYPE_FEATURE_DEX),
+
         // The feature java resources output by R8 from the base. The base produces and publishes
         // these files when the base has dynamic features and R8 code shrinking occurs.
         FEATURE_SHRUNK_JAVA_RES(TYPE_FEATURE_SHRUNK_JAVA_RES),
+
+        /**
+         * Shrunk resources published from the base module to be consumed by dynamic feature modules
+         * (see {@link ApplicationCreationConfig#getShrinkingWithDynamicFeatures}).
+         */
+        FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT(TYPE_FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT),
 
         // The name of an instant or dynamic feature module
         // This is published by {@link FeatureNameWriterTask} to be consumed by dependencies
@@ -550,6 +561,13 @@ public class AndroidArtifacts {
         REVERSE_METADATA_FEATURE_MANIFEST(TYPE_REVERSE_METADATA_FEATURE_MANIFEST),
         REVERSE_METADATA_CLASSES(TYPE_REVERSE_METADATA_CLASSES),
         REVERSE_METADATA_JAVA_RES(TYPE_REVERSE_METADATA_JAVA_RES),
+
+        /**
+         * Linked resources published from dynamic feature modules to be consumed by the base module
+         * (see {@link ApplicationCreationConfig#getShrinkingWithDynamicFeatures}).
+         */
+        REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT(TYPE_REVERSE_METADATA_LINKED_RESOURCES_PROTO_FORMAT),
+
         // The .so.dbg files containing the debug metadata from the corresponding .so files
         REVERSE_METADATA_NATIVE_DEBUG_METADATA(TYPE_REVERSE_METADATA_NATIVE_DEBUG_METADATA),
         // The .so.sym files containing the symbol tables from the corresponding .so files

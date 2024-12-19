@@ -759,6 +759,26 @@ class LintBaselineTest {
         old = "Call requires version 4 of the R-ext SDK (current min is 0): `rOnly`",
       )
     )
+
+    assertTrue(
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        old =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
+        new =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeFirst`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(0) instead.",
+      )
+    )
+
+    assertTrue(
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        old =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
+        new =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeLast`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(list.lastIndex) instead.",
+      )
+    )
   }
 
   @Test

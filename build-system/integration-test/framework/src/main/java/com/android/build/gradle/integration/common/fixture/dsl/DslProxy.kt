@@ -25,7 +25,9 @@ import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
+import org.gradle.api.JavaVersion
 import org.gradle.api.provider.Property
+import java.io.File
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -104,7 +106,8 @@ class DslProxy private constructor(
         }
 
         // if we land here, it means it's just a method call. let's record it
-        if (handleMethodCall(method, args)) return null
+        val returnValue = handleMethodCall(method, args)
+        if (returnValue.validResult) return returnValue.value
 
         throw Error("$method not supported")
     }
@@ -133,7 +136,10 @@ class DslProxy private constructor(
         // nullable primitive types are showing up as java types, not Kotlin types, so need to check
         // for both
         when (param.type) {
-            java.lang.Integer::class.java, Int::class.java -> {
+            Integer::class.java,
+            Int::class.java,
+            File::class.java,
+            JavaVersion::class.java -> {
                 contentHolder.set(propName, value)
             }
             java.lang.Boolean::class.java, Boolean::class.java -> {
@@ -152,14 +158,14 @@ class DslProxy private constructor(
         return true
     }
 
-    data class GetterResult(
+    data class MethodReturn(
         val validResult: Boolean,
         val value: Any?
     )
 
-    private val notAGetter = GetterResult(false, null)
+    private val notAGetter = MethodReturn(false, null)
 
-    private fun checkGetter(method: Method): GetterResult {
+    private fun checkGetter(method: Method): MethodReturn {
         if (method.parameters.isNotEmpty()) return notAGetter
 
         val regex = Regex("^get([A-Za-z0-9]+)$")
@@ -176,7 +182,7 @@ class DslProxy private constructor(
             Property::class.java -> contentHolder.getProperty(propName)
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
-                    return GetterResult(true, namespace)
+                    return MethodReturn(true, namespace)
                 }
                 throw Error("Unsupported getter type ${method.returnType} for method ${method.name}")
             }
@@ -217,7 +223,7 @@ class DslProxy private constructor(
             }
         }
 
-        return GetterResult(true, returnValue)
+        return MethodReturn(true, returnValue)
     }
 
     private fun checkNestedBlock(method: Method, args: Array<out Any?>): Boolean {
@@ -334,9 +340,21 @@ class DslProxy private constructor(
         return true
     }
 
-    private fun handleMethodCall(method: Method, args: Array<out Any?>?): Boolean {
+    private fun handleMethodCall(method: Method, args: Array<out Any?>?): MethodReturn {
+        // there is one case where we want to be able to return a File. it is
+        //   CommonExtension.getDefaultProguardFile(String)
+        // In that case, we want to intercept this call return a fake FIle that contains
+        // ths information, so that in BuildWriter, we can recognize it, and reconstruct
+        // the original call.
+        if (method.name == "getDefaultProguardFile" && method.declaringClass == CommonExtension::class.java) {
+            return MethodReturn(true, MethodReturnedFile(
+                methodName = "getDefaultProguardFile",
+                parameter = args!!.first() as String
+            ))
+        }
+
         contentHolder.call(method.name, args?.toList() ?: listOf(), method.isVarArgs)
-        return true
+        return (MethodReturn(true, null))
     }
 
     private fun findTypeParameterIndex(theClass: Class<*>, typeName: String): Int {
@@ -367,3 +385,11 @@ class DslProxy private constructor(
         throw Error("Unable to find Type info in ${theInterface.typeName} matching type parameter definition from $originalClass")
     }
 }
+
+/**
+ * Override of [File] that encodes the single argument method that returned it.
+ */
+internal class MethodReturnedFile(
+    val methodName: String,
+    val parameter: String,
+): File(parameter)

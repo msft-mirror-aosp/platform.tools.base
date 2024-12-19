@@ -20,6 +20,7 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_NAME
 import com.android.SdkConstants.TAG_USES_PERMISSION
 import com.android.sdklib.AndroidVersion.VersionCodes.S
+import com.android.tools.lint.checks.ScopedStorageDetector.Companion.ATTR_MAX_SDK_VERSION
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -41,8 +42,16 @@ class FineLocationDetector : Detector(), XmlScanner {
     for (node in manifest.documentElement) {
       if (node.tagName != TAG_USES_PERMISSION) continue
       when (node.getAttributeNS(ANDROID_URI, ATTR_NAME)) {
-        FINE_LOCATION_PERMISSION -> fineElement = node
-        COARSE_LOCATION_PERMISSION -> coarseElement = node
+        FINE_LOCATION_PERMISSION -> {
+          if (node.permissionApplies()) {
+            fineElement = node
+          }
+        }
+        COARSE_LOCATION_PERMISSION -> {
+          if (node.permissionApplies()) {
+            coarseElement = node
+          }
+        }
       }
     }
     if (fineElement != null && coarseElement == null) {
@@ -55,6 +64,11 @@ class FineLocationDetector : Detector(), XmlScanner {
         )
       )
     }
+  }
+
+  private fun Element.permissionApplies(): Boolean {
+    val max = getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull() ?: return true
+    return max >= S
   }
 
   companion object {

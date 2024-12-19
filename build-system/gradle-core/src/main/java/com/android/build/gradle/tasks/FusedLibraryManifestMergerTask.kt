@@ -186,9 +186,9 @@ abstract class FusedLibraryManifestMergerTask : ManifestProcessorTask() {
                 AndroidArtifacts.ArtifactType.MANIFEST
             )
             task.libraryManifests.set(libraryManifests)
-            task.manifestPlaceholders.set(creationConfig.extension.manifestPlaceholders)
-            task.minSdkVersion.setDisallowChanges(creationConfig.extension.minSdk.toString())
-            task.namespace.set(creationConfig.extension.namespace)
+            task.manifestPlaceholders.set(creationConfig.manifestPlaceholders)
+            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk.toString())
+            task.namespace.set(creationConfig.namespace)
             task.tmpDir.setDisallowChanges(
                     creationConfig.projectLayout.buildDirectory.dir("tmp/FusedLibraryManifestMerger")
             )

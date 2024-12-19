@@ -297,6 +297,17 @@ public class UselessViewDetector extends LayoutDetector {
             return;
         }
 
+        Node parentNode = element.getParentNode();
+        if (parentNode.getNodeType() != Node.ELEMENT_NODE) {
+            // Can't remove root
+            return;
+        }
+
+        Element parent = (Element) parentNode;
+        if (VALUE_TRUE.equals(parent.getAttributeNS(ANDROID_URI, ATTR_FITS_SYSTEM_WINDOWS))) {
+            return;
+        }
+
         Location location = context.getNameLocation(element);
         String tag = element.getTagName();
         String message =

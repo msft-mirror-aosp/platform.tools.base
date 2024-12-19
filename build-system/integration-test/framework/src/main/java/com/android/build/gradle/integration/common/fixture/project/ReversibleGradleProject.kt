@@ -17,18 +17,24 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.FileUpdateBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.searchAndReplace
 import java.io.File
 import java.nio.file.Path
+import java.util.regex.Pattern
+import kotlin.io.path.createDirectories
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /**
  * Base Class for all reversible projects
  */
 abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     protected open val parentProject: ProjectT,
-) : GradleProject<ProjectDefinitionT> {
+) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider  {
 
     override val location: Path
         get() = parentProject.location
@@ -41,7 +47,7 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     }
 
     override fun file(path: String): File? {
-        return parentProject.file(path)
+        return (parentProject as GradleProjectImpl<*>).file(path)
     }
 }
 
@@ -54,17 +60,58 @@ internal open class ReversibleProjectFiles(
         projectModification.addFile(relativePath, content)
     }
 
-    override fun update(relativePath: String, action: (String?) -> String) {
-        val file = location.resolve(relativePath)
-        if (file.isRegularFile()) {
-            projectModification.modifyFile(relativePath, action)
-        } else {
-            projectModification.addFile(relativePath, action(null))
-        }
-    }
+    override fun update(relativePath: String): FileUpdateBuilder =
+        FileUpdater(projectModification, relativePath, location.resolve(relativePath))
 
     override fun remove(relativePath: String) {
         projectModification.removeFile(relativePath)
+    }
+
+    private class FileUpdater(
+        private val projectModification: TemporaryProjectModification,
+        private val relativePath: String,
+        private val file: Path
+    ): FileUpdateBuilder {
+
+        override val exists: Boolean
+            get() = file.isRegularFile()
+
+        override fun replaceWith(newContent: String) {
+            projectModification.modifyFile(relativePath) {
+                newContent
+            }
+        }
+
+        override fun searchAndReplace(
+            search: String,
+            replace: String,
+            lenient: Boolean
+        ): FileUpdateBuilder {
+            if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
+
+            projectModification.modifyFile(relativePath) {
+                it.searchAndReplace(
+                    file.toString(),
+                    search,
+                    replace,
+                    Pattern.LITERAL,
+                    lenient = false
+                )
+            }
+
+            return FileUpdater(projectModification, relativePath, file)
+        }
+
+        override fun append(newContent: String) {
+            if (file.isRegularFile()) {
+                val content = file.readText()
+                projectModification.modifyFile(relativePath) {
+                    content + newContent
+                }
+            } else {
+                projectModification.addFile(relativePath, newContent)
+            }
+        }
     }
 }
 

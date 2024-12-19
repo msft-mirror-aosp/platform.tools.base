@@ -16,14 +16,15 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbDeviceServices
+import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.property
-import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_COUNT
 import com.android.adblib.tools.AdbLibToolsProperties.APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_DELAY
 import com.android.adblib.tools.debugging.impl.AppProcessNameRetriever
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 import java.time.Duration
 
 /**
@@ -52,21 +53,11 @@ interface AppProcess {
     val pid: Int
 
     /**
-     * Whether the process is `debuggable`, meaning a `JDWP` connection is available.
-     * See [JdwpProcess].
+     * A [StateFlow] that describes the current process information.
+     *
+     * Note: once [scope] has completed, the flow stops being updated.
      */
-    val debuggable: Boolean
-
-    /**
-     * Whether the process is `profileable`, meaning a profiler tool can attach to the process
-     * and collect profiling data using custom agent/simpleperf calls.
-     */
-    val profileable: Boolean
-
-    /**
-     * The process architecture (or "abi") such as `x86`, `arm64`, etc.
-     */
-    val architecture: String
+    val appProcessEntryFlow: StateFlow<AppProcessEntry>
 
     /**
      * The [JdwpProcess] associated to this [AppProcess] if it is [debuggable],
@@ -74,6 +65,26 @@ interface AppProcess {
      */
     val jdwpProcess: JdwpProcess?
 }
+
+/**
+ * Whether the process is `debuggable`, meaning a `JDWP` connection is available.
+ * See [JdwpProcess].
+ */
+val AppProcess.debuggable: Boolean
+    get() = appProcessEntryFlow.value.debuggable
+
+/**
+ * Whether the process is `profileable`, meaning a profiler tool can attach to the process
+ * and collect profiling data using custom agent/simpleperf calls.
+ */
+val AppProcess.profileable: Boolean
+    get() = appProcessEntryFlow.value.profileable
+
+/**
+ * The process architecture (or "abi") such as `x86`, `arm64`, etc.
+ */
+val AppProcess.architecture: String
+    get() = appProcessEntryFlow.value.architecture
 
 /**
  * The [CoroutineScope] whose lifetime matches the lifetime of the process on the device.

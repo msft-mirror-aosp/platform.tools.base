@@ -636,6 +636,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
                     "track_app",
                     "server_status",
                     "devicetracker_proto_format",
+                    "app_info",
                 )
             )
         )

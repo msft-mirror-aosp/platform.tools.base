@@ -17,60 +17,38 @@
 package com.android.build.gradle.integration.packaging
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.builder.merge.DuplicateRelativeFileException
-import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-private val basicSetupAction: TestProjectBuilder.() -> Unit = {
-    subProject(":app") {
-        plugins.add(PluginType.ANDROID_APP)
-        android {
-            setUpHelloWorld()
-            defaultCompileSdk()
-        }
-
+private val basicSetupAction: GradleBuildDefinition.() -> Unit = {
+    androidApplication {
         dependencies {
             implementation(project(":library"))
             implementation(project(":library2"))
         }
     }
-    subProject(":library") {
-        plugins.add(PluginType.ANDROID_LIB)
-        android {
-            defaultCompileSdk()
-        }
-    }
-    subProject(":library2") {
-        plugins.add(PluginType.ANDROID_LIB)
-        android {
-            defaultCompileSdk()
-        }
-    }
+    androidLibrary(":library") { }
+    androidLibrary(":library2") { }
 }
 
 class JavaResPackagingConflictTest {
-    @JvmField
-    @Rule
-    val testBuild = createGradleProject(null, basicSetupAction)
+    @get:Rule
+    val rule = GradleRule.from(action = basicSetupAction)
 
     @Test
     fun testConflictBetweenLibraries() {
-        val library = testBuild.getSubproject(":library")
-        val library2 = testBuild.getSubproject(":library2")
+        val build = rule.build
+        val library = build.androidLibrary(":library")
+        val library2 = build.androidLibrary(":library2")
 
-        library.addFile("src/main/resources/foo.txt", "lib_content")
-        library2.addFile("src/main/resources/foo.txt", "lib2_content")
+        library.files.add("src/main/resources/foo.txt", "lib_content")
+        library2.files.add("src/main/resources/foo.txt", "lib2_content")
 
-        val result = testBuild.executor()
+        val result = build.executor
             .expectFailure()
             .run(":app:mergeDebugJavaResource")
 
@@ -89,38 +67,34 @@ for more information
 
 class JavaResPackagingConflictWithIncludedBuildTest {
 
-    @JvmField
-    @Rule
-    val testBuild = createGradleProject {
+    @get:Rule
+    val rule = GradleRule.from {
         basicSetupAction()
-        subProject(":app") {
+        androidApplication {
             dependencies {
                 implementation("included.build:anotherLib:1.0")
             }
         }
         includedBuild("includedBuild") {
-            subProject(":anotherLib") {
-                plugins.add(PluginType.ANDROID_LIB)
+            androidLibrary(":anotherLib") {
                 group = "included.build"
                 version = "1.0"
-                android {
-                    defaultCompileSdk()
-                }
-                // FIXME can't query for this subproject via GradleTestProject.
-                addFile("src/main/resources/foo.txt", "lib3_content")
             }
         }
     }
 
     @Test
     fun testConflictBetweenLibraries() {
-        val library = testBuild.getSubproject(":library")
-        val library2 = testBuild.getSubproject(":library2")
+        val build = rule.build
+        val library = build.androidLibrary(":library")
+        val library2 = build.androidLibrary(":library2")
+        val library3 = build.includedBuild("includedBuild").androidLibrary(":anotherLib")
 
-        library.addFile("src/main/resources/foo.txt", "lib_content")
-        library2.addFile("src/main/resources/foo.txt", "lib2_content")
+        library.files.add("src/main/resources/foo.txt", "lib_content")
+        library2.files.add("src/main/resources/foo.txt", "lib2_content")
+        library3.files.add("src/main/resources/foo.txt", "lib3_content")
 
-        val result = testBuild.executor()
+        val result = build.executor
             // PROJECT_ISOLATION mode is not supported with includedBuilds
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .expectFailure()
@@ -142,33 +116,29 @@ for more information
 
 class JavaResPackagingConflictWithExternalLibrariesTest {
 
-    @JvmField
-    @Rule
-    val testBuild = createGradleProjectBuilder {
-        basicSetupAction()
-        subProject(":app") {
-            dependencies {
-                implementation("com.example:jar:1")
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            jar("com.example:jar:1.0").addTextFile("foo.txt", "blah")
+        }.from {
+            basicSetupAction()
+            androidApplication {
+                dependencies {
+                    implementation("com.example:jar:1.0")
+                }
             }
         }
-    }.withAdditionalMavenRepo(
-        MavenRepoGenerator(libraries = listOf(
-            MavenRepoGenerator.Library(
-                "com.example:jar:1",
-                TestInputsGenerator.jarWithTextEntries("foo.txt" to "blah")
-            )
-        ))
-    ).create()
 
     @Test
     fun testConflictBetweenLibraries() {
-        val library = testBuild.getSubproject(":library")
-        val library2 = testBuild.getSubproject(":library2")
+        val build = rule.build
+        val library = build.androidLibrary(":library")
+        val library2 = build.androidLibrary(":library2")
 
-        library.addFile("src/main/resources/foo.txt", "lib_content")
-        library2.addFile("src/main/resources/foo.txt", "lib2_content")
+        library.files.add("src/main/resources/foo.txt", "lib_content")
+        library2.files.add("src/main/resources/foo.txt", "lib2_content")
 
-        val result = testBuild.executor()
+        val result = build.executor
             .expectFailure()
             .run(":app:mergeDebugJavaResource")
 
@@ -178,7 +148,7 @@ class JavaResPackagingConflictWithExternalLibrariesTest {
 3 files found with path 'foo.txt' from inputs:
  - project(":library")
  - project(":library2")
- - com.example:jar:1/jar-1.jar
+ - com.example:jar:1.0/jar-1.0.jar
 Adding a packaging block may help, please refer to
 https://developer.android.com/reference/tools/gradle-api/com/android/build/api/dsl/Packaging
 for more information
@@ -188,7 +158,7 @@ for more information
 
 private fun findCause(e: Throwable): Throwable? {
     var cause: Throwable? = e
-    while (cause != null && cause.cause != null) {
+    while (cause?.cause != null) {
         cause = cause.cause
         if (cause?.javaClass?.canonicalName == DuplicateRelativeFileException::class.qualifiedName) {
             return cause
@@ -196,11 +166,4 @@ private fun findCause(e: Throwable): Throwable? {
     }
 
     return null
-}
-
-
-private fun GradleTestProject.addFile(relativePath: String, content: String) {
-    val file = this.file(relativePath)
-    file.parentFile.mkdirs()
-    file.writeText(content)
 }

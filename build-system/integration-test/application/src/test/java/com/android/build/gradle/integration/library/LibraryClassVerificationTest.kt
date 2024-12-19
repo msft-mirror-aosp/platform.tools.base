@@ -15,45 +15,42 @@
  */
 package com.android.build.gradle.integration.library
 
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithClasses
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 
 /** Tests for libraries with resources.  */
 class LibraryClassVerificationTest {
     @get:Rule
-    val project = createGradleProject {
-        subProject("lib") {
-            useNewPluginsDsl = true
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+    val rule = GradleRule.from {
+        androidLibrary(":lib") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
-                defaultCompileSdk()
                 namespace = "com.example.lib"
-                minSdk = 21
-                kotlinOptions {
-                    jvmTarget = "1.8"
+                defaultConfig.minSdk = 21
+            }
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
             }
             dependencies {
                 implementation(project(":otherlib"))
                 implementation(MavenRepoGenerator.Library("com.example.base:base:0.1",
-                        jarWithClasses(listOf(BaseClass::class.java)),
+                    jarWithClasses(listOf(BaseClass::class.java)),
                 ))
-                implementation(localJar {
-                    name = "embedded.jar"
-                    addClass("com/example/EmbeddedJarClass") })
-                compileOnly(localJar {
-                    name = "compileOnly.jar"
-                    addClass("com/example/CompileOnlyJarClass") })
+                implementation(localJar("embedded.jar") { addEmptyClasses("com/example/EmbeddedJarClass") })
+                compileOnly(localJar("compileOnly.jar") { addEmptyClasses("com/example/CompileOnlyJarClass") })
             }
-            addFile("src/main/java/com/example/lib/Use.kt",
+            files {
+                add(
+                    "src/main/java/com/example/lib/Use.kt",
                     //language=kotlin
                     """
                         package com.example.lib
@@ -77,64 +74,77 @@ class LibraryClassVerificationTest {
                             }
                         }
                     """.trimIndent())
-            addFile("src/main/res/values/strings.xml",
+                add(
+                    "src/main/res/values/strings.xml",
                     //language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
                         <resources><string name="my_string">My String</string></resources>
                     """.trimIndent())
+            }
         }
-        subProject("otherlib"){
-            useNewPluginsDsl = true
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+        androidLibrary("otherlib") {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
-                defaultCompileSdk()
                 namespace = "com.example.otherlib"
-                minSdk = 21
-                kotlinOptions {
-                    jvmTarget = "1.8"
+                defaultConfig.minSdk = 21
+            }
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
                 }
             }
-            addFile("src/main/java/com/example/otherlib/OtherLibClass.kt",
+            files {
+                add(
+                    "src/main/java/com/example/otherlib/OtherLibClass.kt",
                     //language=kotlin
                     """
                         package com.example.otherlib
 
                         class OtherLibClass(val y: Int = R.string.otherlib_string)
                     """.trimIndent())
-            addFile("src/main/res/values/strings.xml",
+                add(
+                    "src/main/res/values/strings.xml",
                     //language=xml
                     """
                         <?xml version="1.0" encoding="utf-8"?>
                         <resources><string name="otherlib_string">Other Lib String</string></resources>
                     """.trimIndent())
+            }
         }
-        withKotlinPlugin = true
         gradleProperties {
-            set(BooleanOption.VERIFY_AAR_CLASSES, true)
+            add(BooleanOption.VERIFY_AAR_CLASSES, true)
         }
     }
+
     @Test
     fun checkInvalidClasses() {
+        val build = rule.build
+        val androidLibrary = build.androidLibrary(":lib")
+
         // Check the debug and release builds pass
-        project.executor().run(":lib:assembleDebug")
-        project.executor().run(":lib:assembleRelease")
+        build.executor.run(":lib:assembleDebug")
+        build.executor.run(":lib:assembleRelease")
+
         // Add reference to compile only jar, which should fail the release build
-        TestFileUtils.searchAndReplace(project.file("lib/src/main/java/com/example/lib/Use.kt"),
+        androidLibrary.files.update("src/main/java/com/example/lib/Use.kt")
+            .searchAndReplace(
                 "EmbeddedJarClass",
                 "CompileOnlyJarClass")
+
         // Verify debug build still passes, as verification only affects release builds
-        project.executor().run(":lib:assembleDebug")
+        build.executor.run(":lib:assembleDebug")
         // Verify release build fails with a useful error message
-        val result = project.executor().expectFailure().run(":lib:assembleRelease")
+        val result = build.executor.expectFailure().run(":lib:assembleRelease")
         assertThat(result.stderr).contains("Error: Missing class com.example.CompileOnlyJarClass (referenced from: void com.example.lib.Use.<init>() and 1 other context)")
 
         // override to disable in that particular project
-        TestFileUtils.appendToFile(project.getSubproject("lib").buildFile, """
-            android.experimentalProperties["android.experimental.verifyLibraryClasses"] = false
-        """.trimIndent())
-        project.executor().run(":lib:assembleRelease")
+        androidLibrary.reconfigure(buildFileOnly = true) {
+            android {
+                experimentalProperties["android.experimental.verifyLibraryClasses"] = false
+            }
+        }
+        build.executor.run(":lib:assembleRelease")
     }
 }
 

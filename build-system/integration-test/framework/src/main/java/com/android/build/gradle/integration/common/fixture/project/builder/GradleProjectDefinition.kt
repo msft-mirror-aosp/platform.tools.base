@@ -60,8 +60,17 @@ interface GradleProjectDefinition {
     fun dependencies(action: DependenciesBuilder.() -> Unit)
     val dependencies: DependenciesBuilder
 
-    /** Provides a callback to use with a binary plugin */
-    var pluginCallback: Class<out PluginCallback>?
+    /**
+     * Provides a callback to use with a binary plugin.
+     *
+     * Using this setter provides a single callback. To provide more, use [pluginCallbacks]
+     */
+    var pluginCallback: Class<out PluginCallback>
+
+    /**
+     * The list of plugin callbacks for this project
+     */
+    val pluginCallbacks: MutableList<Class<out PluginCallback>>
 }
 
 internal data class AppliedPlugin(
@@ -78,15 +87,28 @@ internal abstract class GradleProjectDefinitionImpl(
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
-    // right now we don't support changing the pluginCallback during a reconfigure. However,
-    // we still need to rewrite the plugin application during a rewrite.
+    // right now we don't support changing the pluginCallbacks during a reconfigure. However,
+    // we still need to rewrite the plugin applications during a rewrite.
     // Because we only reconfigure a single project and not the whole build (reason we don't yet
     // support changing the callback), the custom plugin map passed to the write function is going
     // to be empty.
-    // Here we cache the first non null plugin and always rewrite it on the next reconfigure.
-    private var cachedCustomPlugin: String? = null
+    // Here we cache the first non-null plugin list and always rewrite it on the next reconfigure.
+    private var cachedCustomPlugins: List<String>? = null
 
-    override var pluginCallback: Class<out PluginCallback>? = null
+    override var pluginCallback: Class<out PluginCallback>
+        set(value) {
+            pluginCallbacks.clear()
+            pluginCallbacks.add(value)
+        }
+        get() = if (pluginCallbacks.isEmpty()) {
+            throw RuntimeException("plugin callback list is empty")
+        } else if (pluginCallbacks.size == 1) {
+            pluginCallbacks[0]
+        } else {
+            throw RuntimeException("plugin callback list has 2+ entries")
+        }
+    override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
+
 
     override var group: String? = null
     override var version: String? = null
@@ -132,7 +154,7 @@ internal abstract class GradleProjectDefinitionImpl(
         location: Path,
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, String>,
+        customPluginMap: Map<String, List<String>>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -148,7 +170,7 @@ internal abstract class GradleProjectDefinitionImpl(
     internal fun writeRoot(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, String>,
+        customPluginMap: Map<String, List<String>>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -168,7 +190,7 @@ internal abstract class GradleProjectDefinitionImpl(
     private fun write(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, String>,
+        customPluginMap: Map<String, List<String>>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
         buildWriter: BuildWriter,
@@ -219,12 +241,14 @@ internal abstract class GradleProjectDefinitionImpl(
 
             emptyLine()
 
-            val pluginToApply = cachedCustomPlugin ?: customPluginMap[path]
-            pluginToApply?.let {
+            val pluginsToApply = cachedCustomPlugins ?: customPluginMap[path]
+            pluginsToApply?.let {
                 // cache it for next time
-                cachedCustomPlugin = it
-                // If there is a plugin class, apply it.
-                applyPluginFromClass(it)
+                cachedCustomPlugins = it
+                // If there is a plugin class, apply them
+                it.forEach { plugin ->
+                    applyPluginFromClass(plugin)
+                }
                 emptyLine()
             }
 

@@ -44,9 +44,12 @@ sealed interface AarSelector: OutputSelector {
         @JvmField
         val RELEASE = of("release")
 
+        @JvmField
+        val NO_BUILD_TYPE = of(null)
+
         @JvmStatic
         fun of(
-            buildType: String,
+            buildType: String?,
         ): AarSelector {
             return AarSelectorImp(
                 buildType = buildType,
@@ -57,12 +60,11 @@ sealed interface AarSelector: OutputSelector {
 }
 
 internal data class AarSelectorImp(
-    private val buildType: String,
+    private val buildType: String?,
     private val flavors: List<String>,
     private val filter: String? = null,
     private val suffix: String? = null,
 ): AarSelector {
-
 
     override fun withFlavor(name: String): AarSelector =
         AarSelectorImp(buildType, flavors + name, filter, suffix)
@@ -80,7 +82,7 @@ internal data class AarSelectorImp(
         segments.add(projectName)
         flavors.let { segments.addAll(it) }
         filter?.let { segments.add(it) }
-        buildType.let { segments.add(it) }
+        buildType?.let { segments.add(it) }
         suffix?.let { segments.add(it) }
 
         return segments.joinToString(separator = "-") + DOT_AAR

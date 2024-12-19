@@ -39,8 +39,16 @@ interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
 
     /**
      * Returns the [GradleRule], for a project initialized with the [TestProjectBuilder]
+     *
+     * @param folderName the name of the folder containing the build.
+     * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
+     * @param action the action to configure the build
      */
-    fun from(action: GradleBuildDefinition.() -> Unit): GradleRule
+    fun from(
+        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+        logicalName: String? = null,
+        action: GradleBuildDefinition.() -> Unit
+    ): GradleRule
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
@@ -59,8 +67,12 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     private val mavenRepository = MavenRepositoryImpl()
     private var enableProfileOutput = false
 
-    override fun from(action: GradleBuildDefinition.() -> Unit): GradleRule {
-        val builder = GradleBuildDefinitionImpl(GradleBuildDefinition.DEFAULT_BUILD_NAME)
+    override fun from(
+        folderName: String,
+        logicalName: String?,
+        action: GradleBuildDefinition.() -> Unit
+    ): GradleRule {
+        val builder = GradleBuildDefinitionImpl(name = logicalName ?: folderName, rootFolderName = folderName)
         action(builder)
 
         return create(builder)

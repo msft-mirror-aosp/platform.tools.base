@@ -52,7 +52,7 @@ object AndroidRestore {
     val file = commandLine.args.first()
 
     val deviceSelector = commandLine.getDeviceSelector()
-    val applicationId = BackupService.getApplicationId(Path.of(file))
+    val applicationId = BackupService.getMetadata(Path.of(file))
     val adbSession = createStandaloneSession(AdbNoopLoggerFactory())
 
     runBlocking {

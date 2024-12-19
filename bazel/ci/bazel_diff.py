@@ -33,7 +33,7 @@ def generate_hash_file(
   args.append(str(output_path))
   build_env.bazel_run(
       *args,
-      timeout=600,
+      timeout=300,
   )
   end = time.time()
   logging.info('generate-hashes took %d seconds', end - start)

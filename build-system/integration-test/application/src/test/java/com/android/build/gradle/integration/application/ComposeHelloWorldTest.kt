@@ -29,7 +29,6 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,6 +50,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             .fromTestProject("composeHelloWorld")
             // increase max heap size to avoid OOMs (b/350788568)
             .withHeap("2048m")
+            .withBuiltInKotlinSupport(useComposeCompilerGradlePlugin)
             .create()
 
     @Before
@@ -211,7 +211,6 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
         assertThat(syncIssue?.data).contains("buildFeatures.compose")
     }
 
-    @Ignore("https://youtrack.jetbrains.com/issue/KT-69967")
     @Test
     fun testWithBuiltInKotlin() {
         Assume.assumeTrue(useComposeCompilerGradlePlugin)
