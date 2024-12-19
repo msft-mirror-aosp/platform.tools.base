@@ -12,6 +12,7 @@ kotlin_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/adt/idea/preview-elements:tools.preview-elements",
+        "//tools/adt/idea/wear-preview-elements:tools.wear-preview-elements",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
     ],
 )

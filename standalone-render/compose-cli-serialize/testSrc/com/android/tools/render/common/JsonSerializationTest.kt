@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.wear.WearTileScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.StringWriter
@@ -119,6 +120,14 @@ class JsonSerializationTest {
                   "previewParams": {},
                   "previewId": "/path/to/image/pattern/name",
                   "previewType": "COMPOSE"
+                },
+                {
+                  "methodFQN": "com.my.package.Cl3Kt.TilePreviewMethod",
+                  "previewParams": {
+                    "name": "tile preview"
+                  },
+                  "previewId": "/path/to/image/pattern/name",
+                  "previewType": "WEAR_TILE"
                 }
               ]
             }
@@ -146,6 +155,11 @@ class JsonSerializationTest {
                     listOf(mapOf("provider" to "com.my.package2.SomeOtherParameterProvider")),
                     emptyMap(),
                     "/path/to/image/pattern/name",
+                ),
+                WearTileScreenshot(
+                    "com.my.package.Cl3Kt.TilePreviewMethod",
+                    mapOf("name" to "tile preview"),
+                    "/path/to/image/pattern/name"
                 )
             ),
             screenshots
@@ -241,6 +255,11 @@ class JsonSerializationTest {
                 listOf(mapOf("provider" to "com.my.package2.SomeOtherParameterProvider")),
                 emptyMap(),
                 "/path/to/image/pattern/name",
+            ),
+            WearTileScreenshot(
+                "com.my.package.Cl3Kt.TilePreviewMethod",
+                mapOf("name" to "tile preview"),
+                "/path/to/image/pattern/name"
             )
         )
 
