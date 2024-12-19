@@ -16,6 +16,10 @@
 
 package com.android.tools.instrumentation.threading.agent.callback;
 
+/**
+ * @see com.android.tools.instrumentation.threading.agent.Agent for more details around
+ * threading agent instrumentation
+ */
 public interface ThreadingCheckerHook {
     /**
      * This method is called by a java agent when encountering methods annotated with @UiThread
@@ -28,4 +32,22 @@ public interface ThreadingCheckerHook {
      * annotation.
      */
     void verifyOnWorkerThread();
+
+    /**
+     * This method is called by a java agent when encountering methods annotated with @RequiresReadLock
+     * annotation.
+     */
+    void verifyReadLock();
+
+    /**
+     * This method is called by a java agent when encountering methods annotated with @RequiresWriteLock
+     * annotation.
+     */
+    void verifyWriteLock();
+
+    /**
+     * This method is called by a java agent when encountering methods annotated with @RequiresReadLockAbsence
+     * annotation.
+     */
+    void verifyNoReadLock();
 }

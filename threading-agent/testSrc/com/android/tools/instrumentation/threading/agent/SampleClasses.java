@@ -23,6 +23,13 @@ import com.android.annotations.concurrency.AnyThread;
 import com.android.annotations.concurrency.Slow;
 import com.android.annotations.concurrency.UiThread;
 import com.android.annotations.concurrency.WorkerThread;
+import com.intellij.util.concurrency.annotations.RequiresBackgroundThread;
+import com.intellij.util.concurrency.annotations.RequiresEdt;
+import com.intellij.util.concurrency.annotations.RequiresReadLock;
+
+import com.intellij.util.concurrency.annotations.RequiresReadLockAbsence;
+import com.intellij.util.concurrency.annotations.RequiresWriteLock;
+
 import java.io.IOException;
 
 @SuppressWarnings("unused") // This class is loaded dynamically
@@ -54,6 +61,31 @@ public class SampleClasses {
         @UiThread
         private void privateUiMethod1() {
             // Do nothing
+        }
+
+        @RequiresReadLock
+        public void readLockMethod1() {
+            // Do nothing
+        }
+
+        @RequiresWriteLock
+        public void writeLockMethod1() {
+            // Do nothing
+        }
+
+        @RequiresBackgroundThread
+        public void backgroundThreadMethod1() {
+            // Do nothing
+        }
+
+        @RequiresReadLockAbsence
+        public void noReadLockMethod1() {
+            // do nothing
+        }
+
+        @RequiresEdt
+        public void requiresEdtMethod1() {
+            // do nothing
         }
 
         // Note that in practice we would never have both of these annotations present at the same

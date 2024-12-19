@@ -34,10 +34,33 @@ final class AnnotationMappings {
                 "Lcom/android/annotations/concurrency/UiThread;",
                 "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
                 "verifyOnUiThread"),
+        EDT_THREAD(
+                "Lcom/intellij/util/concurrency/annotations/RequiresEdt;",
+                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                "verifyOnUiThread"),
         WORKER_THREAD(
                 "Lcom/android/annotations/concurrency/WorkerThread;",
                 "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
                 "verifyOnWorkerThread"),
+        BACKGROUND_THREAD(
+                "Lcom/intellij/util/concurrency/annotations/RequiresBackgroundThread;",
+                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                "verifyOnWorkerThread"),
+        READ_LOCK(
+                "Lcom/intellij/util/concurrency/annotations/RequiresReadLock;",
+                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                "verifyReadLock"
+        ),
+        WRITE_LOCK(
+                "Lcom/intellij/util/concurrency/annotations/RequiresWriteLock;",
+                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                "verifyWriteLock"
+        ),
+        NO_READ_LOCK(
+                "Lcom/intellij/util/concurrency/annotations/RequiresReadLockAbsence;",
+                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                "verifyNoReadLock"
+        ),
         SLOW_THREAD("Lcom/android/annotations/concurrency/Slow;"),
         ANY_THREAD("Lcom/android/annotations/concurrency/AnyThread;");
 

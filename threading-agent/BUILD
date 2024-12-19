@@ -1,5 +1,4 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
@@ -30,26 +29,6 @@ kotlin_library(
     ],
 )
 
-coverage_java_test(
-    name = "agent_tests",
-    srcs = glob(["testSrc/**/*.java"]),
-    jvm_flags = ["-Dtest.suite.jar=agent_tests.jar"],
-    test_class = "com.android.testutils.JarTestSuite",
-    deps = [
-        ":agent_binary",
-        ":sample_kotlin_classes",
-        "//tools/base/annotations",
-        "//tools/base/testutils:tools.testutils",
-        "//tools/base/threading-agent-callback:agent_callback",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:com.google.guava.guava",
-        "@maven//:junit.junit",
-        "@maven//:org.mockito.mockito-core",
-        "@maven//:org.ow2.asm.asm",
-        "@maven//:org.ow2.asm.asm-commons",
-    ],
-)
-
 # Rule to build the `threading_agent.jar` that will be injected into the target JVM.
 # It creates a single jar file with no external dependencies. It also repackages
 # java libraries so that their versions loaded with the java agent by the boot classloader
@@ -61,4 +40,28 @@ java_jarjar(
     ],
     rules = "jarjar_rules.txt",
     visibility = ["//visibility:public"],
+)
+
+# managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.threading-agent",
+    srcs = ["src"],
+    iml_files = ["android.sdktools.threading-agent.iml"],
+    test_class = "com.android.tools.instrumentation.threading.agent.AgentTestSuiteBase",
+    test_srcs = ["testSrc"],
+    visibility = ["//visibility:public"],
+    # do not sort: must match IML order
+    deps = [
+        "//tools/base/threading-agent-callback:studio.android.sdktools.threading-agent-callback[module]",
+        "//tools/adt/idea/.idea/libraries:asm-tools",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations[module]",
+        "@intellij//:intellij-sdk[test]",
+        "@intellij//:com.intellij.java",
+        "//tools/adt/idea/.idea/libraries:truth[test]",
+        "//tools/adt/idea/.idea/libraries:mockito[test]",
+        "//tools/adt/idea/.idea/libraries:junit4[test]",
+        "@intellij//:test-framework[test]",
+        "//tools/adt/idea/adt-testutils:intellij.android.adt.testutils[module, test]",
+        "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+    ],
 )

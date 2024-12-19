@@ -90,6 +90,83 @@ public class AnnotationMappingsTest {
     }
 
     @Test
+    public void requiresEdtAnnotationMapping() {
+        assertThat(
+                AnnotationMappings.create()
+                        .isThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresEdt;"))
+                .isTrue();
+        assertThat(
+                AnnotationMappings.create()
+                        .getCheckerMethodForThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresEdt;"))
+                .isEqualTo(Optional.of(
+                        new CheckerMethodRef(
+                                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                                "verifyOnUiThread"
+                        )
+                ));
+    }
+
+    @Test
+    public void requiresReadLockAnnotationMapping() {
+        assertThat(
+                AnnotationMappings.create()
+                        .isThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresReadLock;"))
+                .isTrue();
+        assertThat(
+                AnnotationMappings.create()
+                        .getCheckerMethodForThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresReadLock;"))
+                .isEqualTo(Optional.of(
+                        new CheckerMethodRef(
+                                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                                "verifyReadLock"
+                        )
+                ));
+    }
+
+    @Test
+    public void requiresWriteLockAnnotationMapping() {
+        assertThat(
+                AnnotationMappings.create()
+                        .isThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresWriteLock;"))
+                .isTrue();
+        assertThat(
+                AnnotationMappings.create()
+                        .getCheckerMethodForThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresWriteLock;"))
+                .isEqualTo(Optional.of(
+                        new CheckerMethodRef(
+                                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                                "verifyWriteLock"
+                        )
+                ));
+    }
+
+    @Test
+    public void requiresReadAbsenceAnnotationMapping() {
+        assertThat(
+                AnnotationMappings.create()
+                        .isThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresReadLockAbsence;"))
+                .isTrue();
+        assertThat(
+                AnnotationMappings.create()
+                        .getCheckerMethodForThreadingAnnotation(
+                                "Lcom/intellij/util/concurrency/annotations/RequiresReadLockAbsence;"))
+                .isEqualTo(Optional.of(
+                        new CheckerMethodRef(
+                                "com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline",
+                                "verifyNoReadLock"
+                        )
+                ));
+    }
+
+
+        @Test
     public void nonThreadingAnnotation_callToIsThreadingAnnotation_returnsFalse() {
         assertThat(AnnotationMappings.create().isThreadingAnnotation("random_annotation_abc"))
                 .isFalse();
