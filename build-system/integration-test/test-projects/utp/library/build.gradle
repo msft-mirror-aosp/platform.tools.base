@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+apply plugin: 'com.android.experimental.built-in-kotlin'
 
 android {
     namespace "com.example.android.kotlin.library"
@@ -34,8 +35,11 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
 

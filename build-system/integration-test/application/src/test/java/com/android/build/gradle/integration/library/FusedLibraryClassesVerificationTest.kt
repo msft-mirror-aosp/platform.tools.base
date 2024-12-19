@@ -84,16 +84,13 @@ class FusedLibraryClassesVerificationTest {
     val project = createGradleProjectBuilder {
         subProject(":androidLib1") {
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.androidLib1"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
             }
             addFile(
@@ -120,16 +117,13 @@ class FusedLibraryClassesVerificationTest {
         subProject(":androidLib2") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.androidLib2"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
             }
             addFile(
@@ -162,16 +156,13 @@ class FusedLibraryClassesVerificationTest {
         subProject(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.$ANDROID_LIB_MANY_TRANSITIVE_DEPS"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
             }
             addFile(
@@ -199,16 +190,13 @@ class FusedLibraryClassesVerificationTest {
         subProject(":$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_DEPENDENCY"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
             }
             addFile(
@@ -239,16 +227,13 @@ class FusedLibraryClassesVerificationTest {
         subProject(":$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP") {
             useNewPluginsDsl = true
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.$ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
             }
             addFile(
@@ -269,16 +254,13 @@ class FusedLibraryClassesVerificationTest {
         }
         subProject(":$ANDROID_LIB_WITH_DATABINDING") {
             plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 namespace = "com.example.$ANDROID_LIB_WITH_DATABINDING"
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
-                }
-                kotlinOptions {
-                    jvmTarget = "1.8"
                 }
                 buildFeatures {
                     dataBinding = true
@@ -315,7 +297,7 @@ class FusedLibraryClassesVerificationTest {
          */
         subProject(":app") {
             plugins.add(PluginType.ANDROID_APP)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 defaultCompileSdk()
                 minSdk = 34
@@ -329,8 +311,7 @@ class FusedLibraryClassesVerificationTest {
             set(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
             set(BooleanOption.USE_ANDROID_X, true)
         }
-        withKotlinPlugin = true
-    }
+    }   .withBuiltInKotlinSupport(true)
         .withAdditionalMavenRepo(mavenRepo)
         .create()
 
@@ -492,7 +473,7 @@ class FusedLibraryClassesVerificationTest {
 
             val expectedFailure = "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
                     "   [Databinding is not supported by Fused Library modules]:\n" +
-                    "    * androidx.databinding:databinding-runtime is not a permitted dependency."
+                    "    * androidx.databinding:databinding-common is not a permitted dependency."
 
             listOf(
                 "generatePomFileForMavenPublication",

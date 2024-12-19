@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 apply plugin: 'com.android.test'
-apply plugin: 'kotlin-android'
+apply plugin: 'com.android.experimental.built-in-kotlin'
 
 android {
     namespace "com.example.android.kotlin.test"
@@ -36,9 +37,11 @@ android {
     }
 
     targetProjectPath = project(":app").path
+}
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
 
