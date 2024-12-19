@@ -54,7 +54,8 @@ class PreviewFinderTest {
                   "previewParams": {
                     "showBackground": "true"
                   },
-                  "previewId": "com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee"
+                  "previewId": "com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee",
+                  "previewType": "COMPOSE"
                 }
               ]
             }
@@ -94,7 +95,8 @@ class PreviewFinderTest {
                   "previewParams": {
                     "showBackground": "true"
                   },
-                  "previewId": "com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee"
+                  "previewId": "com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee",
+                  "previewType": "COMPOSE"
                 }
               ],
               "resultsFilePath": "resultsFilePath"
