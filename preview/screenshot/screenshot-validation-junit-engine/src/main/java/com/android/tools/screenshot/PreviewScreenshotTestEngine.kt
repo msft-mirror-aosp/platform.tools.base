@@ -201,8 +201,8 @@ class PreviewScreenshotTestEngine : TestEngine {
         //renderer failed to generate images
         if (!actualPath.toFile().exists()) {
             val errorMessage = getFirstError(composeScreenshot.error)
-            testResult.setTestStatus(TestStatusProto.TestStatus.ERROR)
-            testResult.setError(createError(errorMessage))
+            testResult.testStatus = TestStatusProto.TestStatus.ERROR
+            testResult.error = createError(errorMessage)
             return PreviewResult(2,
                 composeScreenshot.previewId,
                 duration,
@@ -222,7 +222,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         return when (val result = verifier.assertMatchReference(referencePath, ImageIO.read(actualPath.toFile()))) {
             is Verify.AnalysisResult.Failed -> {
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
                 testResult.apply {
                     addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
                 }
@@ -260,7 +260,7 @@ class PreviewScreenshotTestEngine : TestEngine {
                         )
                     )
                 }
-                testResult.setTestStatus(TestStatusProto.TestStatus.PASSED)
+                testResult.testStatus = TestStatusProto.TestStatus.PASSED
                 result.toPreviewResponse(0,
                     testDisplayName,
                     duration,
@@ -272,8 +272,8 @@ class PreviewScreenshotTestEngine : TestEngine {
 
             is Verify.AnalysisResult.MissingReference -> {
                 val errorMessage = "Reference image missing"
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
-                testResult.setError(createError(errorMessage))
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
+                testResult.error = createError(errorMessage)
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
@@ -284,8 +284,8 @@ class PreviewScreenshotTestEngine : TestEngine {
             }
 
             is Verify.AnalysisResult.SizeMismatch -> {
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
-                testResult.setError(createError(result.message))
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
+                testResult.error = createError(result.message)
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
