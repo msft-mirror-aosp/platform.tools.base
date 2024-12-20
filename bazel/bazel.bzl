@@ -15,9 +15,7 @@ ImlModuleInfo = provider(
         "java_deps",
         "test_provider",
         "main_provider",
-        "module_deps",
-        "plugin_deps",
-        "external_deps",
+        "deps",
         "jvm_target",
         "names",
         "module_visibility",
@@ -279,13 +277,11 @@ def _iml_module_impl(ctx):
                 fail("The module %s, declares specific module visibility not including %s" % (this_dep.label, ctx.label))
         if JavaInfo in this_dep:
             java_deps.append(this_dep[JavaInfo])
-    module_deps = []
-    plugin_deps = []
-    external_deps = []
-    for dep in ctx.attr.deps:
-        if ImlModuleInfo in dep:
-            module_deps.append(dep)
-            if ctx.attr.jvm_target:
+
+    # Check that dependencies are consistent with the JVM target for this module.
+    if ctx.attr.jvm_target:
+        for dep in ctx.attr.deps:
+            if ImlModuleInfo in dep:
                 if not dep[ImlModuleInfo].jvm_target or int(dep[ImlModuleInfo].jvm_target) > int(ctx.attr.jvm_target):
                     fail("The module %s has a jvm_target of \"%s\", but depends on module %s with target \"%s\"" % (
                         ctx.attr.name,
@@ -293,12 +289,6 @@ def _iml_module_impl(ctx):
                         dep[ImlModuleInfo].names[0],
                         dep[ImlModuleInfo].jvm_target,
                     ))
-        elif hasattr(dep, "plugin_info"):
-            plugin_deps.append(dep)
-        elif hasattr(dep, "platform_info"):
-            pass
-        else:
-            external_deps.append(dep)
 
     # Test dependencies (superset of prod).
     test_java_deps = []
@@ -384,9 +374,7 @@ def _iml_module_impl(ctx):
         java_deps = java_deps,
         test_provider = test_provider,
         main_provider = main_provider,
-        module_deps = depset(direct = module_deps),
-        plugin_deps = depset(direct = plugin_deps),
-        external_deps = depset(direct = external_deps),
+        deps = ctx.attr.deps,
         jvm_target = ctx.attr.jvm_target,
         module_visibility = ctx.attr.module_visibility,
         names = names,
