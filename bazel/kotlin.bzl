@@ -271,7 +271,7 @@ def kotlin_library(
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"] + lint_custom_rules,
             tags = ["noci:studio-win"],
             is_test_sources = lint_is_test_sources,
-            extra_args = lint_extra_args,
+            extra_args = ["--java-language-level", jvm_target] + lint_extra_args,
             timeout = lint_timeout if lint_timeout else None,
         )
 
