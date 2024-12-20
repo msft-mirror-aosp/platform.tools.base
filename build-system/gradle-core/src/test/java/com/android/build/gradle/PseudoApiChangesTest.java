@@ -17,16 +17,19 @@
 package com.android.build.gradle;
 
 import com.android.testutils.ApiTester;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.common.reflect.ClassPath;
+
+import org.junit.Test;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Test;
 
 public class PseudoApiChangesTest {
 
@@ -36,6 +39,7 @@ public class PseudoApiChangesTest {
     private static final ImmutableSet<String> EXCLUDED_IMPL_CLASSES =
             ImmutableSet.of(
                     "AndroidSourceSetFactory",
+                    "AgpExperimentalApiOptInRequiredException",
                     "VariantOutputFactory",
                     "ApkInfoParser",
                     "BuilderConstants",
@@ -109,7 +113,8 @@ public class PseudoApiChangesTest {
             builder.add(aClass);
         }
         // And the legacy DSL base classes in builder.
-        for (ClassPath.ClassInfo aClass : classPath.getTopLevelClasses("com.android.builder.core")) {
+        for (ClassPath.ClassInfo aClass :
+                classPath.getTopLevelClasses("com.android.builder.core")) {
             if (excludedImplClasses.remove(aClass.getSimpleName())) {
                 continue;
             }
