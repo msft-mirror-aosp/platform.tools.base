@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
 private const val TRANSPORT_DTD = "com.google.android.gms/.backup.migrate.service.D2dTransport"
 private const val TRANSPORT_CLOUD = "com.google.android.gms/.backup.BackupTransportService"
 private const val CONTENT_URI =
-  "content://com.google.android.gms.fileprovider/android_studio_backup_data/"
+  "content://com.google.android.gms.fileprovider/backup_testing_flows/"
 
 internal class BackupServiceImpl(private val factory: AdbServicesFactory) : BackupService {
 
@@ -54,17 +54,14 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return try {
       with(adbServices) {
         // Backup is always handled by the D2D transport
-        val transport = TRANSPORT_DTD
-        withSetup(transport) {
+        withSetup(TRANSPORT_DTD) {
           reportProgress("Initializing backup transport")
-          initializeTransport(transport)
+          initializeTransport(TRANSPORT_DTD)
           try {
-            withTestApplicationId(applicationId) {
-              reportProgress("Running backup")
-              adbServices.backupNow(applicationId, type)
-              reportProgress("Fetching backup")
-              pullBackup(adbServices, BackupMetadata(applicationId, type), backupFile)
-            }
+            reportProgress("Running backup")
+            adbServices.backupNow(applicationId, type)
+            reportProgress("Fetching backup")
+            pullBackup(adbServices, BackupMetadata(applicationId, type), backupFile)
           } finally {
             reportProgress("Cleaning up")
           }
@@ -88,18 +85,18 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       val adbServices = factory.createAdbServices(serialNumber, listener, RESTORE_STEPS)
       with(adbServices) {
         // Restore is always handled by the Cloud transport
-        withSetup(TRANSPORT_CLOUD) {
+        withSetup(TRANSPORT_DTD) {
+          reportProgress("Initializing backup transport")
+          initializeTransport(TRANSPORT_DTD)
+          setTransport(TRANSPORT_CLOUD, true)
           ZipFile(backupFile.pathString).use { zip ->
             val token = zip.getRestoreToken()
-            val applicationId = zip.getMetaData().applicationId
-            withTestApplicationId(applicationId) {
-              reportProgress("Initializing backup transport")
-              initializeTransport(TRANSPORT_CLOUD)
-              reportProgress("Pushing backup file")
-              zip.pushBackup(adbServices)
-              reportProgress("Restoring $applicationId")
-              restore(token, applicationId)
-            }
+            val metadata = zip.getMetaData()
+            val applicationId = metadata.applicationId
+            reportProgress("Pushing backup file")
+            zip.pushBackup(adbServices)
+            reportProgress("Restoring $applicationId")
+            restore(token, applicationId, metadata.backupType)
           }
         }
         reportProgress("Done")
@@ -166,7 +163,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
 
   companion object {
 
-    const val BACKUP_STEPS = 12
+    const val BACKUP_STEPS = 10
     const val RESTORE_STEPS = 11
   }
 }

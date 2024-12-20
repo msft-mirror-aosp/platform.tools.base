@@ -36,6 +36,8 @@ private val TRANSPORT_COMMAND_REGEX =
   "Selected transport [^ ]+ \\(formerly (?<old>[^ ]+)\\)".toRegex()
 private val PACKAGE_VERSION_CODE_REGEX = "^ {4}versionCode=(?<version>\\d+).*$".toRegex()
 private val APPLICATION_ID_REGEX = "^([a-z][a-z\\d_]*\\.)+[a-z][a-z\\d_]*$".toRegex(IGNORE_CASE)
+private const val SECURE_SETTING_ENABLE_TESTING = "backup_enable_testing_flows"
+private const val SECURE_SETTING_BACKUP_TYPE = "backup_testing_flows_type"
 
 abstract class AbstractAdbServices(
   protected val serialNumber: String,
@@ -60,17 +62,6 @@ abstract class AbstractAdbServices(
   override suspend fun withSetup(transport: String, block: suspend () -> Unit) {
     verifyGmsCore()
     withBmgr { withTestMode { withTransport(transport) { block() } } }
-  }
-
-  override suspend fun withTestApplicationId(applicationId: String, block: suspend () -> Unit) {
-    reportProgress("Setting test app")
-    executeCommand("settings put secure backup_android_studio_test_package_name $applicationId")
-    try {
-      block()
-    } finally {
-      reportProgress("Clearing test app")
-      executeCommand("settings delete secure backup_android_studio_test_package_name")
-    }
   }
 
   override suspend fun initializeTransport(transport: String) {
@@ -106,7 +97,8 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun restore(token: String, applicationId: String) {
+  override suspend fun restore(token: String, applicationId: String, type: BackupType) {
+    setBackupType(type)
     val out = executeCommand("bmgr restore $token $applicationId", ErrorCode.RESTORE_FAILED)
     if (out.stdout.indexOf("restoreFinished: 0\n") < 0) {
       throw BackupException(ErrorCode.RESTORE_FAILED, "Error restoring app: ${out.stdout}")
@@ -249,7 +241,7 @@ abstract class AbstractAdbServices(
     }
   }
 
-  private suspend fun setTransport(transport: String, verify: Boolean): String {
+  override suspend fun setTransport(transport: String, verify: Boolean): String {
     val out = executeCommand("bmgr transport $transport", TRANSPORT_NOT_SELECTED).stdout.trim()
     val result =
       TRANSPORT_COMMAND_REGEX.matchEntire(out)
@@ -273,11 +265,11 @@ abstract class AbstractAdbServices(
   }
 
   private suspend fun enableTestMode(enabled: Boolean) {
-    executeCommand("settings put secure backup_enable_android_studio_mode ${if (enabled) 1 else 0}")
+    executeCommand("settings put secure $SECURE_SETTING_ENABLE_TESTING ${if (enabled) 1 else 0}")
   }
 
   private suspend fun setBackupType(type: BackupType) {
-    executeCommand("settings put secure backup_android_studio_mode_backup_type ${type.type}")
+    executeCommand("settings put secure $SECURE_SETTING_BACKUP_TYPE ${type.type}")
   }
 }
 

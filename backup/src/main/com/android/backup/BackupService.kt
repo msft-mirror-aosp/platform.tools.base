@@ -50,8 +50,8 @@ interface BackupService {
   companion object {
 
     const val TOKEN_FILE = "restore_token_file"
-    const val PM_DATA_FILE = "pm_backup_data"
-    const val APP_DATA_FILE = "app_backup_data"
+    const val PM_DATA_FILE = "pm_backup"
+    const val APP_DATA_FILE = "app_backup"
     const val METADATA_FILE = "metadata.txt"
     const val PROPERTY_APPLICATION_ID = "application-id"
     const val PROPERTY_BACKUP_TYPE = "backup-type"
