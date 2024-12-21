@@ -85,6 +85,8 @@ interface RecipeExecutor {
 
   fun applyPluginInModule(plugin: String, module: Module, revision: AgpVersion)
 
+  fun applyPluginWithClasspathInModule(pluginId: String, module: Module, classpathModule: String, version: String)
+
   /**
    * Records a classpath dependency. If settings.gradle[.kts] has a `pluginManagement` block this
    * call is ignored, unless `forceAdding` is `true`
