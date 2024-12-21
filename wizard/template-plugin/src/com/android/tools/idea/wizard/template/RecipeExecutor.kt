@@ -63,8 +63,6 @@ interface RecipeExecutor {
    */
   fun applyPlugin(plugin: String, revision: String?, minRev: String? = null)
 
-  fun applyPlugin(plugin: String, revision: AgpVersion)
-
   /**
    * Add plugins according to the existing project setup. First it adds plugin to catalog if project
    * has it. Then it add plugin project level declaration to first component that exists: settings
@@ -84,8 +82,6 @@ interface RecipeExecutor {
    * version '`revision`'}" statement to the project top level build.gradle[.kts] file.
    */
   fun applyPluginInModule(plugin: String, module: Module, revision: String?, minRev: String? = null)
-
-  fun applyPluginInModule(plugin: String, module: Module, revision: AgpVersion)
 
   fun applyPluginWithClasspathInModule(pluginId: String, module: Module, classpathModule: String, version: String)
 
