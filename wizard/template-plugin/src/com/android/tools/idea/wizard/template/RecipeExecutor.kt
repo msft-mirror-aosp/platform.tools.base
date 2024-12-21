@@ -76,6 +76,8 @@ interface RecipeExecutor {
    */
   fun addPlugin(pluginId: String, classpath: String)
 
+  fun addPlugin(pluginId: String, classpathModule: String, version: String)
+
   /**
    * Adds "plugins { id '`plugin`' }" statement to the [module] build.gradle[.kts] file and if
    * settings.gradle[.kts] has a `pluginManagement` block, it also adds "plugins { id '`plugin`'

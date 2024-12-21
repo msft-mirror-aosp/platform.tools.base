@@ -21,15 +21,18 @@ import com.android.tools.idea.wizard.template.RecipeExecutor
 
 
 fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: String = data.projectTemplateData.kotlinVersion) {
-  val projectData = data.projectTemplateData
-  if (!data.isNewModule && projectData.language == Language.Kotlin) {
-    applyPlugin("org.jetbrains.kotlin.android", revision)
-    addClasspathDependency("org.jetbrains.kotlin:kotlin-gradle-plugin:$revision")
-  }
+    val projectData = data.projectTemplateData
+    if (!data.isNewModule && projectData.language == Language.Kotlin) {
+        addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
+    }
 }
 
 fun RecipeExecutor.addComposeDependencies(data: ModuleTemplateData, composeBomVersion: String = COMPOSE_BOM_VERSION, composeUiVersion: String? = null) {
-  applyPlugin("org.jetbrains.kotlin.plugin.compose", data.projectTemplateData.kotlinVersion)
+  addPlugin(
+      "org.jetbrains.kotlin.plugin.compose",
+      "org.jetbrains.kotlin:compose-compiler-gradle-plugin",
+      data.projectTemplateData.kotlinVersion
+  )
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion")
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion", "androidTestImplementation")
 
