@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Build
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -102,6 +103,13 @@ interface GradleBuild {
      * This only rewrites the setting file, and does not change anything else
      */
     fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit)
+
+    /**
+     * Allows reconfiguring the settings
+     *
+     * This only rewrites the setting file, and does not change anything else
+     */
+    fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit)
 
     /**
      * Allows making modifications that are reverted.
@@ -298,6 +306,11 @@ internal class GradleBuildImpl(
     override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
         action(definition.settings)
         definition.writeSetting(directory, null, getNewWriter())
+    }
+
+    override fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
+        action(definition.propertiesDelegate)
+        definition.writeProperties(directory)
     }
 
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =

@@ -19,8 +19,6 @@ package com.android.build.gradle.integration.publishing
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.testutils.truth.PathSubject
 import com.google.common.io.Resources
 import org.gradle.api.Project
