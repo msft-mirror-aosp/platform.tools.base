@@ -46,7 +46,7 @@ interface BuildWriter: BooleanNameHandler {
     fun applyPluginFromClass(pluginClass: String)
 
     /** Adds a dependency */
-    fun dependency(scope: String, value:Any, capability: String?)
+    fun dependency(scope: String, value:Any, capability: String? = null)
 
     fun writeCollectionAddAll(name: String, items: Collection<*>)
     fun writeCollectionAdd(name:String, value: Any?)

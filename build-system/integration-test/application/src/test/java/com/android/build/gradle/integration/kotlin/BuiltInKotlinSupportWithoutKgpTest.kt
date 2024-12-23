@@ -16,10 +16,7 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
@@ -28,29 +25,21 @@ import org.junit.Test
 class BuiltInKotlinSupportWithoutKgpTest {
 
     @get:Rule
-    val project =
-        createGradleProjectBuilder {
-            subProject(":lib") {
-                plugins.add(PluginType.ANDROID_LIB)
-                android {
-                    setUpHelloWorld()
-                }
+    val rule = GradleRule.from {
+        androidLibrary {
+            android {
+                experimentalProperties[SCREENSHOT_TEST.key] = true
             }
-        }.create()
+        }
+        gradleProperties {
+            add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+        }
+
+    }
 
     @Test
     fun testKgpMissingFromClasspath() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
-        )
-        val lib = project.getSubproject(":lib")
-        lib.buildFile.appendText(
-            """
-                android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-                """.trimIndent()
-        )
-        val result = lib.executor().expectFailure().run(":lib:assembleDebug")
+        val result = rule.build.executor.expectFailure().run(":lib:assembleDebug")
         result.assertErrorContains("The Kotlin Gradle plugin was not found")
     }
 }

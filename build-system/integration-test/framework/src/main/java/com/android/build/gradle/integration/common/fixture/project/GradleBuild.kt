@@ -105,9 +105,9 @@ interface GradleBuild {
     fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit)
 
     /**
-     * Allows reconfiguring the settings
+     * Allows reconfiguring the Gradle Properties for the build.
      *
-     * This only rewrites the setting file, and does not change anything else
+     * This only rewrites the gradle.properties file.
      */
     fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit)
 

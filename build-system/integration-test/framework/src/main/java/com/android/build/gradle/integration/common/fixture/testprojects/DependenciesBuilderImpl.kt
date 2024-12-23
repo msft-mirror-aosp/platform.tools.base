@@ -20,11 +20,13 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.testutils.MavenRepoGenerator
-import com.android.utils.FileUtils
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeBytes
 
 class DependenciesBuilderImpl() : DependenciesBuilder {
+
     private val dependencies = mutableListOf<Pair<String, DependencyData>>()
 
     private data class DependencyData(
@@ -32,7 +34,8 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         val capability: String? = null
     )
 
-    private class DependencyBuilderImpl: DependencyBuilder {
+    private class DependencyBuilderImpl : DependencyBuilder {
+
         internal var capability: String? = null
 
         override fun requireCapability(capability: String) {
@@ -49,7 +52,11 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         dependencies.clear()
     }
 
-    private fun handleDependency(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+    private fun handleDependency(
+        scope: String,
+        dependency: Any,
+        action: (DependencyBuilder.() -> Unit)?
+    ) {
         val data = action?.let {
             val builder = DependencyBuilderImpl()
             action(builder)
@@ -87,7 +94,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         handleDependency("testRuntimeOnly", dependency, action)
     }
 
-    override fun androidTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+    override fun androidTestImplementation(
+        dependency: Any,
+        action: (DependencyBuilder.() -> Unit)?
+    ) {
         handleDependency("androidTestImplementation", dependency, action)
     }
 
@@ -111,7 +121,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         handleDependency("lintChecks", dependency, action)
     }
 
-    override fun screenshotTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+    override fun screenshotTestImplementation(
+        dependency: Any,
+        action: (DependencyBuilder.() -> Unit)?
+    ) {
         handleDependency("screenshotTestImplementation", dependency, action)
     }
 
@@ -122,11 +135,6 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
     override fun ksp(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
         handleDependency("ksp", dependency, action)
     }
-
-    private class LocalJarDependencyImpl(
-        override val name: String,
-        override val content: ByteArray
-    ): LocalJarDependency
 
     override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
         val builder = JarBuilderImpl().also {
@@ -140,13 +148,17 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         return LocalFilesImpl(path)
     }
 
-    override fun project(path: String, testFixtures: Boolean, configuration: String?): ProjectDependencyBuilder =
-            ProjectDependencyBuilderImpl(path, testFixtures, configuration)
+    override fun project(
+        path: String,
+        testFixtures: Boolean,
+        configuration: String?
+    ): ProjectDependencyBuilder =
+        ProjectDependencyBuilderImpl(path, testFixtures, configuration)
 
     override fun platform(path: Any): PlatformDependency = PlatformDependencyImpl(path)
 
     override fun externalLibrary(path: String, testFixtures: Boolean): ExternalDependencyBuilder =
-            ExternalDependencyBuilderImpl(path, testFixtures)
+        ExternalDependencyBuilderImpl(path, testFixtures)
 
     fun writeBuildFile(sb: StringBuilder, projectDir: File) {
         sb.append("\ndependencies {\n")
@@ -162,6 +174,7 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                         sb.append("$scope '${dependency.coordinate}'\n")
                     }
                 }
+
                 is ProjectDependencyBuilder -> {
                     val projectStr = dependency.configuration?.let { configName ->
                         "project(path: '${dependency.path}', configuration: '$configName')"
@@ -175,14 +188,17 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
 
                     sb.append("$scope $dependencyStr\n")
                 }
+
                 is MavenRepoGenerator.Library -> sb.append("$scope '${dependency.mavenCoordinate}'\n")
                 is LocalJarDependency -> {
-                    val path = createLocalJar(dependency, projectDir)
+                    val path = createLocalJar(dependency, projectDir.toPath())
                     sb.append("$scope files('$path')\n")
                 }
+
                 is LocalFiles -> {
                     sb.append("$scope files('${dependency.path}')\n")
                 }
+
                 else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
             }
         }
@@ -202,7 +218,11 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                         is String -> dependency(scope, dependency, capability)
                         is ExternalDependencyBuilder -> {
                             if (dependency.testFixtures) {
-                                dependency(scope, rawMethod("testFixtures", dependency.coordinate), capability)
+                                dependency(
+                                    scope,
+                                    rawMethod("testFixtures", dependency.coordinate),
+                                    capability
+                                )
                             } else {
                                 dependency(scope, dependency.coordinate, capability)
                             }
@@ -223,14 +243,25 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
                             dependency(scope, dep, capability)
                         }
 
-                        is MavenRepoGenerator.Library -> dependency(scope, dependency.mavenCoordinate.toString(), capability)
+                        is MavenRepoGenerator.Library -> dependency(
+                            scope,
+                            dependency.mavenCoordinate.toString(),
+                            capability
+                        )
+
                         is LocalJarDependency -> {
-                            val path = createLocalJar(dependency, projectLocation.toFile())
+                            val path = createLocalJar(dependency, projectLocation)
                             dependency(scope, rawMethod("files", path), capability)
                         }
+
                         is LocalFiles -> {
-                            dependency(scope, rawMethod("files", dependency.path.toFile().toFormatted()), capability)
+                            dependency(
+                                scope,
+                                rawMethod("files", dependency.path.toFile().toFormatted()),
+                                capability
+                            )
                         }
+
                         else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
                     }
                 }
@@ -241,7 +272,7 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
     }
 
     private fun File.toFormatted(): String {
-        return if (this.isAbsolute){
+        return if (this.isAbsolute) {
             toURI().toString()
         } else {
             // in this case, we want to make sure this is using / even on window as the
@@ -269,19 +300,24 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         }
         return dep
     }
-
-    private fun createLocalJar(
-        localJarDependency : LocalJarDependency,
-        projectDir: File,
-    ): String {
-        val libsFolder = File(projectDir, "libs")
-        FileUtils.mkdirs(libsFolder)
-        val jarFile = File(libsFolder, localJarDependency.name)
-        jarFile.writeBytes(localJarDependency.content)
-
-        return "libs/${localJarDependency.name}"
-    }
 }
+
+internal fun createLocalJar(
+    localJarDependency : LocalJarDependency,
+    projectLocation: Path,
+): String {
+    val relativePath = "libs/${localJarDependency.name}"
+    val jarPath = projectLocation.resolve(relativePath)
+    jarPath.parent.createDirectories()
+    jarPath.writeBytes(localJarDependency.content)
+
+    return relativePath
+}
+
+internal class LocalJarDependencyImpl(
+    override val name: String,
+    override val content: ByteArray
+): LocalJarDependency
 
 private data class LocalFilesImpl(override val path: Path): LocalFiles
 
