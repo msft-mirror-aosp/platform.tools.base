@@ -57,6 +57,7 @@ def _platform_intellij_plugin_impl(ctx):
 
             new_files[path] = stamped_jar
     return [PluginInfo(
+        plugin_id = info.plugin_id,
         directory = info.directory,
         plugin_files = struct(
             linux = new_files,
