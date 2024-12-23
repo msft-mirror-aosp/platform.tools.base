@@ -149,7 +149,6 @@ def _iml_module_jar_impl(
             out_ijar = kotlin_ijar,
             java_runtime = kt_java_runtime,
             kotlinc_opts = kotlinc_opts,
-            transitive_classpath = False,  # Matches JPS.
         ))
         jars.append(kotlin_jar)
         ijars.append(kotlin_ijar)
