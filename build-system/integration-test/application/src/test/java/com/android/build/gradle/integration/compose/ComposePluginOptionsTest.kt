@@ -17,12 +17,11 @@
 package com.android.build.gradle.integration.compose
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProject
-import com.android.build.gradle.internal.CompileOptions.Companion.DEFAULT_JAVA_VERSION
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
-import org.junit.Before
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,23 +29,35 @@ import org.junit.Test
 class ComposePluginOptionsTest {
 
     @get:Rule
-    val project = createGradleProject {
-        withKotlinPlugin = true
-        kotlinVersion = TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(PluginType.KOTLIN_ANDROID)
+    val rule = GradleRule.from {
+        androidApplication {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN)
             android {
-                defaultCompileSdk()
-                minSdk = 24
+                defaultConfig {
+                    minSdk = 24
+                }
                 buildFeatures {
                     compose = true
                 }
-                kotlinOptions {
-                    jvmTarget = DEFAULT_JAVA_VERSION.toString()
-                }
             }
-            addFile(
+            kotlin {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    languageVersion.set(KotlinVersion.KOTLIN_1_9)
+                    freeCompilerArgs.addAll(
+                        "-P",
+                        "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true",
+                        "-P",
+                        "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
+                    )
+                }
+
+            }
+            dependencies {
+                implementation("androidx.compose.runtime:runtime:+")
+            }
+            files.add(
                 "src/main/java/com/example/KotlinClass.kt",
                 // language=kotlin
                 """
@@ -55,44 +66,14 @@ class ComposePluginOptionsTest {
             )
         }
         gradleProperties {
-            set(BooleanOption.USE_ANDROID_X, true)
+            add(BooleanOption.USE_ANDROID_X, true)
         }
-    }
-
-    @Before
-    fun setUp() {
-        project.getSubproject(":app").buildFile.appendText("\n" +
-            """
-            android {
-                kotlinOptions {
-                    languageVersion = "1.9"
-                    freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"]
-                }
-                composeOptions {
-                    kotlinCompilerExtensionVersion = "+"
-                }
-                dependencies {
-                    implementation("androidx.compose.runtime:runtime:+")
-                }
-            }
-            """.trimIndent()
-        )
     }
 
     /** Regression test for b/318384658. */
     @Test
     fun `test AGP does not override user-specified plugin options`() {
-        project.getSubproject(":app").buildFile.appendText("\n" +
-            """
-            android {
-                kotlinOptions {
-                    freeCompilerArgs += [ "-P", "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"]
-                }
-            }
-            """.trimIndent()
-        )
-
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:compileDebugKotlin")
     }
 }

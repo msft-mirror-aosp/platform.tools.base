@@ -20,7 +20,6 @@ import com.android.Version
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
-import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.testutils.TestUtils
 
 sealed class PluginType(
@@ -177,6 +176,12 @@ sealed class PluginType(
         useNewDsl = true,
         version = TestUtils.KSP_VERSION_FOR_TESTS,
     )
+    object COMPOSE_COMPILER_PLUGIN: PluginType(
+        id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+        isKotlin = true,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
+    )
+
     class Custom(id: String): PluginType(id)
 }
 

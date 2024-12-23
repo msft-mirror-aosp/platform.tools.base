@@ -29,16 +29,6 @@ import com.android.testutils.MavenRepoGenerator
 import java.nio.file.Path
 
 /**
- * Creates a [GradleTestProject] with the provided configuration action
- */
-fun createGradleProject(
-    name: String? = null,
-    action: TestProjectBuilder.() -> Unit
-): GradleTestProject {
-    return createGradleProjectBuilder(name, action).create()
-}
-
-/**
  * Creates a [GradleTestProjectBuilder] with the provided configuration action
  */
 fun createGradleProjectBuilder(

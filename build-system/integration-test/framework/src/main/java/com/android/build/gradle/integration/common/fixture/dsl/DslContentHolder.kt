@@ -21,6 +21,7 @@ import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
@@ -98,6 +99,12 @@ interface DslContentHolder {
      * Returns a proxied Gradle Property
      */
     fun getProperty(name: String): Property<Any>
+
+    /**
+     * Returns a proxied Gradle ListProperty
+     */
+    fun getListProperty(name: String): ListProperty<Any>
+
 
     fun <T : BuildType> buildTypes(
         theInterface: Class<T>,
@@ -264,7 +271,11 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     }
 
     override fun getProperty(name: String): Property<Any> {
-        return PropertyProxy<Any>(name, this)
+        return PropertyProxy(name, this)
+    }
+
+    override fun getListProperty(name: String): ListProperty<Any> {
+        return ListPropertyProxy(name, this)
     }
 
     override fun collectionAddAll(
@@ -517,6 +528,10 @@ internal class ChainedDslContentHolder(
 
     override fun getProperty(name: String): Property<Any> {
         return PropertyProxy(name, this)
+    }
+
+    override fun getListProperty(name: String): ListProperty<Any> {
+        return ListPropertyProxy(name, this)
     }
 
     override fun <T : BuildType> buildTypes(

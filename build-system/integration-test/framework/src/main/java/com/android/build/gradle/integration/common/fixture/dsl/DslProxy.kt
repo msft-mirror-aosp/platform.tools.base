@@ -27,6 +27,7 @@ import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -186,6 +187,7 @@ class DslProxy private constructor(
             MutableSet::class.java -> contentHolder.getSet(propName)
             MutableMap::class.java -> contentHolder.getMap(propName)
             Property::class.java -> contentHolder.getProperty(propName)
+            ListProperty::class.java -> contentHolder.getListProperty(propName)
             // custom implementation for String in order to intercept set/get to namespace
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
