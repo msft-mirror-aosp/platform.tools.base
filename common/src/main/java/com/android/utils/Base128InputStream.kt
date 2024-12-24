@@ -21,6 +21,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
+import kotlin.enums.enumEntries
 
 /**
  * An output stream that uses the unsigned little endian base 128
@@ -221,6 +222,22 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
       throw StreamFormatException.Companion.invalidFormat()
     }
     return c != 0
+  }
+
+  /**
+   * Reads an enum value represented by its ordinal number from the stream.
+   *
+   * @return the value read from the stream
+   * @throws IOException if an I/O error occurs
+   * @throws StreamFormatException if an invalid data format is detected
+   */
+  @Throws(IOException::class, StreamFormatException::class)
+  inline fun <reified T : Enum<T>> readEnum(): T {
+    return try {
+      enumEntries<T>()[readInt()]
+    } catch (_: IndexOutOfBoundsException) {
+      throw StreamFormatException.invalidFormat()
+    }
   }
 
   /** @throws UnsupportedOperationException when called. */

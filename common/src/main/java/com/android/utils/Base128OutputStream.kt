@@ -196,6 +196,16 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
     writeInt(if (value) 1 else 0)
   }
 
+  /**
+   * Writes an enum value as its ordinal number to the stream.
+   *
+   * @throws IOException if an I/O error occurs.
+   */
+  @Throws(IOException::class)
+  fun <T : Enum<T>> writeEnum(value: T) {
+    writeInt(value.ordinal)
+  }
+
   /** @throws UnsupportedOperationException when called. */
   @Deprecated("Use writeByte or writeInt instead.")
   override fun write(b: Int) {
