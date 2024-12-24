@@ -13,124 +13,124 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.utils;
+package com.android.utils
 
-import com.android.io.CancellableFileIo;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.android.io.CancellableFileIo
+import java.io.BufferedInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.nio.file.NoSuchFileException
+import java.nio.file.Path
 
 /**
- * An output stream that uses the unsigned little endian base 128 (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>)
- * variable-length encoding for integer values.
+ * An output stream that uses the unsigned little endian base 128
+ * (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>) variable-length encoding for integer
+ * values.
  * @see Base128OutputStream
  */
-public final class Base128InputStream extends BufferedInputStream {
-  @Nullable private Map<String, String> myStringCache;
+class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
 
-  /**
-   * Wraps a given input stream.
-   */
-  public Base128InputStream(@NotNull InputStream stream) {
-    super(stream);
-  }
+  private var stringCache: MutableMap<String, String>? = null
 
   /**
    * Opens a stream to read from the given file.
    *
    * @param file the file to read from
    * @throws NoSuchFileException if the file does not exist
-   * @throws IOException if any other error occurs
+   * @throws IOException if an I/O error occurs
    */
-  public Base128InputStream(@NotNull Path file) throws IOException {
-    super(CancellableFileIo.newInputStream(file));
-  }
+  @Throws(NoSuchFileException::class, IOException::class)
+  constructor(file: Path) : this(CancellableFileIo.newInputStream(file))
 
   /**
-   * If the {@code stringCache} parameter is not null, the {@link #readString()} method will use that cache
+   * If the `stringCache` parameter is not null, the [.readString] method will use that cache
    * to avoid returning distinct String instances that are equal to each other.
    *
    * @param stringCache the map used for storing previously encountered strings; keys and values are identical.
    */
-  public void setStringCache(@Nullable Map<String, String> stringCache) {
-    myStringCache = stringCache;
+  fun setStringCache(stringCache: MutableMap<String, String>) {
+    this.stringCache = stringCache
   }
 
   /**
-   * Reads a 16-bit integer from the stream. The integer had to be written by {@link Base128OutputStream#writeChar(char)}.
+   * Reads a 16-bit integer from the stream. The integer had to be written by [Base128OutputStream.writeChar].
    *
    * @return the value read from the stream
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public char readChar() throws IOException, StreamFormatException {
-    int b = readByteAsInt();
-    int value = b & 0x7F;
-    for (int shift = 7; (b & 0x80) != 0; shift += 7) {
-      b = readByteAsInt();
-      if (shift == 14 && (b & 0xFC) != 0) {
-        throw StreamFormatException.invalidFormat();
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readChar(): Char {
+    var b = readByteAsInt()
+    var value = b and 0x7F
+    var shift = 7
+    while ((b and 0x80) != 0) {
+      b = readByteAsInt()
+      if (shift == 14 && (b and 0xFC) != 0) {
+        throw StreamFormatException.Companion.invalidFormat()
       }
-      value |= (b & 0x7F) << shift;
+      value = value or ((b and 0x7F) shl shift)
+      shift += 7
     }
-    return (char)value;
+    return value.toChar()
   }
 
   /**
-   * Reads a 32-bit integer from the stream. The integer had to be written by {@link Base128OutputStream#writeInt(int)}.
+   * Reads a 32-bit integer from the stream. The integer had to be written by [Base128OutputStream.writeInt].
    *
    * @return the value read from the stream
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public int readInt() throws IOException {
-    int b = readByteAsInt();
-    int value = b & 0x7F;
-    for (int shift = 7; (b & 0x80) != 0; shift += 7) {
-      b = readByteAsInt();
-      if (shift == 28 && (b & 0xF0) != 0) {
-        throw StreamFormatException.invalidFormat();
+  @Throws(IOException::class)
+  fun readInt(): Int {
+    var b = readByteAsInt()
+    var value = b and 0x7F
+    var shift = 7
+    while ((b and 0x80) != 0) {
+      b = readByteAsInt()
+      if (shift == 28 && (b and 0xF0) != 0) {
+        throw StreamFormatException.Companion.invalidFormat()
       }
-      value |= (b & 0x7F) << shift;
+      value = value or ((b and 0x7F) shl shift)
+      shift += 7
     }
-    return value;
+    return value
   }
 
   /**
-   * Reads a 64-bit integer from the stream. The integer had to be written by {@link Base128OutputStream#writeLong(long)}.
+   * Reads a 64-bit integer from the stream. The integer had to be written by [Base128OutputStream.writeLong].
    *
    * @return the value read from the stream
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public long readLong() throws IOException, StreamFormatException {
-    int b = readByteAsInt();
-    long value = b & 0x7F;
-    for (int shift = 7; (b & 0x80) != 0; shift += 7) {
-      b = readByteAsInt();
-      if (shift == 63 && (b & 0xFE) != 0) {
-        throw StreamFormatException.invalidFormat();
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readLong(): Long {
+    var b = readByteAsInt()
+    var value = (b and 0x7F).toLong()
+    var shift = 7
+    while ((b and 0x80) != 0) {
+      b = readByteAsInt()
+      if (shift == 63 && (b and 0xFE) != 0) {
+        throw StreamFormatException.Companion.invalidFormat()
       }
-      value |= ((long) (b & 0x7F)) << shift;
+      value = value or (((b and 0x7F).toLong()) shl shift)
+      shift += 7
     }
-    return value;
+    return value
   }
 
   /**
-   * Reads a float from the stream. The float had to be written by {@link Base128OutputStream#writeFloat(float)}.
+   * Reads a float from the stream. The float had to be written by [Base128OutputStream.writeFloat].
    *
    * @return the value read from the stream
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public float readFloat() throws IOException, StreamFormatException {
-    return Float.intBitsToFloat(readFixed32());
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readFloat(): Float {
+    return Float.fromBits(readFixed32())
   }
 
   /**
@@ -139,38 +139,39 @@ public final class Base128InputStream extends BufferedInputStream {
    * @return the next 32-bits of the stream as a 4-byte int
    * @throws IOException if an I/O error occurs
    */
-  public int readFixed32() throws IOException {
-    return readByteAsInt() | (readByteAsInt() << 8) | (readByteAsInt() << 16) |
-           (readByteAsInt() << 24);
+  @Throws(IOException::class)
+  fun readFixed32(): Int {
+    return readByteAsInt() or (readByteAsInt() shl 8) or (readByteAsInt() shl 16) or
+        (readByteAsInt() shl 24)
   }
 
   /**
-   * Reads a String from the stream. The String had to be written by {@link Base128OutputStream#writeString(String)}.
+   * Reads a String from the stream. The String had to be written by [Base128OutputStream.writeString].
    *
-   * @return the String read from the stream, or null if {@link Base128OutputStream#writeString(String)} was called
-   *     with a null argument
+   * @return the String read from the stream, or null if [Base128OutputStream.writeString] was called
+   * with a null argument
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  @Nullable
-  public String readString() throws IOException, StreamFormatException {
-    int len = readInt();
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readString(): String? {
+    var len = readInt()
     if (len < 0) {
-      throw StreamFormatException.invalidFormat();
+      throw StreamFormatException.Companion.invalidFormat()
     }
     if (len == 0) {
-      return null;
+      return null
     }
-    --len;
+    --len
     if (len == 0) {
-      return "";
+      return ""
     }
-    StringBuilder buf = new StringBuilder(len);
-    for (int i = 0; i < len; i++) {
-      buf.append(readChar());
+    val buf = StringBuilder(len)
+    while (--len >= 0) {
+      buf.append(readChar())
     }
-    String str = buf.toString();
-    return myStringCache == null ? str : myStringCache.computeIfAbsent(str, Function.identity());
+    val str = buf.toString()
+    return stringCache?.computeIfAbsent(str) { it } ?: str
   }
 
   /**
@@ -180,28 +181,30 @@ public final class Base128InputStream extends BufferedInputStream {
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if the stream does not contain any more data
    */
-  public byte readByte() throws IOException {
-    int b = readByteAsInt();
-    return (byte)b;
+  @Throws(IOException::class)
+  fun readByte(): Byte {
+    val b = readByteAsInt()
+    return b.toByte()
   }
 
   /**
-   * Reads an array of bytes from the stream. The bytes had to be written by {@link Base128OutputStream#writeBytes}.
+   * Reads an array of bytes from the stream. The bytes had to be written by [Base128OutputStream.writeBytes].
    *
    * @return the array of bytes read from the stream
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public @NotNull byte[] readBytes() throws IOException, StreamFormatException {
-    int len = readInt();
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readBytes(): ByteArray {
+    val len = readInt()
     if (len < 0) {
-      throw StreamFormatException.invalidFormat();
+      throw StreamFormatException.Companion.invalidFormat()
     }
-    byte[] bytes = new byte[len];
-    for (int i = 0; i < len; i++) {
-      bytes[i] = readByte();
+    val bytes = ByteArray(len)
+    for (i in 0..<len) {
+      bytes[i] = readByte()
     }
-    return bytes;
+    return bytes
   }
 
   /**
@@ -211,67 +214,66 @@ public final class Base128InputStream extends BufferedInputStream {
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
-  public boolean readBoolean() throws IOException, StreamFormatException {
-    int c = readInt();
-    if ((c & ~0x1) != 0) {
-      throw StreamFormatException.invalidFormat();
+  @Throws(IOException::class, StreamFormatException::class)
+  fun readBoolean(): Boolean {
+    val c = readInt()
+    if ((c and 0x1.inv()) != 0) {
+      throw StreamFormatException.Companion.invalidFormat()
     }
-    return c != 0;
+    return c != 0
   }
 
-  /**
-   * @deprecated Use {@link #readByte()} or {@link #readInt()} instead.
-   * @throws UnsupportedOperationException when called
-   */
-  @Deprecated
-  @SuppressWarnings("NonSynchronizedMethodOverridesSynchronizedMethod")
-  @Override
-  public int read() {
-    throw new UnsupportedOperationException(
-        "This method is disabled to prevent unintended accidental use. Please use readByte or readInt instead.");
+  /** @throws UnsupportedOperationException when called. */
+  @Deprecated("Use readByte() or readInt() instead.")
+  override fun read(): Int {
+    throw UnsupportedOperationException(
+        "This method is disabled to prevent unintended accidental use. Please use readByte or readInt instead."
+    )
   }
 
   /**
    * Checks if the stream contains the given bytes starting from the current position.
-   * Unless the remaining part of the stream is shorter than the {@code expected} array,
-   * exactly {@code expected.length} bytes are read from the stream.
+   * Unless the remaining part of the stream is shorter than the `expected` array,
+   * exactly `expected.length` bytes are read from the stream.
    *
    * @param expected expected stream content
    * @return true if the stream content matches, false otherwise.
    * @throws IOException in case of a premature end of stream or an I/O error
    */
-  public boolean validateContents(@NotNull byte[] expected) throws IOException {
-    boolean result = true;
-    for (byte b : expected) {
+  @Throws(IOException::class)
+  fun validateContents(expected: ByteArray): Boolean {
+    var result = true
+    for (b in expected) {
       if (b != readByte()) {
-        result = false;
+        result = false
       }
     }
-    return result;
+    return result
   }
 
-  private int readByteAsInt() throws IOException {
-    int b = super.read();
+  @Throws(IOException::class)
+  private fun readByteAsInt(): Int {
+    val b = super.read()
     if (b < 0) {
-      throw StreamFormatException.prematureEndOfFile();
+      throw StreamFormatException.Companion.prematureEndOfFile()
     }
-    return b;
+    return b
   }
 
   /**
    * Exception thrown when invalid data is encountered while reading from a stream.
    */
-  public static class StreamFormatException extends IOException {
-    public StreamFormatException(@NotNull String message) {
-      super(message);
-    }
+  class StreamFormatException(message: String) : IOException(message) {
+    companion object {
+      @JvmStatic
+      fun prematureEndOfFile(): StreamFormatException {
+        return StreamFormatException("Premature end of file")
+      }
 
-    public static StreamFormatException prematureEndOfFile() {
-      return new StreamFormatException("Premature end of file");
-    }
-
-    public static StreamFormatException invalidFormat() {
-      return new StreamFormatException("Invalid file format");
+      @JvmStatic
+      fun invalidFormat(): StreamFormatException {
+        return StreamFormatException("Invalid file format")
+      }
     }
   }
 }
