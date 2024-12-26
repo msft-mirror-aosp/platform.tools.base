@@ -22,6 +22,7 @@ import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import org.gradle.api.provider.Property
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 /**
  * Class that contains the actual content of a DSL class that's generated on the fly.
@@ -114,6 +115,12 @@ interface DslContentHolder {
         theInterface: Class<ExecutionProfile>,
         parentChain: List<String> = listOf(),
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit,
+    )
+
+    fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String> = listOf(),
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit,
     )
 
     /**
@@ -285,7 +292,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
             name = "buildTypes",
             parameters = listOf(),
             instanceProvider = {
-                NamedDomainObjectContainerProxy<T>(theInterface, it)
+                NamedDomainObjectContainerProxy(theInterface, it)
             },
             parentChain = parentChain,
             action = action,
@@ -301,7 +308,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
             name = "productFlavors",
             parameters = listOf(),
             instanceProvider = {
-                NamedDomainObjectContainerProxy<T>(theInterface, it)
+                NamedDomainObjectContainerProxy(theInterface, it)
             },
             parentChain = parentChain,
             action = action,
@@ -315,6 +322,22 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     ) {
         runNestedBlock(
             name = "profiles",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            parentChain = parentChain,
+            action = action,
+        )
+    }
+
+    override fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "sourceSets",
             parameters = listOf(),
             instanceProvider = {
                 NamedDomainObjectContainerProxy(theInterface, it)
@@ -514,6 +537,14 @@ internal class ChainedDslContentHolder(
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
     ) {
         parent.executionProfiles(theInterface, parentChain + this.name, action)
+    }
+
+    override fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
+    ) {
+        parent.kotlinSourceSets(theInterface, parentChain + this.name, action)
     }
 
     override fun <T> runNestedBlock(

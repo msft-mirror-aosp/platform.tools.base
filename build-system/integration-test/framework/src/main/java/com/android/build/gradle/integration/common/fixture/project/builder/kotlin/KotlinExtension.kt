@@ -17,7 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project.builder.kotlin
 
 import net.bytebuddy.ByteBuddy
+import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 /**
  * Top level interface for the `kotlin {}` in test projects.
@@ -29,6 +31,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
  * Therefore, this is used as an entry point. This exposes only what we need. This is implemented
  * via the proxy so that we don't have to bother with the implementation and the writing into
  * build files.
+ *
+ * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension]
  */
 interface KotlinExtension {
 
@@ -46,4 +50,7 @@ interface KotlinExtension {
     var coreLibrariesVersion: String
 
     var explicitApi: org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode?
+
+    val sourceSets: NamedDomainObjectContainer<KotlinSourceSet>
+    fun sourceSets(configure: NamedDomainObjectContainer<KotlinSourceSet>.() -> Unit)
 }

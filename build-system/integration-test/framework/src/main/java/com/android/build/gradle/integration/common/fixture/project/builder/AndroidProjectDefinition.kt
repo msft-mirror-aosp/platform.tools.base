@@ -17,10 +17,13 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import java.nio.file.Path
 
 /**
@@ -34,10 +37,29 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
         const val DEFAULT_TEST_PATH = ":test"
     }
 
+    /**
+     * the android extension
+     */
     val android: ExtensionT
+
+    /**
+     * Method to configure the android extension
+     */
     fun android(action: ExtensionT.() -> Unit)
 
+    /**
+     * Method to configure the built-in kotlin extension.
+     *
+     * This requires [PluginType.ANDROID_BUILT_IN_KOTLIN] to be applied
+     */
     fun kotlin(action: KotlinExtension.() -> Unit)
+
+    /**
+     * Method to configure the KGP extension.
+     *
+     * This requires [PluginType.KOTLIN_ANDROID] to be applied
+     */
+    fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit)
 
     override val files: AndroidProjectFiles
     fun files(action: AndroidProjectFiles.() -> Unit)
@@ -46,9 +68,18 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
 /**
  * Base implementation for all Android project types.
  */
-internal abstract class AndroidProjectDefinitionImpl<T>(
+internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     path: String
-): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<T> {
+): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<ExtensionT> {
+
+    protected val contentHolder = DefaultDslContentHolder()
+
+    // For kotlin, because we want this to be separate from the android extension, we have
+    // to create a separate content holder and proxy.
+    // custom content holder for kotlin so that it's not under the android one
+    private val kotlinContentHolder = DefaultDslContentHolder()
+    private val kotlinExtension: KotlinExtension = DslProxy.createProxy(KotlinExtension::class.java, kotlinContentHolder)
+    private var kotlinActionRan = false
 
     override val files: AndroidProjectFiles = DelayedAndroidProjectFiles(this::namespace)
 
@@ -66,9 +97,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
             throw RuntimeException("Unsupported android extension type. Override namespace getter in the specific AndroidProjectDefinition implementation!")
         }
 
-    protected val contentHolder = DefaultDslContentHolder()
-
-    protected open fun initDefaultValues(extension: T) {
+    protected open fun initDefaultValues(extension: ExtensionT) {
         if (extension is CommonExtension<*,*,*,*,*,*>) {
             extension.namespace = "pkg.name${path.replace(':', '.')}"
             extension.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
@@ -77,7 +106,7 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         }
     }
 
-    override fun android(action: T.() -> Unit) {
+    override fun android(action: ExtensionT.() -> Unit) {
         action(android)
     }
 
@@ -85,10 +114,18 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         if (!hasPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN))
             throw RuntimeException("Cannot configure kotlin without plugin ANDROID_BUILT_IN_KOTLIN")
 
+        kotlinActionRan = true
+        action(kotlinExtension)
+    }
+
+    override fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit) {
+        if (!hasPlugin(PluginType.KOTLIN_ANDROID))
+            throw RuntimeException("Cannot configure legacyKotlin without plugin KOTLIN_ANDROID")
+        @Suppress("DEPRECATION")
         contentHolder.runNestedBlock(
-            "kotlin",
+            "kotlinOptions",
             parameters = listOf(),
-            KotlinExtension::class.java
+            KotlinJvmOptions::class.java
         ) {
             action(this)
         }
@@ -98,6 +135,13 @@ internal abstract class AndroidProjectDefinitionImpl<T>(
         writer.apply {
             block("android") {
                 contentHolder.writeContent(this)
+            }
+
+            if (kotlinActionRan) {
+                emptyLine()
+                block("kotlin") {
+                    kotlinContentHolder.writeContent(this)
+                }
             }
 
             emptyLine()
