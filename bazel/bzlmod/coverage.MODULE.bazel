@@ -1,0 +1,26 @@
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+local_repository(
+    name = "cov",
+    path = "tools/base/bazel/coverage",
+)
+
+new_local_repository(
+    name = "baseline",
+    build_file_content = """
+load("@cov//:baseline.bzl", "construct_baseline_processing_graph")
+construct_baseline_processing_graph()
+""",
+    path = "bazel-bin",
+)
+
+new_local_repository(
+    name = "results",
+    build_file_content = """
+load("@cov//:results.bzl", "construct_result_processing_graph")
+construct_result_processing_graph()
+""",
+    path = "bazel-testlogs",
+)

@@ -115,7 +115,14 @@ fi
   @cov//:all.lcov \
   || exit $?
 
-readonly lcov_path="./bazel-bin/external/cov/all/lcov"
+readonly lcov_path="$( \
+  ${script_dir}/bazel \
+  cquery \
+  --output files \
+  --config=rcache \
+  --config=release \
+  @cov//:all.lcov \
+)"
 
 if [[ -d "${dist_dir}" ]]; then
   # Copy the report to ab/ outputs

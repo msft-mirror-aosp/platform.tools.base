@@ -3,18 +3,6 @@
 ## generating test target Jacoco execfiles from test coverage data outputs.
 ## Those execfiles will eventually be used by coverage report rules in @cov//
 
-# Create the bazel repo in bazel-testlogs
-# Its BUILD file only constructs the result processing graph
-def setup_testlogs_loop_repo():
-    native.new_local_repository(
-        name = "results",
-        path = "bazel-testlogs",
-        build_file_content = """
-load("@cov//:results.bzl", "construct_result_processing_graph")
-construct_result_processing_graph()
-""",
-    )
-
 jacoco_cli = "@//prebuilts/tools/common/jacoco:cli"
 
 # Reconstruct test, split, and shard information from filepaths
