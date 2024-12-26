@@ -14,65 +14,51 @@
  * limitations under the License.
  */
 
-import kexter.DexMethod
+import kexter.core.DexImpl
 import org.junit.Assert
 import org.junit.Test
 
 class MethodIdsTest {
-  private data class MethodInfo(
-    val id: UInt,
-    val name: String,
-    val owner: String,
-    val signature: String,
-  )
-
   @Test
   fun testAllIdsArePresent() {
-    // Here are methods from 'MultipleClassesInFile.kt'
     val expectedMethodInfos =
       setOf(
-        MethodInfo(id = 0u, name = "<init>", owner = "LA;", signature = "()V"),
-        MethodInfo(id = 1u, name = "a", owner = "LA;", signature = "()I"),
-        MethodInfo(id = 7u, name = "<init>", owner = "LBase;", signature = "()V"),
-        MethodInfo(id = 8u, name = "base", owner = "LBase;", signature = "()I"),
-        MethodInfo(id = 12u, name = "i1", owner = "LI1\$DefaultImpls;", signature = "(LI1;)I"),
-        MethodInfo(id = 13u, name = "access\$i1\$jd", owner = "LI1;", signature = "(LI1;)I"),
-        MethodInfo(id = 14u, name = "i1", owner = "LI1;", signature = "()I"),
-        MethodInfo(id = 15u, name = "i1", owner = "LI2\$DefaultImpls;", signature = "(LI2;)I"),
-        MethodInfo(id = 16u, name = "i2", owner = "LI2\$DefaultImpls;", signature = "(LI2;)I"),
-        MethodInfo(id = 17u, name = "access\$i1\$jd", owner = "LI2;", signature = "(LI2;)I"),
-        MethodInfo(id = 18u, name = "access\$i2\$jd", owner = "LI2;", signature = "(LI2;)I"),
-        MethodInfo(id = 19u, name = "i1", owner = "LI2;", signature = "()I"),
-        MethodInfo(id = 20u, name = "i2", owner = "LI2;", signature = "()I"),
-        MethodInfo(id = 21u, name = "i1", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
-        MethodInfo(id = 22u, name = "i2", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
-        MethodInfo(id = 23u, name = "i3", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
-        MethodInfo(id = 24u, name = "access\$i1\$jd", owner = "LI3;", signature = "(LI3;)I"),
-        MethodInfo(id = 25u, name = "access\$i2\$jd", owner = "LI3;", signature = "(LI3;)I"),
-        MethodInfo(id = 26u, name = "access\$i3\$jd", owner = "LI3;", signature = "(LI3;)I"),
-        MethodInfo(id = 27u, name = "i1", owner = "LI3;", signature = "()I"),
-        MethodInfo(id = 28u, name = "i2", owner = "LI3;", signature = "()I"),
-        MethodInfo(id = 29u, name = "i3", owner = "LI3;", signature = "()I"),
-        MethodInfo(id = 30u, name = "main", owner = "LMultipleClassesInFileKt;", signature = "()V"),
-        MethodInfo(
-          id = 31u,
-          name = "main",
-          owner = "LMultipleClassesInFileKt;",
-          signature = "([Ljava/lang/String;)V",
-        ),
-        MethodInfo(id = 45u, name = "<init>", owner = "LX;", signature = "()V"),
-        MethodInfo(id = 46u, name = "x", owner = "LX;", signature = "()I"),
+        MethodInfo(name = "<init>", owner = "LA;", signature = "()V"),
+        MethodInfo(name = "a", owner = "LA;", signature = "()I"),
+        MethodInfo(name = "<init>", owner = "LBase;", signature = "()V"),
+        MethodInfo(name = "base", owner = "LBase;", signature = "()I"),
+        MethodInfo(name = "i1", owner = "LI1\$DefaultImpls;", signature = "(LI1;)I"),
+        MethodInfo(name = "access\$i1\$jd", owner = "LI1;", signature = "(LI1;)I"),
+        MethodInfo(name = "i1", owner = "LI1;", signature = "()I"),
+        MethodInfo(name = "i1", owner = "LI2\$DefaultImpls;", signature = "(LI2;)I"),
+        MethodInfo(name = "i2", owner = "LI2\$DefaultImpls;", signature = "(LI2;)I"),
+        MethodInfo(name = "access\$i1\$jd", owner = "LI2;", signature = "(LI2;)I"),
+        MethodInfo(name = "access\$i2\$jd", owner = "LI2;", signature = "(LI2;)I"),
+        MethodInfo(name = "i1", owner = "LI2;", signature = "()I"),
+        MethodInfo(name = "i2", owner = "LI2;", signature = "()I"),
+        MethodInfo(name = "i1", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
+        MethodInfo(name = "i2", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
+        MethodInfo(name = "i3", owner = "LI3\$DefaultImpls;", signature = "(LI3;)I"),
+        MethodInfo(name = "access\$i1\$jd", owner = "LI3;", signature = "(LI3;)I"),
+        MethodInfo(name = "access\$i2\$jd", owner = "LI3;", signature = "(LI3;)I"),
+        MethodInfo(name = "access\$i3\$jd", owner = "LI3;", signature = "(LI3;)I"),
+        MethodInfo(name = "i1", owner = "LI3;", signature = "()I"),
+        MethodInfo(name = "i2", owner = "LI3;", signature = "()I"),
+        MethodInfo(name = "i3", owner = "LI3;", signature = "()I"),
+        MethodInfo(name = "main", owner = "LMethodIdsKt;", signature = "()V"),
+        MethodInfo(name = "main", owner = "LMethodIdsKt;", signature = "([Ljava/lang/String;)V"),
+        MethodInfo(name = "<init>", owner = "LX;", signature = "()V"),
+        MethodInfo(name = "x", owner = "LX;", signature = "()I"),
       )
 
-    for (info in expectedMethodInfos) {
-      val id = info.id
-      val retrievedInfo = DexArchive.dex.retrieveMethod(id)?.toMethodInfo(id)
-      Assert.assertEquals(info, retrievedInfo)
+    val dex = DexArchive.dex as DexImpl
+    val retrievedInfos = mutableSetOf<MethodInfo>()
+    for (id in 0u..dex.methodIds.numElements()) {
+      val methodInfo = dex.retrieveMethod(id)?.toMethodInfo() ?: continue
+      retrievedInfos.add(methodInfo)
     }
-  }
-
-  private fun DexMethod.toMethodInfo(id: UInt): MethodInfo {
-    val signature = params.joinToString(separator = "", prefix = "(", postfix = ")") + returnType
-    return MethodInfo(id, name, type, signature)
+    for (info in expectedMethodInfos) {
+      Assert.assertTrue(info in retrievedInfos)
+    }
   }
 }

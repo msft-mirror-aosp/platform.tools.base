@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks
 
 import com.android.SdkConstants.TAG_INTENT_FILTER
+import com.android.tools.lint.checks.AppLinksValidDetector.Companion.APP_LINK_SPLIT_TO_WEB_AND_CUSTOM
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.APP_LINK_WARNING
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.ElementWrapper
 import com.android.tools.lint.checks.AppLinksValidDetector.Companion.IntentFilterData
@@ -4241,8 +4242,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
   }
 
-  // TODO(b/375352603): Re-enable this test.
-  /*fun test_splitToWebAndCustomSchemes() {
+  fun test_splitToWebAndCustomSchemes() {
     lint()
       .files(
         xml(
@@ -4264,7 +4264,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             </uri-relative-filter-group>
                             <data android:scheme="http" />
                             <data android:scheme="custom" />
-                            <data android:host="library.com" />
+                            <data android:host="example.com" />
                             <data android:path="@string/path" />
                             <data android:path="/&lt;&amp;&apos;'" />
                             <data android:path='/single"quote' />
@@ -4285,10 +4285,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         xml(
             "res/values/strings.xml",
             """
-                <resources>
-                    <string name="path">/path</string>
-                </resources>
-                """,
+            <resources>
+                <string name="path">/path</string>
+            </resources>
+            """,
           )
           .indented(),
       )
@@ -4298,47 +4298,49 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         """
         AndroidManifest.xml:7: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">
-                    ^
+                     ~~~~~~~~~~~~~
         1 errors, 0 warnings
-      """
+        """
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
-      @@ -15 +15
-      +                 <action android:name="android.intent.action.SEND" />
-      +                 <uri-relative-filter-group>
-      +                     <data android:path="/path" />
-      +                     <data android:query="queryparam=value" />
-      +                 </uri-relative-filter-group>
-      @@ -16 +21
-      -                 <data android:scheme="custom" />
-      @@ -18 +22
-      -                 <data android:path="@string/path" />
-      @@ -20 +23
-      -                 <data android:path='/single"quote' />
-      -                 <data android:path="" />
-      -                 <!-- Test having tags underneath the host elements as well -->
-      -                 <action android:name="android.intent.action.SEND"/>
-      +                 <data android:path="/single"quote" />
-      +                 <data android:path="@string/path" />
-      +             </intent-filter>
-      +             <intent-filter android:order="-1" android:priority="-1">
-      +                 <action android:name="android.intent.action.VIEW" />
-      +                 <category android:name="android.intent.category.DEFAULT" />
-      +                 <category android:name="android.intent.category.BROWSABLE" />
-      @@ -28 +34
-      +                 <action android:name="android.intent.action.SEND" />
-      +                 <uri-relative-filter-group>
-      +                     <data android:path="/path" />
-      +                     <data android:query="queryparam=value" />
-      +                 </uri-relative-filter-group>
-      +                 <data android:scheme="custom" />
-      +                 <data android:host="library.com" />
-      +                 <data android:path="/&lt;&amp;&apos;'" />
-      +                 <data android:path="/single"quote" />
-      +                 <data android:path="@string/path" />
-      """
+        Fix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
+        @@ -15 +15
+        +                 <action android:name="android.intent.action.SEND" />
+        +                 <uri-relative-filter-group>
+        +                     <data android:path="/path" />
+        +                     <data android:query="queryparam=value" />
+        +                 </uri-relative-filter-group>
+        @@ -16 +21
+        -                 <data android:scheme="custom" />
+        @@ -18 +22
+        -                 <data android:path="@string/path" />
+        -                 <data android:path="/&lt;&amp;&apos;'" />
+        -                 <data android:path='/single"quote' />
+        @@ -22 +23
+        -                 <!-- Test having tags underneath the host elements as well -->
+        -                 <action android:name="android.intent.action.SEND"/>
+        +                 <data android:path="/&lt;&amp;&apos;'" />
+        +                 <data android:path="/single"quote" />
+        +                 <data android:path="@string/path" />
+        +             </intent-filter>
+        +             <intent-filter android:order="-1" android:priority="-1">
+        +                 <action android:name="android.intent.action.VIEW" />
+        +                 <category android:name="android.intent.category.DEFAULT" />
+        +                 <category android:name="android.intent.category.BROWSABLE" />
+        @@ -28 +35
+        +                 <action android:name="android.intent.action.SEND" />
+        +                 <uri-relative-filter-group>
+        +                     <data android:path="/path" />
+        +                     <data android:query="queryparam=value" />
+        +                 </uri-relative-filter-group>
+        +                 <data android:scheme="custom" />
+        +                 <data android:host="example.com" />
+        +                 <data android:path="" />
+        +                 <data android:path="/&lt;&amp;&apos;'" />
+        +                 <data android:path="/single"quote" />
+        +                 <data android:path="@string/path" />
+        """
       )
   }
 
@@ -4360,7 +4362,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
                             <category android-ns:name="android.intent.category.BROWSABLE" />
                             <data android-ns:scheme="http" />
                             <data android-ns:scheme="custom" />
-                            <data android-ns:host="library.com" />
+                            <data android-ns:host="example.com" />
                         </intent-filter>
                     </activity>
                 </application>
@@ -4374,7 +4376,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         """
         AndroidManifest.xml:7: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
                     <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">
-                    ^
+                     ~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )
@@ -4382,7 +4384,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         """
         Fix for AndroidManifest.xml line 7: Replace with <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">...:
         @@ -12 +12
-        +                 <data android-ns:host="library.com" />
+        +                 <data android-ns:host="example.com" />
         +             </intent-filter>
         +             <intent-filter android-ns:order="-1" android-ns:priority="-1">
         +                 <action android-ns:name="android.intent.action.VIEW" />
@@ -4390,5 +4392,242 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                 <category android-ns:name="android.intent.category.BROWSABLE" />
         """
       )
-  }*/
+  }
+
+  fun test_splitToWebAndCustomSchemes_errorWhenOneHostNeedsVerification() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example.helloworld" >
+                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
+
+                <application>
+                    <!-- Activity aliases also contribute to autoVerify -->
+                    <activity-alias android:name=".Alias" android:targetActivity=".SplitWebAndCustomActivity" android:exported="true">
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:host="host1.com" />
+                        </intent-filter>
+                    </activity-alias>
+                    <activity android:name=".SplitWebAndCustomActivity" android:exported="true">
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:scheme="custom" />
+                            <data android:host="host1.com" />
+                            <data android:host="host2.com" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+          """,
+          )
+          .indented()
+      )
+      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:17: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
+                    <intent-filter android:autoVerify="true">
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 17: Replace with <intent-filter android:autoVerify="true">...:
+        @@ -22 +22
+        +                 <data android:host="host1.com" />
+        +                 <data android:host="host2.com" />
+        +             </intent-filter>
+        +             <intent-filter>
+        +                 <action android:name="android.intent.action.VIEW" />
+        +                 <category android:name="android.intent.category.DEFAULT" />
+        +                 <category android:name="android.intent.category.BROWSABLE" />
+        """
+      )
+  }
+
+  fun test_splitToWebAndCustomSchemes_errorWhenHostsUsedInNonAutoVerifyIntentFilter() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example.helloworld" >
+                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
+
+                <application>
+                    <activity-alias android:name=".Alias" android:targetActivity=".SplitWebAndCustomActivity" android:exported="true">
+                        <!-- Intent filter which doesn't use autoVerify should not count for domain verification -->
+                        <intent-filter>
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:host="host1.com" />
+                            <data android:host="host2.com" />
+                        </intent-filter>
+                    </activity-alias>
+                    <activity android:name=".SplitWebAndCustomActivity" android:exported="true">
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:scheme="custom" />
+                            <data android:host="host1.com" />
+                            <data android:host="host2.com" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+          """,
+          )
+          .indented()
+      )
+      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:18: Error: Split your http(s) and custom schemes into separate intent filters [AppLinkSplitToWebAndCustom]
+                    <intent-filter android:autoVerify="true">
+                     ~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 18: Replace with <intent-filter android:autoVerify="true">...:
+        @@ -23 +23
+        +                 <data android:host="host1.com" />
+        +                 <data android:host="host2.com" />
+        +             </intent-filter>
+        +             <intent-filter>
+        +                 <action android:name="android.intent.action.VIEW" />
+        +                 <category android:name="android.intent.category.DEFAULT" />
+        +                 <category android:name="android.intent.category.BROWSABLE" />
+        """
+      )
+  }
+
+  fun test_splitToWebAndCustomSchemes_noErrorWhenHostsAlreadyRequestVerification() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                    package="com.example.helloworld" >
+                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
+
+                <application>
+                    <!-- Non-enabled, non-exported activities also contribute to autoVerify -->
+                    <activity android:name=".HiddenActivity" android:exported="false" android:enabled="false">
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:host="host1.com" />
+                            <data android:host="host2.com" />
+                        </intent-filter>
+                    </activity>
+                    <activity android:name=".SplitWebAndCustomActivity" android:exported="true">
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:scheme="custom" />
+                            <data android:host="host1.com" />
+                            <data android:host="host2.com" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+          """,
+          )
+          .indented()
+      )
+      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+      .run()
+      .expectClean()
+  }
+
+  fun test_splitToWebAndCustomSchemes_noErrorWhenHostsAlreadyRequestVerification_inLibrary() {
+    lint()
+      .projects(
+        project(
+            manifest(
+                """
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                        package="com.example.helloworld" >
+                        <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="34" />
+
+                    <application>
+                        <activity android:name=".SplitWebAndCustomActivity" android:exported="true">
+                            <intent-filter android:autoVerify="true">
+                                <action android:name="android.intent.action.VIEW" />
+                                <category android:name="android.intent.category.DEFAULT" />
+                                <category android:name="android.intent.category.BROWSABLE" />
+                                <data android:scheme="http" />
+                                <data android:scheme="custom" />
+                                <data android:host="library.com" />
+                            </intent-filter>
+                        </activity>
+                        <activity
+                            android:name="com.example.library.LibraryActivity"
+                            android:exported="true" />
+                    </application>
+                </manifest>
+                """
+              )
+              .indented(),
+            projectProperties().dependsOn("../library").manifestMerger(true),
+          )
+          .name("app")
+          .dependsOn(
+            project(
+                manifest(
+                    """
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                        package="com.example.library" >
+
+                        <application>
+                            <activity android:name=".LibraryActivity" >
+
+                                <intent-filter android:autoVerify="true">
+                                    <action android:name="android.intent.action.VIEW" />
+                                    <category android:name="android.intent.category.DEFAULT" />
+                                    <category android:name="android.intent.category.BROWSABLE" />
+
+                                    <data android:scheme="http" />
+                                    <data android:host="library.com" />
+                                </intent-filter>
+                            </activity>
+                        </application>
+                    </manifest>
+                    """
+                  )
+                  .indented(),
+                projectProperties().library(true),
+              )
+              .name("library")
+          )
+      )
+      .issues(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
+      .run()
+      .expectClean()
+  }
 }

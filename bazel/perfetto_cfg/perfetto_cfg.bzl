@@ -50,7 +50,7 @@ PERFETTO_CONFIG = struct(
         # Target exposing platform-specific functionality for base. This is
         # overriden in Google internal builds.
         base_platform = ["//:perfetto_base_default_platform"],
-        zlib = ["@zlib_repo//:zlib"],
+        zlib = ["@zlib//:zlib"],
         jsoncpp = ["@perfetto-jsoncpp-1.0.0//:jsoncpp"],
         linenoise = ["@perfetto-linenoise-c894b9e//:linenoise"],
         sqlite = ["@perfetto-sqlite-amalgamation-3450300//:sqlite"],

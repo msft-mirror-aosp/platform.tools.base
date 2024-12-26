@@ -19,13 +19,13 @@ agent_deps = [
     ":network_inspector_java_proto",
     "//prebuilts/studio/sdk:platforms/latest_jar",
     "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
-    "//prebuilts/tools/common/m2:io.grpc.grpc-api.1.57.0",
     "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common",
     "//tools/base/bazel:studio-proto",
     "@maven//:androidx.annotation.annotation",
     "@maven//:com.squareup.okhttp.okhttp",
     "@maven//:com.squareup.okhttp3.okhttp",
     "@maven//:com.squareup.okio.okio",
+    "@maven//:io.grpc.grpc-api",
     "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
 ]
 

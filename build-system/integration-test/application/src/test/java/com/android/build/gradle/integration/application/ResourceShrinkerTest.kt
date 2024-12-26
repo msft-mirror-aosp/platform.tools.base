@@ -252,9 +252,7 @@ class ResourceShrinkerTest(
         project: GradleTestProject,
         unusedResources: List<String>
     ) {
-        // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
-        // Once that bug is fixed, we should remove that condition.
-        if (r8IntegratedResourceShrinking && nonFinalResIds) {
+        if (r8IntegratedResourceShrinking) {
             assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
         } else {
             assertThat(getZipPaths(project.getOriginalBundle())).containsAtLeastElementsIn(unusedResources)
@@ -487,9 +485,7 @@ class ResourceShrinkerTest(
                 "res/layout/unused14.xml",
                 "res/layout/unused2.xml",
                 "res/menu/unused12.xml",
-            ) + if (r8IntegratedResourceShrinking && nonFinalResIds) {
-                // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
-                // Once that bug is fixed, we should remove that condition.
+            ) + if (r8IntegratedResourceShrinking) {
                 emptyList()
             } else {
                 // This resource is used by a feature module, so the fact that it appears in this
@@ -636,9 +632,7 @@ class ResourceShrinkerTest(
     }
 
     private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
-        // TODO(b/384905036): Because of b/384905036, we also require android.nonFinalResIds = true.
-        // Once that bug is fixed, we should remove that condition.
-        val task = if (r8IntegratedResourceShrinking && nonFinalResIds) {
+        val task = if (r8IntegratedResourceShrinking) {
             "minifyReleaseWithR8"
         } else {
             "shrinkReleaseRes"

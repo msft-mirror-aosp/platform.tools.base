@@ -1416,6 +1416,10 @@ class ModelBuilder<
                 BooleanFlag.DATA_BINDING_ENABLED,
                 variants.any { it.buildFeatures.dataBinding }
             )
+            flags.put(
+                BooleanFlag.GENERATE_MANIFEST_CLASS,
+                projectOptions[BooleanOption.GENERATE_MANIFEST_CLASS]
+            )
 
             return AndroidGradlePluginProjectFlagsImpl(flags.build())
         }

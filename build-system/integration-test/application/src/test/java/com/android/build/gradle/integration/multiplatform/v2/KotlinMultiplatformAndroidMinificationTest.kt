@@ -16,18 +16,18 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.apk.Aar
+import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import kotlin.io.path.pathString
+import kotlin.io.path.readText
 
 class KotlinMultiplatformAndroidMinificationTest {
 
@@ -199,6 +199,34 @@ class KotlinMultiplatformAndroidMinificationTest {
                 "Lcom/example/kmpsecondlib/KmpAndroidSecondLibClass;",
                 "Lcom/example/kmplibraryplugin/KmpLibraryPluginAndroidClass;",
                 "Lcom/example/kmplibraryplugin/KmpLibraryPluginCommonClass;",
+            )
+        }
+    }
+
+    @Test
+    fun testProguardTxtIncludedInAar() {
+        FileUtils.writeToFile(
+            project.getSubproject("kmpFirstLib").file("consumer-proguard-rules.pro"),
+            """
+                -keep class com.example.kmpfirstlib.** { *; }
+            """.trimIndent()
+        )
+
+        project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
+
+        Aar(
+            project.getSubproject("kmpFirstLib").getOutputFile(
+                "aar",
+                "kmpFirstLib.aar"
+            )
+        ).use { aar ->
+            PathSubject.assertThat(aar.getEntry("proguard.txt")).isNotNull()
+
+            val content = aar.getEntry("proguard.txt")
+            Truth.assertThat(content.readText()).isEqualTo(
+                """
+                   -keep class com.example.kmpfirstlib.** { *; }
+                """.trimIndent()
             )
         }
     }

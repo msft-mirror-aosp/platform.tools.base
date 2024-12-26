@@ -62,9 +62,9 @@ def _platform_intellij_plugin_impl(ctx):
             linux = new_files,
         ),
         plugin_metadata = info.plugin_metadata,
-        module_deps = info.module_deps,
-        lib_deps = info.lib_deps,
-        licenses = info.licenses,
+        modules = info.modules,
+        libs = info.libs,
+        license_files = info.license_files,
         overwrite_plugin_version = info.overwrite_plugin_version,
         platform = info.platform,
     )]

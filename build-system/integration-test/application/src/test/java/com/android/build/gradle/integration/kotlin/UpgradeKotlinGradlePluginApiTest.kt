@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.integration.kotlin
 
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 import org.junit.Rule
@@ -27,17 +26,24 @@ import org.junit.Test
 class UpgradeKotlinGradlePluginApiTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                setUpHelloWorld()
+    val rule = GradleRule.from {
+        rootProject {
+            buildscript {
+                classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VERSION_FOR_TESTS") // FIXME update the version
             }
         }
-    }.withBuiltInKotlinSupport(true)
-        .withKotlinGradlePlugin(true)
-        .create()
+        androidApplication {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            files.add(
+                "src/main/java/AppFoo.kt",
+                //language=kotlin
+                """
+                    package com.foo.application
+                    class AppFoo
+                """.trimIndent()
+            )
+        }
+    }
 
     /**
      * Test that users can upgrade the version of kotlin-gradle-plugin-api by adding KGP to their
@@ -45,20 +51,11 @@ class UpgradeKotlinGradlePluginApiTest {
      */
     @Test
     fun testUpgradingKotlinBaseApiPlugin() {
-        val app = project.getSubproject(":app")
-        app.getMainSrcDir("java")
-            .resolve("AppFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.application
-                        class AppFoo
-                        """.trimIndent()
-                )
-            }
-        app.executor().run(":app:assembleDebug")
-        val result = project.executor().run("buildEnvironment")
+        val build = rule.build
+
+        build.executor.run(":app:assembleDebug")
+
+        val result = build.executor.run("buildEnvironment")
         ScannerSubject.assertThat(result.stdout)
             .contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$KOTLIN_VERSION_FOR_TESTS")
     }

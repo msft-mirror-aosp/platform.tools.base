@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import java.nio.file.Path
 
 /**
@@ -76,6 +77,10 @@ internal class ReversibleGradleBuild(
 
     override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
         throw RuntimeException("Cannot reconfigure settings inside withReversibleModifications")
+    }
+
+    override fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
+        throw RuntimeException("Cannot reconfigure properties inside withReversibleModifications")
     }
 
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {

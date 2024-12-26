@@ -47,9 +47,6 @@ _archives = [
         "name": "com_google_protobuf",
         "archive": "//prebuilts/tools/common/external-src-archives/protobuf/3.9.0:protobuf-3.9.0.tar.gz",
         "strip_prefix": "protobuf-3.9.0",
-        "repo_mapping": {
-            "@zlib": "@zlib_repo",
-        },
     },
     # Perfetto Dependencies:
     # These are external dependencies to build Perfetto (from external/perfetto)
@@ -92,7 +89,7 @@ _archives = [
 _binds = {
     "protobuf_clib": "@com_google_protobuf//:protoc_lib",
     "nanopb": "@@_main~_repo_rules~nanopb_repo//:nanopb",
-    "madler_zlib": "@@_main~_repo_rules~zlib_repo//:zlib",
+    "madler_zlib": "@@_main~_repo_rules~zlib//:zlib",
     "protobuf_headers": "@com_google_protobuf//:protobuf_headers",
     "protoc": "@com_google_protobuf//:protoc",
 }

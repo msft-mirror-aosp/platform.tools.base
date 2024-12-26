@@ -37,6 +37,12 @@ sealed interface AarSelector: OutputSelector {
     /** returns a new instance with the added suffix. If a suffix already exist, it is replaced */
     fun withSuffix(newSuffix: String): AarSelector
 
+    /**
+     * returns a new instance of the selector, targeting the test fixture output.
+     * This is the same as using withSuffix("testFixtures")
+     */
+    fun forTestFixtures(): AarSelector
+
     companion object {
         @JvmField
         val DEBUG = of("debug")
@@ -75,6 +81,9 @@ internal data class AarSelectorImp(
     override fun withSuffix(newSuffix: String): AarSelector =
         AarSelectorImp(buildType, flavors, filter, newSuffix)
 
+    override fun forTestFixtures(): AarSelector {
+        return AarSelectorImp(buildType, flavors, filter, "testFixtures")
+    }
 
     override fun getFileName(projectName: String): String {
         val segments = mutableListOf<String>()

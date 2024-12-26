@@ -262,31 +262,9 @@ internal class GradleRuleImpl internal constructor(
     }
 
     private fun createAncillaryBuildFiles() {
-        buildDefinition.createAncillaryBuildFiles(locations.testFiles) { path, properties ->
+        buildDefinition.createAncillaryBuildFiles(locations.testFiles) { path ->
             createLocalProp(path)
-            createGradleProp(path, properties)
         }
-    }
-
-    private fun createGradleProp(destinationDir: Path, properties: List<String>) {
-        // Use a specific Jdk to run Gradle, which might be different from the one running the test
-        // class
-        val jdkVersionForGradle = System.getProperty("gradle.java.version");
-        val propList = if (jdkVersionForGradle != null && jdkVersionForGradle == "17") {
-            properties + "org.gradle.java.home=${
-                TestUtils.getJava17Jdk().toString().replace("\\", "/")}"
-        } else {
-            properties
-        }
-
-        if (propList.isEmpty()) {
-            return
-        }
-
-        val gradlePropPath = destinationDir.resolve("gradle.properties")
-        gradlePropPath.writeText(
-            propList.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
-        )
     }
 
     private fun createLocalProp(destinationDir: Path) {

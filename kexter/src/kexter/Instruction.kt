@@ -16,7 +16,98 @@
 
 package kexter
 
-class Instruction(val opcode: Opcode, val index: UInt, val payload: ByteArray)
+import kexter.core.DexReader
+
+sealed class Instruction(val opcode: Opcode, val index: UInt, val payload: ByteArray) {
+  companion object {
+    fun from(opcode: Opcode, index: UInt, payload: ByteArray): Instruction {
+      if (opcode.name.startsWith("INVOKE")) {
+        return InvokeInstruction(opcode, index, payload)
+      }
+      return InstructionImpl(opcode, index, payload)
+    }
+  }
+}
+
+class InstructionImpl(opcode: Opcode, index: UInt, payload: ByteArray) :
+  Instruction(opcode, index, payload)
+
+class InvokeInstruction(opcode: Opcode, index: UInt, payload: ByteArray) :
+  Instruction(opcode, index, payload) {
+
+  /*
+   * According to https://source.android.com/docs/core/runtime/dalvik-bytecode
+   * these are the formats used for `invoke*` instructions:
+   * 35c, 3rc, 45cc, 4rcc
+   *
+   * Format specifications can be found here:
+   * https://source.android.com/docs/core/runtime/instruction-formats
+   *
+   * # 35c
+   * Instructions:
+   *	- `invoke-virtual`
+   *	- `invoke-super`
+   *	- `invoke-direct`
+   *	- `invoke-static`
+   *	- `invoke-interface`
+   *	- `invoke-custom`
+   *
+   * Format:
+   * `A|G|op BBBB F|E|D|C`
+   *
+   * The format above means that an instruction consists of three 16 bit words.
+   * The first word `A|G|op`:
+   *	- `A` is the argument word count (4 bits)
+   *	- `G` is the last argument (4 bits)
+   *	- `op` is the opcode (8 bits)
+   * The second word `BBBB` is the 16 bit method reference index.
+   * The third word `F|E|D|C` stores four arguments 4 bits each.
+   *
+   * The payload for this format will be `A|G BBBB F|E|D|C` - 5 bytes in total.
+   *
+   * # 3rc
+   * Instructions:
+   *	- `invoke-virtual/range`
+   *	- `invoke-super/range`
+   *	- `invoke-direct/range`
+   *	- `invoke-static/range`
+   *	- `invoke-interface/range`
+   *	- `invoke-custom/range`
+   *
+   * Format:
+   * `AA|op BBBB CCCC`
+   *
+   * Payload:
+   * `AA BBBB CCCC`
+   *
+   * # 45cc
+   * Instructions:
+   *	- `invoke-polymorphic`
+   *
+   * Format:
+   * `A|G|op BBBB F|E|D|C HHHH`
+   *
+   * Payload:
+   * `A|G BBBB F|E|D|C HHHH`
+   *
+   * # 4rcc
+   * Instructions:
+   *	- `invoke-polymorphic/range`
+   *
+   * Format:
+   * `AA|op BBBB CCCC HHHH`
+   *
+   * Payload:
+   * `AA BBBB CCCC HHHH`
+   *
+   * From the description of formats above, it is clear that
+   * a method index is always stored in the second
+   * and third bytes of the payload.
+   */
+  fun methodIndex(): UInt {
+    return DexReader(payload, 1u).ushort().toUInt()
+  }
+}
 
 enum class InstructionFormat(val payloadSize: UInt) {
   K10x(1u),

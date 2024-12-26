@@ -415,6 +415,8 @@ InternalArtifactType<T : FileSystemLocation>(
     // Files holding the corresponding lint invocation's return value
     object LINT_RETURN_VALUE: InternalArtifactType<RegularFile>(FILE)
     object LINT_VITAL_RETURN_VALUE: InternalArtifactType<RegularFile>(FILE)
+    // This only exists so that the Lint vital task runs when the assemble or bundle task is run
+    object LINT_VITAL_OUTPUT: InternalArtifactType<RegularFile>(FILE)
     // Partial lint results, which are the module-specific lint results generated when running lint
     // with the --analyze-only flag. These partial results are merged into a final report
     // downstream.

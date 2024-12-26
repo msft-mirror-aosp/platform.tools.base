@@ -16,116 +16,82 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.ANDROIDTEST_DEBUG
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
-import com.android.testutils.apk.Aar
 import org.junit.Rule
 import org.junit.Test
 
 class BuiltInKotlinForLibTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
-        subProject(":lib") {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            android {
-                setUpHelloWorld()
-            }
-        }
-    }.withBuiltInKotlinSupport(true)
-        .create()
-
-    @Test
-    fun testKotlinClassesInAar() {
-        val lib = project.getSubproject(":lib")
-        lib.getMainSrcDir("java")
-            .resolve("LibFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
+    val rule = GradleRule.from {
+        androidLibrary {
+            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            files {
+                add(
+                    "src/main/java/LibFoo.kt",
+                    //language=kotlin
                     """
                         package com.foo.library
                         class LibFoo
-                        """.trimIndent()
-                )
-            }
-        lib.getMainSrcDir("kotlin")
-            .resolve("KotlinLibFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
+                    """.trimIndent())
+                add(
+                    "src/main/kotlin/KotlinLibFoo.kt",
+                    //language=kotlin
                     """
                         package com.foo.library
                         class KotlinLibFoo
-                        """.trimIndent()
+                    """.trimIndent()
                 )
             }
-        lib.executor().run(":lib:assembleDebug")
-        lib.withAar("debug") {
-            assertThat(this).containsMainClass("Lcom/foo/library/LibFoo;")
-            assertThat(this).containsMainClass("Lcom/foo/library/KotlinLibFoo;")
+        }
+    }
+
+    @Test
+    fun testKotlinClassesInAar() {
+        val build = rule.build
+        build.executor.run(":lib:assembleDebug")
+
+        build.androidLibrary().assertAar(AarSelector.DEBUG) {
+            containsMainClass("Lcom/foo/library/LibFoo;")
+            containsMainClass("Lcom/foo/library/KotlinLibFoo;")
         }
     }
 
     @Test
     fun testKotlinClassesInTestApk() {
-        val lib = project.getSubproject(":lib")
-        lib.getMainSrcDir("java")
-            .resolve("LibFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.library
-                        class LibFoo
+        val build = rule.build {
+            androidLibrary {
+                files {
+                    add(
+                        "src/androidTest/java/LibFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            class LibFooTest
                         """.trimIndent()
-                )
-            }
-        lib.getMainSrcDir("kotlin")
-            .resolve("KotlinLibFoo.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.library
-                        class KotlinLibFoo
+                    )
+                    add(
+                        "src/androidTest/kotlin/KotlinLibFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            class KotlinLibFooTest
                         """.trimIndent()
-                )
+                    )
+                }
             }
-        lib.file("src/androidTest/java/LibFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.library
-                        class LibFooTest
-                        """.trimIndent()
-                )
-            }
-        lib.file("src/androidTest/kotlin/KotlinLibFooTest.kt")
-            .let {
-                it.parentFile.mkdirs()
-                it.writeText(
-                    """
-                        package com.foo.library
-                        class KotlinLibFooTest
-                        """.trimIndent()
-                )
-            }
+        }
 
-        lib.executor().run(":lib:assembleDebugAndroidTest")
-        lib.getApk(ANDROIDTEST_DEBUG).use {
-            assertThat(it).hasClass("Lcom/foo/library/LibFoo;")
-            assertThat(it).hasClass("Lcom/foo/library/KotlinLibFoo;")
-            assertThat(it).hasClass("Lcom/foo/library/LibFooTest;")
-            assertThat(it).hasClass("Lcom/foo/library/KotlinLibFooTest;")
+        build.executor.run(":lib:assembleDebugAndroidTest")
+        build.androidLibrary().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            hasClass("Lcom/foo/library/LibFoo;")
+            hasClass("Lcom/foo/library/KotlinLibFoo;")
+            hasClass("Lcom/foo/library/LibFooTest;")
+            hasClass("Lcom/foo/library/KotlinLibFooTest;")
         }
     }
 
@@ -136,49 +102,42 @@ class BuiltInKotlinForLibTest {
      */
     @Test
     fun testTestFixtures() {
-        val lib = project.getSubproject(":lib")
-        TestFileUtils.appendToFile(
-            lib.buildFile,
-            """
-                android.testFixtures.enable = true
-                """.trimIndent()
-        )
-        lib.file("src/testFixtures/kotlin/LibFooTestFixture.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-
-                    import com.foo.library.LibFoo
-
-                    class LibFooTestFixture
-                    """.trimIndent()
-            )
+        val build = rule.build {
+            androidLibrary {
+                android {
+                    testFixtures {
+                        enable = true
+                    }
+                }
+                files {
+                    add(
+                        "src/testFixtures/kotlin/LibFooTestFixture.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            import com.foo.library.LibFoo
+                            class LibFooTestFixture
+                        """.trimIndent()
+                    )
+                }
+            }
         }
-        lib.file("src/main/kotlin/LibFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-                    class LibFoo
-                    """.trimIndent()
-            )
-        }
-        lib.executor().run(":lib:assembleDebugTestFixtures")
-        val aar = lib.outputDir.resolve("aar").listFiles()?.single()
-        Aar(aar).use {
-            assertThat(it).containsMainClass("Lcom/foo/library/LibFooTestFixture;")
+
+        build.executor.run(":lib:assembleDebugTestFixtures")
+
+        build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
+            containsMainClass("Lcom/foo/library/LibFooTestFixture;")
         }
 
         // Kotlin support for testFixtures should work with or without the gradle property when
         // general built-in Kotlin support is enabled
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}=true"
-        )
-        lib.executor().run(":lib:assembleDebugTestFixtures")
-        Aar(aar).use {
-            assertThat(it).containsMainClass("Lcom/foo/library/LibFooTestFixture;")
+        build.reconfigureGradleProperties {
+            add(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true)
+        }
+
+        build.executor.run(":lib:assembleDebugTestFixtures")
+        build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
+            containsMainClass("Lcom/foo/library/LibFooTestFixture;")
         }
     }
 }

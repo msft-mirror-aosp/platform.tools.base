@@ -23,7 +23,6 @@ import com.google.common.io.Resources
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.IOException
 
 /**
  * Recommended debugging procedure:

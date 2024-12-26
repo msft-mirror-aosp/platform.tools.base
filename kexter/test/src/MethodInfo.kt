@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:JvmName("IntUtil")
-package com.android.ide.common.util
 
-import kotlin.math.roundToInt
+import kexter.DexMethod
 
-fun String?.parseIntOrDefault(defaultValue: Int): Int {
-    if (this == null) {
-        return defaultValue
-    }
-    return try {
-        java.lang.Float.parseFloat(this).roundToInt()
-    } catch (ex: NumberFormatException) {
-        defaultValue
-    }
+internal data class MethodInfo(val name: String, val owner: String, val signature: String)
+
+internal fun DexMethod.toMethodInfo(): MethodInfo {
+  val signature = params.joinToString(separator = "", prefix = "(", postfix = ")") + returnType
+  return MethodInfo(name, type, signature)
 }

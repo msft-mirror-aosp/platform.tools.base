@@ -53,7 +53,7 @@ new_local_repository(
 )
 
 new_local_repository(
-    name = "zlib_repo",
+    name = "zlib",
     build_file = "//tools/base/bazel:external/zlib.BUILD",
     path = "external/zlib",
 )

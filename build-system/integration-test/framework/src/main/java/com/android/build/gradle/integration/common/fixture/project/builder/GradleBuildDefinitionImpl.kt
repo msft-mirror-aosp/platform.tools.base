@@ -42,9 +42,11 @@ import com.android.build.gradle.integration.common.fixture.project.prebuilts.Hel
 import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.TestUtils
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 
 internal class GradleBuildDefinitionImpl(
     override val name: String,
@@ -56,7 +58,7 @@ internal class GradleBuildDefinitionImpl(
     internal val rootProject = GenericProjectDefinitionImpl(":")
     internal val subProjects = mutableMapOf<String, GradleProjectDefinitionImpl>()
 
-    private val propertiesDelegate = GradlePropertiesDelegate()
+    internal val propertiesDelegate = GradlePropertiesDelegate()
 
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
@@ -355,6 +357,8 @@ internal class GradleBuildDefinitionImpl(
             )
         }
 
+        writeProperties(location)
+
         // and the included builds
         includedBuilds.values.forEach {
             it.write(location.resolve(it.name), repositories)
@@ -376,6 +380,25 @@ internal class GradleBuildDefinitionImpl(
         )
     }
 
+    internal fun writeProperties(
+        location: Path
+    ) {
+        // Use a specific Jdk to run Gradle, which might be different from the one running the test
+        // class
+        val jdkVersionForGradle = System.getProperty("gradle.java.version");
+        val propList = if (jdkVersionForGradle != null && jdkVersionForGradle == "17") {
+            propertiesDelegate.properties + "org.gradle.java.home=${
+                TestUtils.getJava17Jdk().toString().replace("\\", "/")}"
+        } else {
+            propertiesDelegate.properties
+        }
+
+        val gradlePropPath = location.resolve("gradle.properties")
+        gradlePropPath.writeText(
+            propList.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
+        )
+    }
+
     /**
      * Recursively write the local properties for this build and all included builds.
      *
@@ -384,9 +407,9 @@ internal class GradleBuildDefinitionImpl(
      * @param parentFolder the root folder this build is in. this does not include the folder for the build itself.
      * @param writeAction the action that write the prop file, once provided with the folder of the build
      */
-    internal fun createAncillaryBuildFiles(parentFolder: Path, writeAction: (Path, List<String>) -> Unit) {
+    internal fun createAncillaryBuildFiles(parentFolder: Path, writeAction: (Path) -> Unit) {
         val buildFolder = parentFolder.resolve(rootFolderName)
-        writeAction(buildFolder, propertiesDelegate.properties)
+        writeAction(buildFolder)
 
         includedBuilds.values.forEach {
             it.createAncillaryBuildFiles(buildFolder, writeAction)

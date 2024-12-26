@@ -107,6 +107,9 @@ message AndroidGradlePluginProjectFlags {
 
         // Whether data binding is enabled for this library (never expected in KMP)
         DATA_BINDING_ENABLED = 10;
+
+        // Whether to generate manifest classes
+        GENERATE_MANIFEST_CLASS = 11;
     }
 
     message BooleanFlagValue {

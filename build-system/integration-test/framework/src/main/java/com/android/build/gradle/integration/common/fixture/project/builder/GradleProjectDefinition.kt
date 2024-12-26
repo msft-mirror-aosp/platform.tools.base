@@ -16,10 +16,15 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.dependencies.JarBuilder
+import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
+import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependency
+import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependencyImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.testprojects.createLocalJar
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
@@ -71,6 +76,29 @@ interface GradleProjectDefinition {
      * The list of plugin callbacks for this project
      */
     val pluginCallbacks: MutableList<Class<out PluginCallback>>
+
+    /**
+     * Configures the buildscript for this project
+     */
+    fun buildscript(action: BuildscriptBuilder.() -> Unit)
+}
+
+/**
+ * a builder to configure the buildscript classpath of a project
+ *
+ * See [GradleProjectDefinition.buildscript]
+ */
+interface BuildscriptBuilder {
+
+    /**
+     * Adds a dependency to the buildscript classpath for this project
+     */
+    fun classpath(dependency: Any)
+
+    /**
+     * Creates a [LocalJarBuilder] to be passed to [classpath] or any other scope
+     */
+    fun localJar(name: String, action: JarBuilder.() -> Unit) : LocalJarDependency
 }
 
 internal data class AppliedPlugin(
@@ -94,6 +122,8 @@ internal abstract class GradleProjectDefinitionImpl(
     // to be empty.
     // Here we cache the first non-null plugin list and always rewrite it on the next reconfigure.
     private var cachedCustomPlugins: List<String>? = null
+
+    private val buildscriptBuilder = BuildscriptBuilderImpl()
 
     override var pluginCallback: Class<out PluginCallback>
         set(value) {
@@ -150,6 +180,10 @@ internal abstract class GradleProjectDefinitionImpl(
         action(dependencies)
     }
 
+    override fun buildscript(action: BuildscriptBuilder.() -> Unit) {
+        action(buildscriptBuilder)
+    }
+
     internal fun writeSubProject(
         location: Path,
         buildFileOnly: Boolean = false,
@@ -198,10 +232,23 @@ internal abstract class GradleProjectDefinitionImpl(
         location.createDirectories()
 
         buildWriter.apply {
-            if (isRoot && customPluginMap.isNotEmpty()) {
+            val isRootWithCustomPlugin = isRoot && customPluginMap.isNotEmpty()
+            if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin) {
                 block("buildscript") {
                     block("dependencies") {
-                        method("classpath", rawMethod("files", "build-logic.jar"))
+                        buildscriptBuilder.dependencies.forEach { dependency ->
+                            when (dependency) {
+                                is String -> dependency("classpath", dependency)
+                                is LocalJarDependency -> {
+                                    val path = createLocalJar(dependency, location)
+                                    dependency("classpath", rawMethod("files", path))
+                                }
+                                else -> throw RuntimeException("Unsupported dependency type: ${dependency.javaClass}")
+                            }
+                        }
+                        if (isRootWithCustomPlugin) {
+                            dependency("classpath", rawMethod("files", "build-logic.jar"))
+                        }
                     }
                 }
             }
@@ -276,6 +323,25 @@ internal abstract class GradleProjectDefinitionImpl(
         if (!buildFileOnly) {
             (files as DelayedGradleProjectFiles).write(location)
         }
+    }
+}
+
+private class BuildscriptBuilderImpl: BuildscriptBuilder {
+    val dependencies = mutableListOf<Any>()
+
+    val isEmpty: Boolean
+        get() = dependencies.isEmpty()
+
+    override fun classpath(dependency: Any) {
+        dependencies.add(dependency)
+    }
+
+    override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
+        val builder = JarBuilderImpl().also {
+            action(it)
+        }
+
+        return LocalJarDependencyImpl(name, builder.getContent())
     }
 }
 

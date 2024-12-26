@@ -13,20 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.ide.common.fonts
 
-package com.android.build.gradle.integration.common.utils
+import com.google.common.collect.Multimap
 
-import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.utils.FileUtils
-import java.io.File
+open class ParseResult
 
-fun GradleTestProject.getFusedLibraryAar(): File {
-    executor().run(":$name:assemble")
-    return FileUtils.join(
-        buildDir,
-        SdkConstants.FD_OUTPUTS,
-        SdkConstants.EXT_AAR,
-        "$name${SdkConstants.DOT_AAR}"
-    )
-}
+class DownloadableParseResult(
+    val authority: String,
+    val fonts: Multimap<String, MutableFontDetail>) : ParseResult()
+
+class FontQueryParserError(message: String, cause: Throwable): RuntimeException(message, cause)
