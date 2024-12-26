@@ -590,6 +590,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val classes = mutableListOf<File>()
     val classpath = mutableListOf<File>()
     val lintChecks = mutableListOf<File>()
+    var proguard: MutableList<File>? = null
     var baseline: File? = null
     var mergedManifest: File? = null
 
@@ -648,9 +649,12 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
           }
           dependencies.put(module, target to getDependencyKind(child))
         }
-        TAG_AIDL,
-        TAG_PROGUARD -> {
+        TAG_AIDL -> {
           // Not currently checked by lint
+        }
+        TAG_PROGUARD -> {
+          val list = proguard ?: mutableListOf<File>().also { proguard = it }
+          list.add(getFile(child, dir))
         }
         else -> {
           reportError("Unexpected tag ${child.tagName}", child)
@@ -691,6 +695,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     kotlinLanguageLevel?.let { module.kotlinLanguageLevel = it }
     module.setCompileSdkVersion(buildApi)
     module.initializeSdkLevelInfo(mergedManifest, manifests.getOrNull(0))
+    proguard?.let { module.setProguardFiles(it) }
 
     this.lintChecks[module] = lintChecks
     this.mergedManifests[module] = mergedManifest
@@ -1188,6 +1193,10 @@ private class ManualProject(
       }
       files.addAll(sources)
     }
+  }
+
+  fun setProguardFiles(files: List<File>?) {
+    this.proguardFiles = files
   }
 
   /** Sets the global class path for this module. */
