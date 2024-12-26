@@ -7,7 +7,7 @@ def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_
     if visibility == None:
         visibility = ["@results//:__pkg__"]
     elif "//visibility:public" not in visibility:
-        visibility += ["@results//:__pkg__"]
+        visibility = visibility + ["@results//:__pkg__"]  # Avoiding mutation because the input list might be frozen.
 
     native.java_test(
         name = name,
