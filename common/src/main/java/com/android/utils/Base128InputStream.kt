@@ -233,10 +233,11 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
    */
   @Throws(IOException::class, StreamFormatException::class)
   inline fun <reified T : Enum<T>> readEnum(): T {
+    val ordinal = readInt()
     return try {
-      enumEntries<T>()[readInt()]
+      enumEntries<T>()[ordinal]
     } catch (_: IndexOutOfBoundsException) {
-      throw StreamFormatException.invalidFormat()
+      throw StreamFormatException("Invalid ordinal value $ordinal of enum ${T::class.simpleName}")
     }
   }
 
