@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.project.BundleSelector
+import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import org.junit.Rule
 import org.junit.Test
 
@@ -104,7 +103,7 @@ class AssetPackTest {
     fun buildDebugBundle() {
         val build = rule.build
         build.executor.run(":app:bundleDebug")
-        build.androidApplication().assertBundle(BundleSelector.DEBUG) {
+        build.androidApplication().assertAab(AabSelector.DEBUG) {
             contains(
                 "/assetPackOne/assets/assetFileOne.txt",
                 "/assetPackOne/manifest/AndroidManifest.xml",

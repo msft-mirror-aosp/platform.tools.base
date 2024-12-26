@@ -65,7 +65,6 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
     }
 }
 
-
 internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
 ) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(

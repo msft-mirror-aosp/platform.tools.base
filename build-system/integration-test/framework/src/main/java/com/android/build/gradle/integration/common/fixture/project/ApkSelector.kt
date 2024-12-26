@@ -46,16 +46,16 @@ sealed interface ApkSelector: OutputSelector {
 
     companion object {
         @JvmField
-        val DEBUG = of("debug", true)
+        val DEBUG = of(buildType = "debug", isSigned = true)
 
         @JvmField
-        val RELEASE = of("release", false)
+        val RELEASE = of(buildType = "release", isSigned = false)
 
         @JvmField
-        val RELEASE_SIGNED = of("release", true)
+        val RELEASE_SIGNED = of(buildType = "release", isSigned = true)
 
         @JvmField
-        val ANDROIDTEST_DEBUG = of("debug", "androidTest", true)
+        val ANDROIDTEST_DEBUG = of(buildType = "debug", testSuite = "androidTest", isSigned = true)
 
         @JvmStatic
         fun of(

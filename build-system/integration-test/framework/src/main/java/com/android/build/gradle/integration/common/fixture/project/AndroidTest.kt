@@ -59,8 +59,7 @@ internal class AndroidTestDefinitionImpl(
 /**
  * Specialized interface for android test [AndroidProject] to use in the test
  */
-interface AndroidTestProject: AndroidProject<AndroidProjectDefinition<TestExtension>>, GeneratesApk {
-}
+interface AndroidTestProject: AndroidProject<AndroidProjectDefinition<TestExtension>>, GeneratesApk
 
 /**
  * Implementation of [AndroidProject]
@@ -73,7 +72,7 @@ internal class AndroidTestImpl(
     location,
     projectDefinition,
     namespace,
-), AndroidTestProject {
+), AndroidTestProject, GeneratesApk by GeneratesApkDelegate(location) {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidTestProject =
         ReversibleAndroidTestProject(this, projectModification)
@@ -88,15 +87,5 @@ internal class ReversibleAndroidTestProject(
 ) : ReversibleAndroidProject<AndroidTestProject, AndroidProjectDefinition<TestExtension>>(
     parentProject,
     projectModification
-), AndroidTestProject {
-
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R =
-        parentProject.withApk(apkSelector, action)
-
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        parentProject.assertApk(apkSelector, action)
-    }
-
-    override fun hasApk(apkSelector: ApkSelector): Boolean = parentProject.hasApk(apkSelector)
-}
+), AndroidTestProject, GeneratesApk by GeneratesApkFromParentDelegate(parentProject)
 

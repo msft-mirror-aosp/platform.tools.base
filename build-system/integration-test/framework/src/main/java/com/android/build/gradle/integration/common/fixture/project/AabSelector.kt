@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants.EXT_APP_BUNDLE
-import com.android.build.gradle.integration.common.fixture.project.BundleSelector.Companion.of
 import com.android.utils.combineAsCamelCase
 
 /**
@@ -29,41 +28,47 @@ import com.android.utils.combineAsCamelCase
  * Creation of an instance can be done via [of] or by making a modified copy of an existing
  * instance, for example with [withFlavor]
  */
-sealed interface BundleSelector: OutputSelector {
+sealed interface AabSelector: OutputSelector {
 
     /** returns a new instance with the added flavor. */
-    fun withFlavor(name: String): ApkSelector
+    fun withFlavor(name: String): AabSelector
 
     /** returns a new instance with the new filter. If a filter already exist, it is replaced. */
-    fun withFilter(newFilter: String): ApkSelector
+    fun withFilter(newFilter: String): AabSelector
 
     /** returns a new instance with the added suffix. If a suffix already exist, it is replaced */
-    fun withSuffix(newSuffix: String): ApkSelector
+    fun withSuffix(newSuffix: String): AabSelector
 
-    fun forTestSuite(name: String): ApkSelector
+    fun forTestSuite(name: String): AabSelector
 
     /** returns a new instance setup to represent APK in the intermediate folder */
-    fun fromIntermediates(): ApkSelector
+    fun fromIntermediates(): AabSelector
 
     companion object {
         @JvmField
-        val DEBUG = of("debug", true)
+        val DEBUG = of(buildType = "debug", isSigned = true)
 
         @JvmField
-        val RELEASE = of("release", false)
+        val RELEASE = of(buildType = "release", isSigned = false)
 
         @JvmField
-        val RELEASE_SIGNED = of("release", true)
+        val RELEASE_SIGNED = of(buildType = "release", isSigned = true)
 
         @JvmField
-        val ANDROIDTEST_DEBUG = of("debug", "androidTest", true)
+        val NO_BUILD_TYPE = of(buildType = null, isSigned = false)
+
+        @JvmField
+        val NO_BUILD_TYPE_SIGNED = of(buildType = null, isSigned = true)
+
+        @JvmField
+        val ANDROIDTEST_DEBUG = of(buildType = "debug", testName = "androidTest", isSigned = true)
 
         @JvmStatic
         fun of(
-            buildType: String,
+            buildType: String?,
             isSigned: Boolean
-        ): BundleSelector {
-            return BundleSelectorImp(
+        ): AabSelector {
+            return AabSelectorImp(
                 buildType = buildType,
                 testSuite =  null,
                 flavors = listOf(),
@@ -73,11 +78,11 @@ sealed interface BundleSelector: OutputSelector {
 
         @JvmStatic
         fun of(
-            buildType: String,
+            buildType: String?,
             testName: String?,
             isSigned: Boolean
-        ): BundleSelector {
-            return BundleSelectorImp(
+        ): AabSelector {
+            return AabSelectorImp(
                 buildType = buildType,
                 testSuite =  testName,
                 flavors = listOf(),
@@ -87,29 +92,29 @@ sealed interface BundleSelector: OutputSelector {
     }
 }
 
-internal data class BundleSelectorImp(
-    private val buildType: String,
+internal data class AabSelectorImp(
+    private val buildType: String?,
     private val testSuite: String?,
     private val flavors: List<String>,
     private val isSigned: Boolean,
     private val filter: String? = null,
     private val suffix: String? = null,
     override val fromIntermediates: Boolean = false,
-): BundleSelector {
+): AabSelector {
 
-    override fun withFlavor(name: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
+    override fun withFlavor(name: String): AabSelector =
+        AabSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
 
-    override fun withFilter(newFilter: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
+    override fun withFilter(newFilter: String): AabSelector =
+        AabSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
 
-    override fun withSuffix(newSuffix: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
+    override fun withSuffix(newSuffix: String): AabSelector =
+        AabSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
-    override fun forTestSuite(name: String): ApkSelector =
-        ApkSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
+    override fun forTestSuite(name: String): AabSelector =
+        AabSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
 
-    override fun fromIntermediates(): ApkSelector = ApkSelectorImp(
+    override fun fromIntermediates(): AabSelector = AabSelectorImp(
         buildType, testSuite, flavors, isSigned, filter, suffix,
         fromIntermediates = true
     )
@@ -120,7 +125,7 @@ internal data class BundleSelectorImp(
         segments.add(projectName)
         flavors.let { segments.addAll(it) }
         filter?.let { segments.add(it) }
-        buildType.let { segments.add(it) }
+        buildType?.let { segments.add(it) }
         testSuite?.let { segments.add(it) }
         suffix?.let { segments.add(it) }
         if (!isSigned) { segments.add("unsigned") }
@@ -139,8 +144,9 @@ internal data class BundleSelectorImp(
         if (flavors.isNotEmpty()) {
             pathBuilder.append(flavors.combineAsCamelCase()).append('/')
         }
-
-        pathBuilder.append(buildType).append('/')
+        buildType?.let {
+            pathBuilder.append(it).append('/')
+        }
         return pathBuilder.toString()
     }
 }

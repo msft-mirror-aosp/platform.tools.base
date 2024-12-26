@@ -28,6 +28,9 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.truth.AabSubject
+import com.android.testutils.apk.Aab
+import com.android.tools.build.bundletool.model.AppBundle
 import java.nio.file.Path
 
 /*
@@ -95,7 +98,7 @@ internal class AssetPackBundleDefinitionImpl(
 /**
  * Specialized interface for AssetPackBundle [GradleProject] to use in the test
  */
-interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition> {
+interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition>, GeneratesAab {
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
 }
@@ -109,8 +112,7 @@ internal class AssetPackBundleImpl(
 ) : GradleProjectImpl<AssetPackBundleDefinition>(
     location,
     projectDefinition,
-),
-    AssetPackBundleProject {
+), AssetPackBundleProject, GeneratesAab by GeneratesAabDelegate(location) {
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
@@ -128,6 +130,8 @@ internal class ReversibleAssetPackBundleProject(
     projectModification: TemporaryProjectModification
 ) : ReversibleGradleProject<AssetPackBundleProject, AssetPackBundleDefinition>(
     parentProject,
-), AssetPackBundleProject {
+), AssetPackBundleProject,
+    GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
+
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
 }

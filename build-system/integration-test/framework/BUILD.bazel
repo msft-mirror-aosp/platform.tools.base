@@ -35,6 +35,7 @@ kotlin_library(
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-tree",
         # You can change order after this line:
+        "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:com.google.apis.google-api-services-storage",
         "@maven//:com.google.code.gson.gson",
