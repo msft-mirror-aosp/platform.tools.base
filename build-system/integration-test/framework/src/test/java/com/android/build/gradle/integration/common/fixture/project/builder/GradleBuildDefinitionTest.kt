@@ -238,6 +238,7 @@ class GradleBuildDefinitionTest {
         build.write(
             location = folder,
             repositories = repositories,
+            globalDefinitionState = GlobalDefinitionStateImpl(listOf(), mapOf())
         )
 
         return folder

@@ -115,14 +115,6 @@ internal abstract class GradleProjectDefinitionImpl(
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
-    // right now we don't support changing the pluginCallbacks during a reconfigure. However,
-    // we still need to rewrite the plugin applications during a rewrite.
-    // Because we only reconfigure a single project and not the whole build (reason we don't yet
-    // support changing the callback), the custom plugin map passed to the write function is going
-    // to be empty.
-    // Here we cache the first non-null plugin list and always rewrite it on the next reconfigure.
-    private var cachedCustomPlugins: List<String>? = null
-
     private val buildscriptBuilder = BuildscriptBuilderImpl()
 
     override var pluginCallback: Class<out PluginCallback>
@@ -188,7 +180,7 @@ internal abstract class GradleProjectDefinitionImpl(
         location: Path,
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, List<String>>,
+        customPluginMap: Map<String, Set<String>>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -204,7 +196,7 @@ internal abstract class GradleProjectDefinitionImpl(
     internal fun writeRoot(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, List<String>>,
+        customPluginMap: Map<String, Set<String>>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -224,7 +216,7 @@ internal abstract class GradleProjectDefinitionImpl(
     private fun write(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
-        customPluginMap: Map<String, List<String>>,
+        customPluginMap: Map<String, Set<String>>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
         buildWriter: BuildWriter,
@@ -281,17 +273,15 @@ internal abstract class GradleProjectDefinitionImpl(
                         // (if it's used by this project, it's written above)
                         if (version == INTERNAL_PLUGIN_VERSION) continue
 
-                        pluginId(plugin.id, plugin.version, apply = false)
+                        pluginId(plugin.id, version, apply = false)
                     }
                 }
             }
 
             emptyLine()
 
-            val pluginsToApply = cachedCustomPlugins ?: customPluginMap[path]
+            val pluginsToApply = customPluginMap[path]
             pluginsToApply?.let {
-                // cache it for next time
-                cachedCustomPlugins = it
                 // If there is a plugin class, apply them
                 it.forEach { plugin ->
                     applyPluginFromClass(plugin)

@@ -48,11 +48,21 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     fun android(action: ExtensionT.() -> Unit)
 
     /**
+     * Resets the content of the Android (and legacy kotlin) DSL.
+     */
+    fun resetAndroidDsl()
+
+    /**
      * Method to configure the built-in kotlin extension.
      *
      * This requires [PluginType.ANDROID_BUILT_IN_KOTLIN] to be applied
      */
     fun kotlin(action: KotlinExtension.() -> Unit)
+
+    /**
+     * Resets the content of the Kotlin DSL
+     */
+    fun resetKotlinDsl()
 
     /**
      * Method to configure the KGP extension.
@@ -110,12 +120,20 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
         action(android)
     }
 
+    override fun resetAndroidDsl() {
+        contentHolder.clear()
+    }
+
     override fun kotlin(action: KotlinExtension.() -> Unit) {
-        if (!hasPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN))
-            throw RuntimeException("Cannot configure kotlin without plugin ANDROID_BUILT_IN_KOTLIN")
+        if (!hasPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN) && !hasPlugin(PluginType.KOTLIN_ANDROID))
+            throw RuntimeException("Cannot configure kotlin without plugin ANDROID_BUILT_IN_KOTLIN or KOTLIN_ANDROID")
 
         kotlinActionRan = true
         action(kotlinExtension)
+    }
+
+    override fun resetKotlinDsl() {
+        kotlinContentHolder.clear()
     }
 
     override fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit) {

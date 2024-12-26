@@ -28,6 +28,7 @@ import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.provider.Property
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import java.io.File
 import java.lang.reflect.InvocationHandler
@@ -192,9 +193,10 @@ class DslProxy private constructor(
                 }
                 throw Error("Unsupported getter type ${method.returnType} for method ${method.name}")
             }
-            // allow-listed Gradle types that we want to support.
+            // allow-listed Gradle, JetBrains and other types that we want to support.
             // Returned as chained proxies
-            SourceDirectorySet::class.java -> method.getChainedProxyForReturn(propName)
+            SourceDirectorySet::class.java,
+            KotlinJvmCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
             // the rest
             else -> {
                 // AGP API objects. These are generally objects that also have a matching configuration

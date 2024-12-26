@@ -62,6 +62,8 @@ internal class GradleBuildDefinitionImpl(
 
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
+    internal lateinit var globalDefinitionState: GlobalDefinitionState
+
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
     }
@@ -333,8 +335,10 @@ internal class GradleBuildDefinitionImpl(
     internal fun write(
         location: Path,
         repositories: Collection<Path>?,
+        globalDefinitionState: GlobalDefinitionState,
     ) {
         location.createDirectories()
+        this.globalDefinitionState = globalDefinitionState
 
         // gather all the custom binary plugin callbacks, and return whether we need to
         // include build logic in the settings file
@@ -361,7 +365,14 @@ internal class GradleBuildDefinitionImpl(
 
         // and the included builds
         includedBuilds.values.forEach {
-            it.write(location.resolve(it.name), repositories)
+            val newLocation = location.resolve(it.name)
+            // computes a new GlobalDefinitionState for this build
+            val globalState = GlobalDefinitionStateImpl(
+                globalDefinitionState.additionalProperties,
+                it.handleCustomBuildLogic(newLocation)
+            )
+
+            it.write(newLocation, repositories, globalState)
         }
     }
 
@@ -380,22 +391,13 @@ internal class GradleBuildDefinitionImpl(
         )
     }
 
-    internal fun writeProperties(
-        location: Path
-    ) {
-        // Use a specific Jdk to run Gradle, which might be different from the one running the test
-        // class
-        val jdkVersionForGradle = System.getProperty("gradle.java.version");
-        val propList = if (jdkVersionForGradle != null && jdkVersionForGradle == "17") {
-            propertiesDelegate.properties + "org.gradle.java.home=${
-                TestUtils.getJava17Jdk().toString().replace("\\", "/")}"
-        } else {
-            propertiesDelegate.properties
-        }
+    internal fun writeProperties(location: Path) {
+
+        val properties = globalDefinitionState.additionalProperties + propertiesDelegate.properties
 
         val gradlePropPath = location.resolve("gradle.properties")
         gradlePropPath.writeText(
-            propList.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
+            properties.joinToString(separator = System.lineSeparator(), prefix = System.lineSeparator(), postfix = System.lineSeparator())
         )
     }
 
@@ -416,6 +418,15 @@ internal class GradleBuildDefinitionImpl(
         }
     }
 
+    /**
+     * Computes the Plugin Version Map.
+     *
+     * This includes all the versions for all the plugins applied throughout the build.
+     *
+     * This allows each build file to know how the plugins must be applied. For instance if 2
+     * projects have the same plugin in different versions then the version is specified in the
+     * project build files. Otherwise, it's specified in the root project (with apply false).
+     */
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> {
         val allPlugins = mutableMapOf<PluginType, Set<String>>()
         (subProjects.values + rootProject).forEach { project ->
@@ -438,7 +449,7 @@ internal class GradleBuildDefinitionImpl(
      * This method handles project with custom plugins applied to them via
      * [com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback]
      */
-    private fun handleCustomBuildLogic(location: Path): Map<String, List<String>> {
+    internal fun handleCustomBuildLogic(location: Path): Map<String, Set<String>> {
         // gather all the custom callbacks. This returns a map from each callback class
         // to a list of all projects using this callback.
         val callbackMap = subProjects.values.asSequence()
@@ -453,7 +464,7 @@ internal class GradleBuildDefinitionImpl(
 
         // result to be used by the projects to apply their plugins.
         // The map is from the project path to the plugin class names.
-        val pluginClassMap = mutableMapOf<String, List<String>>()
+        val pluginClassMap = mutableMapOf<String, Set<String>>()
 
         val handler = CustomBuildLogicHandler(location.resolve("build-logic.jar"))
         handler.use {
@@ -465,8 +476,8 @@ internal class GradleBuildDefinitionImpl(
                 // by each subproject
                 paths.forEach { path ->
                     val nameList = pluginClassMap.computeIfAbsent(path) {
-                        mutableListOf()
-                    } as MutableList<String>
+                        mutableSetOf()
+                    } as MutableSet<String>
                     nameList.add(pluginClassName)
                 }
             }

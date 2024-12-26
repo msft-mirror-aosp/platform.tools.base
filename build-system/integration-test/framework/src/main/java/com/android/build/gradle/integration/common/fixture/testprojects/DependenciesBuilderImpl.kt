@@ -94,6 +94,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         handleDependency("testRuntimeOnly", dependency, action)
     }
 
+    override fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+        handleDependency("testFixturesImplementation", dependency, action)
+    }
+
     override fun androidTestImplementation(
         dependency: Any,
         action: (DependencyBuilder.() -> Unit)?

@@ -188,7 +188,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     open class NamedData(
         override val name: String,
         val value: Any? = null
-   ): NamedPayload {
+    ): NamedPayload {
         override fun toString(): String {
             return "NamedData(name='$name', value=$value)"
         }
@@ -229,6 +229,10 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     ): NamedPayload
 
     private val eventList = mutableListOf<Event>()
+
+    internal fun clear() {
+        eventList.clear()
+    }
 
     override fun set(name: String, value: Any?, parentChain: List<String>) {
         eventList += Event(EventType.ASSIGNMENT, NamedData(name, value), parentChain)

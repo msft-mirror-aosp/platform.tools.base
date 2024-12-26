@@ -316,6 +316,9 @@ internal class GradleBuildImpl(
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =
         definition.computeAllPluginMap()
 
+    internal fun getCustomPluginMap(): Map<String, Set<String>> =
+        definition.globalDefinitionState.customPluginMap
+
     /**
      * Runs the provided action with this build. At the end of the action, all file changes made
      * via [GradleProjectFiles] are reversed so that the build is the same as before this method

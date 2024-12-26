@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.debugGradleConnection
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
 import com.android.build.gradle.integration.common.fixture.gradle_project.TestLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.builder.GlobalDefinitionStateImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -111,9 +112,28 @@ internal class GradleRuleImpl internal constructor(
             MavenRepoGenerator(allLibraries).generate(repoPath)
         }
 
-        buildDefinition.write(rootBuildPath, localRepositories)
+        val globalState = GlobalDefinitionStateImpl(
+            getDefaultProperties(),
+            buildDefinition.handleCustomBuildLogic(rootBuildPath)
+        )
+
+        buildDefinition.write(rootBuildPath, localRepositories, globalState)
 
         createAncillaryBuildFiles()
+    }
+
+    private fun getDefaultProperties(): List<String> {
+        return buildList {
+            // This is necessary when setting jvmToolchain to 17
+            // This must be injected here to not impact unit tests of the fixture as they do not
+            // have access to this injected value
+            add("org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}")
+
+            val jdkVersionForGradle = System.getProperty("gradle.java.version")
+            if (jdkVersionForGradle == "17") {
+                add("org.gradle.java.home=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}")
+            }
+        }
     }
 
     private fun computeMavenRepoLocation(): Path =

@@ -91,8 +91,11 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         // we need to query the other projects for their plugins
         val allPlugins = build.computeAllPluginMap()
 
+        // the custom plugin map is pre-recorded and available from the build (Definition)
+        val customPluginMap = build.getCustomPluginMap()
+
         (projectDefinition as GradleProjectDefinitionImpl)
-            .writeSubProject(location, buildFileOnly, allPlugins, mapOf(), build.getNewWriter())
+            .writeSubProject(location, buildFileOnly, allPlugins, customPluginMap, build.getNewWriter())
 
         // we also need to write new inline dependencies
         val newDependencies = projectDefinition.dependencies

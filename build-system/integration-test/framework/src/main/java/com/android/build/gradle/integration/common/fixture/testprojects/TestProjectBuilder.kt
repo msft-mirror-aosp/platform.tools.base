@@ -329,6 +329,7 @@ interface DependenciesBuilder {
     /** Adds a dependency to the testRuntimeOnly configuration. See [implementation] for details. */
     fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
+    fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
     /**
      * adds a dependency in the androidTestImplementation scope.
      *
