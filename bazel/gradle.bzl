@@ -2,9 +2,9 @@ load(":maven.bzl", "MavenRepoInfo")
 
 def _java_runtime(java_version):
     if java_version == 17:
-        return "//prebuilts/studio/jdk/jdk17:jdk17_runtime"
+        return "//prebuilts/studio/jdk/jdk17:java_runtime"
     elif java_version == 11:
-        return "//prebuilts/studio/jdk/jdk11:jdk11_runtime"
+        return "//prebuilts/studio/jdk/jdk11:java_runtime"
     else:
         fail("unexpected java version " + java_version)
 

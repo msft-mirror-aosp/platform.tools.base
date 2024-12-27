@@ -49,12 +49,18 @@ register_toolchains(
 
 # Java toolchains
 register_toolchains(
+    # Java runtime that executable Java compilation outputs ('java'). Tests use these ones
     "//prebuilts/studio/jdk/jdk11:runtime_toolchain_definition",
-    "//prebuilts/studio/jdk/jdk17:java_runtime_toolchain",
-    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_type",
+    "//prebuilts/studio/jdk/jdk17:runtime_toolchain_definition",
+    "//prebuilts/studio/jdk/jbr-next:runtime_toolchain_definition",
+
+    # Java runtime used to execute the Java compiler ('javac')
     "//prebuilts/studio/jdk/jdk17:java8_compile_toolchain_definition",
     "//prebuilts/studio/jdk/jdk17:java11_compile_toolchain_definition",
     "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
-    "//prebuilts/studio/jdk/jbr-next:jetbrains_java_runtime_toolchain",
-    "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_type",
+
+    # Bazel want those for bootclasspath shenanigans. Not used in studio-main rules
+    # https://github.com/bazelbuild/rules_java/blob/master/toolchains/BUILD#L75
+    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_definition",
+    "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_definition",
 )

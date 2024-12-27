@@ -182,7 +182,7 @@ kotlin_test(
     data = [
         ":TestData",
         ":runtime_test_dependencies",
-        "//prebuilts/studio/jdk:jdk11",
+        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//prebuilts/studio/sdk:add-ons/addon-google_apis-google-latest",
         "//prebuilts/studio/sdk:build-tools/latest",
         "//prebuilts/studio/sdk:platform-tools",

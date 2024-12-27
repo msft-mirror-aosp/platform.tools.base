@@ -5,7 +5,7 @@ java_test(
     name = "docker-image-test",
     srcs = ["DockerImageTest.java"],
     data = [
-        "//prebuilts/studio/jdk:jdk_runtime",
+        "//prebuilts/studio/jdk/jdk8:java_runtime",
         "//prebuilts/studio/sdk:build-tools/latest",
         "//tools/base/build-system/aapt2:aapt2_for_tests",
     ],
