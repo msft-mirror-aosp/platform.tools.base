@@ -167,7 +167,10 @@ interface DslContentHolder {
     fun writeContent(writer: BuildWriter)
 }
 
-internal class DefaultDslContentHolder(override val name: String = ""): DslContentHolder {
+internal class DefaultDslContentHolder(
+    private val extensionSupport: ExtensionSupport,
+    override val name: String = ""
+): DslContentHolder {
 
     enum class EventType {
         ASSIGNMENT,
@@ -388,10 +391,13 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         parentChain: List<String> = listOf(),
         action: T.() -> Unit,
     ): T {
-        val contentHolder = DefaultDslContentHolder(name)
+        val contentHolder = DefaultDslContentHolder(extensionSupport, name)
 
         val instance = instanceProvider(contentHolder)
-        action(instance)
+
+        extensionSupport.handleNestedBlock(contentHolder) {
+            action(instance)
+        }
 
         eventList += Event(
             EventType.NESTED_BLOCK,

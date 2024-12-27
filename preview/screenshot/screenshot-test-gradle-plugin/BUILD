@@ -109,6 +109,10 @@ kotlin_library(
     lint_custom_rules = [
         "@maven//:androidx.lint.lint-gradle",  # For gradle-specific lint checks
     ],
+    visibility = [
+        "//tools/base/build-system/integration-test:__subpackages__",
+        "//tools/base/preview/screenshot:__pkg__",
+    ],
     deps = [
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/gradle-core",

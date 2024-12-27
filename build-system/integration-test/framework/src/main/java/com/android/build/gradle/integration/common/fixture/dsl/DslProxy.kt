@@ -142,6 +142,7 @@ class DslProxy private constructor(
         when (param.type) {
             Integer::class.java,
             Int::class.java,
+            Float::class.java,
             File::class.java,
             JavaVersion::class.java -> {
                 contentHolder.set(propName, value)
@@ -157,7 +158,7 @@ class DslProxy private constructor(
                 }
             }
 
-            else -> throw IllegalArgumentException("Does not support type ${param.type} for method ${method.name}")
+            else -> throw IllegalArgumentException("Does not support type ${param.type} for method ${method.name} -- Add support as needed")
         }
 
         return true

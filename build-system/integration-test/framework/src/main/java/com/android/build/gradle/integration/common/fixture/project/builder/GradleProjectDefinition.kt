@@ -18,6 +18,9 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
+import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
@@ -33,7 +36,7 @@ import kotlin.io.path.writeText
  * Base interface for all project definition, including but not limited to
  * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
-interface GradleProjectDefinition {
+interface GradleProjectDefinition: ExtensionAwareDefinition {
     val path: String
 
     /**
@@ -111,7 +114,9 @@ internal data class AppliedPlugin(
  */
 internal abstract class GradleProjectDefinitionImpl(
     override val path: String
-): GradleProjectDefinition {
+): ExtensionAwareDefinitionImpl(), GradleProjectDefinition {
+
+    protected val contentHolder = DefaultDslContentHolder(this)
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 

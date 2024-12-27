@@ -31,7 +31,13 @@ import java.nio.file.Path
  */
 interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
     /** the location on disk of the project */
+    @Deprecated("Use resolve instead")
     val location: Path
+
+    /**
+     * resolve a path relative to the project location
+     */
+    fun resolve(path: String): Path
 
     /** The build folder for the project. This does NOT support build dir relocation */
     val buildDir: Path
@@ -59,6 +65,14 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
     protected val projectDefinition: ProjectDefinitionT,
 ) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider {
 
+    override fun resolve(path: String): Path {
+        // let's not allow access to the build file via this API.
+        // Build files should be edited via the DSL (via reconfigure)
+        if (path == "build.gradle" || path == "build.gradle.kts")
+            throw RuntimeException("Unauthorized access to the build file. Use the DSL to edit the file instead")
+        return location.resolve(path)
+    }
+
     /**
      * the build that contains this project.
      *
@@ -71,6 +85,7 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
     override val buildDir: Path
         get() = location.resolve("build")
 
+    // internal implementation of TemporaryProjectModification.FileProvider
     override fun file(path: String): File? {
         return location.resolve(path).toFile()
     }

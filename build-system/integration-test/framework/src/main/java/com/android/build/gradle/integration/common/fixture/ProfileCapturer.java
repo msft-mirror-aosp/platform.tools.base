@@ -18,6 +18,7 @@
 package com.android.build.gradle.integration.common.fixture;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild;
 import com.android.builder.utils.ExceptionRunnable;
 import com.google.common.base.Preconditions;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
@@ -77,6 +78,16 @@ public final class ProfileCapturer {
         // more
         // information
         this.poller = new DirectoryPoller(dir, extension);
+    }
+
+    public ProfileCapturer(@NonNull GradleBuild gradleBuild) throws IOException {
+        Path dir = gradleBuild.getProfileDirectory();
+        Preconditions.checkArgument(
+                dir != null,
+                "Profile output must be enabled by the GradleRule to use "
+                        + "ProfileCapturer. "
+                        + "Use GradleRuleBuilder::enableProfileOutput to do so."); // FIXME
+        this.poller = new DirectoryPoller(dir, ".rawproto");
     }
 
     public ProfileCapturer(@NonNull Path dir) throws IOException {

@@ -62,8 +62,6 @@ internal class AssetPackDefinitionImpl(
         action(files)
     }
 
-    private val contentHolder = DefaultDslContentHolder()
-
     override val assetPack: AssetPackExtension =
         DslProxy.createProxy(
             AssetPackExtension::class.java,

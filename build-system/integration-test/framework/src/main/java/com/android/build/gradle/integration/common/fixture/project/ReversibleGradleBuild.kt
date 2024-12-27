@@ -86,4 +86,7 @@ internal class ReversibleGradleBuild(
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
         throw RuntimeException("Cannot nest withReversibleModifications")
     }
+
+    override val profileDirectory: Path?
+        get() = parentBuild.profileDirectory
 }

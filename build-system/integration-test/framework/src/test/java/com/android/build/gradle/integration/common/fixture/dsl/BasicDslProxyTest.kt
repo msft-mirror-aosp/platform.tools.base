@@ -27,11 +27,11 @@ import org.junit.Test
 // this should really test the event content of the holder instead of relying on
 // the BuildWriter but it's so much more convenient...
 
-class BasicDslProxyTest {
+class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
+    private val contentHolder = DefaultDslContentHolder(this)
 
     @Test
     fun basicTest() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("address", listOf(), Address::class.java) {
             street = "1600 Amphitheatre Parkway"
             city = "Mountain View"
@@ -52,7 +52,6 @@ class BasicDslProxyTest {
 
     @Test
     fun nestedTest() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             surname = null
@@ -103,7 +102,6 @@ class BasicDslProxyTest {
 
     @Test
     fun chainedBlockUsage() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.mayor {
                 name = "bob"
@@ -126,7 +124,6 @@ class BasicDslProxyTest {
 
     @Test
     fun methodCall() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"
             sendMessage("Hello!")
@@ -144,6 +141,83 @@ class BasicDslProxyTest {
               sendMessage(null)
               something('one', 'two')
               something(12, 'one', 'two')
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
+    fun extension() {
+        // This tests an extension. Person has `address` but not `workAddress`.
+        // We'll us the same type for both
+        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+            name = "BugDroid"
+            surname = null
+            address {
+                street = "1600 Amphitheatre Parkway"
+                city = "Mountain View"
+                zipCode = 94043
+            }
+            viaExtension("workAddress", Address::class) {
+                street = "901 Cherry Ave." //youtube
+                city = "San Bruno"
+                zipCode = 94066
+            }
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
+            person {
+              name = 'BugDroid'
+              surname = null
+              address {
+                street = '1600 Amphitheatre Parkway'
+                city = 'Mountain View'
+                zipCode = 94043
+              }
+              workAddress {
+                street = '901 Cherry Ave.'
+                city = 'San Bruno'
+                zipCode = 94066
+              }
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
+    fun nestedExtension() {
+        // this tests a nested extension to make sure it gets written inside the right block
+        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+            name = "BugDroid"
+            surname = null
+            address {
+                street = "1600 Amphitheatre Parkway"
+                city = "Mountain View"
+                zipCode = 94043
+                viaExtension("landlord", Person::class) {
+                    name = "Sundar"
+                    surname = "Pichai"
+                }
+            }
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
+            person {
+              name = 'BugDroid'
+              surname = null
+              address {
+                street = '1600 Amphitheatre Parkway'
+                city = 'Mountain View'
+                zipCode = 94043
+                landlord {
+                  name = 'Sundar'
+                  surname = 'Pichai'
+                }
+              }
             }
 
         """.trimIndent())

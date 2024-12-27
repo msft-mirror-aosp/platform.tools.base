@@ -19,11 +19,13 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
+import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
+import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
-interface GradleSettingsDefinition {
+interface GradleSettingsDefinition: ExtensionAwareDefinition {
 
     /**
      * Applies a plugin with an optional version string. If null, the default version is used.
@@ -62,11 +64,11 @@ interface GradleSettingsDefinition {
     fun addRepository(location: String)
 }
 
-internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
+internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), GradleSettingsDefinition {
     private val featurePreviews = mutableListOf<String>()
 
     private val plugins = mutableListOf<AppliedPlugin>()
-    private val androidContentHolder = DefaultDslContentHolder()
+    private val androidContentHolder = DefaultDslContentHolder(this)
 
     // cache or the repositories as we need to keep this around for reconfiguration.
     private var repositoriesCache: Collection<Path>? = null
@@ -112,7 +114,9 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     }
 
     override fun android(action: SettingsExtension.() -> Unit) {
-        action(android)
+        handleNestedBlock(androidContentHolder) {
+            action(android)
+        }
     }
 
     override fun enableFeaturePreview(name: String) {
@@ -221,7 +225,6 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
     private fun hasAndroid(): Boolean = plugins.map { it.plugin }.contains(PluginType.ANDROID_SETTINGS)
 }
-
 
 private fun BuildWriter.mavenSnippet(repo: Path) {
     block("maven") {

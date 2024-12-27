@@ -118,6 +118,13 @@ interface GradleBuild {
      * using the provided instance of [GradleBuild], will be reverted after the action is run.
      */
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
+
+    /**
+     * the location of the profile directory if profiling is on, otherwise null.
+     *
+     * Profiling is turned on via [GradleRuleBuilder.withProfileOutput]
+     */
+    val profileDirectory: Path?
 }
 
 /**
@@ -275,6 +282,7 @@ internal class GradleBuildImpl(
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
     internal val mavenRepoPath: Path,
+    override val profileDirectory: Path?
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {

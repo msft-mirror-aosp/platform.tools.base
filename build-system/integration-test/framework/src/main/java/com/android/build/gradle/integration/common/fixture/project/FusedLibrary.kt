@@ -67,8 +67,6 @@ internal class FusedLibraryDefinitionImpl(
         action(files)
     }
 
-    private val contentHolder = DefaultDslContentHolder()
-
     override val androidFusedLibrary: FusedLibraryExtension =
         DslProxy.createProxy(
             FusedLibraryExtension::class.java,

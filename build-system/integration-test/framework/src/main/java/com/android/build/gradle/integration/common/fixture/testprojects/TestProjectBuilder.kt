@@ -280,7 +280,17 @@ interface DependencyBuilder {
 
 interface DependenciesBuilder {
 
+    /**
+     * Remove all dependencies
+     */
     fun clear()
+
+    /**
+     * Remove a dependency, by its scope and its information.
+     *
+     * This must match exactly how it was added
+     */
+    fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the implementation scope.

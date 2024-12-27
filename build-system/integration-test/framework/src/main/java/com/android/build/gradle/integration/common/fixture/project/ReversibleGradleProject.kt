@@ -39,6 +39,8 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     override val location: Path
         get() = parentProject.location
 
+    override fun resolve(path: String): Path = parentProject.resolve(path)
+
     override val buildDir: Path
         get() = parentProject.buildDir
 
@@ -99,7 +101,7 @@ internal open class ReversibleProjectFiles(
                 )
             }
 
-            return FileUpdater(projectModification, relativePath, file)
+            return this
         }
 
         override fun append(newContent: String) {
@@ -111,6 +113,14 @@ internal open class ReversibleProjectFiles(
             } else {
                 projectModification.addFile(relativePath, newContent)
             }
+        }
+
+        override fun transform(action: (String) -> String): FileUpdateBuilder {
+            if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
+
+            projectModification.modifyFile(relativePath, action)
+
+            return this
         }
     }
 }
