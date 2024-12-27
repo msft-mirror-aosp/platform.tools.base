@@ -11,8 +11,6 @@ ImlModuleInfo = provider(
     doc = "Info produced by the iml_module rule.",
     fields = [
         "module_jars",
-        "forms",
-        "test_forms",
         "java_deps",
         "test_provider",
         "main_provider",
@@ -80,20 +78,17 @@ def _iml_module_jar_impl(
         roots,
         java_srcs,
         kotlin_srcs,
-        form_srcs,
         resources,
         res_zips,
         output_jar,
         java_deps,
         java_runtime_deps,
-        form_deps,
         exports,
         friend_jars,
         module_name):
     jars = []
     ijars = []
     sourcepath = []
-    forms = []
 
     java_jar = ctx.actions.declare_file(name + ".java.jar") if java_srcs else None
     kotlin_jar = ctx.actions.declare_file(name + ".kotlin.jar") if kotlin_srcs else None
@@ -137,8 +132,7 @@ def _iml_module_jar_impl(
 
     # Java
     if java_srcs:
-        compiled_java = ctx.actions.declare_file(name + ".pjava.jar") if form_srcs else java_jar
-        formc_input_jars = [compiled_java] + ([kotlin_jar] if kotlin_jar else [])
+        compiled_java = java_jar
 
         # Bazel normally places transitive deps on the classpath (subject to
         # strict-deps enforcement and reduced-classpath optimizations). However,
@@ -156,51 +150,9 @@ def _iml_module_jar_impl(
             sourcepath = sourcepath,
         )
 
-        # Note: we exclude formc output from ijars, since formc does not generate APIs used downstream.
         ijars += java_provider.compile_jars.to_list()
 
-        # Forms
-        if form_srcs:
-            forms += relative_paths(ctx, form_srcs, roots)
-
-            # formc requires full compile jars (no ijars/hjars).
-            form_dep_jars = depset(transitive = [
-                java_common.make_non_strict(dep).full_compile_jars
-                for dep in java_deps
-            ])
-
-            # Note: we explicitly include the bootclasspath from the current Java toolchain with
-            # the classpath, because extracting it at runtime, when we are running in the
-            # FormCompiler JVM, is not portable across JDKs (and made much harder on JDK9+).
-            form_classpath = depset(transitive = [form_dep_jars, java_compile_toolchain.bootclasspath])
-
-            args = ctx.actions.args()
-            args.add_joined("-cp", form_classpath, join_with = ":")
-            args.add("-o", java_jar)
-            args.add_all(form_srcs)
-            args.add_all([k + "=" + v.path for k, v in form_deps])
-            args.add_all(formc_input_jars)
-
-            # To support persistent workers, arguments must come from a param file..
-            args.use_param_file("@%s", use_always = True)
-            args.set_param_file_format("multiline")
-
-            ctx.actions.run(
-                inputs = depset(
-                    direct = [v for _, v in form_deps] + form_srcs + formc_input_jars,
-                    transitive = [form_classpath],
-                ),
-                outputs = [java_jar],
-                mnemonic = "formc",
-                arguments = [args],
-                executable = ctx.executable._formc,
-                execution_requirements = {"supports-multiplex-workers": "1"},
-            )
-
         jars.append(java_jar)
-
-    if form_srcs and not java_srcs:
-        fail("Forms only supported with java sources")
 
     run_singlejar(
         ctx = ctx,
@@ -227,7 +179,7 @@ def _iml_module_jar_impl(
         output_jar = output_jar,
         compile_jar = full_ijar or output_jar,
     )
-    return main_provider, main_provider_no_deps, forms
+    return main_provider, main_provider_no_deps
 
 def merge_runfiles(deps):
     return depset(transitive = [
@@ -243,10 +195,8 @@ def _iml_module_impl(ctx):
 
     # Prod dependencies.
     java_deps = []
-    form_deps = []
     for this_dep in ctx.attr.deps:
         if ImlModuleInfo in this_dep:
-            form_deps += this_dep[ImlModuleInfo].forms
             dep_vis = this_dep[ImlModuleInfo].module_visibility
             if dep_vis and ctx.label not in [Label(vis) for vis in dep_vis]:
                 fail("The module %s, declares specific module visibility not including %s" % (this_dep.label, ctx.label))
@@ -267,12 +217,10 @@ def _iml_module_impl(ctx):
 
     # Test dependencies (superset of prod).
     test_java_deps = []
-    test_form_deps = []
     for this_dep in ctx.attr.test_deps:
         if JavaInfo in this_dep:
             test_java_deps.append(this_dep[JavaInfo])
         if ImlModuleInfo in this_dep:
-            test_form_deps += this_dep[ImlModuleInfo].test_forms
             test_java_deps.append(this_dep[ImlModuleInfo].test_provider)
 
     # Runtime dependencies.
@@ -302,19 +250,17 @@ def _iml_module_impl(ctx):
 
     # If multiple modules we use the label, otherwise use the exact module name
     module_name = names[0] if len(names) == 1 else ctx.label.name
-    main_provider, main_provider_no_deps, main_forms = _iml_module_jar_impl(
+    main_provider, main_provider_no_deps = _iml_module_jar_impl(
         ctx = ctx,
         name = ctx.label.name,
         roots = ctx.attr.roots,
         java_srcs = ctx.files.java_srcs,
         kotlin_srcs = ctx.files.kotlin_srcs,
-        form_srcs = ctx.files.form_srcs,
         resources = ctx.files.resources,
         res_zips = ctx.files.res_zips,
         output_jar = ctx.outputs.production_jar,
         java_deps = java_deps,
         java_runtime_deps = java_runtime_deps,
-        form_deps = form_deps,
         exports = exports,
         friend_jars = [],
         module_name = module_name,
@@ -324,19 +270,17 @@ def _iml_module_impl(ctx):
     for test_friend in ctx.attr.test_friends:
         friend_jars += test_friend[JavaInfo].compile_jars.to_list()
 
-    test_provider, _, test_forms = _iml_module_jar_impl(
+    test_provider, _ = _iml_module_jar_impl(
         ctx = ctx,
         name = ctx.label.name + "_test",
         roots = ctx.attr.test_roots,
         java_srcs = ctx.files.java_test_srcs,
         kotlin_srcs = ctx.files.kotlin_test_srcs,
-        form_srcs = ctx.files.form_test_srcs,
         resources = ctx.files.test_resources,
         res_zips = [],
         output_jar = ctx.outputs.test_jar,
         java_deps = [main_provider_no_deps] + test_java_deps,
         java_runtime_deps = java_runtime_deps,
-        form_deps = test_form_deps,
         exports = exports + test_exports,
         friend_jars = friend_jars,
         module_name = module_name,
@@ -344,8 +288,6 @@ def _iml_module_impl(ctx):
 
     iml_module_info = ImlModuleInfo(
         module_jars = ctx.outputs.production_jar,
-        forms = main_forms,
-        test_forms = test_forms,
         java_deps = java_deps,
         test_provider = test_provider,
         main_provider = main_provider,
@@ -375,10 +317,8 @@ _iml_module_ = rule(
         "kotlin_srcs": attr.label_list(allow_files = True),
         "kotlin_use_compose": attr.bool(),
         "kotlin_use_ir": attr.bool(),
-        "form_srcs": attr.label_list(allow_files = True),
         "java_test_srcs": attr.label_list(allow_files = True),
         "kotlin_test_srcs": attr.label_list(allow_files = True),
-        "form_test_srcs": attr.label_list(allow_files = True),
         "jvm_target": attr.string(),
         "javacopts": attr.string_list(),
         "kotlinc_opts": attr.string_list(),
@@ -430,12 +370,6 @@ _iml_module_ = rule(
         ),
         "_kotlin": attr.label(
             default = Label("@maven//:org.jetbrains.kotlin.kotlin-stdlib"),
-            allow_files = True,
-        ),
-        "_formc": attr.label(
-            executable = True,
-            cfg = "exec",
-            default = Label("//tools/base/bazel:formc"),
             allow_files = True,
         ),
     },
@@ -588,13 +522,11 @@ def iml_module(
         java_srcs = srcs.javas,
         kotlin_srcs = srcs.kotlins,
         kotlin_use_compose = kotlin_use_compose,
-        form_srcs = srcs.forms,
         resources = srcs.resources,
         res_zips = res_zips,
         roots = srcs.roots,
         java_test_srcs = split_test_srcs.javas,
         kotlin_test_srcs = split_test_srcs.kotlins,
-        form_test_srcs = split_test_srcs.forms,
         test_resources = split_test_srcs.resources,
         test_roots = split_test_srcs.roots,
         package_prefixes = package_prefixes,
@@ -1054,7 +986,7 @@ def split_srcs(src_dirs, res_dirs, exclude):
         A struct representing groups of source files.
     """
     roots = src_dirs + res_dirs
-    exts = ["java", "kt", "groovy", "DS_Store", "form", "flex"]
+    exts = ["java", "kt", "groovy", "DS_Store", "flex"]
     excludes = []
     for root in roots:
         excludes += [root + "/**/*." + ext for ext in exts]
@@ -1069,14 +1001,12 @@ def split_srcs(src_dirs, res_dirs, exclude):
 
     javas = native.glob([src + "/**/*.java" for src in src_dirs], exclude)
     kotlins = native.glob([src + "/**/*.kt" for src in src_dirs], exclude)
-    forms = native.glob([src + "/**/*.form" for src in src_dirs], exclude)
 
     return struct(
         roots = roots,
         resources = resources,
         javas = javas,
         kotlins = kotlins,
-        forms = forms,
     )
 
 def iml_alias(name, default, overrides = {}, **kwargs):
