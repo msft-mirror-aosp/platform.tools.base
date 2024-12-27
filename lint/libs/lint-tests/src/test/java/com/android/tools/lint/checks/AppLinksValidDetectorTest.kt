@@ -3696,6 +3696,71 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun test_queryParamAndFragment_withOtherAttributes() {
+    lint()
+      .files(
+        gradle(
+          """
+          apply plugin: 'com.android.application'
+
+          android {
+              compileSdkVersion 35
+
+              defaultConfig {
+                  minSdkVersion 30
+                  targetSdkVersion 35
+              }
+          }
+        """
+        ),
+        xml(
+            "AndroidManifest.xml",
+            """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.helloworld" >
+              <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
+
+              <application>
+                  <activity android:name=".FullscreenActivity" android:exported="true">
+
+                      <intent-filter android:autoVerify="true">
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+
+                          <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/main/AndroidManifest.xml:13: Error: App link matching does not support query parameters or fragments, unless using <uri-relative-filter-group> (introduced in Android 15) [AppLinkUrlError]
+                        <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for src/main/AndroidManifest.xml line 13: Replace with <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />...:
+        @@ -13 +13
+        -                 <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
+        +                 <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />
+        +                 <uri-relative-filter-group>
+        +                     <data android:path="/gizmos" />
+        +                     <data android:query="queryParam" />
+        +                     <data android:fragment="fragment" />
+        +                 </uri-relative-filter-group>
+        """
+      )
+  }
+
   fun test_queryParameter_andFragment_compileSdkVersionBelowAndroidV() {
     lint()
       .files(

@@ -973,6 +973,23 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         val dataElement = (dataTag as? ElementWrapper)?.element ?: return
         val parent = dataElement.parentNode as? Element ?: return
         val dataIndent = context.getLocation(dataElement).start?.column ?: DEFAULT_INDENT_AMOUNT
+        val newLineAndDataIndent = "\n" + indentation(dataIndent)
+        val indexOfThisPath = dataTag.attributes.indexOfFirst { it.rawValue == path.rawValue }
+        val otherAttributesInThisDataTag =
+          dataTag.attributes.toMutableList().apply {
+            removeAt(indexOfThisPath)
+            sortBy { it.name }
+          }
+        val otherAttributesText =
+          when {
+            otherAttributesInThisDataTag.isEmpty() -> ""
+            else ->
+              "<data " +
+                otherAttributesInThisDataTag.joinToString(" ") {
+                  "$namespace:${it.name}=\"${it.rawValue}\""
+                } +
+                " />$newLineAndDataIndent"
+          }
         val message =
           when (parent.tagName) {
             TAG_URI_RELATIVE_FILTER_GROUP ->
@@ -984,13 +1001,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         val fixText =
           when (parent.tagName) {
             TAG_URI_RELATIVE_FILTER_GROUP -> {
-              val newLineAndDataIndent = "\n" + indentation(dataIndent)
               val newLineAndIndentedFragment =
                 when (fragmentInUri) {
                   "" -> ""
                   else -> """$newLineAndDataIndent<data $namespace:fragment="$fragmentInUri" />"""
                 }
-              "<data $namespace:$name=$pathBeforeQueryAndFragment />" +
+              "$otherAttributesText<data $namespace:$name=$pathBeforeQueryAndFragment />" +
                 concatenateWithIndent(queries, newLineAndDataIndent) +
                 newLineAndIndentedFragment
             }
@@ -1004,7 +1020,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                   "" -> ""
                   else -> """$newLineAndInnerIndent<data $namespace:fragment="$fragmentInUri" />"""
                 }
-              "<uri-relative-filter-group>" +
+              "$otherAttributesText<uri-relative-filter-group>" +
                 """$newLineAndInnerIndent<data $namespace:$name="$pathBeforeQueryAndFragment" />""" +
                 concatenateWithIndent(queries, newLineAndInnerIndent) +
                 newLineAndIndentedFragment +
