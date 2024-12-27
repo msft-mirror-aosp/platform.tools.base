@@ -57,7 +57,6 @@ import com.android.SdkConstants.VALUE_0
 import com.android.SdkConstants.VALUE_FALSE
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.ide.common.rendering.api.ResourceNamespace
-import com.android.resources.ResourceType
 import com.android.resources.ResourceUrl
 import com.android.sdklib.AndroidVersion.VersionCodes
 import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_ADVANCED_GLOB
@@ -1211,7 +1210,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
       val project = context.project
       val resources = client.getResources(project, ResourceRepositoryScope.ALL_DEPENDENCIES)
-      val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.STRING, url.name)
+      val items = resources.getResources(ResourceNamespace.TODO(), url.type, url.name)
       if (items.isEmpty()) {
         return str
       }
@@ -1720,14 +1719,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     fun getIntentFilterData(intentFilter: TagWrapper): IntentFilterData {
       val autoVerify = intentFilter.getAttributeWrapper(ATTR_AUTO_VERIFY)?.substitutedValue
       val order =
-        intentFilter.getAttributeWrapper(ATTR_ORDER)?.substitutedValue?.ifEmpty { VALUE_0 }?.toInt()
-          ?: 0
+        intentFilter
+          .getAttributeWrapper(ATTR_ORDER)
+          ?.substitutedValue
+          ?.ifEmpty { VALUE_0 }
+          ?.toIntOrNull() ?: 0
       val priority =
         intentFilter
           .getAttributeWrapper(ATTR_PRIORITY)
           ?.substitutedValue
           ?.ifEmpty { VALUE_0 }
-          ?.toInt() ?: 0
+          ?.toIntOrNull() ?: 0
       val actions = mutableListOf<AttributeWrapper>()
       val categories = mutableListOf<AttributeWrapper>()
       val dataTagElements = mutableListOf<TagWrapper>()

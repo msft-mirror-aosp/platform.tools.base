@@ -4630,4 +4630,43 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun test_b386174049() {
+    lint()
+      .files(
+        xml(
+            "AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                      package="com.example.helloworld">
+
+                <application>
+                    <activity android:name=".FullscreenActivity" >
+                        <intent-filter android:autoVerify="true" android:order="@integer/order" android:priority="@integer/priority">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:host="example.com" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            """,
+          )
+          .indented(),
+        xml(
+            "res/values/integers.xml",
+            """
+              <resources>
+                  <integer name="order">0</integer>
+                  <integer name="priority">noninteger</integer>
+              </resources>
+            """,
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
 }
