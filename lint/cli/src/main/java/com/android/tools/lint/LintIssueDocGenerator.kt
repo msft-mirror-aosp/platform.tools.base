@@ -94,6 +94,7 @@ import java.net.SocketTimeoutException
 import java.net.URL
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -125,6 +126,10 @@ import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.visitor.AbstractUastVisitor
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.LdcInsnNode
+import org.objectweb.asm.tree.MethodInsnNode
 import org.w3c.dom.Element
 
 /**
@@ -148,6 +153,7 @@ class LintIssueDocGenerator(
   private val includeSeverityColor: Boolean,
   private val verbose: Boolean,
   private val examplesFile: File?,
+  private val issueSince: Map<Issue, String>,
 ) {
   private val allIssues: List<Issue> = registryMap.keys.flatMap { it.issues }
 
@@ -691,7 +697,8 @@ class LintIssueDocGenerator(
         val registries = issueToRegistry[id]
         val artifact = issue.registry?.let { registryMap[it] }
         if (artifact != null && registries != null && registries.size > 1) {
-          sb.append(" (from $artifact)")
+          val artifactWithoutVersion = artifact.substringBeforeLast(':')
+          sb.append(" (from $artifactWithoutVersion:+)")
         }
         sb.append("\n")
       }
@@ -850,9 +857,13 @@ class LintIssueDocGenerator(
           it
         }
       }
+    val since = issueSince[issue]
     val copyrightYear = issueMap[issue.id]?.copyrightYear ?: -1
     val copyrightYearInfo =
-      if (copyrightYear != -1) {
+      // If we have a release date, don't include the copyright year from
+      // the source file (which is less accurate; for example, an old detector
+      // with a new issue will list the copyright year of the original detector)
+      if (copyrightYear != -1 && (since == null || !since.contains("("))) {
         arrayOf("Copyright Year" to copyrightYear.toString())
       } else {
         emptyArray()
@@ -937,7 +948,7 @@ class LintIssueDocGenerator(
 
     val artifactMap =
       if (artifactId != null) {
-        val artifactUrl = "[$artifactId](${getArtifactPageName(artifactId)})\n"
+        val artifactUrl = "[$artifactId](${getArtifactPageName(artifactId)})"
         arrayOf("Artifact" to artifactUrl)
       } else emptyArray()
     val atLeastMap =
@@ -962,6 +973,7 @@ class LintIssueDocGenerator(
         *vendorInfo,
         *atLeastMap,
         *artifactMap,
+        "Since" to since,
         "Affects" to scopeDescription,
         "Editing" to inEditor,
         *moreInfoUrls,
@@ -1657,7 +1669,26 @@ class LintIssueDocGenerator(
       if (file != null) {
         issueData.detectorSourceFile = file
         issueData.detectorSource = file.readText()
-        issueData.copyrightYear = findCopyrightYear(file)
+
+        val copyrightYear = findCopyrightYear(file)
+        val since = issueSince[issueData.issue]
+        if (since != null && since.contains("(")) {
+          val releaseYear =
+            since.substringAfter("(").substringAfter(" ").substringBefore(")").toInt()
+          issueData.copyrightYear = releaseYear
+          if (
+            copyrightYear != releaseYear &&
+              releaseYear <= 2014 &&
+              singleIssueDetectors.contains(issueData.issue)
+          ) {
+            // If it's a detector with a SINGLE issue, we're more likely
+            // to trust the copyright year from the early days, since
+            // we don't have release binaries for the first few years
+            issueData.copyrightYear = copyrightYear
+          }
+        } else {
+          issueData.copyrightYear = copyrightYear
+        }
       }
     }
 
@@ -2887,7 +2918,7 @@ class LintIssueDocGenerator(
         firstOrNull()?.isDigit() == true && NUMBER_PATTERN.matcher(this).find()
     }
 
-    private fun getRegistry(client: LintCliClient, jarFile: File): IssueRegistry? {
+    private fun getRegistry(client: LintClient, jarFile: File): IssueRegistry? {
       val registries = JarFileIssueRegistry.get(client, listOf(jarFile), skipVerification = true)
       return registries.firstOrNull()
     }
@@ -3146,6 +3177,10 @@ class LintIssueDocGenerator(
           includeBuiltins = true
           emptyMap()
         } else {
+          if (searchMavenCentral) {
+            populateJCenterOfflineRepo(getJCenterCache(), verbose)
+          }
+
           val gmavenMap =
             if (searchGmaven) findLintIssueRegistriesFromGmaven(client, verbose) else emptyMap()
           val mavenCentralMap =
@@ -3165,6 +3200,8 @@ class LintIssueDocGenerator(
         }
 
       val registryMap = getRegistries(registries, includeBuiltins)
+
+      val sinceMap = findSinceMap(verbose, client, registryMap, searchGmaven, includeBuiltins)
 
       if (sourcePath.isEmpty() && registryMap is BuiltinIssueRegistry) {
         addAospUrls(sourcePath, testPath)
@@ -3187,6 +3224,7 @@ class LintIssueDocGenerator(
           includeSeverityColor,
           verbose,
           examples,
+          sinceMap,
         )
       generator.generate()
 
@@ -3195,6 +3233,210 @@ class LintIssueDocGenerator(
       }
 
       return ERRNO_SUCCESS
+    }
+
+    /**
+     * Look through the various jar files of the built-in lint checks to figure out when each issue
+     * was introduced. We can't use the normal machinery for this (loading them as issue registries)
+     * -- I tried injecting a service loader registration of the BuiltinIssueRegistry, but even with
+     * that, for older versions, class loading fails since the lint APIs they depend on have changed
+     * significantly over the years. So instead, we just look up detector implementations, and scan
+     * them looking for Issue.create registrations that mention our target issue id's.
+     */
+    private fun findSinceMap(
+      verbose: Boolean,
+      client: LintClient,
+      registryMap: Map<IssueRegistry, String?>,
+      searchGmaven: Boolean,
+      includeBuiltins: Boolean,
+    ): MutableMap<Issue, String> {
+      val sinceMap = mutableMapOf<Issue, Version>()
+      val releaseDates = mutableMapOf<Version, String>()
+
+      if (searchGmaven && includeBuiltins) {
+        if (verbose) println("Checking builtin-versions")
+        val issues = BuiltinIssueRegistry().issues
+        val issueToDetectorClass =
+          issues.associate {
+            it to it.implementation.detectorClass.name.replace('.', '/') + DOT_CLASS
+          }
+        val detectorVersions = mutableMapOf<String, String>()
+        val detectorToIssues = mutableMapOf<String, MutableList<Issue>>()
+        for ((issue, detector) in issueToDetectorClass) {
+          detectorToIssues.getOrPut(detector) { mutableListOf() }.add(issue)
+        }
+        issueToDetectorClass.values.forEach { detectorVersions[it] = "" }
+        val gmavenDir = File(getGmavenCache(), "m2repository/com/android/tools/lint/lint-checks")
+        val jcenterDir = File(getJCenterCache(), "m2repository/com/android/tools/lint/lint-checks")
+        val versionDirs =
+          gmavenDir.listFiles().filter { it.isDirectory && it.name[0].isDigit() } +
+            jcenterDir.listFiles().filter { it.isDirectory && it.name[0].isDigit() }
+        for (versionDir in versionDirs.sorted()) {
+          val version = versionDir.name
+          val jar = File(versionDir, "lint-checks-$version.jar")
+          if (jar.isFile) {
+            val dateFile = File(jar.path.removeSuffix(".jar") + ".date")
+            val date =
+              if (dateFile.isFile) {
+                val dateString = dateFile.readText().trim()
+                val date =
+                  if (dateString.contains("/"))
+                    LocalDate.parse(dateString, DateTimeFormatter.ofPattern("yyyy/MM/dd"))
+                  else LocalDate.parse(dateString)
+                val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+                date.format(formatter)
+              } else {
+                null
+              }
+
+            // Convert from lint artifact version to AGP version
+            val major = version.substringBefore('.').toInt() - 23
+            val version =
+              if (major < 0) Version.parse("0.0.0")
+              else Version.parse(major.toString() + "." + version.substringAfter('.'))
+            if (date != null && major >= 0) {
+              assert(releaseDates[version] == null)
+              releaseDates[version] = date
+            }
+
+            if (verbose) println("Checking individual issue versions for lint-checks $version")
+            JarFile(jar).use { jarFile ->
+              for (detector in detectorVersions.keys) {
+                val entry = jarFile.getJarEntry(detector)
+                if (entry != null) {
+                  // We can't JUST look at detector presence; we should also check the issues
+                  // themselves, since sometimes we add new issues to old detectors
+                  for (issue in detectorToIssues[detector]!!) {
+                    var found =
+                      classContainsIssueId(issue.id, jarFile.getInputStream(entry).readBytes())
+                    if (!found) {
+                      val companion = detector.removeSuffix(DOT_CLASS) + "\$Companion.class"
+                      val companionEntry = jarFile.getJarEntry(companion)
+                      if (companionEntry != null) {
+                        found =
+                          classContainsIssueId(
+                            issue.id,
+                            jarFile.getInputStream(companionEntry).readBytes(),
+                          )
+                      }
+                    }
+                    if (found) {
+                      val currentVersion = sinceMap[issue]
+                      if (currentVersion == null || currentVersion > version) {
+                        sinceMap[issue] = version
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      val result = mutableMapOf<Issue, String>()
+
+      for ((issue, version) in sinceMap) {
+        var versionString = version.toString()
+        var date = releaseDates[version]
+        // If there's a stable release for this version, use that instead
+        val stable = versionString.substringBefore('-')
+        if (stable != versionString) {
+          val stableVersion = Version.parse(stable)
+          val stableDate = releaseDates[stableVersion]
+          if (stableDate != null) {
+            versionString = stable
+            date = stableDate
+          }
+        }
+        result[issue] =
+          if (versionString == "0.0.0") {
+            "Initial"
+          } else if (date != null) {
+            "$versionString ($date)"
+          } else {
+            versionString
+          }
+      }
+      sinceMap.clear()
+
+      // Also look up version information for third party issues.
+      for ((registry, key) in registryMap) {
+        registry as? DocIssueRegistry ?: continue
+        val versionIssues = mutableListOf<Pair<Version, List<String>>>()
+
+        val artifact = (key ?: "artifact").replace(":", "-")
+        if (verbose) println("Checking versions for $key")
+        for ((v, entry) in registry.library.versions.asSequence().sortedByDescending { it.key }) {
+          var bytes = entry.jarBytes
+          var file = File.createTempFile(artifact, DOT_JAR)
+          file.deleteOnExit()
+          file.writeBytes(bytes)
+          val r =
+            JarFileIssueRegistry.get(client, listOf(file), skipVerification = true).firstOrNull()
+              ?: continue
+
+          versionIssues.add(v to r.issues.map { it.id }.sorted())
+        }
+        var prev = emptyList<String>()
+        versionIssues.reverse()
+        for ((version, versionIds) in versionIssues) {
+          val added = versionIds.filter { !prev.contains(it) }
+          if (added.isNotEmpty()) {
+            for (id in added) {
+              val issue = registry.issues.firstOrNull { it.id == id }
+              if (issue != null) {
+                sinceMap[issue] = version
+              }
+            }
+          }
+
+          prev = versionIds
+        }
+      }
+
+      for ((issue, version) in sinceMap) {
+        result[issue] = version.toString()
+      }
+
+      return result
+    }
+
+    /**
+     * Checks whether we find a Issue.create registration for the given issue id in the given class
+     * byte code.
+     */
+    private fun classContainsIssueId(issueId: String, bytes: ByteArray?): Boolean {
+      val classReader = ClassReader(bytes)
+      val cn = ClassNode()
+      classReader.accept(cn, 0)
+      for (method in cn.methods) {
+        for (instruction in method.instructions) {
+          if (instruction is MethodInsnNode) {
+            val name = instruction.name
+            if (
+              (name == "create" || name == "create\$default") &&
+                (instruction.owner == "com/android/tools/lint/detector/api/Issue" ||
+                  instruction.owner == "com/android/tools/lint/detector/api/Issue\$Companion")
+            ) {
+              var curr = instruction.previous
+              while (curr != null) {
+                if (curr is LdcInsnNode && curr.cst == issueId) {
+                  return true
+                } else if (
+                  curr is MethodInsnNode &&
+                    (curr.name == "create" || curr.name == "create\$default")
+                ) {
+                  break
+                }
+                curr = curr.previous
+              }
+            }
+          }
+        }
+      }
+
+      return false
     }
 
     private fun findLintIssueRegistriesFromUnpublished(
@@ -3491,6 +3733,44 @@ class LintIssueDocGenerator(
       }
     }
 
+    /**
+     * Before gmaven we published our artifacts on jcenter; these jars seem to be mirrored on maven
+     * central now. This method downloads the old versions of the lint-check jars, for use by
+     * [findSinceMap].
+     */
+    private fun populateJCenterOfflineRepo(cacheDir: File, verbose: Boolean) {
+      if (SKIP_NETWORK) return
+
+      val metadata =
+        URL("https://repo1.maven.org/maven2/com/android/tools/lint/lint-checks/maven-metadata.xml")
+          .readText()
+      val document = XmlUtils.parseDocumentSilently(metadata, false) ?: return
+      val nodes = document.getElementsByTagName("version")
+      for (i in 0 until nodes.length) {
+        val element = nodes.item(i)
+        val version = element.textContent
+        val relative = "com/android/tools/lint/lint-checks/$version/lint-checks-$version"
+        val jarUrl = URL("https://repo1.maven.org/maven2/$relative.jar")
+        val cachedEntry = File(cacheDir, "m2repository/$relative.jar")
+        if (cachedEntry.exists()) {
+          if (verbose) println("Cached com.android.tools.lint:lint-checks:$version in $cachedEntry")
+          continue
+        }
+
+        if (verbose) {
+          println("Reading $jarUrl")
+        }
+        val bytes = jarUrl.readBytes()
+        cachedEntry.parentFile.mkdirs()
+        cachedEntry.writeBytes(bytes)
+        writePomDate(jarUrl, File(cacheDir, "m2repository/$relative.date"))
+        if (verbose)
+          println(
+            "Stored com.android.tools.lint:lint-checks::$version: ${bytes.size} bytes in $cachedEntry"
+          )
+      }
+    }
+
     private fun downloadMavenFile(
       library: MavenCentralLibrary,
       version: String,
@@ -3557,6 +3837,28 @@ class LintIssueDocGenerator(
           for (version in versions) {
             val groupPath = group.replace('.', '/')
             val relative = "$groupPath/$artifact/$version/$artifact-$version"
+            if (group == "com.android.tools.lint" && artifact == "lint-checks") {
+              // The built-in lint checks do not look like the other custom lint checks
+              // found on gmaven; special case these such that we can use them to look up
+              // versions in [findSinceMap].
+              val url = "https://dl.google.com/android/maven2/$relative.jar"
+              val jarTarget = File(cacheDir, "$relative.jar")
+              jarTarget.parentFile?.mkdirs()
+              if (!jarTarget.isFile) {
+                // Don't try again:
+                jarTarget.createNewFile()
+                if (verbose) println("Read $url")
+                val bytes =
+                  try {
+                    readUrlData(client, url, 30 * 1000)
+                  } catch (e: IOException) {
+                    continue
+                  }
+                jarTarget.writeBytes(bytes!!)
+                writePomDate(URL(url), File(cacheDir, "$relative.date"))
+              }
+              continue
+            }
             val url = "https://dl.google.com/android/maven2/$relative.aar"
             val aarTarget = File(cacheDir, "$relative.aar")
             aarTarget.parentFile?.mkdirs()
@@ -3745,9 +4047,7 @@ class LintIssueDocGenerator(
        */
       val lintLibrary: Boolean,
     ) {
-      val versions: MutableMap<Version, LibraryVersionEntry> = TreeMap { o1, o2 ->
-        -o1.compareTo(o2)
-      }
+      val versions: TreeMap<Version, LibraryVersionEntry> = TreeMap { o1, o2 -> -o1.compareTo(o2) }
       var registry: IssueRegistry? = null
       /**
        * Some libraries are released both as part of another library and as a standalone AAR. This
@@ -4470,6 +4770,14 @@ class LintIssueDocGenerator(
       return dir
     }
 
+    fun getJCenterCache(): File {
+      val dir = File(getCacheDir(), "jcenter")
+      if (!dir.isDirectory) {
+        dir.mkdirs()
+      }
+      return dir
+    }
+
     private fun getMavenCentralCache(): File {
       val dir = File(getCacheDir(), "mavenCentral")
       if (!dir.isDirectory) {
@@ -4543,10 +4851,9 @@ class LintIssueDocGenerator(
       var url: String? = null
       val cacheDir = getSourceCache()
       val testResult =
-        // We don't know if the detector is in a .kt or .java file, and we also don't know if it's
-        // in
-        // src/main/java or
-        // src/main/kotlin, so look in all these combinations (results are cached)
+        // We don't know if the detector is in a .kt or .java file, and we also
+        // don't know if it's in src/main/java or src/main/kotlin, so look in all
+        // these combinations (results are cached)
         findDetectorSource(library, detectorPath, test, "java", ".kt", cacheDir)?.also {
           url = library.getUrl(true, test, issue, detectorPath, "java", ".kt")
         }
@@ -4624,7 +4931,7 @@ class LintIssueDocGenerator(
     if (registries.size > 1) {
       val index = registries.indexOf(issue.registry)
       if (index > 0) {
-        return "${issue.id}-${index+1}${format.extension}"
+        return "${issue.id}-${index + 1}${format.extension}"
       }
     }
 
