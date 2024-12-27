@@ -744,13 +744,16 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void codeTransparency(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCodeTransparency,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void countrySet(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet,kotlin.Unit> action);
     method public void density(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDensity,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void deviceGroup(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceGroup,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
     method public com.android.build.api.dsl.BundleAbi getAbi();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleAiModelVersion getAiModelVersion();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCodeTransparency getCodeTransparency();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCountrySet getCountrySet();
     method public com.android.build.api.dsl.BundleDensity getDensity();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceTier getDeviceTier();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceGroup getDeviceGroup();
+    method @org.gradle.api.Incubating public org.gradle.api.file.RegularFileProperty getDeviceTargetingConfig();
+    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceTier getDeviceTier();
     method @org.gradle.api.Incubating public org.gradle.api.file.DirectoryProperty getIntegrityConfigDir();
     method public com.android.build.api.dsl.BundleLanguage getLanguage();
     method public com.android.build.api.dsl.BundleStoreArchive getStoreArchive();
@@ -763,7 +766,9 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCodeTransparency codeTransparency;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCountrySet countrySet;
     property public abstract com.android.build.api.dsl.BundleDensity density;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceTier deviceTier;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceGroup deviceGroup;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.file.RegularFileProperty deviceTargetingConfig;
+    property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceTier deviceTier;
     property @org.gradle.api.Incubating public abstract org.gradle.api.file.DirectoryProperty integrityConfigDir;
     property public abstract com.android.build.api.dsl.BundleLanguage language;
     property public abstract com.android.build.api.dsl.BundleStoreArchive storeArchive;
@@ -803,6 +808,15 @@ package com.android.build.api.dsl {
   public interface BundleDensity {
     method @org.gradle.api.Incubating public Boolean? getEnableSplit();
     method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
+  }
+
+  @org.gradle.api.Incubating public interface BundleDeviceGroup {
+    method @org.gradle.api.Incubating public String? getDefaultGroup();
+    method @org.gradle.api.Incubating public Boolean? getEnableSplit();
+    method @org.gradle.api.Incubating public void setDefaultGroup(String?);
+    method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract String? defaultGroup;
     property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
   }
 

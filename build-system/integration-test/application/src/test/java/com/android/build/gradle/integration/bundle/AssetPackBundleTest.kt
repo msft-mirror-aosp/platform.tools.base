@@ -69,8 +69,6 @@ class AssetPackBundleTest {
                     enableSplit = true
                 }
             }
-            files.add("src/main/device_group_config.json", deviceGroupConfig)
-            pluginCallbacks += MyCallback::class.java
         }
         assetPack(":assetPackOne") {
             assetPack {
@@ -102,16 +100,6 @@ class AssetPackBundleTest {
         }
     }
 
-    class MyCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.extensions.getByType(ExtraPropertiesExtension::class.java).apply {
-                set("android_experimental_bundle_deviceGroup_enableSplit", true)
-                set("android_experimental_bundle_deviceGroup_defaultGroup", "highRam")
-                set("android_experimental_bundle_deviceGroupConfig", project.file("src/main/device_group_config.json"))
-            }
-        }
-    }
-
     @get:Rule
     val tmpFile = TemporaryFolder()
 
@@ -126,10 +114,6 @@ class AssetPackBundleTest {
             containsFileWithContent(
                 "onDemandAiPack/assets/customModel.tflite",
                 onDemandAiPackContent
-            )
-            containsFileWithContent(
-                "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.json",
-                deviceGroupConfig
             )
             contains("assetPackOne/manifest/AndroidManifest.xml")
             contains("assetPackTwo/manifest/AndroidManifest.xml")
@@ -151,12 +135,6 @@ class AssetPackBundleTest {
                 .suffixStrippingBuilder
                 .setEnabled(true)
                 .setDefaultSuffix("medium")
-            splitsConfigBuilder
-                .addSplitDimensionBuilder()
-                .setValue(Config.SplitDimension.Value.DEVICE_GROUP)
-                .suffixStrippingBuilder
-                .setEnabled(true)
-                .setDefaultSuffix("highRam")
             splitsConfigBuilder
                 .addSplitDimensionBuilder()
                 .setValue(Config.SplitDimension.Value.COUNTRY_SET)

@@ -19,18 +19,20 @@ package com.android.build.gradle.integration.bundle
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.options.BooleanOption
 import com.android.bundle.Config
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.tools.build.bundletool.model.AppBundle
+import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
 import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
 
-class DeviceGroupConfigPackageBundleTaskTest {
+class DeviceTargetingConfigPackageBundleTaskTest {
 
-  private val deviceGroupConfig =
+  private val config =
     """
     {
       "device_groups": [
@@ -51,7 +53,7 @@ class DeviceGroupConfigPackageBundleTaskTest {
 
   private val app =
     MinimalSubProject.app("com.example.test")
-      .withFile("src/main/config.json", deviceGroupConfig)
+      .withFile("src/main/config.json", config)
 
   @get:Rule
   val project =
@@ -60,19 +62,25 @@ class DeviceGroupConfigPackageBundleTaskTest {
       .create()
 
   @Test
-  fun testDeviceGroupConfig() {
+  fun testDeviceTargetingConfig_enabled() {
     project
       .getSubproject(":app")
       .buildFile
       .appendText(
           """
-          project.ext {
-            android_experimental_bundle_deviceGroup_enableSplit = true
-            android_experimental_bundle_deviceGroup_defaultGroup = "test_group"
-            android_experimental_bundle_deviceGroupConfig = file('src/main/config.json')
+          android {
+            bundle {
+              deviceGroup {
+                enableSplit = true
+                defaultGroup = 'test_group'
+              }
+              deviceTargetingConfig = file('src/main/config.json')
+            }
           }
           """.trimIndent())
-    project.executor().run(":app:bundleDebug")
+    project.executor()
+            .with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true)
+            .run(":app:bundleDebug")
 
     val bundleFile = project.locateBundleFileViaModel("debug", ":app")
 
@@ -81,7 +89,7 @@ class DeviceGroupConfigPackageBundleTaskTest {
     assertThat(bundleFile) {
       it.containsFileWithContent(
         "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.json",
-        deviceGroupConfig,
+        config,
       )
     }
 
@@ -101,7 +109,49 @@ class DeviceGroupConfigPackageBundleTaskTest {
   }
 
   @Test
-  fun testDeviceGroupConfig_notSpecified() {
+  fun testDeviceTargetingConfig_notEnabled() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+          """
+          android {
+            bundle {
+              deviceTargetingConfig = file('src/main/config.json')
+            }
+          }
+          """.trimIndent())
+    val failure = project.executor().expectFailure().run(":app:bundleDebug")
+
+    val exception = Throwables.getRootCause(failure.exception!!)
+    assertThat(exception).hasMessageThat()
+        .contains("deviceTargetingConfig is not enabled")
+  }
+
+  @Test
+  fun testDeviceGroup_notEnabled() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+          """
+          android {
+            bundle {
+              deviceGroup {
+                enableSplit = true
+              }
+            }
+          }
+          """.trimIndent())
+    val failure = project.executor().expectFailure().run(":app:bundleDebug")
+
+    val exception = Throwables.getRootCause(failure.exception!!)
+    assertThat(exception).hasMessageThat()
+        .contains("deviceGroup splits is not enabled")
+  }
+
+  @Test
+  fun testDeviceTargetingConfig_notSpecified() {
     project.executor().run(":app:bundleDebug")
 
     val bundleFile = project.locateBundleFileViaModel("debug", ":app")

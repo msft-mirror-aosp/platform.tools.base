@@ -18,6 +18,8 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+
 
 /**
  * DSL object for configuring the Android Application Bundle
@@ -35,7 +37,11 @@ interface Bundle {
     val texture: BundleTexture
 
     @get:Incubating
+    @Deprecated("Use deviceGroup instead")
     val deviceTier: BundleDeviceTier
+
+    @get:Incubating
+    val deviceGroup: BundleDeviceGroup
 
     @get:Incubating
     val codeTransparency: BundleCodeTransparency
@@ -51,6 +57,9 @@ interface Bundle {
     @get:Incubating
     val aiModelVersion: BundleAiModelVersion
 
+    @get:Incubating
+    val deviceTargetingConfig: RegularFileProperty
+
     fun abi(action: BundleAbi.() -> Unit)
 
     fun density(action: BundleDensity.() -> Unit)
@@ -60,7 +69,11 @@ interface Bundle {
     fun texture(action: BundleTexture.() -> Unit)
 
     @Incubating
+    @Deprecated("Use deviceGroup instead")
     fun deviceTier(action: BundleDeviceTier.() -> Unit)
+
+    @Incubating
+    fun deviceGroup(action: BundleDeviceGroup.() -> Unit)
 
     @Incubating
     fun codeTransparency(action: BundleCodeTransparency.() -> Unit)

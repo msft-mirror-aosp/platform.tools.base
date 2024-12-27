@@ -727,6 +727,15 @@ https://issuetracker.google.com/368059518
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)
 https://issuetracker.google.com/369698074
   * com.android.build.api.variant.DeviceTest.getBuildConfigFields: org.gradle.api.provider.MapProperty<java.lang.String, com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> ()
+https://issuetracker.google.com/373816438
+  * com.android.build.api.dsl.Bundle.deviceGroup: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceGroup, kotlin.Unit>)
+  * com.android.build.api.dsl.Bundle.getDeviceGroup: com.android.build.api.dsl.BundleDeviceGroup ()
+  * com.android.build.api.dsl.Bundle.getDeviceTargetingConfig: org.gradle.api.file.RegularFileProperty ()
+  * com.android.build.api.dsl.BundleDeviceGroup
+  * com.android.build.api.dsl.BundleDeviceGroup.getDefaultGroup: java.lang.String ()
+  * com.android.build.api.dsl.BundleDeviceGroup.getEnableSplit: java.lang.Boolean ()
+  * com.android.build.api.dsl.BundleDeviceGroup.setDefaultGroup: void (java.lang.String)
+  * com.android.build.api.dsl.BundleDeviceGroup.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/380074867

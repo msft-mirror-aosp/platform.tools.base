@@ -363,6 +363,15 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * Whether to enable the deviceTargetingConfig option in app bundles.
+     */
+    ENABLE_DEVICE_TARGETING_CONFIG_API(
+        "android.experimental.enableDeviceTargetingConfigApi",
+        false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

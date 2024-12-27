@@ -5,6 +5,8 @@ are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 8.8.0
   * com.android.build.api.dsl.BaseFlavor.getResourceConfigurations: java.util.Set<java.lang.String> ()
+  * com.android.build.api.dsl.Bundle.deviceTier: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier, kotlin.Unit>)
+  * com.android.build.api.dsl.Bundle.getDeviceTier: com.android.build.api.dsl.BundleDeviceTier ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getCompilationName: java.lang.String ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getDefaultSourceSetName: java.lang.String ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setCompilationName: void (java.lang.String)
