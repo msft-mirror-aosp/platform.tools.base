@@ -109,9 +109,9 @@ internal class GradleRuleImpl internal constructor(
         // always create the maven repo as new items can be added during reconfiguration
         val repoPath = computeMavenRepoLocation()
 
-        val localRepositories = mutableListOf<Path>().also {
-            it += BuildSystem.get().localRepositories
-            it.add(repoPath)
+        val localRepositories = buildList {
+            addAll(BuildSystem.get().localRepositories)
+            add(repoPath)
         }
 
         // Libraries can also be added inline during dependencies. We need to go through all
@@ -124,10 +124,11 @@ internal class GradleRuleImpl internal constructor(
 
         val globalState = GlobalDefinitionStateImpl(
             getDefaultProperties(),
+            localRepositories,
             buildDefinition.handleCustomBuildLogic(rootBuildPath)
         )
 
-        buildDefinition.write(rootBuildPath, localRepositories, globalState)
+        buildDefinition.write(rootBuildPath, globalState)
 
         createAncillaryBuildFiles()
     }
@@ -402,7 +403,6 @@ internal class GradleRuleImpl internal constructor(
     private fun checkConfigurationCache() {
         val checker = ConfigurationCacheReportChecker()
         (build as GradleBuildImpl).subProject(":")
-            .location
             .resolve("build/reports")
             .toFile()
             .walk()

@@ -134,6 +134,7 @@ internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), Gra
     internal fun write(
         name: String,
         location: Path,
+        useOldPluginStyle: Boolean,
         repositories: Collection<Path>?,
         includedBuildNames: Collection<String>,
         subProjectPaths: Collection<String>,
@@ -150,10 +151,12 @@ internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), Gra
         } + extraRepositories.map { location.resolve(it) }
 
         buildWriter.apply {
-            block("pluginManagement") {
-                block("repositories") {
-                    for (repository in finalRepositoryList) {
-                        mavenSnippet(repository)
+            if (!useOldPluginStyle) {
+                block("pluginManagement") {
+                    block("repositories") {
+                        for (repository in finalRepositoryList) {
+                            mavenSnippet(repository)
+                        }
                     }
                 }
             }
@@ -226,7 +229,7 @@ internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), Gra
     private fun hasAndroid(): Boolean = plugins.map { it.plugin }.contains(PluginType.ANDROID_SETTINGS)
 }
 
-private fun BuildWriter.mavenSnippet(repo: Path) {
+internal fun BuildWriter.mavenSnippet(repo: Path) {
     block("maven") {
         set("url", rawMethod("uri", repo.toUri().toString()))
         block("metadataSources") {

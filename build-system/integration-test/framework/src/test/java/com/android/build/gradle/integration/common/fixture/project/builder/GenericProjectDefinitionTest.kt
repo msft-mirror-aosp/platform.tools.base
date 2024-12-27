@@ -45,8 +45,10 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
+            useOldPluginStyle = false,
+            projectRepositories = listOf(),
+            buildWriter = GroovyBuildWriter(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -68,8 +70,10 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
+            useOldPluginStyle = false,
+            projectRepositories = listOf(),
+            buildWriter = GroovyBuildWriter(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -90,8 +94,10 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
+            useOldPluginStyle = false,
+            projectRepositories = listOf(),
+            buildWriter = GroovyBuildWriter(),
         )
 
         val fooFile = location.resolve("foo.txt")
@@ -128,8 +134,10 @@ class GenericProjectDefinitionTest {
             location = location,
             buildFileOnly = false,
             allPlugins = mapOf(),
-            buildWriter = GroovyBuildWriter(),
             customPluginMap = mapOf(),
+            useOldPluginStyle = false,
+            projectRepositories = listOf(),
+            buildWriter = GroovyBuildWriter(),
         )
 
         val fooFile = location.resolve("foo.txt")

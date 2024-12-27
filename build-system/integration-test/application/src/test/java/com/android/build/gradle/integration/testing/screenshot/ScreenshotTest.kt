@@ -43,7 +43,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,12 +57,6 @@ class ScreenshotTest {
     val rule = GradleRule.configure()
         .withProfileOutput()
         .from {
-            rootProject {
-                buildscript {
-                    classpath("com.android.compose.screenshot:screenshot-test-gradle-plugin:+")
-                }
-            }
-
             androidApplication {
                 setupProject()
             }
@@ -89,7 +82,14 @@ class ScreenshotTest {
 
     private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProject(addEmptyJarToClassPath: Boolean = true) {
         applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-        applyPlugin(PluginType.Custom("com.android.compose.screenshot"))
+        applyPlugin(
+            PluginType.Custom(
+                id = "com.android.compose.screenshot",
+                version = "+",
+                artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
+                hasMarker = false,
+            )
+        )
 
         if (addEmptyJarToClassPath) {
             val customJarName = UUID.randomUUID().toString() + ".jar"
@@ -123,7 +123,7 @@ class ScreenshotTest {
         kotlin {
             jvmToolchain(17)
         }
-        pluginCallback = ScreenshotCall::class.java
+        pluginCallback = ScreenshotCallback::class.java
 
         files {
             add(
@@ -237,7 +237,7 @@ class ScreenshotTest {
         }
     }
 
-    class ScreenshotCall: GenericCallback {
+    class ScreenshotCallback: GenericCallback {
         override fun handleProject(project: Project) {
             println("Class loader for AGP API = " + com.android.build.api.variant.AndroidComponentsExtension::class.java.getClassLoader().hashCode())
 
@@ -517,9 +517,10 @@ class ScreenshotTest {
     }
 
     @Test
-    @Ignore("b/386402741")
     fun runPreviewScreenshotTestWithMultiModuleProject() {
-        val build = rule.build
+        val build = rule.build {
+            useOldPluginStyleForSeparateClassloaders = true
+        }
         // Generate screenshots to be tested against
         verifyClassLoaderSetup(build.sstExecutor().run("updateDebugScreenshotTest"))
 

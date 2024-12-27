@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -106,11 +105,21 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         // we need to query the other projects for their plugins
         val allPlugins = build.computeAllPluginMap()
 
-        // the custom plugin map is pre-recorded and available from the build (Definition)
-        val customPluginMap = build.getCustomPluginMap()
+        val useOldPluginStyle = build.useOldPluginStyle
+        val globalState = build.getGlobalDefinitionState()
 
-        (projectDefinition as GradleProjectDefinitionImpl)
-            .writeSubProject(location, buildFileOnly, allPlugins, customPluginMap, build.getNewWriter())
+        // the custom plugin map is pre-recorded and available from the build (Definition)
+        val customPluginMap = globalState.customPluginMap
+        val repositories = if (useOldPluginStyle) globalState.repositories else listOf()
+
+        (projectDefinition as GradleProjectDefinitionImpl).writeSubProject(
+            location,
+            buildFileOnly,
+            allPlugins,
+            customPluginMap,
+            useOldPluginStyle,
+            repositories,
+            build.getNewWriter())
 
         // we also need to write new inline dependencies
         val newDependencies = projectDefinition.dependencies

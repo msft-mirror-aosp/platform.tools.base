@@ -42,7 +42,6 @@ import com.android.build.gradle.integration.common.fixture.project.prebuilts.Hel
 import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.testutils.MavenRepoGenerator
-import com.android.testutils.TestUtils
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -61,6 +60,7 @@ internal class GradleBuildDefinitionImpl(
     internal val propertiesDelegate = GradlePropertiesDelegate()
 
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
+    override var useOldPluginStyleForSeparateClassloaders: Boolean = false
 
     internal lateinit var globalDefinitionState: GlobalDefinitionState
 
@@ -334,7 +334,6 @@ internal class GradleBuildDefinitionImpl(
 
     internal fun write(
         location: Path,
-        repositories: Collection<Path>?,
         globalDefinitionState: GlobalDefinitionState,
     ) {
         location.createDirectories()
@@ -345,18 +344,31 @@ internal class GradleBuildDefinitionImpl(
         val customPluginMap = handleCustomBuildLogic(location)
 
         // gather all the plugins and all their versions so that the settings file can declare them as needed.
-        val allPlugins = computeAllPluginMap()
+        // this is not needed if we use the old plugin style
+        val allPlugins = if (useOldPluginStyleForSeparateClassloaders) mapOf() else computeAllPluginMap()
 
-        writeSetting(location, repositories, buildFileType.getNewWriter())
+        // only give the repositories to the project if they need it.
+        val repoForProjects = if (useOldPluginStyleForSeparateClassloaders) globalDefinitionState.repositories else listOf()
+
+        writeSetting(location)
 
         // write all the projects
-        rootProject.writeRoot(location, allPlugins, customPluginMap, buildFileType.getNewWriter())
+        rootProject.writeRoot(
+            location,
+            allPlugins,
+            customPluginMap,
+            useOldPluginStyleForSeparateClassloaders,
+            repoForProjects,
+            buildFileType.getNewWriter())
+
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
                 buildFileOnly = false,
                 allPlugins,
                 customPluginMap,
+                useOldPluginStyleForSeparateClassloaders,
+                repoForProjects,
                 buildFileType.getNewWriter()
             )
         }
@@ -369,25 +381,23 @@ internal class GradleBuildDefinitionImpl(
             // computes a new GlobalDefinitionState for this build
             val globalState = GlobalDefinitionStateImpl(
                 globalDefinitionState.additionalProperties,
+                globalDefinitionState.repositories,
                 it.handleCustomBuildLogic(newLocation)
             )
 
-            it.write(newLocation, repositories, globalState)
+            it.write(newLocation,  globalState)
         }
     }
 
-    internal fun writeSetting(
-        location: Path,
-        repositories: Collection<Path>?,
-        buildWriter: BuildWriter
-    ) {
+    internal fun writeSetting(location: Path) {
         settings.write(
             name = name,
             location = location,
-            repositories = repositories,
+            useOldPluginStyle = useOldPluginStyleForSeparateClassloaders,
+            repositories = globalDefinitionState.repositories,
             includedBuildNames = includedBuilds.values.map { it.name},
             subProjectPaths = subProjects.values.map { it.path },
-            buildWriter = buildWriter,
+            buildWriter = buildFileType.getNewWriter(),
         )
     }
 

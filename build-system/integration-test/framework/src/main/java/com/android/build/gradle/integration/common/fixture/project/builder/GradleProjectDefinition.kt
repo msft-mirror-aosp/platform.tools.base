@@ -186,6 +186,8 @@ internal abstract class GradleProjectDefinitionImpl(
         buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
+        useOldPluginStyle: Boolean,
+        projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -193,7 +195,9 @@ internal abstract class GradleProjectDefinitionImpl(
             allPlugins,
             customPluginMap,
             isRoot = false,
-            buildFileOnly = buildFileOnly,
+            buildFileOnly,
+            useOldPluginStyle,
+            projectRepositories,
             buildWriter
         )
     }
@@ -202,6 +206,8 @@ internal abstract class GradleProjectDefinitionImpl(
         location: Path,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
+        useOldPluginStyle: Boolean,
+        projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
     ) {
         write(
@@ -210,6 +216,8 @@ internal abstract class GradleProjectDefinitionImpl(
             customPluginMap,
             isRoot = true,
             buildFileOnly = false,
+            useOldPluginStyle,
+            projectRepositories,
             buildWriter
         )
     }
@@ -224,61 +232,113 @@ internal abstract class GradleProjectDefinitionImpl(
         customPluginMap: Map<String, Set<String>>,
         isRoot: Boolean,
         buildFileOnly: Boolean,
+        useOldPluginStyle: Boolean,
+        projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
     ) {
         location.createDirectories()
 
         buildWriter.apply {
-            val isRootWithCustomPlugin = isRoot && customPluginMap.isNotEmpty()
-            if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin) {
-                block("buildscript") {
-                    block("dependencies") {
-                        buildscriptBuilder.dependencies.forEach { dependency ->
-                            when (dependency) {
-                                is String -> dependency("classpath", dependency)
-                                is LocalJarDependency -> {
-                                    val path = createLocalJar(dependency, location)
-                                    dependency("classpath", rawMethod("files", path))
-                                }
-                                else -> throw RuntimeException("Unsupported dependency type: ${dependency.javaClass}")
+            if (useOldPluginStyle) {
+                // in the old plugin style, we will write a buildscript in every project, with
+                // all the repositories and all the artifacts containing in the plugins.
+                // This should only be used to recreate cases where different projects use different
+                // classloaders
+                if (plugins.isNotEmpty()) {
+                    block("buildscript") {
+                        block("repositories") {
+                            for (repo in projectRepositories) {
+                                mavenSnippet(repo)
                             }
                         }
-                        if (isRootWithCustomPlugin) {
-                            dependency("classpath", rawMethod("files", "build-logic.jar"))
+                        block("dependencies") {
+                            // write the plugins dependencies
+                            for (plugin in plugins) {
+                                plugin.plugin.artifact?.let {
+                                    if (plugin.version != INTERNAL_PLUGIN_VERSION) {
+                                        dependency("classpath", "$it:${plugin.version}")
+                                    }
+                                }
+                            }
+                            writeDependencyBuilderContent(location)
+
+                            if (customPluginMap.isNotEmpty()) {
+                                // we need to make a path relative to where the build logic jar will
+                                // be. We can compute that based on the number segments in the gradle
+                                // path.
+                                val count = path.split(":").size
+
+                                val buildLogicPath = buildString {
+                                    for (i in 1..<count) {
+                                        append("../")
+                                    }
+                                    append("build-logic.jar")
+                                }
+                                dependency("classpath", rawMethod("files", buildLogicPath))
+                            }
+                        }
+                    }
+
+                    emptyLine()
+
+                    // write the plugins
+                    for (plugin in plugins) {
+                        applyPluginByName(plugin.plugin.id)
+                    }
+                }
+            } else {
+
+                val isRootWithCustomPlugin = isRoot && customPluginMap.isNotEmpty()
+
+                val pluginsWithNoMarkers = allPlugins.keys.filter { !it.hasMarker && it.artifact != null }
+                val isRootWithNonMarkerPlugin = isRoot && pluginsWithNoMarkers.isNotEmpty()
+
+                if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin) {
+                    block("buildscript") {
+                        block("dependencies") {
+                            writeDependencyBuilderContent(location)
+                            if (isRootWithCustomPlugin) {
+                                dependency("classpath", rawMethod("files", "build-logic.jar"))
+                            }
+                            if (isRootWithNonMarkerPlugin) {
+                                for (plugin in pluginsWithNoMarkers) {
+                                    dependency("classpath", "${plugin.artifact}:${plugin.version}")
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            block("plugins") {
-                // write the plugins used by this project
-                for ((plugin, version) in plugins) {
-                    // we display the version if:
-                    // - this is the root project
-                    // - this is not the root project, but there are 2+ versions used in the build
-                    // If the version is INTERNAL_PLUGIN_VERSION then we also skip it
-                    val versionToWrite =
-                        if ((isRoot || allPlugins[plugin]!!.size > 2) && version != INTERNAL_PLUGIN_VERSION)
-                            version
-                        else null
-                    pluginId(plugin.id, versionToWrite)
-                }
+                block("plugins") {
+                    // write the plugins used by this project
+                    for ((plugin, version) in plugins) {
+                        // we display the version if:
+                        // - this is the root project
+                        // - this is not the root project, but there are 2+ versions used in the build
+                        // If the version is INTERNAL_PLUGIN_VERSION then we also skip it
+                        val versionToWrite =
+                            if ((isRoot || allPlugins[plugin]!!.size > 2) && version != INTERNAL_PLUGIN_VERSION)
+                                version
+                            else null
+                        pluginId(plugin.id, versionToWrite)
+                    }
 
-                // write the plugins used by the other projects (only for root project)
-                if (isRoot) {
-                    val remainingPlugins = allPlugins - plugins.map { it.plugin }.toSet()
+                    // write the plugins used by the other projects (only for root project)
+                    if (isRoot) {
+                        val remainingPlugins = allPlugins - plugins.map { it.plugin }.toSet()
 
-                    // we can exclude plugin with no versions
-                    for ((plugin, versions) in remainingPlugins) {
-                        // if there are 2+ versions we don't write it there.
-                        if (versions.size > 1) continue
+                        // we can exclude plugin with no versions
+                        for ((plugin, versions) in remainingPlugins) {
+                            // if there are 2+ versions we don't write it there.
+                            if (versions.size > 1) continue
 
-                        val version = versions.first()
-                        // no need to write core plugins since there's no version to define
-                        // (if it's used by this project, it's written above)
-                        if (version == INTERNAL_PLUGIN_VERSION) continue
+                            val version = versions.first()
+                            // no need to write core plugins since there's no version to define
+                            // (if it's used by this project, it's written above)
+                            if (version == INTERNAL_PLUGIN_VERSION) continue
 
-                        pluginId(plugin.id, version, apply = false)
+                            pluginId(plugin.id, version, apply = false)
+                        }
                     }
                 }
             }
@@ -319,6 +379,20 @@ internal abstract class GradleProjectDefinitionImpl(
             (files as DelayedGradleProjectFiles).write(location)
         }
     }
+
+    private fun BuildWriter.writeDependencyBuilderContent(location: Path) {
+        buildscriptBuilder.dependencies.forEach { dependency ->
+            when (dependency) {
+                is String -> dependency("classpath", dependency)
+                is LocalJarDependency -> {
+                    val path = createLocalJar(dependency, location)
+                    dependency("classpath", rawMethod("files", path))
+                }
+
+                else -> throw RuntimeException("Unsupported dependency type: ${dependency.javaClass}")
+            }
+        }
+    }
 }
 
 private class BuildscriptBuilderImpl: BuildscriptBuilder {
@@ -340,4 +414,10 @@ private class BuildscriptBuilderImpl: BuildscriptBuilder {
     }
 }
 
+/**
+ * Internal version. This is used so that plugins always have a version
+ * even if it's the same as Gradle.
+ * As we pass plugins and their versions in various maps, this is easier to handle
+ * than a null value.
+ */
 internal const val INTERNAL_PLUGIN_VERSION: String = "__internal_version__"

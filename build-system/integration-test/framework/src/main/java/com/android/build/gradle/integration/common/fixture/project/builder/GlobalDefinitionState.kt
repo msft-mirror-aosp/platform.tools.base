@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import java.nio.file.Path
 
 /**
  * This class contains global state information required to write build files on disk.
@@ -35,6 +35,11 @@ interface GlobalDefinitionState {
     val additionalProperties: List<String>
 
     /**
+     * The repositories needed to run the build
+     */
+    val repositories: Collection<Path>
+
+    /**
      * Map of custom plugins.
      * the map is from the subproject path to the set of custom plugin class name that need to be
      * applied.
@@ -47,5 +52,6 @@ interface GlobalDefinitionState {
 
 class GlobalDefinitionStateImpl(
     override val additionalProperties: List<String>,
+    override val repositories: Collection<Path>,
     override val customPluginMap: Map<String, Set<String>>
 ): GlobalDefinitionState
