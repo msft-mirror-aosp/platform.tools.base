@@ -692,7 +692,7 @@ class LintFixVerifierDetector : Detector(), Detector.UastScanner {
       val newBinaryFix =
         fix()
           .name("Create blob")
-          .newFile(File(range.file.parentFile, "data.bin"), ByteArray(150) { 0 })
+          .newFile(File(range.file.parentFile, "data.bin"), ByteArray(150))
           .build()
 
       // And delete a file

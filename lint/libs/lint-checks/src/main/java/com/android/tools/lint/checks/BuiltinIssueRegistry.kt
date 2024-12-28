@@ -91,6 +91,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           AppLinksValidDetector.TEST_URL,
           AppLinksValidDetector.URI_RELATIVE_FILTER_GROUP,
           AppLinksValidDetector.VALIDATION,
+          ArrayInitDetector.ISSUE,
           ArraySizeDetector.INCONSISTENT,
           AssertDetector.EXPENSIVE,
           AssertDetector.SIDE_EFFECT,
