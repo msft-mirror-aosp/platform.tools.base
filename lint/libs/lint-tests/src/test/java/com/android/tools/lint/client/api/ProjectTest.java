@@ -88,7 +88,7 @@ public class ProjectTest extends AbstractCheckTest {
         assertEquals(
                 ""
                         + "MainProject/project.properties: Error: Circular library dependencies; check your project.properties files carefully [LintError]\n"
-                        + "1 errors, 0 warnings\n",
+                        + "1 error\n",
                 checkLint(Arrays.asList(main, library)));
     }
 

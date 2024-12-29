@@ -98,7 +98,6 @@ import java.net.URL
 import java.net.URLConnection
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.math.max
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys.PERF_MANAGER
 import org.jetbrains.kotlin.cli.common.CommonCompilerPerformanceManager
@@ -158,8 +157,6 @@ open class LintCliClient : LintClient {
     get() = uastEnvironment?.ideaProject
 
   private var hasErrors = false
-  protected var errorCount = 0
-  protected var warningCount = 0
 
   /** Definite incidents; these should be unconditionally reported. */
   val definiteIncidents: MutableList<Incident> = ArrayList()
@@ -411,7 +408,13 @@ open class LintCliClient : LintClient {
     if (hasErrors && !reportingToConsole() && flags.isSetExitCode && !flags.isQuiet) {
       val writer = System.out.printWriter()
       val count =
-        describeCounts(stats.errorCount, stats.warningCount, comma = false, capitalize = false)
+        describeCounts(
+          stats.errorCount,
+          stats.warningCount,
+          stats.hintCount,
+          comma = false,
+          capitalize = false,
+        )
       println("Lint found $count. First failure:")
       val reporter = Reporter.createTextReporter(this, LintCliFlags(), null, writer, false)
       reporter.setWriteStats(false)
@@ -769,22 +772,19 @@ open class LintCliClient : LintClient {
     baselineFile: File,
     stats: LintStats,
   ) {
-    var hasConsoleOutput = false
-    for (reporter in flags.reporters) {
-      if (reporter is TextReporter && reporter.isWriteToConsole) {
-        hasConsoleOutput = true
-        break
-      }
-    }
-    if (!flags.isQuiet && !hasConsoleOutput) {
+    if (!flags.isQuiet && !reportingToConsole()) {
       if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
-        if (errorCount == 0 && warningCount == 1) {
-          // the warning is the warning about baseline issues having been filtered
-          // out, don't list this as "1 warning"
+        if (stats.count() == 0) {
           print("Lint found no new issues")
         } else {
           val count =
-            describeCounts(errorCount, max(0, warningCount - 1), comma = true, capitalize = false)
+            describeCounts(
+              stats.errorCount,
+              stats.warningCount,
+              stats.hintCount,
+              comma = true,
+              capitalize = false,
+            )
           print("Lint found $count")
           if (stats.autoFixedCount > 0) {
             print(" (${stats.autoFixedCount} of these were automatically fixed)")
@@ -794,12 +794,20 @@ open class LintCliClient : LintClient {
           describeCounts(
             stats.baselineErrorCount,
             stats.baselineWarningCount,
+            stats.baselineHintCount,
             comma = false,
             capitalize = true,
           )
-        print(" ($count filtered by baseline ${baselineFile.name})")
+        print(" (and $count filtered by baseline ${baselineFile.name})")
       } else {
-        val count = describeCounts(errorCount, warningCount, comma = true, capitalize = false)
+        val count =
+          describeCounts(
+            stats.errorCount,
+            stats.warningCount,
+            stats.hintCount,
+            comma = true,
+            capitalize = false,
+          )
         print("Lint found $count")
       }
       println()
@@ -1038,9 +1046,6 @@ open class LintCliClient : LintClient {
   private fun countIncident(severity: Severity) {
     if (severity.isError) {
       hasErrors = true
-      errorCount++
-    } else if (severity === Severity.WARNING) { // Don't count informational as a warning
-      warningCount++
     }
   }
 
@@ -1555,10 +1560,6 @@ open class LintCliClient : LintClient {
     val plugin = Version.ANDROID_GRADLE_PLUGIN_VERSION
     val stamp = readStamp()?.let { " [$it] " } ?: ""
     return (plugin ?: "unknown") + stamp
-  }
-
-  fun haveErrors(): Boolean {
-    return errorCount > 0
   }
 
   @Suppress("DeprecatedCallableAddReplaceWith")

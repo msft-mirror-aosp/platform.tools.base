@@ -712,7 +712,7 @@ class LintResourceRepositoryTest {
             "The serialized content was:\n" +
             "mangled2\n" +
             "Stack: java.lang.StringIndexOutOfBoundsException: Index 8 out of bounds for length"
-        ) + ".*\\) \\[LintWarning]\n" + "0 errors, 1 warnings"
+        ) + ".*\\) \\[LintWarning]\n" + "0 errors, 1 warning"
       )
   }
 

@@ -87,7 +87,7 @@ public class LintLibraryModelTest {
                         + FileUtils.join("src", "main", "java", "com", "android", "test", "lint", "lintmodel", "mylibrary", "MyLibrary.java") + ":9: Warning: DateFormat character 'Y' in YYYY is the week-era-year; did you mean 'y'? [WeekBasedYear]\n"
                         + "         DateTimeFormatter.ofPattern(\"'profile-'YYYY-MM-dd-HH-mm-ss-SSS'.rawproto'\", Locale.US); // ERROR\n"
                         + "                                               ~~~~\n"
-                        + "0 errors, 1 warnings";
+                        + "0 errors, 1 warning";
         File file = new File(project.getSubproject("app").getProjectDir(), "lint-results.txt");
         assertThat(file).exists();
         assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);

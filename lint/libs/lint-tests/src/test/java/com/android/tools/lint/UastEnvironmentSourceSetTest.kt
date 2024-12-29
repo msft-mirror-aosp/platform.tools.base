@@ -107,7 +107,7 @@ class UastEnvironmentSourceSetTest {
       "src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]\n" +
         "    return foo(x);\n" +
         "           ~~~\n" +
-        "1 errors, 0 warnings",
+        "1 error",
       "",
 
       // Expected exit code

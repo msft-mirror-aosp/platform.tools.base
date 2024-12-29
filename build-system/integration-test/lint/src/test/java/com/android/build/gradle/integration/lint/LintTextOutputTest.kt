@@ -107,13 +107,14 @@ class LintTextOutputTest {
             "\n\nandroid.lintOptions.baseline file(\"lint-baseline.xml\")\n\n"
         )
         project.executor().expectFailure().run("lintDebug")
-        // Verify that the text report says "0 errors, 0 warnings" when written to a file
+        // Verify that the text report says "No errors or warnings" when written to a file
         project.executor().run("lintDebug")
-        PathSubject.assertThat(project.file("lint-results.txt")).contains("0 errors, 0 warnings")
-        // Verify that we don't see "0 errors, 0 warnings" if we print to stdout
+        PathSubject.assertThat(project.file("lint-results.txt")).contains("No errors or warnings")
+        // Verify that we don't see "No errors or warnings" if we print to stdout
         TestFileUtils.searchAndReplace(project.buildFile, "file(\"lint-results.txt\")", "'stdout'")
         project.executor().run("lintDebug")
-        ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("0 errors, 0 warnings")
-        ScannerSubject.assertThat(project.buildResult.stderr).doesNotContain("0 errors, 0 warnings")
+        ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("0 errors")
+        ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("No errors or warnings")
+        ScannerSubject.assertThat(project.buildResult.stderr).doesNotContain("No errors or warnings")
     }
 }

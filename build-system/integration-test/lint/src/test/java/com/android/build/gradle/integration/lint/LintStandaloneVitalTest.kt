@@ -54,7 +54,7 @@ class LintStandaloneVitalTest {
 
         result.stderr.use {
             assertThat(it).contains("MyClass.java:5: Error: Use Boolean.valueOf(true) instead")
-            assertThat(it).contains("1 errors, 0 warnings")
+            assertThat(it).contains("1 error")
         }
     }
 }

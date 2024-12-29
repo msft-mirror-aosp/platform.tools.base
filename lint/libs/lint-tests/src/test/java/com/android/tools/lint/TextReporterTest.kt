@@ -76,7 +76,7 @@ class TextReporterTest : AbstractCheckTest() {
             res/menu/menu.xml:11: Warning: Hardcoded string "My title 2", should use @string resource [HardcodedText]
                     android:title="My title 2">
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 errors, 2 warnings
+            1 error, 2 warnings
                 """,
         LintCliFlags().apply { isShowEverything = true },
       )
@@ -168,7 +168,7 @@ class TextReporterTest : AbstractCheckTest() {
                    Contact: lint@example.com
                    Feedback: https://example.com/lint/file-new-bug.html
 
-                1 errors, 2 warnings
+                1 error, 2 warnings
                 """,
           LintCliFlags().apply { isExplainIssues = true },
         )

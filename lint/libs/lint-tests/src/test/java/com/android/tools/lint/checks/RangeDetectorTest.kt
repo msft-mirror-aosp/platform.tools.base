@@ -1368,7 +1368,7 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
           "src/test/pkg/FloatRangeTest.java:8: Error: Value must be ≥ -90.0 (was -150.0) [Range]\n" +
           "        call(-150.0); // ERROR\n" +
           "             ~~~~~~\n" +
-          "1 errors, 0 warnings",
+          "1 error",
         "", // Expected exit code
         ERRNO_SUCCESS,
         arrayOf(

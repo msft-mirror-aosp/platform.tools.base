@@ -233,7 +233,7 @@ public class MainTest extends AbstractCheckTest {
                         + "res/layout/accessibility.xml:5: Error: Missing contentDescription attribute on image [ContentDescription]\n"
                         + "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
                         + "     ~~~~~~~~~~~\n"
-                        + "2 errors, 0 warnings\n",
+                        + "2 errors\n",
 
                 // Expected error
                 "",
@@ -456,7 +456,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/test/pkg/CipherTest1.java:11: Warning: Potentially insecure random numbers on Android 4.3 and older. Read https://android-developers.blogspot.com/2013/08/some-securerandom-thoughts.html for more info. [TrulyRandom]\n"
                         + "        cipher.init(Cipher.WRAP_MODE, key); // FLAG\n"
                         + "               ~~~~\n"
-                        + "0 errors, 1 warnings\n",
+                        + "0 errors, 1 warning\n",
                 "",
 
                 // Expected exit code
@@ -596,13 +596,13 @@ public class MainTest extends AbstractCheckTest {
         checkDriver(
                 // Expected output
                 ""
-                        + "res/layout/accessibility.xml:4: Information: Missing contentDescription attribute on image [ContentDescription]\n"
+                        + "res/layout/accessibility.xml:4: Hint: Missing contentDescription attribute on image [ContentDescription]\n"
                         + "    <ImageView android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
                         + "     ~~~~~~~~~\n"
-                        + "res/layout/accessibility.xml:5: Information: Missing contentDescription attribute on image [ContentDescription]\n"
+                        + "res/layout/accessibility.xml:5: Hint: Missing contentDescription attribute on image [ContentDescription]\n"
                         + "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n"
                         + "     ~~~~~~~~~~~\n"
-                        + "0 errors, 0 warnings\n",
+                        + "0 errors, 0 warnings, 2 hints",
 
                 // Expected error
                 "",
@@ -681,7 +681,7 @@ public class MainTest extends AbstractCheckTest {
                             + "src/test/pkg/CipherTest1.java:11: Warning: Potentially insecure random numbers on Android 4.3 and older. Read https://android-developers.blogspot.com/2013/08/some-securerandom-thoughts.html for more info. [TrulyRandom]\n"
                             + "        cipher.init(Cipher.WRAP_MODE, key); // FLAG\n"
                             + "               ~~~~\n"
-                            + "0 errors, 1 warnings\n",
+                            + "0 errors, 1 warning\n",
                     "",
 
                     // Expected exit code
@@ -720,7 +720,7 @@ public class MainTest extends AbstractCheckTest {
                 ""
                         + "\n"
                         + "build.gradle: Error: \"MainTest_testGradle\" is a Gradle project. To correctly analyze Gradle projects, you should run \"gradlew lint\" instead. [LintError]\n"
-                        + "1 errors, 0 warnings\n",
+                        + "1 error\n",
                 "",
 
                 // Expected exit code
@@ -742,7 +742,7 @@ public class MainTest extends AbstractCheckTest {
                 ""
                         + "\n"
                         + "build.gradle.kts: Error: \"MainTest_testGradleKts\" is a Gradle project. To correctly analyze Gradle projects, you should run \"gradlew lint\" instead. [LintError]\n"
-                        + "1 errors, 0 warnings\n",
+                        + "1 error\n",
                 "",
 
                 // Expected exit code
@@ -774,7 +774,7 @@ public class MainTest extends AbstractCheckTest {
                         + "res/font/font1.xml:4: Warning: A downloadable font cannot have a <font> sub tag [FontValidation]\n"
                         + "    <font\n"
                         + "     ~~~~\n"
-                        + "0 errors, 1 warnings";
+                        + "0 errors, 1 warning";
         checkDriver(
                 expected,
                 "",
@@ -814,7 +814,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/Test.java:2: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]\n"
                         + "    // STOPSHIP\n"
                         + "       ~~~~~~~~\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
 
                 // Expected exit code
@@ -832,7 +832,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/Test.java:2: Error: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
                         + "    String s = \"/sdcard/path\";\n"
                         + "               ~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
 
                 // Expected exit code
@@ -861,7 +861,7 @@ public class MainTest extends AbstractCheckTest {
                         + "    <Button android:id='@+id/duplicated'/>\n"
                         + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "    res/layout/test.xml:2: Duplicate id @+id/duplicated originally defined here\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
 
                 // Expected exit code
@@ -909,7 +909,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/Test.java:2: Error: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
                         + "    String s = \"/sdcard/path\";\n"
                         + "               ~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
 
                 // Expected exit code
@@ -937,7 +937,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/test/pkg/HelløWorld.java:3: Error: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
                         + "    String s = \"/sdcard/path\";\n"
                         + "               ~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
                 // Expected exit code
                 ERRNO_SUCCESS,
@@ -1026,7 +1026,7 @@ public class MainTest extends AbstractCheckTest {
                         + "lint.xml:4: Error: Unknown issue id \"SomeUnknownId\". Did you mean 'UnknownId' (Reference to an unknown id) ? [UnknownIssueId]\n"
                         + "    <issue id=\"SomeUnknownId\" severity=\"fatal\" />\n"
                         + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings",
+                        + "1 error",
                 "",
 
                 // Expected exit code
@@ -1132,7 +1132,7 @@ public class MainTest extends AbstractCheckTest {
                         + "src/test/pkg/Test2.java:3: Warning: This method should only be accessed from tests or within private scope [VisibleForTests]\n"
                         + "    public static void test1() { Test.hidden(); } // WARN 1\n"
                         + "                                      ~~~~~~\n"
-                        + "0 errors, 1 warnings",
+                        + "0 errors, 1 warning",
                 "",
 
                 // Expected exit code
@@ -1171,7 +1171,7 @@ public class MainTest extends AbstractCheckTest {
                             + "src/test/pkg/Test.java:4: Error: Call requires API level 24, or core library desugaring (current min is 1): java.lang.Byte#hashCode [NewApi]\n"
                             + "        return java.lang.Byte.hashCode(b);\n"
                             + "                              ~~~~~~~~\n"
-                            + "1 errors, 0 warnings",
+                            + "1 error",
                     "",
 
                     // Expected exit code
@@ -1284,7 +1284,7 @@ public class MainTest extends AbstractCheckTest {
                         + " API checks unavailable. [NewApi]\n"
                         + "package test.pkg\n"
                         + "~~~~~~~~~~~~~~~~\n"
-                        + "2 errors, 0 warnings",
+                        + "2 errors",
                     "",
 
                     // Expected exit code
@@ -1383,7 +1383,7 @@ public class MainTest extends AbstractCheckTest {
                         + "    <item type=\"id\" name=\"name\" />\n"
                         + "                    ~~~~~~~~~~~\n"
                         + "    res/values/duplicates.xml:2: Previously defined here\n"
-                        + "2 errors, 0 warnings",
+                        + "2 errors",
                 "",
                 ERRNO_ERRORS,
 
@@ -1474,7 +1474,7 @@ public class MainTest extends AbstractCheckTest {
         }
 
         checkDriver(
-                "",
+                "Wrote text report to /TESTROOT/build/foo2.text",
                 "",
 
                 // Expected exit code

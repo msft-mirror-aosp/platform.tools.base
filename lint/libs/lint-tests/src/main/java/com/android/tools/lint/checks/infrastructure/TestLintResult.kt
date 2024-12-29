@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.TextFormat
+import com.android.tools.lint.detector.api.describeCounts
 import com.android.utils.PositionXmlParser
 import com.google.common.base.Joiner
 import com.google.common.base.Splitter
@@ -104,7 +105,7 @@ internal constructor(
     }
 
     val actual = transformer.transform(describeOutput(expectedException, testMode))
-    val expected = normalizeOutput(expectedText)
+    val expected = normalizeOutput(normalizeExpectedOutput(expectedText))
 
     if (actual.trim() != expected.trimIndent().trim()) {
       // See if it's a Windows path issue
@@ -146,7 +147,7 @@ internal constructor(
   ): TestLintResult {
     checkPendingErrors()
     val actual = transformer.transform(describeOutput(null, testMode))
-    val expected = normalizeOutput(expectedText)
+    val expected = normalizeOutput(normalizeExpectedOutput(expectedText))
 
     val expectedWithoutIndent = expected.trimIndent()
     val unixPath = expectedWithoutIndent.replace(File.separatorChar, '/')
@@ -230,6 +231,33 @@ internal constructor(
     } else {
       normalizeOutput(output)
     }
+  }
+
+  private fun normalizeExpectedOutput(output: String): String {
+    // Switch error count over to new format ("1 errors" -> "1 error", etc)
+    var output = output.trimIndent().trimEnd()
+    if (output.isEmpty()) {
+      return output
+    }
+    val lastLineBegin = output.lastIndexOf('\n') + 1
+    if (lastLineBegin < output.length && !output[lastLineBegin].isDigit()) {
+      return output
+    }
+    val matchResult = OLD_ERROR_COUNT_PATTERN.matchAt(output, lastLineBegin)
+    if (matchResult != null) {
+      val replacement =
+        describeCounts(
+          matchResult.groupValues[1].toInt(),
+          matchResult.groupValues[2].toInt(),
+          0,
+          true,
+          false,
+          true,
+        )
+      output = output.substring(0, lastLineBegin) + replacement
+    }
+
+    return output
   }
 
   private fun normalizeOutput(output: String): String {
@@ -954,6 +982,8 @@ internal constructor(
   companion object {
     private const val TRUNCATION_MARKER = "\u2026"
     val comparator: Comparator<Incident> = Comparator { o1, o2 -> o2.startOffset - o1.startOffset }
+
+    private val OLD_ERROR_COUNT_PATTERN = Regex("(\\d+) errors, (\\d+) warnings\\s*$")
 
     // TestLintClient used to have a typo (it would emit the message
     // "<No location-specific message", without the closing >.)

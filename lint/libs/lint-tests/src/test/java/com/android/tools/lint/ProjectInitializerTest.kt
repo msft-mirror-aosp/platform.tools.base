@@ -359,23 +359,23 @@ class ProjectInitializerTest {
 
     MainTest.checkDriver(
       """
-            baseline.xml: Information: 1 error was filtered out because it is listed in the baseline file, baseline.xml [LintBaseline]
-            project.xml:5: Error: test.jar (relative to ROOT) does not exist [LintError]
-            <classpath jar="test.jar" />
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            res/values/strings.xml:3: Error: string1 has already been defined in this folder [DuplicateDefinition]
-                <string name="string1">String 2</string>
-                        ~~~~~~~~~~~~~~
-                res/values/strings.xml:2: Previously defined here
-            generated/Generated.java:3: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
-              String path = "/sdcard/file";
-                            ~~~~~~~~~~~~~~
-            ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
-                <permission android:name="bar.permission.SEND_SMS"
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:8: Previous permission here
-            2 errors, 2 warnings (1 error filtered by baseline baseline.xml)
-            """,
+      baseline.xml: Hint: 1 error was filtered out because it is listed in the baseline file, baseline.xml [LintBaseline]
+      project.xml:5: Error: test.jar (relative to ROOT) does not exist [LintError]
+      <classpath jar="test.jar" />
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/values/strings.xml:3: Error: string1 has already been defined in this folder [DuplicateDefinition]
+          <string name="string1">String 2</string>
+                  ~~~~~~~~~~~~~~
+          res/values/strings.xml:2: Previously defined here
+      generated/Generated.java:3: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+        String path = "/sdcard/file";
+                      ~~~~~~~~~~~~~~
+      ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
+          <permission android:name="bar.permission.SEND_SMS"
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:8: Previous permission here
+      2 errors, 2 warnings (and 1 error filtered by baseline baseline.xml)
+      """,
       expectedError,
 
       // Expected exit code
@@ -451,7 +451,7 @@ class ProjectInitializerTest {
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            3 errors, 0 warnings
+            3 errors
             """,
       "",
       ERRNO_SUCCESS,
@@ -492,7 +492,7 @@ class ProjectInitializerTest {
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 0 warnings
+            2 errors
             """,
       "",
       ERRNO_SUCCESS,
@@ -596,7 +596,7 @@ class ProjectInitializerTest {
             AndroidManifest.xml:7: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
                     android:targetSdkVersion="22" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 1 warnings
+            2 errors, 1 warning
             """,
       "",
 
@@ -736,7 +736,7 @@ class ProjectInitializerTest {
             res/values/strings.xml:2: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
                 <string name="nam﻿e">Value</string>
                                  ~
-            1 errors, 0 warnings
+            1 error
             """,
       "",
 
@@ -853,7 +853,7 @@ class ProjectInitializerTest {
         "src/main/java/test/pkg/Private.java:5: Warning: The resource @string/my_private_string is marked as private in foo-bar.aar [PrivateResource]\n" +
         "                            int x = R.string.my_private_string; // ERROR\n" +
         "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 1 warnings\n",
+        "0 errors, 1 warning\n",
       "",
 
       // Expected exit code
@@ -952,7 +952,7 @@ class ProjectInitializerTest {
           .replace('/', File.separatorChar) +
         "public class Child extends Parent {\n" +
         "             ~~~~~\n" +
-        "1 errors, 0 warnings\n",
+        "1 error\n",
       "",
 
       // Expected exit code
@@ -1020,7 +1020,7 @@ class ProjectInitializerTest {
         "src/test/pkg/RequiresApiFieldTest.java:14: Error: Call requires API level 24 (current min is 1): Method24 [NewApi]\n" +
         "        Log.d(\"zzzz\", \"ReferenceField24: \" + Method24());\n" +
         "                                             ~~~~~~~~\n" +
-        "1 errors, 0 warnings\n",
+        "1 error\n",
       "",
 
       // Expected exit code
@@ -1140,7 +1140,7 @@ class ProjectInitializerTest {
             C.java:20: Error: Call requires API level 24 (current min is 1): java.util.Collection#parallelStream [NewApi]
                     Stream stream = collection.parallelStream(); // ERROR
                                                ~~~~~~~~~~~~~~
-            1 errors, 0 warnings
+            1 error
             """,
       "",
 
@@ -1261,7 +1261,7 @@ class ProjectInitializerTest {
         "src/test/pkg/Client.java:8: Error: Method method2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
         "        new test.pkg2.Library2().method2();\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "2 errors, 0 warnings",
+        "2 errors",
       "",
 
       // Expected exit code
@@ -1339,7 +1339,7 @@ class ProjectInitializerTest {
             src/test/pkg/Java14Test.java:17: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE [SwitchIntDef]
                     return switch (duration) {
                            ^
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1429,7 +1429,7 @@ class ProjectInitializerTest {
       name.some-ext:21: Error: Obsolete ProGuard file; use -keepclasseswithmembers instead of -keepclasseswithmembernames [Proguard]
       -keepclasseswithmembernames class * {
       ^
-      1 errors, 0 warnings
+      1 error
       """,
       "",
 
@@ -1630,7 +1630,7 @@ class ProjectInitializerTest {
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1660,7 +1660,7 @@ class ProjectInitializerTest {
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1739,7 +1739,7 @@ class ProjectInitializerTest {
                 <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
                  ~~~~~~~~
                 layout/SomethingNamedAndroidManifest.xml:5: Also appears here
-            1 errors, 0 warnings
+            1 error
             """,
       "Manifest merger failed with multiple errors, see logs",
 
@@ -2202,7 +2202,7 @@ class ProjectInitializerTest {
                 java/com/google/a/Activity.java:13: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
                         Log.d(TAG, "message");
                               ~~~
-                2 errors, 0 warnings""",
+                2 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2255,7 +2255,7 @@ class ProjectInitializerTest {
                 java/com/google/b/Activity.java:14: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
                         Log.d(TAG, "message");
                               ~~~
-                3 errors, 0 warnings""",
+                3 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2364,7 +2364,7 @@ class ProjectInitializerTest {
                 java/com/google/a/res/values/strings.xml:5: Error: The resource R.string.a_string_unused appears to be unused [UnusedResources]
                     <string name="a_string_unused">a string unused</string>
                             ~~~~~~~~~~~~~~~~~~~~~~
-                8 errors, 0 warnings""",
+                8 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2847,7 +2847,7 @@ src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, the
 src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
         android:supportsRtl="true"
                              ~~~~
-1 errors, 5 warnings
+1 error, 5 warnings
       """,
       "",
       ERRNO_SUCCESS,
@@ -3266,7 +3266,7 @@ src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, the
 src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
         android:supportsRtl="true"
                              ~~~~
-1 errors, 5 warnings
+1 error, 5 warnings
       """,
       "",
       ERRNO_SUCCESS,

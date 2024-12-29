@@ -70,6 +70,7 @@ import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.ConfigurationHierarchy;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.LintBaseline;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintFixPerformer;
@@ -784,7 +785,7 @@ public class TestLintClient extends LintCliClient {
     }
 
     public String writeOutput(List<Incident> incidents) throws IOException {
-        LintStats stats = LintStats.Companion.create(getErrorCount(), getWarningCount());
+        LintStats stats = LintStats.Companion.create(incidents, (LintBaseline)null);
         for (Reporter reporter : getFlags().getReporters()) {
             reporter.write(stats, incidents, driver.getRegistry());
         }
@@ -1079,12 +1080,6 @@ public class TestLintClient extends LintCliClient {
                 // If we allow duplicates, don't list them multiple times.
                 List<Incident> incidents = getDefiniteIncidents();
                 incidents.remove(incidents.size() - 1);
-                if (incident.getSeverity().isError()) {
-                    setErrorCount(getErrorCount() - 1);
-                } else if (incident.getSeverity() == Severity.WARNING) {
-                    // Don't count informational as a warning
-                    setWarningCount(getWarningCount() - 1);
-                }
             } else {
                 TestMode mode = task.runner.getCurrentTestMode();
                 String field = mode.getFieldName();

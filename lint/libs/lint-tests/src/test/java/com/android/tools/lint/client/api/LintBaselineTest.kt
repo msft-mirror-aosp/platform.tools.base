@@ -1155,7 +1155,7 @@ class LintBaselineTest {
       "src/test/pkg/test.kt:4: Error: Field requires API level 19 (current min is 1): android.location.LocationManager#MODE_CHANGED_ACTION [InlinedApi]\n" +
         "    val mode = LocationManager.MODE_CHANGED_ACTION\n" +
         "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "1 errors, 0 warnings",
+        "1 error",
       // Expected error
       "",
       // Expected exit code
@@ -1227,7 +1227,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "",
       // Expected exit code
@@ -1287,7 +1287,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "",
       // Expected exit code
@@ -1386,8 +1386,8 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       """
-        ../baseline.xml: Information: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
-        0 errors, 0 warnings (1 warning filtered by baseline baseline.xml)
+        ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
+        No errors or warnings (and 1 warning filtered by baseline baseline.xml)
         """
         .trimIndent(),
       // Expected error
@@ -1427,6 +1427,82 @@ class LintBaselineTest {
         """
         .trimIndent()
     assertEquals(expected, readBaseline(existingBaseline))
+  }
+
+  @Test
+  fun testNoOutputScenario() {
+    // LintCliClient has a special case which makes sure that in non-quiet mode
+    // where you are writing reports to files (not the console) there's a summary
+    // line. This unit test triggers that scenario and checks the output & report.
+    val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
+
+    val testFile =
+      kotlin(
+          """
+            package test.pkg
+            val path = "/sdcard/path"
+            """
+        )
+        .indented()
+
+    val existingBaseline = File(root, "baseline.xml")
+    existingBaseline.writeText(
+      // language=XML
+      """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <issues>
+
+                <issue
+                    id="SdCardPath"
+                    message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+                    <location
+                        file="src/test/pkg/test.kt"
+                        line="2"
+                        column="13"/>
+                </issue>
+
+            </issues>
+        """
+        .trimIndent()
+    )
+    val project = lint().files(testFile).createProjects(root).single()
+    val textReport = File(root, "text-report.txt")
+    MainTest.checkDriver(
+      // Expected output
+      """
+      Wrote text report to ROOT/text-report.txt
+      Lint found no new issues (and 1 warning filtered by baseline baseline.xml)
+      """
+        .trimIndent(),
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        existingBaseline.path,
+        "--text",
+        textReport.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
+    )
+
+    assertEquals(
+      """
+      ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
+      No errors or warnings (and 1 warning filtered by baseline baseline.xml)
+      """
+        .trimIndent()
+        .trim(),
+      textReport.readText().trim().dos2unix(),
+    )
   }
 
   @Test
@@ -1470,9 +1546,9 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       """
-      ../baseline.xml: Information: 1 errors/warnings were listed in the baseline file (../baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: NewApi [LintBaselineFixed]
-      0 errors, 0 warnings
-        """
+      ../baseline.xml: Hint: 1 errors/warnings were listed in the baseline file (../baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: NewApi [LintBaselineFixed]
+      No errors or warnings
+      """
         .trimIndent(),
       // Expected error
       "",
@@ -1822,12 +1898,12 @@ class LintBaselineTest {
 
     val outputWithBaseline =
       """
-            ../baselines/baseline.xml: Information: 1 error was filtered out because it is listed in the baseline file, ../baselines/baseline.xml [LintBaseline]
-            ../baselines/baseline.xml: Information: 1 errors/warnings were listed in the baseline file (../baselines/baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: HardcodedText [LintBaselineFixed]
+            ../baselines/baseline.xml: Hint: 1 error was filtered out because it is listed in the baseline file, ../baselines/baseline.xml [LintBaseline]
+            ../baselines/baseline.xml: Hint: 1 errors/warnings were listed in the baseline file (../baselines/baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: HardcodedText [LintBaselineFixed]
             res/layout/accessibility.xml:3: Error: Missing contentDescription attribute on image [ContentDescription]
                 <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                  ~~~~~~~~~~~
-            1 errors, 0 warnings (1 error filtered by baseline baseline.xml)
+            1 error (and 1 error filtered by baseline baseline.xml)
             """
     val outputWithoutBaseline =
       """
@@ -1837,7 +1913,7 @@ class LintBaselineTest {
             res/layout/accessibility.xml:3: Error: Missing contentDescription attribute on image [ContentDescription]
                 <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                  ~~~~~~~~~~~
-            2 errors, 0 warnings
+            2 errors
             """
 
     val project = lint().files(testFile).createProjects(root).single()
@@ -2173,7 +2249,7 @@ class LintBaselineTest {
           assertThat(it.contains("mypath.txt")).isTrue()
           assertThat(it.contains("package.xml")).isTrue()
           assertThat(
-              it.contains("1 errors, 2 warnings (1 warning filtered by baseline baseline.xml)")
+              it.contains("1 error, 2 warnings (and 1 warning filtered by baseline baseline.xml)")
             )
             .isTrue()
         },
@@ -2262,7 +2338,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "",
       // Expected exit code
@@ -2289,7 +2365,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "",
       // Expected exit code
@@ -2338,7 +2414,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "Created baseline file ROOT" +
         File.separator +
@@ -2566,7 +2642,7 @@ class LintBaselineTest {
     MainTest.checkDriver(
       // Expected output
       "ROOT/app/res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
-        "0 errors, 1 warnings",
+        "0 errors, 1 warning",
       // Expected error
       "",
       // Expected exit code

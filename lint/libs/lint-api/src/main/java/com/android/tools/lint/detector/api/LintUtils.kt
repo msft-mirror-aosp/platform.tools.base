@@ -320,40 +320,60 @@ fun getBaseName(fileName: String): String {
  *
  * @param errorCount the count of errors
  * @param warningCount the count of warnings
+ * @param hintCount the count of hints (weak warnings / informational severity)
  * @param comma if true, use a comma to separate messages, otherwise "and"
  * @param capitalize whether we should capitalize sentence
+ * @param includeZero if true, and you only find warnings, include the zero count of errors as well
+ *   (and similarly warnings, if hints are found)
  * @return a description string
  */
 fun describeCounts(
   errorCount: Int,
   warningCount: Int,
+  hintCount: Int,
   comma: Boolean,
   capitalize: Boolean,
+  includeZero: Boolean = false,
 ): String {
-  if (errorCount == 0 && warningCount == 0) {
+  if (errorCount == 0 && warningCount == 0 && hintCount == 0) {
     return if (capitalize) {
       "No errors or warnings"
     } else {
       "no errors or warnings"
     }
   }
-  val errors = pluralize(errorCount, "error")
-  val warnings = pluralize(warningCount, "warning")
-  return when {
-    errorCount == 0 -> "$warningCount $warnings"
-    warningCount == 0 -> "$errorCount $errors"
-    else -> {
-      val conjunction = if (comma) "," else " and"
-      "$errorCount $errors$conjunction $warningCount $warnings"
+
+  fun StringBuilder.appendCount(severityNoun: String, count: Int) {
+    append(count)
+    append(' ')
+    append(severityNoun)
+    if (count != 1) {
+      append('s')
     }
   }
-}
 
-// PRIVATE because it only works for limited scenarios
-private fun pluralize(count: Int, one: String): String {
-  return if (count == 1) {
-    one
-  } else one + "s"
+  val sb = StringBuilder()
+  val conjunction = if (comma) ", " else " and "
+  if (includeZero || errorCount > 0) {
+    sb.appendCount("error", errorCount)
+    if (warningCount > 0 || hintCount > 0) {
+      if (includeZero || warningCount > 0 && hintCount > 0) {
+        sb.append(", ")
+      } else {
+        sb.append(conjunction)
+      }
+    }
+  }
+  if (warningCount > 0 || includeZero && hintCount > 0) {
+    sb.appendCount("warning", warningCount)
+    if (hintCount > 0) {
+      sb.append(conjunction)
+    }
+  }
+  if (hintCount > 0) {
+    sb.appendCount("hint", hintCount)
+  }
+  return sb.toString()
 }
 
 /**
@@ -2366,7 +2386,7 @@ object LintUtils {
     "Use package function instead",
     replaceWith =
       ReplaceWith(
-        "com.android.tools.lint.detector.api.describeCounts(errorCount, warningCount, comma, capitalize)"
+        "com.android.tools.lint.detector.api.describeCounts(errorCount, warningCount, 0, comma, capitalize)"
       ),
   )
   fun describeCounts(
@@ -2375,12 +2395,7 @@ object LintUtils {
     comma: Boolean,
     capitalize: Boolean,
   ): String {
-    return com.android.tools.lint.detector.api.describeCounts(
-      errorCount,
-      warningCount,
-      comma,
-      capitalize,
-    )
+    return describeCounts(errorCount, warningCount, 0, comma, capitalize)
   }
 
   @JvmStatic

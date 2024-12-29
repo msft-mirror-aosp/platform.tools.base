@@ -77,5 +77,5 @@ public class LintCustomRuleTest {
                     + "   Vendor: Google\n"
                     + "   Identifier: LintCustomRuleTest\n"
                     + "\n"
-                    + "1 errors, 0 warnings";
+                    + "1 error";
 }

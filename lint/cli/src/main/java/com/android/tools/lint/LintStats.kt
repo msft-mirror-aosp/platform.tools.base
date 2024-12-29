@@ -16,6 +16,7 @@
 
 package com.android.tools.lint
 
+import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.LintBaseline
 import com.android.tools.lint.client.api.LintFixPerformer.Companion.canAutoFix
 import com.android.tools.lint.detector.api.Incident
@@ -23,20 +24,20 @@ import com.android.tools.lint.detector.api.Severity
 import kotlin.math.max
 
 /** Value object passed to [Reporter] instances providing statistics to include in the summary. */
-class LintStats
-constructor(
+class LintStats(
   val errorCount: Int,
   val warningCount: Int,
+  val hintCount: Int = 0,
   val baselineErrorCount: Int = 0,
   val baselineWarningCount: Int = 0,
+  val baselineHintCount: Int = 0,
   val baselineFixedCount: Int = 0,
   val autoFixedCount: Int = 0,
   val hasAutoFixCount: Int = 0,
   // TODO: Timing stats too?
 ) {
-
   fun count(): Int {
-    return errorCount + warningCount
+    return errorCount + warningCount + hintCount
   }
 
   companion object {
@@ -44,20 +45,37 @@ constructor(
       return create(mergedIncidents, if (baseline != null) listOf(baseline) else emptyList())
     }
 
-    fun create(errorCount: Int = 0, warningCount: Int = 0): LintStats {
-      return LintStats(errorCount, warningCount, 0, 0, 0, 0)
+    fun create(errorCount: Int = 0, warningCount: Int = 0, hintCount: Int = 0): LintStats {
+      return LintStats(errorCount, warningCount, hintCount, 0, 0, 0, 0, 0)
     }
 
     fun create(incidents: List<Incident>, baselines: List<LintBaseline>): LintStats {
       var errorCount = 0
       var warningCount = 0
+      var hintCount = 0
       var autofixed = 0
       var hasAutoFixCount = 0
       for (incident in incidents) {
-        if (incident.severity === Severity.ERROR || incident.severity === Severity.FATAL) {
-          errorCount++
-        } else if (incident.severity === Severity.WARNING) {
-          warningCount++
+        val severity = incident.severity
+        when {
+          severity === Severity.ERROR || severity === Severity.FATAL -> errorCount++
+          severity === Severity.WARNING -> warningCount++
+          severity == Severity.INFORMATIONAL -> {
+            // -1: don't count these baseline tips:
+            // "Hint: 1 error was filtered out because it is listed in the baseline file,
+            // baseline.xml [LintBaseline]"
+            //
+            // "Hint: 1 errors/warnings were listed in the baseline file (../baselines/baseline.xml)
+            // but not found in the project;
+            //    perhaps they have been fixed? Unmatched issue types: HardcodedText
+            // [LintBaselineFixed]"
+            if (
+              incident.issue != IssueRegistry.BASELINE_USED &&
+                incident.issue != IssueRegistry.BASELINE_FIXED
+            ) {
+              hintCount++
+            }
+          }
         }
 
         if (incident.wasAutoFixed) {
@@ -79,6 +97,7 @@ constructor(
       // of filtered and remaining counts.
       var baselineErrorCount = 0
       var baselineWarningCount = 0
+      var baselineHintCount = 0
       var baselineFixedCount = 0
       if (baselines.isNotEmpty()) {
         // Figure out the actual overlap; later I could stash these into temporary
@@ -87,6 +106,7 @@ constructor(
         for (baseline in baselines) {
           baselineErrorCount = max(baselineErrorCount, baseline.foundErrorCount)
           baselineWarningCount = max(baselineWarningCount, baseline.foundWarningCount)
+          baselineHintCount = max(baselineHintCount, baseline.foundHintCount)
           baselineFixedCount = max(baselineFixedCount, baseline.fixedCount)
         }
       }
@@ -94,8 +114,10 @@ constructor(
       return LintStats(
         errorCount,
         warningCount,
+        hintCount,
         baselineErrorCount,
         baselineWarningCount,
+        baselineHintCount,
         baselineFixedCount,
         autofixed,
         hasAutoFixCount,

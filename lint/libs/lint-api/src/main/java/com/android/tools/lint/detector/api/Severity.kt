@@ -20,8 +20,7 @@ import com.android.tools.lint.model.LintModelSeverity
 import java.util.Locale
 
 /** Severity of an issue found by lint */
-enum class Severity
-constructor(
+enum class Severity(
   /** A description of this severity suitable for display to the user. */
   val description: String
 ) {
@@ -29,10 +28,12 @@ constructor(
   IGNORE("Ignore"),
 
   /**
-   * Information only: Might not be a problem, but the check has found something interesting to say
-   * about the code.
+   * Hint: Might not be a problem, but the check has found something interesting to say about the
+   * code. In IntelliJ, this is called a "weak warning". These issues are shown with a more subtle
+   * highlight in the editor. And these issues are not promoted to errors with the
+   * `warningsAsErrors` flag.
    */
-  INFORMATIONAL("Information"),
+  INFORMATIONAL("Hint"),
 
   /** Warning: Probably a problem. */
   WARNING("Warning"),

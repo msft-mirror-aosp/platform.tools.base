@@ -53,7 +53,7 @@ class LintStandaloneCustomRuleTest {
         val file = project.getSubproject("library").file("lint-results.txt")
         assertThat(file).exists()
         assertThat(file).contains("MyClass.java:3: Error: Do not implement java.util.List directly [UnitTestLintCheck2 from com.example.google.lint]")
-        assertThat(file).contains("1 errors, 0 warnings")
+        assertThat(file).contains("1 error")
     }
 
     @Test

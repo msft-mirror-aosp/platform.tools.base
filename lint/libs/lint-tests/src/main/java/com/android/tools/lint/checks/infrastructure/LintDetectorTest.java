@@ -46,6 +46,7 @@ import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.ConfigurationHierarchy;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.LintBaseline;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.client.api.LintXmlConfiguration;
@@ -1104,7 +1105,7 @@ public abstract class LintDetectorTest extends BaseLintDetectorTest {
                 prev = incident;
             }
 
-            LintStats stats = LintStats.Companion.create(getErrorCount(), getWarningCount());
+            LintStats stats = LintStats.Companion.create(incidents, (LintBaseline) null);
             for (Reporter reporter : getFlags().getReporters()) {
                 reporter.write(stats, incidents, driver.getRegistry());
             }
