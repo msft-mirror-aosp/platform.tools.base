@@ -482,7 +482,7 @@ class FusedLibraryClassesVerificationTest {
                     "however its parent dependency com.externaldep:depwithdep:1.0 was not.")
 
         // Check validation can be disabled.
-        build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").reconfigure(buildFileOnly = true) {
+        build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").reconfigure {
             androidFusedLibrary {
                 experimentalProperties[BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = false
             }

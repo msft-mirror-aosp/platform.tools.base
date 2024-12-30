@@ -75,7 +75,7 @@ class LibWithNavigationTest {
             assertThat(getTask(fullTaskName)).didWork()
         }
 
-        library.reconfigure(buildFileOnly = true) {
+        library.reconfigure {
             android {
                 buildFeatures {
                     androidResources = false

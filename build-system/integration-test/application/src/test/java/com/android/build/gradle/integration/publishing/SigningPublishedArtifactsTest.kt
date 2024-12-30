@@ -104,14 +104,11 @@ class SigningPublishedArtifactsTest {
             SigningPublishedArtifactsTest::class.java,
             "SigningPublishedArtifactsTest/secring.gpg"
         )
-        Files.write(
-            lib.location.resolve("secring.gpg"),
-            Resources.toByteArray(url)
-        )
+        lib.files.add("secring.gpg", Resources.toByteArray(url))
 
         build.executor.run("clean", "publish")
 
-        val artifactsDir = lib.location.resolve("../repo/com/android/lib/1.0")
+        val artifactsDir = lib.resolve("../repo/com/android/lib/1.0")
         val javadocDebugAsc = artifactsDir.resolve("lib-1.0-debug-javadoc.jar.asc")
         val sourcesDebugAsc = artifactsDir.resolve("lib-1.0-debug-sources.jar.asc")
         val javadocReleaseAsc = artifactsDir.resolve("lib-1.0-release-javadoc.jar.asc")

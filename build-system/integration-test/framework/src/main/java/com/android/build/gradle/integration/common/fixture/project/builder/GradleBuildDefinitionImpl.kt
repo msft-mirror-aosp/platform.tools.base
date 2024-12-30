@@ -364,7 +364,6 @@ internal class GradleBuildDefinitionImpl(
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
-                buildFileOnly = false,
                 allPlugins,
                 customPluginMap,
                 useOldPluginStyleForSeparateClassloaders,

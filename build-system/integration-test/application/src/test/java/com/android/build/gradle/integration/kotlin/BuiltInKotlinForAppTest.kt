@@ -123,9 +123,9 @@ class BuiltInKotlinForAppTest {
         build.executor.run(":app:testDebug")
         val app = build.androidApplication()
         val testResults =
-            app.location
+            app.buildDir
                 .resolve(
-                    "build/test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
+                    "test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
                 )
         PathSubject.assertThat(testResults).exists()
     }

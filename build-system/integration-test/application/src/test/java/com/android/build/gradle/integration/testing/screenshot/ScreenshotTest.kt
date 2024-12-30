@@ -287,7 +287,7 @@ class ScreenshotTest {
         result.assertErrorContains("There were failing tests. See the results at: ")
 
         //set high threshold - tests pass
-        appProject.reconfigure(buildFileOnly = true) {
+        appProject.reconfigure {
             android {
                 testOptions {
                     // ScreenshotTestOptions is not yet part of the AGP API so use it via the
@@ -302,7 +302,7 @@ class ScreenshotTest {
         build.sstExecutor().run(":app:validateScreenshotTest")
 
         //reduce threshold - tests fail
-        appProject.reconfigure(buildFileOnly = true) {
+        appProject.reconfigure {
             android {
                 testOptions {
                     viaExtension("screenshotTests", ScreenshotTestOptions::class) {
@@ -661,7 +661,7 @@ class ScreenshotTest {
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
         // Verify that exception is thrown when ui-tooling dep is missing
-        build.androidApplication().reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure {
             dependencies {
                 remove("screenshotTestImplementation", uiToolingDep)
             }

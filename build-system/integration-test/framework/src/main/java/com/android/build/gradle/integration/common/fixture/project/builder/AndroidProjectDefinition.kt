@@ -52,9 +52,10 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     fun resetAndroidDsl()
 
     /**
-     * Method to configure the built-in kotlin extension.
+     * Method to configure the new kotlin extension.
      *
-     * This requires [PluginType.ANDROID_BUILT_IN_KOTLIN] to be applied
+     * When using [PluginType.ANDROID_BUILT_IN_KOTLIN] you must use this instead of
+     * [legacyKotlin]
      */
     fun kotlin(action: KotlinExtension.() -> Unit)
 
@@ -64,7 +65,7 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     fun resetKotlinDsl()
 
     /**
-     * Method to configure the KGP extension.
+     * Method to configure the old Kotlin extension that is added as `android.kotlinOptions`.
      *
      * This requires [PluginType.KOTLIN_ANDROID] to be applied
      */

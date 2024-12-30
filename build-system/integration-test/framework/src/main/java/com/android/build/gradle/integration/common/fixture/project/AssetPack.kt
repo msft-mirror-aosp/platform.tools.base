@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AssetPackExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -86,10 +85,7 @@ internal class AssetPackDefinitionImpl(
 /**
  * Specialized interface for AssetPack [GradleProject] to use in the test
  */
-interface AssetPackProject: GradleProject<AssetPackDefinition> {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface AssetPackProject: GradleProject<AssetPackDefinition>
 
 /**
  * Implementation of [AndroidProject]
@@ -117,6 +113,6 @@ internal class ReversibleAssetPackProject(
     projectModification: TemporaryProjectModification
 ) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
     parentProject,
-), AssetPackProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    projectModification,
+), AssetPackProject
+

@@ -82,7 +82,7 @@ class AndroidTestClasspathTest {
         }
 
         val app = build.androidApplication()
-        app.reconfigure(buildFileOnly = true) {
+        app.reconfigure {
             dependencies {
                 androidTestImplementation(project(":lib"))
             }

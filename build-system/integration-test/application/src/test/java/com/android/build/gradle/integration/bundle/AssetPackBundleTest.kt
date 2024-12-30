@@ -347,9 +347,9 @@ class AssetPackBundleTest {
         val build = rule.build
         val bundle = build.assetPackBundle(":assetPackBundle")
 
-        val keystore = bundle.location.resolve("keystore.jks")
+        val keystore = bundle.resolve("keystore.jks")
 
-        bundle.reconfigure(buildFileOnly = true) {
+        bundle.reconfigure {
             bundle {
                 signingConfig {
                     storeFile = keystore.toFile()

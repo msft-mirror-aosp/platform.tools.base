@@ -61,8 +61,6 @@ internal class AssetPackBundleDefinitionImpl(
         applyPlugin(PluginType.ANDROID_ASSET_PACK_BUNDLE)
     }
 
-    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
-
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
     }
@@ -96,10 +94,7 @@ internal class AssetPackBundleDefinitionImpl(
 /**
  * Specialized interface for AssetPackBundle [GradleProject] to use in the test
  */
-interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition>, GeneratesAab {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition>, GeneratesAab
 
 /**
  * Implementation of [AssetPackBundleProject]
@@ -111,8 +106,6 @@ internal class AssetPackBundleImpl(
     location,
     projectDefinition,
 ), AssetPackBundleProject, GeneratesAab by GeneratesAabDelegate(location) {
-
-    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
     override fun getReversibleInstance(
         projectModification: TemporaryProjectModification
@@ -128,8 +121,6 @@ internal class ReversibleAssetPackBundleProject(
     projectModification: TemporaryProjectModification
 ) : ReversibleGradleProject<AssetPackBundleProject, AssetPackBundleDefinition>(
     parentProject,
+    projectModification,
 ), AssetPackBundleProject,
-    GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
-
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    GeneratesAab by GeneratesAabFromParentDelegate(parentProject)

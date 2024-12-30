@@ -17,13 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.DynamicFeatureExtension
-import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 
@@ -87,6 +84,4 @@ internal class ReversibleAndroidDynamicFeatureProject(
 ) : ReversibleAndroidProject<AndroidDynamicFeatureProject, AndroidProjectDefinition<DynamicFeatureExtension>>(
     parentProject,
     projectModification
-), AndroidDynamicFeatureProject {
-}
-
+), AndroidDynamicFeatureProject

@@ -203,7 +203,7 @@ class InjectedAbiTest {
 
         // remove x86_64 .so files
         project.removeSoFiles(listOf("x86_64"))
-        val jniLibsDir = project.location.resolve("src/main/jniLibs")
+        val jniLibsDir = project.resolve("src/main/jniLibs")
         PathSubject.assertThat(jniLibsDir).exists()
         assertThat(jniLibsDir.listDirectoryEntries().map { it.name }).doesNotContain("x86_64")
 
@@ -225,7 +225,7 @@ class InjectedAbiTest {
         }
 
         // Add explicit abiFilters and remove x86 .so files
-        project.reconfigure(buildFileOnly = true) {
+        project.reconfigure {
             android {
                 defaultConfig {
                     ndk {
@@ -284,7 +284,7 @@ class InjectedAbiTest {
 
         // remove x86_64 .so files
         project.removeSoFiles(listOf("x86_64"))
-        val jniLibsDir = project.location.resolve("src/main/jniLibs")
+        val jniLibsDir = project.resolve("src/main/jniLibs")
         PathSubject.assertThat(jniLibsDir).exists()
         assertThat(jniLibsDir.listDirectoryEntries().map { it.name }).doesNotContain("x86_64")
 
@@ -344,7 +344,7 @@ class InjectedAbiTest {
 
     private fun AndroidApplicationProject.assertDoesNotExist(apkSelector: ApkSelector) {
         if (this.hasApk(apkSelector)) {
-            fail("APK ($apkSelector) exist for ${this.location}")
+            fail("APK ($apkSelector) exists")
         }
     }
 
@@ -358,7 +358,7 @@ class InjectedAbiTest {
 
     private fun AndroidApplicationProject.removeSoFiles(abis: List<String>) {
         abis.forEach {
-            val folder = location.resolve("src/main/jniLibs/$it")
+            val folder = resolve("src/main/jniLibs/$it")
             FileUtils.deleteRecursivelyIfExists(folder.toFile())
         }
     }

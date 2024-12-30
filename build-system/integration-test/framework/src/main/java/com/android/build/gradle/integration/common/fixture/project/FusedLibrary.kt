@@ -95,10 +95,7 @@ internal class FusedLibraryDefinitionImpl(
 /**
  * Specialized interface for FusedLibrary [GradleProject] to use in the test
  */
-interface FusedLibraryProject: BaseAndroidProject<FusedLibraryDefinition>, GeneratesAar {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface FusedLibraryProject: BaseAndroidProject<FusedLibraryDefinition>, GeneratesAar
 
 /**
  * Implementation of [AndroidProject]
@@ -125,6 +122,5 @@ internal class ReversibleFusedLibraryProject(
     projectModification: TemporaryProjectModification
 ) : BaseReversibleAndroidProjectImpl<FusedLibraryProject, FusedLibraryDefinition>(
     parentProject,
-), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject) {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    projectModification
+), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

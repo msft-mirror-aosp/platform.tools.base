@@ -139,7 +139,7 @@ class LibraryClassVerificationTest {
         assertThat(result.stderr).contains("Error: Missing class com.example.CompileOnlyJarClass (referenced from: void com.example.lib.Use.<init>() and 1 other context)")
 
         // override to disable in that particular project
-        androidLibrary.reconfigure(buildFileOnly = true) {
+        androidLibrary.reconfigure {
             android {
                 experimentalProperties["android.experimental.verifyLibraryClasses"] = false
             }

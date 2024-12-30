@@ -145,7 +145,7 @@ class SharedLibraryTest {
             """.trimIndent()
         )
 
-        build.androidApplication().reconfigure(buildFileOnly = true) { addSharedDependency() }
+        build.androidApplication().reconfigure { addSharedDependency() }
         val resultAfter = build.executor.run("assembleDebug")
         assertThat(resultAfter.exception).isNull()
     }

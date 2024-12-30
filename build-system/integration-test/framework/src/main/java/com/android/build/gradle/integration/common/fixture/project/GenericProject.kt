@@ -68,8 +68,6 @@ internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDef
         super.replaceAppliedPlugin(type, version)
     }
 
-    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
-
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
     }
@@ -96,10 +94,7 @@ internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDef
  * This class represents non Android projects that don't have their own custom interfaces
  *
  */
-interface GenericProject: GradleProject<GenericProjectDefinition> {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface GenericProject: GradleProject<GenericProjectDefinition>
 
 /**
  * Default implementation of [GenericProject]
@@ -111,9 +106,6 @@ internal class GenericProjectImpl(
     location,
     projectDefinition,
 ), GenericProject {
-
-
-    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
         ReversibleGenericProject(this, projectModification.delegate(this))
@@ -130,6 +122,7 @@ internal class GenericProjectImpl(
 internal open class ReversibleGenericProject(
     parentProject: GenericProject,
     projectModification: TemporaryProjectModification,
-): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(parentProject), GenericProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(
+    parentProject,
+    projectModification
+), GenericProject

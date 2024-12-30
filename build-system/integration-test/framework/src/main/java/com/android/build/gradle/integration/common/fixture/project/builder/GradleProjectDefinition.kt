@@ -122,6 +122,8 @@ internal abstract class GradleProjectDefinitionImpl(
 
     private val buildscriptBuilder = BuildscriptBuilderImpl()
 
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
+
     override var pluginCallback: Class<out PluginCallback>
         set(value) {
             pluginCallbacks.clear()
@@ -183,7 +185,6 @@ internal abstract class GradleProjectDefinitionImpl(
 
     internal fun writeSubProject(
         location: Path,
-        buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
         useOldPluginStyle: Boolean,
@@ -195,7 +196,6 @@ internal abstract class GradleProjectDefinitionImpl(
             allPlugins,
             customPluginMap,
             isRoot = false,
-            buildFileOnly,
             useOldPluginStyle,
             projectRepositories,
             buildWriter
@@ -215,7 +215,6 @@ internal abstract class GradleProjectDefinitionImpl(
             allPlugins,
             customPluginMap,
             isRoot = true,
-            buildFileOnly = false,
             useOldPluginStyle,
             projectRepositories,
             buildWriter
@@ -231,7 +230,6 @@ internal abstract class GradleProjectDefinitionImpl(
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
         isRoot: Boolean,
-        buildFileOnly: Boolean,
         useOldPluginStyle: Boolean,
         projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
@@ -375,8 +373,15 @@ internal abstract class GradleProjectDefinitionImpl(
         }
 
         // write the rest of the content.
-        if (!buildFileOnly) {
-            (files as DelayedGradleProjectFiles).write(location)
+        (files as? DelayedGradleProjectFiles)?.let { files->
+            if (!files.isDirect) {
+                files.write(location)
+                // once the project is written on disk, we want to move the files to a direct
+                // mode so that reconfigure can update them.
+                // Keeping them delayed would not work as they must be in memory and that would mean
+                // having to load all the files when doing a reconfigure.
+                files.makeDirect(location)
+            }
         }
     }
 

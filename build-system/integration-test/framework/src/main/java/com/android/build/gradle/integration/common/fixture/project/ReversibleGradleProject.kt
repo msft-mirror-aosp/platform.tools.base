@@ -24,27 +24,29 @@ import com.android.build.gradle.integration.common.fixture.project.builder.searc
 import java.io.File
 import java.nio.file.Path
 import java.util.regex.Pattern
-import kotlin.io.path.createDirectories
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
 /**
  * Base Class for all reversible projects
  */
 abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
-    protected open val parentProject: ProjectT,
+    protected val parentProject: ProjectT,
+    projectModification: TemporaryProjectModification
 ) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider  {
 
-    override val location: Path
-        get() = parentProject.location
+    @Suppress("UNCHECKED_CAST")
+    override val files: GradleProjectFiles = ReversibleProjectFiles(
+        projectModification,
+        (parentProject as GradleProjectImpl<ProjectDefinitionT>).location
+    )
 
     override fun resolve(path: String): Path = parentProject.resolve(path)
 
     override val buildDir: Path
         get() = parentProject.buildDir
 
-    override fun reconfigure(buildFileOnly: Boolean, action: ProjectDefinitionT.() -> Unit) {
+    override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
         throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
     }
 
@@ -59,6 +61,10 @@ internal open class ReversibleProjectFiles(
     private val location: Path,
 ): GradleProjectFiles {
     override fun add(relativePath: String, content: String) {
+        projectModification.addFile(relativePath, content)
+    }
+
+    override fun add(relativePath: String, content: ByteArray) {
         projectModification.addFile(relativePath, content)
     }
 
@@ -97,7 +103,7 @@ internal open class ReversibleProjectFiles(
                     search,
                     replace,
                     Pattern.LITERAL,
-                    lenient = false
+                    lenient
                 )
             }
 

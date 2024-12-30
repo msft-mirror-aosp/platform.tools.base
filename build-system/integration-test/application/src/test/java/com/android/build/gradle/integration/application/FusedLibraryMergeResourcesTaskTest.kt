@@ -218,7 +218,7 @@ class FusedLibraryMergeResourcesTaskTest {
             file
         }
 
-        app.reconfigure(buildFileOnly = true) {
+        app.reconfigure {
             dependencies {
                 implementation(files(aarFile))
             }

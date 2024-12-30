@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
+import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import java.nio.file.Path
 import kotlin.io.path.name
@@ -67,8 +68,10 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
 
 internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
+    projectModification: TemporaryProjectModification
 ) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
     parentProject,
+    projectModification,
 ), BaseAndroidProject<ProjectDefinitionT> {
     override fun getIntermediatePath(vararg paths: String?): Path = parentProject.getIntermediatePath(*paths)
 

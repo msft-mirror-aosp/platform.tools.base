@@ -198,7 +198,7 @@ internal class FusedLibraryManifestMergerTaskTest {
         }
 
         // inject it as a local dependency of the app module
-        build.androidApplication().reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure {
             dependencies {
                 implementation(files(aarFile))
             }
