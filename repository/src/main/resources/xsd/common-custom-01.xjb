@@ -75,6 +75,9 @@
         <bindings node="//xsd:complexType[@name='archiveType']">
             <plugin:super name="com.android.repository.impl.meta.Archive"/>
         </bindings>
+        <bindings node="//xsd:group[@name='archiveFields']/xsd:sequence/xsd:element[@name='checksum']">
+            <property name="legacyChecksum"/>
+        </bindings>
         <bindings node="//xsd:complexType[@name='patchesType']">
             <plugin:super name="com.android.repository.impl.meta.Archive$PatchesType"/>
         </bindings>

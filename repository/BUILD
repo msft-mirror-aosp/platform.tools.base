@@ -1,9 +1,12 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:utils.bzl", "fileset")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-load("xjc.bzl", "xsd_to_java")
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
+load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+load("xjc.bzl", "xsd_java_library")
 
 exports_files(
     ["src/main/resources/xsd/global.xjb"],
@@ -24,6 +27,7 @@ iml_module(
         "src/testFixtures/java",
     ],
     visibility = ["//visibility:public"],
+    exports = ["//tools/base/repository:schema-generated"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
@@ -37,6 +41,7 @@ iml_module(
         "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
         "//tools/analytics-library/shared:analytics-shared[module]",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
+        "//tools/base/repository:schema-generated",
     ],
 )
 
@@ -51,13 +56,37 @@ fileset(
     },
 )
 
-maven_library(
-    name = "tools.repository",
-    # buildifier: disable=bad-recursive-glob
+kotlin_library(
+    name = "tools.repository-core",
     srcs = glob([
         "src/main/java/**/*.kt",
         "src/main/java/**/*.java",
     ]),
+    lint_baseline = "lint_baseline.xml",
+    module_name = "repository",
+    deps = [
+        "//tools/analytics-library/shared:tools.analytics-shared",
+        "//tools/base/common:tools.common",
+        "@maven//:com.google.jimfs.jimfs",
+        "@maven//:com.sun.activation.javax.activation",
+        "@maven//:org.apache.commons.commons-compress",
+        "@maven//:org.glassfish.jaxb.jaxb-runtime",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+    ],
+)
+
+maven_library(
+    name = "tools.repository",
+    # buildifier: disable=bad-recursive-glob
+    srcs = [],
+    bundled_deps = [
+        ":generic-1.lib",
+        ":generic-2.lib",
+        ":tools.repository-core",
+        ":repo-common-1.lib",
+        ":repo-common-2.lib",
+        ":repo-sites-common-1.lib",
+    ],
     coordinates = "com.android.tools:repository",
     description = "A library for downloading and managing package repositories",
     module_name = "repository",
@@ -114,48 +143,51 @@ coverage_java_test(
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "repo-common-1",
-    catalog = "src/main/resources/xsd/catalog.xml",
-    custom_binding = "src/main/resources/xsd/common-custom-01.xjb",
-    episode = "repo-common-01.xjb",
+    binding = "src/main/resources/xsd/common-custom-01.xjb",
+    java_deps = [":tools.repository-core"],
     package = "com.android.repository.impl.generated.v1",
-    src_location = "tools/base/repository/src/main/java",
+    visibility = ["//tools/base/sdklib:__pkg__"],
     xsd = "src/main/resources/xsd/repo-common-01.xsd",
-    deps = [":tools.repository.lib"],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "repo-common-2",
-    catalog = "src/main/resources/xsd/catalog.xml",
-    custom_binding = "src/main/resources/xsd/common-custom-02.xjb",
-    episode = "repo-common-02.xjb",
+    binding = "src/main/resources/xsd/common-custom-02.xjb",
+    java_deps = [":tools.repository-core"],
     package = "com.android.repository.impl.generated.v2",
-    src_location = "tools/base/repository/src/main/java",
+    visibility = ["//tools/base/sdklib:__pkg__"],
     xsd = "src/main/resources/xsd/repo-common-02.xsd",
-    deps = [":tools.repository.lib"],
 )
 
-xsd_to_java(
+xsd_java_library(
+    name = "generic-1",
+    binding = "src/main/resources/xsd/generic-custom-01.xjb",
+    java_deps = [":tools.repository-core"],
+    package = "com.android.repository.impl.generated.generic.v1",
+    visibility = ["//tools/base/sdklib:__pkg__"],
+    xsd = "src/main/resources/xsd/generic-01.xsd",
+    xsd_deps = [":repo-common-1"],
+)
+
+xsd_java_library(
     name = "generic-2",
-    binding_deps = [":repo-common-02.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
-    custom_binding = "src/main/resources/xsd/generic-custom-02.xjb",
-    episode = "generic-02.xjb",
+    binding = "src/main/resources/xsd/generic-custom-02.xjb",
+    java_deps = [":tools.repository-core"],
     package = "com.android.repository.impl.generated.generic.v2",
-    src_location = "tools/base/repository/src/main/java",
+    visibility = ["//tools/base/sdklib:__pkg__"],
     xsd = "src/main/resources/xsd/generic-02.xsd",
-    deps = [":tools.repository.lib"],
+    xsd_deps = [":repo-common-2"],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "repo-sites-common-1",
-    custom_binding = "src/main/resources/xsd/sources/repo-sites-common-custom-1.xjb",
-    episode = "sources/repo-sites-common-1.xjb",
+    binding = "src/main/resources/xsd/sources/repo-sites-common-custom-1.xjb",
+    java_deps = [":tools.repository-core"],
     package = "com.android.repository.impl.sources.generated.v1",
-    src_location = "tools/base/repository/src/main/java",
+    visibility = ["//tools/base/sdklib:__pkg__"],
     xsd = "src/main/resources/xsd/sources/repo-sites-common-1.xsd",
-    deps = [":tools.repository.lib"],
 )
 
 java_binary(
@@ -168,17 +200,22 @@ java_binary(
     ],
 )
 
-genrule(
-    name = "find_workspace",
-    srcs = ["BUILD"],
-    outs = ["root"],
-    # iml_to_build doesn't support triple-quote strings, so we have to put everything together here
-    cmd = "path=$$(pwd -P); while [[ $$path != / ]]; do if [[ -a $$path/DO_NOT_BUILD_HERE ]]; then break;fi;path=$$(dirname $$(cd $$path && pwd -P)); done; cp $$path/DO_NOT_BUILD_HERE $(location root)",
-    local = 1,
-    # no-linux prevents this target building on studio-linux CI builds.
-    tags = [
-        "manual",
-        "no-linux",
-    ],
+# managed by go/iml_to_build
+jvm_import(
+    name = "schema-generated",
+    # do not sort: must match IML order
+    jars = ["//tools/base/repository:repository-sdk-schema.jar"],
     visibility = ["//visibility:public"],
+)
+
+merge_jars(
+    name = "repository-sdk-schema",
+    out = "repository-sdk-schema.jar",
+    jars = [
+        "//tools/base/repository:libgeneric-1.lib.jar",
+        "//tools/base/repository:libgeneric-2.lib.jar",
+        "//tools/base/repository:librepo-common-1.lib.jar",
+        "//tools/base/repository:librepo-common-2.lib.jar",
+        "//tools/base/repository:librepo-sites-common-1.lib.jar",
+    ],
 )

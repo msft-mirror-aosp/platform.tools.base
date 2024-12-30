@@ -3373,7 +3373,6 @@ com/android/tools/repository
   com/android/repository/io/
   com/android/repository/util/
   xsd/
-  xsd/catalog.xml
   xsd/common-custom-01.xjb
   xsd/common-custom-02.xjb
   xsd/generic-01.xsd
@@ -4049,7 +4048,6 @@ com/android/tools/sdklib
   com/android/sdklib/tool/sdkmanager/
   com/android/sdklib/util/
   xsd/
-  xsd/catalog.xml
   xsd/legacy/
   xsd/legacy/sdk-addon-01.xsd
   xsd/legacy/sdk-addon-02.xsd
