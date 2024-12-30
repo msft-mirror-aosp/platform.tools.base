@@ -24,8 +24,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.KtsBu
 import com.google.common.truth.Truth
 import org.junit.Test
 
-class CollectionDslProxyTest: ExtensionAwareDefinitionImpl() {
-    private val contentHolder = DefaultDslContentHolder(this)
+class CollectionDslProxyTest {
+    private val contentHolder = DefaultDslContentHolder()
 
     @Test
     fun listAdd() {

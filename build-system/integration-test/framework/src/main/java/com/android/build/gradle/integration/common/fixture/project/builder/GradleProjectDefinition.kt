@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
-import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
@@ -114,9 +113,9 @@ internal data class AppliedPlugin(
  */
 internal abstract class GradleProjectDefinitionImpl(
     override val path: String
-): ExtensionAwareDefinitionImpl(), GradleProjectDefinition {
+): GradleProjectDefinition {
 
-    protected val contentHolder = DefaultDslContentHolder(this)
+    protected val contentHolder = DefaultDslContentHolder()
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 

@@ -168,7 +168,6 @@ interface DslContentHolder {
 }
 
 internal class DefaultDslContentHolder(
-    private val extensionSupport: ExtensionSupport,
     override val name: String = ""
 ): DslContentHolder {
 
@@ -391,13 +390,11 @@ internal class DefaultDslContentHolder(
         parentChain: List<String> = listOf(),
         action: T.() -> Unit,
     ): T {
-        val contentHolder = DefaultDslContentHolder(extensionSupport, name)
+        val contentHolder = DefaultDslContentHolder(name)
 
         val instance = instanceProvider(contentHolder)
 
-        extensionSupport.handleNestedBlock(contentHolder) {
-            action(instance)
-        }
+        action(instance)
 
         eventList += Event(
             EventType.NESTED_BLOCK,
