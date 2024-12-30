@@ -56,7 +56,6 @@ TEST_DATA = [
     "//tools/base/build-system/aapt2:aapt2_for_tests",
     "//tools/base/build-system/integration-test:android_platform_for_tests",
     "//tools/base/build-system/integration-test:test-projects/BasicRenderScript",
-    "//tools/base/build-system/integration-test:test-projects/additionalTestOutput",
     "//tools/base/build-system/integration-test:test-projects/additionalTestOutputOverride",
     "//tools/base/build-system/integration-test:test-projects/androidManifestInTest",
     "//tools/base/build-system/integration-test:test-projects/api",
@@ -183,10 +182,7 @@ AUTOMATIC_TEST_DATA = TEST_DATA + OLD_SDKS + [
     "//prebuilts/studio/sdk:ndk-bundle",
     "//prebuilts/tools/common/cmake:cmake-3.8.2",
     # These test-projects are only used in CheckAll.
-    "//tools/base/build-system/integration-test:test-projects/androidTestLibDep",
-    "//tools/base/build-system/integration-test:test-projects/conditionalApiUse",
     "//tools/base/build-system/integration-test:test-projects/daggerOne",
-    "//tools/base/build-system/integration-test:test-projects/dependenciesWithVariants",
     "//tools/base/build-system/integration-test:test-projects/emptySplit",
     "//tools/base/build-system/integration-test:test-projects/flavorlibWithFailedTests",
     "//tools/base/build-system/integration-test:test-projects/mavenLocal",
