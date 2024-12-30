@@ -130,10 +130,14 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
           // but don't treat these as the same
           1
         } else if (
-          nameIndex == 0 || nameIndex == name.length && descIndex == 0 || descIndex == desc.length
-        )
+          (ownerIndex == owner.length) &&
+            (nameIndex == 0 || nameIndex == name.length) &&
+            (descIndex == 0 || descIndex == desc.length)
+        ) {
           0
-        else 1
+        } else {
+          -1
+        }
       }
     }
   }
@@ -187,12 +191,16 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
         .java
         .getResourceAsStream("/desugared_apis_30_1.txt")
         ?.let { inputStream ->
+          // merge both built-in checks and the extra desugaring ones
+          // we have to merge carefully since we sometimes have to drop
+          // entries from one when the other list fully supports the whole
+          // class. For example, the built-in rules backport a handful
+          // of individual methods in java/util/Objects, but in the library
+          // desugaring list, the whole class is included, so we should
+          // drop the individual entries.
           val lines = defaultDesugaredMethods.toMutableList()
-          for (line in inputStream.bufferedReader(Charsets.UTF_8).readLines()) {
-            if (!lines.contains(line)) {
-              lines.add(line)
-            }
-          }
+          lines.addAll(inputStream.bufferedReader(Charsets.UTF_8).readLines())
+
           if (minSdk >= 21) {
             lines.add("java/util/Collection#parallelStream()Ljava/util/stream/Stream;")
             lines.add("java/util/stream/BaseStream#parallel()Ljava/util/stream/BaseStream;")
@@ -200,9 +208,11 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
             lines.add("java/util/stream/IntStream#parallel()Ljava/util/stream/BaseStream;")
             lines.add("java/util/stream/LongStream#parallel()Ljava/util/stream/BaseStream;")
           }
+
           lines.sort()
+
           assert(lines.isNotEmpty() && !lines[0].endsWith('\r'))
-          lines
+          removeMembersFromSupportedClasses(lines)
         } ?: emptyList()
     }
 
@@ -379,7 +389,7 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
     /** Creates a new [DesugaredMethodLookup] for the given collection of files. */
     fun createDesugaredMethodLookup(files: Collection<File>): DesugaredMethodLookup {
       assert(files.isNotEmpty())
-      var lines = ArrayList<String>(1024)
+      var lines: MutableList<String> = ArrayList<String>(1024)
       for (file in files) {
         file.forEachLine {
           if (it.isNotBlank()) {
@@ -390,9 +400,31 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
       lines.sort()
 
       if (files.size > 1 && lines.isNotEmpty()) {
+        lines = removeMembersFromSupportedClasses(lines)
+      }
+
+      // make sure the files aren't Windows line separator encoded or that the line sequence methods
+      // handles it gracefully
+      assert(lines.isNotEmpty() && !lines[0].endsWith('\r'))
+
+      return DesugaredMethodLookup(lines.toTypedArray())
+    }
+
+    /**
+     * Remove any entries from the signature list for an individual method or field if the whole
+     * class is already listed as fully supported. (These would confuse the binary search.)
+     */
+    private fun removeMembersFromSupportedClasses(lines: MutableList<String>): MutableList<String> {
+      if (lines.isNotEmpty()) {
         val filtered = ArrayList<String>(lines.size)
         var prev = ""
         for (line in lines) {
+          if (prev == line) {
+            continue
+          }
+          if (prev > line) {
+            error("Expected sorted file")
+          }
           if (prev.indexOf('#') == -1) {
             // last line was a class; see if this line is a member of that class; if so, drop it
             if (line.startsWith(prev) && line.length > prev.length && line[prev.length] == '#') {
@@ -403,14 +435,9 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
           filtered.add(line)
           prev = line
         }
-        lines = filtered
+        return filtered
       }
-
-      // make sure the files aren't Windows line separator encoded or that the line sequence methods
-      // handles it gracefully
-      assert(lines.isNotEmpty() && !lines[0].endsWith('\r'))
-
-      return DesugaredMethodLookup(lines.distinct().toTypedArray())
+      return lines
     }
 
     /**

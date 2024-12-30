@@ -23,6 +23,7 @@ import com.android.tools.lint.model.LintModelVariant
 import com.android.utils.SdkUtils.fileToUrl
 import kotlin.test.assertNotEquals
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -336,6 +337,31 @@ class DesugaredMethodLookupTest {
   }
 
   @Test
+  fun `test merge signature lists`() {
+    val entries = DesugaredMethodLookup.getBundledLibraryDesugaringRules(19)
+
+    // Make sure it's sorted
+    var prev = ""
+    for (entry in entries) {
+      assertTrue(entry > prev)
+      prev = entry
+    }
+
+    // Make sure that if we support a whole class, we don't then
+    // go on to also include individual entries
+    prev = ""
+    for (entry in entries) {
+      val index = entry.indexOf('#')
+      if (index != -1 && prev == entry.substring(0, index)) {
+        Assert.fail(
+          "$prev and $entry are both present; $prev should have implied all entries are included"
+        )
+      }
+      prev = entry
+    }
+  }
+
+  @Test
   fun `test find all`() {
     assertTrue(
       DesugaredMethodLookup.isDesugaredMethod(
@@ -346,45 +372,52 @@ class DesugaredMethodLookupTest {
       )
     )
 
-    for (entry in DesugaredMethodLookup.defaultDesugaredMethods) {
-      val sharp = entry.indexOf("#")
-      if (sharp == -1) {
-        // full class: make up some names; they *should* match
-        assertTrue(
-          entry,
-          DesugaredMethodLookup.isDesugaredMethod(
-            entry,
-            "foo",
-            "(I)",
-            SourceSetType.INSTRUMENTATION_TESTS,
-          ),
-        )
-        continue
-      }
-      assertNotEquals(-1, sharp)
-      val owner = entry.substring(0, sharp).replace("/", ".").replace("\$", ".")
-      val paren = entry.indexOf('(', sharp + 1)
-      if (paren == -1) {
-        // field -- has name, but no desc.
-        val name = entry.substring(sharp + 1)
-        assertTrue(
-          entry,
-          DesugaredMethodLookup.isDesugaredField(owner, name, SourceSetType.INSTRUMENTATION_TESTS),
-        )
-        continue
-      }
-      assertNotEquals(-1, paren)
-      val name = entry.substring(sharp + 1, paren)
-      val desc = entry.substring(paren, entry.indexOf(")") + 1)
-      assertTrue(
-        entry,
-        DesugaredMethodLookup.isDesugaredMethod(
-          owner,
-          name,
-          desc,
-          SourceSetType.INSTRUMENTATION_TESTS,
-        ),
+    val signatureLists =
+      listOf(
+        DesugaredMethodLookup.defaultDesugaredMethods,
+        DesugaredMethodLookup.getBundledLibraryDesugaringRules(24).toTypedArray(),
       )
+
+    for (signatures in signatureLists) {
+      val lookup = DesugaredMethodLookup(signatures)
+      for (entry in signatures) {
+        val sharp = entry.indexOf("#")
+        if (sharp == -1) {
+          // full class: make up some names; they *should* match
+          assertTrue(entry, lookup.isDesugaredMethod(entry, "foo", "(I)"))
+          assertTrue(entry, lookup.isDesugaredClass(entry))
+          assertFalse(entry, lookup.isDesugaredClass(entry.substring(0, entry.length - 2)))
+          continue
+        }
+        assertNotEquals(-1, sharp)
+        val owner = entry.substring(0, sharp).replace("/", ".").replace("\$", ".")
+        val paren = entry.indexOf('(', sharp + 1)
+        val partialClassSupport = signatures.any { it.startsWith(entry.substring(0, sharp + 1)) }
+
+        if (paren == -1) {
+          // field -- has name, but no desc.
+          val name = entry.substring(sharp + 1)
+          assertTrue(entry, lookup.isDesugaredField(owner, name))
+          // Make sure we don't match on partial field name (unless we support
+          // the whole class; in that case, it doesn't list individual fields)
+          if (partialClassSupport) {
+            assertFalse(entry, lookup.isDesugaredField(owner, name.substring(0, name.length - 2)))
+          }
+          continue
+        }
+        assertNotEquals(-1, paren)
+        val name = entry.substring(sharp + 1, paren)
+        val desc = entry.substring(paren, entry.indexOf(")") + 1)
+        assertTrue(entry, lookup.isDesugaredMethod(owner, name, desc))
+        // Make sure we don't match on partial field name (unless we support
+        // the whole class; in that case, it doesn't list individual fields)
+        if (partialClassSupport) {
+          assertFalse(
+            entry,
+            lookup.isDesugaredMethod(owner, name, desc.substring(0, desc.length - 2) + "JJ)"),
+          )
+        }
+      }
     }
   }
 
@@ -471,6 +504,16 @@ class DesugaredMethodLookupTest {
         )
       )
 
+      // Don't match partial names
+      assertFalse(
+        DesugaredMethodLookup.isDesugaredMethod(
+          "def/gh/I",
+          "name",
+          "()",
+          SourceSetType.INSTRUMENTATION_TESTS,
+        )
+      )
+
       // Match methods where the descriptor just lists the class name
       assertTrue(
         DesugaredMethodLookup.isDesugaredMethod(
@@ -480,6 +523,9 @@ class DesugaredMethodLookupTest {
           SourceSetType.INSTRUMENTATION_TESTS,
         )
       )
+
+      /* No longer done: it looks like the descriptor files contain
+         all valid inner classes.
       // Match inner classes where the descriptor just lists the top level class name
       assertTrue(
         DesugaredMethodLookup.isDesugaredMethod(
@@ -489,6 +535,7 @@ class DesugaredMethodLookupTest {
           SourceSetType.INSTRUMENTATION_TESTS,
         )
       )
+       */
 
       assertFalse(
         DesugaredMethodLookup.isDesugaredMethod(
