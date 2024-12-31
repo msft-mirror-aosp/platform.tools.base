@@ -15,12 +15,16 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.sdklib.IAndroidTarget
+import com.android.testutils.TestUtils
+import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.checks.infrastructure.TestFiles
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceSetType
 import com.android.tools.lint.model.LintModelAndroidArtifact
 import com.android.tools.lint.model.LintModelVariant
 import com.android.utils.SdkUtils.fileToUrl
+import java.io.File
 import kotlin.test.assertNotEquals
 import org.junit.After
 import org.junit.Assert
@@ -378,6 +382,15 @@ class DesugaredMethodLookupTest {
         DesugaredMethodLookup.getBundledLibraryDesugaringRules(24).toTypedArray(),
       )
 
+    val client =
+      object : LintCliClient(CLIENT_UNIT_TESTS) {
+        override fun getSdkHome(): File? = TestUtils.getSdk().toFile()
+      }
+    val lookup = client.getPlatformLookup()!!
+    val xmlFile =
+      File(lookup.getLatestSdkTarget()!!.getPath(IAndroidTarget.DATA).toFile(), "api-versions.xml")
+    val info = Api.parseApi(xmlFile)
+
     for (signatures in signatureLists) {
       val lookup = DesugaredMethodLookup(signatures)
       for (entry in signatures) {
@@ -416,6 +429,56 @@ class DesugaredMethodLookupTest {
             entry,
             lookup.isDesugaredMethod(owner, name, desc.substring(0, desc.length - 2) + "JJ)"),
           )
+        }
+      }
+
+      // Negative tests: make sure nothing in the Android SDK surface shows up
+      // as matching unless it's present in the signature list
+      val allowed =
+        signatures
+          .map {
+            // Drop return type to simplify below lookup
+            val rp = it.lastIndexOf(')')
+            if (rp != -1) {
+              it.substring(0, rp + 1)
+            } else {
+              it
+            }
+          }
+          .toSet()
+      for (apiClass in info.classes.values) {
+        val name = apiClass.name
+        val fields = apiClass.fields
+        val methods = apiClass.methods
+
+        if (!allowed.contains(name)) {
+          assertFalse(name, lookup.isDesugaredClass(name))
+        }
+
+        for (methodWithDesc in methods) {
+          val entry = "$name#$methodWithDesc"
+          if (!allowed.contains(name) && !allowed.contains(entry)) {
+            val index = methodWithDesc.indexOf('(')
+            val methodName = methodWithDesc.substring(0, index)
+            val desc = methodWithDesc.substring(index)
+            if (methodName == "<init>") {
+              // The signature lists are missing constructors. We have an approximation
+              // that we consider a constructor backported if one or more methods/fields
+              // are present in the signature file, so match the same logic here.
+              val isPresent =
+                signatures.contains(name) || signatures.any { it.startsWith("$name#") }
+              assertEquals(entry, isPresent, lookup.isDesugaredMethod(name, methodName, desc))
+            } else {
+              assertFalse(entry, lookup.isDesugaredMethod(name, methodName, desc))
+            }
+          }
+        }
+
+        for (field in fields) {
+          val entry = "$name#$field"
+          if (!allowed.contains(name) && !allowed.contains(entry)) {
+            assertFalse(entry, lookup.isDesugaredField(name, field))
+          }
         }
       }
     }
