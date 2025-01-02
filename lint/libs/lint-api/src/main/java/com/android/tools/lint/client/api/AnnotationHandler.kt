@@ -109,7 +109,9 @@ import org.jetbrains.uast.UClassLiteralExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UEnumConstant
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.ULambdaExpression
+import org.jetbrains.uast.ULocalVariable
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UObjectLiteralExpression
 import org.jetbrains.uast.UParameter
@@ -126,7 +128,6 @@ import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastEmptyExpression
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUClass
-import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.isNullLiteral
 import org.jetbrains.uast.skipParenthesizedExprDown
@@ -178,7 +179,8 @@ internal class AnnotationHandler(
       if (check != null) {
         val type =
           when (p.operator) {
-            UastBinaryOperator.ASSIGN -> if (check === rightOperand) ASSIGNMENT_LHS else BINARY
+            UastBinaryOperator.ASSIGN ->
+              if (check === rightOperand) ASSIGNMENT_RHS else ASSIGNMENT_LHS
             UastBinaryOperator.EQUALS,
             UastBinaryOperator.NOT_EQUALS,
             UastBinaryOperator.IDENTITY_EQUALS,
@@ -204,44 +206,6 @@ internal class AnnotationHandler(
             }
           }
         }
-      }
-    } else if (call is UVariable) {
-      val variable = call
-      val variablePsi = call.javaPsi
-      // TODO: What about fields?
-      call
-        .getContainingUMethod()
-        ?.accept(
-          object : AbstractUastVisitor() {
-            override fun visitSimpleNameReferenceExpression(
-              node: USimpleNameReferenceExpression
-            ): Boolean {
-              // Bail out early if this name reference is
-              // definitely not the variable we're looking for.
-              if (node.identifier != variable.name) {
-                return super.visitSimpleNameReferenceExpression(node)
-              }
-              val referencedVariable = node.resolve()
-              if (variablePsi == referencedVariable) {
-                val expression = node.getParentOfType(UExpression::class.java, true)
-                if (expression != null) {
-                  val inner = node.getParentOfType(UExpression::class.java, false) ?: return false
-                  checkAnnotations(context, inner, VARIABLE_REFERENCE, annotated, annotations)
-                  return false
-                }
-
-                // TODO: if the reference is the LHS Of an assignment
-                //   UastExpressionUtils.isAssignment(expression)
-                // then assert the annotations on to the right hand side
-              }
-              return super.visitSimpleNameReferenceExpression(node)
-            }
-          }
-        )
-
-      val initializer = variable.uastInitializer
-      if (initializer != null) {
-        checkAnnotations(context, initializer, ASSIGNMENT_RHS, annotated, annotations)
       }
     }
   }
@@ -944,15 +908,31 @@ internal class AnnotationHandler(
     }
     */
 
-    val field = node.resolve() as? PsiModifierListOwner
-    if (
-      field is PsiField ||
-        field is PsiMethod ||
-        field?.toUElement()?.sourcePsi is KtObjectDeclaration
-    ) {
+    val resolved = node.resolve().toUElement() ?: return
+
+    // Field (or getter method, or object access).
+    if (resolved is UField || resolved is UMethod || resolved.sourcePsi is KtObjectDeclaration) {
+      val psi = resolved.javaPsi
+      if (psi !is PsiModifierListOwner) return
       if (isOverloadedMethodCall(node)) return
-      val annotations = getMemberAnnotations(context, field)
-      checkAnnotations(context, node, FIELD_REFERENCE, field, annotations)
+      val annotations = getMemberAnnotations(context, psi)
+      checkAnnotations(context, node, FIELD_REFERENCE, psi, annotations)
+      return
+    }
+
+    // Parameter reference.
+    if (resolved is UParameter) {
+      val annotations = getRelevantAnnotations(context.evaluator, resolved as UAnnotated, PARAMETER)
+      // TODO: Add PARAMETER_REFERENCE?
+      checkAnnotations(context, node, VARIABLE_REFERENCE, resolved as UAnnotated, annotations)
+      return
+    }
+
+    // Variable reference.
+    if (resolved is ULocalVariable) {
+      val annotations = getRelevantAnnotations(context.evaluator, resolved as UAnnotated, VARIABLE)
+      checkAnnotations(context, node, VARIABLE_REFERENCE, resolved as UAnnotated, annotations)
+      return
     }
   }
 
@@ -1084,7 +1064,16 @@ internal class AnnotationHandler(
     val evaluator = context.evaluator
     val variableAnnotations = getRelevantAnnotations(evaluator, variable as UAnnotated, VARIABLE)
     if (variableAnnotations.isNotEmpty()) {
-      checkContextAnnotations(context, variable, variableAnnotations, variable)
+      val initializer = variable.uastInitializer
+      if (initializer != null) {
+        checkAnnotations(
+          context,
+          initializer,
+          ASSIGNMENT_RHS,
+          variable as UAnnotated,
+          variableAnnotations,
+        )
+      }
     }
 
     // Handle type annotations--the explicitly specified types of declarations--separately

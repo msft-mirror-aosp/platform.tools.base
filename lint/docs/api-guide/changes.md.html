@@ -5,6 +5,15 @@ authors: new features, API and behavior changes, and so on. For
 information about user visible changes to lint, see the User
 Guide.
 
+**8.10**
+
+* Lint might now call `Detector.visitAnnotationUsage` in a few additional cases,
+  with `usageInfo.type` set to `VARIABLE_REFERENCE`, `FIELD_REFERENCE`,
+  `ASSIGNMENT_RHS`, or `ASSIGNMENT_LHS`. We believe the additional cases were
+  previously (incorrectly) not triggering, so most `Detector`s should continue
+  to work without changes. However, some `Detector`s may have inadvertently been
+  relying on these cases not triggering, and so may need minor changes.
+
 **8.9**
 
 * Lint's testing infrastructure support for testing quickfixes
