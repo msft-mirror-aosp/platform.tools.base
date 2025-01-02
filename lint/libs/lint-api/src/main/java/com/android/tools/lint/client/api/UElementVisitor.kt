@@ -232,6 +232,8 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
             v.afterCheckFile(context)
           }
         }
+
+        annotationHandler?.clearAnnotationCaches()
       } finally {
         context.setJavaFile(null)
         context.uastFile = null

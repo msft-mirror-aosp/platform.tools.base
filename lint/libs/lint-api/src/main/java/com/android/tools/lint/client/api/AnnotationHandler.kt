@@ -150,6 +150,16 @@ internal class AnnotationHandler(
     driver.skipAnnotations?.forEach { (relevantAnnotations as MutableSet).add(it) }
   }
 
+  /**
+   * Clears the caches that map from UElement and PSI element to a list of relevant annotations.
+   * These caches are useful while visiting a file (where we may request the annotations for an
+   * element multiple times), so should be cleared after visiting each file.
+   */
+  fun clearAnnotationCaches() {
+    relevantAnnotationsCacheUast.clear()
+    relevantAnnotationsCachePsi.clear()
+  }
+
   private fun checkContextAnnotations(
     context: JavaContext,
     origCall: UElement,
@@ -405,17 +415,23 @@ internal class AnnotationHandler(
     return AnnotationInfo(this, name, owner, source)
   }
 
+  private val relevantAnnotationsCacheUast = HashMap<UAnnotated, List<UAnnotation>>(2048)
+
   private fun getRelevantAnnotations(
     evaluator: JavaEvaluator,
     annotated: UAnnotated,
     origin: AnnotationOrigin,
   ): List<AnnotationInfo> {
     @Suppress("UElementAsPsi") val owner = annotated as? PsiElement ?: return emptyList()
-    val allAnnotations: List<UAnnotation> =
-      evaluator.getAllAnnotations(annotated, inHierarchy = true)
-    return filterRelevantAnnotations(evaluator, allAnnotations).mapNotNull {
-      it.toAnnotationInfo(owner, origin)
-    }
+
+    val filteredAnnotations =
+      relevantAnnotationsCacheUast.getOrPut(annotated) {
+        val allAnnotations: List<UAnnotation> =
+          evaluator.getAllAnnotations(annotated, inHierarchy = true)
+        filterRelevantAnnotations(evaluator, allAnnotations)
+      }
+
+    return filteredAnnotations.mapNotNull { it.toAnnotationInfo(owner, origin) }
   }
 
   private fun getRelevantAnnotations(
@@ -423,19 +439,28 @@ internal class AnnotationHandler(
     owner: PsiModifierListOwner,
     origin: AnnotationOrigin,
   ): List<AnnotationInfo> {
-    val allAnnotations = evaluator.getAnnotations(owner, inHierarchy = true)
-    return filterRelevantAnnotations(evaluator, allAnnotations).mapNotNull {
-      it.toAnnotationInfo(owner, origin)
-    }
+    val filteredAnnotations = getRelevantAnnotations(evaluator, owner, true)
+    return filteredAnnotations.mapNotNull { it.toAnnotationInfo(owner, origin) }
   }
+
+  private data class RelevantAnnotationsCachePsiKey(
+    val owner: PsiModifierListOwner,
+    val inHierarchy: Boolean,
+  )
+
+  private val relevantAnnotationsCachePsi =
+    HashMap<RelevantAnnotationsCachePsiKey, List<UAnnotation>>(4096)
 
   private fun getRelevantAnnotations(
     evaluator: JavaEvaluator,
     owner: PsiModifierListOwner,
     inHierarchy: Boolean = true,
   ): List<UAnnotation> {
-    val allAnnotations = evaluator.getAnnotations(owner, inHierarchy)
-    return filterRelevantAnnotations(evaluator, allAnnotations)
+    val key = RelevantAnnotationsCachePsiKey(owner, inHierarchy)
+    return relevantAnnotationsCachePsi.getOrPut(key) {
+      val allAnnotations = evaluator.getAnnotations(owner, inHierarchy)
+      filterRelevantAnnotations(evaluator, allAnnotations)
+    }
   }
 
   /** Returns a list of annotations surrounding the given [annotated] element. */
