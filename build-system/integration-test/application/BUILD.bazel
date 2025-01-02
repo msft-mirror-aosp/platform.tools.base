@@ -456,6 +456,9 @@ gradle_integration_test(
             "src/test/java/com/android/build/gradle/integration/kotlin/*.java",
             "src/test/java/com/android/build/gradle/integration/kotlin/*.kt",
         ],
+        exclude = [
+            "src/test/java/com/android/build/gradle/integration/kotlin/UpgradeKotlinGradlePluginApiTest.kt",
+        ],
     ),
     data = TEST_DATA,
     maven_repo_zips = [
@@ -473,6 +476,23 @@ gradle_integration_test(
     ],
     resources = glob(["src/test/resources/**"]),
     shard_count = 7,
+    deps = TEST_DEPS,
+)
+
+gradle_integration_test(
+    name = "built-in-kotlin-support-with-latest-kotlin-tests",
+    srcs = [
+        "src/test/java/com/android/build/gradle/integration/kotlin/UpgradeKotlinGradlePluginApiTest.kt",
+    ],
+    data = TEST_DATA,
+    maven_repo_zips = [
+        "//tools/base/build-system:android_gradle_plugin",
+    ],
+    maven_repos = [
+        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
+        "//tools/base/build-system/integration-test:latest_kotlin_gradle_plugin_prebuilts_for_sync_benchmarks",
+        "//tools/base/build-system/integration-test/application:prebuilts",
+    ],
     deps = TEST_DEPS,
 )
 

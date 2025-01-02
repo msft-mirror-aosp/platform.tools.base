@@ -1011,6 +1011,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-build-common:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20-dev-7612",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.21",

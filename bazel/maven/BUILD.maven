@@ -64123,6 +64123,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.1.20-dev-7612/kotlin-build-tools-impl-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.1.20-dev-7612",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_1.3.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/1.3.20/kotlin-compiler-embeddable-1.3.20.pom",
     repo_root_path = "repository",
@@ -64404,6 +64420,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.1.20-dev-7612/kotlin-compiler-embeddable-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.1.20-dev-7612",
+        "org.jetbrains.intellij.deps.trove4j_1.0.20200330",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler-runner_1.3.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/1.3.20/kotlin-compiler-runner-1.3.20.pom",
     repo_root_path = "repository",
@@ -64665,6 +64697,7 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-daemon-client_2.1.20-dev-7612",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.1.20-dev-7612",
     ],
     visibility = ["//visibility:public"],
 )
@@ -64978,6 +65011,9 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.1.20-dev-7612/kotlin-daemon-client-2.1.20-dev-7612.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -65122,6 +65158,14 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.1.0/kotlin-daemon-embeddable-2.1.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.1.20-dev-7612/kotlin-daemon-embeddable-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.1.20-dev-7612",
     visibility = ["//visibility:public"],
 )
 
@@ -67583,6 +67627,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.1.20-dev-7612/kotlin-script-runtime-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.1.20-dev-7612",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-scripting-common_1.3.41",
     pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/1.3.41/kotlin-scripting-common-1.3.41.pom",
     repo_root_path = "repository",
@@ -67752,6 +67804,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.1.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.1.20-dev-7612/kotlin-scripting-common-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67974,6 +68037,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.1.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.1.20-dev-7612/kotlin-scripting-compiler-embeddable-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68216,6 +68291,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.1.20-dev-7612/kotlin-scripting-compiler-impl-embeddable-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-scripting-jvm_1.3.41",
     pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/1.3.41/kotlin-scripting-jvm-1.3.41.pom",
     repo_root_path = "repository",
@@ -68430,6 +68518,19 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-script-runtime_2.1.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
         "org.jetbrains.kotlin.kotlin-scripting-common_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.1.20-dev-7612",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.1.20-dev-7612/kotlin-scripting-jvm-2.1.20-dev-7612.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.1.20-dev-7612",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20-dev-7612",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.1.20-dev-7612",
     ],
     visibility = ["//visibility:public"],
 )
