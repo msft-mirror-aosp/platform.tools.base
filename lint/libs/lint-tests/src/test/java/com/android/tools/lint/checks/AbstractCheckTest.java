@@ -111,6 +111,10 @@ public abstract class AbstractCheckTest extends LintDetectorTest {
             task.addTestModes(ANDROIDX_TEST_MODE);
         }
 
+        // Only verify quickfixes across all test modes when adding new checks
+        // or for complex lint tests that explicitly opt in.
+        task.verifyFixedFileSyntax(null);
+
         // Make sure we have access to compileSdkVersions specified by tests; if not,
         // there's potential flakiness differences based on which SDKs are available
         // when tests are running in the IDE when it's not using specific prebuilts.

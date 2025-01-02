@@ -762,7 +762,10 @@ internal fun String.withLineNumbers(): String {
   var lineNumber = 1
   val lines = this.lines()
   val width = max(1, ceil(log10(lines.size.toDouble())).toInt())
-  return lines.joinToString("\n") { String.format("%${width}d %s", lineNumber++, it) }
+  return lines.joinToString("\n") {
+    val separator = if (it.isBlank()) "" else " "
+    String.format("%${width}d%s%s", lineNumber++, separator, it)
+  }
 }
 
 internal fun listFile(path: String, contents: String): String {

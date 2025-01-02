@@ -15,9 +15,14 @@
  */
 package com.android.tools.lint.checks.infrastructure
 
+import com.android.SdkConstants.DOT_JAVA
+import com.android.SdkConstants.DOT_KT
+import com.android.SdkConstants.DOT_KTS
 import com.android.SdkConstants.DOT_XML
 import com.android.ide.common.xml.XmlPrettyPrinter
 import com.android.tools.lint.LintCliFixPerformer
+import com.android.tools.lint.checks.infrastructure.TestFiles.java
+import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintResult.Companion.getDiff
 import com.android.tools.lint.client.api.LintFixPerformer.Companion.getLocation
 import com.android.tools.lint.client.api.LintFixPerformer.Companion.isEditingFix
@@ -28,15 +33,20 @@ import com.android.tools.lint.detector.api.LintFix.LintFixGroup
 import com.android.tools.lint.detector.api.LintFix.SetAttribute
 import com.android.tools.lint.detector.api.LintFix.ShowUrl
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.getErrorLines
 import com.android.utils.XmlUtils
 import com.google.common.base.Splitter
 import com.google.common.collect.Lists
+import com.intellij.openapi.util.Disposer
+import com.intellij.psi.PsiErrorElement
+import com.intellij.psi.util.PsiTreeUtil
 import java.io.File
 import java.io.IOException
 import java.util.Base64
 import java.util.regex.Pattern
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.rules.TemporaryFolder
 import org.xml.sax.SAXException
 
 /**
@@ -56,6 +66,7 @@ class LintFixVerifier(
   private var diffWindow = 0
   private var reformat: Boolean? = null
   private var robot = false
+  private var verifyFixedFileSyntax = false
 
   /** Sets up 2 lines of context in the diffs */
   fun window(): LintFixVerifier {
@@ -86,6 +97,15 @@ class LintFixVerifier(
    */
   fun reformatDiffs(reformatDiffs: Boolean): LintFixVerifier {
     reformat = reformatDiffs
+    return this
+  }
+
+  /**
+   * Sets whether lint should verify that any Kotlin, Java, or XML files have valid syntax after
+   * applying the fixes.
+   */
+  fun verifyFixedFileSyntax(verify: Boolean): LintFixVerifier {
+    verifyFixedFileSyntax = verify
     return this
   }
 
@@ -161,19 +181,49 @@ class LintFixVerifier(
     return this
   }
 
+  /**
+   * Like [expectFixDiffs] but does not check the fix diff output -- it only applies the fixes and
+   * then verifies that the resulting modified files are syntactically valid.
+   */
+  fun verifyFixesValid(transformer: TestResultTransformer): LintFixVerifier {
+    expectFixDiffs(null, compatMode1 = false, compatMode2 = false, transformer = transformer)
+    return this
+  }
+
   private fun expectFixDiffs(
-    expected: String,
+    expected: String?,
     compatMode1: Boolean,
     compatMode2: Boolean,
     transformer: TestResultTransformer = TestResultTransformer { it },
   ): LintFixVerifier {
-    var expected = expected
+    val verifyOnly = verifyFixedFileSyntax && expected == null
+    var expected = expected ?: ""
     val diff = StringBuilder(100)
     checkFixes(null, null, diff, compatMode1, compatMode2)
     var actual =
       transformer.transform(diff.toString().replace("\r\n", "\n").trimIndent().replace('$', '＄'))
     val originalActual = actual
     expected = expected.trimIndent().replace('$', '＄')
+
+    if (verifyOnly) {
+      return this
+    }
+
+    if (!outputMatches(expected, actual)) {
+      // If not implicitly matching with whitespace cleanup and number adjustments
+      // just assert that they're equal -- this will never be true, but we want
+      // the test failure output to show the original comparison such that updated
+      // test copying from the diff includes the new normalized output.
+      val modePrefix = TestLintClient.testModePrefix(mode)
+      val defaultPrefix = if (modePrefix.isEmpty()) "" else "Default:\n\n"
+      assertEquals(defaultPrefix + expected, modePrefix + originalActual)
+    }
+
+    return this
+  }
+
+  private fun outputMatches(expected: String, actual: String): Boolean {
+    var actual = actual
     if (
       expected != actual &&
         // Also allow trailing spaces in embedded lines since the old differ
@@ -194,7 +244,7 @@ class LintFixVerifier(
       if (
         diffWindow == 0 && dropImportLineNumberDiffs(expected) == dropImportLineNumberDiffs(actual)
       ) {
-        return this
+        return true
       }
 
       // Until 3.2 canary 10 the line numbers were off by one; try adjusting
@@ -203,19 +253,13 @@ class LintFixVerifier(
           actual.replace("\\s+\n".toRegex(), "\n").trim()
       ) {
         if (mode.sameOutput(expected, actual, TestMode.OutputKind.QUICKFIXES)) {
-          return this
+          return true
         }
 
-        // If not implicitly matching with whitespace cleanup and number adjustments
-        // just assert that they're equal -- this will never be true but we want
-        // the test failure output to show the original comparison such that updated
-        // test copying from the diff includes the new normalized output.
-        val modePrefix = TestLintClient.testModePrefix(mode)
-        val defaultPrefix = if (modePrefix.isEmpty()) "" else "Default:\n\n"
-        assertEquals(defaultPrefix + expected, modePrefix + originalActual)
+        return false
       }
     }
-    return this
+    return true
   }
 
   private fun findTestFile(path: String): TestFile? {
@@ -295,7 +339,12 @@ class LintFixVerifier(
         }
         if (expectedFile != null) {
           val after = edited[targetPath]!!
-          assertEquals(expectedFile.getContents()!!.trimIndent(), after.trimIndent())
+          val expected = expectedFile.getContents()!!.trimIndent()
+          val actual = after.trimIndent()
+          if (expected != actual && verifyFixedFileSyntax) {
+            validateSourceFile(targetPath, expected, actual)
+          }
+          assertEquals(expected, actual)
         }
         if (diffs != null) {
           if (reformat != null && reformat) {
@@ -326,7 +375,19 @@ class LintFixVerifier(
             compatMode2,
           )
         }
+
         val name = lintFix.getDisplayName()
+
+        if (verifyFixedFileSyntax) {
+          for (path in edited.keys) {
+            val initial = initial[path]!!
+            val edited = edited[path]!!
+            if (initial != edited) {
+              validateSourceFile(path, initial, edited, name)
+            }
+          }
+        }
+
         if (fixName != null && fixName != name) {
           if (!names.contains(name)) {
             names.add(name)
@@ -465,6 +526,99 @@ class LintFixVerifier(
         diffs.append(diff).append("\n")
       }
     }
+  }
+
+  private fun validateXmlSource(path: String, source: String): String? {
+    try {
+      XmlUtils.parseDocument(source, true)
+    } catch (t: Throwable) {
+      return "XML parsing error in $path: ${t.message}\n"
+    }
+
+    return null
+  }
+
+  private fun validateJavaOrKotlinSource(path: String, source: String): String? {
+    val temporaryFolder = TemporaryFolder.builder().build()
+    temporaryFolder.create()
+    try {
+      val (contexts, disposable) =
+        parse(
+          temporaryFolder = temporaryFolder,
+          testFiles =
+            arrayOf(if (path.endsWith(DOT_JAVA)) java(path, source) else kotlin(path, source)),
+        )
+      try {
+        for (context in contexts) {
+          val root = context.psiFile!!
+          val error = PsiTreeUtil.findChildOfType(root, PsiErrorElement::class.java)
+          if (error != null) {
+            val line = context.getLocation(error).start?.line ?: -1
+            val location = context.getLocation(error)
+            val lines = location.getErrorLines { source }
+            return "$error\nin ${path}:${line + 1} with text " +
+              "\"${error.text}\" inside \"${error.parent.text}\"\n" +
+              "$lines\n"
+          }
+        }
+      } finally {
+        Disposer.dispose(disposable)
+      }
+    } finally {
+      temporaryFolder.delete()
+    }
+    return null
+  }
+
+  /**
+   * Makes sure that the [after] file is a valid XML/Java/Kotlin source file (after applying
+   * quickfixes to it). The original contents was [before] and its source path is [path]; these are
+   * used to only complain if the file wasn't already containing parsing problems before the
+   * quickfix, and to pick the language to use to validate.
+   */
+  private fun validateSourceFile(
+    path: String,
+    before: String,
+    after: String,
+    fixName: String? = null,
+  ) {
+    if (task.includeSelectionMarkers && (after.contains("|") || after.contains("["))) {
+      // For example, we might add this: `@RequiresApi([TODO]|)`
+      return
+    }
+
+    val validator =
+      if (path.endsWith(DOT_KT) || path.endsWith(DOT_KTS) || path.endsWith(DOT_JAVA)) {
+        ::validateJavaOrKotlinSource
+      } else if (path.endsWith(DOT_XML)) {
+        ::validateXmlSource
+      } else {
+        return
+      }
+
+    val message = validator(path, after) ?: return
+    if (validator(path, before) != null) {
+      // Only complain if the previous file didn't already have errors...
+      return
+    }
+
+    val sb = StringBuilder()
+    sb.append(TestLintClient.testModePrefix(mode))
+    sb.append("After applying a fix")
+    if (fixName != null) {
+      sb.append(" (").append(fixName).append(")")
+    }
+    sb.append(",\nfound syntax errors in the source file ($path):\n")
+    sb.append(message).append("\n")
+    sb.append(
+      "If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.\n\n"
+    )
+    sb.append("Fixed file:\n")
+    sb.append(listFile(path, after))
+
+    // Rather than fail(), use assert equals so we get the "Click to see difference"
+    // action in the IDE and a keyboard shortcut (⌘D on OSX) to open it
+    assertEquals("", sb.toString())
   }
 
   private fun appendShowUrl(incident: Incident, fix: ShowUrl, diffs: StringBuilder) {
