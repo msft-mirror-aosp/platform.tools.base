@@ -52,6 +52,18 @@ interface GradleBuildDefinition {
      */
     var buildFileType: BuildFileType
 
+    /**
+     * Whether to use the old plugin style in order to get different classloaders. Default is false.
+     *
+     * This should only be used when trying to create situation where different projects have
+     * different classloaders for AGP.
+     *
+     * Note that this is not enough to get different classloaders. Each project should also
+     * have a different classpath. One can use local jars on each project using
+     * [GradleProjectDefinition.buildscript] to achieve this.
+     */
+    var useOldPluginStyleForSeparateClassloaders: Boolean
+
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
     fun includedBuild(name: String, action: GradleBuildDefinition.() -> Unit): GradleBuildDefinition

@@ -1867,6 +1867,8 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           message,
           apiLevelFix(api, minSdk),
           expressionOwner,
+          name = "iterator",
+          desc = "()",
           requires = api,
           min = minSdk,
         )

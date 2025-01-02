@@ -67,8 +67,6 @@ internal class FusedLibraryDefinitionImpl(
         action(files)
     }
 
-    private val contentHolder = DefaultDslContentHolder()
-
     override val androidFusedLibrary: FusedLibraryExtension =
         DslProxy.createProxy(
             FusedLibraryExtension::class.java,
@@ -111,31 +109,9 @@ internal class FusedLibraryImpl(
 ) : BaseAndroidProjectImpl<FusedLibraryDefinition>(
     location,
     projectDefinition,
-), FusedLibraryProject {
+), FusedLibraryProject, GeneratesAar by GeneratesAarDelegate(location) {
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
-
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {
-        val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
-
-        return Aar(path.toFile()).use {
-            action(it)
-        }
-    }
-
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
-
-        AarSubject.assertThat(Aar(path.toFile())).use {
-            action(it)
-        }
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean {
-        return computeOutputPath(aarSelector).isRegularFile()
-    }
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): FusedLibraryProject =
         ReversibleFusedLibraryProject(this, projectModification)
@@ -149,15 +125,6 @@ internal class ReversibleFusedLibraryProject(
     projectModification: TemporaryProjectModification
 ) : BaseReversibleAndroidProjectImpl<FusedLibraryProject, FusedLibraryDefinition>(
     parentProject,
-), FusedLibraryProject {
+), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject) {
     override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R =
-        parentProject.withAar(aarSelector, action)
-
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        parentProject.assertAar(aarSelector, action)
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean = parentProject.hasAar(aarSelector)
 }

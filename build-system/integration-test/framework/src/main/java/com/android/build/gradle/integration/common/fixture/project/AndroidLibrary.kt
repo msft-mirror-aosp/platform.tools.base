@@ -75,49 +75,28 @@ internal class AndroidLibraryImpl(
     location,
     projectDefinition,
     namespace,
-), AndroidLibraryProject {
+), AndroidLibraryProject, GeneratesAar by GeneratesAarDelegate(location) {
+    private val apkDelegate = GeneratesApkDelegate(location)
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
         if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
-        return super.withApk(apkSelector, action)
+        return apkDelegate.withApk(apkSelector, action)
     }
 
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
         if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
-        super.assertApk(apkSelector, action)
+        apkDelegate.assertApk(apkSelector, action)
     }
 
     override fun hasApk(apkSelector: ApkSelector): Boolean {
         if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
-        return super.hasApk(apkSelector)
-    }
-
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {
-        val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
-
-        return Aar(path.toFile()).use {
-            action(it)
-        }
-    }
-
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
-
-        AarSubject.assertThat(Aar(path.toFile())).use {
-            action(it)
-        }
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean {
-        return computeOutputPath(aarSelector).isRegularFile()
+        return apkDelegate.hasApk(apkSelector)
     }
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidLibraryProject =
@@ -133,23 +112,6 @@ internal class ReversibleAndroidLibraryProject(
 ) : ReversibleAndroidProject<AndroidLibraryProject, AndroidProjectDefinition<LibraryExtension>>(
     parentProject,
     projectModification
-), AndroidLibraryProject {
-
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R =
-        parentProject.withApk(apkSelector, action)
-
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        parentProject.assertApk(apkSelector, action)
-    }
-
-    override fun hasApk(apkSelector: ApkSelector): Boolean = parentProject.hasApk(apkSelector)
-
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R =
-        parentProject.withAar(aarSelector, action)
-
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        parentProject.assertAar(aarSelector, action)
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean = parentProject.hasAar(aarSelector)
-}
+), AndroidLibraryProject,
+    GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
+    GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

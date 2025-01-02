@@ -26,7 +26,11 @@ import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.SourceDirectorySet
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import java.io.File
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -138,6 +142,7 @@ class DslProxy private constructor(
         when (param.type) {
             Integer::class.java,
             Int::class.java,
+            Float::class.java,
             File::class.java,
             JavaVersion::class.java -> {
                 contentHolder.set(propName, value)
@@ -145,6 +150,7 @@ class DslProxy private constructor(
             java.lang.Boolean::class.java, Boolean::class.java -> {
                 contentHolder.setBoolean(propName, value, isNotation)
             }
+            // custom implementation for String in order to intercept set/get to namespace
             String::class.java -> {
                 contentHolder.set(propName, value)
                 if (rootExtensionProxy && propName == "namespace") {
@@ -152,7 +158,7 @@ class DslProxy private constructor(
                 }
             }
 
-            else -> throw IllegalArgumentException("Does not support type ${param.type} for method ${method.name}")
+            else -> throw IllegalArgumentException("Does not support type ${param.type} for method ${method.name} -- Add support as needed")
         }
 
         return true
@@ -175,55 +181,63 @@ class DslProxy private constructor(
                 ?: throw Error("Expected prop name but null")
 
         val returnValue = when (method.returnType) {
+            // some custom proxies in order to ensure they are not called in the wrong way
+            // (like querying for the collection content, or calling get on providers)
             MutableList::class.java,
             MutableCollection::class.java -> contentHolder.getList(propName)
             MutableSet::class.java -> contentHolder.getSet(propName)
             MutableMap::class.java -> contentHolder.getMap(propName)
             Property::class.java -> contentHolder.getProperty(propName)
+            ListProperty::class.java -> contentHolder.getListProperty(propName)
+            // custom implementation for String in order to intercept set/get to namespace
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
                     return MethodReturn(true, namespace)
                 }
                 throw Error("Unsupported getter type ${method.returnType} for method ${method.name}")
             }
+            // allow-listed Gradle, JetBrains and other types that we want to support.
+            // Returned as chained proxies
+            SourceDirectorySet::class.java,
+            KotlinJvmCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
+            // the rest
             else -> {
-                // we may get here if the type is a nested block.
+                // AGP API objects. These are generally objects that also have a matching configuration
+                // method, so we return the objects as chained proxies
                 if (method.returnType.name.startsWith("com.android.build.api")) {
                     // FIXME should we check whether there is a matching action method?
-                    try {
-                        val returnType = method.genericReturnType
-                        val actualReturnType = if (returnType is TypeVariable<*>) {
-                            // search in the class that defined the method for the index of the type param for
-                            // the type used in the function.
-                            val ownerClass = method.declaringClass
-                            val index = findTypeParameterIndex(ownerClass, returnType.name)
-
-                            // get the same info on the proxied interface to get the final type, and find the
-                            // type from the same index.
-                            val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
-
-                            resolvedType.typeName
-                        } else {
-                            method.returnType.name
-                        }
-
-                        contentHolder.chainedProxy(
-                            propName,
-                            javaClass.classLoader.loadClass(actualReturnType)
-                        )
-                    } catch (e: ClassNotFoundException) {
-                        throw RuntimeException(
-                            "Failed to load ${method.returnType.name} for ${theInterface.name}.$propName",
-                            e
-                        )
-                    }
+                    method.getChainedProxyForReturn(propName)
                 } else {
-                    throw Error("Unsupported getter type ${method.returnType} for method ${method.name}")
+                    // and the real rest throws.
+                    throw Error("Unsupported getter type ${method.returnType} for method ${method.name} -- Add support as needed")
                 }
             }
         }
 
         return MethodReturn(true, returnValue)
+    }
+
+    fun Method.getChainedProxyForReturn(propName: String): Any = try {
+        val genericType = genericReturnType
+        val actualReturnClass = if (genericType is TypeVariable<*>) {
+            // search in the class that defined the method for the index of the type param for
+            // the type used in the function.
+            val ownerClass = declaringClass
+            val index = findTypeParameterIndex(ownerClass, genericType.name)
+
+            // get the same info on the proxied interface to get the final type, and find the
+            // type from the same index.
+            getTypeParameterByIndex(ownerClass.typeName, index)
+        } else {
+            returnType
+        }
+
+        contentHolder.chainedProxy(propName, actualReturnClass)
+    } catch (e: ClassNotFoundException) {
+        throw RuntimeException(
+            "Failed to load ${returnType.name} for ${theInterface.name}.$propName",
+            e
+        )
     }
 
     private fun checkNestedBlock(method: Method, args: Array<out Any?>): Boolean {
@@ -278,62 +292,82 @@ class DslProxy private constructor(
                     method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
                 }
             } else {
-                throw RuntimeException("Unsupported ParameterizedType in block function")
+                throw RuntimeException("Unsupported ParameterizedType in block function for '${method.name}' - Add support as needed.")
             }
         } else {
             method.declaringClass.classLoader.loadClass(blockTypeValue.typeName)
         }
 
         // Now that we have resolved all the types, we can call into the nested block.
-        // Build Type and Product Flavor handle their block differently as the
-        // inner type is a specific container that has to create the build type or flavor
-        // themselves, so there's 2 layers inside this method really.
-        when (method.name) {
-            "buildTypes" -> {
-                // content holder has a special API for build type container.
-                // The provided type is not the type of the container but the type handled
-                // by the container.
-                @Suppress("UNCHECKED_CAST")
-                contentHolder.buildTypes(blockTypeClass as Class<BuildType>) {
-                    // calls into the function configuring the container.
-                    // `this` here is the nested block (container)
+        // Container blocks are handled on a case by case basis as the main action creates
+        // objects based on the type parameter on the container.
+        // Because of this we need custom support for each new container
+        if (blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
+            when (blockTypeClass.name) {
+                "com.android.build.api.dsl.ApplicationBuildType",
+                "com.android.build.api.dsl.LibraryBuildType",
+                "com.android.build.api.dsl.DynamicFeatureBuildType",
+                "com.android.build.api.dsl.TestBuildType" -> {
+                    // content holder has a special API for build type container.
+                    // The provided type is not the type of the container but the type handled
+                    // by the container.
                     @Suppress("UNCHECKED_CAST")
-                    (args[0] as Function1<Any,*>).invoke(this)
+                    contentHolder.buildTypes(blockTypeClass as Class<BuildType>) {
+                        // calls into the function configuring the container.
+                        // `this` here is the nested block (container)
+                        @Suppress("UNCHECKED_CAST")
+                        (args[0] as Function1<Any, *>).invoke(this)
+                    }
                 }
-            }
-            "productFlavors" -> {
-                // content holder has a special API for flavor container.
-                // The provided type is not the type of the container but the type handled
-                // by the container.
-                @Suppress("UNCHECKED_CAST")
-                contentHolder.productFlavors(blockTypeClass as Class<ProductFlavor>) {
-                    // calls into the function configuring the container.
-                    // `this` here is the nested block (container)
+
+                "com.android.build.api.dsl.ApplicationProductFlavor",
+                "com.android.build.api.dsl.LibraryProductFlavor",
+                "com.android.build.api.dsl.DynamicFeatureProductFlavor",
+                "com.android.build.api.dsl.TestProductFlavor" -> {
+                    // content holder has a special API for flavor container.
+                    // The provided type is not the type of the container but the type handled
+                    // by the container.
                     @Suppress("UNCHECKED_CAST")
-                    (args[0] as Function1<Any,*>).invoke(this)
+                    contentHolder.productFlavors(blockTypeClass as Class<ProductFlavor>) {
+                        // calls into the function configuring the container.
+                        // `this` here is the nested block (container)
+                        @Suppress("UNCHECKED_CAST")
+                        (args[0] as Function1<Any, *>).invoke(this)
+                    }
                 }
-            }
-            "profiles" -> {
-                @Suppress("UNCHECKED_CAST")
-                contentHolder.executionProfiles(blockTypeClass as Class<ExecutionProfile>) {
-                    // calls into the function configuring the container.
-                    // `this` here is the nested block (container)
+
+                "com.android.build.api.dsl.ExecutionProfile" -> {
                     @Suppress("UNCHECKED_CAST")
-                    (args[0] as Function1<Any,*>).invoke(this)
+                    contentHolder.executionProfiles(blockTypeClass as Class<ExecutionProfile>) {
+                        // calls into the function configuring the container.
+                        // `this` here is the nested block (container)
+                        @Suppress("UNCHECKED_CAST")
+                        (args[0] as Function1<Any, *>).invoke(this)
+                    }
                 }
-            }
-            else -> {
-                if (blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
-                    // this another container. we need specific support for it.
+
+                "org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    contentHolder.kotlinSourceSets(blockTypeClass as Class<KotlinSourceSet>) {
+                        // calls into the function configuring the container.
+                        // `this` here is the nested block (container)
+                        @Suppress("UNCHECKED_CAST")
+                        (args[0] as Function1<Any, *>).invoke(this)
+                    }
+                }
+
+                else -> {
+                    // this a container with different content. we need specific support for it.
                     throw RuntimeException("Unsupported container configuration: ${method.name}(${blockTypeClass.name})")
                 }
-                // Normal nested block. the provided type is the direct nested block type.
-                contentHolder.runNestedBlock(method.name, listOf(), blockTypeClass) {
-                    // calls into the function configuring the nested block
-                    // `this` here is the nested block
-                    @Suppress("UNCHECKED_CAST")
-                    (args[0] as Function1<Any,*>).invoke(this)
-                }
+            }
+        } else {
+            // Normal nested block. the provided type is the direct nested block type.
+            contentHolder.runNestedBlock(method.name, listOf(), blockTypeClass) {
+                // calls into the function configuring the nested block
+                // `this` here is the nested block
+                @Suppress("UNCHECKED_CAST")
+                (args[0] as Function1<Any,*>).invoke(this)
             }
         }
 
@@ -371,13 +405,13 @@ class DslProxy private constructor(
         throw Error("Could not find type parameters $typeName on class $theClass")
     }
 
-    private fun getTypeParameterByIndex(originalClass: String, index: Int): Type {
+    private fun getTypeParameterByIndex(originalClass: String, index: Int): Class<*> {
         val genericInfo = theInterface.genericInterfaces
         for (type in genericInfo) {
             if (type is ParameterizedType) {
                 val owner = type.rawType
                 if (owner.typeName == originalClass) {
-                    return type.actualTypeArguments[index]
+                    return theInterface.classLoader.loadClass(type.actualTypeArguments[index].typeName)
                 }
             }
         }

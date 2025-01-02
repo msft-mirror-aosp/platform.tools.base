@@ -23,11 +23,17 @@ import com.android.build.gradle.integration.common.fixture.project.builder.KtsBu
 import com.google.common.truth.Truth
 import org.junit.Test
 
-class DslContentHolderTest {
+/**
+ * this tests the content holder only, by providing a manual instance of the object (unless it's
+ * nested).
+ *
+ * See [BasicDslProxyTest] for usage integrated with the [DslProxy]
+ */
+class DslContentHolderTest: ExtensionAwareDefinitionImpl() {
+    private val contentHolder = DefaultDslContentHolder(this)
 
     @Test
     fun simple() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             name = "address",
             parameters = listOf(),
@@ -52,7 +58,6 @@ class DslContentHolderTest {
 
     @Test
     fun nested() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
             parameters = listOf(),
@@ -87,7 +92,6 @@ class DslContentHolderTest {
 
     @Test
     fun skipNullAndBlock() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
             parameters = listOf(),
@@ -108,7 +112,6 @@ class DslContentHolderTest {
 
     @Test
     fun testOrder() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
             parameters = listOf(),
@@ -149,7 +152,6 @@ class DslContentHolderTest {
 
     @Test
     fun getterChain() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
             parameters = listOf(),
@@ -176,7 +178,6 @@ class DslContentHolderTest {
 
     @Test
     fun methodCall() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "person",
             parameters = listOf(),
@@ -201,8 +202,6 @@ class DslContentHolderTest {
 
     @Test
     fun mapPut() {
-
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock(
             "address",
             parameters = listOf(),

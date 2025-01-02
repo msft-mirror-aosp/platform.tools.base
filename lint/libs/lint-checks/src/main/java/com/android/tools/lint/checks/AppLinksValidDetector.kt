@@ -57,7 +57,6 @@ import com.android.SdkConstants.VALUE_0
 import com.android.SdkConstants.VALUE_FALSE
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.ide.common.rendering.api.ResourceNamespace
-import com.android.resources.ResourceType
 import com.android.resources.ResourceUrl
 import com.android.sdklib.AndroidVersion.VersionCodes
 import com.android.tools.lint.checks.AndroidPatternMatcher.PATTERN_ADVANCED_GLOB
@@ -157,7 +156,10 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           fix()
             .replace()
             .with(subTags.joinToString("\n" + indentation(indentAmount)))
-            .autoFix()
+            .robot(true)
+            // This quick-fix copies data elements, so it may be affected by other quick-fixes or
+            // generate new problems.
+            .independent(false)
             .build(),
         )
       }
@@ -542,7 +544,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             |set `android:autoVerify="false"` to make it clear this is not intended \
             |to be an Android App Link."""
           .trimMargin(),
-        fix().set(ANDROID_URI, ATTR_AUTO_VERIFY, VALUE_TRUE).build(),
+        fix().set(ANDROID_URI, ATTR_AUTO_VERIFY, VALUE_TRUE).autoFix().build(),
       )
     }
 
@@ -643,7 +645,10 @@ class AppLinksValidDetector : Detector(), XmlScanner {
               Location.create(context.file, firstChildStart, firstChildStart)
                 .withSource(intentFilter)
             )
-            .autoFix()
+            // If the host is required, the user needs to fill it in. Otherwise, no user input is
+            // needed.
+            .robot(!needsHostFix)
+            .independent(true)
             .build()
 
         reportUrlError(
@@ -810,11 +815,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       val fix =
         if (intentFilterData.dataTags.hostPortPairs.isEmpty()) {
           // If there are no hosts, ask the user to specify the scheme.
-          fix().set().todo(ANDROID_URI, ATTR_SCHEME)
+          fix().set().todo(ANDROID_URI, ATTR_SCHEME).independent(true)
         } else {
           // If there's at least one host, it's likely they want http(s), so we can prompt them with
           // http.
-          fix().set().todo(ANDROID_URI, ATTR_SCHEME, "http")
+          fix().set().todo(ANDROID_URI, ATTR_SCHEME, "http").independent(true)
         }
       reportUrlError(
         context,
@@ -968,6 +973,23 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         val dataElement = (dataTag as? ElementWrapper)?.element ?: return
         val parent = dataElement.parentNode as? Element ?: return
         val dataIndent = context.getLocation(dataElement).start?.column ?: DEFAULT_INDENT_AMOUNT
+        val newLineAndDataIndent = "\n" + indentation(dataIndent)
+        val indexOfThisPath = dataTag.attributes.indexOfFirst { it.rawValue == path.rawValue }
+        val otherAttributesInThisDataTag =
+          dataTag.attributes.toMutableList().apply {
+            removeAt(indexOfThisPath)
+            sortBy { it.name }
+          }
+        val otherAttributesText =
+          when {
+            otherAttributesInThisDataTag.isEmpty() -> ""
+            else ->
+              "<data " +
+                otherAttributesInThisDataTag.joinToString(" ") {
+                  "$namespace:${it.name}=\"${it.rawValue}\""
+                } +
+                " />$newLineAndDataIndent"
+          }
         val message =
           when (parent.tagName) {
             TAG_URI_RELATIVE_FILTER_GROUP ->
@@ -979,13 +1001,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         val fixText =
           when (parent.tagName) {
             TAG_URI_RELATIVE_FILTER_GROUP -> {
-              val newLineAndDataIndent = "\n" + indentation(dataIndent)
               val newLineAndIndentedFragment =
                 when (fragmentInUri) {
                   "" -> ""
                   else -> """$newLineAndDataIndent<data $namespace:fragment="$fragmentInUri" />"""
                 }
-              "<data $namespace:$name=$pathBeforeQueryAndFragment />" +
+              "$otherAttributesText<data $namespace:$name=$pathBeforeQueryAndFragment />" +
                 concatenateWithIndent(queries, newLineAndDataIndent) +
                 newLineAndIndentedFragment
             }
@@ -999,7 +1020,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                   "" -> ""
                   else -> """$newLineAndInnerIndent<data $namespace:fragment="$fragmentInUri" />"""
                 }
-              "<uri-relative-filter-group>" +
+              "$otherAttributesText<uri-relative-filter-group>" +
                 """$newLineAndInnerIndent<data $namespace:$name="$pathBeforeQueryAndFragment" />""" +
                 concatenateWithIndent(queries, newLineAndInnerIndent) +
                 newLineAndIndentedFragment +
@@ -1020,7 +1041,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           ) {
             null
           } else {
-            fix().replace().with(fixText).build()
+            // This quick-fix copies data elements, so it may be affected by other quick-fixes or
+            // generate new problems.
+            fix().replace().with(fixText).robot(true).independent(false).build()
           },
         )
       }
@@ -1060,7 +1083,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             dataElement,
             context.getLocation(dataElement),
             message,
-            fix().replace().with("").build(),
+            fix().replace().with("").autoFix().build(),
           )
         }
       } else { // permitted.isNotEmpty()
@@ -1079,6 +1102,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
               .with("")
               .repeatedly(true)
               .reformat(true)
+              .autoFix()
               .build(),
           )
         }
@@ -1135,6 +1159,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                   .with(replacementText.toString())
                   .range(replacementRange)
                   .robot(true)
+                  // This quick-fix copies data elements, so it may be affected by other quick-fixes
+                  // or generate new problems.
                   .independent(false)
                   .build()
               )
@@ -1200,7 +1226,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
       val project = context.project
       val resources = client.getResources(project, ResourceRepositoryScope.ALL_DEPENDENCIES)
-      val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.STRING, url.name)
+      val items = resources.getResources(ResourceNamespace.TODO(), url.type, url.name)
       if (items.isEmpty()) {
         return str
       }
@@ -1709,14 +1735,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     fun getIntentFilterData(intentFilter: TagWrapper): IntentFilterData {
       val autoVerify = intentFilter.getAttributeWrapper(ATTR_AUTO_VERIFY)?.substitutedValue
       val order =
-        intentFilter.getAttributeWrapper(ATTR_ORDER)?.substitutedValue?.ifEmpty { VALUE_0 }?.toInt()
-          ?: 0
+        intentFilter
+          .getAttributeWrapper(ATTR_ORDER)
+          ?.substitutedValue
+          ?.ifEmpty { VALUE_0 }
+          ?.toIntOrNull() ?: 0
       val priority =
         intentFilter
           .getAttributeWrapper(ATTR_PRIORITY)
           ?.substitutedValue
           ?.ifEmpty { VALUE_0 }
-          ?.toInt() ?: 0
+          ?.toIntOrNull() ?: 0
       val actions = mutableListOf<AttributeWrapper>()
       val categories = mutableListOf<AttributeWrapper>()
       val dataTagElements = mutableListOf<TagWrapper>()

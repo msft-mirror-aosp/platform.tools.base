@@ -1354,6 +1354,96 @@ class ProjectInitializerTest {
   }
 
   @Test
+  fun testProguard() {
+    // Tests proguard support
+    val root = temp.newFolder().canonicalFile.absoluteFile
+
+    val projects =
+      lint()
+        .projects(
+          project(
+              source(
+                  "name.some-ext",
+                  """
+                  -optimizationpasses 5
+                  -dontusemixedcaseclassnames
+                  -dontskipnonpubliclibraryclasses
+                  -dontpreverify
+                  -verbose
+                  -optimizations !code/simplification/arithmetic,!field/*,!class/merging/*
+
+                  -keep public class * extends android.app.Activity
+                  -keep public class * extends android.app.Application
+                  -keep public class * extends android.app.Service
+                  -keep public class * extends android.content.BroadcastReceiver
+                  -keep public class * extends android.content.ContentProvider
+                  -keep public class * extends android.app.backup.BackupAgentHelper
+                  -keep public class * extends android.preference.Preference
+                  -keep public class com.android.vending.licensing.ILicensingService
+
+                  -keepclasseswithmembernames class * {
+                      native <methods>;
+                  }
+
+                  -keepclasseswithmembernames class * {
+                      public <init>(android.content.Context, android.util.AttributeSet);
+                  }
+
+                  -keepclasseswithmembernames class * {
+                      public <init>(android.content.Context, android.util.AttributeSet, int);
+                  }
+
+                  -keepclassmembers enum * {
+                      public static **[] values();
+                      public static ** valueOf(java.lang.String);
+                  }
+
+                  -keep class * implements android.os.Parcelable {
+                    public static final android.os.Parcelable${"$"}Creator *;
+                  }
+                  """,
+                )
+                .indented(),
+              xml(
+                  "project.xml",
+                  """
+                  <project>
+                  <root dir="$root/project" />
+                  <sdk dir='${TestUtils.getSdk()}'/>
+                  <module name="M" android="true" library="false">
+                  <proguard file="name.some-ext" />
+                  </module>
+                  </project>
+                  """,
+                )
+                .indented(),
+            )
+            .name("project")
+        )
+        .createProjects(root)
+    val projectDir = projects[0]
+    val descriptorFile = File(projectDir, "project.xml")
+
+    MainTest.checkDriver(
+      """
+      name.some-ext:21: Error: Obsolete ProGuard file; use -keepclasseswithmembers instead of -keepclasseswithmembernames [Proguard]
+      -keepclasseswithmembernames class * {
+      ^
+      1 errors, 0 warnings
+      """,
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf("--check", "Proguard", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
+    )
+  }
+
+  @Test
   fun testCrLf() {
     // Regression test for bug handling Windows line endings,
     // https://issuetracker.google.com/149490356

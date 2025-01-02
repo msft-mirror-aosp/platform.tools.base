@@ -16,19 +16,16 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.project.BundleSelector
+import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.bundle.Config
 import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_VALUE
-import com.android.tools.build.bundletool.model.AppBundle
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import java.util.Optional
-import java.util.zip.ZipFile
 
 class AiPackTest {
     private val packageName = "com.example.aipacktestapp"
@@ -108,7 +105,7 @@ class AiPackTest {
         build.executor.run(":app:bundleDebug")
 
         val app = build.androidApplication()
-        app.assertBundle(BundleSelector.DEBUG) {
+        app.assertAab(AabSelector.DEBUG) {
             exists()
             contains(
                 "/customModelInstallTime/assets/customModel.tflite",
@@ -123,11 +120,7 @@ class AiPackTest {
             )
         }
 
-        val bundleFile = app.getBundle(BundleSelector.DEBUG)
-
-        ZipFile(bundleFile).use { zip ->
-            val appBundle = AppBundle.buildFromZip(zip)
-
+        app.withAppBundle(AabSelector.DEBUG) {
             val splitsConfigBuilder = Config.SplitsConfig.newBuilder()
             splitsConfigBuilder
                 .addSplitDimension(
@@ -140,11 +133,11 @@ class AiPackTest {
                         .setNegate(false)
                 )
                 .build()
-            assertThat(appBundle.bundleConfig.optimizations.splitsConfig)
+            assertThat(bundleConfig.optimizations.splitsConfig)
                 .isEqualTo(splitsConfigBuilder.build())
 
             // Bundletool treats AI packs as special types of asset packs.
-            val moduleNames = appBundle.assetModules.keys.map { it.name }
+            val moduleNames = assetModules.keys.map { it.name }
             assertThat(moduleNames).containsExactly(
                 "customModelInstallTime",
                 "customModelFastFollow",
@@ -152,7 +145,7 @@ class AiPackTest {
             )
 
             val customModelInstallTimeManifest =
-                appBundle.assetModules[BundleModuleName.create("customModelInstallTime")]!!.androidManifest
+                assetModules[BundleModuleName.create("customModelInstallTime")]!!.androidManifest
             assertThat(customModelInstallTimeManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
@@ -167,7 +160,7 @@ class AiPackTest {
                 .isTrue()
 
             val customModelFastFollowManifest =
-                appBundle.assetModules[BundleModuleName.create("customModelFastFollow")]!!.androidManifest
+                assetModules[BundleModuleName.create("customModelFastFollow")]!!.androidManifest
             assertThat(customModelFastFollowManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
@@ -182,7 +175,7 @@ class AiPackTest {
                 .isTrue()
 
             val modelAdaptationOnDemandManifest =
-                appBundle.assetModules[BundleModuleName.create("modelAdaptationOnDemand")]!!.androidManifest
+                assetModules[BundleModuleName.create("modelAdaptationOnDemand")]!!.androidManifest
             assertThat(modelAdaptationOnDemandManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )

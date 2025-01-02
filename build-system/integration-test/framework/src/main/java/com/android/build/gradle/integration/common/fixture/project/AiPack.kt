@@ -60,8 +60,6 @@ internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(
         action(files)
     }
 
-    private val contentHolder = DefaultDslContentHolder()
-
     override val aiPack: AiPackExtension =
         DslProxy.createProxy(
             AiPackExtension::class.java,

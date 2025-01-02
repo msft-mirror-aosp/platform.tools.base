@@ -24,11 +24,11 @@ import com.android.build.gradle.integration.common.fixture.project.builder.KtsBu
 import com.google.common.truth.Truth
 import org.junit.Test
 
-class CollectionDslProxyTest {
+class CollectionDslProxyTest: ExtensionAwareDefinitionImpl() {
+    private val contentHolder = DefaultDslContentHolder(this)
 
     @Test
     fun listAdd() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
             places += "Post Office"
         }
@@ -45,7 +45,6 @@ class CollectionDslProxyTest {
 
     @Test
     fun listAddAll() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
             places += listOf("Post Office", "City Hall")
         }
@@ -72,7 +71,6 @@ class CollectionDslProxyTest {
 
     @Test
     fun chainedListUsage() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.places += listOf("Post Office", "City Hall")
         }
@@ -89,7 +87,6 @@ class CollectionDslProxyTest {
 
     @Test
     fun mapPut() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("address", listOf(), Address::class.java) {
             properties["foo"] = "bar"
         }

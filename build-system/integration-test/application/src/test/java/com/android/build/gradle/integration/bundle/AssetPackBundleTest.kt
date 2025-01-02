@@ -17,16 +17,13 @@
 package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.bundle.Config
 import com.android.ide.common.signing.KeystoreHelper
-import com.android.testutils.truth.PathSubject.assertThat
-import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_VALUE
-import com.android.tools.build.bundletool.model.AppBundle
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
 import com.google.common.truth.Truth.assertThat
@@ -35,9 +32,7 @@ import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Path
 import java.util.Optional
-import java.util.zip.ZipFile
 
 private const val APP_ID = "com.test.assetpack.bundle"
 private const val VERSION_TAG = "20210319.patch1"
@@ -125,30 +120,27 @@ class AssetPackBundleTest {
         val build = rule.build
         build.executor.run(":assetPackBundle:bundle")
 
-        val bundleFile = build.getResultBundle()
-        assertThat(bundleFile).exists()
-        assertThat(bundleFile) {
-            it.containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
-            it.containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
-            it.containsFileWithContent(
+        build.assetPackBundle(":assetPackBundle").assertAab(AabSelector.NO_BUILD_TYPE) {
+            containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
+            containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
+            containsFileWithContent(
                 "onDemandAiPack/assets/customModel.tflite",
                 onDemandAiPackContent
             )
-            it.containsFileWithContent(
+            containsFileWithContent(
                 "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.json",
                 deviceGroupConfig
             )
-            it.contains("assetPackOne/manifest/AndroidManifest.xml")
-            it.contains("assetPackTwo/manifest/AndroidManifest.xml")
-            it.contains("onDemandAiPack/manifest/AndroidManifest.xml")
-            it.contains("BundleConfig.pb")
-            it.doesNotContain("META-INF/KEY0.SF")
-            it.doesNotContain("META-INF/KEY0.RSA")
+            contains("assetPackOne/manifest/AndroidManifest.xml")
+            contains("assetPackTwo/manifest/AndroidManifest.xml")
+            contains("onDemandAiPack/manifest/AndroidManifest.xml")
+            contains("BundleConfig.pb")
+            doesNotContain("META-INF/KEY0.SF")
+            doesNotContain("META-INF/KEY0.RSA")
         }
 
-        ZipFile(bundleFile.toFile()).use { zip ->
-            val appBundle = AppBundle.buildFromZip(zip)
-            assertThat(appBundle.bundleConfig.type).isEqualTo(
+        build.assetPackBundle(":assetPackBundle").withAppBundle(AabSelector.NO_BUILD_TYPE) {
+            assertThat(bundleConfig.type).isEqualTo(
                 Config.BundleConfig.BundleType.ASSET_ONLY
             )
 
@@ -177,17 +169,17 @@ class AssetPackBundleTest {
                 .suffixStrippingBuilder
                 .setEnabled(true)
                 .setDefaultSuffix("")
-            assertThat(appBundle.bundleConfig.optimizations.splitsConfig)
+            assertThat(bundleConfig.optimizations.splitsConfig)
                 .isEqualTo(splitsConfigBuilder.build())
 
-            assertThat(appBundle.bundleConfig.assetModulesConfig).isEqualTo(
+            assertThat(bundleConfig.assetModulesConfig).isEqualTo(
                 Config.AssetModulesConfig.newBuilder()
                     .setAssetVersionTag(VERSION_TAG)
                     .addAllAppVersion(VERSION_CODES.map { it.toLong() })
                     .build()
             )
 
-            val moduleNames = appBundle.assetModules.keys.map { it.name }
+            val moduleNames = assetModules.keys.map { it.name }
             assertThat(moduleNames).containsExactly(
                 "assetPackOne",
                 "assetPackTwo",
@@ -195,7 +187,7 @@ class AssetPackBundleTest {
             )
 
             val assetPackOneManifest =
-                appBundle.assetModules[BundleModuleName.create("assetPackOne")]!!.androidManifest
+                assetModules[BundleModuleName.create("assetPackOne")]!!.androidManifest
             assertThat(assetPackOneManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
@@ -204,7 +196,7 @@ class AssetPackBundleTest {
                 .isTrue()
 
             val assetPackTwoManifest =
-                appBundle.assetModules[BundleModuleName.create("assetPackTwo")]!!.androidManifest
+                assetModules[BundleModuleName.create("assetPackTwo")]!!.androidManifest
             assertThat(assetPackTwoManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
@@ -213,7 +205,7 @@ class AssetPackBundleTest {
                 .isTrue()
 
             val onDemandAiPackManifest =
-                appBundle.assetModules[BundleModuleName.create("onDemandAiPack")]!!.androidManifest
+                assetModules[BundleModuleName.create("onDemandAiPack")]!!.androidManifest
             assertThat(onDemandAiPackManifest.moduleType).isEqualTo(
                 BundleModule.ModuleType.ASSET_MODULE
             )
@@ -261,16 +253,14 @@ class AssetPackBundleTest {
 
         build.executor.run(":assetPackBundle:bundle")
 
-        val bundleFile = build.getResultBundle()
-        assertThat(bundleFile).exists()
-        assertThat(bundleFile) {
-            it.containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
-            it.containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
-            it.contains("assetPackOne/manifest/AndroidManifest.xml")
-            it.contains("assetPackTwo/manifest/AndroidManifest.xml")
-            it.contains("BundleConfig.pb")
-            it.contains("META-INF/KEY0.SF")
-            it.contains("META-INF/KEY0.RSA")
+        build.assetPackBundle(":assetPackBundle").assertAab(AabSelector.NO_BUILD_TYPE_SIGNED) {
+            containsFileWithContent("assetPackOne/assets/assetFileOne.txt", assetFileOneContent)
+            containsFileWithContent("assetPackTwo/assets/assetFileTwo.txt", assetFileTwoContent)
+            contains("assetPackOne/manifest/AndroidManifest.xml")
+            contains("assetPackTwo/manifest/AndroidManifest.xml")
+            contains("BundleConfig.pb")
+            contains("META-INF/KEY0.SF")
+            contains("META-INF/KEY0.RSA")
         }
     }
 
@@ -376,7 +366,4 @@ class AssetPackBundleTest {
                 .contains("Keystore file '${keystore}' not found")
         }
     }
-
-    private fun GradleBuild.getResultBundle(): Path =
-        assetPackBundle(":assetPackBundle").buildDir.resolve("outputs/bundle/assetPackBundle.aab")
 }

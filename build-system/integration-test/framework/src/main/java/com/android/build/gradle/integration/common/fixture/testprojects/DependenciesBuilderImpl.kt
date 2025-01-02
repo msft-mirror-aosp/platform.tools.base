@@ -52,6 +52,18 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
         dependencies.clear()
     }
 
+    override fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+        val data = action?.let {
+            val builder = DependencyBuilderImpl()
+            action(builder)
+            DependencyData(dependency, builder.capability)
+        } ?: DependencyData(dependency)
+
+        if (!dependencies.remove(scope to data)) {
+            throw RuntimeException("Could not find dependency scope: $scope, dependency: $dependency")
+        }
+    }
+
     private fun handleDependency(
         scope: String,
         dependency: Any,
@@ -92,6 +104,10 @@ class DependenciesBuilderImpl() : DependenciesBuilder {
 
     override fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
         handleDependency("testRuntimeOnly", dependency, action)
+    }
+
+    override fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
+        handleDependency("testFixturesImplementation", dependency, action)
     }
 
     override fun androidTestImplementation(

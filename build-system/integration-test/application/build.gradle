@@ -28,6 +28,7 @@ dependencies {
     testCompileOnly(project(':base:profile'))
     testImplementation libs.com.android.tools.layoutlib.layoutlibApi
     testImplementation project(':base:profgen')
+    testImplementation project(':base:preview:screenshot:screenshot-test-gradle-plugin')
 
     testImplementation libs.kotlin_stdlib
     testImplementation libs.kotlin_test

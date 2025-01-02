@@ -65,6 +65,8 @@ interface FileUpdateBuilder {
     fun searchAndReplace(search: String, replace: String, lenient: Boolean = false): FileUpdateBuilder
 
     fun append(newContent: String)
+
+    fun transform(action: (String) -> String): FileUpdateBuilder
 }
 
 /**
@@ -149,12 +151,18 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
         ): FileUpdateBuilder {
             val content = map[key] ?: throw RuntimeException("File $key not found. Cannot update")
             map[key] = content.searchAndReplace(key, search, replace, Pattern.LITERAL, lenient = false)
-            return FileUpdater(map, key)
+            return this
         }
 
         override fun append(newContent: String) {
             val content = map[key]
             map[key] = content?.let { it + newContent } ?: newContent
+        }
+
+        override fun transform(action: (String) -> String): FileUpdateBuilder {
+            val content = map[key] ?: throw RuntimeException("File $key not found. Cannot update")
+            map[key] = action(content)
+            return this
         }
     }
 }
@@ -197,7 +205,7 @@ internal open class DirectGradleProjectFiles(
             else
                 throw RuntimeException("File $file not found. Cannot update")
 
-            val newContent =
+            file.writeText(
                 content.searchAndReplace(
                     file.toString(),
                     search,
@@ -205,11 +213,9 @@ internal open class DirectGradleProjectFiles(
                     Pattern.LITERAL,
                     lenient = false
                 )
+            )
 
-            file.parent.createDirectories()
-            file.writeText(newContent)
-
-            return FileUpdater(file)
+            return this
         }
 
         override fun append(newContent: String) {
@@ -218,6 +224,16 @@ internal open class DirectGradleProjectFiles(
             file.writeText(oldContent?.let {
                 it + newContent
             } ?: newContent)
+        }
+
+        override fun transform(action: (String) -> String): FileUpdateBuilder {
+            val content = if (file.isRegularFile())
+                file.readText()
+            else
+                throw RuntimeException("File $file not found. Cannot update")
+
+            file.writeText(action(content))
+            return this
         }
     }
 }

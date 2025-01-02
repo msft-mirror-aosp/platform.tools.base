@@ -29,9 +29,9 @@ import org.gradle.api.Action
  *
  * @param <T> The type of object which this action accepts.
 </T> */
-abstract class ErroringAction<T> : Action<T> {
+abstract class ErroringAction<T> : Action<T & Any> {
 
-    override fun execute(objectToExecute: T) {
+    override fun execute(objectToExecute: T & Any) {
         try {
             doExecute(objectToExecute)
         } catch (e: Exception) {

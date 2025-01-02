@@ -45,13 +45,13 @@ sealed interface AarSelector: OutputSelector {
 
     companion object {
         @JvmField
-        val DEBUG = of("debug")
+        val DEBUG = of(buildType = "debug")
 
         @JvmField
-        val RELEASE = of("release")
+        val RELEASE = of(buildType = "release")
 
         @JvmField
-        val NO_BUILD_TYPE = of(null)
+        val NO_BUILD_TYPE = of(buildType = null)
 
         @JvmStatic
         fun of(

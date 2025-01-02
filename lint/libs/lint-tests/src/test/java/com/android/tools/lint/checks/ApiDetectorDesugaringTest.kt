@@ -509,6 +509,38 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testInstantSource() {
+    // Regression test for b/374282903
+    lint()
+      .files(
+        manifest().minSdk(1),
+        java(
+            """
+            package test.pkg;
+
+            import java.time.InstantSource;
+
+            public class Foo {
+              void useSource(InstantSource source) {
+                var unused = source.instant();
+              }
+            }
+          """
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Foo.java:7: Error: Call requires API level 34 (current min is 1): java.time.InstantSource#instant [NewApi]
+            var unused = source.instant();
+                                ~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
   fun testLibraryDesugaredCasts() {
     // Regression test for b/347167978
     lint()

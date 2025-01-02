@@ -21,7 +21,9 @@ import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 /**
  * Class that contains the actual content of a DSL class that's generated on the fly.
@@ -98,6 +100,12 @@ interface DslContentHolder {
      */
     fun getProperty(name: String): Property<Any>
 
+    /**
+     * Returns a proxied Gradle ListProperty
+     */
+    fun getListProperty(name: String): ListProperty<Any>
+
+
     fun <T : BuildType> buildTypes(
         theInterface: Class<T>,
         parentChain: List<String> = listOf(),
@@ -114,6 +122,12 @@ interface DslContentHolder {
         theInterface: Class<ExecutionProfile>,
         parentChain: List<String> = listOf(),
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit,
+    )
+
+    fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String> = listOf(),
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit,
     )
 
     /**
@@ -153,7 +167,10 @@ interface DslContentHolder {
     fun writeContent(writer: BuildWriter)
 }
 
-internal class DefaultDslContentHolder(override val name: String = ""): DslContentHolder {
+internal class DefaultDslContentHolder(
+    private val extensionSupport: ExtensionSupport,
+    override val name: String = ""
+): DslContentHolder {
 
     enum class EventType {
         ASSIGNMENT,
@@ -181,7 +198,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     open class NamedData(
         override val name: String,
         val value: Any? = null
-   ): NamedPayload {
+    ): NamedPayload {
         override fun toString(): String {
             return "NamedData(name='$name', value=$value)"
         }
@@ -223,6 +240,10 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
 
     private val eventList = mutableListOf<Event>()
 
+    internal fun clear() {
+        eventList.clear()
+    }
+
     override fun set(name: String, value: Any?, parentChain: List<String>) {
         eventList += Event(EventType.ASSIGNMENT, NamedData(name, value), parentChain)
     }
@@ -253,7 +274,11 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     }
 
     override fun getProperty(name: String): Property<Any> {
-        return PropertyProxy<Any>(name, this)
+        return PropertyProxy(name, this)
+    }
+
+    override fun getListProperty(name: String): ListProperty<Any> {
+        return ListPropertyProxy(name, this)
     }
 
     override fun collectionAddAll(
@@ -285,7 +310,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
             name = "buildTypes",
             parameters = listOf(),
             instanceProvider = {
-                NamedDomainObjectContainerProxy<T>(theInterface, it)
+                NamedDomainObjectContainerProxy(theInterface, it)
             },
             parentChain = parentChain,
             action = action,
@@ -301,7 +326,7 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
             name = "productFlavors",
             parameters = listOf(),
             instanceProvider = {
-                NamedDomainObjectContainerProxy<T>(theInterface, it)
+                NamedDomainObjectContainerProxy(theInterface, it)
             },
             parentChain = parentChain,
             action = action,
@@ -315,6 +340,22 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
     ) {
         runNestedBlock(
             name = "profiles",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            parentChain = parentChain,
+            action = action,
+        )
+    }
+
+    override fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "sourceSets",
             parameters = listOf(),
             instanceProvider = {
                 NamedDomainObjectContainerProxy(theInterface, it)
@@ -350,10 +391,13 @@ internal class DefaultDslContentHolder(override val name: String = ""): DslConte
         parentChain: List<String> = listOf(),
         action: T.() -> Unit,
     ): T {
-        val contentHolder = DefaultDslContentHolder(name)
+        val contentHolder = DefaultDslContentHolder(extensionSupport, name)
 
         val instance = instanceProvider(contentHolder)
-        action(instance)
+
+        extensionSupport.handleNestedBlock(contentHolder) {
+            action(instance)
+        }
 
         eventList += Event(
             EventType.NESTED_BLOCK,
@@ -492,6 +536,10 @@ internal class ChainedDslContentHolder(
         return PropertyProxy(name, this)
     }
 
+    override fun getListProperty(name: String): ListProperty<Any> {
+        return ListPropertyProxy(name, this)
+    }
+
     override fun <T : BuildType> buildTypes(
         theInterface: Class<T>,
         parentChain: List<String>,
@@ -514,6 +562,14 @@ internal class ChainedDslContentHolder(
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
     ) {
         parent.executionProfiles(theInterface, parentChain + this.name, action)
+    }
+
+    override fun kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        parentChain: List<String>,
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
+    ) {
+        parent.kotlinSourceSets(theInterface, parentChain + this.name, action)
     }
 
     override fun <T> runNestedBlock(

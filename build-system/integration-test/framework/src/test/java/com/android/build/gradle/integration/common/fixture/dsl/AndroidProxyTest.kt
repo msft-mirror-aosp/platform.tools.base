@@ -26,11 +26,12 @@ import org.junit.Test
  *
  * This does not test the content, this is handled by [BasicDslProxyTest] and [DslContentHolderTest]
  */
-class AndroidProxyTest {
+class AndroidProxyTest: ExtensionAwareDefinitionImpl() {
+
+    private val contentHolder = DefaultDslContentHolder(this)
 
     @Test
     fun testApplication() {
-        val contentHolder = DefaultDslContentHolder()
         contentHolder.runNestedBlock("android", listOf(), ApplicationExtension::class.java) {
             namespace = "foo"
 

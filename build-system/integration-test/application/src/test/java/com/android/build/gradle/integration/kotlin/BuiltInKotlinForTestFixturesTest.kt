@@ -17,57 +17,35 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.VERSION_CATALOG
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
-import com.android.testutils.apk.Aar
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 
 class BuiltInKotlinForTestFixturesTest {
 
     @get:Rule
-    val project =
-        createGradleProjectBuilder {
-            subProject(":lib") {
-                plugins.add(PluginType.ANDROID_LIB)
-                plugins.add(PluginType.KOTLIN_ANDROID)
-                android {
-                    setUpHelloWorld()
-                    minSdk = 21
-                }
-                appendToBuildFile {
-                    """
-                        kotlin {
-                            jvmToolchain(17)
-                        }
+    val rule = GradleRule.from {
+        androidLibrary {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
 
-                        """.trimIndent()
-                }
+            android {
+                defaultConfig.minSdk = 21
             }
-            subProject(":lib2") {
-                plugins.add(PluginType.ANDROID_LIB)
-                plugins.add(PluginType.KOTLIN_ANDROID)
-                android {
-                    setUpHelloWorld()
-                }
-                appendToBuildFile {
-                    """
-                        kotlin {
-                            jvmToolchain(17)
-                        }
-
-                        """.trimIndent()
-                }
+            kotlin {
+                jvmToolchain(17)
             }
-        }.withKotlinGradlePlugin(true)
-            .create()
+        }
+    }
 
     /**
      * Include dependency on "androidx.compose.ui:ui-tooling-preview:1.6.5" as a regression test for
@@ -75,88 +53,93 @@ class BuiltInKotlinForTestFixturesTest {
      */
     @Test
     fun testModuleAndExternalDependencies() {
-        enableTestFixturesKotlinSupport()
-        val lib = project.getSubproject(":lib")
-        TestFileUtils.appendToFile(
-            lib.buildFile,
-            """
+        val build = rule.build {
+            enableTestFixturesKotlinSupport()
+            androidLibrary {
                 dependencies {
                     testFixturesImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
                     testFixturesImplementation(project(":lib2"))
                 }
-                """.trimIndent()
-        )
-        lib.file("src/testFixtures/kotlin/LibTestFixtureFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
+                files.add(
+                    "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library
 
-                    import com.foo.library.two.LibTwoClass
-                    import androidx.compose.ui.tooling.preview.Preview
+                        import com.foo.library.two.LibTwoClass
+                        import androidx.compose.ui.tooling.preview.Preview
 
-                    class LibTestFixtureFoo
+                        class LibTestFixtureFoo
                     """.trimIndent()
-            )
-        }
-        val lib2 = project.getSubproject(":lib2")
-        lib2.file("src/main/kotlin/LibTwoClass.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library.two
-                    class LibTwoClass
+                )
+            }
+            androidLibrary(":lib2") {
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+                kotlin {
+                    jvmToolchain(17)
+                }
+                files.add(
+                    "src/main/kotlin/LibTwoClass.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library.two
+                        class LibTwoClass
                     """.trimIndent()
-            )
+                )
+            }
         }
-        lib.executor()
+
+        build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .run(":lib:assembleDebugTestFixtures")
-        val aar = lib.outputDir.resolve("aar").listFiles().single()
-        Aar(aar).use {
-            assertThat(it).containsMainClass("Lcom/foo/library/LibTestFixtureFoo;")
+
+        build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
+            containsMainClass("Lcom/foo/library/LibTestFixtureFoo;")
         }
     }
 
     @Test
     fun testInternalModifierAccessible() {
-        enableTestFixturesKotlinSupport()
-        val lib = project.getSubproject(":lib")
-        lib.file("src/testFixtures/kotlin/LibTestFixtureFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-                    class LibTestFixtureFoo {
-                      init { LibFoo().bar() }
-                    }
-                    """.trimIndent()
-            )
+        val build = rule.build {
+            enableTestFixturesKotlinSupport()
+            androidLibrary {
+                files {
+                    add(
+                        "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            class LibTestFixtureFoo {
+                                init { LibFoo().bar() }
+                            }
+                        """.trimIndent()
+                    )
+                    add(
+                        "src/main/java/LibFoo.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.library
+                            class LibFoo {
+                                internal fun bar() {}
+                            }
+                        """.trimIndent()
+                    )
+                }
+            }
         }
-        lib.getMainSrcDir("java").resolve("LibFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-                    class LibFoo {
-                      internal fun bar() {}
-                    }
-                """.trimIndent()
-            )
-        }
-        lib.executor().run(":lib:assembleDebugTestFixtures")
+
+        build.executor.run(":lib:assembleDebugTestFixtures")
     }
 
     @Test
     fun testLowKotlinVersion() {
-        enableTestFixturesKotlinSupport()
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '1.8.10')"
-        )
-        val lib = project.getSubproject(":lib")
-        val result = lib.executor().expectFailure().run(":lib:assembleDebugTestFixtures")
+        val build = rule.build {
+            enableTestFixturesKotlinSupport()
+            androidLibrary {
+                replaceAppliedPlugin(PluginType.KOTLIN_ANDROID, "1.8.10")
+            }
+        }
+        val result = build.executor.expectFailure().run(":lib:assembleDebugTestFixtures")
         result.assertErrorContains(
             "The current Kotlin Gradle plugin version (1.8.10) is below the required"
         )
@@ -164,97 +147,97 @@ class BuiltInKotlinForTestFixturesTest {
 
     @Test
     fun testLowKotlinVersionWithNoBuiltInKotlinSupport() {
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '1.8.10')"
-        )
-        val lib = project.getSubproject(":lib")
-        lib.buildFile.appendText(
-            """
-                android.testFixtures.enable = true
-                """.trimIndent()
-        )
+        val build = rule.build {
+            androidLibrary {
+                replaceAppliedPlugin(PluginType.KOTLIN_ANDROID, "1.8.10")
+                android {
+                    testFixtures.enable = true
+                }
+            }
+        }
         // We expect no build failure in this case.
         // Set failOnWarning to false because Gradle warns about deprecated feature(s) used by KGP 1.8.10.
-        lib.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withFailOnWarning(false).run(":lib:assembleDebugTestFixtures")
+        build.executor
+            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .withFailOnWarning(false)
+            .run(":lib:assembleDebugTestFixtures")
     }
 
     // Regression test for b/364331837
     @Test
     fun testJvmTarget() {
-        enableTestFixturesKotlinSupport()
-        val lib = project.getSubproject(":lib")
-        // Add a simple kotlin source file so that kotlin compilation task does work.
-        lib.file("src/testFixtures/kotlin/LibTestFixtureFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-                    class LibTestFixtureFoo {}
+        val build = rule.build {
+            enableTestFixturesKotlinSupport()
+            androidLibrary {
+                // remove the jvmtoolchain setting
+                resetKotlinDsl()
+                kotlin {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+                }
+
+                // Add a simple kotlin source file so that kotlin compilation task does work.
+                files.add(
+                    "src/testFixtures/kotlin/LibTestFixtureFoo.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library
+                        class LibTestFixtureFoo {}
                     """.trimIndent()
-            )
+                )
+
+                pluginCallback = JvmTargetCallback::class.java
+            }
         }
 
-        // First check setting jvmTarget via the compilerOptions DSL
-        TestFileUtils.searchAndReplace(
-            lib.buildFile,
-            "jvmToolchain(17)",
-             "compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)"
-        )
-        TestFileUtils.appendToFile(
-            lib.buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("compileDebugTestFixturesKotlin") {
-                        doLast {
-                            def jvmTarget = it.compilerOptions.jvmTarget.get().target
-                            println("My jvmTarget: " + jvmTarget)
-                        }
-                    }
-               }
-            """.trimIndent()
-        )
         ScannerSubject.assertThat(
-            lib.executor().run(":lib:compileDebugTestFixturesKotlin").stdout
+            build.executor.run(":lib:compileDebugTestFixturesKotlin").stdout
         ).contains("My jvmTarget: 17")
 
         // Then check that setting jvmTarget on the task overrides the compilerOptions DSL
-        TestFileUtils.appendToFile(
-            lib.buildFile,
-            // language=groovy
-            """
-                tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile.class).configureEach {
-                    compilerOptions {
-                        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-                    }
-                }
-                """.trimIndent()
-        )
-
         ScannerSubject.assertThat(
-            lib.executor().run(":lib:compileDebugTestFixturesKotlin").stdout
+            build.executor
+                .withArgument("-PsetViaTask=true")
+                .run(":lib:compileDebugTestFixturesKotlin")
+                .stdout
         ).contains("My jvmTarget: 21")
     }
 
+    class JvmTargetCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val setViaTask = project.providers.gradleProperty("setViaTask")
 
-    private fun enableTestFixturesKotlinSupport() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}=true"
-        )
-        val lib = project.getSubproject(":lib")
-        TestFileUtils.appendToFile(
-            lib.buildFile,
-            """
-                android.testFixtures.enable = true
-
-                dependencies {
-                    testFixturesImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+            project.afterEvaluate {
+                project.tasks.named("compileDebugTestFixturesKotlin") {
+                    it.doLast { task ->
+                        task as KotlinCompile
+                        val jvmTarget = task.compilerOptions.jvmTarget.get().target
+                        println("My jvmTarget: $jvmTarget")
+                    }
                 }
-                """.trimIndent()
-        )
+            }
+
+            if (setViaTask.orNull == "true") {
+                project.tasks.withType(KotlinCompile::class.java).configureEach {
+                    it.compilerOptions {
+                        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun GradleBuildDefinition.enableTestFixturesKotlinSupport() {
+        androidLibrary {
+            android {
+                testFixtures.enable = true
+            }
+            dependencies {
+                testFixturesImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+            }
+        }
+
+        gradleProperties {
+            add(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true)
+        }
     }
 }

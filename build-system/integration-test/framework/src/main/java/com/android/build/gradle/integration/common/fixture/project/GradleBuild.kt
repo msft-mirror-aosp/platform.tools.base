@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GlobalDefinitionState
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
@@ -118,6 +119,13 @@ interface GradleBuild {
      * using the provided instance of [GradleBuild], will be reverted after the action is run.
      */
     fun withReversibleModifications(action: (GradleBuild) -> Unit)
+
+    /**
+     * the location of the profile directory if profiling is on, otherwise null.
+     *
+     * Profiling is turned on via [GradleRuleBuilder.withProfileOutput]
+     */
+    val profileDirectory: Path?
 }
 
 /**
@@ -275,6 +283,7 @@ internal class GradleBuildImpl(
     private val executorProvider: () -> GradleTaskExecutor,
     private val modelBuilderProvider: () -> ModelBuilderV2,
     internal val mavenRepoPath: Path,
+    override val profileDirectory: Path?
 ): BaseGradleBuildImpl() {
 
     override fun subProject(path: String): GradleProject<*> {
@@ -305,7 +314,7 @@ internal class GradleBuildImpl(
 
     override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
         action(definition.settings)
-        definition.writeSetting(directory, null, getNewWriter())
+        definition.writeSetting(directory)
     }
 
     override fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
@@ -315,6 +324,12 @@ internal class GradleBuildImpl(
 
     internal fun computeAllPluginMap(): Map<PluginType, Set<String>> =
         definition.computeAllPluginMap()
+
+    internal fun getGlobalDefinitionState(): GlobalDefinitionState =
+        definition.globalDefinitionState
+
+    internal val useOldPluginStyle: Boolean
+        get() = definition.useOldPluginStyleForSeparateClassloaders
 
     /**
      * Runs the provided action with this build. At the end of the action, all file changes made

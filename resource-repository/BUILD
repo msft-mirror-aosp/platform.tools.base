@@ -43,6 +43,7 @@ iml_module(
     ],
 )
 
+# buildifier: disable=native-java-binary
 java_binary(
     name = "framework-res-jar-creator",
     main_class = "com.android.resources.aar.FrameworkResJarCreator",
@@ -58,7 +59,7 @@ genrule(
     ],
     outs = ["framework_res.jar"],
     cmd = "$(JAVA) -classpath $(location :framework-res-jar-creator_deploy.jar) " + "com.android.resources.aar.FrameworkResJarCreator " + "$(location //prebuilts/studio/layoutlib/data/res:version)/.. $(location //prebuilts/studio/layoutlib/data/res:version)/../../overlays $(OUTS)",
-    toolchains = ["//prebuilts/studio/jdk/jdk17:jdk17_runtime"],
+    toolchains = ["//prebuilts/studio/jdk/jbr-next:java_runtime"],
     tools = [
         ":framework-res-jar-creator",
         ":framework-res-jar-creator_deploy.jar",

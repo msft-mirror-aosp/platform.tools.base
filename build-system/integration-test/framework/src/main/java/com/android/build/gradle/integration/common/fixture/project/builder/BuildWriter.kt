@@ -42,8 +42,10 @@ interface BuildWriter: BooleanNameHandler {
 
     /** Applies a plugin by id. This is to be used inside the `plugins {}` block */
     fun pluginId(id: String, version: String?, apply: Boolean = true)
-    /** Applies a plugin by its class */
+    /** Applies a plugin by its class - this uses the old `apply plugin:` DSL  */
     fun applyPluginFromClass(pluginClass: String)
+    /** Applies a plugin by its name - this uses the old `apply plugin:` DSL  */
+    fun applyPluginByName(pluginName: String)
 
     /** Adds a dependency */
     fun dependency(scope: String, value:Any, capability: String? = null)
@@ -399,6 +401,10 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         indent().put("apply plugin: ").put(pluginClass).endLine()
     }
 
+    override fun applyPluginByName(pluginName: String) {
+        indent().put("apply plugin: ").put(quoteString(pluginName)).endLine()
+    }
+
     override fun listOf(value: String): String {
         return "listOf($value)"
     }
@@ -442,6 +448,10 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
 
     override fun applyPluginFromClass(pluginClass: String) {
         indent().put("apply plugin: ").put(pluginClass).endLine()
+    }
+
+    override fun applyPluginByName(pluginName: String) {
+        indent().put("apply plugin: ").put(quoteString(pluginName)).endLine()
     }
 
     override fun listOf(value: String): String {

@@ -45,7 +45,7 @@ abstract class GenericCallbackPlugin: Plugin<Project> {
  * of any type.
  *
  * Unlike other [PluginCallback], this one does not handle any extension. This also means that
- * the plugin is always active and does not response to any other specific plugin being
+ * the plugin is always active and does not respond to any other specific plugin being
  * applied
  */
 interface GenericCallback: PluginCallback {

@@ -59,7 +59,6 @@ internal class PrivacySandboxSdkDefinitionImpl(
         applyPlugin(PluginType.PRIVACY_SANDBOX_SDK)
     }
 
-    private val contentHolder = DefaultDslContentHolder()
     override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {

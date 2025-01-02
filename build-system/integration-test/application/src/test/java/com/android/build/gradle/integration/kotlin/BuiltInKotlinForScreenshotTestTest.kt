@@ -16,14 +16,10 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.VERSION_CATALOG
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
@@ -31,41 +27,17 @@ import org.junit.Test
 class BuiltInKotlinForScreenshotTestTest {
 
     @get:Rule
-    val project =
-        createGradleProjectBuilder {
-            subProject(":lib") {
-                plugins.add(PluginType.ANDROID_LIB)
-                plugins.add(PluginType.KOTLIN_ANDROID)
-                android {
-                    setUpHelloWorld()
-                    minSdk = 21
-                }
-                appendToBuildFile {
-                    """
-                        kotlin {
-                            jvmToolchain(17)
-                        }
-
-                        """.trimIndent()
-                }
+    val rule = GradleRule.from {
+        androidLibrary {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
+            android {
+                defaultConfig.minSdk = 21
             }
-            subProject(":lib2") {
-                plugins.add(PluginType.ANDROID_LIB)
-                plugins.add(PluginType.KOTLIN_ANDROID)
-                android {
-                    setUpHelloWorld()
-                }
-                appendToBuildFile {
-                    """
-                        kotlin {
-                            jvmToolchain(17)
-                        }
-
-                        """.trimIndent()
-                }
+            kotlin {
+                jvmToolchain(17)
             }
-        }.withKotlinGradlePlugin(true)
-            .create()
+        }
+    }
 
     /**
      * Include dependency on "androidx.compose.ui:ui-tooling-preview:1.6.5" as a regression test for
@@ -73,117 +45,102 @@ class BuiltInKotlinForScreenshotTestTest {
      */
     @Test
     fun testModuleAndExternalDependencies() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
-        )
-        val lib = project.getSubproject(":lib")
-        lib.buildFile.appendText(
-            """
-                android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-
+        val build = rule.build {
+            gradleProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }
+            androidLibrary {
+                android.experimentalProperties[SCREENSHOT_TEST.key] = true
                 dependencies {
                     screenshotTestImplementation("androidx.compose.ui:ui-tooling-preview:1.6.5")
                     screenshotTestImplementation(project(":lib2"))
                 }
-                """.trimIndent()
-        )
-        lib.file("src/screenshotTest/kotlin/LibScreenshotTest.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
+                files.add(
+                    "src/screenshotTest/kotlin/LibScreenshotTest.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library
 
-                    import com.foo.library.two.LibTwoClass
-                    import androidx.compose.ui.tooling.preview.Preview
+                        import com.foo.library.two.LibTwoClass
+                        import androidx.compose.ui.tooling.preview.Preview
 
-                    class LibScreenshotTest
+                        class LibScreenshotTest
                     """.trimIndent()
-            )
-        }
-        val lib2 = project.getSubproject(":lib2")
-        lib2.file("src/main/kotlin/LibTwoClass.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library.two
-                    class LibTwoClass
+                )
+            }
+            androidLibrary(":lib2") {
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+                kotlin {
+                    jvmToolchain(17)
+                }
+                files.add(
+                    "src/main/kotlin/LibTwoClass.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library.two
+                        class LibTwoClass
                     """.trimIndent()
-            )
+                )
+            }
         }
-        lib.executor()
+
+        build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .run(":lib:compileDebugScreenshotTestKotlin")
+
         val screenshotTestClassFile =
-            project.getSubproject("lib")
-                .getIntermediateFile(
-                    "built_in_kotlinc",
-                    "debugScreenshotTest",
-                    "compileDebugScreenshotTestKotlin",
-                    "classes",
-                    "com",
-                    "foo",
-                    "library",
-                    "LibScreenshotTest.class"
-                )
+            build.androidLibrary().intermediatesDir.resolve(
+                "built_in_kotlinc/debugScreenshotTest/compileDebugScreenshotTestKotlin/classes/com/foo/library/LibScreenshotTest.class"
+            )
         PathSubject.assertThat(screenshotTestClassFile).exists()
     }
 
     @Test
     fun testInternalModifierAccessible() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
-        )
-        val lib = project.getSubproject(":lib")
-        lib.buildFile.appendText(
-            """
-                android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-                """.trimIndent()
-        )
-        lib.file("src/screenshotTest/kotlin/LibScreenshotTestFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
-                    package com.foo.library
-                    class LibScreenshotTestFoo {
-                      init { LibFoo().bar() }
-                    }
+        val build = rule.build {
+            gradleProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }
+            androidLibrary {
+                android.experimentalProperties[SCREENSHOT_TEST.key] = true
+                files.add(
+                    "src/screenshotTest/kotlin/LibScreenshotTestFoo.kt",
+                    //language=kotlin
+                    """
+                        package com.foo.library
+                        class LibScreenshotTestFoo {
+                            init { LibFoo().bar() }
+                        }
                     """.trimIndent()
-            )
-        }
-        lib.getMainSrcDir("java").resolve("LibFoo.kt").let {
-            it.parentFile.mkdirs()
-            it.writeText(
-                """
+                )
+                files.add(
+                    "src/main/java/LibFoo.kt",
+                    //language=kotlin
+                    """
                     package com.foo.library
                     class LibFoo {
-                      internal fun bar() {}
+                        internal fun bar() {}
                     }
-                """.trimIndent()
-            )
+                    """.trimIndent()
+                )
+            }
         }
-        lib.executor().run(":lib:compileDebugScreenshotTestKotlin")
+        build.executor.run(":lib:compileDebugScreenshotTestKotlin")
     }
 
     @Test
     fun testLowKotlinVersion() {
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '1.8.10')"
-        )
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
-        )
-        val lib = project.getSubproject(":lib")
-        lib.buildFile.appendText(
-            """
-                android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
-                """.trimIndent()
-        )
-        val result = lib.executor().expectFailure().run(":lib:compileDebugScreenshotTest")
+        val build = rule.build {
+            androidLibrary {
+                replaceAppliedPlugin(PluginType.KOTLIN_ANDROID, "1.8.10")
+                android.experimentalProperties[SCREENSHOT_TEST.key] = true
+            }
+            gradleProperties {
+                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+            }
+        }
+
+        val result = build.executor.expectFailure().run(":lib:compileDebugScreenshotTest")
         result.assertErrorContains(
             "The current Kotlin Gradle plugin version (1.8.10) is below the required"
         )

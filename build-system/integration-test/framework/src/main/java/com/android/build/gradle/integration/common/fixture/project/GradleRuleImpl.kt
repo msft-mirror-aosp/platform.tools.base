@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.debugGradleConnection
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
 import com.android.build.gradle.integration.common.fixture.gradle_project.TestLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.builder.GlobalDefinitionStateImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -48,7 +49,6 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.createDirectories
-import kotlin.io.path.writeText
 
 internal class GradleRuleImpl internal constructor(
     private val buildDefinition: GradleBuildDefinitionImpl,
@@ -69,7 +69,18 @@ internal class GradleRuleImpl internal constructor(
         status = Status.WRITTEN
 
         doWriteBuild()
-        computeGradleBuild(buildDefinition, locations.testFiles, locations.testSupportLocations)
+
+        val profileDirectory = if (enableProfileOutput)
+            locations.testFiles.resolve(GradleTestProjectBuilder.DEFAULT_PROFILE_DIR)
+        else
+            null
+
+        computeGradleBuild(
+            buildDefinition = buildDefinition,
+            destinationPath = locations.testFiles,
+            testSupportLocations = locations.testSupportLocations,
+            profileDirectory = profileDirectory
+        )
     }
 
     override fun build(action: GradleBuildDefinition.() -> Unit): GradleBuild {
@@ -98,9 +109,9 @@ internal class GradleRuleImpl internal constructor(
         // always create the maven repo as new items can be added during reconfiguration
         val repoPath = computeMavenRepoLocation()
 
-        val localRepositories = mutableListOf<Path>().also {
-            it += BuildSystem.get().localRepositories
-            it.add(repoPath)
+        val localRepositories = buildList {
+            addAll(BuildSystem.get().localRepositories)
+            add(repoPath)
         }
 
         // Libraries can also be added inline during dependencies. We need to go through all
@@ -111,9 +122,29 @@ internal class GradleRuleImpl internal constructor(
             MavenRepoGenerator(allLibraries).generate(repoPath)
         }
 
-        buildDefinition.write(rootBuildPath, localRepositories)
+        val globalState = GlobalDefinitionStateImpl(
+            getDefaultProperties(),
+            localRepositories,
+            buildDefinition.handleCustomBuildLogic(rootBuildPath)
+        )
+
+        buildDefinition.write(rootBuildPath, globalState)
 
         createAncillaryBuildFiles()
+    }
+
+    private fun getDefaultProperties(): List<String> {
+        return buildList {
+            // This is necessary when setting jvmToolchain to 17
+            // This must be injected here to not impact unit tests of the fixture as they do not
+            // have access to this injected value
+            add("org.gradle.java.installations.paths=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}")
+
+            val jdkVersionForGradle = System.getProperty("gradle.java.version")
+            if (jdkVersionForGradle == "17") {
+                add("org.gradle.java.home=${TestUtils.getJava17Jdk().toString().replace("\\", "/")}")
+            }
+        }
     }
 
     private fun computeMavenRepoLocation(): Path =
@@ -129,12 +160,13 @@ internal class GradleRuleImpl internal constructor(
         buildDefinition: GradleBuildDefinitionImpl,
         destinationPath: Path,
         testSupportLocations: TestLocation,
+        profileDirectory: Path?
     ): GradleBuild {
         // this is the location for the actual build
         val buildPath = destinationPath.resolve(buildDefinition.rootFolderName)
 
         val includedBuilds = buildDefinition.includedBuilds.values.associate {
-            it.name to computeGradleBuild(it, buildPath, testSupportLocations)
+            it.name to computeGradleBuild(it, buildPath, testSupportLocations, profileDirectory)
         }
 
         val subProjects = buildDefinition.subProjects.values.associate { definition ->
@@ -211,7 +243,8 @@ internal class GradleRuleImpl internal constructor(
             definition = buildDefinition,
             executorProvider = { instantiateExecutor() },
             modelBuilderProvider = { instantiateModelBuilder() },
-            mavenRepoPath = computeMavenRepoLocation()
+            mavenRepoPath = computeMavenRepoLocation(),
+            profileDirectory = profileDirectory
         ).also { build ->
             subProjects.values.forEach {
                 it.build = build
@@ -258,7 +291,7 @@ internal class GradleRuleImpl internal constructor(
         override val additionalMavenRepoDir: Path
             get() = computeMavenRepoLocation()
         override val profileDirectory: Path?
-            get() = if (enableProfileOutput) GradleTestProjectBuilder.DEFAULT_PROFILE_DIR else null
+            get() = build.profileDirectory
     }
 
     private fun createAncillaryBuildFiles() {
@@ -370,7 +403,6 @@ internal class GradleRuleImpl internal constructor(
     private fun checkConfigurationCache() {
         val checker = ConfigurationCacheReportChecker()
         (build as GradleBuildImpl).subProject(":")
-            .location
             .resolve("build/reports")
             .toFile()
             .walk()

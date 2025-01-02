@@ -28,9 +28,9 @@ import com.android.build.gradle.integration.common.utils.getApkLocations
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.testutils.apk.Aab
 import com.android.testutils.apk.Apk
+import com.android.tools.build.bundletool.model.AppBundle
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.isRegularFile
 
 /*
  * Support for Android Application in the [GradleRule] fixture
@@ -64,21 +64,9 @@ internal class AndroidApplicationDefinitionImpl(
 /**
  * Specialized interface for application [AndroidProject] to use in the test
  */
-interface AndroidApplicationProject: AndroidProject<AndroidProjectDefinition<ApplicationExtension>>, GeneratesApk {
-    /**
-     * Runs the action with a provided instance of [Aab].
-     *
-     * It is possible to return a value from the action, but it should not be [Aab] as this
-     * may not be safe. [Aab] is a [AutoCloseable] and should be treated as such.
-     */
-    fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R
-
-    /**
-     * Runs the action with a provided [ZipSubject]
-     */
-    fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit)
-
-    fun getBundle(bundleSelector: BundleSelector): File
+interface AndroidApplicationProject : AndroidProject<AndroidProjectDefinition<ApplicationExtension>>,
+    GeneratesApk,
+    GeneratesAab {
 
     fun getApkFromBundleTaskName(variantName: String): String
     fun locateApkFolderViaModel(variantName: String): File
@@ -95,27 +83,9 @@ internal class AndroidApplicationImpl(
     location,
     projectDefinition,
     namespace,
-), AndroidApplicationProject {
-
-    override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R {
-        val path = computeOutputPath(bundleSelector)
-        if (!path.isRegularFile()) error("Bundle file does not exist: $path")
-
-        return Aab(path.toFile()).use {
-            action(it)
-        }
-    }
-
-    override fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit) {
-        withBundle(bundleSelector) {
-            AabSubject.assertThat(this).use {
-                action(it)
-            }
-        }
-    }
-
-    override fun getBundle(bundleSelector: BundleSelector): File =
-        computeOutputPath(bundleSelector).toFile()
+), AndroidApplicationProject,
+    GeneratesAab by GeneratesAabDelegate(location),
+    GeneratesApk by GeneratesApkDelegate(location) {
 
     override fun getApkFromBundleTaskName(variantName: String): String {
         val projectPath = projectDefinition.path
@@ -151,26 +121,9 @@ internal class ReversibleAndroidApplicationProject(
 ) : ReversibleAndroidProject<AndroidApplicationProject, AndroidProjectDefinition<ApplicationExtension>>(
     parentProject,
     projectModification
-), AndroidApplicationProject {
-
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R =
-        parentProject.withApk(apkSelector, action)
-
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        parentProject.assertApk(apkSelector, action)
-    }
-
-    override fun hasApk(apkSelector: ApkSelector): Boolean = parentProject.hasApk(apkSelector)
-
-    override fun <R> withBundle(bundleSelector: BundleSelector, action: Aab.() -> R): R =
-        parentProject.withBundle(bundleSelector, action)
-
-    override fun assertBundle(bundleSelector: BundleSelector, action: AabSubject.() -> Unit) {
-        parentProject.assertBundle(bundleSelector, action)
-    }
-
-    override fun getBundle(bundleSelector: BundleSelector): File =
-        parentProject.getBundle(bundleSelector)
+), AndroidApplicationProject,
+    GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
+    GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
 
     override fun getApkFromBundleTaskName(variantName: String): String =
         parentProject.getApkFromBundleTaskName(variantName)

@@ -159,6 +159,16 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
     }
 
     @Test
+    fun transform() {
+        val files = getInstance()
+        files.add("foo", "some text with some content")
+        files.update("foo").transform {
+            "/*$it*/"
+        }
+        checker.checkContent(files, "foo" to "/*some text with some content*/")
+    }
+
+    @Test
     fun updateAction() {
         val files = getInstance()
         files.add("foo", "some text with some content")

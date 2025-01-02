@@ -29,16 +29,6 @@ import com.android.testutils.MavenRepoGenerator
 import java.nio.file.Path
 
 /**
- * Creates a [GradleTestProject] with the provided configuration action
- */
-fun createGradleProject(
-    name: String? = null,
-    action: TestProjectBuilder.() -> Unit
-): GradleTestProject {
-    return createGradleProjectBuilder(name, action).create()
-}
-
-/**
  * Creates a [GradleTestProjectBuilder] with the provided configuration action
  */
 fun createGradleProjectBuilder(
@@ -290,7 +280,17 @@ interface DependencyBuilder {
 
 interface DependenciesBuilder {
 
+    /**
+     * Remove all dependencies
+     */
     fun clear()
+
+    /**
+     * Remove a dependency, by its scope and its information.
+     *
+     * This must match exactly how it was added
+     */
+    fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
     /**
      * adds a dependency in the implementation scope.
@@ -329,6 +329,7 @@ interface DependenciesBuilder {
     /** Adds a dependency to the testRuntimeOnly configuration. See [implementation] for details. */
     fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
 
+    fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
     /**
      * adds a dependency in the androidTestImplementation scope.
      *

@@ -249,9 +249,8 @@ public class TestUtils {
     @NonNull
     public static Path getWorkspaceRoot(@NonNull String workspaceName) throws IOException {
         String pathToParent = runningFromBazel() ? ".." : "bazel-out/../../../external";
-        // Canonicalize to get rid of the ".."s or symlinks.
-        Path canonicalPath =
-                resolveWorkspacePathUnchecked(pathToParent).toFile().getCanonicalFile().toPath();
+        // Canonicalize to get rid of the ".."s and symlinks.
+        Path canonicalPath = resolveWorkspacePathUnchecked(pathToParent).toRealPath();
         return canonicalPath.resolve(workspaceName);
     }
 
