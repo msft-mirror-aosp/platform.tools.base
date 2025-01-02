@@ -287,9 +287,6 @@ enum class BooleanOption(
     PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES(
             "android.experimental.privacysandboxsdk.requireServices", true, FeatureStage.Experimental),
 
-    PRIVACY_SANDBOX_SDK_ENABLE_LINT(
-        "android.experimental.privacysandboxsdk.enableLint", false, FeatureStage.Experimental),
-
     VERIFY_AAR_CLASSES("android.experimental.verifyLibraryClasses", false, FeatureStage.Experimental),
     DISABLE_COMPILE_SDK_CHECKS("android.experimental.disableCompileSdkChecks", false, FeatureStage.Experimental),
     ADDITIONAL_ARTIFACTS_IN_MODEL("android.experimental.additionalArtifactsInModel", false, FeatureStage.Experimental),
@@ -423,6 +420,12 @@ enum class BooleanOption(
      */
     R8_INTEGRATED_RESOURCE_SHRINKING(
         "android.r8.integratedResourceShrinking",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0)
+    ),
+
+    PRIVACY_SANDBOX_SDK_ENABLE_LINT(
+        "android.experimental.privacysandboxsdk.enableLint",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0)
     ),
