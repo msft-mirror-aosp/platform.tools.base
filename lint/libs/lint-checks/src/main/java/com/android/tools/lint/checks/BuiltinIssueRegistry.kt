@@ -492,6 +492,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           UselessViewDetector.USELESS_LEAF,
           UselessViewDetector.USELESS_PARENT,
           Utf8Detector.ISSUE,
+          UseKtxDetector.USE_KTX,
           VectorDetector.ISSUE,
           VectorDrawableCompatDetector.ISSUE,
           VectorPathDetector.PATH_LENGTH,
