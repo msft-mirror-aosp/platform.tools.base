@@ -13,71 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.integration.common.truth
 
-package com.android.build.gradle.integration.common.truth;
+import com.android.testutils.apk.Aar
+import com.google.common.base.Charsets
+import com.google.common.base.Preconditions
+import com.google.common.truth.Fact
+import com.google.common.truth.FailureMetadata
+import com.google.common.truth.StringSubject
+import com.google.common.truth.Subject.Factory
+import com.google.common.truth.Truth
+import java.io.IOException
+import java.io.UncheckedIOException
+import java.nio.file.Files
+import java.util.stream.Collectors
 
-import static com.google.common.truth.Truth.assertAbout;
-
-import com.android.annotations.NonNull;
-import com.android.testutils.apk.Aar;
-
-import com.google.common.base.Charsets;
-import com.google.common.base.Preconditions;
-import com.google.common.truth.Fact;
-import com.google.common.truth.FailureMetadata;
-import com.google.common.truth.StringSubject;
-import com.google.common.truth.Subject;
-import com.google.common.truth.Truth;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.stream.Collectors;
-
-/** Truth support for aar files. */
-public class AarSubject extends AbstractAndroidSubject<AarSubject, Aar> {
-
-    public static Subject.Factory<AarSubject, Aar> aars() {
-        //noinspection resource
-        return AarSubject::new;
+/** Truth support for aar files.  */
+class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
+    AbstractAndroidSubject<AarSubject, Aar>(failureMetadata, subject) {
+    init {
+        validateAar()
     }
 
-    public AarSubject(@NonNull FailureMetadata failureMetadata, @NonNull Aar subject) {
-        super(failureMetadata, subject);
-        validateAar();
-    }
-
-    @NonNull
-    public static AarSubject assertThat(@NonNull Aar aar) {
-        return assertAbout(aars()).that(aar);
-    }
-
-    private void validateAar() {
+    private fun validateAar() {
         // only validate if the aar actually exists
         if (actual().exists() && actual().getEntry("AndroidManifest.xml") == null) {
             failWithoutActual(
-                    Fact.simpleFact("Invalid aar, should contain " + "AndroidManifest.xml"));
+                Fact.simpleFact("Invalid aar, should contain " + "AndroidManifest.xml")
+            )
         }
     }
 
-    @NonNull
-    public StringSubject textSymbolFile() {
+    fun textSymbolFile(): StringSubject {
         try {
-            Path entry = actual().getEntry("R.txt");
-            Preconditions.checkNotNull(entry);
-            return Truth.assertThat(new String(Files.readAllBytes(entry), Charsets.UTF_8));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            val entry = actual().getEntry("R.txt")
+            Preconditions.checkNotNull(entry)
+            return Truth.assertThat(String(Files.readAllBytes(entry), Charsets.UTF_8))
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
         }
     }
 
-    @NonNull
-    public StringSubject manifestFile() {
+    fun manifestFile(): StringSubject {
         try {
-            return Truth.assertThat(actual().getAndroidManifestContentsAsString());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            return Truth.assertThat(actual().androidManifestContentsAsString)
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
         }
     }
 
@@ -85,28 +66,44 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject, Aar> {
      * Asserts the subject contains an android resource at the given path with the specified String
      * content.
      *
-     * <p>Content is trimmed when compared.
+     *
+     * Content is trimmed when compared.
      */
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public final void containsResourceWithContent(@NonNull String path, @NonNull String expected) {
+    fun containsResourceWithContent(path: String, expected: String) {
         try {
-            Path resource = actual().getResource(path);
+            val resource = actual().getResource(path)
             if (resource == null) {
                 failWithoutActual(
-                        Fact.simpleFact("Resource " + path + " does not exist in " + actual()));
-                return;
+                    Fact.simpleFact("Resource " + path + " does not exist in " + actual())
+                )
+                return
             }
-            String actual = Files.readAllLines(resource).stream().collect(Collectors.joining("\n"));
-            if (!expected.equals(actual)) {
+            val actual = Files.readAllLines(resource).stream().collect(Collectors.joining("\n"))
+            if (expected != actual) {
                 failWithoutActual(
-                        Fact.simpleFact(
-                                String.format(
-                                        "Resource %s in %s does not have expected contents."
-                                                + " Expected '%s' actual '%s'",
-                                        path, actual(), expected, actual)));
+                    Fact.simpleFact(
+                        String.format(
+                            "Resource %s in %s does not have expected contents."
+                                    + " Expected '%s' actual '%s'",
+                            path, actual(), expected, actual
+                        )
+                    )
+                )
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        fun aars(): Factory<AarSubject, Aar> {
+            return Factory { failureMetadata: FailureMetadata, subject: Aar -> AarSubject(failureMetadata, subject) }
+        }
+
+        @JvmStatic
+        fun assertThat(aar: Aar): AarSubject {
+            return Truth.assertAbout(aars()).that(aar)
         }
     }
 }

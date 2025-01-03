@@ -17,20 +17,13 @@
 package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.LoggingLevel
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.AarSubject
-import com.android.build.gradle.integration.common.truth.AarSubject.assertThat
-import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.symbols.Symbol
 import com.android.ide.common.symbols.SymbolTable
 import com.android.resources.ResourceType
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -121,7 +114,7 @@ class ShrinkLibraryRClassTest {
     private fun extractAarJar(): Path {
         val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
         project.getAar("release") { aar ->
-            assertThat(aar).containsClass("Lcom/example/lib/UseR;")
+            AarSubject.assertThat(aar).containsClass("Lcom/example/lib/UseR;")
             Files.copy(aar.getEntry("classes.jar")!!, jar)
         }
         return jar
