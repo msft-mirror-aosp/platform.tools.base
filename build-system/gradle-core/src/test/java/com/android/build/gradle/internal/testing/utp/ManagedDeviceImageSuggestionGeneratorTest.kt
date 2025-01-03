@@ -156,6 +156,110 @@ class ManagedDeviceImageSuggestionGeneratorTest {
     }
 
     @Test
+    fun ensureSuggestingExtensionWorks() {
+        assertThat(
+            ManagedDeviceImageSuggestionGenerator(
+                CpuArchitecture.ARM,
+                "extensionWithHigher",
+                31,
+                10,
+                "google_apis",
+                "",
+                false,
+                listOf("system-images;android-31-ext12;google_apis;arm64-v8a")
+            ).message
+        ).isEqualTo(
+            "System Image specified by extensionWithHigher does not exist.\n\n" +
+                    "Try one of the following fixes:\n" +
+                    "1. The system image does not exist with extension version 10. However an " +
+                    "image exists for extension version 12. Set sdkExtensionVersion = 12 to use."
+        )
+
+        assertThat(
+            ManagedDeviceImageSuggestionGenerator(
+                CpuArchitecture.ARM,
+                "extensionNoHigher",
+                35,
+                20,
+                "google_apis",
+                "",
+                false,
+                listOf("system-images;android-35-ext14;google_apis;arm64-v8a")
+            ).message
+        ).isEqualTo(
+            "System Image specified by extensionNoHigher does not exist.\n\n" +
+                    "Try one of the following fixes:\n" +
+                    "1. The system image does not presently exist for extension version 20. The " +
+                    "latest available extension version for SDK version 35 is 14. Set " +
+                    "sdkExtensionVersion = 14 to use. Be aware this may not have all extension " +
+                    "apis needed for your application."
+        )
+
+        assertThat(
+            ManagedDeviceImageSuggestionGenerator(
+                CpuArchitecture.ARM,
+                "extensionNotAvailable",
+                35,
+                10,
+                "default",
+                "",
+                false,
+                listOf("system-images;android-35;default;arm64-v8a")
+            ).message
+        ).isEqualTo(
+            "System Image specified by extensionNotAvailable does not exist.\n\n" +
+                    "Try one of the following fixes:\n" +
+                    "1. No explicit extension levels exist for SDK version 35. Either unset " +
+                    "sdkExtensionVersion or try a different sdkVersion."
+        )
+    }
+
+    @Test
+    fun ensurePageAlignmentSuggestionWorks() {
+        // check 16k suggests 4k if available
+        assertThat(
+            ManagedDeviceImageSuggestionGenerator(
+                CpuArchitecture.X86_64,
+                "page4kbAvailable",
+                35,
+                null,
+                "default",
+                "_ps16k",
+                false,
+                listOf("system-images;android-35;default;x86_64")
+            ).message
+        ).isEqualTo(
+            "System Image specified by page4kbAvailable does not exist.\n\n" +
+                    "Try one of the following fixes:\n" +
+                    "1. There is a valid system image for a different page alignment. Set " +
+                    "pageAlignment = PageAlignment.FORCE_4KB_PAGES to use. Be aware using " +
+                    "a different page alignment will affect how native code is run for " +
+                    "testing purposes."
+        )
+
+        // check 4k suggests 16k if available.
+        assertThat(
+            ManagedDeviceImageSuggestionGenerator(
+                CpuArchitecture.X86_64,
+                "page16kbAvailable",
+                35,
+                null,
+                "default",
+                "",
+                false,
+                listOf("system-images;android-35;default_ps16k;x86_64")
+            ).message
+        ).isEqualTo(
+            "System Image specified by page16kbAvailable does not exist.\n\n" +
+                    "Try one of the following fixes:\n" +
+                    "1. There is a valid system image for a different page alignment. Set " +
+                    "pageAlignment = PageAlignment.FORCE_16KB_PAGES to use. Be aware using " +
+                    "a different page alignment will affect how native code is run for " +
+                    "testing purposes."
+        )
+    }
+
+    @Test
     fun ensure32BitSuggestionWorks() {
         val generator = ManagedDeviceImageSuggestionGenerator(
             CpuArchitecture.X86_64,

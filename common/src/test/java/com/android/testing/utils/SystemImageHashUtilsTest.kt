@@ -51,5 +51,46 @@ class SystemImageHashUtilsTest {
         assertEquals(
             30, parseApiFromHash("system-images;android-30;google_apis_playstore;x86_64")
         )
+        assertEquals(
+            30,
+            parseApiFromHash("system-images;android-30-ext12;default;x86_64"))
+    }
+
+    @Test
+    fun testParseExtensionFromHash() {
+        assertEquals(
+            null,
+            parseExtensionFromHash("system-images;android-29;default;x86"))
+        assertEquals(
+            9,
+            parseExtensionFromHash("system-images;android-29-ext9;google_apis;x86"))
+        assertEquals(
+            12,
+            parseExtensionFromHash("system-images;android-30-ext12;default;x86_64"))
+    }
+
+    @Test
+    fun testParseSystemImageSource() {
+        assertEquals(
+            "google_apis_playstore",
+            parseSystemImageSourceFromHash(
+                "system-images;android-30;google_apis_playstore;x86_64"))
+        assertEquals(
+            "google_apis_playstore",
+            parseSystemImageSourceFromHash(
+                "system-images;android-36;google_apis_playstore_ps16k;x86_64"))
+    }
+
+    @Test
+    fun testParseVendor() {
+        assertEquals(
+            "google_apis_playstore",
+            parseVendorFromHash(
+                "system-images;android-30;google_apis_playstore;x86_64"))
+        // Vendor string will include page size suffix.
+        assertEquals(
+            "google_apis_playstore_ps16k",
+            parseVendorFromHash(
+                "system-images;android-36;google_apis_playstore_ps16k;x86_64"))
     }
 }

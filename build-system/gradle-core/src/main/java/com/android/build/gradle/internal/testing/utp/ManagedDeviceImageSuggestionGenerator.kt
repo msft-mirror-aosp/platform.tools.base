@@ -17,11 +17,14 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.api.dsl.ManagedVirtualDevice
+import com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment
 import com.android.build.gradle.internal.computeAbiFromArchitecture
+import com.android.build.gradle.internal.dsl.PAGE_16KB_SUFFIX
 import com.android.testing.utils.computeSystemImageHashFromDsl
 import com.android.testing.utils.isTvOrAutoSource
 import com.android.testing.utils.parseApiFromHash
-import com.android.testing.utils.parseVendorFromHash
+import com.android.testing.utils.parseExtensionFromHash
+import com.android.testing.utils.parseSystemImageSourceFromHash
 import com.android.testing.utils.parseAbiFromHash
 import com.android.utils.CpuArchitecture
 import kotlin.math.min
@@ -100,11 +103,18 @@ class ManagedDeviceImageSuggestionGenerator (
             // Check to see if there are any alternative image sources.
             yield(checkAllSourcesSuggestion())
             // Step 4:
+            // Check for an extension level recommendation
+            yield(checkForExtensionSuggestion())
+            // Step 5:
             // Check for an api recommendation
             yield(checkForOtherSdkVersionSuggestion())
-            // Step 5:
+            // Step 6:
             // See if unsetting require64Bit makes a difference.
             yield(checkFor32BitSuggestion())
+            // Step 7:
+            // See if a different page size is available
+            // This is last as changing the page size will change how native code is run.
+            yield(checkForOtherPageAlignment())
         }
 
         val recommendations = suggestions.filterNotNull().take(MAX_SUGGESTIONS).toList()
@@ -169,6 +179,56 @@ class ManagedDeviceImageSuggestionGenerator (
                     "source. Set systemImageSource = \"$newImageSource\" to use."
         } else {
             null
+        }
+    }
+
+    private fun checkForExtensionSuggestion(): String? {
+        // If not using an extension level, nothing to suggest.
+        sdkExtensionVersion ?: return null
+
+        val highestExtension = allImages.filter {
+            parseApiFromHash(it) == sdkVersion
+        }.maxOfOrNull {
+            parseExtensionFromHash(it) ?: 0
+        } ?: 0
+
+        // First look for the next highest extension available.
+        var nextAvailableExtension: Int? = null
+        for (extension in sdkExtensionVersion..highestExtension) {
+            val newHash = computeHash(otherSdkExtensionVersion = extension)
+            if (allImages.contains(newHash)) {
+                nextAvailableExtension = extension
+                break
+            }
+        }
+
+        if (nextAvailableExtension != null) {
+            return "The system image does not exist with extension version $sdkExtensionVersion. " +
+                    "However an image exists for extension version $nextAvailableExtension. Set " +
+                    "sdkExtensionVersion = $nextAvailableExtension to use."
+        }
+
+        // The extension specified may be too high for the sdk version,
+        // try to suggest the highest available.
+        var latestAvailableExtension: Int? = null
+
+        for (extension in min(sdkExtensionVersion, highestExtension) downTo 1) {
+            val newHash = computeHash(otherSdkExtensionVersion = extension)
+            if (allImages.contains(newHash)) {
+                latestAvailableExtension = extension
+                break
+            }
+        }
+
+        return if (latestAvailableExtension != null) {
+            "The system image does not presently exist for extension version " +
+                    "$sdkExtensionVersion. The latest available extension version for SDK " +
+                    "version $sdkVersion is $latestAvailableExtension. Set sdkExtensionVersion = " +
+                    "$latestAvailableExtension to use. Be aware this may not have all extension " +
+                    "apis needed for your application."
+        } else {
+            "No explicit extension levels exist for SDK version $sdkVersion. Either unset " +
+                    "sdkExtensionVersion or try a different sdkVersion."
         }
     }
 
@@ -261,7 +321,7 @@ class ManagedDeviceImageSuggestionGenerator (
                     parseAbiFromHash(it)?.startsWith("x86") == true
                 }
             }.mapNotNull {
-                parseVendorFromHash(it)
+                parseSystemImageSourceFromHash(it)
             }.filterNot {
                 isTvOrAutoSource(it)
             }.toMutableSet()
@@ -278,5 +338,23 @@ class ManagedDeviceImageSuggestionGenerator (
                 "This is likely due to an invalid image source. The source specified by " +
                 "$deviceName is \"$systemImageSource\".\n" +
                 "Set systemImageSource to any of $sources to get more suggestions."
+    }
+
+    private fun checkForOtherPageAlignment(): String? {
+        val otherAlignment = when(pageAlignmentSuffix) {
+            PAGE_16KB_SUFFIX -> ""
+            else -> PAGE_16KB_SUFFIX
+        }
+
+        if (allImages.contains(computeHash(otherPageAlignment = otherAlignment))) {
+            val alignment = when (otherAlignment) {
+                PAGE_16KB_SUFFIX -> PageAlignment.FORCE_16KB_PAGES
+                else -> PageAlignment.FORCE_4KB_PAGES
+            }
+            return "There is a valid system image for a different page alignment. Set " +
+                    "pageAlignment = PageAlignment.$alignment to use. Be aware using a different " +
+                    "page alignment will affect how native code is run for testing purposes."
+        }
+        return null
     }
 }
