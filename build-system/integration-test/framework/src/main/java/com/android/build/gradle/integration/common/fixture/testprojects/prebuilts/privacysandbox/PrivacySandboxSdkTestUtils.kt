@@ -16,13 +16,18 @@
 
 package com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox
 
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.SubProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.sdklib.BuildToolInfo
-import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
+import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.JavaVersion
+import org.gradle.api.Project
 
 private val aidlPath = SdkHelper.getBuildTool(BuildToolInfo.PathId.AIDL).absolutePath
         .replace("""\""", """\\""")
@@ -31,31 +36,22 @@ const val androidxPrivacySandboxVersion = "1.0.0-alpha10"
 const val androidxPrivacySandboxSdkRuntimeVersion = "1.0.0-alpha13"
 const val androidxPrivacySandboxLibraryPluginVersion = "1.0.0-alpha02"
 
-fun TestProjectBuilder.privacySandboxSdkProject(path: String, action: SubProjectBuilder.() -> Unit) {
-    subProject(path) {
-        plugins.add(PluginType.PRIVACY_SANDBOX_SDK)
+fun GradleBuildDefinition.privacySandboxSdkLibraryProject(
+    path: String,
+    action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
+) {
+    androidLibrary(path, createMinimumProject = false) {
+        applyPlugin(PluginType.KOTLIN_ANDROID)
+        applyPlugin(PluginType.KSP)
         android {
-            defaultCompileSdk()
-        }
-        action()
-    }
-}
-
-fun TestProjectBuilder.privacySandboxSdkLibraryProject(path: String, action: SubProjectBuilder.() -> Unit) {
-    subProject(path) {
-        useNewPluginsDsl = true
-        plugins.add(PluginType.ANDROID_LIB)
-        plugins.add(PluginType.KOTLIN_ANDROID)
-        plugins.add(PluginType.KSP)
-        android {
-            defaultCompileSdk()
+            compileSdk = DEFAULT_COMPILE_SDK_VERSION
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_1_8
                 targetCompatibility = JavaVersion.VERSION_1_8
             }
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
+        }
+        legacyKotlin {
+            jvmTarget = "1.8"
         }
         dependencies {
             implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10")
@@ -67,19 +63,25 @@ fun TestProjectBuilder.privacySandboxSdkLibraryProject(path: String, action: Sub
             ksp("androidx.privacysandbox.tools:tools-apicompiler:$androidxPrivacySandboxVersion")
             ksp("androidx.annotation:annotation:1.6.0")
         }
-        appendToBuildFile {
-            """
-                   def aidlCompilerPath = '$aidlPath'
-                   ksp { arg("aidl_compiler_path", aidlCompilerPath) }
-                """
-        }
+        pluginCallbacks += KspAndAidlSetupCallback::class.java
         // Have an empty manifest as a regression test of b/237279793
-        addFile("src/main/AndroidManifest.xml", """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                </manifest>
-                """.trimIndent()
-        )
+        files.setupMinimumManifest()
         action()
+    }
+}
+
+class KspAndAidlSetupCallback: LibraryComponentCallback {
+    override fun handleExtension(
+        project: Project,
+        androidComponents: LibraryAndroidComponentsExtension
+    ) {
+        // use finalize DSL to make sure KSP has been applied
+        androidComponents.finalizeDsl { it ->
+            val ksp = project.extensions.getByType(KspExtension::class.java)
+            ksp.arg(
+                "aidl_compiler_path",
+                androidComponents.sdkComponents.aidl.get().executable.get().asFile.absolutePath
+            )
+        }
     }
 }

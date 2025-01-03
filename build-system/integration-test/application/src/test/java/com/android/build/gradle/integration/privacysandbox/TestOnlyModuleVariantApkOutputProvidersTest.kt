@@ -16,110 +16,132 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
+import com.android.build.api.variant.ApkOutput
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxTestOnlyModuleApkOutputTest.Companion.getBuildFileContentWithFetchTask
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.JavaVersion
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
 class TestOnlyModuleVariantApkOutputProvidersTest {
 
-    @JvmField
-    @Rule
-    val project =  createGradleProjectBuilder {
-        withKotlinPlugin = true
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                defaultCompileSdk()
-                minSdk = 23
-                namespace = "com.example.privacysandboxsdk.consumer"
-            }
-            addFile(
-                "src/main/java/com/privacysandboxsdk/consumer/HelloWorld.kt",
-                // language=kotlin
-                """
-                package com.example.privacysandboxsdk.consumer
-
-                class HelloWorld {
-
-                    fun printSomething() {
-                        // The line below should compile if classes from another SDK are in the
-                        // same compile classpath.
-                        println("Hello World!")
+    @get:Rule
+    val rule =  GradleRule.configure().withProfileOutput()
+        .withProfileOutput()
+        .from {
+            androidApplication {
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+                android {
+                    namespace = "com.example.privacysandboxsdk.consumer"
+                    defaultConfig.minSdk = 23
+                    compileOptions {
+                        sourceCompatibility = JavaVersion.VERSION_17
+                        targetCompatibility = JavaVersion.VERSION_17
                     }
                 }
-            """.trimIndent()
-            )
-
-        }
-        subProject(":app-test") {
-            plugins.add(PluginType.ANDROID_TEST)
-            plugins.add(PluginType.KOTLIN_ANDROID)
-            android {
-                defaultCompileSdk()
-                minSdk = 23
-                namespace = "com.example.privacysandboxsdk.consumer.test"
-                targetProjectPath = ":app"
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_17
-                    targetCompatibility = JavaVersion.VERSION_17
-                }
-                kotlinOptions {
+                legacyKotlin {
                     jvmTarget = "17"
                 }
+                files.add(
+                    "src/main/java/com/privacysandboxsdk/consumer/HelloWorld.kt",
+                    // language=kotlin
+                    """
+                        package com.example.privacysandboxsdk.consumer
+
+                        class HelloWorld {
+                            fun printSomething() {
+                                // The line below should compile if classes from another SDK are in the
+                                // same compile classpath.
+                                println("Hello World!")
+                            }
+                        }
+                    """.trimIndent()
+                )
             }
-            addFile("src/main/java/com/privacysandboxsdk/consumer/test/HelloWorldTest.kt",
-                """
-                package com.example.privacysandboxsdk.consumer.test
-
-                class HelloWorldTest {
-
-                    fun testSomething() {
-                        println(1+1)
+            androidTest(":app-test", createMinimumProject = false) {
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+                android {
+                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                    namespace = "com.example.privacysandboxsdk.consumer.test"
+                    defaultConfig.minSdk = 23
+                    targetProjectPath = ":app"
+                    compileOptions {
+                        sourceCompatibility = JavaVersion.VERSION_17
+                        targetCompatibility = JavaVersion.VERSION_17
                     }
                 }
-
-                """.trimIndent())
+                legacyKotlin {
+                    jvmTarget = "17"
+                }
+                files {
+                    setupMinimumManifest()
+                    add(
+                        "src/main/java/com/privacysandboxsdk/consumer/test/HelloWorldTest.kt",
+                        //language=kotlin
+                        """
+                            package com.example.privacysandboxsdk.consumer.test
+                            class HelloWorldTest {
+                                fun testSomething() {
+                                    println(1+1)
+                                }
+                            }
+                        """.trimIndent()
+                    )
+                }
+            }
         }
-    }.enableProfileOutput().create()
 
-    private fun executor() = project.executor()
+    private fun GradleBuild.configuredExecutor() = executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
         .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
 
+
     @Test
     fun getApkOutput() {
-        project.getSubproject(":app-test").buildFile.appendText(
-            getBuildFileContentWithFetchTask("""
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("app-debug.apk") }
+        val build = rule.build {
+            androidTest(":app-test") {
+                pluginCallbacks += VerificationForTestCallback::class.java
+            }
+        }
 
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("app-test-debug.apk") }
-                    assert apkInstall[1].description.contains("Testing Apk")
-
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("app-debug.apk") }
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("app-test-debug.apk") }
-                    assert apkInstall[1].description.contains("Testing Apk")
-
-            """.trimIndent()
-
-            )
-        )
-        executor()
+        build.configuredExecutor()
             .with(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE, true)
             .run(":app-test:fetchApks")
+    }
+
+    class VerificationForTestCallback: FetchTaskForAndroidTestCallback<TestOnlyVerificationTask>() {
+        override val taskType: Class<TestOnlyVerificationTask>
+            get() = TestOnlyVerificationTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (TestOnlyVerificationTask) -> Property<ApkOutput>
+            get() = TestOnlyVerificationTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (TestOnlyVerificationTask) -> Property<ApkOutput>
+            get() = TestOnlyVerificationTask::privacySandboxDisabledApkOutput
+    }
+}
+
+abstract class TestOnlyVerificationTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(0, "app-debug.apk")
+            checkGroupFiles(1, "app-test-debug.apk")
+            checkGroupDescription(1, "Testing Apk")
+        }
+
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(0, "app-debug.apk")
+            checkGroupFiles(1, "app-test-debug.apk")
+            checkGroupDescription(1, "Testing Apk")
+        }
     }
 }

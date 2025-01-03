@@ -27,6 +27,8 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.file.Files
 import java.util.stream.Collectors
+import java.util.zip.ZipFile
+import com.android.SdkConstants
 
 /** Truth support for aar files.  */
 class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
@@ -89,6 +91,62 @@ class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
                         )
                     )
                 )
+            }
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
+        }
+    }
+
+    /**
+     * Checks whether the AAR has the given classes.
+     *
+     * the classes are expresses a class file path inside the jar.
+     */
+    fun containsMainClasses(vararg classes: String) {
+        try {
+            val path = "/" + SdkConstants.FN_CLASSES_JAR
+            val resource = actual().getEntryAsFile(path)
+            if (resource == null) {
+                failWithoutActual(
+                    Fact.simpleFact("File " + path + " does not exist in " + actual()))
+                return
+            }
+
+            ZipFile(resource.toFile()).use {
+                val entriesAsNames = it.entries().toList()
+                    .map { it.name }
+                    .filter { it.endsWith(SdkConstants.EXT_CLASS) }
+
+                Truth.assertWithMessage("Entries for ${SdkConstants.FN_CLASSES_JAR} in ${actual()}")
+                    .that(entriesAsNames).containsAtLeastElementsIn(classes)
+            }
+        } catch (e: IOException) {
+            throw UncheckedIOException(e)
+        }
+    }
+
+    /**
+     * Checks whether the AAR has exactly the given classes.
+     *
+     * the classes are expresses a class file path inside the jar.
+     */
+    fun containsExactlyMainClasses(vararg classes: String) {
+        try {
+            val path = "/" + SdkConstants.FN_CLASSES_JAR
+            val resource = actual().getEntryAsFile(path)
+            if (resource == null) {
+                failWithoutActual(
+                    Fact.simpleFact("File " + path + " does not exist in " + actual()))
+                return
+            }
+
+            ZipFile(resource.toFile()).use {
+                val entriesAsNames = it.entries().toList()
+                    .map { it.name }
+                    .filter { it.endsWith(SdkConstants.EXT_CLASS) }
+
+                Truth.assertWithMessage("Entries for ${SdkConstants.FN_CLASSES_JAR} in ${actual()}")
+                    .that(entriesAsNames).containsExactly(*classes)
             }
         } catch (e: IOException) {
             throw UncheckedIOException(e)

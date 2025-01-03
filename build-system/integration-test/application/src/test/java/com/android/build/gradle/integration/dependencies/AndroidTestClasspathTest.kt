@@ -50,7 +50,7 @@ class AndroidTestClasspathTest {
                 }
 
             }
-            androidLibrary("lib") {
+            androidLibrary(":lib") {
                 android {
                     namespace = "com.test.lib"
                 }

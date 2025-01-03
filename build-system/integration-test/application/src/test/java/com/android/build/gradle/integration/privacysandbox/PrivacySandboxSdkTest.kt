@@ -17,31 +17,31 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.signing.KeystoreHelper
 import com.android.testutils.apk.Dex
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject
-import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.util.Objects
+import kotlin.io.path.isDirectory
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 
 /** Integration tests for the privacy sandbox SDK */
 class PrivacySandboxSdkTest {
 
     @get:Rule
-    val project = privacySandboxSampleProject()
+    val rule = privacySandboxSampleProject()
 
-    private fun executor() = project.executor()
+    private fun GradleBuild.configuredExecutor() = executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
@@ -50,16 +50,19 @@ class PrivacySandboxSdkTest {
 
     @Test
     fun testDexingWithR8() {
-        val privacySandboxSdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        privacySandboxSdkProject.buildFile.appendText(
-            """
-                    android.experimentalProperties["android.experimental.privacysandboxsdk.optimize"] = false
-            """
-        )
-        val dexLocation = project.getSubproject(":privacy-sandbox-sdk")
-            .getIntermediateFile("dex", "single", "minifyBundleWithR8", "classes.dex")
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    experimentalProperties["android.experimental.privacysandboxsdk.optimize"] = false
+                }
+            }
+        }
 
-        executor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
+        val dexLocation = build.privacySandboxSdk(":privacy-sandbox-sdk")
+            .intermediatesDir
+            .resolve("dex/single/minifyBundleWithR8/classes.dex")
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
 
         Dex(dexLocation).also { dex ->
             assertThat(dex.classes.keys).containsAtLeast(
@@ -76,14 +79,12 @@ class PrivacySandboxSdkTest {
         }
 
         // Check incremental changes are handled
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("sdk-impl-a")
-                .file("src/main/java/com/example/sdkImplA/Example.kt"),
-            "fun f1() {}",
-            "fun g() {}"
-        )
+        build.androidLibrary(":sdk-impl-a")
+            .files
+            .update("src/main/java/com/example/sdkImplA/Example.kt")
+            .searchAndReplace("fun f1() {}", "fun g() {}")
 
-        executor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
+        build.configuredExecutor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
 
         Dex(dexLocation).also { dex ->
             assertThat(dex.classes["Lcom/example/sdkImplA/Example;"]!!.methods.map { it.name }).contains(
@@ -95,18 +96,20 @@ class PrivacySandboxSdkTest {
 
     @Test
     fun testDexingWithR8optimization() {
-        val privacySandboxSdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        privacySandboxSdkProject.buildFile.appendText(
-            """
-                    android.experimentalProperties["android.experimental.privacysandboxsdk.optimize"] = true
-                    android.optimization.keepRules.files.add(new File(project.projectDir, "proguard-rules.pro"))
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    experimentalProperties["android.experimental.privacysandboxsdk.optimize"] = true
+                    optimization.keepRules.files.add(projectDotFile("proguard-rules.pro"))
+                }
+            }
+        }
 
-            """
-        )
-        val dexLocation = project.getSubproject(":privacy-sandbox-sdk")
-            .getIntermediateFile("dex", "single", "minifyBundleWithR8", "classes.dex")
+        val dexLocation = build.privacySandboxSdk(":privacy-sandbox-sdk")
+            .intermediatesDir
+            .resolve("dex/single/minifyBundleWithR8/classes.dex")
 
-        executor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
+        build.configuredExecutor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
 
         Dex(dexLocation).also { dex ->
             assertThat(dex.classes.keys).doesNotContain(
@@ -123,14 +126,12 @@ class PrivacySandboxSdkTest {
         }
 
         // Check incremental changes are handled
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("android-lib")
-                .file("src/main/java/com/example/androidlib/Example.java"),
-            "public void f2() {}",
-            "public void g() {}"
-        )
+        build.androidLibrary(":android-lib")
+            .files
+            .update("src/main/java/com/example/androidlib/Example.java")
+            .searchAndReplace("public void f2() {}", "public void g() {}")
 
-        executor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
+        build.configuredExecutor().run(":privacy-sandbox-sdk:minifyBundleWithR8")
 
         Dex(dexLocation).also { dex ->
             assertThat(dex.classes["Lcom/example/androidlib/Example;"]!!.methods.map { it.name }).contains(
@@ -140,13 +141,17 @@ class PrivacySandboxSdkTest {
 
     @Test
     fun testAsb() {
-        executor().run(":privacy-sandbox-sdk:assemble")
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        val asbFile = sdkProject.getOutputFile("asb", "single", "privacy-sandbox-sdk.asb")
-        val asbManifest = sdkProject.getIntermediateFile(
-                                "merged_manifest", "single", "mergeManifest", "AndroidManifest.xml")
-        val asbManifestBlameReport = sdkProject.getOutputFile(
-                "${SdkConstants.FD_LOGS}/manifest-merger-mergeManifest-report.txt")
+        val build = rule.build
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:assemble")
+
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
+        val asbFile = sdkProject.outputsDir.resolve("asb/single/privacy-sandbox-sdk.asb")
+
+        val asbManifest = sdkProject.intermediatesDir
+            .resolve("merged_manifest/single/mergeManifest/AndroidManifest.xml")
+        val asbManifestBlameReport = sdkProject.outputsDir
+            .resolve("${SdkConstants.FD_LOGS}/manifest-merger-mergeManifest-report.txt")
         assertThat(asbManifest).hasContents(
                 """
                 <?xml version="1.0" encoding="utf-8"?>
@@ -206,8 +211,8 @@ class PrivacySandboxSdkTest {
 
                 </manifest>
         """.trimIndent())
-        assertThat(asbManifestBlameReport.exists()).isTrue()
-        assertThat(asbFile.exists()).isTrue()
+        assertThat(asbManifestBlameReport.isRegularFile()).isTrue()
+        assertThat(asbFile.isRegularFile()).isTrue()
 
         Zip(asbFile).use {
             assertThat(
@@ -237,35 +242,42 @@ class PrivacySandboxSdkTest {
 
     @Test
     fun testAsbSigning() {
-        val privacySandboxSdkProject = project.getSubproject(":privacy-sandbox-sdk")
         val storeType = "jks"
-        val storeFile = project.file("privacysandboxsdk.jks")
+        val storeFile = "privacysandboxsdk.jks"
         val storePassword = "rbStore123"
         val keyPassword = "rbKey123"
         val keyAlias = "privacysandboxsdkkey"
+
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    signingConfig {
+                        this?.storeFile = projectDotFile(storeFile)
+                        this?.keyAlias = keyAlias
+                        this?.keyPassword = keyPassword
+                        this?.storeType = storeType
+                        this?.storePassword = storePassword
+                    }
+                }
+            }
+        }
+
         KeystoreHelper.createNewStore(
                 storeType,
-                storeFile,
+                build.privacySandboxSdk(":privacy-sandbox-sdk").resolve(storeFile).toFile(),
                 storePassword,
                 keyPassword,
                 keyAlias,
                 "CN=Privacy Sandbox Sdk test",
                 100
         )
-        privacySandboxSdkProject.buildFile.appendText(
-                """
-                    android.signingConfig {
-                                storeFile = file("${storeFile.absolutePath.replace("\\", "\\\\")}")
-                                keyAlias = "$keyAlias"
-                                keyPassword = "$keyPassword"
-                                storeType = "$storeType"
-                                storePassword = "$storePassword"
-                            }
-                            """
-        )
-        executor().run(":privacy-sandbox-sdk:assemble")
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:assemble")
+
+        val privacySandboxSdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
+
         val asbFile =
-                privacySandboxSdkProject.getOutputFile("asb", "single", "privacy-sandbox-sdk.asb")
+                privacySandboxSdkProject.outputsDir.resolve("asb/single/privacy-sandbox-sdk.asb")
         Zip(asbFile).use {
             assertThat(it.getEntry("/META-INF/MANIFEST.MF")).isNotNull()
             assertThat(it.getEntry("/META-INF/PRIVACYS.RSA")).isNotNull()
@@ -275,78 +287,98 @@ class PrivacySandboxSdkTest {
 
     @Test
     fun checkKsp() {
-        val sdkImplA = project.getSubproject("sdk-impl-a")
-        val pkg =
-                FileUtils.join(sdkImplA.mainSrcDir, "com", "example", "sdkImplA")
-        val mySdkFile = File(pkg, "MySdk.kt")
+        val mySdkFile = "src/main/java/com/example/sdkImplA/MySdk.kt"
+        val build = rule.build {
+            androidLibrary(":sdk-impl-a") {
+                // Invalid usage of @PrivacySandboxSdk as interface contains two methods with the same name.
+                files.add(
+                    mySdkFile,
+                    //language=kotlin
+                    """
+                        package com.example.sdkImplA
+                        import androidx.privacysandbox.tools.PrivacySandboxService
+                        @PrivacySandboxService
+                        public interface MySdk {
+                            suspend fun doStuff(x: Int, y: Int): String
+                            suspend fun doStuff(x: Int, y: Int)
+                        }
+                    """.trimIndent()
+                )
+            }
+        }
 
-        // Invalid usage of @PrivacySandboxSdk as interface contains two methods with the same name.
-        mySdkFile.writeText(
-                "package com.example.sdkImplA\n" +
-                        "import androidx.privacysandbox.tools.PrivacySandboxService\n" +
-                        "   @PrivacySandboxService\n" +
-                        "   public interface MySdk {\n" +
-                        "       suspend fun doStuff(x: Int, y: Int): String\n" +
-                        "       suspend fun doStuff(x: Int, y: Int)\n" +
-                        "   }\n"
+        build.configuredExecutor().expectFailure().run(":sdk-impl-a:build")
+
+        build.androidLibrary(":sdk-impl-a").files.update(mySdkFile).replaceWith(
+            //language=kotlin
+            """
+                package com.example.sdkImplA
+                import androidx.privacysandbox.tools.PrivacySandboxService
+                @PrivacySandboxService
+                public interface MySdk {
+                    suspend fun doStuff(x: Int, y: Int): String
+                }
+            """.trimIndent()
         )
 
-        executor().expectFailure().run("sdk-impl-a:build")
+        build.configuredExecutor().run(":sdk-impl-a:build")
 
-        mySdkFile.writeText(
-                "package com.example.sdkImplA\n" +
-                        "import androidx.privacysandbox.tools.PrivacySandboxService\n" +
-                        "   @PrivacySandboxService\n" +
-                        "   public interface MySdk {\n" +
-                        "       suspend fun doStuff(x: Int, y: Int): String\n" +
-                        "   }\n"
-        )
-        executor().run("sdk-impl-a:build")
-
-        val kspDir = FileUtils.join(sdkImplA.generatedDir, "ksp")
-        assertThat(kspDir.exists()).isTrue()
+        val kspDir = build.androidLibrary(":sdk-impl-a").generatedDir.resolve("ksp")
+        assertThat(kspDir.isDirectory()).isTrue()
     }
 
     @Test
     fun testNoServiceDefinedInModuleUsedBySdk() {
-        executor()
-                .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
-                .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, true)
-                .expectFailure()
-                .run(":example-app:assembleDebug")
-                .also {
-                    assertThat(it.failureMessage).contains(
-                            "Unable to proceed generating shim with no provided sdk descriptor entries in:")
-                }
+        rule.build.configuredExecutor()
+            .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
+            .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, true)
+            .expectFailure()
+            .run(":example-app:assembleDebug")
+            .also {
+                assertThat(it.failureMessage).contains(
+                        "Unable to proceed generating shim with no provided sdk descriptor entries in:")
+            }
 
-        executor()
-                .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
-                .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
-                .run(":example-app:assembleDebug")
+        rule.build.configuredExecutor()
+            .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
+            .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
+            .run(":example-app:assembleDebug")
     }
 
     @Test
     fun testProguardRulesGeneration() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":privacy-sandbox-sdk").buildFile,
-            """compatSdkProviderClassName = "Test"""",
-            ""
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":privacy-sandbox-sdk").buildFile,
-            """sdkProviderClassName = "Test"""",
-            ""
-        )
-        executor().run(":privacy-sandbox-sdk:generatePrivacySandboxProguardRules")
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    bundle {
+                        compatSdkProviderClassName = null
+                        sdkProviderClassName = null
+                    }
+                }
+            }
+        }
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:generatePrivacySandboxProguardRules")
     }
 
     @Test
     fun testTargetSdkVersion() {
-        project.getSubproject(":privacy-sandbox-sdk").buildFile.appendText("\nandroid.targetSdk 34")
-        executor().run(":privacy-sandbox-sdk:assemble")
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        val asbManifest = sdkProject.getIntermediateFile(
-            "merged_manifest", "single", "mergeManifest", "AndroidManifest.xml")
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    targetSdk = 34
+                }
+            }
+
+        }
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:assemble")
+
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
+        val asbManifest = sdkProject.intermediatesDir
+            .resolve("merged_manifest/single/mergeManifest/AndroidManifest.xml")
+            .toFile()
+
         val manifestLines = asbManifest.readLines()
         assertThat(manifestLines).containsAtLeastElementsIn(
             listOf(

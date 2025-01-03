@@ -123,6 +123,29 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
     }
 
     @Test
+    fun multiChainedBlockUsage() {
+        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
+            mountainView.mayor {
+                name = "bob"
+
+            }
+            mountainView.mayor.address.street = "1600 Amphitheatre Parkway"
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            california {
+              mountainView.mayor {
+                name = 'bob'
+              }
+              mountainView.mayor.address.street = '1600 Amphitheatre Parkway'
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
     fun methodCall() {
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"

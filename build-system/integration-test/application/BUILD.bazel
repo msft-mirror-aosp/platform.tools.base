@@ -31,6 +31,7 @@ TEST_DEPS = [
     "//tools/base/zipflinger",
     "@maven//:com.android.tools.build.bundletool",
     "@maven//:com.android.tools.smali.smali-dexlib2",
+    "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
     "@maven//:org.jetbrains.dokka.dokka-core",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     "@maven//:org.ow2.asm.asm",

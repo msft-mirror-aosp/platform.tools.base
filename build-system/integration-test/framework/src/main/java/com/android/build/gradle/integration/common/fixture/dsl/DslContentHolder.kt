@@ -485,7 +485,7 @@ internal class ChainedDslContentHolder(
 ): DslContentHolder {
 
     override fun set(name: String, value: Any?, parentChain: List<String>) {
-        parent.set(name, value, parentChain + this.name)
+        parent.set(name, value, parentChain.addFirst(this.name))
     }
 
     override fun setBoolean(
@@ -494,27 +494,27 @@ internal class ChainedDslContentHolder(
         isNotation: Boolean,
         parentChain: List<String>
     ) {
-        parent.setBoolean(name, value, isNotation, parentChain + this.name)
+        parent.setBoolean(name, value, isNotation, parentChain.addFirst(this.name))
     }
 
     override fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String>) {
-        parent.call(name, args, isVarArgs, parentChain + this.name)
+        parent.call(name, args, isVarArgs, parentChain.addFirst(this.name))
     }
 
     override fun collectionAddAll(name: String, value: Collection<Any?>?, parentChain: List<String>) {
-        parent.collectionAddAll(name, value, parentChain + this.name)
+        parent.collectionAddAll(name, value, parentChain.addFirst(this.name))
     }
 
     override fun collectionAdd(name: String, value: Any?, parentChain: List<String>) {
-        parent.collectionAdd(name, value, parentChain + this.name)
+        parent.collectionAdd(name, value, parentChain.addFirst(this.name))
     }
 
     override fun mapPutAll(name: String, value: Map<out Any?, Any?>, parentChain: List<String>) {
-        parent.mapPutAll(name, value, parentChain + this.name)
+        parent.mapPutAll(name, value, parentChain.addFirst(this.name))
     }
 
     override fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String>) {
-        parent.mapPut(name, key, value, parentChain + this.name)
+        parent.mapPut(name, key, value, parentChain.addFirst(this.name))
     }
 
     override fun getList(name: String): MutableList<*> {
@@ -542,7 +542,7 @@ internal class ChainedDslContentHolder(
         parentChain: List<String>,
         action: NamedDomainObjectContainerProxy<T>.() -> Unit
     ) {
-        parent.buildTypes(theInterface, parentChain + this.name, action)
+        parent.buildTypes(theInterface, parentChain.addFirst(this.name), action)
     }
 
     override fun <T : ProductFlavor> productFlavors(
@@ -550,7 +550,7 @@ internal class ChainedDslContentHolder(
         parentChain: List<String>,
         action: NamedDomainObjectContainerProxy<T>.() -> Unit
     ) {
-        parent.productFlavors(theInterface, parentChain + this.name, action)
+        parent.productFlavors(theInterface, parentChain.addFirst(this.name), action)
     }
 
     override fun executionProfiles(
@@ -558,7 +558,7 @@ internal class ChainedDslContentHolder(
         parentChain: List<String>,
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
     ) {
-        parent.executionProfiles(theInterface, parentChain + this.name, action)
+        parent.executionProfiles(theInterface, parentChain.addFirst(this.name), action)
     }
 
     override fun kotlinSourceSets(
@@ -566,7 +566,7 @@ internal class ChainedDslContentHolder(
         parentChain: List<String>,
         action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
     ) {
-        parent.kotlinSourceSets(theInterface, parentChain + this.name, action)
+        parent.kotlinSourceSets(theInterface, parentChain.addFirst(this.name), action)
     }
 
     override fun <T> runNestedBlock(
@@ -580,7 +580,7 @@ internal class ChainedDslContentHolder(
             name,
             parameters,
             theInterface,
-            parentChain + this.name,
+            parentChain.addFirst(this.name),
             action)
     }
 
@@ -590,4 +590,15 @@ internal class ChainedDslContentHolder(
     override fun writeContent(writer: BuildWriter) {
         throw RuntimeException("ChainedDslContentHolder do not write their own content")
     }
+}
+
+/**
+ * Returns a new list with the provided string plus the existing list.
+ *
+ * We need to add the new chained holder first because of how the chained called
+ * are resolved (last to first).
+ */
+private fun List<String>.addFirst(item: String): List<String> = buildList {
+    add(item)
+    addAll(this@addFirst)
 }

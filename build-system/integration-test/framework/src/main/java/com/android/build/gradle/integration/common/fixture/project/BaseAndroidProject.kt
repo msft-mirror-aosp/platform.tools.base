@@ -33,6 +33,8 @@ interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition>
 
     /** Return the intermediates directory from Android plugins.  */
     val intermediatesDir: Path
+    /** Return the generated directory from Android plugins.  */
+    val generatedDir: Path
     /** Return the output directory from Android plugins.  */
     val outputsDir: Path
 }
@@ -47,6 +49,9 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
 
     override val intermediatesDir: Path
         get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
+
+    override val generatedDir: Path
+        get() = location.resolve("build/${SdkConstants.FD_GENERATED}")
 
     override val outputsDir: Path
         get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
@@ -77,6 +82,9 @@ internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidP
 
     override val intermediatesDir: Path
         get() = parentProject.intermediatesDir
+
+    override val generatedDir: Path
+        get() = parentProject.generatedDir
 
     override val outputsDir: Path
         get() = parentProject.outputsDir

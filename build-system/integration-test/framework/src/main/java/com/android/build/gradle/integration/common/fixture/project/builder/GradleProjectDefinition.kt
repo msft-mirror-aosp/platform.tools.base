@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
+import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
@@ -27,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.testprojects.LocalJar
 import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependencyImpl
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.build.gradle.integration.common.fixture.testprojects.createLocalJar
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
@@ -76,6 +78,13 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
      * Configures the buildscript for this project
      */
     fun buildscript(action: BuildscriptBuilder.() -> Unit)
+
+    /**
+     * returns a [File] that encodes the call to `project.file()`.
+     *
+     * This can be used to provide File instance into the DSL.
+     */
+    fun projectDotFile(relativePath: String): File
 }
 
 /**
@@ -161,6 +170,10 @@ internal abstract class GradleProjectDefinitionImpl(
 
     override fun buildscript(action: BuildscriptBuilder.() -> Unit) {
         action(buildscriptBuilder)
+    }
+
+    override fun projectDotFile(relativePath: String): File {
+        return MethodReturnedFile("project.file", relativePath)
     }
 
     internal fun writeSubProject(

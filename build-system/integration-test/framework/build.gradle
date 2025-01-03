@@ -49,6 +49,7 @@ dependencies {
     implementation libs.bytebuddy
     implementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
     implementation libs.bundle_tool
+    implementation libs.ksp_gradle_plugin // to acces the KSP extension in custom test project plugins
 
     testImplementation libs.mockito_core
     testImplementation libs.com.android.tools.common

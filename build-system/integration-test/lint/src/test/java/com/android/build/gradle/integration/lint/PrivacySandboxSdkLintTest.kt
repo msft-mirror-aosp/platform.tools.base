@@ -20,19 +20,16 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class PrivacySandboxSdkLintTest {
     @get:Rule
-    val project = privacySandboxSampleProject()
+    val rule = privacySandboxSampleProject()
 
-    private fun executor() = project.executor()
+    private fun executor() = rule.build.executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT, true)
@@ -42,53 +39,61 @@ class PrivacySandboxSdkLintTest {
 
     @Test
     fun testTargetSdkVersionLintReporting() {
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        sdkProject.buildFile.appendText("\nandroid.targetSdk 32")
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    targetSdk = 32
+                }
+            }
+        }
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
 
         val buildResult = executor().expectFailure().run(":privacy-sandbox-sdk:lint")
         GradleTaskSubject.assertThat(buildResult.getTask(":privacy-sandbox-sdk:lintAnalyze")).didWork()
-        val lintTextReport = sdkProject.getReportsFile("lint-results-main.txt")
+        val lintTextReport = sdkProject.buildDir.resolve("reports/lint-results-main.txt")
         assertThat(lintTextReport).exists()
-        assertThat(lintTextReport).contains("""privacy-sandbox-sdk/build.gradle:26: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
-android.targetSdk 32
-~~~~~~~~~~~~~~~~~~~~""".trimIndent())
+        assertThat(lintTextReport).contains("""
+privacy-sandbox-sdk/build.gradle:14: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
+  targetSdk = 32
+  ~~~~~~~~~~~~~~""".trimIndent())
     }
 
 
     @Test
     fun testSdkLintReporting() {
+        val build = rule.build
         executor().run(":privacy-sandbox-sdk:lint")
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        val lintTextReport = sdkProject.getReportsFile("lint-results-main.txt")
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
+
+        val lintTextReport = sdkProject.buildDir.resolve("reports/lint-results-main.txt")
         assertThat(lintTextReport).exists()
-        assertThat(lintTextReport).contains("""sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.string_from_sdk_impl_a appears to be unused [UnusedResources]
-                <string name="string_from_sdk_impl_a">fromSdkImplA</string>
-                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        """.trimIndent())
-        val lintHtmlReport = sdkProject.getReportsFile("lint-results-main.html")
+        assertThat(lintTextReport).contains("""
+sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.string_from_sdk_impl_a appears to be unused [UnusedResources]
+    <string name="string_from_sdk_impl_a">fromSdkImplA</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+""".trimIndent())
+        val lintHtmlReport = sdkProject.buildDir.resolve("reports/lint-results-main.html")
         assertThat(lintHtmlReport).exists()
         assertThat(lintHtmlReport).contains("The resource <code>R.string.string_from_sdk_impl_a</code> appears to be unused")
-        val lintXmlReport = sdkProject.getReportsFile("lint-results-main.xml")
+        val lintXmlReport = sdkProject.buildDir.resolve("reports/lint-results-main.xml")
         assertThat(lintXmlReport).exists()
         assertThat(lintXmlReport).contains("message=\"The resource `R.string.string_from_sdk_impl_a` appears to be unused\"")
     }
 
     @Test
     fun checkUpdateLintBaseline() {
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        TestFileUtils.appendToFile(
-            sdkProject.buildFile,
-            """
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
                 android {
-                    lint {
-                       baseline = file('lint-baseline.xml')
-                    }
+                    lint.baseline = projectDotFile("lint-baseline.xml")
                 }
-            """.trimIndent()
-        )
+            }
+        }
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
+
 
         // First test the case when there is no existing baseline.
-        val baselineFile = File(sdkProject.projectDir, "lint-baseline.xml")
+        val baselineFile = sdkProject.resolve("lint-baseline.xml")
         assertThat(baselineFile).doesNotExist()
         val result = executor().run(":privacy-sandbox-sdk:updateLintBaseline")
         GradleTaskSubject.assertThat(result.getTask(":android-lib:lintAnalyzeDebug")).didWork()
@@ -100,53 +105,60 @@ android.targetSdk 32
 
         // Run lint and ensure that this issue is not reported again because it is recorded in the baseline.
         executor().run(":privacy-sandbox-sdk:lint")
-        val lintXmlReport = sdkProject.getReportsFile("lint-results-main.xml")
+        val lintXmlReport = sdkProject.buildDir.resolve("reports/lint-results-main.xml")
         assertThat(lintXmlReport).exists()
         assertThat(lintXmlReport).doesNotContain("""The resource `R.string.string_from_sdk_impl_a` appears to be unused""")
         assertThat(lintXmlReport).contains("Baseline Applied")
     }
     @Test
     fun checkLintVital() {
+        val build = rule.build
+
         val result = executor().run(":privacy-sandbox-sdk:assemble")
         GradleTaskSubject.assertThat(result.getTask(":android-lib:lintVitalAnalyzeDebug")).didWork()
         GradleTaskSubject.assertThat(result.getTask(":sdk-impl-a:lintVitalAnalyzeDebug")).didWork()
         GradleTaskSubject.assertThat(result.getTask(":privacy-sandbox-sdk:lintVital")).didWork()
-        val lintVitalReport = project.getSubproject("privacy-sandbox-sdk")
-            .getIntermediateFile("lint_vital_intermediate_text_report", "single", "lintVitalReport", "lint-results-main.txt")
+        val lintVitalReport = build
+            .privacySandboxSdk(":privacy-sandbox-sdk")
+            .intermediatesDir
+            .resolve("lint_vital_intermediate_text_report/single/lintVitalReport/lint-results-main.txt")
         assertThat(lintVitalReport).exists()
         assertThat(lintVitalReport).contains("No issues found.")
     }
 
     @Test
     fun checkLintFix() {
-        val androidLibProject = project.getSubproject(":android-lib")
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
-        TestFileUtils.appendToFile(
-            androidLibProject.buildFile,
-            "\nandroid.lint.error += \"SyntheticAccessor\"\n"
-        )
+        val sourceTestPath = "src/main/java/com/example/androidlib/AccessTest.java"
 
-        TestFileUtils.appendToFile(
-            sdkProject.buildFile,
-            "\nandroid.lint.error += \"SyntheticAccessor\"\n"
-        )
-
-        val sourceTestFile = androidLibProject.file("src/main/java/com/example/androidlib/AccessTest.java")
-        FileUtils.createFile(sourceTestFile,
-            """
-                package com.example.androidlib;
-
-                class AccessTest {
-                    private AccessTest() {}
-                    class Inner {
-                        private void innerMethod() {
-                            new AccessTest();
-                        }
-                    }
-                    public void f2() {}
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    lint.error += "SyntheticAccessor"
                 }
+            }
+            androidLibrary(":android-lib") {
+                android {
+                    lint.error += "SyntheticAccessor"
+                }
+                files.add(
+                    sourceTestPath,
+                    //language=java
+                    """
+                        package com.example.androidlib;
 
-            """.trimIndent())
+                        class AccessTest {
+                            private AccessTest() {}
+                            class Inner {
+                                private void innerMethod() {
+                                    new AccessTest();
+                                }
+                            }
+                            public void f2() {}
+                        }
+                    """.trimIndent()
+                )
+            }
+        }
 
         val result = executor().expectFailure().run(":privacy-sandbox-sdk:lintFix")
         assertThat(result.stderr)
@@ -154,6 +166,7 @@ android.targetSdk 32
                 "Aborting build since sources were modified to apply quickfixes after compilation"
             )
         // Make sure quickfixes worked too
+        val sourceTestFile = build.androidLibrary(":android-lib").resolve(sourceTestPath)
         assertThat(sourceTestFile).doesNotContain("private AccessTest()")
         assertThat(sourceTestFile).contains("AccessTest()")
     }

@@ -129,6 +129,7 @@ single_gradle_connected_test_per_source(
         "@maven//:androidx.privacysandbox.activity.activity-client_1.0.0-alpha01",
         "@maven//:androidx.privacysandbox.activity.activity-core_1.0.0-alpha01",
         "@maven//:androidx.privacysandbox.activity.activity-provider_1.0.0-alpha01",
+        "@maven//:androidx.privacysandbox.library.androidx.privacysandbox.library.gradle.plugin_1.0.0-alpha02",
         "@maven//:androidx.privacysandbox.plugins.plugins-privacysandbox-library_1.0.0-alpha02",
         "@maven//:androidx.privacysandbox.sdkruntime.sdkruntime-core_1.0.0-alpha13",
         "@maven//:androidx.privacysandbox.sdkruntime.sdkruntime-client_1.0.0-alpha13",

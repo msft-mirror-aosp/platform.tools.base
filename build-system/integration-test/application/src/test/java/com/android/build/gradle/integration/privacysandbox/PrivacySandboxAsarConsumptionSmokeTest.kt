@@ -16,67 +16,56 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.LibraryType
 import com.android.testutils.MavenRepoGenerator
-import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
 class PrivacySandboxAsarConsumptionSmokeTest {
 
-    private val mavenRepo = MavenRepoGenerator(listOf(
-            MavenRepoGenerator.Library(
-                    "com.example:externalasar:1",
-                    "asar",
-                    byteArrayOf(),
-            )
-    ))
-
     @get:Rule
-    val project = createGradleProjectBuilder {
-        subProject(":example-app") {
-            plugins.add(PluginType.ANDROID_APP)
-            android {
-                defaultCompileSdk()
-                minSdk = 14
-                namespace = "com.example.privacysandboxsdk.consumer"
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            library(MavenRepoGenerator.Library(
+                "com.example:externalasar:1",
+                "asar",
+                byteArrayOf(),
+            ))
+        }.from {
+            androidApplication {
+                android {
+                    namespace = "com.example.privacysandboxsdk.consumer"
+                    defaultConfig.minSdk = 14
+                    privacySandbox {
+                        enable = false
+                    }
+                }
+                dependencies {
+                    implementation("com.example:externalasar:1")
+                }
             }
-            dependencies {
-                implementation("com.example:externalasar:1")
+            gradleProperties {
+                add(BooleanOption.USE_ANDROID_X, true)
             }
         }
-        rootProject {
-            useNewPluginsDsl = true
-        }
-    }
-            .withAdditionalMavenRepo(mavenRepo)
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .create()
-
 
     @Test
     fun testDependencyWithoutSupportEnabled() {
-        project.getSubproject(":example-app").buildFile.appendText("""
-            android.privacySandbox.enable = false
-        """.trimIndent())
-        val result = project.executor().expectFailure().run(":example-app:assembleDebug")
+        val build = rule.build
+
+        val result = build.executor.expectFailure().run(":app:assembleDebug")
         assertThat(result.stderr).contains("Dependency com.example:externalasar:1 is an Android Privacy Sandbox SDK library")
 
-        val models = project.modelV2().fetchModels(variantName = "debug")
-        val variantDependencies = models.container.getProject(":example-app").variantDependencies ?: error("Expected variant dependencies model to build")
+        val models = build.modelBuilder.fetchModels(variantName = "debug")
+        val variantDependencies = models.container.getProject(":app").variantDependencies ?: error("Expected variant dependencies model to build")
         val compileDependencies = variantDependencies.mainArtifact.compileDependencies
         assertThat(compileDependencies).hasSize(1)
         val library = variantDependencies.libraries[compileDependencies.single().key] ?: error("Inconsistent model: failed to load compile library")
         assertThat(library.type).isEqualTo(LibraryType.NO_ARTIFACT_FILE)
         assertThat(library.libraryInfo?.name).isEqualTo("externalasar")
     }
-
 }

@@ -16,22 +16,22 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
+import com.android.build.api.variant.ApkOutput
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProjectWithDynamicFeature
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForAppVariant
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForDynamicFeatureVariant
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.viaBundleVerificationString
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
 class PrivacySandboxAppWithDynamicFeatureApkOutputTest {
 
-    @JvmField
-    @Rule
-    val project = privacySandboxSampleProjectWithDynamicFeature()
+    @get:Rule
+    val rule = privacySandboxSampleProjectWithDynamicFeature()
 
-    private fun executor() = project.executor()
+    private fun GradleBuild.configuredExecutor() = executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
@@ -41,50 +41,55 @@ class PrivacySandboxAppWithDynamicFeatureApkOutputTest {
 
     @Test
     fun getApkOutputForAppWithDynamicFeature() {
-        project.getSubproject("example-app").buildFile.appendText(
-            getBuildFileContentWithFetchTaskForAppVariant(viaBundleVerificationString)
-        )
-
-        executor().run(":example-app:fetchApks")
+        val build = rule.build {
+            androidApplication(":example-app") {
+                pluginCallbacks += ViaBundleVerificationForAppCallback::class.java
+            }
+        }
+        build.configuredExecutor().run(":example-app:fetchApks")
     }
 
     @Test
     fun getApkOutputForDynamicFeature() {
-        project.getSubproject("feature").buildFile.appendText(
-            getBuildFileContentWithFetchTaskForDynamicFeatureVariant(
-                """
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 4 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1
-                        || apkInstall[2].apks.size() != 1 || apkInstall[3].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.first().getAsFile().name.contains("standalone.apk")
-                    assert apkInstall[0].description.contains("Source Sdk: com.example.privacysandboxsdk_10002")
-
-                    assert apkInstall[1].apks.first().getAsFile().name.contains("standalone.apk")
-                    assert apkInstall[1].description.contains("Source Sdk: com.example.privacysandboxsdkb_10002")
-
-                    assert apkInstall[2].apks.first().asFile.name.contains("base-master_3.apk")
-                    assert apkInstall[2].description.contains("Apks from Main Bundle")
-
-                    assert apkInstall[3].apks.any { it.getAsFile().name.contains("feature-debug.apk") }
-                    assert apkInstall[3].description.contains("Dynamic feature Apk Group")
-
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 3 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("base-master_2.apk") }
-                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("comexampleprivacysandboxsdk-master.apk") }
-                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("comexampleprivacysandboxsdkb-master.apk") }
-
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("feature-debug.apk") }
-                    assert apkInstall[1].description.contains("Dynamic feature Apk Group")
-        """.trimIndent()
-            )
-        )
-
-        executor().run(":feature:fetchApks")
+        val build = rule.build {
+            androidFeature(":feature") {
+                pluginCallbacks += VerificationForDynamicFeatureCallback::class.java
+            }
+        }
+        build.configuredExecutor().run(":feature:fetchApks")
     }
 
+    class VerificationForDynamicFeatureCallback: FetchTaskForFeatureCallback<FetchApkDynamicFeatureVerificationTask>() {
+        override val taskType: Class<FetchApkDynamicFeatureVerificationTask>
+            get() = FetchApkDynamicFeatureVerificationTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (FetchApkDynamicFeatureVerificationTask) -> Property<ApkOutput>
+            get() = FetchApkDynamicFeatureVerificationTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (FetchApkDynamicFeatureVerificationTask) -> Property<ApkOutput>
+            get() = FetchApkDynamicFeatureVerificationTask::privacySandboxDisabledApkOutput
+    }
 }
+
+abstract class FetchApkDynamicFeatureVerificationTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(4)
+            checkGroupFiles(0, "standalone.apk")
+            checkGroupDescription(0, "Source Sdk: com.example.privacysandboxsdk_10002")
+            checkGroupFiles(1, "standalone.apk")
+            checkGroupDescription(1, "Source Sdk: com.example.privacysandboxsdkb_10002")
+            checkGroupFiles(2, "base-master_3.apk")
+            checkGroupDescription(2, "Apks from Main Bundle")
+            checkGroupFiles(3, "feature-debug.apk")
+            checkGroupDescription(3, "Dynamic feature Apk Group")
+        }
+
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(0, "base-master_2.apk", "comexampleprivacysandboxsdk-master.apk", "comexampleprivacysandboxsdkb-master.apk")
+            checkGroupFiles(1, "feature-debug.apk")
+            checkGroupDescription(1, "Dynamic feature Apk Group")
+        }
+    }
+}
+

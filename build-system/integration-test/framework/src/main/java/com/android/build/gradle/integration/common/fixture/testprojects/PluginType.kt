@@ -106,7 +106,7 @@ sealed class PluginType(
     object ANDROIDX_PRIVACY_SANDBOX_LIBRARY: PluginType(
         id = "androidx.privacysandbox.library",
         isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
+        artifact = "androidx.privacysandbox.plugins:plugins-privacysandbox-library",
         version = androidxPrivacySandboxLibraryPluginVersion,
     )
     object ANDROID_ASSET_PACK: PluginType(

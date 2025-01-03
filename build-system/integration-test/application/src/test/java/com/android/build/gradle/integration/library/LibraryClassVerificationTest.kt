@@ -83,7 +83,7 @@ class LibraryClassVerificationTest {
                     """.trimIndent())
             }
         }
-        androidLibrary("otherlib") {
+        androidLibrary(":otherlib") {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 namespace = "com.example.otherlib"

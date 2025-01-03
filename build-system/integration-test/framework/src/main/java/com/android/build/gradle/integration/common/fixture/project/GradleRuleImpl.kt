@@ -202,6 +202,12 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
+                is AndroidXPrivacySandboxLibraryDefinitionImpl -> AndroidXPrivacySandboxLibraryImpl(
+                    subProjectLocation,
+                    definition,
+                    definition.namespace
+                )
+
                 is AssetPackDefinitionImpl -> AssetPackImpl(
                     subProjectLocation,
                     definition,

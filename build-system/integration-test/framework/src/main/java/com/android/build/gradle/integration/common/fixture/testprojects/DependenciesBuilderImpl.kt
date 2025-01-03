@@ -25,7 +25,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
 
-class DependenciesBuilderImpl() : DependenciesBuilder {
+class DependenciesBuilderImpl : DependenciesBuilder {
 
     private val dependencies = mutableListOf<Pair<String, DependencyData>>()
 
@@ -330,24 +330,24 @@ internal fun createLocalJar(
     return relativePath
 }
 
-internal class LocalJarDependencyImpl(
+internal data class LocalJarDependencyImpl(
     override val name: String,
     override val content: ByteArray
 ): LocalJarDependency
 
 private data class LocalFilesImpl(override val path: Path): LocalFiles
 
-private class ProjectDependencyBuilderImpl(
+private data class ProjectDependencyBuilderImpl(
     override val path: String,
     override val testFixtures: Boolean,
     override val configuration: String? = null
 ): ProjectDependencyBuilder
 
-private class PlatformDependencyImpl(
+private data class PlatformDependencyImpl(
     override val path: Any
 ) : PlatformDependency
 
-private class ExternalDependencyBuilderImpl(
+private data class ExternalDependencyBuilderImpl(
     override val coordinate: String,
     override val testFixtures: Boolean
 ): ExternalDependencyBuilder

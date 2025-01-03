@@ -22,7 +22,7 @@ import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
 fun uninstallPackage(packageName: String, ignoreErrors : Boolean = false) =
-    execAdb("uninstall", packageName, ignoreErrors = ignoreErrors)
+    execAdb("shell", "pm", "uninstall", packageName, ignoreErrors = ignoreErrors)
 
 fun executeShellCommand(vararg cmd: String, ignoreErrors: Boolean = false)
     = execAdb("shell", *cmd, ignoreErrors = ignoreErrors)
