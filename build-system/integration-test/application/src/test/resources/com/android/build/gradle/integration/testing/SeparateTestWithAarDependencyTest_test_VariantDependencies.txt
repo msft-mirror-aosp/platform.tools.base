@@ -38,7 +38,7 @@
                                     > dependencies:
                                        - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
                                           - dependencies = "*visited*"
-                                       - androidx.arch.core|core-common|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}:
+                                       - androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
                                           - requestedCoordinates = (null)
                                           - dependencies:
                                              - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
@@ -235,11 +235,11 @@
                                           - dependencies:
                                              - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
                                                 - dependencies = "*visited*"
-                                             - androidx.arch.core|core-common|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}:
+                                             - androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
                                                 - dependencies = "*visited*"
                                        - androidx.lifecycle|lifecycle-livedata-core|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-livedata-core:2.5.1:
                                           - dependencies = "*visited*"
-                                       - androidx.arch.core|core-common|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}:
+                                       - androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
                                           - dependencies = "*visited*"
                                     < dependencies
                                  < androidx.lifecycle|lifecycle-livedata|2.0.0|org.gradle.status>release|androidx.lifecycle:lifecycle-livedata:2.0.0
@@ -658,14 +658,14 @@
             - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/appcompat-1.6.1/R.txt{F}
          < androidLibraryData
       < androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1
-      > androidx.arch.core|core-common|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}:
+      > androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/androidx/arch/core/core-common/{KOTLIN_VERSION_FOR_TESTS}/core-common-{KOTLIN_VERSION_FOR_TESTS}.jar{F}
+         - artifact           = {LOCAL_REPO}/androidx/arch/core/core-common/2.1.0/core-common-2.1.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "androidx.arch.core"
             - name           = "core-common"
-            - version        = "{KOTLIN_VERSION_FOR_TESTS}"
+            - version        = "2.1.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -675,11 +675,11 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * "androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}"
+               * "androidx.arch.core:core-common:2.1.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < androidx.arch.core|core-common|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:{KOTLIN_VERSION_FOR_TESTS}
+      < androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0
       > androidx.arch.core|core-runtime|2.0.0|org.gradle.status>release|androidx.arch.core:core-runtime:2.0.0:
          - type        = ANDROID_LIBRARY
          - artifact    = {LOCAL_REPO}/androidx/arch/core/core-runtime/2.0.0/core-runtime-2.0.0.aar{F}
