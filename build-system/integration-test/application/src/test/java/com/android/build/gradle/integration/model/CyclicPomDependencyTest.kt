@@ -97,12 +97,12 @@ class CyclicPomDependencyTest: ModelComparator() {
         genericProject(":bar1") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallback = Bar1Callback::class.java
+            pluginCallbacks += Bar1Callback::class.java
         }
         genericProject(":bar2") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallback = Bar2Callback::class.java
+            pluginCallbacks += Bar2Callback::class.java
         }
         settings {
             addRepository("repo")

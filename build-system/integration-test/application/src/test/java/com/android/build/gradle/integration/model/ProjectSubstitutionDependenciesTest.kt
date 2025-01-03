@@ -34,7 +34,7 @@ class ProjectSubstitutionDependenciesTest: ModelComparator() {
                 runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
                 implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
             }
-            pluginCallback = AppCallback::class.java
+            pluginCallbacks += AppCallback::class.java
         }
         androidLibrary(":lib") { }
         androidLibrary(":lib2") {  }

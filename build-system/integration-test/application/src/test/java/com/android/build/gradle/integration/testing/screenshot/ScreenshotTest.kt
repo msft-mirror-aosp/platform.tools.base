@@ -123,7 +123,7 @@ class ScreenshotTest {
         kotlin {
             jvmToolchain(17)
         }
-        pluginCallback = ScreenshotCallback::class.java
+        pluginCallbacks += ScreenshotCallback::class.java
 
         files {
             add(
@@ -765,7 +765,7 @@ class ScreenshotTest {
         val build = rule.build {
             androidApplication {
                 // cannot set filter using the conventional command ./gradlew validateDebugScreenshotTest --tests "Pattern". https://github.com/gradle/gradle/issues/1228
-                pluginCallback = FilterSetupCallback::class.java
+                pluginCallbacks += FilterSetupCallback::class.java
             }
         }
         val appProject = build.androidApplication()

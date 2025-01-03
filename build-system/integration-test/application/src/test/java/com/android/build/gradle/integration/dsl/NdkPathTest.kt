@@ -37,7 +37,7 @@ class NdkPathTest {
             }
         }
         androidApplication {
-            pluginCallback = AppCallback::class.java
+            pluginCallbacks += AppCallback::class.java
         }
     }
 

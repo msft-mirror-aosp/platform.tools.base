@@ -101,7 +101,7 @@ class BuiltInKotlinForAppTest2 {
                     }
                 }
 
-                pluginCallback = KotlinTaskCallback::class.java
+                pluginCallbacks += KotlinTaskCallback::class.java
             }
         }
 

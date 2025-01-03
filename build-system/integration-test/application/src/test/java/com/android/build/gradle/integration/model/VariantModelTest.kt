@@ -37,7 +37,7 @@ class FlavoredAppModelTest: ModelComparator() {
                     create("pro") { it.dimension = "model" }
                 }
             }
-            pluginCallback = DisableSomeVariantCallback::class.java
+            pluginCallbacks += DisableSomeVariantCallback::class.java
         }
     }
 
@@ -86,7 +86,7 @@ class MultiFlavoredAppModelTest: ModelComparator() {
                     create("other") { it.dimension = "market" }
                 }
             }
-            pluginCallback = DisableBunchOfVariantCallback::class.java
+            pluginCallbacks += DisableBunchOfVariantCallback::class.java
         }
     }
 
@@ -135,7 +135,7 @@ class DisabledVariantInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableDebugVariantCallback::class.java
+            pluginCallbacks += DisableDebugVariantCallback::class.java
         }
     },
     syncOptions = {
@@ -180,7 +180,7 @@ class DisabledAndroidTestInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableDebugAndroidTestCallback::class.java
+            pluginCallbacks += DisableDebugAndroidTestCallback::class.java
         }
     },
     syncOptions = {
@@ -227,7 +227,7 @@ class DisabledUnitTestInAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableDebugUnitTestCallback::class.java
+            pluginCallbacks += DisableDebugUnitTestCallback::class.java
         }
     },
     syncOptions = {
@@ -284,7 +284,7 @@ class DisabledSingleVariantInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableOneDebugVariantCallback::class.java
+            pluginCallbacks += DisableOneDebugVariantCallback::class.java
         }
     },
     syncOptions = {
@@ -342,7 +342,7 @@ class DisabledVariantByBuildTypeInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableAllDebugVariantsCallback::class.java
+            pluginCallbacks += DisableAllDebugVariantsCallback::class.java
         }
     },
     syncOptions = {
@@ -400,7 +400,7 @@ class DisabledVariantByFlavorInFlavorAppModelTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidApplication {
-            pluginCallback = DisableAllOneVariantsCallback::class.java
+            pluginCallbacks += DisableAllOneVariantsCallback::class.java
         }
     },
     syncOptions = {
@@ -440,7 +440,7 @@ class NoVariantModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
-            pluginCallback = DisableAllVariantsCallback::class.java
+            pluginCallbacks += DisableAllVariantsCallback::class.java
         }
     }
 

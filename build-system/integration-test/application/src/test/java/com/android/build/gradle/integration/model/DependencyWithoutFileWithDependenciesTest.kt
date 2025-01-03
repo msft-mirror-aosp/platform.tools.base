@@ -50,7 +50,7 @@ class DependencyWithoutFileWithDependenciesTest: ModelComparator() {
             group = "com.foo"
             version = "1.0"
 
-            pluginCallback = TestCallback::class.java
+            pluginCallbacks += TestCallback::class.java
         }
 
         settings {

@@ -43,7 +43,7 @@ class SourceSetsTest {
                     applicationId = "com.example.api.use"
                 }
             }
-            pluginCallback = MyAppCallback::class.java
+            pluginCallbacks += MyAppCallback::class.java
         }
     }
 
@@ -155,7 +155,8 @@ class SourceSetsTest {
         val build = rule.build {
             androidApplication {
                 // replace previous plugin
-                pluginCallback = RegisterTaskViaOldApi::class.java
+                pluginCallbacks.clear()
+                pluginCallbacks += RegisterTaskViaOldApi::class.java
             }
         }
 

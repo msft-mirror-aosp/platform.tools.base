@@ -87,7 +87,7 @@ class AaptTest {
 
         val build = rule.build {
             androidApplication {
-                pluginCallback = TraceFolderCallback::class.java
+                pluginCallbacks += TraceFolderCallback::class.java
             }
             gradleProperties {
                 add("_aaptTest_", windowsFriendlyFilePath)
@@ -154,7 +154,7 @@ class AaptTest {
     fun testIgnoreAssetsPatterns_variantApi() {
         val build = rule.build {
             androidApplication {
-                pluginCallback = IgnorePatternCallback::class.java
+                pluginCallbacks += IgnorePatternCallback::class.java
             }
         }
 
@@ -228,7 +228,7 @@ class AaptTest {
                         ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
                     }
                 }
-                pluginCallback = IgnorePatternCallback2::class.java
+                pluginCallbacks += IgnorePatternCallback2::class.java
             }
         }
 

@@ -70,7 +70,7 @@ class AssetPackBundleTest {
                 }
             }
             files.add("src/main/device_group_config.json", deviceGroupConfig)
-            pluginCallback = MyCallback::class.java
+            pluginCallbacks += MyCallback::class.java
         }
         assetPack(":assetPackOne") {
             assetPack {

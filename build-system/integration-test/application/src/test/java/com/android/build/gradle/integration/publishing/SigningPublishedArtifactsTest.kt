@@ -47,7 +47,7 @@ class SigningPublishedArtifactsTest {
                 }
             }
 
-            pluginCallback = SigningCallback::class.java
+            pluginCallbacks += SigningCallback::class.java
         }
         settings {
             addRepository("repo")

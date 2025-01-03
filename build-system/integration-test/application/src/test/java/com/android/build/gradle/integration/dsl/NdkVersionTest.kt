@@ -37,7 +37,7 @@ class NdkVersionTest {
             }
         }
         androidApplication {
-            pluginCallback = AppCallback::class.java
+            pluginCallbacks += AppCallback::class.java
         }
     }
 

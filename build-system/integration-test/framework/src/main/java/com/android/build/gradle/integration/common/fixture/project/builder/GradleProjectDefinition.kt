@@ -68,13 +68,6 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
     val dependencies: DependenciesBuilder
 
     /**
-     * Provides a callback to use with a binary plugin.
-     *
-     * Using this setter provides a single callback. To provide more, use [pluginCallbacks]
-     */
-    var pluginCallback: Class<out PluginCallback>
-
-    /**
      * The list of plugin callbacks for this project
      */
     val pluginCallbacks: MutableList<Class<out PluginCallback>>
@@ -123,18 +116,6 @@ internal abstract class GradleProjectDefinitionImpl(
 
     override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
-    override var pluginCallback: Class<out PluginCallback>
-        set(value) {
-            pluginCallbacks.clear()
-            pluginCallbacks.add(value)
-        }
-        get() = if (pluginCallbacks.isEmpty()) {
-            throw RuntimeException("plugin callback list is empty")
-        } else if (pluginCallbacks.size == 1) {
-            pluginCallbacks[0]
-        } else {
-            throw RuntimeException("plugin callback list has 2+ entries")
-        }
     override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
 
 

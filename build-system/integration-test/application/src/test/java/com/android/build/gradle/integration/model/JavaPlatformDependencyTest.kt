@@ -38,7 +38,7 @@ class JavaPlatformDependencyTest : ModelComparator() {
         }
         genericProject(":lib") {
             applyPlugin(PluginType.JAVA_PLATFORM)
-            pluginCallback = PlatformCallback::class.java
+            pluginCallbacks += PlatformCallback::class.java
             dependencies {
                 api(MavenRepoGenerator.Library("com.bar:foo:1.0"))
             }

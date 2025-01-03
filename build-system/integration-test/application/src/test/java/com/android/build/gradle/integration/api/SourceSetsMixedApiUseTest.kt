@@ -47,7 +47,7 @@ class SourceSetsMixedApiUseTest {
                 namespace = "com.example.api.use"
                 defaultConfig.applicationId = "com.example.api.use"
             }
-            pluginCallback = MyCallback::class.java
+            pluginCallbacks += MyCallback::class.java
         }
     }
 

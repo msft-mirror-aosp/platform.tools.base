@@ -185,7 +185,7 @@ class BuiltInKotlinForTestFixturesTest {
                     """.trimIndent()
                 )
 
-                pluginCallback = JvmTargetCallback::class.java
+                pluginCallbacks += JvmTargetCallback::class.java
             }
         }
 

@@ -38,7 +38,7 @@ class CustomConfigPublishingModelTest : ModelComparator() {
             }
         }
         androidLibrary {
-            pluginCallback = LibCallback::class.java
+            pluginCallbacks += LibCallback::class.java
 
         }
     }
