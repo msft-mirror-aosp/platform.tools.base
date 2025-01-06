@@ -91,9 +91,9 @@ data class JdwpProcessProperties(
     /**
      * The status of JDWP session proxy between an external debugger and the Android Process.
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
-    val jdwpSessionProxyStatus: JdwpSessionProxyStatus = JdwpSessionProxyStatus(),
+    val jdwpProxyStatus: JdwpProxySocketServerStatus = JdwpProxySocketServerStatus(),
 
     /**
      * List of features reported by the [DdmsFeatChunk] packet
@@ -168,22 +168,22 @@ fun InstructionSet.Companion.fromLegacyDescription(value: String): InstructionSe
  * [JdwpProcess].
  *
  * @see JdwpProcess
- * @see JdwpProcessProperties.jdwpSessionProxyStatus
+ * @see JdwpProcessProperties.jdwpProxyStatus
  */
-data class JdwpSessionProxyStatus(
+data class JdwpProxySocketServerStatus(
     /**
      * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
      * JDWP debugging session with the Android process. If the value is `null`, the debugger
      * connection is not ready yet.
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
     val socketAddress: InetSocketAddress? = null,
 
     /**
      * `true` if there is an active JDWP debugging session on [socketAddress].
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
     val isExternalDebuggerAttached: Boolean = false,
 )
@@ -204,8 +204,8 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
         completed = source.completed.mergeWith(other.completed),
         exception = source.exception.mergeWith(other.exception),
         isWaitingForDebugger = source.isWaitingForDebugger.mergeWith(other.isWaitingForDebugger),
-        jdwpSessionProxyStatus = source.jdwpSessionProxyStatus.mergeWith(
-            other.jdwpSessionProxyStatus
+        jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(
+            other.jdwpProxyStatus
         ),
     )
 }
@@ -214,8 +214,8 @@ internal fun JdwpProcessProperties.addException(throwable: Throwable): Throwable
     return exception?.also { it.addSuppressed(throwable) } ?: throwable
 }
 
-private fun JdwpSessionProxyStatus.mergeWith(other: JdwpSessionProxyStatus): JdwpSessionProxyStatus {
-    return JdwpSessionProxyStatus(
+private fun JdwpProxySocketServerStatus.mergeWith(other: JdwpProxySocketServerStatus): JdwpProxySocketServerStatus {
+    return JdwpProxySocketServerStatus(
         isExternalDebuggerAttached = this.isExternalDebuggerAttached.mergeWith(other.isExternalDebuggerAttached),
         socketAddress = this.socketAddress ?: other.socketAddress
     )

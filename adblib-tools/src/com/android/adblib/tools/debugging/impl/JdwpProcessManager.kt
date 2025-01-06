@@ -27,15 +27,15 @@ import com.android.adblib.serialNumber
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
-import com.android.adblib.tools.debugging.CustomJdwpSessionProxyProvider
+import com.android.adblib.tools.debugging.CustomJdwpProxySocketServerProvider
 import com.android.adblib.tools.debugging.JdwpPacketReceiver
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxy
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServer
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.isTrackAppSupported
-import com.android.adblib.tools.debugging.jdwpSessionProxy
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.trackJdwpStateFlow
@@ -544,7 +544,7 @@ private class JdwpProcessDelegate(
     override val device: ConnectedDevice,
     override val pid: Int,
     private val delegateSession: AdbSession
-) : AbstractJdwpProcess(), CustomJdwpSessionProxyProvider {
+) : AbstractJdwpProcess(), CustomJdwpProxySocketServerProvider {
 
     private val processDescription = "${device.session} - $device - pid=$pid"
     private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
@@ -614,8 +614,8 @@ private class JdwpProcessDelegate(
         logger.debug { "Ready to close" }
     }
 
-    override fun createJdwpSessionProxy(): JdwpSessionProxy {
-        return JdwpSessionProxyDelegate(this)
+    override fun createProxy(): JdwpProxySocketServer {
+        return JdwpProxySocketServerDelegate(this)
     }
 
     override fun close() {
@@ -657,9 +657,9 @@ private class JdwpProcessDelegate(
         }
     }
 
-    private class JdwpSessionProxyDelegate(
+    private class JdwpProxySocketServerDelegate(
         override val process: JdwpProcessDelegate
-    ) : JdwpSessionProxy {
+    ) : JdwpProxySocketServer {
 
         private val processDescription = "${device.session} - $device - pid=${process.pid}"
 
@@ -668,7 +668,7 @@ private class JdwpProcessDelegate(
         private val device: ConnectedDevice
             get() = process.device
 
-        private val proxyStatusMutableFlow = MutableStateFlow(JdwpSessionProxyStatus())
+        private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus())
 
         private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             forwardStateFlowFromDelegateProcess()
@@ -686,7 +686,7 @@ private class JdwpProcessDelegate(
                 runCatching {
                     process.deferredDelegateProcess.await().also { delegateProcess ->
                         logger.debug { "Acquired delegate process, starting forwarding" }
-                        delegateProcess.jdwpSessionProxy.proxyStatusFlow.collect { newStatus ->
+                        delegateProcess.jdwpProxySocketServer.proxyStatusFlow.collect { newStatus ->
                             logger.verbose { "Forwarding new proxy status: $newStatus" }
                             proxyStatusMutableFlow.update { newStatus }
                         }

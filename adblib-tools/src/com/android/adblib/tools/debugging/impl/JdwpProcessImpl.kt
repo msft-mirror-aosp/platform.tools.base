@@ -22,12 +22,12 @@ import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxy
+import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.appProcessTracker
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.jdwpProcessTracker
-import com.android.adblib.tools.debugging.jdwpSessionProxy
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,11 +68,11 @@ internal class JdwpProcessImpl(
      * We currently have 2 consumers:
      * * A [JdwpProcessPropertiesCollector] that opens a jdwp session for a few seconds to collect
      *   the process properties (package name, process name, etc.)
-     * * A [JdwpSessionProxy] that opens a jdwp session "on demand" when a Java debugger wants
+     * * A [JdwpProxySocketServer] that opens a jdwp session "on demand" when a Java debugger wants
      *   to connect to the process on the device.
      *
      * Typically, both consumers don't overlap, but if a debugger tries to attach to the process
-     * just after its creation, before we are done collecting properties, the [JdwpSessionProxy]
+     * just after its creation, before we are done collecting properties, the [JdwpProxySocketServer]
      * ends up trying to open a jdwp session before [JdwpProcessPropertiesCollector] is done
      * collecting process properties. When this happens, we open a single JDWP connection that
      * is used for collecting process properties and for a debugging session. The connection
@@ -87,9 +87,9 @@ internal class JdwpProcessImpl(
 
         scope.launch(session.ioDispatcher) {
             runCatching {
-                jdwpSessionProxy.proxyStatusFlow.collect { newProxyStatus ->
+                jdwpProxySocketServer.proxyStatusFlow.collect { newProxyStatus ->
                     propertiesAtomicStateFlow.update {
-                        it.copy(jdwpSessionProxyStatus = newProxyStatus)
+                        it.copy(jdwpProxyStatus = newProxyStatus)
                     }
                 }
             }.onFailure { throwable ->
@@ -99,7 +99,7 @@ internal class JdwpProcessImpl(
 
         val localCollectorJob = scope.launch(session.ioDispatcher) {
             runCatching {
-                propertyCollector.execute(propertiesAtomicStateFlow, jdwpSessionProxy.proxyStatusFlow)
+                propertyCollector.execute(propertiesAtomicStateFlow, jdwpProxySocketServer.proxyStatusFlow)
             }.onFailure { throwable ->
                 logger.logIOCompletionErrors(throwable)
             }
@@ -115,7 +115,7 @@ internal class JdwpProcessImpl(
                         externalCollector,
                         localCollectorJob,
                         propertiesAtomicStateFlow,
-                        jdwpSessionProxy.proxyStatusFlow
+                        jdwpProxySocketServer.proxyStatusFlow
                     )
                     handler.execute()
                 }.onFailure { throwable ->

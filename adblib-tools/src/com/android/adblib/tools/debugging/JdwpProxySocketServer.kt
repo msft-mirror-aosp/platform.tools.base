@@ -17,14 +17,14 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbChannelFactory
 import com.android.adblib.CoroutineScopeCache
-import com.android.adblib.tools.debugging.impl.JdwpSessionProxyImpl
+import com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Maintains a JDWP socket proxy for the given [process] on a given device.
  *
  * The proxy creates a [server socket][AdbChannelFactory.createServerSocket] on
- * `localhost` (see [JdwpSessionProxyStatus.socketAddress]), then it accepts JDWP
+ * `localhost` (see [JdwpProxySocketServerStatus.socketAddress]), then it accepts JDWP
  * connections from external Java debuggers (e.g. IntelliJ or Android Studio) on that server
  * socket.
  *
@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
  * The proxy is active as soon as [proxyStatusFlow] is collected, and until [JdwpProcess.scope]
  * is cancelled.
  */
-interface JdwpSessionProxy {
+interface JdwpProxySocketServer {
 
     /**
      * The JDWP process this proxy applies to
@@ -44,43 +44,43 @@ interface JdwpSessionProxy {
     val process: JdwpProcess
 
     /**
-     * The [StateFlow] of [JdwpSessionProxyStatus], corresponding to the state of the JDWP proxy
+     * The [StateFlow] of [JdwpProxySocketServerStatus], corresponding to the state of the JDWP proxy
      * and socket between an external debugger and the Android Process.
      *
-     * @see JdwpSessionProxyStatus
+     * @see JdwpProxySocketServerStatus
      */
-    val proxyStatusFlow: StateFlow<JdwpSessionProxyStatus>
+    val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
 }
 
-private val jdwpSessionProxyKey =
-    CoroutineScopeCache.Key<JdwpSessionProxy>("JdwpSessionProxy")
+private val jdwpProxySocketServerKey =
+    CoroutineScopeCache.Key<JdwpProxySocketServer>("${JdwpProxySocketServer::class.simpleName}")
 
 /**
- * Returns the [JdwpSessionProxy] for this [JdwpProcess]
+ * Returns the [JdwpProxySocketServer] for this [JdwpProcess]
  */
-val JdwpProcess.jdwpSessionProxy: JdwpSessionProxy
+val JdwpProcess.jdwpProxySocketServer: JdwpProxySocketServer
     get() {
-        return this.cache.getOrPut(jdwpSessionProxyKey) {
+        return this.cache.getOrPut(jdwpProxySocketServerKey) {
             // Return the default implementation unless the process provides
             // a custom one. In the case of JdwpProcessDelegate, for example,
             // we want to re-use the same proxy as the delegate process, to avoid
             // creating additional (and redundant) socket servers.
-            if (this is CustomJdwpSessionProxyProvider) {
-                createJdwpSessionProxy()
+            if (this is CustomJdwpProxySocketServerProvider) {
+                createProxy()
             } else {
-                JdwpSessionProxyImpl(this)
+                JdwpProxySocketServerImpl(this)
             }
         }
     }
 
 /**
- * Interface a [JdwpProcess] can implement to return a custom [JdwpSessionProxy]
+ * Interface a [JdwpProcess] can implement to return a custom [JdwpProxySocketServer]
  */
-internal interface CustomJdwpSessionProxyProvider {
+internal interface CustomJdwpProxySocketServerProvider {
     /**
-     * Creates an instance of [JdwpSessionProxy] for this process. This function
+     * Creates an instance of [JdwpProxySocketServer] for this process. This function
      * is internal only, as it is an implementation detail of custom [JdwpProcess]
      * implementations.
      */
-    fun createJdwpSessionProxy(): JdwpSessionProxy
+    fun createProxy(): JdwpProxySocketServer
 }

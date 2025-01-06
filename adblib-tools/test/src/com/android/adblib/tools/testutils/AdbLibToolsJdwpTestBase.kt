@@ -77,7 +77,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
         //process.startMonitoring()
         CoroutineTestUtils.yieldUntil {
-            process.properties.jdwpSessionProxyStatus.socketAddress != null &&
+            process.properties.jdwpProxyStatus.socketAddress != null &&
                     process.properties.processName != null
         }
         val jdwpSession = attachDebuggerSession(process)
@@ -89,10 +89,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     }
 
     protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
-        process.propertiesFlow.first { it.jdwpSessionProxyStatus.socketAddress != null }
+        process.propertiesFlow.first { it.jdwpProxyStatus.socketAddress != null }
         val clientSocket = registerCloseable(
             session.channelFactory.connectSocket(
-                process.properties.jdwpSessionProxyStatus.socketAddress!!
+                process.properties.jdwpProxyStatus.socketAddress!!
             )
         )
         return registerCloseable(

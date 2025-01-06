@@ -19,7 +19,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.mergeWith
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -33,7 +33,7 @@ internal class ExternalPropertiesCollectorHandler(
     private val externalCollector: ExternalJdwpProcessPropertiesCollector,
     private val localCollectorJob: Job,
     private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>,
-    private val localProxyStatusStateFlow: StateFlow<JdwpSessionProxyStatus>
+    private val localProxyStatusStateFlow: StateFlow<JdwpProxySocketServerStatus>
 ) {
     private val session = externalCollector.process.device.session
     private val logger = adbLogger(session)
@@ -71,30 +71,30 @@ internal class ExternalPropertiesCollectorHandler(
         // locally, because that is the only valid address/port that can be used to
         // resume the process.
         val isWaitingForDebugger: Boolean
-        val jdwpSessionProxyStatus: JdwpSessionProxyStatus
+        val jdwpProxyStatus: JdwpProxySocketServerStatus
         if (other.isWaitingForDebugger) {
             logger.debug { "Overriding local proxy status because external collector says `isWaitingForDebugger` == true" }
             // If an external collector says the process is waiting for a debugger,
             // that takes precedence over our jdwp proxy value
-            if (other.jdwpSessionProxyStatus != this.jdwpSessionProxyStatus)
+            if (other.jdwpProxyStatus != this.jdwpProxyStatus)
                 logger.info {
                     "Using JDWP session proxy " +
-                            "'${other.jdwpSessionProxyStatus}' " +
+                            "'${other.jdwpProxyStatus}' " +
                             "from external collector '${this@ExternalPropertiesCollectorHandler}' instead of " +
                             "local JDWP proxy' " +
-                            "${this.jdwpSessionProxyStatus.socketAddress}'"
+                            "${this.jdwpProxyStatus.socketAddress}'"
                 }
             isWaitingForDebugger = true
-            jdwpSessionProxyStatus = other.jdwpSessionProxyStatus
+            jdwpProxyStatus = other.jdwpProxyStatus
         } else {
             logger.debug { "Using local proxy status because external collector says `isWaitingForDebugger` == false" }
             isWaitingForDebugger = false
-            jdwpSessionProxyStatus = localProxyStatusStateFlow.value
+            jdwpProxyStatus = localProxyStatusStateFlow.value
         }
 
         return this.mergeWith(other).copy(
             isWaitingForDebugger = isWaitingForDebugger,
-            jdwpSessionProxyStatus = jdwpSessionProxyStatus
+            jdwpProxyStatus = jdwpProxyStatus
         )
     }
 }

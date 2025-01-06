@@ -30,7 +30,7 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TI
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.fromLegacyDescription
@@ -82,7 +82,7 @@ internal class UsingJdwpSessionFlowUpdater(
     private val device: ConnectedDevice,
     private val pid: Int,
     private val jdwpSessionProvider: SharedJdwpSessionProvider,
-    private val proxyStatusFlow: StateFlow<JdwpSessionProxyStatus>
+    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
 ) : JdwpProcessPropertiesFlowUpdater {
 
     private val session: AdbSession

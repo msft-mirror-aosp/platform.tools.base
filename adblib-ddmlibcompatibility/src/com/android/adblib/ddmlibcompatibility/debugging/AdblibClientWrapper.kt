@@ -165,7 +165,7 @@ internal class AdblibClientWrapper(
         // "DebuggerStatus" is trickier: order is important
         clientWrapper.clientData.debuggerConnectionStatus = when {
             // This comes from the JDWP connection proxy, when a JDWP connection is started
-            newProperties.jdwpSessionProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
+            newProperties.jdwpProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
 
             // This comes from seeing a DDMS_WAIT packet on the JDWP connection
             newProperties.isWaitingForDebugger -> ClientData.DebuggerStatus.WAITING
@@ -236,7 +236,7 @@ internal class AdblibClientWrapper(
      * Android Studio) can connect to open a JDWP session with the process.
      */
     override fun getDebuggerListenPort(): Int {
-        return jdwpProcess.properties.jdwpSessionProxyStatus.socketAddress?.port ?: -1
+        return jdwpProcess.properties.jdwpProxyStatus.socketAddress?.port ?: -1
     }
 
     /**
@@ -244,7 +244,7 @@ internal class AdblibClientWrapper(
      * currently attached to the process via a JDWP session.
      */
     override fun isDebuggerAttached(): Boolean {
-        return jdwpProcess.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached
+        return jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached
     }
 
     override fun executeGarbageCollector() {

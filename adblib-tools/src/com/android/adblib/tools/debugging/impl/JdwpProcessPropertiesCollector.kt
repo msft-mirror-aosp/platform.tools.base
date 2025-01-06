@@ -22,7 +22,7 @@ import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
@@ -53,12 +53,12 @@ internal class JdwpProcessPropertiesCollector(
      */
     suspend fun execute(
         stateFlow: AtomicStateFlow<JdwpProcessProperties>,
-        proxyStatusFlow: StateFlow<JdwpSessionProxyStatus>) {
+        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>) {
         createFlowUpdater(proxyStatusFlow).execute(processScope, stateFlow)
     }
 
     private suspend fun createFlowUpdater(
-        proxyStatusFlow: StateFlow<JdwpSessionProxyStatus>
+        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
     ): JdwpProcessPropertiesFlowUpdater {
         val useAppInfo =
             device.session.property(AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&

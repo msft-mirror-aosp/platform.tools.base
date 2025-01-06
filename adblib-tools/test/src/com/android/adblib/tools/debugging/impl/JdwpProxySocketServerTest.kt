@@ -31,7 +31,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
-class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
+class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
 
     @Test
     fun socketAddressIsAssignedAutomatically() = runBlockingWithTimeout {
@@ -52,11 +52,11 @@ class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
         // Act
         val process = connectedDevice.jdwpProcessManager.getProcess(10)
         yieldUntil {
-            process.properties.jdwpSessionProxyStatus.socketAddress != null
+            process.properties.jdwpProxyStatus.socketAddress != null
         }
 
         // Assert
-        assertFalse(process.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
+        assertFalse(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
     }
 
     @Test
@@ -91,7 +91,7 @@ class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
         // Prepare
         val jdwpSessionInfo = createJdwpProxySession(pid = 11)
         val jdwpProcess = jdwpSessionInfo.process
-        val debuggerSocketAddress = jdwpProcess.properties.jdwpSessionProxyStatus.socketAddress
+        val debuggerSocketAddress = jdwpProcess.properties.jdwpProxyStatus.socketAddress
 
         // Act
         val jdwpSession1 = jdwpSessionInfo.debuggerJdwpSession
@@ -100,16 +100,16 @@ class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
         // Close JDWP session and wait for process to reflect new status
         jdwpSession1.close()
         yieldUntil {
-            !jdwpProcess.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached
+            !jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached
         }
-        val debuggerSocketAddress2 = jdwpProcess.properties.jdwpSessionProxyStatus.socketAddress
+        val debuggerSocketAddress2 = jdwpProcess.properties.jdwpProxyStatus.socketAddress
 
         // Open 2nd session
         val jdwpSession2 = attachDebuggerSession(jdwpProcess)
         val reply2 = sendVmVersionPacket(jdwpSession2)
 
         // Assert
-        assertTrue(jdwpProcess.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
+        assertTrue(jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached)
         assertEquals(debuggerSocketAddress, debuggerSocketAddress2)
         assertTrue(reply1.isReply)
         assertTrue(reply2.isReply)
@@ -184,12 +184,12 @@ class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
         // Act
         attachDebuggerSession(process)
         yieldUntil {
-            process.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached &&
+            process.properties.jdwpProxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger
         }
 
         // Assert
-        assertTrue(process.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
+        assertTrue(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
         assertFalse(process.properties.isWaitingForDebugger)
     }
 
@@ -217,12 +217,12 @@ class JdwpSessionProxyTest : AdbLibToolsJdwpTestBase() {
         // Act
         attachDebuggerSession(process)
         yieldUntil {
-            process.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached &&
+            process.properties.jdwpProxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger
         }
 
         // Assert
-        assertTrue(process.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
+        assertTrue(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
         assertFalse(process.properties.isWaitingForDebugger)
     }
 }

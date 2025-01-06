@@ -23,7 +23,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
-import com.android.adblib.tools.debugging.jdwpSessionProxy
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.payloadLength
@@ -382,8 +382,8 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act
-        val proxyAddress = connectedJdwpProcess.jdwpSessionProxy.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
-        val delegatingProxyAddress = delegatingProcess.jdwpSessionProxy.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
 
         // Assert
         assertSame(proxyAddress, delegatingProxyAddress)
@@ -400,8 +400,8 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
-        assertNotNull(properties.jdwpSessionProxyStatus.socketAddress)
+        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertNotNull(properties.jdwpProxyStatus.socketAddress)
         assertEquals(
             listOf(
                 "hprof-heap-dump",

@@ -16,17 +16,16 @@
 package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AdbChannel
-import com.android.adblib.AdbChannelFactory
 import com.android.adblib.AdbServerSocket
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.JdwpPacketReceiver
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.JdwpSessionProxy
+import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpSession
 import com.android.adblib.tools.debugging.JdwpSessionPipeline
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.jdwpSessionPipelineFactoryList
 import com.android.adblib.tools.debugging.sendPacket
@@ -48,11 +47,11 @@ import kotlinx.coroutines.supervisorScope
 import java.io.EOFException
 
 /**
- * Implementation of [JdwpSessionProxy]
+ * Implementation of [JdwpProxySocketServer]
  */
-internal class JdwpSessionProxyImpl(
+internal class JdwpProxySocketServerImpl(
     override val process: JdwpProcess
-) : JdwpSessionProxy {
+) : JdwpProxySocketServer {
     private val session: AdbSession
         get() = device.session
 
@@ -64,10 +63,10 @@ internal class JdwpSessionProxyImpl(
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, process.pid)
 
-    private val proxyStatusStateFlow = MutableStateFlow(JdwpSessionProxyStatus())
+    private val proxyStatusStateFlow = MutableStateFlow(JdwpProxySocketServerStatus())
 
     /**
-     * The current [status][JdwpSessionProxyStatus] of this [JdwpSessionProxy]
+     * The current [status][JdwpProxySocketServerStatus] of this [JdwpProxySocketServer]
      */
     override val proxyStatusFlow = proxyStatusStateFlow.asStateFlow()
         get() {

@@ -25,7 +25,7 @@ import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.mergeWith
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnection.ConnectionForDevice
@@ -276,15 +276,15 @@ private class ProcessInventoryServerConnectionForDevice(
         val source = this
         return copy(
             isWaitingForDebugger = if (proxyInfo.hasWaitingForDebugger()) proxyInfo.waitingForDebugger else source.isWaitingForDebugger,
-            jdwpSessionProxyStatus = source.jdwpSessionProxyStatus.mergeWith(proxyInfo)
+            jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(proxyInfo)
         )
     }
 
-    private fun JdwpSessionProxyStatus.mergeWith(
+    private fun JdwpProxySocketServerStatus.mergeWith(
         proxyInfo: ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
-    ): JdwpSessionProxyStatus {
+    ): JdwpProxySocketServerStatus {
         val source = this
-        return JdwpSessionProxyStatus(
+        return JdwpProxySocketServerStatus(
             isExternalDebuggerAttached = if (proxyInfo.hasIsExternalDebuggerAttached()) proxyInfo.isExternalDebuggerAttached else source.isExternalDebuggerAttached,
             socketAddress = if (proxyInfo.hasSocketAddress()) proxyInfo.socketAddress.toInetSocketAddress() else source.socketAddress
         )
@@ -357,12 +357,12 @@ private class ProcessInventoryServerConnectionForDevice(
                 // for external instances to connect to (since the JDWP process is stuck in
                 // the "WAIT" state)
                 if (source.isWaitingForDebugger) {
-                    source.jdwpSessionProxyStatus.socketAddress?.also {
+                    source.jdwpProxyStatus.socketAddress?.also {
                         proto.socketAddress = it.toInetSocketAddressProto()
                     }
                 }
                 proto.isExternalDebuggerAttached =
-                    source.jdwpSessionProxyStatus.isExternalDebuggerAttached
+                    source.jdwpProxyStatus.isExternalDebuggerAttached
             }.build()
     }
 
