@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.InstructionSet
-import com.android.adblib.tools.debugging.impl.JdwpSessionProxy
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
 import java.net.InetSocketAddress

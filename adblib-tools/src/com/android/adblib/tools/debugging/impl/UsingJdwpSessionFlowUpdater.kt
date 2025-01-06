@@ -30,6 +30,7 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TI
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.fromLegacyDescription
@@ -80,7 +81,8 @@ import java.nio.channels.InterruptedByTimeoutException
 internal class UsingJdwpSessionFlowUpdater(
     private val device: ConnectedDevice,
     private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider
+    private val jdwpSessionProvider: SharedJdwpSessionProvider,
+    private val proxyStatusFlow: StateFlow<JdwpSessionProxyStatus>
 ) : JdwpProcessPropertiesFlowUpdater {
 
     private val session: AdbSession
@@ -497,10 +499,9 @@ internal class UsingJdwpSessionFlowUpdater(
                 // it is active. If/when the external debugger detaches from the process,
                 // we also release the SharedJdwpSession in case another debug session
                 // needs to be started later on.
-                with(propertiesFlow.asStateFlow()) {
-                    waitUntil { jdwpSessionProxyStatus.isExternalDebuggerAttached }
-                    waitWhile { jdwpSessionProxyStatus.isExternalDebuggerAttached }
-                }
+                proxyStatusFlow.waitUntil { isExternalDebuggerAttached }
+                propertiesFlow.update { it.copy(isWaitingForDebugger = false) }
+                proxyStatusFlow.waitWhile { isExternalDebuggerAttached }
 
                 logger.debug { "JDWP session holder: JDWP session about to be released as debugger has detached" }
             }

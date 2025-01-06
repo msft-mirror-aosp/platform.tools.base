@@ -21,9 +21,9 @@ import com.android.adblib.AdbServerSocket
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
-import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpPacketReceiver
-import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.JdwpSessionProxy
 import com.android.adblib.tools.debugging.JdwpSession
 import com.android.adblib.tools.debugging.JdwpSessionPipeline
 import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
@@ -33,7 +33,6 @@ import com.android.adblib.tools.debugging.sendPacket
 import com.android.adblib.tools.debugging.utils.NoDdmsPacketFilterFactory
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.debugging.utils.receiveAll
-import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -49,37 +48,51 @@ import kotlinx.coroutines.supervisorScope
 import java.io.EOFException
 
 /**
- * Implementation of a JDWP proxy for the process [pid] on a given device. The proxy creates a
- * [server socket][AdbChannelFactory.createServerSocket] on `localhost` (see
- * [JdwpSessionProxyStatus.socketAddress]), then it accepts JDWP connections from external
- * Java debuggers (e.g. IntelliJ or Android Studio) on that server socket. Each time a new
- * socket connection is opened by an external debugger, the proxy opens a JDWP session to the
- * process on the device (see [JdwpSession.openJdwpSession]) and forwards (both ways) JDWP protocol
- * packets between the external debugger and the process on the device.
+ * Implementation of [JdwpSessionProxy]
  */
-internal class JdwpSessionProxy(
-    private val device: ConnectedDevice,
-    private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider,
-) {
-
+internal class JdwpSessionProxyImpl(
+    override val process: JdwpProcess
+) : JdwpSessionProxy {
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val pid: Int
+        get() = process.pid
+
+    private val logger = adbLogger(device.session).withProcessPrefix(device, process.pid)
 
     private val proxyStatusStateFlow = MutableStateFlow(JdwpSessionProxyStatus())
 
     /**
      * The current [status][JdwpSessionProxyStatus] of this [JdwpSessionProxy]
      */
-    val proxyStatus = proxyStatusStateFlow.asStateFlow()
+    override val proxyStatusFlow = proxyStatusStateFlow.asStateFlow()
+        get() {
+            lazyStartMonitoring
+            return field
+        }
 
-    suspend fun execute(processStateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        logger.debug { "Start monitoring" }
+
+        process.scope.launch(session.ioDispatcher) {
+            runCatching {
+                runSocketServer()
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
+            }
+        }
+    }
+
+    private suspend fun runSocketServer() {
         // Create server socket and start accepting JDWP connections
         session.channelFactory.createServerSocket().use { serverSocket ->
             val socketAddress = serverSocket.bind()
-            processStateFlow.updateProxyStatus { it.copy(socketAddress = socketAddress) }
+
+            proxyStatusStateFlow.update { it.copy(socketAddress = socketAddress) }
             try {
                 // Retry proxy as long as process is active (i.e. as long as we have not been
                 // cancelled)
@@ -94,7 +107,7 @@ internal class JdwpSessionProxy(
                     // and cancels "acceptOneJdwpConnection" as needed
                     supervisorScope {
                         try {
-                            acceptOneJdwpConnection(serverSocket, processStateFlow)
+                            acceptOneJdwpConnection(serverSocket)
                         } catch (t: Throwable) {
                             // We can only log errors, as there is no component to propagate
                             // the exception to. Also, we need to keep the proxy running
@@ -104,37 +117,32 @@ internal class JdwpSessionProxy(
                     }
                 }
             } finally {
-                processStateFlow.updateProxyStatus { it.copy(socketAddress = null) }
+                proxyStatusStateFlow.update { it.copy(socketAddress = null) }
             }
         }
     }
 
-    private suspend fun acceptOneJdwpConnection(
-        serverSocket: AdbServerSocket,
-        processStateFlow: AtomicStateFlow<JdwpProcessProperties>
-    ) {
+    private suspend fun acceptOneJdwpConnection(serverSocket: AdbServerSocket) {
         serverSocket.accept().use { debuggerSocket ->
             logger.debug { "External debugger connection accepted: $debuggerSocket" }
-            processStateFlow.update {
-                it.copy(
-                    isWaitingForDebugger = false,
-                    jdwpSessionProxyStatus = it.jdwpSessionProxyStatus.copy(
-                        isExternalDebuggerAttached = true
-                    )
-                )
+            proxyStatusStateFlow.update {
+                it.copy(isExternalDebuggerAttached = true)
             }
             try {
                 proxyJdwpSession(debuggerSocket)
             } finally {
                 logger.debug { "Debugger proxy has ended proxy connection" }
-                processStateFlow.updateProxyStatus { it.copy(isExternalDebuggerAttached = false) }
+                proxyStatusStateFlow.update {
+                    it.copy(isExternalDebuggerAttached = false)
+                }
             }
         }
     }
 
     private suspend fun proxyJdwpSession(debuggerSocket: AdbChannel) {
         logger.debug { "Start proxying socket between external debugger and process on device" }
-        jdwpSessionProvider.withSharedJdwpSession { deviceSession ->
+        process.withJdwpSession {
+            val deviceSession = this
             // The JDWP Session proxy does not need to send custom JDWP packets,
             // so we pass a `null` value for `nextPacketIdBase`.
             JdwpSession.wrapSocketChannel(device, debuggerSocket, pid, null).use { debuggerSession ->
@@ -268,19 +276,5 @@ internal class JdwpSessionProxy(
      */
     private fun JdwpPacketReceiver.withNoDdmsPacketFilter(): JdwpPacketReceiver {
         return withFilter(NoDdmsPacketFilterFactory.filterId)
-    }
-
-    private fun AtomicStateFlow<JdwpProcessProperties>.updateProxyStatus(
-        updater: (JdwpSessionProxyStatus) -> JdwpSessionProxyStatus
-    ) {
-        update { currentProperties ->
-            val newStatus = updater(currentProperties.jdwpSessionProxyStatus)
-
-            // Update the proxy status state flow we expose as a field,
-            // as well as the proxy status of the returned JdwpSessionProperties
-            proxyStatusStateFlow.update { newStatus }
-            currentProperties.copy(jdwpSessionProxyStatus = newStatus)
-        }
-        logger.verbose { "Updated stateflow: $value" }
     }
 }

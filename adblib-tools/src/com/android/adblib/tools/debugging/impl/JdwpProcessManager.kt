@@ -27,11 +27,15 @@ import com.android.adblib.serialNumber
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
+import com.android.adblib.tools.debugging.CustomJdwpSessionProxyProvider
 import com.android.adblib.tools.debugging.JdwpPacketReceiver
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpSessionProxy
+import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.isTrackAppSupported
+import com.android.adblib.tools.debugging.jdwpSessionProxy
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.trackJdwpStateFlow
@@ -55,6 +59,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
@@ -539,7 +544,7 @@ private class JdwpProcessDelegate(
     override val device: ConnectedDevice,
     override val pid: Int,
     private val delegateSession: AdbSession
-) : AbstractJdwpProcess() {
+) : AbstractJdwpProcess(), CustomJdwpSessionProxyProvider {
 
     private val processDescription = "${device.session} - $device - pid=$pid"
     private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
@@ -609,6 +614,10 @@ private class JdwpProcessDelegate(
         logger.debug { "Ready to close" }
     }
 
+    override fun createJdwpSessionProxy(): JdwpSessionProxy {
+        return JdwpSessionProxyDelegate(this)
+    }
+
     override fun close() {
         logger.debug { "close()" }
         cache.close()
@@ -647,5 +656,45 @@ private class JdwpProcessDelegate(
             delegate.addReplayPacket(packet)
         }
     }
-}
 
+    private class JdwpSessionProxyDelegate(
+        override val process: JdwpProcessDelegate
+    ) : JdwpSessionProxy {
+
+        private val processDescription = "${device.session} - $device - pid=${process.pid}"
+
+        private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
+
+        private val device: ConnectedDevice
+            get() = process.device
+
+        private val proxyStatusMutableFlow = MutableStateFlow(JdwpSessionProxyStatus())
+
+        private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            forwardStateFlowFromDelegateProcess()
+        }
+
+        override val proxyStatusFlow = proxyStatusMutableFlow.asStateFlow()
+            get() {
+                lazyStartMonitoring
+                return field
+            }
+
+        private fun forwardStateFlowFromDelegateProcess() {
+            logger.debug { "Forwarding proxy state flow from delegate" }
+            process.scope.launch {
+                runCatching {
+                    process.deferredDelegateProcess.await().also { delegateProcess ->
+                        logger.debug { "Acquired delegate process, starting forwarding" }
+                        delegateProcess.jdwpSessionProxy.proxyStatusFlow.collect { newStatus ->
+                            logger.verbose { "Forwarding new proxy status: $newStatus" }
+                            proxyStatusMutableFlow.update { newStatus }
+                        }
+                    }
+                }.onFailure { throwable ->
+                    logger.logIOCompletionErrors(throwable)
+                }
+            }
+        }
+    }
+}
