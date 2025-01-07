@@ -30,6 +30,9 @@ import org.gradle.internal.serialize.PlaceholderException
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.events.ProgressEvent
+import org.gradle.tooling.events.problems.ProblemAggregationEvent
+import org.gradle.tooling.events.problems.SingleProblemEvent
+import org.junit.Assert
 import java.io.File
 import java.util.Scanner
 import java.util.function.Consumer
@@ -44,6 +47,7 @@ class GradleBuildResult(
     private val stdoutFile: File,
     private val stderrFile: File,
     private val taskEvents: List<ProgressEvent>,
+    val problemEvents: List<ProgressEvent>,
     val exception: GradleConnectionException?,
 ) {
     @JvmOverloads

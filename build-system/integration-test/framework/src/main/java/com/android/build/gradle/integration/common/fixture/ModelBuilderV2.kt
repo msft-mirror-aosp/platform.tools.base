@@ -27,6 +27,7 @@ import com.android.build.gradle.options.Option
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.models.ModelBuilderParameter
 import com.google.common.collect.Sets
+import com.google.common.truth.Truth
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
@@ -38,6 +39,11 @@ import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
 import org.gradle.tooling.events.OperationType
+import org.gradle.tooling.events.ProgressEvent
+import org.gradle.tooling.events.problems.ProblemAggregationEvent
+import org.gradle.tooling.events.problems.ProblemSummariesEvent
+import org.gradle.tooling.events.problems.Severity
+import org.gradle.tooling.events.problems.SingleProblemEvent
 import org.gradle.tooling.model.GradleProject
 import org.junit.Assert
 import java.io.BufferedOutputStream
@@ -116,7 +122,7 @@ class ModelBuilderV2 internal constructor(
         nativeParams: NativeModuleParams? = null
     ): FetchResult<ModelContainerV2> {
         val container =
-                assertNoSyncIssues(
+                checkSyncIssues(
                     buildModelV2(
                         GetAndroidModelV2Action(
                             variantName,
@@ -185,9 +191,9 @@ class ModelBuilderV2 internal constructor(
      *
      * @param action the build action to gather the model
      */
-    private fun <T> buildModelV2(action: BuildAction<T>): T {
+    private fun <T> buildModelV2(action: BuildAction<T>): Pair<T, GradleBuildResult> {
         val executor = projectConnection.action(action)
-        return buildModel(executor).first
+        return buildModel(executor)
     }
 
     /**
@@ -199,12 +205,16 @@ class ModelBuilderV2 internal constructor(
     private fun <T> buildModel(executor: BuildActionExecuter<T>): Pair<T, GradleBuildResult> {
         with(BooleanOption.IDE_BUILD_MODEL_ONLY_V2, true)
         with(BooleanOption.IDE_INVOKED_FROM_IDE, true)
+        with(BooleanOption.ENABLE_PROBLEMS_API, true)
+        suppressOptionWarning(BooleanOption.ENABLE_PROBLEMS_API)
         setJvmArguments(executor)
 
         val stdErrFile = File.createTempFile("stdOut", "log")
         val stdOutFile = File.createTempFile("stdErr", "log")
-        val progressListener = CollectingProgressListener()
-        executor.addProgressListener(progressListener, OperationType.TASK)
+        val tasksProgressListener = CollectingProgressListener()
+        executor.addProgressListener(tasksProgressListener, OperationType.TASK)
+        val problemsProgressListener = CollectingProgressListener()
+        executor.addProgressListener(problemsProgressListener, OperationType.PROBLEMS)
         return try {
             val model: T =
                 BufferedOutputStream(FileOutputStream(stdOutFile)).use { stdout ->
@@ -219,24 +229,94 @@ class ModelBuilderV2 internal constructor(
                 }
 
             val buildResult = GradleBuildResult(
-                stdOutFile, stdErrFile, progressListener.getEvents(), null
+                stdOutFile, stdErrFile, tasksProgressListener.getEvents(), problemsProgressListener.getEvents(), null
             )
 
             lastBuildResultConsumer.accept(buildResult)
 
             model to buildResult
         } catch (e: GradleConnectionException) {
+            val buildResult =
+                GradleBuildResult(
+                    stdOutFile,
+                    stdErrFile,
+                    tasksProgressListener.getEvents(),
+                    problemsProgressListener.getEvents(),
+                    e
+                )
             lastBuildResultConsumer.accept(
-                GradleBuildResult(stdOutFile, stdErrFile, progressListener.getEvents(), e)
+                buildResult
             )
             maybePrintJvmLogs(e)
             throw e
         }
     }
 
-    private fun assertNoSyncIssues(
-        container: ModelContainerV2
+    private fun checkSyncIssues(
+        containerAndResult: Pair<ModelContainerV2, GradleBuildResult>
     ): ModelContainerV2 {
+        val (container, buildResult) = containerAndResult
+        assertGeneratedProblemsMatchIssues(
+            buildResult.problemEvents,
+            container.infoMaps.mapValues {
+                it.value.mapValues { it.value.issues?.syncIssues?.toList() ?: emptyList() }
+            }
+        )
+        assertNoUnexpectedSyncIssues(container)
+        return container
+    }
+
+    /** Checks that information reported with ProblemsAPI matches SyncIssues*/
+    private fun assertGeneratedProblemsMatchIssues(
+        problemEvents: List<ProgressEvent>,
+        syncIssues: Map<String, Map<String, List<SyncIssue>>>
+    ) {
+        val allSingleProblems = problemEvents.filterIsInstance<SingleProblemEvent>().map { it.problem }
+        val allProblemAggregations = problemEvents.filterIsInstance<ProblemAggregationEvent>()
+        val allSyncIssues = syncIssues.flatMap { it.value.flatMap { it.value } }
+
+        val problemsAsIssues = allSingleProblems
+            .filter { it.definition.id.group.name == "agp-sync-issues"}
+            .map {
+                val severity = when (it.definition.severity) {
+                    Severity.WARNING -> SyncIssue.SEVERITY_WARNING
+                    Severity.ERROR -> SyncIssue.SEVERITY_ERROR
+                    else -> 0
+                }
+                val type = it.definition.id.name.toInt()
+                """
+severity: $severity
+type: $type
+data: ${it.additionalData.asMap.get("EvalIssueException.data")}
+message:
+${it.contextualLabel.contextualLabel}
+multiLineMessage:
+${it.details?.details?.lines()}
+                """.trimIndent()
+            }
+        val issuesAsStrings = allSyncIssues.map {
+            """
+severity: ${it.severity}
+type: ${it.type}
+data: ${it.data}
+message:
+${it.message}
+multiLineMessage:
+${it.multiLineMessage}
+            """.trimIndent()
+        }
+
+        // Gradle suppresses identical issues over some threshold (15 as of now).
+        // Next occurrences are only aggregated as counters in ProblemSummariesEvent.
+        val suppressedCount = problemEvents.filterIsInstance<ProblemSummariesEvent>()
+            .sumOf { it.problemSummaries.sumOf { it.count } }
+        Truth.assertThat(problemsAsIssues).hasSize(issuesAsStrings.size - suppressedCount)
+        Truth.assertThat(issuesAsStrings).containsAtLeastElementsIn(problemsAsIssues)
+    }
+
+    private fun assertNoUnexpectedSyncIssues(
+        container: ModelContainerV2
+    ) {
         val allowedOptions: Set<String> =
             Sets.union(
                 explicitlyAllowedOptions,
@@ -263,8 +343,6 @@ class ModelBuilderV2 internal constructor(
         if (errors.isNotEmpty()) {
             Assert.fail(errors.joinToString(separator = "\n"))
         }
-
-        return container
     }
 
     private fun removeAllowedIssues(
