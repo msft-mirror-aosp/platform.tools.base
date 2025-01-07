@@ -40,10 +40,13 @@ class PreviewMethodFinder(
     companion object {
         private const val COMPOSABLE_ANNOTATION = "Landroidx/compose/runtime/Composable;"
         private const val PREV_PARAMS_ANNOTATION = "Landroidx/compose/ui/tooling/preview/PreviewParameter;"
+
+        internal const val COMPOSE_PREVIEW_ANNOTATION = "Landroidx/compose/ui/tooling/preview/Preview;"
+        internal const val COMPOSE_PREVIEW_ANNOTATION_CONTAINER = "Landroidx/compose/ui/tooling/preview/Preview\$Container;"
     }
 
     private val annotationResolver = MultipreviewAnnotationResolver(
-        screenshotTestDirectory, screenshotTestJars, mainDirectory, mainJars, dependencyJars)
+        COMPOSE_PREVIEW_ANNOTATION, COMPOSE_PREVIEW_ANNOTATION_CONTAINER, screenshotTestDirectory, screenshotTestJars, mainDirectory, mainJars, dependencyJars)
 
     /**
      * Finds all methods with Preview annotations.
