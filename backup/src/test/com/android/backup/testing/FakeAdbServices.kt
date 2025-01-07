@@ -41,7 +41,7 @@ private const val DUMPSYS_ACTIVITY = "dumpsys activity"
 private const val LIST_PACKAGES = "pm list packages"
 
 /** A fake [com.android.backup.AdbServices] */
-internal class FakeAdbServices(
+class FakeAdbServices(
   serialNumber: String = "serial",
   totalSteps: Int = 10,
   minGmsVersion: Int = 100,
