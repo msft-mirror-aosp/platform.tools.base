@@ -95,14 +95,8 @@ class PreviewMethodFinder(
                 return object: MethodVisitor(Opcodes.ASM9, methodNode) {
                     override fun visitEnd() {
                         super.visitEnd()
-                        processMethod(methodNode) { previewAnnotations, methodPreviewParameters ->
-                            onPreviewMethodFound(PreviewMethod(
-                                MethodRepresentation(
-                                    "${classToProcess.className.replace('/', '.')}.${methodNode.name}",
-                                    methodPreviewParameters),
-                                previewAnnotations
-                            ))
-                        }
+                        val methodFqn = "${classToProcess.className.replace('/', '.')}.${methodNode.name}"
+                        processMethod(methodNode, methodFqn, onPreviewMethodFound)
                     }
                 }
             }
@@ -111,7 +105,8 @@ class PreviewMethodFinder(
 
     private fun processMethod(
         methodNodeToProcess: MethodNode,
-        onPreviewFound: (Set<BaseAnnotationRepresentation>, List<ParameterRepresentation>) -> Unit) {
+        methodFqn: String,
+        onPreviewMethodFound: (PreviewMethod) -> Unit) {
         // First, we check if a method has a composable annotation.
         // This test runs very fast and the majority of methods don't have composable annotation.
         // If a method doesn't have composable annotation, no need to check further.
@@ -127,7 +122,10 @@ class PreviewMethodFinder(
         }
 
         val methodPreviewParameters = findAllPreviewParameters(methodNodeToProcess)
-        onPreviewFound(previewAnnotations, methodPreviewParameters)
+        onPreviewMethodFound(PreviewMethod(
+            MethodRepresentation(methodFqn, methodPreviewParameters),
+            previewAnnotations
+        ))
     }
 
     private fun isComposableMethod(method: MethodNode): Boolean {
