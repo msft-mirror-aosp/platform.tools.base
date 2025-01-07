@@ -43,10 +43,23 @@ class PreviewMethodFinder(
 
         internal const val COMPOSE_PREVIEW_ANNOTATION = "Landroidx/compose/ui/tooling/preview/Preview;"
         internal const val COMPOSE_PREVIEW_ANNOTATION_CONTAINER = "Landroidx/compose/ui/tooling/preview/Preview\$Container;"
+
+        private const val TILE_PREVIEW_DATA = "Landroidx/wear/tiles/tooling/preview/TilePreviewData;"
+        private const val ANDROID_CONTEXT = "Landroid/content/Context;"
+        private val TILE_PREVIEW_METHOD_DESCRIPTORS = setOf(
+            "()$TILE_PREVIEW_DATA", // no parameters and returns a TilePreviewData
+            "($ANDROID_CONTEXT)$TILE_PREVIEW_DATA", // a single Context parameter and returns a TilePreviewData
+        )
+
+        private const val WEAR_TILE_PREVIEW_ANNOTATION = "Landroidx/wear/tiles/tooling/preview/Preview;"
+        private const val WEAR_TILE_PREVIEW_ANNOTATION_CONTAINER = "Landroidx/wear/tiles/tooling/preview/Preview\$Container;"
     }
 
-    private val annotationResolver = MultipreviewAnnotationResolver(
+    private val composeAnnotationResolver = MultipreviewAnnotationResolver(
         COMPOSE_PREVIEW_ANNOTATION, COMPOSE_PREVIEW_ANNOTATION_CONTAINER, screenshotTestDirectory, screenshotTestJars, mainDirectory, mainJars, dependencyJars)
+
+    private val wearTileAnnotationResolver = MultipreviewAnnotationResolver(
+        WEAR_TILE_PREVIEW_ANNOTATION, WEAR_TILE_PREVIEW_ANNOTATION_CONTAINER, screenshotTestDirectory, screenshotTestJars, mainDirectory, mainJars, dependencyJars)
 
     /**
      * Finds all methods with Preview annotations.
@@ -110,23 +123,52 @@ class PreviewMethodFinder(
         methodNodeToProcess: MethodNode,
         methodFqn: String,
         onPreviewMethodFound: (PreviewMethod) -> Unit) {
-        // First, we check if a method has a composable annotation.
-        // This test runs very fast and the majority of methods don't have composable annotation.
-        // If a method doesn't have composable annotation, no need to check further.
-        if (!isComposableMethod(methodNodeToProcess)) {
-            return
+        // First, we check if a method has a composable annotation or is a tile preview method.
+        // This test runs very fast and the majority of methods don't have composable annotation or
+        // aren't a tile preview method.
+        // If a method doesn't have composable annotation or is not a tile preview method, no need
+        // to check further.
+        when {
+            isComposableMethod(methodNodeToProcess) ->
+                // This test is a bit expensive, so you should run it only for methods which can be
+                // a preview.
+                processComposableMethod(methodNodeToProcess, methodFqn, onPreviewMethodFound)
+            isTilePreviewMethod(methodNodeToProcess) ->
+                // This test is a bit expensive, so you should run it only for methods which can be
+                // a preview.
+                processWearTileMethod(methodNodeToProcess, methodFqn, onPreviewMethodFound)
+            else -> return
         }
+    }
 
-        // This test is a bit expensive, so you should run it only for methods with composable
-        // annotations.
-        val previewAnnotations = findAllPreviewAnnotations(methodNodeToProcess)
+    private fun processComposableMethod(
+        methodNodeToProcess: MethodNode,
+        methodFqn: String,
+        onPreviewMethodFound: (PreviewMethod) -> Unit) {
+        val previewAnnotations = findAllPreviewAnnotations(composeAnnotationResolver, methodNodeToProcess)
         if (previewAnnotations.isEmpty()) {
             return
         }
 
         val methodPreviewParameters = findAllPreviewParameters(methodNodeToProcess)
-        onPreviewMethodFound(PreviewMethod(
+        onPreviewMethodFound(ComposePreviewMethod(
             MethodRepresentation(methodFqn, methodPreviewParameters),
+            previewAnnotations
+        ))
+    }
+
+    private fun processWearTileMethod(
+        methodNodeToProcess: MethodNode,
+        methodFqn: String,
+        onPreviewMethodFound: (PreviewMethod) -> Unit) {
+        val previewAnnotations = findAllPreviewAnnotations(wearTileAnnotationResolver, methodNodeToProcess)
+        if (previewAnnotations.isEmpty()) {
+            return
+        }
+
+        onPreviewMethodFound(WearTilePreviewMethod(
+            // Wear Tiles don't support preview parameters yet
+            MethodRepresentation(methodFqn, emptyList()),
             previewAnnotations
         ))
     }
@@ -136,18 +178,23 @@ class PreviewMethodFinder(
                 || method.visibleAnnotations.containsComposableAnnotation()
     }
 
+    private fun isTilePreviewMethod(method: MethodNode): Boolean {
+        return method.desc in TILE_PREVIEW_METHOD_DESCRIPTORS
+    }
+
     private fun List<AnnotationNode>?.containsComposableAnnotation(): Boolean {
         return this?.find { it.desc == COMPOSABLE_ANNOTATION } != null
     }
 
-    private fun findAllPreviewAnnotations(method: MethodNode): Set<BaseAnnotationRepresentation> {
+    private fun findAllPreviewAnnotations(annotationResolver: MultipreviewAnnotationResolver, method: MethodNode): Set<BaseAnnotationRepresentation> {
         val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
-        method.invisibleAnnotations.findAllPreviewAnnotations(previewAnnotations::addAll)
-        method.visibleAnnotations.findAllPreviewAnnotations(previewAnnotations::addAll)
+        method.invisibleAnnotations.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
+        method.visibleAnnotations.findAllPreviewAnnotations(annotationResolver, previewAnnotations::addAll)
         return previewAnnotations
     }
 
     private fun List<AnnotationNode>?.findAllPreviewAnnotations(
+        annotationResolver: MultipreviewAnnotationResolver,
         onFound: (Set<BaseAnnotationRepresentation>) -> Unit) {
         this?.forEach {
             annotationResolver.findAllPreviewAnnotations(it.desc, onFound)?.let { visitor ->

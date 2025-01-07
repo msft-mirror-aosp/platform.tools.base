@@ -22,10 +22,24 @@ package com.android.tools.preview.multipreview
  * @param method contains information about preview method and its parameters
  * @param previewAnnotations contains information about preview annotation and its parameters
  */
-data class PreviewMethod(
-    val method: MethodRepresentation,
-    val previewAnnotations: Set<BaseAnnotationRepresentation>,
-) {
+sealed interface PreviewMethod {
+    val method: MethodRepresentation
+    val previewAnnotations: Set<BaseAnnotationRepresentation>
+}
+
+data class ComposePreviewMethod(
+    override val method: MethodRepresentation,
+    override val previewAnnotations: Set<BaseAnnotationRepresentation>,
+) : PreviewMethod {
+    init {
+        require(previewAnnotations.isNotEmpty()) { "previewAnnotations must not be empty" }
+    }
+}
+
+data class WearTilePreviewMethod(
+    override val method: MethodRepresentation,
+    override val previewAnnotations: Set<BaseAnnotationRepresentation>,
+) : PreviewMethod {
     init {
         require(previewAnnotations.isNotEmpty()) { "previewAnnotations must not be empty" }
     }
