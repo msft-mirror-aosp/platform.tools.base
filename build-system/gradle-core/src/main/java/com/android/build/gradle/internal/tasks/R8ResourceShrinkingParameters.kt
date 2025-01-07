@@ -75,6 +75,10 @@ abstract class R8ResourceShrinkingParameters {
     @get:Optional // Set iff enabled == true
     abstract val usePreciseShrinking: Property<Boolean>
 
+    @get:Input
+    @get:Optional // Set iff enabled == true
+    abstract val optimizedShrinking: Property<Boolean>
+
     @get:OutputFile
     @get:Optional // Set iff enabled == true && a log file is provided
     abstract val logFile: RegularFileProperty
@@ -100,6 +104,7 @@ abstract class R8ResourceShrinkingParameters {
                 mergedNotCompiledResourcesInputDir = mergedNotCompiledResourcesInputDir.get().asFile,
                 featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
                 usePreciseShrinking = usePreciseShrinking.get(),
+                optimizedShrinking = optimizedShrinking.get(),
                 logFile = logFile.asFile.orNull,
                 shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
                 featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull
@@ -147,6 +152,18 @@ fun ApplicationCreationConfig.runResourceShrinkingWithR8(): Boolean {
             && services.projectOptions[BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING]
 }
 
+/**
+ * Returns true if R8 will run optimized shrinking for both code and resources. That is:
+ *   - [runResourceShrinkingWithR8] == true, and
+ *   - [BooleanOption.R8_OPTIMIZED_SHRINKING] == true, and
+ *   - the feature additionally requires that [BooleanOption.USE_NON_FINAL_RES_IDS] == true
+ */
+fun ApplicationCreationConfig.runOptimizedShrinkingWithR8(): Boolean {
+    return runResourceShrinkingWithR8()
+            && services.projectOptions[BooleanOption.R8_OPTIMIZED_SHRINKING]
+            && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
+}
+
 fun R8ResourceShrinkingParameters.initialize(
     creationConfig: ApplicationCreationConfig,
     mappingFile: RegularFileProperty
@@ -172,6 +189,7 @@ fun R8ResourceShrinkingParameters.initialize(
     usePreciseShrinking.setDisallowChanges(
         creationConfig.services.projectOptions.get(BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE)
     )
+    optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinkingWithR8())
     logFile.setDisallowChanges(
         mappingFile.flatMap {
             creationConfig.services.fileProvider(

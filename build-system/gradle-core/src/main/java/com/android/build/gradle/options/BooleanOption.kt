@@ -354,6 +354,18 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * When enabled, R8 will perform both code and resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if resource shrinking is enabled AND
+     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_SHRINKING(
+        "android.r8.optimizedShrinking",
+        false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

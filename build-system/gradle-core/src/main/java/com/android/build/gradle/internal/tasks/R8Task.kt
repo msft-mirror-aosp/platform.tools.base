@@ -691,7 +691,7 @@ abstract class R8Task @Inject constructor(
             it.useFullR8.set(useFullR8.get())
             it.referencedInputs.from((referencedClasses + referencedResources).toList())
             it.classes.from(
-                if (includeFeaturesInScopes.get() && !hasAllAccessTransformers.get()) {
+                if (shrinkingWithDynamicFeatures.get() && !hasAllAccessTransformers.get()) {
                     listOf(baseJar.get().asFile)
                 } else {
                     classes.toList()

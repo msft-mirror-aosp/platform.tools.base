@@ -362,6 +362,9 @@ private fun setupResourceShrinking(
         if (!config.usePreciseShrinking) {
             it.disablePreciseShrinking()
         }
+        if (config.optimizedShrinking) {
+            it.enableOptimizedShrinkingWithR8()
+        }
         config.logFile?.let { logFile ->
             it.setDebugConsumer(StringConsumer.FileConsumer(logFile.toPath()))
         }
@@ -575,6 +578,7 @@ data class ResourceShrinkingConfig(
     val mergedNotCompiledResourcesInputDir: File,
     val featureLinkedResourcesInputFiles: List<File>,
     val usePreciseShrinking: Boolean,
+    val optimizedShrinking: Boolean,
     val logFile: File?,
     val shrunkResourcesOutputFiles: List<File>,
     val featureShrunkResourcesOutputDir: File?
