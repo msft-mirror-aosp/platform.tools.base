@@ -34,6 +34,7 @@ import com.android.ddmlib.idevicemanager.IDeviceManagerUtils
 import com.google.common.base.Throwables
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.ListeningExecutorService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -604,6 +605,14 @@ class AdbLibAndroidDebugBridge(
         return isSuccessful
     }
 
+    override fun getVirtualDeviceId(
+        service: ListeningExecutorService,
+        adb: File,
+        device: IDevice
+    ): ListenableFuture<String?>? {
+        unsupportedMethod()
+    }
+
     private inline fun <R> withLock(block: () -> R): R {
         return try {
             lock.lock()
@@ -611,6 +620,10 @@ class AdbLibAndroidDebugBridge(
         } finally {
             lock.unlock()
         }
+    }
+
+    private fun unsupportedMethod(): Nothing {
+        throw UnsupportedOperationException("This method is not used in Android Studio")
     }
 
     companion object {

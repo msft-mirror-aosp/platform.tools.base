@@ -31,7 +31,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.BufferedReader;
@@ -40,14 +39,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelegate {
 
@@ -561,70 +558,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
                 },
                 "devices",
                 "-l");
-    }
-
-    @NonNull
-    public ListenableFuture<String> getVirtualDeviceId(
-            @NonNull ListeningExecutorService service, @NonNull File adb, @NonNull IDevice device) {
-        List<String> command =
-                Arrays.asList(adb.toString(), "-s", device.getSerialNumber(), "emu", "avd", "id");
-
-        return execute(
-                service, command, AndroidDebugBridgeBase::processVirtualDeviceIdCommandOutput);
-    }
-
-    /**
-     * Processes the output of an adb -s serial emu avd id command. In the following example,
-     * Pixel_3_API_29/snap_2019-10-29_17-06-54 is the virtual device ID. It's simply the argument to
-     * the -id flag of the emulator command used to run the virtual device.
-     *
-     * <pre>
-     * $ adb -s emulator-5554 emu avd id
-     * Pixel_3_API_29/snap_2019-10-29_17-06-54
-     * OK
-     * </pre>
-     *
-     * @return the virtual device ID or the empty string if the output is unexpected
-     */
-    @NonNull
-    private static String processVirtualDeviceIdCommandOutput(
-            @NonNull Process process, @NonNull BufferedReader reader) {
-        List<String> lines = reader.lines().collect(Collectors.toList());
-
-        if (lines.size() != 2) {
-            return "";
-        }
-
-        if (!lines.get(1).equals("OK")) {
-            return "";
-        }
-
-        String result = lines.get(0);
-        assert !result.isEmpty();
-
-        return result;
-    }
-
-    @NonNull
-    private static <T> ListenableFuture<T> execute(
-            @NonNull ListeningExecutorService service,
-            @NonNull List<String> command,
-            @NonNull AndroidDebugBridge.AdbOutputProcessor<T> processor) {
-        return service.submit(
-                () -> {
-                    ProcessBuilder builder = new ProcessBuilder(command);
-                    builder.redirectErrorStream(true);
-
-                    Process process = builder.start();
-
-                    try (BufferedReader in =
-                                 new BufferedReader(
-                                         new InputStreamReader(
-                                                 process.getInputStream(),
-                                                 StandardCharsets.UTF_8))) {
-                        return processor.process(process, in);
-                    }
-                });
     }
 
     /**
