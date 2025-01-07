@@ -68,6 +68,8 @@ public class DeployerRunner {
     private final MetricsRecorder metrics;
     private final UIService service;
 
+    private long deviceWaitTimeoutMs = TimeUnit.SECONDS.toMillis(30);
+
     // Run it from bazel with the following command:
     // bazel run :deployer.runner INSTALL --device=<target device> <package name> <apk 1> <apk 2>
     // ... <apk N>
@@ -116,6 +118,11 @@ public class DeployerRunner {
         this.dexDb = dexDb;
         this.service = service;
         this.metrics = new MetricsRecorder();
+    }
+
+    @VisibleForTesting
+    public void setDeviceWaitTimeout(long duration, TimeUnit unit) {
+        deviceWaitTimeoutMs = unit.toMillis(duration);
     }
 
     public int run(String[] args) {
@@ -334,7 +341,7 @@ public class DeployerRunner {
             }
 
             try {
-                if (latch.await(30, TimeUnit.SECONDS)) {
+                if (latch.await(deviceWaitTimeoutMs, TimeUnit.MILLISECONDS)) {
                     return devices;
                 }
                 return Collections.emptyMap();
