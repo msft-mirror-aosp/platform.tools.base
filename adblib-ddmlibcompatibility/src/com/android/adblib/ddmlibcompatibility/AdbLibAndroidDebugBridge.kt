@@ -15,6 +15,7 @@
  */
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.SdkConstants
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
@@ -43,6 +44,7 @@ import java.io.File
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.security.InvalidParameterException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -269,6 +271,56 @@ class AdbLibAndroidDebugBridge(
                 false
             }
         }
+    }
+
+    override fun getAdbVersion(adbFile: File): ListenableFuture<AdbVersion> {
+        return getAdbVersion(adbFile.toPath())
+    }
+
+    internal fun getAdbVersion(adbPath: Path): ListenableFuture<AdbVersion> {
+        return session.scope.async {
+            val processResult =
+                session.host.processRunner.runProcess(
+                    adbPath,
+                    listOf("version"),
+                    envVars = emptyMap()
+                )
+
+            processResult.stdout.forEach { line ->
+                val version = AdbVersion.parseFrom(line)
+                if (version != AdbVersion.UNKNOWN) {
+                    return@async version
+                }
+            }
+
+            val errorMessage = StringBuilder("Unable to detect adb version")
+            val exitCode = processResult.exitCode
+            if (exitCode != 0) {
+                errorMessage.append(", exit value: 0x" + Integer.toHexString(exitCode))
+                // Display special message if it is the STATUS_DLL_NOT_FOUND code, and
+                // ignore adb output since it's empty anyway
+                if (exitCode == STATUS_DLL_NOT_FOUND
+                    && SdkConstants.currentPlatform()
+                    == SdkConstants.PLATFORM_WINDOWS
+                ) {
+                    errorMessage.append(
+                        ". ADB depends on the Windows Universal C Runtime, which is"
+                                + " usually installed by default via Windows Update. You"
+                                + " may need to manually fetch and install the runtime"
+                                + " package here:"
+                                + " https://support.microsoft.com/en-ca/help/2999226/update-for-universal-c-runtime-in-windows"
+                    )
+                    throw RuntimeException(errorMessage.toString())
+                }
+            }
+            if (processResult.stdout.isNotEmpty()) {
+                errorMessage.append(", adb stdout: ${processResult.stdout.joinToString("\n")}")
+            }
+            if (processResult.stderr.isNotEmpty()) {
+                errorMessage.append(", adb stderr: ${processResult.stderr.joinToString("\n")}")
+            }
+            throw RuntimeException(errorMessage.toString())
+        }.asListenableFuture()
     }
 
     override fun getRawDeviceList(): ListenableFuture<List<AdbDevice>> {
@@ -559,5 +611,10 @@ class AdbLibAndroidDebugBridge(
         } finally {
             lock.unlock()
         }
+    }
+
+    companion object {
+        // ADB exit value when no Universal C Runtime on Windows
+        const val STATUS_DLL_NOT_FOUND: Int = -0x3FFFFECB // Signed version of 0xc0000135
     }
 }
