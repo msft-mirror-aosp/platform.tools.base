@@ -23,12 +23,9 @@ import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.utils.ILogger;
+
 import com.google.common.collect.ImmutableList;
-import java.io.File;
-import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,6 +33,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This test works in the same manner as the DeployerRunnerTest with a fake adb server to which
@@ -97,7 +100,7 @@ public class AdbInstallerTest {
         }
 
         String[] expectedHistory = {
-            "getprop", INVOCATION, RM_DIR, MK_DIR, CHMOD_DIR, CHOWN_DIR, CHMOD_INSTALLER, INVOCATION
+            "getprop", INVOCATION, RM_DIR, MK_DIR, CHMOD_INSTALLER, CHMOD_DIR, CHOWN_DIR, INVOCATION
         };
 
         assertHistory(device, expectedHistory);

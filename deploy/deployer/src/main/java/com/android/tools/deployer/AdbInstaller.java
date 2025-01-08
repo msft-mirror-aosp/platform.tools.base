@@ -285,6 +285,12 @@ public class AdbInstaller extends Installer {
                 },
                 Timeouts.SHELL_MKDIR);
 
+        // No need to check result here. If something wrong happens, an IOException is thrown.
+        adb.push(installerFile.getAbsolutePath(), INSTALLER_PATH);
+
+        // Make sure the installer has +x.
+        runShell(new String[] {"chmod", "+x", INSTALLER_PATH}, Timeouts.SHELL_CHMOD);
+
         // We use 775 instead of 770 so the app user is able to copy the agent when we invoke the
         // cp command with run-as. 0005 allows for rx by others.
         runShell(
@@ -294,12 +300,6 @@ public class AdbInstaller extends Installer {
         runShell(
                 new String[] {"chown", "-R", "shell:shell", Deployer.BASE_DIRECTORY},
                 Timeouts.SHELL_CHOWN);
-
-        // No need to check result here. If something wrong happens, an IOException is thrown.
-        adb.push(installerFile.getAbsolutePath(), INSTALLER_PATH);
-
-        // Make sure the installer has +x.
-        runShell(new String[] {"chmod", "+x", INSTALLER_PATH}, Timeouts.SHELL_CHMOD);
     }
 
     private void runShell(String[] cmd, long timeOutMs) throws IOException {
