@@ -45,6 +45,10 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @deprecated Use GradleRule instead
+ */
+@Deprecated
 public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestProjectBuilder> {
 
     public static final Path DEFAULT_PROFILE_DIR = Paths.get("build", "android-profile");
