@@ -175,6 +175,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_1.9.23",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_1.9.23",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
+        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_1.9.23",
     ],
     visibility = ["//visibility:public"],
 )

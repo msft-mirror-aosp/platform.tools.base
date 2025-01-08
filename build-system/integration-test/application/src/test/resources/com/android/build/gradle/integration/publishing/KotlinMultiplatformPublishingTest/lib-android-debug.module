@@ -1,9 +1,9 @@
 {
   "formatVersion": "1.1",
   "component": {
-    "url": "../../project/0.1.2/project-0.1.2.module",
+    "url": "../../lib/0.1.2/lib-0.1.2.module",
     "group": "com.example",
-    "module": "project",
+    "module": "lib",
     "version": "0.1.2",
     "attributes": {
       "org.gradle.status": "release"
@@ -16,8 +16,9 @@
   },
   "variants": [
     {
-      "name": "releaseApiElements-published",
+      "name": "debugApiElements-published",
       "attributes": {
+        "com.android.build.api.attributes.BuildTypeAttr": "debug",
         "org.gradle.category": "library",
         "org.gradle.jvm.environment": "android",
         "org.gradle.usage": "java-api",
@@ -34,8 +35,8 @@
       ],
       "files": [
         {
-          "name": "project-release.aar",
-          "url": "project-android-0.1.2.aar",
+          "name": "lib-debug.aar",
+          "url": "lib-android-debug-0.1.2.aar",
           "size": {SIZE},
           "sha512": "{DIGEST}",
           "sha256": "{DIGEST}",
@@ -45,8 +46,9 @@
       ]
     },
     {
-      "name": "releaseRuntimeElements-published",
+      "name": "debugRuntimeElements-published",
       "attributes": {
+        "com.android.build.api.attributes.BuildTypeAttr": "debug",
         "org.gradle.category": "library",
         "org.gradle.jvm.environment": "android",
         "org.gradle.usage": "java-runtime",
@@ -77,8 +79,8 @@
       ],
       "files": [
         {
-          "name": "project-release.aar",
-          "url": "project-android-0.1.2.aar",
+          "name": "lib-debug.aar",
+          "url": "lib-android-debug-0.1.2.aar",
           "size": {SIZE},
           "sha512": "{DIGEST}",
           "sha256": "{DIGEST}",
@@ -88,8 +90,9 @@
       ]
     },
     {
-      "name": "releaseSourcesElements-published",
+      "name": "debugSourcesElements-published",
       "attributes": {
+        "com.android.build.api.attributes.BuildTypeAttr": "debug",
         "org.gradle.category": "documentation",
         "org.gradle.dependency.bundling": "external",
         "org.gradle.docstype": "sources",
@@ -100,8 +103,8 @@
       },
       "files": [
         {
-          "name": "project-android-0.1.2-sources.jar",
-          "url": "project-android-0.1.2-sources.jar",
+          "name": "lib-android-debug-0.1.2-sources.jar",
+          "url": "lib-android-debug-0.1.2-sources.jar",
           "size": {SIZE},
           "sha512": "{DIGEST}",
           "sha256": "{DIGEST}",

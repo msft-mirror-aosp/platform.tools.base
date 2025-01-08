@@ -63211,6 +63211,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_1.9.23",
+    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/1.9.23/org.jetbrains.kotlin.multiplatform.gradle.plugin-1.9.23.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/1.9.23",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_1.9.23",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.0",
+    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.0/org.jetbrains.kotlin.multiplatform.gradle.plugin-2.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.1.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.0.21",
     pom = "repository/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.0.21/org.jetbrains.kotlin.plugin.compose.gradle.plugin-2.0.21.pom",
     repo_root_path = "repository",

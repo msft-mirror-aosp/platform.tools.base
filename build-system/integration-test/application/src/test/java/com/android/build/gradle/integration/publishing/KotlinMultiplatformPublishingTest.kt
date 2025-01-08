@@ -16,64 +16,87 @@
 
 package com.android.build.gradle.integration.publishing
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.readText
 
 /** Test expected publishing output when AGP is used in Kotlin MPP projects. */
 class KotlinMultiplatformPublishingTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_MPP)
-            plugins.add(PluginType.MAVEN_PUBLISH)
-            android {
-                setUpHelloWorld()
-                minSdk = 24
-            }
-            appendToBuildFile {
-                """
+    val rule = GradleRule.configure()
+        .withGradleOptions {
+            // this is necessary because KMP does not work with project Isolation.
+            // There were some tests where it worked but that's because they used the root
+            // project, and it's fine in the root (the KMP plugin accesses things in the root
+            // folder so if it's already there it's fine)
+            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        }.from {
+            androidLibrary {
+                applyPlugin(PluginType.KOTLIN_MPP)
+                applyPlugin(PluginType.MAVEN_PUBLISH)
+                pluginCallbacks += Callback::class.java
+
+                android {
+                    defaultConfig.minSdk = 24
+
                     group = "com.example"
                     version = "0.1.2"
-                    publishing {
-                        repositories {
-                            maven {
-                                url = new File(buildDir, "testRepo")
-                                name = "buildDir"
-                            }
-                        }
-                    }
-
-                    kotlin {
-                        android { publishAllLibraryVariants() }
-                    }
-                """.trimIndent()
+                }
             }
         }
-    }.withKotlinGradlePlugin(true).create()
+
+    class Callback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+
+            publishing.apply {
+                repositories {
+                    it.maven {
+                        it.url = project.uri(project.projectDir.resolve("build/testRepo"))
+                        it.name = "buildDir"
+                    }
+                }
+            }
+
+            val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+
+            kotlin.apply {
+                androidTarget { target ->
+                    target.publishAllLibraryVariants()
+                }
+            }
+        }
+    }
 
     @Test
     fun testKotlinMultiplatform() {
-        project.executor()
-            .run("publishAllPublicationsToBuildDirRepository")
+        val build = rule.build
+        val lib = build.androidLibrary()
+
+        build.executor.run("publishAllPublicationsToBuildDirRepository")
 
         val mainModule =
-            project.projectDir.resolve("build/testRepo/com/example/project/0.1.2/project-0.1.2.module")
+            lib.buildDir.resolve("testRepo/com/example/lib/0.1.2/lib-0.1.2.module")
         val androidModule =
-            project.projectDir.resolve("build/testRepo/com/example/project-android/0.1.2/project-android-0.1.2.module")
+            lib.buildDir.resolve("testRepo/com/example/lib-android/0.1.2/lib-android-0.1.2.module")
         val androidDebugModule =
-            project.projectDir.resolve("build/testRepo/com/example/project-android-debug/0.1.2/project-android-debug-0.1.2.module")
+            lib.buildDir.resolve("testRepo/com/example/lib-android-debug/0.1.2/lib-android-debug-0.1.2.module")
 
-        assertThat(normalizeModuleFile(mainModule)).isEqualTo(getExpectedFile("project.module"))
-        assertThat(normalizeModuleFile(androidModule)).isEqualTo(getExpectedFile("project-android.module"))
-        assertThat(normalizeModuleFile(androidDebugModule)).isEqualTo(getExpectedFile("project-android-debug.module"))
+        assertThat(normalizeModuleFile(mainModule)).isEqualTo(getExpectedFile("lib.module"))
+        assertThat(normalizeModuleFile(androidModule)).isEqualTo(getExpectedFile("lib-android.module"))
+        assertThat(normalizeModuleFile(androidDebugModule)).isEqualTo(getExpectedFile("lib-android-debug.module"))
     }
 
     private fun getExpectedFile(fileName: String): String {
@@ -84,8 +107,8 @@ class KotlinMultiplatformPublishingTest {
         }
     }
 
-    private fun normalizeModuleFile(file: File): String {
-        val original = file.readText().trim()
+    private fun normalizeModuleFile(path: Path): String {
+        val original = path.readText().trim()
         return original.normalizeVersionsOfCommonDependencies()
             .replace(Regex("\"sha512\": \".*\""), "\"sha512\": \"{DIGEST}\"")
             .replace(Regex("\"sha256\": \".*\""), "\"sha256\": \"{DIGEST}\"")

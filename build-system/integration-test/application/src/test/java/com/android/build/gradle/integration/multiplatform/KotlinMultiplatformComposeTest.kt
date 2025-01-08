@@ -16,13 +16,18 @@
 
 package com.android.build.gradle.integration.multiplatform
 
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS
+import org.gradle.api.JavaVersion
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,69 +35,74 @@ import org.junit.Test
 class KotlinMultiplatformComposeTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
-        rootProject {
-            plugins.add(PluginType.ANDROID_LIB)
-            plugins.add(PluginType.KOTLIN_MPP)
-            android {
-                setUpHelloWorld()
-                minSdk = 24
-            }
-            dependencies {
-                implementation("androidx.compose.ui:ui-tooling:$COMPOSE_UI_VERSION")
-                implementation("androidx.compose.material:material:$COMPOSE_UI_VERSION")
-            }
-            appendToBuildFile {
-                """
-                    kotlin {
-                        android {
-                           compilations.all {
-                              it.compilerOptions.options.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-                           }
-                        }
+    val rule = GradleRule.configure()
+        .withGradleOptions {
+            // this is necessary because KMP does not work with project Isolation.
+            // There were some tests where it worked but that's because they used the root
+            // project, and it's fine in the root (the KMP plugin accesses things in the root
+            // folder so if it's already there it's fine)
+            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        }.from {
+            androidLibrary {
+                applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+                pluginCallbacks += Callback::class.java
+                android {
+                    defaultConfig.minSdk = 24
+                    buildFeatures {
+                        compose = true
                     }
-                    android {
-                        buildFeatures {
-                            compose true
-                        }
-                        compileOptions {
-                            sourceCompatibility JavaVersion.VERSION_1_8
-                            targetCompatibility JavaVersion.VERSION_1_8
-                        }
-                        composeOptions {
-                            useLiveLiterals false
-                            kotlinCompilerExtensionVersion = "${TestUtils.COMPOSE_COMPILER_FOR_TESTS}"
-                        }
+                    compileOptions {
+                        sourceCompatibility = JavaVersion.VERSION_1_8
+                        targetCompatibility = JavaVersion.VERSION_1_8
                     }
-                """.trimIndent()
-            }
-            addFile(
-                "src/main/kotlin/com/Example.kt", """
-                package foo
-
-                import androidx.compose.foundation.layout.Column
-                import androidx.compose.material.Text
-                import androidx.compose.runtime.Composable
-
-                @Composable
-                fun MainView() {
-                    Column {
-                        Text(text = "Hello World")
+                    composeOptions {
+                        useLiveLiterals = false
+                        kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
                     }
                 }
-            """.trimIndent()
-            )
+                dependencies {
+                    implementation("androidx.compose.ui:ui-tooling:$COMPOSE_UI_VERSION")
+                    implementation("androidx.compose.material:material:$COMPOSE_UI_VERSION")
+                }
+                files.add(
+                    "src/main/kotlin/com/Example.kt",
+                    //language=kotlin
+                    """
+                        package foo
+
+                        import androidx.compose.foundation.layout.Column
+                        import androidx.compose.material.Text
+                        import androidx.compose.runtime.Composable
+
+                        @Composable
+                        fun MainView() {
+                            Column {
+                                Text(text = "Hello World")
+                            }
+                        }
+                    """.trimIndent()
+                )
+            }
+        }
+
+    class Callback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+            kotlin.apply {
+                androidTarget { target ->
+                    target.compilations.all { compilation ->
+                        compilation.compilerOptions.options.jvmTarget.set(JvmTarget.JVM_1_8)
+                    }
+                }
+            }
         }
     }
-        .withKotlinGradlePlugin(true)
-        .withKotlinVersion(KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-        .create()
 
     /** Regression test for b/203594737. */
     @Test
     fun testLibraryBuilds() {
-        project.executor()
+        rule.build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
-            .run("assembleDebug")
+            .run(":lib:assembleDebug")
     }
 }

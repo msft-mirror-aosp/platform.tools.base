@@ -55,7 +55,8 @@ sealed class PluginType(
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KAPT: PluginType(
-        id = "kotlin-kapt",
+        id = "org.jetbrains.kotlin.kapt",
+        oldId = "kotlin-kapt",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KSP: PluginType(

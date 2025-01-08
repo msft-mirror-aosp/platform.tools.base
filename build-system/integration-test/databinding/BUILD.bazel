@@ -22,6 +22,7 @@ TEST_DEPS = [
     "@maven//:com.google.truth.extensions.truth-java8-extension",
     "@maven//:com.google.truth.truth",
     "@maven//:commons-io.commons-io",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
     "@maven//:org.jetbrains.kotlin.kotlin-test",
 ]
