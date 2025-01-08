@@ -24,7 +24,6 @@ import com.android.testutils.TestUtils
 
 sealed class PluginType(
     open val id: String,
-    val oldId: String = id,
     val isAndroid: Boolean = false,
     val isSettings: Boolean = false,
     open val artifact: String? = null,
@@ -45,7 +44,6 @@ sealed class PluginType(
     )
     object KOTLIN_JVM: PluginType(
         id = "org.jetbrains.kotlin.jvm",
-        oldId = "kotlin",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KOTLIN_ANDROID: PluginType(
@@ -56,7 +54,6 @@ sealed class PluginType(
     )
     object KAPT: PluginType(
         id = "org.jetbrains.kotlin.kapt",
-        oldId = "kotlin-kapt",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KSP: PluginType(
@@ -65,7 +62,6 @@ sealed class PluginType(
     )
     object KOTLIN_MPP: PluginType(
         id = "org.jetbrains.kotlin.multiplatform",
-        oldId = "kotlin-multiplatform",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object ANDROID_APP: PluginType(

@@ -31,7 +31,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 
 /**
  * Represents a Gradle Build that can be configured before being written on disk

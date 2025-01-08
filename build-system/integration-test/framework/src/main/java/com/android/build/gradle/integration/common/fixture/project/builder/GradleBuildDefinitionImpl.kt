@@ -40,7 +40,6 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.testutils.MavenRepoGenerator
 import java.io.File

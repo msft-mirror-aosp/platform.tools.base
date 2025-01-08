@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.testprojects
+package com.android.build.gradle.integration.common.fixture.project.builder
 
-import com.android.utils.FileUtils
-import java.io.File
+sealed class BuildFileType private constructor(val extension: String) {
+    abstract fun getNewWriter(): BuildWriter
 
-
-class SourceFile(
-    val relativePath: String,
-    var content: String
-) {
-
-    fun writeToDir(directory: File) {
-        FileUtils.join(directory, relativePath).writeText(content)
+    data object GROOVY: BuildFileType(extension = "") {
+        override fun getNewWriter(): BuildWriter = GroovyBuildWriter()
+    }
+    data object KTS: BuildFileType(".kts") {
+        override fun getNewWriter(): BuildWriter = KtsBuildWriter()
     }
 }
