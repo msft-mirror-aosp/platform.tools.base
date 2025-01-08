@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.dsl
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test

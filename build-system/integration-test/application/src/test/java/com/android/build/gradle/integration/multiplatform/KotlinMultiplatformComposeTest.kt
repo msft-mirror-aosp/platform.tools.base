@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.multiplatform
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils

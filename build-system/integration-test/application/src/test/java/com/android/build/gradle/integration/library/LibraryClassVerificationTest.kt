@@ -16,7 +16,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator

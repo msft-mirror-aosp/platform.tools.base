@@ -29,7 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import java.nio.file.Path
 
 /**

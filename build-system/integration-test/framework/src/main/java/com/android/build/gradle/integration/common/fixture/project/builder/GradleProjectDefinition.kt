@@ -22,12 +22,6 @@ import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContent
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependency
-import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependencyImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createLocalJar
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories

@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.compose
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule

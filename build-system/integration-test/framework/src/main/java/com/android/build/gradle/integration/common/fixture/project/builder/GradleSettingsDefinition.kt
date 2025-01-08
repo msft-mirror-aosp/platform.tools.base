@@ -20,7 +20,6 @@ import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 import kotlin.io.path.writeText
 

@@ -22,7 +22,7 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_V
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.sdklib.BuildToolInfo
 import com.google.devtools.ksp.gradle.KspExtension

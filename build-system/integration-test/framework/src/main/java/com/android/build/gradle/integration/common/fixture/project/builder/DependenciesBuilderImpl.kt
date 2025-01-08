@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.common.fixture.testprojects
+package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path

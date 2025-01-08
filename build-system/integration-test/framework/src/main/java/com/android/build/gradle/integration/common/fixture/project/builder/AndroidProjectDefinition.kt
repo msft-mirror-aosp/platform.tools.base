@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import java.nio.file.Path
 
