@@ -1962,7 +1962,8 @@ abstract class TaskManager(
 
         R8ParallelBuildService.RegistrationAction(
             project,
-            creationConfig.services.projectOptions.get(IntegerOption.R8_MAX_WORKERS)
+            // R8_MAX_WORKERS has a default value so get() should return not-null
+            creationConfig.services.projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!
         ).execute()
         return taskFactory.register(
                 R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))

@@ -187,7 +187,8 @@ class KmpTaskManager(
             )
             R8ParallelBuildService.RegistrationAction(
                 project,
-                variant.services.projectOptions.get(IntegerOption.R8_MAX_WORKERS)
+                // R8_MAX_WORKERS has a default value so get() should return not-null
+                variant.services.projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!
             ).execute()
             project.tasks.registerTask(
                 R8Task.CreationAction(
