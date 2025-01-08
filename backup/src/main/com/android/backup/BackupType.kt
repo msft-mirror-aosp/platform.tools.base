@@ -16,8 +16,8 @@
 
 package com.android.backup
 
-
 enum class BackupType(val displayName: String, internal val type: Int) {
-  CLOUD("Cloud", 1),
   DEVICE_TO_DEVICE("Device to Device", 0),
+  CLOUD("Cloud", 1),
+  CLOUD_UNENCRYPTED("Cloud (Unencrypted)", 2),
 }

@@ -19,6 +19,7 @@ package com.android.backup
 import com.android.backup.BackupResult.Error
 import com.android.backup.BackupResult.Success
 import com.android.backup.BackupType.CLOUD
+import com.android.backup.BackupType.CLOUD_UNENCRYPTED
 import com.android.backup.BackupType.DEVICE_TO_DEVICE
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
@@ -142,6 +143,49 @@ class BackupServiceImplTest {
       .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/app_backup")
     val metadata = BackupService.getMetadata(backupFile)
     assertThat(metadata).isEqualTo(BackupMetadata("com.app", CLOUD))
+  }
+
+  @Test
+  fun backup_cloudUnencrypted(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val adbServicesFactory = FakeAdbServicesFactory()
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.backup("serial", "com.app", CLOUD_UNENCRYPTED, backupFile, null)
+
+    val adbServices = adbServicesFactory.adbServices
+    assertThat(result).isEqualTo(Success)
+    assertThat(adbServices.getCommands())
+      .containsExactly(
+        "dumpsys package com.google.android.gms",
+        "bmgr enabled",
+        "bmgr enable true",
+        "settings put secure backup_enable_testing_flows 1",
+        "bmgr transport com.google.android.gms/.backup.migrate.service.D2dTransport",
+        "bmgr list transports",
+        "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
+        "settings put secure backup_testing_flows_type 2",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr transport com.google.android.gms/.backup.BackupTransportService",
+        "settings put secure backup_enable_testing_flows 0",
+        "bmgr enable false",
+      )
+      .inOrder()
+    assertThat(adbServices.testMode).isEqualTo(0)
+    assertThat(backupFile.exists()).isTrue()
+    val files = backupFile.unzip()
+    assertThat(files.keys)
+      .containsExactly("pm_backup", "restore_token_file", "app_backup", "metadata.txt")
+    assertThat(files["pm_backup"])
+      .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/pm_backup")
+    assertThat(files["restore_token_file"])
+      .isEqualTo(
+        "content://com.google.android.gms.fileprovider/backup_testing_flows/restore_token_file"
+      )
+    assertThat(files["app_backup"])
+      .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/app_backup")
+    val metadata = BackupService.getMetadata(backupFile)
+    assertThat(metadata).isEqualTo(BackupMetadata("com.app", CLOUD_UNENCRYPTED))
   }
 
   @Test
