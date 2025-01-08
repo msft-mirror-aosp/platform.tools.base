@@ -319,13 +319,23 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         return this;
     }
 
-    /** Create GradleTestProject from a TestProject. */
+    /**
+     * Create GradleTestProject from a TestProject.
+     *
+     * @deprecated Use GradleRule instead
+     */
+    @Deprecated
     public GradleTestProjectBuilder fromTestApp(@NonNull TestProject testProject) {
         this.testProject = testProject;
         return this;
     }
 
-    /** Create GradleTestProject from an existing test project. */
+    /**
+     * Create GradleTestProject from an existing test project.
+     *
+     * @deprecated Use GradleRule instead
+     */
+    @Deprecated
     public GradleTestProjectBuilder fromTestProject(@NonNull String project) {
         GradleProject app = new EmptyTestApp();
         if (name == null) {
@@ -337,6 +347,10 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         return fromTestApp(app);
     }
 
+    /**
+     * @deprecated Use GradleRule instead
+     */
+    @Deprecated
     public GradleTestProjectBuilder fromDir(@NonNull File dir) {
         Preconditions.checkArgument(
                 dir.isDirectory(), "%s is not a directory", dir.getAbsolutePath());
@@ -345,7 +359,12 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         return fromTestApp(app);
     }
 
-    /** Create GradleTestProject from a data binding integration test. */
+    /**
+     * Create GradleTestProject from a data binding integration test.
+     *
+     * @deprecated Use GradleRule instead
+     */
+    @Deprecated
     public GradleTestProjectBuilder fromDataBindingIntegrationTest(
             @NonNull String project, boolean useAndroidX) {
         GradleProject app = new EmptyTestApp();

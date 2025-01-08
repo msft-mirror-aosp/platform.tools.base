@@ -37,6 +37,7 @@ import java.io.File
  * The root project includes an app subproject and may also include additional subprojects if they
  * are added to the root project.
  */
+@Deprecated("Use GradleRule instead")
 class EmptyActivityProjectBuilder {
 
     /*

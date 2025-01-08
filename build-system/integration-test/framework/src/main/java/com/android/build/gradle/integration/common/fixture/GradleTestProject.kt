@@ -91,6 +91,7 @@ import java.util.stream.Collectors
  * The test directory is always deleted if it already exists at the start of the test to ensure a
  * clean environment.
  */
+@Deprecated("Use GradleRule instead")
 open class GradleTestProject @JvmOverloads constructor(
     /** Return the name of the test project.  */
     val name: String = DEFAULT_TEST_PROJECT_NAME,
