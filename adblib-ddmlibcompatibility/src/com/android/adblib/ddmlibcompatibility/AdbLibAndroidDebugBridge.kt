@@ -18,6 +18,8 @@ package com.android.adblib.ddmlibcompatibility
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
+import com.android.adblib.adbLogger
+import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
@@ -53,6 +55,8 @@ class AdbLibAndroidDebugBridge(
     private val adbServerController: AdbServerController,
     private val adbServerConfiguration: MutableStateFlow<AdbServerConfiguration>
 ) : AndroidDebugBridgeBase() {
+
+    private val logger = adbLogger(session)
 
     var iDeviceManager: IDeviceManager? = null
 
@@ -224,7 +228,6 @@ class AdbLibAndroidDebugBridge(
                     return false
                 }
                 // Try to start adb
-                // TODO: handle exceptions thrown from `start` and return a correct value
                 if (!startAdb(timeout, unit)) {
                     return false
                 }
@@ -254,8 +257,14 @@ class AdbLibAndroidDebugBridge(
     override fun startAdb(timeout: Long, unit: TimeUnit): Boolean {
         return runBlocking {
             withTimeoutOrNull(unit.toMillis(timeout)) {
-                adbServerController.start()
-                true
+                try {
+                    adbServerController.start()
+                    true
+                } catch (t: Throwable) {
+                    t.rethrowCancellation()
+                    logger.warn(t, "Failed to start adb server")
+                    false
+                }
             } ?: run {
                 false
             }
@@ -401,9 +410,14 @@ class AdbLibAndroidDebugBridge(
 
         return runBlocking {
             withTimeoutOrNull(unit.toMillis(timeout)) {
-                // TODO: handle exceptions thrown from `stop` and return a correct value
-                adbServerController.stop()
-                true
+                try {
+                    adbServerController.stop()
+                    true
+                } catch (t: Throwable) {
+                    t.rethrowCancellation()
+                    logger.warn(t, "Failed to stop adb server")
+                    false
+                }
             } ?: run {
                 false
             }

@@ -29,6 +29,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import java.io.IOException
 import java.nio.file.Paths
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -53,6 +54,34 @@ class AdbLibAndroidDebugBridgeTest {
         // Assert
         assertFalse(result)
 
+    }
+
+    @Test
+    fun startAdbReturnsFalse_whenAdbServerControllerThrows() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStart = IOException("my exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.startAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
+    }
+
+    @Test
+    fun stopAdbReturnsFalse_whenAdbServerControllerThrows() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStop = IOException("my exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.stopAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
     }
 
     @Test
@@ -129,6 +158,9 @@ class AdbLibAndroidDebugBridgeTest {
 
     private class FakeAdbServerController(private val startDelayMs: Long = 0) : AdbServerController {
 
+        var throwOnStart: Throwable? = null
+        var throwOnStop: Throwable? = null
+
         override val channelProvider: AdbServerChannelProvider
             get() {
                 throw UnsupportedOperationException("Not yet implemented")
@@ -138,12 +170,14 @@ class AdbLibAndroidDebugBridgeTest {
             private set
 
         override suspend fun start() {
+            throwOnStart?.let { throw it }
             delay(startDelayMs)
             isStarted = true
         }
 
         override suspend fun stop() {
-            throw UnsupportedOperationException("Not yet implemented")
+            throwOnStop?.let { throw it }
+            isStarted = false
         }
 
         override fun close() {

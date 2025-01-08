@@ -78,6 +78,116 @@ class AdbServerControllerImplTest {
     }
 
     @Test
+    fun testStartThrows_whenAdbInUserManagedMode(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                isUserManaged = true,
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        exceptionRule.expect(IllegalStateException::class.java)
+        exceptionRule.expectMessage("Start adb triggered for user-managed adb mode")
+
+        // Act
+        controller.start()
+    }
+
+    @Test
+    fun testStartThrows_whenAdbPathNotProvided(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        exceptionRule.expect(IllegalStateException::class.java)
+        exceptionRule.expectMessage("adb path must be provided")
+
+        // Act
+        controller.start()
+    }
+
+    @Test
+    fun testStopThrows_whenAdbInUserManagedMode(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                serverPort = PORT,
+            )
+        }
+        // Put controller into `isStarted` state before tweaking the config
+        controller.start()
+        configFlow.update {
+            it.copy(
+                isUserManaged = true,
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        exceptionRule.expect(IllegalStateException::class.java)
+        exceptionRule.expectMessage("Stop adb triggered for user-managed adb mode")
+
+        // Act
+        controller.stop()
+    }
+
+    @Test
+    fun testStopThrows_whenAdbPathNotProvided(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                serverPort = PORT,
+            )
+        }
+        // Put controller into `isStarted` state before tweaking the config
+        controller.start()
+        configFlow.update {
+            it.copy(
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        exceptionRule.expect(IllegalStateException::class.java)
+        exceptionRule.expectMessage("adb path must be provided")
+
+        // Act
+        controller.stop()
+    }
+
+    @Test
     fun testCanConnectToExistingAdbServer(): Unit = runBlockingWithTimeout {
         // Prepare
         val controller = registerCloseable(AdbServerControllerImpl(host, configFlow))
