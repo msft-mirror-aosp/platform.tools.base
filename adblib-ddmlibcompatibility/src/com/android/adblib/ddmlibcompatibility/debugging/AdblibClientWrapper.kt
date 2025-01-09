@@ -18,6 +18,7 @@ package com.android.adblib.ddmlibcompatibility.debugging
 import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
+import com.android.adblib.deviceProperties
 import com.android.adblib.property
 import com.android.adblib.tools.debugging.DdmsCommandException
 import com.android.adblib.tools.debugging.JdwpCommandProgress
@@ -140,7 +141,7 @@ internal class AdblibClientWrapper(
         }
     }
 
-    private fun updateClientWrapper(
+    private suspend fun updateClientWrapper(
         clientWrapper: AdblibClientWrapper,
         newProperties: JdwpProcessProperties
     ) {
@@ -149,7 +150,12 @@ internal class AdblibClientWrapper(
             newProperties.userId,
             newProperties.packageName
         )
-        clientWrapper.clientData.setNames(names)
+        // For Android R+ wait for packageName to become available before setting names.
+        // This is needed to maintain backwards compatibility.  If we rely on "app-info" for
+        // package and process names, the package name often arrives after the process name.
+        if (trackerHost.device.deviceProperties().api() < 30 || newProperties.packageName != null) {
+            clientWrapper.clientData.setNames(names)
+        }
         clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier
         clientWrapper.clientData.abi = newProperties.abi
         clientWrapper.clientData.jvmFlags = newProperties.jvmFlags
