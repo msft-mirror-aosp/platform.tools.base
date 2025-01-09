@@ -387,6 +387,7 @@ com.android.tools.analytics-library:testing
     com.android.tools:testutils (runtime)
     com.google.guava:guava (runtime)
     com.google.protobuf:protobuf-java (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.analytics-library:tracker
   pomName=Android Tools Analytics Tracker
