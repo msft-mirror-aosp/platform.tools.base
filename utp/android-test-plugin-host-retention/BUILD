@@ -50,6 +50,10 @@ kotlin_test(
         # should be loaded first.
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
+        "@maven//:com.google.testing.platform.android-test-plugin",
+        "//tools/base/utp/utp-common",
+        "//tools/base/utp/android-test-plugin-host-retention-proto",
+        "//tools/base/emulator/proto",
         ":android-test-plugin-host-retention",
         "@maven//:io.grpc.grpc-stub",
         "@maven//:io.grpc.grpc-testing",

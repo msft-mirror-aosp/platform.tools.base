@@ -40,6 +40,8 @@ kotlin_test(
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
         ":android-test-plugin-host-apk-installer",
+        "@maven//:com.google.testing.platform.android-device-provider-local",
+        "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",

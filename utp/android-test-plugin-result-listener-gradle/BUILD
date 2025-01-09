@@ -47,6 +47,7 @@ kotlin_test(
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
         ":android-test-plugin-result-listener-gradle",
+        "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "@maven//:io.grpc.grpc-testing",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
