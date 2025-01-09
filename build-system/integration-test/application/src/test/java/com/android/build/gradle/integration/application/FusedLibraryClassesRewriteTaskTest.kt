@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.CLASSES_WITH_REWRITTEN_R_CLASS_REFS
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.FUSED_R_CLASS
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -97,21 +99,12 @@ internal class FusedLibraryClassesRewriteTaskTest {
 
         build.executor.run(":fusedLib1:rewriteClasses")
 
-        val rewrittenClasses =
-            fusedLibrary
-                .getIntermediatePath(
-                    FusedLibraryInternalArtifactType.CLASSES_WITH_REWRITTEN_R_CLASS_REFS.getFolderName(),
-                    "single",
-                    "rewriteClasses"
-                ).toFile()
-        val fusedLibraryRjar =
-            fusedLibrary
-                .getIntermediatePath(
-                    FusedLibraryInternalArtifactType.FUSED_R_CLASS.getFolderName(),
-                    "single",
-                    "rewriteClasses",
-                    "R.jar"
-                ).toFile()
+        val rewrittenClasses = fusedLibrary.resolve(CLASSES_WITH_REWRITTEN_R_CLASS_REFS)
+                .resolve("single/rewriteClasses")
+                .toFile()
+        val fusedLibraryRjar = fusedLibrary.resolve(FUSED_R_CLASS)
+            .resolve("single/rewriteClasses/R.jar")
+            .toFile()
 
         URLClassLoader(
             arrayOf(rewrittenClasses.toURI().toURL(), fusedLibraryRjar.toURI().toURL()),

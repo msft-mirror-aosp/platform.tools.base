@@ -67,9 +67,9 @@ class R8TaskTest {
 
         val buildResult = build.executor.withLoggingLevel(LoggingLevel.DEBUG)
             .run(":app:assembleReleaseAndroidTest")
-        val appClasses = app.getIntermediatePath(
-            InternalArtifactType.COMPILE_APP_CLASSES_JAR.getFolderName() + "/release/bundleReleaseClassesToCompileJar/classes.jar"
-        )
+        val appClasses = app
+            .resolve(InternalArtifactType.COMPILE_APP_CLASSES_JAR)
+            .resolve("release/bundleReleaseClassesToCompileJar/classes.jar")
         buildResult.assertOutputContains("[R8] Classpath classes: [$appClasses]")
     }
 
@@ -115,8 +115,7 @@ class R8TaskTest {
         val app = build.androidApplication()
 
         build.executor.run(":app:assembleRelease")
-        val mainDexListFile = InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST
-            .getOutputDir(app.buildDir.toFile())
+        val mainDexListFile = app.resolve(InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST)
             .resolve("release/minifyReleaseWithR8/mainDexList.txt")
         assertThat(mainDexListFile).exists()
     }

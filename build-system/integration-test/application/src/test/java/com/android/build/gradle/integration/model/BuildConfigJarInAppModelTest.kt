@@ -52,10 +52,11 @@ class BuildConfigJarInAppModelTest {
          val androidProject = result.getProject().androidProject
             ?: throw RuntimeException("Failed to get AndroidProject model")
         val debugVariant = androidProject.getDebugVariant()
-        val expectedBuildConfigPath = FileUtils.join(
-            InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getOutputDir(build.androidApplication().buildDir.toFile()),
-            "debug/generateDebugBuildConfig/BuildConfig.jar"
-        )
+
+        val expectedBuildConfigPath = build.androidApplication()
+            .resolve(InternalArtifactType.COMPILE_BUILD_CONFIG_JAR)
+            .resolve("debug/generateDebugBuildConfig/BuildConfig.jar")
+            .toFile()
         Truth.assertThat(debugVariant.mainArtifact.classesFolders).contains(expectedBuildConfigPath)
         Truth.assertThat(
             debugVariant.mainArtifact.generatedClassPaths["buildConfigGeneratedClasses"])

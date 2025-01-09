@@ -170,6 +170,22 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
     }
 
     @Test
+    fun inlinedRootAccess() {
+        val person = DslProxy.createProxy(Person::class.java, contentHolder)
+        person.name = "Bob"
+        val groovy = GroovyBuildWriter().block("person") {
+            contentHolder.writeContent(this)
+        }
+
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            person {
+              name = 'Bob'
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
     fun extension() {
         // This tests an extension. Person has `address` but not `workAddress`.
         // We'll us the same type for both

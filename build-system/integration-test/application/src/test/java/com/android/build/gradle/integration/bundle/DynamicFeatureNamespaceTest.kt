@@ -59,13 +59,8 @@ class DynamicFeatureNamespaceTest {
         build.executor.run(":feature:processManifestDebugForFeature")
 
         val manifestFile =
-            build.androidFeature()
-                .getIntermediatePath(
-                    "metadata_feature_manifest",
-                    "debug",
-                    "processManifestDebugForFeature",
-                    ANDROID_MANIFEST_XML
-                )
+            build.androidFeature().intermediatesDir
+                .resolve("metadata_feature_manifest/debug/processManifestDebugForFeature/$ANDROID_MANIFEST_XML")
 
         val document =
             XmlUtils.parseDocument(manifestFile.readText(), false)
