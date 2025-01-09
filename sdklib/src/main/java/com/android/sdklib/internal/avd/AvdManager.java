@@ -75,6 +75,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1361,7 +1362,8 @@ public class AvdManager {
             status = AvdStatus.ERROR_PROPERTIES;
         } else if (deviceStatus == DeviceStatus.MISSING) {
             status = AvdStatus.ERROR_DEVICE_MISSING;
-        } else if (sysImage == null) {
+        } else if (sysImage == null && !isDirectoryOutsideSdkDirectory(imageSysDir)) {
+            // SdkHandler is aware only of system images located under the SDK directory.
             status = AvdStatus.ERROR_IMAGE_MISSING;
         } else {
             status = AvdStatus.OK;
@@ -1417,6 +1419,15 @@ public class AvdManager {
         }
 
         return info;
+    }
+
+    private boolean isDirectoryOutsideSdkDirectory(@NonNull String imageSysDir) {
+        Path dir = Paths.get(imageSysDir);
+        if (!dir.isAbsolute()) {
+            return false;
+        }
+        Path sdkDir = mSdkHandler.getLocation();
+        return (sdkDir == null || !dir.startsWith(sdkDir)) && Files.isDirectory(dir);
     }
 
     /**
