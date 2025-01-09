@@ -24,29 +24,37 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
-
+import java.time.Duration
 
 class PrivacySandboxSdkAppConnectedTest {
 
-    @get:Rule var project = privacySandboxSdkAppLargeSampleProject()
+    @get:Rule
+    val rule = privacySandboxSdkAppLargeSampleProject {
+        androidApplication(":client-app") {
+            android {
+                installation {
+                    timeOutInMs = Duration.ofSeconds(30).toMillis().toInt()
+                }
+            }
+        }
+    }
 
     @Before
     fun setUp() {
         // fail fast if no response
-        project.addAdbTimeout()
         setupDevice()
     }
 
     @Test
     fun `connectedAndroidTest task for application`() {
-        executor(project)
+        rule.build.customExecutor()
                 .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
                 .run(":client-app:connectedAndroidTest")
     }
 
     @Test
     fun `install and uninstall works for both SDK and APK for application`() {
-        executor(project)
+        rule.build.customExecutor()
                 .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
                 .run(":client-app:installDebug")
         Truth.assertThat(packageExists(APP_PACKAGE_NAME)).isTrue()

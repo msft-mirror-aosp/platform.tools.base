@@ -16,39 +16,43 @@
 
 package com.android.build.gradle.integration.connected.application.privacysandbox
 
-import com.android.build.gradle.integration.common.fixture.deviceSupportsPrivacySandbox
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProjectWithDynamicFeature
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkAppLargeSampleProjectWithFeatures
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkAppLargeSampleProjectWithTestModule
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import java.time.Duration
 
 class PrivacySandboxSdkDynamicFeatureConnectedTest {
-    @get:Rule var project = privacySandboxSdkAppLargeSampleProjectWithFeatures()
+    @get:Rule
+    val rule = privacySandboxSdkAppLargeSampleProjectWithFeatures {
+        androidApplication(":client-app") {
+            android {
+                installation {
+                    timeOutInMs = Duration.ofSeconds(30).toMillis().toInt()
+                }
+            }
+        }
+    }
+
     @Before
     fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout()
         setupDevice()
     }
 
     @Test
     fun `connectedAndroidTest task for application with dynamic feature`() {
-        executor(project)
+        rule.build.customExecutor()
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
             .run(":client-app:connectedAndroidTest")
     }
 
     @Test
     fun `install and uninstall works for both SDK and APK for application with dynamic feature`() {
-        executor(project)
-            .run(":client-app:installDebug")
+        rule.build.customExecutor().run(":client-app:installDebug")
         Truth.assertThat(packageExists(APP_PACKAGE_NAME)).isTrue()
         Truth.assertThat(packageExists(SDK_PACKAGE_NAME, isLibrary = true)).isTrue()
 

@@ -17,6 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
+import com.android.testutils.TestInputsGenerator
+import com.android.testutils.generateAarWithContent
+import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +46,6 @@ class GenericProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
-            buildFileOnly = false,
             allPlugins = mapOf(),
             customPluginMap = mapOf(),
             useOldPluginStyle = false,
@@ -68,7 +70,6 @@ class GenericProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
-            buildFileOnly = false,
             allPlugins = mapOf(),
             customPluginMap = mapOf(),
             useOldPluginStyle = false,
@@ -92,7 +93,6 @@ class GenericProjectDefinitionTest {
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
-            buildFileOnly = false,
             allPlugins = mapOf(),
             customPluginMap = mapOf(),
             useOldPluginStyle = false,
@@ -106,33 +106,20 @@ class GenericProjectDefinitionTest {
     }
 
     @Test
-    fun addExistingFile() {
+    fun wrap() {
         val project = GenericProjectDefinitionImpl("name")
-
-        project.files.add("foo.txt", "foo")
-
-        expected.expect(RuntimeException::class.java)
-        project.files.add("foo.txt", "bar")
-    }
-
-    @Test
-    fun removeMissingFile() {
-        val project = GenericProjectDefinitionImpl("name")
-
-        expected.expect(NoSuchFileException::class.java)
-        project.files.remove("foo.txt")
-    }
-
-    @Test
-    fun updateMissingFile() {
-        val project = GenericProjectDefinitionImpl("name")
-
-        project.files.update("foo.txt").replaceWith("new content")
+        project.wrap(
+            generateAarWithContent(
+                packageName = "com.example.aar",
+                mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+                resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray())
+            ),
+            "lib.aar"
+        )
 
         val location = temporaryFolder.newFolder().toPath()
         project.writeSubProject(
             location = location,
-            buildFileOnly = false,
             allPlugins = mapOf(),
             customPluginMap = mapOf(),
             useOldPluginStyle = false,
@@ -140,9 +127,19 @@ class GenericProjectDefinitionTest {
             buildWriter = GroovyBuildWriter(),
         )
 
-        val fooFile = location.resolve("foo.txt")
-        Truth.assertThat(fooFile.isRegularFile()).isTrue()
-        Truth.assertThat(fooFile.readText()).isEqualTo("new content")
+        val buildFile = location.resolve("build.gradle")
+        Truth.assertThat(buildFile.isRegularFile()).isTrue()
+        Truth.assertThat(buildFile.readText()).isEqualTo(
+            //language=groovy
+            """
+                plugins {
+                }
+
+                configurations.create('default')
+                artifacts.add('default', file('lib.aar'))
+
+            """.trimIndent())
+
     }
 }
 

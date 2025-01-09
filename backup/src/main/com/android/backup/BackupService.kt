@@ -60,6 +60,9 @@ interface BackupService {
     fun getInstance(adbSession: AdbSession, logger: Logger, minGmsVersion: Int): BackupService =
       BackupServiceImpl(AdbServicesFactoryImpl(adbSession, logger, minGmsVersion))
 
+    fun getInstance(adbServicesFactory: AdbServicesFactory): BackupService =
+      BackupServiceImpl(adbServicesFactory)
+
     /**
      * Verifies a backup file is valid and returns the application id of the associated app
      *

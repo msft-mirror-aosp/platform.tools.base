@@ -29,7 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import java.nio.file.Path
 
 /**
@@ -69,6 +69,11 @@ interface GradleBuild {
      * The project must exist and be a Privacy Sandbox SDK.
      */
     fun privacySandboxSdk(path: String): PrivacySandboxSdkProject
+    /**
+     * Queries for an AndroidX privacy sandbox library via its gradle path.
+     * The project must exist and be a Privacy Sandbox Library.
+     */
+    fun androidXPrivacySandboxLibrary(path:String): AndroidXPrivacySandboxLibraryProject
     /**
      * Queries for an AI pack project via its gradle path.
      * The project must exist and be an AI Pack project
@@ -164,7 +169,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
+                Project with path '$path' is not an Android application project.
                 Possible options are ${getProjectListByType<AndroidApplicationImpl>()}
             """.trimIndent()
         )
@@ -176,7 +181,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
+                Project with path '$path' is not an Android library project.
                 Possible options are ${getProjectListByType<AndroidLibraryImpl>()}
             """.trimIndent()
         )
@@ -188,7 +193,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
+                Project with path '$path' is not an Android dynamic feature project.
                 Possible options are ${getProjectListByType<AndroidFeatureImpl>()}
             """.trimIndent()
         )
@@ -200,7 +205,7 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
+                Project with path '$path' is not an Android test project.
                 Possible options are ${getProjectListByType<AndroidTestImpl>()}
             """.trimIndent()
         )
@@ -212,8 +217,20 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Android project.
+                Project with path '$path' is not a privacy sandbox SDK project.
                 Possible options are ${getProjectListByType<PrivacySandboxSdkImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun androidXPrivacySandboxLibrary(path: String): AndroidXPrivacySandboxLibraryProject {
+        val project = subProject(path)
+        if (project is AndroidXPrivacySandboxLibraryProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not an Androids Privacy Sandbox Library project.
+                Possible options are ${getProjectListByType<AndroidXPrivacySandboxLibraryImpl>()}
             """.trimIndent()
         )
     }

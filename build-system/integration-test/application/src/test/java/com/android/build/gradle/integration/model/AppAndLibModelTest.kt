@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator

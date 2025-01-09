@@ -27,7 +27,7 @@ import org.gradle.api.Project
  * by [GradleRule].
  *
  * Do not extend this. Instead, implement [LegacyLibraryCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallback]
+ * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */

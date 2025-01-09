@@ -1997,6 +1997,7 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             projectOptions = projectOptions,
             isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
+            sourceSetConfigurationsMap = emptyMap()
         )
         artifactCollectionsInputs.setDisallowChanges(
             ArtifactCollectionsInputsImpl(
@@ -2050,6 +2051,7 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             projectOptions = projectOptions,
             isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
+            sourceSetConfigurationsMap = emptyMap()
         )
         artifactCollectionsInputs.setDisallowChanges(
             ArtifactCollectionsInputsImpl(
@@ -2102,6 +2104,7 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             projectOptions = projectOptions,
             isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
+            sourceSetConfigurationsMap = emptyMap()
         )
         artifactCollectionsInputs.setDisallowChanges(
             ArtifactCollectionsInputsImpl(
@@ -2309,6 +2312,7 @@ abstract class JavaArtifactInput : ArtifactInput() {
             projectOptions = projectOptions,
             isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
+            sourceSetConfigurationsMap = emptyMap()
         )
         artifactCollectionsInputs.setDisallowChanges(
             ArtifactCollectionsInputsImpl(
@@ -2395,6 +2399,7 @@ abstract class JavaArtifactInput : ArtifactInput() {
             projectOptions = projectOptions,
             isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
+            sourceSetConfigurationsMap = emptyMap()
         )
         artifactCollectionsInputs.setDisallowChanges(
             ArtifactCollectionsInputsImpl(

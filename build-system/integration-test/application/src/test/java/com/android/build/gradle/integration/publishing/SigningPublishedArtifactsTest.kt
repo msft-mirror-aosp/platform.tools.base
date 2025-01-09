@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.publishing
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.testutils.truth.PathSubject
 import com.google.common.io.Resources
 import org.gradle.api.Project
@@ -28,7 +28,6 @@ import org.gradle.plugins.signing.SigningExtension
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class SigningPublishedArtifactsTest {
 
@@ -47,7 +46,7 @@ class SigningPublishedArtifactsTest {
                 }
             }
 
-            pluginCallback = SigningCallback::class.java
+            pluginCallbacks += SigningCallback::class.java
         }
         settings {
             addRepository("repo")
@@ -104,14 +103,11 @@ class SigningPublishedArtifactsTest {
             SigningPublishedArtifactsTest::class.java,
             "SigningPublishedArtifactsTest/secring.gpg"
         )
-        Files.write(
-            lib.location.resolve("secring.gpg"),
-            Resources.toByteArray(url)
-        )
+        lib.files.add("secring.gpg", Resources.toByteArray(url))
 
         build.executor.run("clean", "publish")
 
-        val artifactsDir = lib.location.resolve("../repo/com/android/lib/1.0")
+        val artifactsDir = lib.resolve("../repo/com/android/lib/1.0")
         val javadocDebugAsc = artifactsDir.resolve("lib-1.0-debug-javadoc.jar.asc")
         val sourcesDebugAsc = artifactsDir.resolve("lib-1.0-debug-sources.jar.asc")
         val javadocReleaseAsc = artifactsDir.resolve("lib-1.0-release-javadoc.jar.asc")

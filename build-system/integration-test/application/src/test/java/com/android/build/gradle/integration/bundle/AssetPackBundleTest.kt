@@ -70,7 +70,7 @@ class AssetPackBundleTest {
                 }
             }
             files.add("src/main/device_group_config.json", deviceGroupConfig)
-            pluginCallback = MyCallback::class.java
+            pluginCallbacks += MyCallback::class.java
         }
         assetPack(":assetPackOne") {
             assetPack {
@@ -347,9 +347,9 @@ class AssetPackBundleTest {
         val build = rule.build
         val bundle = build.assetPackBundle(":assetPackBundle")
 
-        val keystore = bundle.location.resolve("keystore.jks")
+        val keystore = bundle.resolve("keystore.jks")
 
-        bundle.reconfigure(buildFileOnly = true) {
+        bundle.reconfigure {
             bundle {
                 signingConfig {
                     storeFile = keystore.toFile()

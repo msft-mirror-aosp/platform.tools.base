@@ -17,11 +17,17 @@
 package com.android.build.gradle.internal.dsl.decorator
 
 import com.android.build.gradle.internal.dsl.AgpDslLockedException
+import com.android.build.gradle.internal.dsl.AgpExperimentalApiOptInRequiredException
 import com.android.build.gradle.internal.dsl.Lockable
 import com.android.build.gradle.internal.dsl.decorator.annotation.NonNullableSetter
+import com.android.build.gradle.internal.dsl.decorator.annotation.RuntimeGuardedExperimentalApi
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
+import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptions
+import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import groovy.util.Eval
@@ -659,5 +665,124 @@ class DslDecoratorUnitTest {
         }
         assertThat(failure2).hasMessageThat().contains("It is too late to modify list")
         assertThat(o.list).containsExactly("a", "c", "e", "f").inOrder()
+    }
+
+    abstract class WithRuntimeGuardedExperimentalApi() {
+        // For this test, use a removed boolean option as a convenient placeholder.
+        @get:RuntimeGuardedExperimentalApi(BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION)
+        abstract val experimentalBlock: SubBlock
+        abstract fun experimentalBlock(action: SubBlock.() -> Unit)
+
+        @get:RuntimeGuardedExperimentalApi(BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION)
+        abstract var experimentalValue: String
+
+        @get:RuntimeGuardedExperimentalApi(BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION)
+        abstract val experimentalList: MutableList<String>
+    }
+
+    @Test
+    fun checkWithRuntimeGuardedExperimentalApi() {
+        val subBlockPropertyType = SupportedPropertyType.Block(
+            type = SubBlock::class.java,
+            implementationType = SubBlockImpl::class.java
+        )
+        val decorator = DslDecorator(listOf(subBlockPropertyType, SupportedPropertyType.Var.String,
+            SupportedPropertyType.Collection.List))
+        registerTestDecorator(decorator)
+        val decorated = decorator.decorate(WithRuntimeGuardedExperimentalApi::class)
+
+        val gradleProperties = mutableMapOf<BooleanOption, Boolean>(
+            BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION to true
+        )
+        whenever(dslServices.projectOptions)
+            .thenAnswer { invocation -> ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
+
+        val o1 = decorated.getDeclaredConstructor(DslServices::class.java)
+            .newInstance(dslServices)
+
+        o1.experimentalValue = "example"
+        assertThat(o1.experimentalValue).isEqualTo("example")
+
+        o1.experimentalBlock.string = "example2"
+        assertThat(o1.experimentalBlock.string).isEqualTo("example2")
+
+        o1.experimentalBlock {
+            string = "example3"
+        }
+        assertThat(o1.experimentalBlock.string).isEqualTo("example3")
+
+        o1.experimentalList += "a"
+        assertThat(o1.experimentalList).containsExactly("a")
+        Eval.me("o1", o1, "o1.experimentalList += ['one', 'two']")
+        assertThat(o1.experimentalList).containsExactly("a", "one", "two")
+
+
+        gradleProperties[BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION] = false
+        val o2 = decorated.getDeclaredConstructor(DslServices::class.java)
+            .newInstance(dslServices)
+
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalValue }
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalValue = ""}
+
+
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalBlock }
+
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalList }
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { Eval.me("o2", o2, "o2.experimentalList += ['one', 'two']") }
+
+    }
+
+    abstract class WithDifferentExperimentalGuards() {
+        // For this test, use removed boolean options as a convenient placeholder.
+        @get:RuntimeGuardedExperimentalApi(BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION)
+        abstract var experimentalImprovedResolution: String
+
+        @get:RuntimeGuardedExperimentalApi(BooleanOption.ENABLE_NEW_RESOURCE_PROCESSING)
+        abstract var experimentalNewResourceProcessing: String
+
+        abstract var notExperimental: String
+    }
+
+    @Test
+    fun checkDifferentGuards() {
+
+        val decorator = DslDecorator(listOf(SupportedPropertyType.Var.String))
+        registerTestDecorator(decorator)
+        val decorated = decorator.decorate(WithDifferentExperimentalGuards::class)
+
+        val gradleProperties = mutableMapOf<BooleanOption, Boolean>(
+            BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION to true,
+            BooleanOption.ENABLE_NEW_RESOURCE_PROCESSING to true,
+        )
+        whenever(dslServices.projectOptions)
+            .thenAnswer { invocation -> ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
+
+        val o1 = decorated.getDeclaredConstructor(DslServices::class.java)
+            .newInstance(dslServices)
+
+        o1.experimentalImprovedResolution = "example"
+        assertThat(o1.experimentalImprovedResolution).isEqualTo("example")
+
+        o1.experimentalNewResourceProcessing = "example2"
+        assertThat(o1.experimentalNewResourceProcessing).isEqualTo("example2")
+
+        o1.notExperimental = "example3"
+        assertThat(o1.notExperimental).isEqualTo("example3")
+
+        gradleProperties[BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION] = false
+        val o2 = decorated.getDeclaredConstructor(DslServices::class.java)
+            .newInstance(dslServices)
+
+        val failure = assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalImprovedResolution = "example_o2" }
+        assertThat(failure).hasMessageThat().isEqualTo("API experimentalImprovedResolution is experimental, and requires opt in, as it may change or break in future versions without notice.\n" +
+                "Set android.enableImprovedDependenciesResolution=true in gradle.properties to enable access to this API.")
+        assertFailsWith<AgpExperimentalApiOptInRequiredException> { o2.experimentalImprovedResolution }
+
+        o2.experimentalNewResourceProcessing = "example2_o2"
+        assertThat(o2.experimentalNewResourceProcessing).isEqualTo("example2_o2")
+
+        o2.notExperimental = "example3_o2"
+        assertThat(o2.notExperimental).isEqualTo("example3_o2")
+
     }
 }

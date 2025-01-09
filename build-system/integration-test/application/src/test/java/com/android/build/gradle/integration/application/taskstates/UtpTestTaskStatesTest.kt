@@ -68,7 +68,7 @@ class UtpTestTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }
@@ -106,7 +106,7 @@ class UtpTestTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }
@@ -134,7 +134,7 @@ class UtpTestTaskStatesTest {
                         localDevices {
                             device1 {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }
@@ -161,12 +161,12 @@ class UtpTestTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                             someDeviceName (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 3"
-                                apiLevel = 27
+                                sdkVersion = 27
                                 systemImageSource = "aosp"
                             }
                         }
@@ -210,7 +210,7 @@ class UtpTestTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }
@@ -241,7 +241,7 @@ class UtpTestTaskStatesTest {
                         allDevices {
                             device1 (com.android.build.api.dsl.ManagedVirtualDevice) {
                                 device = "Pixel 2"
-                                apiLevel = 29
+                                sdkVersion = 29
                                 systemImageSource = "aosp"
                             }
                         }
@@ -262,6 +262,33 @@ class UtpTestTaskStatesTest {
         assertTaskExists(project, "app:allDevicesDebugAndroidTest")
         assertTaskExists(project, "app:device1Check")
         assertTaskExists(project, "app:testGroupCheck")
+        assertTaskExists(project, "app:allDevicesCheck")
+    }
+
+    @Test
+    fun checkAddLocalDevicesAddsTasksOldApi() {
+        project.gradlePropertiesFile.appendText(
+            "\nandroid.experimental.androidTest.useUnifiedTestPlatform=true\n")
+        appProject.buildFile.appendText("""
+            android {
+                testOptions {
+                    managedDevices {
+                        localDevices {
+                            device1 {
+                                device = "Pixel 2"
+                                apiLevel = 29
+                                systemImageSource = "aosp"
+                            }
+                        }
+                    }
+                }
+            }
+        """)
+        assertTaskExists(project, "app:cleanManagedDevices")
+        assertTaskExists(project, "app:device1Setup")
+        assertTaskExists(project, "app:device1DebugAndroidTest")
+        assertTaskExists(project, "app:allDevicesDebugAndroidTest")
+        assertTaskExists(project, "app:device1Check")
         assertTaskExists(project, "app:allDevicesCheck")
     }
 }

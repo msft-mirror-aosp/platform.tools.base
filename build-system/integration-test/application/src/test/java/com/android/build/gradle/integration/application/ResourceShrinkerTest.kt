@@ -49,18 +49,22 @@ import java.util.zip.ZipFile
 @RunWith(Parameterized::class)
 class ResourceShrinkerTest(
     private val nonFinalResIds: Boolean,
-    private val r8IntegratedResourceShrinking: Boolean
+    private val r8IntegratedResourceShrinking: Boolean,
+    private val r8OptimizedShrinking: Boolean
 ) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "nonFinalResIds_{0}_r8IntegratedResourceShrinking_{1}")
+        @Parameterized.Parameters(name = "nonFinalResIds_{0}_r8IntegratedResourceShrinking_{1}__r8OptimizedShrinking_{2}")
         @JvmStatic
         fun parameters() = listOf(
-            arrayOf(true, true),
-            arrayOf(true, false),
-            arrayOf(false, true),
-            arrayOf(false, false),
+            arrayOf(false, false, false),
+            arrayOf(false, true, false),
+            arrayOf(true, false, false),
+            arrayOf(true, true, false),
+            // r8OptimizedShrinking only takes effect when nonFinalResIds = true and
+            // r8IntegratedResourceShrinking = true
+            arrayOf(true, true, true),
         )
     }
 
@@ -68,12 +72,14 @@ class ResourceShrinkerTest(
     var project = builder().fromTestProject("shrink")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
+        .addGradleProperty(BooleanOption.R8_OPTIMIZED_SHRINKING, r8OptimizedShrinking)
         .create()
 
     @get:Rule
     var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
+        .addGradleProperty(BooleanOption.R8_OPTIMIZED_SHRINKING, r8OptimizedShrinking)
         .create()
 
     private val testAapt2 = TestUtils.getAapt2().toFile().absoluteFile
@@ -163,7 +169,20 @@ class ResourceShrinkerTest(
                 "res/layout/unused13.xml",
                 "res/menu/unused12.xml",
                 "res/raw/keep.xml"
-        )
+        ) + if (r8OptimizedShrinking) {
+            // With optimized shrinking, more resources are removed.
+            listOf(
+                "res/layout/prefix_3_suffix.xml",
+                "res/layout/prefix_used_1.xml",
+                "res/layout/prefix_used_2.xml",
+                "res/layout/used3.xml",
+                "res/layout/used4.xml",
+                "res/layout/used5.xml",
+                "res/layout/used6.xml",
+            )
+        } else {
+            emptyList()
+        }
         checkUnusedResourcesAreReplacedInApk(project, removedFiles)
 
         val debugApk = project.getApk(DEBUG)
@@ -199,25 +218,31 @@ class ResourceShrinkerTest(
             it.doesNotContain("res/jd.xml")
         }
         // Check that zip entities have proper methods.
-        assertThat(getZipPathsWithMethod(
-                project.getSubproject("webview").getShrunkBinaryResources()))
-                .containsExactly(
-                        "  stored  resources.arsc",
-                        "deflated  AndroidManifest.xml",
-                        "deflated  res/raw/unknown",
-                        "deflated  res/drawable/used1.xml",
-                        "  stored  res/raw/used_icon.png",
-                        "  stored  res/raw/used_icon2.png",
-                        "deflated  res/raw/used_index.html",
-                        "deflated  res/raw/used_index2.html",
-                        "deflated  res/raw/used_index3.html",
-                        "deflated  res/layout/used_layout1.xml",
-                        "deflated  res/layout/used_layout2.xml",
-                        "deflated  res/layout/used_layout3.xml",
-                        "deflated  res/raw/used_script.js",
-                        "deflated  res/raw/used_styles.css",
-                        "deflated  res/layout/webview.xml"
-                )
+        val expectedShrunkResources = listOf(
+            "  stored  resources.arsc",
+            "deflated  AndroidManifest.xml",
+            "deflated  res/raw/unknown",
+            "deflated  res/layout/used_layout1.xml",
+            "deflated  res/layout/used_layout2.xml",
+            "deflated  res/layout/webview.xml"
+        ) + if (r8OptimizedShrinking) {
+            // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+            emptyList()
+        } else {
+            listOf(
+                "deflated  res/drawable/used1.xml",
+                "  stored  res/raw/used_icon.png",
+                "  stored  res/raw/used_icon2.png",
+                "deflated  res/raw/used_index.html",
+                "deflated  res/raw/used_index2.html",
+                "deflated  res/raw/used_index3.html",
+                "deflated  res/layout/used_layout3.xml",
+                "deflated  res/raw/used_script.js",
+                "deflated  res/raw/used_styles.css",
+            )
+        }
+        assertThat(getZipPathsWithMethod(project.getSubproject("webview").getShrunkBinaryResources()))
+            .containsExactlyElementsIn(expectedShrunkResources)
 
         // Check that unused resources that are referenced with Resources.getIdentifier are removed
         // in case shrinker mode is set to 'strict'.
@@ -270,22 +295,28 @@ class ResourceShrinkerTest(
                 "classes.dex",
                 "resources.arsc",
                 "AndroidManifest.xml",
+                "META-INF/com/android/build/gradle/app-metadata.properties",
+                "META-INF/version-control-info.textproto",
+                "res/GM",
+                "res/_M.xml",
+                "res/_S.xml",
+                "res/g0.xml",
+        ) + if (r8OptimizedShrinking) {
+            // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+            emptyList()
+        } else {
+            listOf(
                 "res/0g.js",
                 "res/1B.png",
                 "res/95.html",
                 "res/Fr.xml",
-                "res/GM",
                 "res/Hv.xml",
                 "res/Ta.css",
-                "res/_M.xml",
-                "res/_S.xml",
-                "res/g0.xml",
                 "res/jL.html",
                 "res/mZ.html",
                 "res/vy.png",
-                "META-INF/com/android/build/gradle/app-metadata.properties",
-                "META-INF/version-control-info.textproto"
-        )
+            )
+        }
 
         // As AAPT optimize shortens file paths including shrunk resource file names,
         // the shrunk apk must include the obfuscated files.

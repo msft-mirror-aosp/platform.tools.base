@@ -24,8 +24,10 @@ import java.nio.file.Path
 import java.util.regex.Pattern
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteExisting
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 /**
@@ -41,6 +43,13 @@ interface GradleProjectFiles {
     fun add(relativePath: String, content: String)
 
     /**
+     * Adds a file to the given location with the given content.
+     *
+     * If the file already exists, an exception is thrown
+     */
+    fun add(relativePath: String, content: ByteArray)
+
+    /**
      * Returns a [FileUpdateBuilder] to update the content of a file.
      */
     fun update(relativePath: String): FileUpdateBuilder
@@ -53,19 +62,49 @@ interface GradleProjectFiles {
     }
 
     /**
-     * Removes the file at the given location
+     * Removes the file at the given location. It is OK if the file does not exist
      */
     fun remove(relativePath: String)
 }
 
 interface FileUpdateBuilder {
     val exists: Boolean
+
+    /**
+     * Replaces the content of the file with the provided content.
+     *
+     * If the file does not exist, a new file is created with the provided content.
+     */
     fun replaceWith(newContent: String)
 
+    /**
+     * Search the content of the file with the given string and replace all occurrences with
+     * the new content.
+     *
+     * The file must always exist or an exception is thrown. If the string to search is not found
+     * an exception is thrown, unless `lenient` is set to `true`.
+     *
+     * @param search the string to search for
+     * @param replace the string with which to replace all occurrences of `search`
+     * @param lenient whether the call is lenient to content that don't have any occurrence of `search`
+     */
     fun searchAndReplace(search: String, replace: String, lenient: Boolean = false): FileUpdateBuilder
 
+    /**
+     * Appends the content of the file with the provided content.
+     *
+     * If the file does not exist, a new file is created wit the provided content.
+     */
     fun append(newContent: String)
 
+    /**
+     * Transforms the file with the provided lambda.
+     *
+     * The lambda receives the current content as a string, and returns the new content for the
+     * file.
+     *
+     * The file must always exist or an exception is thrown.
+     */
     fun transform(action: (String) -> String): FileUpdateBuilder
 }
 
@@ -97,13 +136,34 @@ interface AndroidProjectFiles: GradleProjectFiles {
 /**
  * Implementation of [GradleProjectFiles] that only records the actions but does not yet
  * write anything on disk. This is done later when the project is created via [write]
+ *
+ * It is possible to transform this implementation to instead directly manipulate the file
+ * system. This is done by calling [makeDirect], after which the implementation is superseded by
+ * a [DirectGradleProjectFiles] instance.
  */
 internal open class DelayedGradleProjectFiles: GradleProjectFiles {
     // map from relative path to file content
     @get:VisibleForTesting
-    internal val sourceFiles = mutableMapOf<String, String>()
+    internal val sourceFiles = mutableMapOf<String, Any>()
+
+    @get:VisibleForTesting
+    internal var directFiles: DirectGradleProjectFiles? = null
+
+    val isDirect: Boolean
+        get() = directFiles != null
+
+    internal open fun makeDirect(location: Path) {
+        directFiles = DirectGradleProjectFiles(location)
+        sourceFiles.clear()
+    }
 
     override fun add(relativePath: String, content: String) {
+        val dFiles = directFiles
+        if (dFiles != null) {
+            dFiles.add(relativePath, content)
+            return
+        }
+
         val existingContent = sourceFiles[relativePath]
         if (existingContent != null) {
             throw RuntimeException("A file already exist at $relativePath")
@@ -112,28 +172,63 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
         sourceFiles[relativePath] = content
     }
 
-    override fun update(relativePath: String): FileUpdateBuilder =
-        FileUpdater(sourceFiles, relativePath)
+    override fun add(relativePath: String, content: ByteArray) {
+        val dFiles = directFiles
+        if (dFiles != null) {
+            dFiles.add(relativePath, content)
+            return
+        }
+
+        val existingContent = sourceFiles[relativePath]
+        if (existingContent != null) {
+            throw RuntimeException("A file already exist at $relativePath")
+        }
+
+        sourceFiles[relativePath] = content
+    }
+
+    override fun update(relativePath: String): FileUpdateBuilder {
+        val dFiles = directFiles
+        if (dFiles != null) {
+            return dFiles.update(relativePath)
+        }
+
+        return FileUpdater(sourceFiles, relativePath)
+    }
 
     override fun remove(relativePath: String) {
-        sourceFiles[relativePath]
-            ?: throw NoSuchFileException("No file exists at $relativePath")
+        val dFiles = directFiles
+        if (dFiles != null) {
+            dFiles.remove(relativePath)
+            return
+        }
 
         sourceFiles.remove(relativePath)
     }
 
     internal fun write(location: Path) {
+        if (directFiles != null) {
+            throw RuntimeException("Should not call write after makeDirect()")
+        }
         // write the content of the project
         for ((path, content) in sourceFiles) {
 
             val fileLocation = location.resolve(path)
             fileLocation.parent.createDirectories()
-            fileLocation.writeText(content)
+            when (content) {
+                is String -> {
+                    fileLocation.writeText(content)
+                }
+                is ByteArray -> {
+                    fileLocation.writeBytes(content)
+                }
+                else -> throw RuntimeException("Unsupported file content type for $path")
+            }
         }
     }
 
     private class FileUpdater(
-        private val map: MutableMap<String, String>,
+        private val map: MutableMap<String, Any>,
         private val key: String
     ): FileUpdateBuilder {
 
@@ -149,24 +244,47 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
             replace: String,
             lenient: Boolean
         ): FileUpdateBuilder {
-            val content = map[key] ?: throw RuntimeException("File $key not found. Cannot update")
-            map[key] = content.searchAndReplace(key, search, replace, Pattern.LITERAL, lenient = false)
+            val content = map[key] ?: throw RuntimeException("File $key not found. Cannot searchAndReplace")
+
+            val stringContent = content as? String
+                ?: throw RuntimeException("Can only do searchAndReplace on string content (key: $key")
+
+            map[key] = stringContent.searchAndReplace(key, search, replace, Pattern.LITERAL, lenient)
             return this
         }
 
         override fun append(newContent: String) {
             val content = map[key]
-            map[key] = content?.let { it + newContent } ?: newContent
+
+            if (content == null) {
+                map[key] = newContent
+
+            } else {
+                val stringContent = content as? String
+                    ?: throw RuntimeException("Can only do append on string content (key: $key")
+
+                map[key] = stringContent + newContent
+            }
         }
 
         override fun transform(action: (String) -> String): FileUpdateBuilder {
-            val content = map[key] ?: throw RuntimeException("File $key not found. Cannot update")
-            map[key] = action(content)
+            val content = map[key] ?: throw RuntimeException("File $key not found. Cannot transform")
+
+            val stringContent = content as? String
+                ?: throw RuntimeException("Can only do transform on string content (key: $key")
+
+            map[key] = action(stringContent)
             return this
         }
     }
 }
 
+/**
+ * This is an implementation of [GradleProjectFiles] that directly writes into a root folder.
+ *
+ * The relative paths provided via the API are resolved from this root, and each call directly
+ * impacts the file system.
+ */
 internal open class DirectGradleProjectFiles(
     @get:VisibleForTesting
     internal val location: Path
@@ -174,15 +292,31 @@ internal open class DirectGradleProjectFiles(
 
     override fun add(relativePath: String, content: String) {
         val file = location.resolve(relativePath)
+
+        if (file.isRegularFile()) {
+            throw RuntimeException("A file already exist at $relativePath")
+        }
+
         file.parent.createDirectories()
         file.writeText(content)
+    }
+
+    override fun add(relativePath: String, content: ByteArray) {
+        val file = location.resolve(relativePath)
+
+        if (file.isRegularFile()) {
+            throw RuntimeException("A file already exist at $relativePath")
+        }
+
+        file.parent.createDirectories()
+        file.writeBytes(content)
     }
 
     override fun update(relativePath: String): FileUpdateBuilder =
         FileUpdater(location.resolve(relativePath))
 
     override fun remove(relativePath: String) {
-        location.resolve(relativePath).deleteExisting()
+        location.resolve(relativePath).deleteIfExists()
     }
 
     private class FileUpdater(private val file: Path): FileUpdateBuilder {
@@ -211,7 +345,7 @@ internal open class DirectGradleProjectFiles(
                     search,
                     replace,
                     Pattern.LITERAL,
-                    lenient = false
+                    lenient
                 )
             )
 
@@ -241,6 +375,12 @@ internal open class DirectGradleProjectFiles(
 internal class DelayedAndroidProjectFiles(
     private val namespaceProvider: () -> String
 ): DelayedGradleProjectFiles(), AndroidProjectFiles {
+
+    override fun makeDirect(location: Path) {
+        directFiles = DirectAndroidProjectFiles(location, namespaceProvider())
+        sourceFiles.clear()
+    }
+
     override val namespace: String
         get() = namespaceProvider()
     override val namespaceAsPath: String

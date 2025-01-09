@@ -41,6 +41,23 @@ interface GradlePropertiesBuilder {
      * Adds a [StringOption]
      */
     fun add(option: StringOption, value: String)
+
+    /**
+     * Removes the property matching the key.
+     *
+     * If the key is a [BooleanOption] or [StringOption] use the specific API
+     */
+    fun remove(key: String)
+
+    /**
+     * Removes the property matching the key.
+     */
+    fun remove(option: BooleanOption)
+
+    /**
+     * Removes the property matching the key.
+     */
+    fun remove(option: StringOption)
 }
 
 internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
@@ -59,6 +76,18 @@ internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
 
     override fun add(option: StringOption, value: String) {
         mutableStrings[option] = value
+    }
+
+    override fun remove(key: String) {
+        mutableProperties.remove(key)
+    }
+
+    override fun remove(option: BooleanOption) {
+        mutableBooleans.remove(option)
+    }
+
+    override fun remove(option: StringOption) {
+        mutableStrings.remove(option)
     }
 
     internal val properties: List<String>

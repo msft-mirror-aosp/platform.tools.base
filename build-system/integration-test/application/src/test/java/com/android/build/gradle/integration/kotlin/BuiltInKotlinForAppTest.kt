@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
@@ -123,9 +123,9 @@ class BuiltInKotlinForAppTest {
         build.executor.run(":app:testDebug")
         val app = build.androidApplication()
         val testResults =
-            app.location
+            app.buildDir
                 .resolve(
-                    "build/test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
+                    "test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
                 )
         PathSubject.assertThat(testResults).exists()
     }

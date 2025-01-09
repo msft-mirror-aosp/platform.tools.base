@@ -15,23 +15,11 @@
  */
 package com.android.tools.instrumentation.threading.agent;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-
 import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerHook;
 import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline;
 import com.google.common.io.ByteStreams;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.testFramework.ApplicationRule;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,9 +32,26 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 public class AgentTest {
 
     @Rule public MockitoRule rule = MockitoJUnit.rule();
+
+    @Rule public ApplicationRule applicationRule = new ApplicationRule();
 
     @Mock private ThreadingCheckerHook mockThreadingCheckerHook;
 
@@ -178,9 +183,86 @@ public class AgentTest {
     }
 
     @Test
+    public void testReadLockThreadMethodAnnotation()
+            throws IOException, IllegalAccessException, InstantiationException,
+                   NoSuchMethodException, InvocationTargetException {
+        Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+
+        ApplicationManager.getApplication().runReadAction(() -> {
+            try {
+                callMethod(transformedClass, instance, "readLockMethod1", false);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            verify(mockThreadingCheckerHook).verifyReadLock();
+        });
+    }
+
+    @Test
+    public void testWriteLockThreadMethodAnnotation()
+            throws IOException, IllegalAccessException, InstantiationException,
+                   NoSuchMethodException, InvocationTargetException {
+        Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+
+        ApplicationManager.getApplication().runWriteAction(() -> {
+            try {
+                callMethod(transformedClass, instance, "writeLockMethod1", false);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            verify(mockThreadingCheckerHook).verifyWriteLock();
+        });
+    }
+
+    @Test
+    public void testEdtThreadLockMethodAnnotation()
+            throws IOException, IllegalAccessException, InstantiationException,
+                   NoSuchMethodException, InvocationTargetException {
+        Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                callMethod(transformedClass, instance, "requiresEdtMethod1", false);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            verify(mockThreadingCheckerHook).verifyOnUiThread();
+        });
+
+    }
+
+    @Test
+    public void testBackgroundThreadMethodAnnotation()
+            throws IOException, IllegalAccessException, InstantiationException,
+                   NoSuchMethodException, InvocationTargetException {
+        Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+
+        callMethod(transformedClass, instance, "backgroundThreadMethod1", false);
+        verify(mockThreadingCheckerHook).verifyOnWorkerThread();
+    }
+
+    @Test
+    public void testNoReadLockAccessMethodAnnotation()
+            throws IOException, IllegalAccessException, InstantiationException,
+                   NoSuchMethodException, InvocationTargetException {
+        Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+        callMethod(transformedClass, instance, "noReadLockMethod1", false);
+
+        verify(mockThreadingCheckerHook).verifyNoReadLock();
+    }
+
+    @Test
     public void testAnyThreadMethodAnnotation_currentlyDoesNotGetInstrumented()
             throws IOException, IllegalAccessException, InstantiationException,
-                    NoSuchMethodException, InvocationTargetException {
+                  NoSuchMethodException, InvocationTargetException {
 
         Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();

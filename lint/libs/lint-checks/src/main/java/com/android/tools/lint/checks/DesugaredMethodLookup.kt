@@ -74,7 +74,7 @@ class DesugaredMethodLookup(val methodDescriptors: Array<String>, val names: Set
       // We're not really comparing the two lambda parameters;
       // we're looking at the combination of o1 and the pair of
       // parameters passed in
-      if (o1.startsWith(target)) {
+      if (o1.startsWith(target) && (o1 == target || o1[target.length] == '#')) {
         0
       } else {
         o1.compareTo(target)

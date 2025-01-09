@@ -137,7 +137,7 @@ internal class FusedLibraryMergeArtifactTaskTest {
             assertThat(aarMetadataReader.minCompileSdkExtension).isEqualTo("2")
         }
 
-        fusedLib1.reconfigure(buildFileOnly = true) {
+        fusedLib1.reconfigure {
             androidFusedLibrary {
                 aarMetadata.minAgpVersion = "8.4-alpha02"
                 aarMetadata.minCompileSdk = 9

@@ -60,7 +60,7 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
                     }
                 }
             }
-            pluginCallback = MyAppCallback::class.java
+            pluginCallbacks += MyAppCallback::class.java
         }
     }
 

@@ -29,6 +29,7 @@ KGP_FOR_TESTS = [
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_" + KGP_VERSION_FOR_TESTS,
+    "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_" + KGP_VERSION_FOR_TESTS,
 ]
 

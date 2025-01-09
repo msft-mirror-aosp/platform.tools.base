@@ -46,7 +46,7 @@ class SourcesDirectoryModelTest : ModelComparator() {
     fun `test adding source directories to IDE model with addGeneratedSourceDirectory and addStaticSourceDirectory`() {
         val build = rule.build {
             androidApplication {
-                pluginCallback = AppCallback::class.java
+                pluginCallbacks += AppCallback::class.java
             }
         }
 
@@ -119,7 +119,7 @@ class SourcesDirectoryModelTest : ModelComparator() {
     fun `test adding generated source directory to IDE model with registerJavaGeneratingTask old API`() {
         val build = rule.build {
             androidApplication {
-                pluginCallback = LegacyAppCallback::class.java
+                pluginCallbacks += LegacyAppCallback::class.java
             }
         }
 

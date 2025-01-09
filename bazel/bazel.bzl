@@ -421,28 +421,23 @@ _iml_module_ = rule(
         "test_deps": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo], [CcInfo]]),
         "test_friends": attr.label_list(providers = [JavaInfo]),
         "data": attr.label_list(allow_files = True),
+        # Toolchain for compiling java sources
         "java_toolchain": attr.label(),
+        # Java runtime, to be used for `-jdk-home` kotlinc option
+        # Kotlinc does not support the --release 8 Javac option, see https://youtrack.jetbrains.com/issue/KT-29974
+        # (and if it would, it would probably works similary - only when there is no --add-exports)
         "_kt_java_runtime_8": attr.label(
-            # We need this to be able to target JRE 8 in Kotlin, because
-            # Kotlinc does not support the --release 8 Javac option.
-            # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk:jdk_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk8:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
         "_kt_java_runtime_11": attr.label(
-            # We need this to be able to target JRE 11 in Kotlin, because
-            # Kotlinc does not support the --release 11 Javac option.
-            # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk/jdk11:jdk11_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk11:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
         "_kt_java_runtime_17": attr.label(
-            # We need this to be able to target JRE 17 in Kotlin, because
-            # Kotlinc does not support the --release 17 Javac option.
-            # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk/jdk17:jdk17_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk17:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
@@ -542,7 +537,8 @@ def iml_module(
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,
-        generate_k2_tests = False):
+        generate_k2_tests = False,
+        generate_coverage_baseline = True):
     """A macro corresponding to an IntelliJ module.
 
     Generates the following targets:
@@ -631,11 +627,11 @@ def iml_module(
     # if jvm_target is specified, use JDK that compiles to that target
     # otherwise use default JDK, controlled by `java_language_version_17` flag
     if jvm_target == "8":
-        java_toolchain = "//prebuilts/studio/jdk/jdk17:java8_compile_toolchain"
+        java_toolchain = "//prebuilts/studio/jdk:java8_compile_toolchain"
     elif jvm_target == "11":
-        java_toolchain = "//prebuilts/studio/jdk/jdk17:java11_compile_toolchain"
+        java_toolchain = "//prebuilts/studio/jdk:java11_compile_toolchain"
     else:
-        java_toolchain = "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain"
+        java_toolchain = "//prebuilts/studio/jdk:java17_compile_toolchain"
 
     _iml_module_(
         name = name,
@@ -669,7 +665,7 @@ def iml_module(
         target_compatible_with = target_compatible_with,
     )
 
-    if srcs.javas + srcs.kotlins and not compatible_intellij_platforms:
+    if generate_coverage_baseline and (srcs.javas + srcs.kotlins) and not compatible_intellij_platforms:
         coverage_baseline(
             name = name,
             srcs = srcs.javas + srcs.kotlins,

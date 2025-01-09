@@ -16,7 +16,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
@@ -83,7 +83,7 @@ class LibraryClassVerificationTest {
                     """.trimIndent())
             }
         }
-        androidLibrary("otherlib") {
+        androidLibrary(":otherlib") {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             android {
                 namespace = "com.example.otherlib"
@@ -139,7 +139,7 @@ class LibraryClassVerificationTest {
         assertThat(result.stderr).contains("Error: Missing class com.example.CompileOnlyJarClass (referenced from: void com.example.lib.Use.<init>() and 1 other context)")
 
         // override to disable in that particular project
-        androidLibrary.reconfigure(buildFileOnly = true) {
+        androidLibrary.reconfigure {
             android {
                 experimentalProperties["android.experimental.verifyLibraryClasses"] = false
             }

@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_V
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule

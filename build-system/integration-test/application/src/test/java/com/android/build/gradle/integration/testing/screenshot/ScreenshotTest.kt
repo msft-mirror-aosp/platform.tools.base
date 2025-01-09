@@ -26,7 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
@@ -123,7 +123,7 @@ class ScreenshotTest {
         kotlin {
             jvmToolchain(17)
         }
-        pluginCallback = ScreenshotCallback::class.java
+        pluginCallbacks += ScreenshotCallback::class.java
 
         files {
             add(
@@ -287,7 +287,7 @@ class ScreenshotTest {
         result.assertErrorContains("There were failing tests. See the results at: ")
 
         //set high threshold - tests pass
-        appProject.reconfigure(buildFileOnly = true) {
+        appProject.reconfigure {
             android {
                 testOptions {
                     // ScreenshotTestOptions is not yet part of the AGP API so use it via the
@@ -302,7 +302,7 @@ class ScreenshotTest {
         build.sstExecutor().run(":app:validateScreenshotTest")
 
         //reduce threshold - tests fail
-        appProject.reconfigure(buildFileOnly = true) {
+        appProject.reconfigure {
             android {
                 testOptions {
                     viaExtension("screenshotTests", ScreenshotTestOptions::class) {
@@ -661,7 +661,7 @@ class ScreenshotTest {
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
         // Verify that exception is thrown when ui-tooling dep is missing
-        build.androidApplication().reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure {
             dependencies {
                 remove("screenshotTestImplementation", uiToolingDep)
             }
@@ -765,7 +765,7 @@ class ScreenshotTest {
         val build = rule.build {
             androidApplication {
                 // cannot set filter using the conventional command ./gradlew validateDebugScreenshotTest --tests "Pattern". https://github.com/gradle/gradle/issues/1228
-                pluginCallback = FilterSetupCallback::class.java
+                pluginCallbacks += FilterSetupCallback::class.java
             }
         }
         val appProject = build.androidApplication()

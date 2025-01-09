@@ -196,6 +196,21 @@ public class TemporaryProjectModification implements Closeable {
         TestUtils.waitForFileSystemTick();
     }
 
+    public void addFile(@NonNull String relativePath, @NonNull byte[] content)
+            throws IOException, InterruptedException {
+        File file = getFile(relativePath);
+
+        if (file.exists()) {
+            throw new RuntimeException("File already exists: " + file);
+        }
+
+        FileUtils.mkdirs(file.getParentFile());
+
+        mFileEvents.put(relativePath, FileEvent.added());
+
+        Files.write(content, file);
+    }
+
     public void addDir(@NonNull String relativePath) throws IOException, InterruptedException {
         File file = getFile(relativePath);
 

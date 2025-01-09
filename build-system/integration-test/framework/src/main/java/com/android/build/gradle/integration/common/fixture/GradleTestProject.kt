@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.BuildS
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.forEachLine
@@ -618,23 +617,6 @@ open class GradleTestProject @JvmOverloads constructor(
         createSettingsFile(settingsFile, rootProjectName)
         localProp = createLocalProp()
         createGradleProp()
-
-        if (testProject is TestProjectBuilder) {
-            createSettingsAndLocalPropForIncluded(testProject, projectDir)
-        }
-    }
-
-    private fun createSettingsAndLocalPropForIncluded(parentTestProject: TestProjectBuilder, parentDir: File) {
-        for (includedBuild in  parentTestProject.includedBuilds) {
-            val includedProjectDir = parentDir.resolve(includedBuild.name)
-            createSettingsFile(
-                getSettingsFile(includedProjectDir),
-                rootProjectName = null
-            )
-            createLocalProp(includedProjectDir)
-
-            createSettingsAndLocalPropForIncluded(includedBuild, includedProjectDir)
-        }
     }
 
     private fun getRepoDirectories(): List<Path> {

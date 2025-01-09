@@ -167,66 +167,70 @@ public class TestLintTask {
     boolean allowKotlinClassStubs = false;
     @Nullable LanguageLevel javaLanguageLevel = null;
     @Nullable LanguageVersionSettings kotlinLanguageLevel = null;
+    @Nullable Boolean verifyFixedFileSyntax = true;
+
     // **NOTE**: Make sure newly added configuration state is also added to copy() below
 
     TestLintTask copy() {
-      ensurePreRun();
-      TestLintTask copy = new TestLintTask();
-      copy.projects = new ProjectDescriptionList(projects.getProjects(), projects.getReportFrom());
-      copy.requestedResourceRepository = requestedResourceRepository;
-      copy.forceAgpResourceRepository = forceAgpResourceRepository;
-      copy.allowCompilationErrors = allowCompilationErrors;
-      copy.allowObsoleteLintChecks = allowObsoleteLintChecks;
-      copy.allowSystemErrors = allowSystemErrors;
-      copy.incrementalFileName = incrementalFileName;
-      copy.issues = issues;
-      copy.issueIds = issueIds;
-      copy.allowDelayedIssueRegistration = allowDelayedIssueRegistration;
-      copy.sdkHome = sdkHome;
-      copy.listeners.addAll(listeners);
-      copy.driverConfigurator = driverConfigurator;
-      copy.optionSetter = optionSetter;
-      copy.messageChecker = messageChecker;
-      copy.projectInspector = projectInspector;
-      copy.variantName = variantName;
-      copy.customScope = customScope;
-      copy.forceSymbolResolutionErrors = forceSymbolResolutionErrors;
-      copy.clientFactory = clientFactory;
-      copy.detector = detector;
-      copy.customRules = customRules;
-      copy.ignoreUnknownGradleConstructs = ignoreUnknownGradleConstructs;
-      copy.allowMissingSdk = allowMissingSdk;
-      copy.requireCompileSdk = requireCompileSdk;
-      copy.vital = vital;
-      copy.textFormat = textFormat;
-      copy.mockNetworkData = mockNetworkData;
-      copy.mockNetworkErrorCodes = mockNetworkErrorCodes;
-      copy.mockNetworkHeaderFields = mockNetworkHeaderFields;
-      copy.allowNetworkAccess = allowNetworkAccess;
-      copy.allowDuplicates = allowDuplicates;
-      copy.showSecondaryLintContent = showSecondaryLintContent;
-      copy.baseline = baseline;
-      copy.baselineFile = baselineFile;
-      copy.configuredOptions = configuredOptions;
-      copy.overrideConfig = overrideConfig;
-      copy.overrideConfigFile = overrideConfigFile;
-      copy.desugaring = desugaring;
-      copy.platforms = platforms;
-      copy.testModes.addAll(testModes);
-      copy.ignoredTestModes.addAll(ignoredTestModes);
-      copy.testModesIdenticalOutput = testModesIdenticalOutput;
-      copy.useTestProject = useTestProject;
-      copy.allowExceptions = allowExceptions;
-      copy.useTestConfiguration = useTestConfiguration;
-      copy.reportFrom = reportFrom;
-      copy.stripRoot = stripRoot;
-      copy.includeSelectionMarkers = includeSelectionMarkers;
-      copy.allowAbsolutePathsInMessages = allowAbsolutePathsInMessages;
-      copy.allowNonAlphabeticalFixOrder = allowNonAlphabeticalFixOrder;
-      copy.allowKotlinClassStubs = allowKotlinClassStubs;
-      copy.javaLanguageLevel = javaLanguageLevel;
-      copy.kotlinLanguageLevel = kotlinLanguageLevel;
-      return copy;
+        ensurePreRun();
+        TestLintTask copy = new TestLintTask();
+        copy.projects =
+                new ProjectDescriptionList(projects.getProjects(), projects.getReportFrom());
+        copy.requestedResourceRepository = requestedResourceRepository;
+        copy.forceAgpResourceRepository = forceAgpResourceRepository;
+        copy.allowCompilationErrors = allowCompilationErrors;
+        copy.allowObsoleteLintChecks = allowObsoleteLintChecks;
+        copy.allowSystemErrors = allowSystemErrors;
+        copy.incrementalFileName = incrementalFileName;
+        copy.issues = issues;
+        copy.issueIds = issueIds;
+        copy.allowDelayedIssueRegistration = allowDelayedIssueRegistration;
+        copy.sdkHome = sdkHome;
+        copy.listeners.addAll(listeners);
+        copy.driverConfigurator = driverConfigurator;
+        copy.optionSetter = optionSetter;
+        copy.messageChecker = messageChecker;
+        copy.projectInspector = projectInspector;
+        copy.variantName = variantName;
+        copy.customScope = customScope;
+        copy.forceSymbolResolutionErrors = forceSymbolResolutionErrors;
+        copy.clientFactory = clientFactory;
+        copy.detector = detector;
+        copy.customRules = customRules;
+        copy.ignoreUnknownGradleConstructs = ignoreUnknownGradleConstructs;
+        copy.allowMissingSdk = allowMissingSdk;
+        copy.requireCompileSdk = requireCompileSdk;
+        copy.vital = vital;
+        copy.textFormat = textFormat;
+        copy.mockNetworkData = mockNetworkData;
+        copy.mockNetworkErrorCodes = mockNetworkErrorCodes;
+        copy.mockNetworkHeaderFields = mockNetworkHeaderFields;
+        copy.allowNetworkAccess = allowNetworkAccess;
+        copy.allowDuplicates = allowDuplicates;
+        copy.showSecondaryLintContent = showSecondaryLintContent;
+        copy.baseline = baseline;
+        copy.baselineFile = baselineFile;
+        copy.configuredOptions = configuredOptions;
+        copy.overrideConfig = overrideConfig;
+        copy.overrideConfigFile = overrideConfigFile;
+        copy.desugaring = desugaring;
+        copy.platforms = platforms;
+        copy.testModes.addAll(testModes);
+        copy.ignoredTestModes.addAll(ignoredTestModes);
+        copy.testModesIdenticalOutput = testModesIdenticalOutput;
+        copy.useTestProject = useTestProject;
+        copy.allowExceptions = allowExceptions;
+        copy.useTestConfiguration = useTestConfiguration;
+        copy.reportFrom = reportFrom;
+        copy.stripRoot = stripRoot;
+        copy.includeSelectionMarkers = includeSelectionMarkers;
+        copy.allowAbsolutePathsInMessages = allowAbsolutePathsInMessages;
+        copy.allowNonAlphabeticalFixOrder = allowNonAlphabeticalFixOrder;
+        copy.allowKotlinClassStubs = allowKotlinClassStubs;
+        copy.javaLanguageLevel = javaLanguageLevel;
+        copy.kotlinLanguageLevel = kotlinLanguageLevel;
+        copy.verifyFixedFileSyntax = verifyFixedFileSyntax;
+        return copy;
     }
 
     /** Creates a new lint test task */
@@ -365,6 +369,21 @@ public class TestLintTask {
      */
     public TestLintTask allowNonAlphabeticalFixOrder(boolean allowNonAlphabeticalFixOrder) {
         this.allowNonAlphabeticalFixOrder = allowNonAlphabeticalFixOrder;
+        return this;
+    }
+
+    /**
+     * Sets whether lint should verify that all the Kotlin, Java and XML source files are
+     * syntactically valid after applying quick fixes using {@link
+     * TestLintResult#expectFixDiffs(String)}. (If null rather than true or false, this will only be
+     * done by default if the expected fix string is blank, which typically only happens when you
+     * first add tests for a new quickfix.)
+     *
+     * @param verifyFixedFileSyntax whether to allow non-alphabetically ordered quick fixes
+     * @return this, for constructor chaining
+     */
+    public TestLintTask verifyFixedFileSyntax(@Nullable Boolean verifyFixedFileSyntax) {
+        this.verifyFixedFileSyntax = verifyFixedFileSyntax;
         return this;
     }
 
@@ -978,12 +997,15 @@ public class TestLintTask {
                         if (count > 1) {
                             client.log(
                                     null,
-                                    ""
-                                            + "Warning: Using the same client more than once; make sure you call\n"
-                                            + "clientFactory() instead of the deprecated client() from your lint()\n"
-                                            + "task. This normally just means passing in your creation code as a\n"
-                                            + "lambda; e.g. client(object : TestLintClient()...) should be converted\n"
-                                            + "to clientFactory({object: TestLintClient()...}).\n");
+                                    "Warning: Using the same client more than once; make sure you"
+                                        + " call\n"
+                                        + "clientFactory() instead of the deprecated client() from"
+                                        + " your lint()\n"
+                                        + "task. This normally just means passing in your creation"
+                                        + " code as a\n"
+                                        + "lambda; e.g. client(object : TestLintClient()...) should"
+                                        + " be converted\n"
+                                        + "to clientFactory({object: TestLintClient()...}).\n");
                         }
                         return client;
                     }
@@ -1190,11 +1212,13 @@ public class TestLintTask {
         return runner.run();
     }
 
-    /** Configure the test to run the entire pipeline multiple times. The state configured so far
+    /**
+     * Configure the test to run the entire pipeline multiple times. The state configured so far
      * will be applied to each individual run, but you can also apply per-configuration additional
-     * settings. */
+     * settings.
+     */
     public MultiRun multi() {
-      return new MultiRun(this);
+        return new MultiRun(this);
     }
 
     /**
@@ -1291,9 +1315,9 @@ public class TestLintTask {
             }
 
             throw new RuntimeException(
-                    "No issues configured; you must call either issues(), "
-                            + "detector() or customRules() to tell the lint infrastructure which checks "
-                            + "should be performed");
+                    "No issues configured; you must call either issues(), detector() or"
+                        + " customRules() to tell the lint infrastructure which checks should be"
+                        + " performed");
         }
 
         return checkedIssues;

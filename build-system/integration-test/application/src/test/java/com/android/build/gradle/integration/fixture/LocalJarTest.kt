@@ -43,7 +43,7 @@ class LocalJarTest {
         val build = rule.build
         val app = build.androidApplication()
 
-        val jar = app.location.resolve("libs/libfoo.jar")
+        val jar = app.resolve("libs/libfoo.jar")
         Truth.assertThat(jar.isRegularFile()).isTrue()
 
         ZipFileSubject.assertThat(jar) {

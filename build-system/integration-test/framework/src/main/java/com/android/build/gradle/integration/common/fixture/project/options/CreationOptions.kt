@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.options
 
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 
 
 interface CreationOptionsBuilder {

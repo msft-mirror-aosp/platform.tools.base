@@ -48,7 +48,7 @@ import java.lang.reflect.WildcardType
  */
 class DslProxy private constructor(
     private val theInterface: Class<*>,
-    private val contentHolder: DslContentHolder,
+    internal val contentHolder: DslContentHolder,
 ): InvocationHandler {
 
     private val rootExtensionProxy =

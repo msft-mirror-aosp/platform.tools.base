@@ -96,6 +96,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
   ) {
     var s = 0
     var len = string.length
+    val n = len
 
     // First strip leading/trailing whitespace.  Do this before handling
     // escapes, so they can be used to force whitespace into the string.
@@ -107,7 +108,7 @@ class StringEscapeDetector : ResourceXmlDetector() {
       len--
     }
     // If the string ends with '\', then we keep the space after it.
-    if (len > 0 && string[s + len - 1] == '\\' && s + len < string.length) {
+    if (len > 0 && string[s + len - 1] == '\\' && s + len < n) {
       len++
     }
     var quoted = 0.toChar()
@@ -118,7 +119,11 @@ class StringEscapeDetector : ResourceXmlDetector() {
         if (c == '\\') {
           break
         }
-        if (quoted.code == 0 && c.isWhitespace() && (c != ' ' || string[p + 1].isWhitespace())) {
+        if (
+          quoted.code == 0 &&
+            c.isWhitespace() &&
+            (c != ' ' || p == n - 1 || string[p + 1].isWhitespace())
+        ) {
           break
         }
         if (c == '"' && (quoted.code == 0 || quoted == '"')) {

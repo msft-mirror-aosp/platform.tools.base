@@ -31,7 +31,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
 
 /**
  * Represents a Gradle Build that can be configured before being written on disk
@@ -167,6 +166,20 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: PrivacySandboxSdkDefinition.() -> Unit
     ): PrivacySandboxSdkDefinition
+
+    /**
+     * Configures a subProject with the AndroidX Privacy sandbox Library plugin.
+     *
+     * It is an extension of the Android library plugin.
+     *
+     * @param path the Gradle path of the project
+     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
+     */
+    fun androidXPrivacySandboxLibrary(
+        path: String = DEFAULT_LIB_PATH,
+        createMinimumProject: Boolean = true,
+        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
+    ): AndroidProjectDefinition<LibraryExtension>
 
     /**
      * Configures a subProject with the Android AI Pack plugin, creating it if needed.

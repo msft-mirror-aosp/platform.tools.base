@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.r8.TargetedShrinkRules
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithClasses

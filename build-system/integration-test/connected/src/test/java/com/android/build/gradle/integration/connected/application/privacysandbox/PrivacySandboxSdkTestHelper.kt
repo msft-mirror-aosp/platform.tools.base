@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.deviceSupportsPrivacySandbox
 import com.android.build.gradle.integration.common.fixture.enablePrivacySandboxOnTestDevice
 import com.android.build.gradle.integration.common.fixture.executeShellCommand
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.uninstallPackage
 import com.android.build.gradle.options.BooleanOption
 
@@ -64,7 +65,8 @@ fun packageExists(packageName: String, isLibrary: Boolean = false) : Boolean {
         // So that part is stripped out
         .any { it == packageName.substringBefore("_") }
 }
-fun executor(project: GradleTestProject) = project.executor()
+
+fun GradleBuild.customExecutor() = executor
     .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
     .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
     .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)

@@ -17,9 +17,9 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
+import com.android.testutils.TestUtils.LATEST_KOTLIN_VERSION
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,11 +27,6 @@ class UpgradeKotlinGradlePluginApiTest {
 
     @get:Rule
     val rule = GradleRule.from {
-        rootProject {
-            buildscript {
-                classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$KOTLIN_VERSION_FOR_TESTS") // FIXME update the version
-            }
-        }
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             files.add(
@@ -46,17 +41,40 @@ class UpgradeKotlinGradlePluginApiTest {
     }
 
     /**
-     * Test that users can upgrade the version of kotlin-gradle-plugin-api by adding KGP to their
+     * Test that users can upgrade the version of kotlin artifacts by adding KGP to their
      * buildscript classpath with the desired version.
      */
     @Test
     fun testUpgradingKotlinBaseApiPlugin() {
-        val build = rule.build
+        val build =
+            rule.build {
+                rootProject {
+                    buildscript {
+                        classpath(
+                            "org.jetbrains.kotlin:kotlin-gradle-plugin:$LATEST_KOTLIN_VERSION"
+                        )
+                    }
+                }
+            }
 
         build.executor.run(":app:assembleDebug")
 
         val result = build.executor.run("buildEnvironment")
         ScannerSubject.assertThat(result.stdout)
-            .contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$KOTLIN_VERSION_FOR_TESTS")
+            .contains("org.jetbrains.kotlin:kotlin-gradle-plugin-api:$LATEST_KOTLIN_VERSION")
+        ScannerSubject.assertThat(result.stdout)
+            .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:$LATEST_KOTLIN_VERSION")
+        ScannerSubject.assertThat(result.stdout)
+            .contains("org.jetbrains.kotlin:kotlin-gradle-plugins-bom:$LATEST_KOTLIN_VERSION")
+    }
+
+    /**
+     * Test that [testUpgradingKotlinBaseApiPlugin] would fail if the buildscript classpath wasn't
+     * modified.
+     */
+    @Test
+    fun testNotUpgradingKotlinBaseApiPlugin() {
+        val result = rule.build.executor.run("buildEnvironment")
+        ScannerSubject.assertThat(result.stdout).doesNotContain(LATEST_KOTLIN_VERSION)
     }
 }

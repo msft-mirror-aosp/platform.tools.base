@@ -48,6 +48,7 @@ dependencies {
     testImplementation libs.protobuf_util
     testImplementation libs.truth
     testImplementation libs.unified_test_platform
+    testImplementation libs.ksp_gradle_plugin  // to acces the KSP extension in custom test project plugins
 
     testImplementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
 

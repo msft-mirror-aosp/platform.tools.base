@@ -16,19 +16,25 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
+import com.android.build.api.variant.ApkOutput
+import com.android.build.api.variant.TestAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.plugins.TestComponentCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProjectWithSeparateTest
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
 class PrivacySandboxTestOnlyModuleApkOutputTest {
 
-    @JvmField
-    @Rule
-    val project = privacySandboxSampleProjectWithSeparateTest()
+    @get:Rule
+    val rule = privacySandboxSampleProjectWithSeparateTest()
 
-    private fun executor() = project.executor()
+    private fun GradleBuild.configuredExecutor() = executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
@@ -38,73 +44,81 @@ class PrivacySandboxTestOnlyModuleApkOutputTest {
 
     @Test
     fun getTestOnlyModuleApkOutput() {
-        project.getSubproject("example-app-test").buildFile.appendText(
-            getBuildFileContentWithFetchTask(verificationString)
+        val build = rule.build {
+            androidTest(":example-app-test") {
+                pluginCallbacks += VerificationForTestCallback::class.java
+            }
+        }
+
+        build.configuredExecutor().run(":example-app-test:fetchApks")
+    }
+
+    class VerificationForTestCallback: FetchTaskForAndroidTestCallback<PrivacySandBoxTestOnlyVerificationTask>() {
+        override val taskType: Class<PrivacySandBoxTestOnlyVerificationTask>
+            get() = PrivacySandBoxTestOnlyVerificationTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (PrivacySandBoxTestOnlyVerificationTask) -> Property<ApkOutput>
+            get() = PrivacySandBoxTestOnlyVerificationTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (PrivacySandBoxTestOnlyVerificationTask) -> Property<ApkOutput>
+            get() = PrivacySandBoxTestOnlyVerificationTask::privacySandboxDisabledApkOutput
+    }
+}
+
+/**
+ * Base class for all Test callback with any FetchApkTask.
+ *
+ * Specific [FetchApkTask] implementations are providing the actual verification steps
+ */
+abstract class FetchTaskForAndroidTestCallback<TaskT: FetchApkTask>: BaseVariantCallbackForApk<TaskT>(),
+    TestComponentCallback {
+
+    abstract val taskType: Class<TaskT>
+
+    override fun handleExtension(
+        project: Project,
+        androidComponents: TestAndroidComponentsExtension
+    ) {
+        val taskProvider = project.tasks.register(
+            "fetchApks",
+            taskType
         )
 
-        executor().run(":example-app-test:fetchApks")
-    }
-
-    companion object {
-        fun getBuildFileContentWithFetchTask(verificationString: String) =
-            """
-            import com.android.build.api.variant.ApkInstallGroup
-            import com.android.build.api.variant.ApkOutput
-            import com.android.build.api.variant.TestVariant
-            import com.android.build.api.variant.DeviceSpec
-
-            abstract class FetchApkTask extends DefaultTask {
-                @Internal
-                abstract Property<ApkOutput> getPrivacySandboxEnabledApkOutput()
-
-                @Internal
-                abstract Property<ApkOutput> getPrivacySandboxDisabledApkOutput()
-
-                @TaskAction
-                void execute() {
-                    $verificationString
-                }
+        androidComponents.apply {
+            onVariants(selector().withName("debug")) { variant ->
+                wireTaskToOutputProvider(variant, taskProvider)
             }
-
-            def taskProvider = tasks.register("fetchApks", FetchApkTask)
-
-            androidComponents {
-                onVariants(selector().withName("debug")) { variant ->
-                    if (variant instanceof TestVariant) {
-                        TestVariant testVariant = (TestVariant) variant
-                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxEnabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(true).build())
-                        testVariant.outputProviders.provideApkOutputToTask(taskProvider, FetchApkTask::getPrivacySandboxDisabledApkOutput, new DeviceSpec.Builder().setName("testDevice").setApiLevel(33).setCodeName("").setAbis([]).setSupportsPrivacySandbox(false).build())
-                    }
-                }
-            }
-        """.trimIndent()
+        }
     }
-    private val verificationString = """
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 4 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1 || apkInstall[2].apks.size() != 2 || apkInstall[3].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.first().getAsFile().name.contains("standalone.apk")
-                    assert apkInstall[0].description.contains("Source Sdk: com.example.privacysandboxsdk_10002")
+}
 
-                    assert apkInstall[1].apks.first().getAsFile().name.contains("standalone.apk")
-                    assert apkInstall[1].description.contains("Source Sdk: com.example.privacysandboxsdkb_10002")
+abstract class PrivacySandBoxTestOnlyVerificationTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(4)
+            checkGroupFiles(0, "standalone.apk")
+            checkGroupDescription(0, "Source Sdk: com.example.privacysandboxsdk_10002")
+            checkGroupFiles(1, "standalone.apk")
+            checkGroupDescription(1, "Source Sdk: com.example.privacysandboxsdkb_10002")
+            checkGroupFiles(
+                2,
+                "example-app-debug.apk",
+                "example-app-debug-injected-privacy-sandbox.apk"
+            )
+            checkGroupFiles(3, "example-app-test-debug.apk")
+            checkGroupDescription(3, "Testing Apk")
+        }
 
-                    assert apkInstall[2].apks.any { it.getAsFile().name.contains("example-app-debug.apk") }
-                    assert apkInstall[2].apks.any { it.getAsFile().name.contains("example-app-debug-injected-privacy-sandbox.apk") }
-
-                    assert apkInstall[3].apks.any { it.getAsFile().name.contains("example-app-test-debug.apk") }
-                    assert apkInstall[3].description.contains("Testing Apk")
-
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 4 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("example-app-debug.apk") }
-                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("splits" + File.separator + "comexampleprivacysandboxsdk-master.apk") }
-                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("splits" + File.separator + "comexampleprivacysandboxsdkb-master.apk") }
-                    assert apkInstall[0].apks.any { it.getAsFile().absolutePath.contains("splits" + File.separator + "example-app-debug-injected-privacy-sandbox-compat.apk") }
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("example-app-test-debug.apk") }
-                    assert apkInstall[1].description.contains("Testing Apk")
-    """.trimIndent()
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(
+                0,
+                "example-app-debug.apk",
+                "comexampleprivacysandboxsdk-master.apk",
+                "comexampleprivacysandboxsdkb-master.apk",
+                "example-app-debug-injected-privacy-sandbox-compat.apk"
+            )
+            checkGroupFiles(1, "example-app-test-debug.apk")
+            checkGroupDescription(1, "Testing Apk")
+        }
+    }
 }

@@ -18,10 +18,9 @@ package com.android.build.gradle.integration.compose
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.junit.Rule
 import org.junit.Test
 
@@ -44,10 +43,7 @@ class ComposePluginOptionsTest {
             kotlin {
                 compilerOptions {
                     jvmTarget.set(JvmTarget.JVM_1_8)
-                    languageVersion.set(KotlinVersion.KOTLIN_1_9)
                     freeCompilerArgs.addAll(
-                        "-P",
-                        "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true",
                         "-P",
                         "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
                     )

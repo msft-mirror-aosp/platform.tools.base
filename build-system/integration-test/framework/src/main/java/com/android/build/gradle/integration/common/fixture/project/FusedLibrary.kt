@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -26,12 +25,9 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Direc
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.AarSubject
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
-import com.android.testutils.apk.Aar
 import java.nio.file.Path
-import kotlin.io.path.isRegularFile
 
 /*
  * Support for Android Fused Library in the [GradleRule] fixture
@@ -95,10 +91,7 @@ internal class FusedLibraryDefinitionImpl(
 /**
  * Specialized interface for FusedLibrary [GradleProject] to use in the test
  */
-interface FusedLibraryProject: BaseAndroidProject<FusedLibraryDefinition>, GeneratesAar {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface FusedLibraryProject: BaseAndroidProject<FusedLibraryDefinition>, GeneratesAar
 
 /**
  * Implementation of [AndroidProject]
@@ -125,6 +118,5 @@ internal class ReversibleFusedLibraryProject(
     projectModification: TemporaryProjectModification
 ) : BaseReversibleAndroidProjectImpl<FusedLibraryProject, FusedLibraryDefinition>(
     parentProject,
-), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject) {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    projectModification
+), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

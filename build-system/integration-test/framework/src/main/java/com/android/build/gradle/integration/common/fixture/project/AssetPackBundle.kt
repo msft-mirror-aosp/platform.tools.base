@@ -19,18 +19,12 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.api.dsl.AssetPackBundleExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.AabSubject
-import com.android.testutils.apk.Aab
-import com.android.tools.build.bundletool.model.AppBundle
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import java.nio.file.Path
 
 /*
@@ -60,8 +54,6 @@ internal class AssetPackBundleDefinitionImpl(
     init {
         applyPlugin(PluginType.ANDROID_ASSET_PACK_BUNDLE)
     }
-
-    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
         action(files)
@@ -96,10 +88,7 @@ internal class AssetPackBundleDefinitionImpl(
 /**
  * Specialized interface for AssetPackBundle [GradleProject] to use in the test
  */
-interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition>, GeneratesAab {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface AssetPackBundleProject: GradleProject<AssetPackBundleDefinition>, GeneratesAab
 
 /**
  * Implementation of [AssetPackBundleProject]
@@ -111,8 +100,6 @@ internal class AssetPackBundleImpl(
     location,
     projectDefinition,
 ), AssetPackBundleProject, GeneratesAab by GeneratesAabDelegate(location) {
-
-    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
     override fun getReversibleInstance(
         projectModification: TemporaryProjectModification
@@ -128,8 +115,6 @@ internal class ReversibleAssetPackBundleProject(
     projectModification: TemporaryProjectModification
 ) : ReversibleGradleProject<AssetPackBundleProject, AssetPackBundleDefinition>(
     parentProject,
+    projectModification,
 ), AssetPackBundleProject,
-    GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {
-
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    GeneratesAab by GeneratesAabFromParentDelegate(parentProject)

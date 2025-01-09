@@ -16,10 +16,10 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.compose.BrokenClass
-import com.android.tools.render.compose.ImagePathOrMessage
-import com.android.tools.render.compose.RenderProblem
-import com.android.tools.render.compose.ScreenshotError
+import com.android.tools.render.common.BrokenClass
+import com.android.tools.render.common.ImagePathOrMessage
+import com.android.tools.render.common.RenderProblem
+import com.android.tools.render.common.ScreenshotError
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.core.ErrorProto
 import com.google.testing.platform.proto.api.core.TestCaseProto

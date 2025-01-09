@@ -92,7 +92,7 @@ class FusedLibraryTest {
                 androidFusedLibrary {
                     minSdk = DEFAULT_MIN_SDK_VERSION
                 }
-                pluginCallback = FusedLibCallback::class.java
+                pluginCallbacks += FusedLibCallback::class.java
                 dependencies {
                     include(project(":androidLib1"))
                     include(project(":androidLib2"))

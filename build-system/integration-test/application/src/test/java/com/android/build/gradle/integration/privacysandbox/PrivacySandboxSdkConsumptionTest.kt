@@ -18,8 +18,9 @@ package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
@@ -32,29 +33,33 @@ import com.android.builder.model.v2.ide.SyncIssue
 import com.android.ide.common.build.GenericBuiltArtifactsLoader
 import com.android.sdklib.SdkVersionInfo
 import com.android.testutils.apk.Apk
-import com.android.utils.FileUtils
 import com.android.utils.StdLogger
 import com.google.protobuf.TextFormat
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.isRegularFile
 
 /** Integration tests for the privacy sandbox SDK for consumption */
 class PrivacySandboxSdkConsumptionTest {
 
     @get:Rule
-    val project = privacySandboxSampleProject()
+    val rule = privacySandboxSampleProject()
 
-    private fun executor() = project.executor()
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    private fun GradleBuild.configuredExecutor() = executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
             .withPerTestPrefsRoot(true)
             .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
 
-    private fun modelV2() = project.modelV2()
+    private fun GradleBuild.configuredModelBuilder() = modelBuilder
             .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
             .withPerTestPrefsRoot(true)
             .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
@@ -64,34 +69,37 @@ class PrivacySandboxSdkConsumptionTest {
     fun testConsumptionViaBundle() {
         // TODO(b/235469089) expand this to verify installation also
 
-        //Add service to sdk-impl-a
-        val pkg = FileUtils.join(project.getSubproject("sdk-impl-a").mainSrcDir,
-                "com",
-                "example",
-                "sdkImplA")
-        val mySdkFile = File(pkg, "MySdk.kt")
-        mySdkFile.writeText(
-                "package com.example.sdkImplA\n" +
-                        "import androidx.privacysandbox.tools.PrivacySandboxService\n" +
-                        "   @PrivacySandboxService\n" +
-                        "   public interface MySdk {\n" +
-                        "       suspend fun foo(bar: Int): String\n" +
-                        "   }\n"
-        )
+        val build = rule.build {
+            //Add service to sdk-impl-a
+            androidLibrary(":sdk-impl-a") {
+                files.add(
+                    "src/main/java/com/example/sdkImplA/MySdk.kt",
+                    //language=kotlin
+                    """
+                        package com.example.sdkImplA
+                        import androidx.privacysandbox.tools.PrivacySandboxService
+                        @PrivacySandboxService
+                        public interface MySdk {
+                         suspend fun foo(bar: Int): String
+                        }
+                    """.trimIndent()
+                )
+            }
+
+        }
 
         // Check building the SDK itself
-        executor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
-        val ideModelFile = project.getSubproject(":example-app")
-            .getIntermediateFile(
-                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName(),
-                "debug",
-                "buildPrivacySandboxSdkApksForDebug",
-                "ide_model.json")
+        build.configuredExecutor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
+        val folderName = InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName()
+        val ideModelFile = build
+            .androidApplication(":example-app")
+            .intermediatesDir
+            .resolve("${folderName}/debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
+            .toFile()
         val privacySandboxSdkApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
             LoggerWrapper.getLogger(PrivacySandboxSdkConsumptionTest::class.java))
             .single { it.applicationId == "com.example.privacysandboxsdk_10002" }
             .elements.single().outputFile
-
 
         Apk(File(privacySandboxSdkApk)).use {
             ApkSubject.assertThat(it).containsClass(SDK_IMPL_A_CLASS)
@@ -104,17 +112,16 @@ class PrivacySandboxSdkConsumptionTest {
         }
 
         // Check building the bundle to deploy to UpsideDownCake
-        val apkSelectConfig = project.file("apkSelectConfig.json")
+        val apkSelectConfig = temporaryFolder.newFile("apkSelectConfig.json")
         apkSelectConfig.writeText(
             """{"sdk_version":$COMPILE_SDK_VERSION,"sdk_runtime":{"supported":"true"},"screen_density":420,"supported_abis":["x86_64","arm64-v8a"],"supported_locales":["en"]}""")
 
-        executor()
+        build.configuredExecutor()
                 .with(StringOption.IDE_APK_SELECT_CONFIG, apkSelectConfig.absolutePath)
                 .run(":example-app:extractApksFromBundleForDebug")
 
-        val extractedApks = project.getSubproject(":example-app")
-                .getIntermediateFile("extracted_apks", "debug", "extractApksFromBundleForDebug")
-                .toPath()
+        val extractedApks = build.androidApplication(":example-app")
+                .intermediatesDir.resolve("extracted_apks/debug/extractApksFromBundleForDebug")
         val baseMaster2Apk = extractedApks.resolve("base-master_2.apk")
         val baseMaster3Apk = extractedApks.resolve("base-master_3.apk")
 
@@ -130,20 +137,17 @@ class PrivacySandboxSdkConsumptionTest {
             val manifestContent = ApkSubject.getManifestContent(it.file)
             val manifestContentStr = manifestContent.joinToString("\n")
             certDigest = certDigestPattern.find(manifestContentStr)?.value!!
-            assertThat(manifestContentStr)
-                    .contains(MY_PRIVACY_SANDBOX_SDK_MANIFEST_PACKAGE)
+            assertThat(manifestContentStr).contains(MY_PRIVACY_SANDBOX_SDK_MANIFEST_PACKAGE)
             assertThat(manifestContent).containsAtLeastElementsIn(
                     listOf(
-                            "          E: uses-sdk-library (line=0)",
-                            "            A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"com.example.privacysandboxsdk\" (Raw: \"com.example.privacysandboxsdk\")",
-                            "            A: http://schemas.android.com/apk/res/android:certDigest(0x01010548)=\"$certDigest\" (Raw: \"$certDigest\")",
-                            "            A: http://schemas.android.com/apk/res/android:versionMajor(0x01010577)=\"10002\" (Raw: \"10002\")"
+                            "            E: uses-sdk-library (line=0)",
+                            "              A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"com.example.privacysandboxsdk\" (Raw: \"com.example.privacysandboxsdk\")",
+                            "              A: http://schemas.android.com/apk/res/android:certDigest(0x01010548)=\"$certDigest\" (Raw: \"$certDigest\")",
+                            "              A: http://schemas.android.com/apk/res/android:versionMajor(0x01010577)=\"10002\" (Raw: \"10002\")"
                     )
             )
-            assertThat(manifestContentStr)
-                    .doesNotContain(INTERNET_PERMISSION)
-            assertThat(manifestContentStr)
-                    .doesNotContain(FOREGROUND_SERVICE)
+            assertThat(manifestContentStr).doesNotContain(INTERNET_PERMISSION)
+            assertThat(manifestContentStr).doesNotContain(FOREGROUND_SERVICE)
 
         }
 
@@ -151,7 +155,7 @@ class PrivacySandboxSdkConsumptionTest {
         apkSelectConfig.writeText(
                 """{"sdk_version":32,"codename":"Tiramisu","screen_density":420,"supported_abis":["x86_64","arm64-v8a"],"supported_locales":["en"]}""")
 
-        executor()
+        build.configuredExecutor()
                 .with(StringOption.IDE_APK_SELECT_CONFIG, apkSelectConfig.absolutePath)
                 .run(":example-app:extractApksFromBundleForDebug")
 
@@ -177,15 +181,33 @@ class PrivacySandboxSdkConsumptionTest {
 
     @Test
     fun testConsumptionViaApk() {
-        declarePrivacySandboxSdkServiceOnSdkA()
-        val model =
-                modelV2().with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
-                        .fetchModels().container.getProject(":example-app")
+        val build = rule.build {
+            //Add service to sdk-impl-a
+            androidLibrary(":sdk-impl-a") {
+                files.add(
+                    "src/main/java/com/example/sdkImplA/MySdk.kt",
+                    //language=kotlin
+                    """
+                        package com.example.sdkImplA
+                        import androidx.privacysandbox.tools.PrivacySandboxService
+                        @PrivacySandboxService
+                        public interface MySdk {
+                            suspend fun foo(bar: Int): String
+                        }
+                    """.trimIndent()
+                )
+
+            }
+        }
+        val model = build.configuredModelBuilder()
+            .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
+            .fetchModels().container.getProject(":example-app")
+
         val exampleAppDebug = model.androidProject!!.variants.single { it.name == "debug" }
         val privacySandboxSdkInfo = exampleAppDebug.mainArtifact.privacySandboxSdkInfo!!
 
-        val profiles = ProfileCapturer(project).capture {
-            executor().with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
+        val profiles = ProfileCapturer(build).capture {
+            build.configuredExecutor().with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
                     .run(exampleAppDebug.mainArtifact.assembleTaskName,
                             privacySandboxSdkInfo.task,
                             privacySandboxSdkInfo.taskLegacy,
@@ -208,21 +230,20 @@ class PrivacySandboxSdkConsumptionTest {
             }
             """.trimIndent())
 
-        Apk(project.getSubproject(":example-app")
-                .getApk(GradleTestProject.ApkType.DEBUG).file).use {
-            ApkSubject.assertThat(it).exists()
-            val manifestContent = ApkSubject.getManifestContent(it.file).joinToString("\n")
+        build.androidApplication(":example-app").withApk(ApkSelector.DEBUG) {
             // This asset must only be packaged in non-sandbox capable devices, otherwise it may
             // cause runtime exceptions on supported privacy sandbox platforms.
-            assertThat(it.entries.map { it.toString() })
-                    .doesNotContain(RUNTIME_ENABLED_SDK_TABLE_ASSET_FOR_COMPAT)
+            assertThat(entries.map { it.toString() })
+                .doesNotContain(RUNTIME_ENABLED_SDK_TABLE_ASSET_FOR_COMPAT)
 
+            val manifestContent = ApkSubject.getManifestContent(file).joinToString("\n")
             assertThat(manifestContent).contains(INTERNET_PERMISSION)
             assertThat(manifestContent)
-                    .doesNotContain(FOREGROUND_SERVICE)
+                .doesNotContain(FOREGROUND_SERVICE)
             assertThat(manifestContent)
-                    .doesNotContain(USES_SDK_LIBRARY_MANIFEST_ELEMENT)
+                .doesNotContain(USES_SDK_LIBRARY_MANIFEST_ELEMENT)
         }
+
         val usesSdkLibrarySplitPath =
                 GenericBuiltArtifactsLoader.loadListFromFile(privacySandboxSdkInfo.additionalApkSplitFile,
                         LoggerWrapper.getLogger(PrivacySandboxSdkConsumptionTest::class.java))
@@ -270,19 +291,23 @@ class PrivacySandboxSdkConsumptionTest {
 
     @Test
     fun producesApkSplitsFromSdks() {
+        val build = rule.build
+
         // For API S-, ensure that APKs are produced for each SDK that the app requires.
-        val apkSelectConfig = project.file("apkSelectConfig.json")
+        val apkSelectConfig = temporaryFolder.newFile("apkSelectConfig.json")
         apkSelectConfig.writeText(
                 """{"sdk_version":28,"codename":"Pie","screen_density":420,"supported_abis":["x86_64","arm64-v8a"],"supported_locales":["en"]}""")
 
-        executor()
-                .withFailOnWarning(false)
-                .with(StringOption.IDE_APK_SELECT_CONFIG, apkSelectConfig.absolutePath)
-                .run(":example-app:extractApksFromSdkSplitsForDebug")
+        build.configuredExecutor()
+            .withFailOnWarning(false)
+            .with(StringOption.IDE_APK_SELECT_CONFIG, apkSelectConfig.absolutePath)
+            .run(":example-app:extractApksFromSdkSplitsForDebug")
 
-        val extractedSdkApksDir =
-                File(project.getSubproject(":example-app").intermediatesDir,
-                        InternalArtifactType.EXTRACTED_SDK_APKS.getFolderName())
+        val extractedSdkApksDir = build
+            .androidApplication(":example-app")
+            .intermediatesDir
+            .resolve(InternalArtifactType.EXTRACTED_SDK_APKS.getFolderName())
+            .toFile()
         val extractedSdkApks = extractedSdkApksDir
                 .walkTopDown()
                 .filter { it.isFile }
@@ -375,7 +400,7 @@ class PrivacySandboxSdkConsumptionTest {
 
     @Test
     fun testBuildFailureWhenPublicationNotEnabled() {
-        val buildFailsPublicationNotEnabled = executor()
+        val buildFailsPublicationNotEnabled = rule.build.configuredExecutor()
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT, false)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
             .expectFailure()
@@ -393,14 +418,15 @@ class PrivacySandboxSdkConsumptionTest {
 
     @Test
     fun testPublicationAndConsumptionCanBeToggledSeparately() {
-        executor()
-            .run(":privacy-sandbox-sdk:assemble")
-        val sdkProject = project.getSubproject(":privacy-sandbox-sdk")
+        val build = rule.build
+
+        build.configuredExecutor().run(":privacy-sandbox-sdk:assemble")
+        val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
         assertThat(
-            sdkProject.getOutputFile("asb", "single", "privacy-sandbox-sdk.asb").exists()
+            sdkProject.outputsDir.resolve("asb/single/privacy-sandbox-sdk.asb").isRegularFile()
         ).isTrue()
 
-        val buildFailsConsumptionNotEnabled = executor()
+        val buildFailsConsumptionNotEnabled = build.configuredExecutor()
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT, true)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
@@ -432,25 +458,6 @@ class PrivacySandboxSdkConsumptionTest {
       in this project's build.gradle"""
         )
         // Other tests verify behaviour with publication and consumption enabled.
-    }
-
-    private fun declarePrivacySandboxSdkServiceOnSdkA() {
-        //Add service to sdk-impl-a
-        val pkg = FileUtils.join(
-            project.getSubproject("sdk-impl-a").mainSrcDir,
-            "com",
-            "example",
-            "sdkImplA"
-        )
-        val mySdkFile = File(pkg, "MySdk.kt")
-        mySdkFile.writeText(
-            "package com.example.sdkImplA\n" +
-                    "import androidx.privacysandbox.tools.PrivacySandboxService\n" +
-                    "   @PrivacySandboxService\n" +
-                    "   public interface MySdk {\n" +
-                    "       suspend fun foo(bar: Int): String\n" +
-                    "   }\n"
-        )
     }
 
     companion object {

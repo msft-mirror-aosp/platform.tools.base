@@ -15,6 +15,6 @@
  */
 
 package com.android.compose.screenshot.report
-import com.android.tools.render.compose.ImagePathOrMessage
+import com.android.tools.render.common.ImagePathOrMessage
 
 data class ScreenshotTestImages(val reference: ImagePathOrMessage, val actual: ImagePathOrMessage, val diff: ImagePathOrMessage)

@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import org.gradle.api.Project
@@ -38,7 +38,7 @@ class JavaPlatformDependencyTest : ModelComparator() {
         }
         genericProject(":lib") {
             applyPlugin(PluginType.JAVA_PLATFORM)
-            pluginCallback = PlatformCallback::class.java
+            pluginCallbacks += PlatformCallback::class.java
             dependencies {
                 api(MavenRepoGenerator.Library("com.bar:foo:1.0"))
             }

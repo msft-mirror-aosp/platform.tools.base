@@ -36,7 +36,7 @@ gradle_build(
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
         ":gradle_project_files",
-        "//prebuilts/studio/jdk:jdk11",
+        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
         "//tools:agp_gradle_build_files",
         "//tools/base/common:agp_gradle_build_files",
         "//tools/buildSrc:agp_gradle_build_files",

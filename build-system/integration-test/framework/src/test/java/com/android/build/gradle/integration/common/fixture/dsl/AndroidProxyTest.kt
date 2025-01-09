@@ -26,9 +26,9 @@ import org.junit.Test
  *
  * This does not test the content, this is handled by [BasicDslProxyTest] and [DslContentHolderTest]
  */
-class AndroidProxyTest: ExtensionAwareDefinitionImpl() {
+class AndroidProxyTest {
 
-    private val contentHolder = DefaultDslContentHolder(this)
+    private val contentHolder = DefaultDslContentHolder()
 
     @Test
     fun testApplication() {

@@ -21,6 +21,7 @@ import com.android.testutils.TestUtils
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradle
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
+import com.android.tools.lint.checks.infrastructure.TestFiles.manifest
 import com.android.tools.lint.checks.infrastructure.TestFiles.source
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.client.api.IssueRegistry
@@ -46,6 +47,7 @@ import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getParentOfType
+import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.junit.ComparisonFailure
 import org.junit.Test
@@ -259,7 +261,7 @@ class LintFixVerifierTest {
     // This test makes sure that multiple quickfixes applied to the same file are applied correctly
     lint()
       .files(
-        TestFiles.manifest().minSdk(14),
+        manifest().minSdk(14),
         java(
             """
                     package androidx;
@@ -312,12 +314,121 @@ class LintFixVerifierTest {
                 +             private Api21Impl() {
                 +                 // This class is non-instantiable.
                 +             }
+                +         }
                 +
                 +         static void setBackgroundTintList(View obj, ColorStateList tint) {
                 +             obj.setBackgroundTintList(tint);
                 +         }
                 """
       )
+  }
+
+  @Test
+  fun testVerifyBrokenFix() {
+    // Makes sure that when the quickfix produces broken source code,
+    // we fail properly
+    try {
+      lint()
+        .files(
+          manifest().minSdk(14),
+          java(
+              """
+              package androidx;
+              import android.content.res.ColorStateList;
+              import android.view.View;
+              public class AutofixUnsafeVoidMethodReferenceJava {
+                  void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
+                      view.setBackgroundTintList(tint);
+                  }
+              }
+              """
+            )
+            .indented(),
+        )
+        .sdkHome(TestUtils.getSdk().toFile())
+        .issues(BrokenClassVerificationFailureDetector.ISSUE)
+        .run()
+        .expect(
+          """
+          src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:6: Error: This call references a method added in API level 21; however, the containing class androidx.AutofixUnsafeVoidMethodReferenceJava is reachable from earlier API levels and will fail run-time class verification. [_BrokenClassVerificationFailure]
+                  view.setBackgroundTintList(tint);
+                       ~~~~~~~~~~~~~~~~~~~~~
+          1 errors, 0 warnings
+          """
+        )
+        .expectFixDiffs(
+          """
+          Fix for src/androidx/AutofixUnsafeVoidMethodReferenceJava.java line 19: Extract to static inner class:
+          @@ -19 +19
+          -             view.setBackgroundTintList(tint);
+          +             Api21Impl.setBackgroundTintList(view, tint);
+          @@ -22 +22
+          +         @RequiresApi(21)
+          +         static class Api21Impl {
+          +             private Api21Impl() {
+          +                 // This class is non-instantiable.
+          +             }
+          +
+          +         static void setBackgroundTintList(View obj, ColorStateList tint) {
+          +             obj.setBackgroundTintList(tint);
+          +         }
+          """
+        )
+    } catch (e: Throwable) {
+      Assert.assertEquals(
+        """
+        expected:<[]> but was:<[After applying a fix (Extract to static inner class),
+        found syntax errors in the source file (src/androidx/AutofixUnsafeVoidMethodReferenceJava.java):
+        PsiErrorElement:'}' expected
+        in src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:17 with text "" inside "public class AutofixUnsafeVoidMethodReferenceJava {
+            void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
+                Api21Impl.setBackgroundTintList(view, tint);
+            }
+                @RequiresApi(21)
+                static class Api21Impl {
+                    private Api21Impl() {
+                        // This class is non-instantiable.
+                    }
+
+                static void setBackgroundTintList(View obj, ColorStateList tint) {
+                    obj.setBackgroundTintList(tint);
+                }
+        }"
+        }
+         ^
+
+
+        If this is intentional, you can turn this off with `.verifyFixedFileSyntax(false)`.
+
+        Fixed file:
+
+        //////////////////////////////////////////////////////////////////////
+        src/androidx/AutofixUnsafeVoidMethodReferenceJava.java:
+        //////////////////////////////////////////////////////////////////////
+
+         1 package androidx;
+         2 import android.content.res.ColorStateList;
+         3 import android.view.View;
+         4 public class AutofixUnsafeVoidMethodReferenceJava {
+         5     void unsafeReferenceWithSdkCheck(View view, ColorStateList tint) {
+         6         Api21Impl.setBackgroundTintList(view, tint);
+         7     }
+         8         @RequiresApi(21)
+         9         static class Api21Impl {
+        10             private Api21Impl() {
+        11                 // This class is non-instantiable.
+        12             }
+        13
+        14         static void setBackgroundTintList(View obj, ColorStateList tint) {
+        15             obj.setBackgroundTintList(tint);
+        16         }
+        17 }]>
+        """
+          .trimIndent()
+          .trim(),
+        e.message?.trim(),
+      )
+    }
   }
 
   @Test
@@ -366,6 +477,7 @@ class LintFixVerifierTest {
               "            private Api21Impl() {\n" +
               "                // This class is non-instantiable.\n" +
               "            }\n" +
+              "        }\n" +
               "\n" +
               "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
               "            obj.setBackgroundTintList(tint);\n" +
@@ -393,6 +505,65 @@ class LintFixVerifierTest {
             5,
             Severity.ERROR,
             Implementation(ClassVerificationFailureDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          )
+          .setAndroidSpecific(true)
+    }
+  }
+
+  // Like ClassVerificationFailureDetector but the quickfix has an error (missing a closing
+  // `}`)
+  class BrokenClassVerificationFailureDetector : Detector(), SourceCodeScanner {
+    override fun getApplicableMethodNames(): List<String> = listOf("setBackgroundTintList")
+
+    @Suppress("BooleanLiteralArgument")
+    override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+      val part1 =
+        fix()
+          .replace()
+          .range(context.getLocation(node))
+          .with("Api21Impl.setBackgroundTintList(view, tint)")
+          .build()
+      val part2 =
+        fix()
+          .replace()
+          .range(context.getLocation(node.getContainingUClass()!!.lastChild))
+          .beginning()
+          .with(
+            "        @RequiresApi(21)\n" +
+              "        static class Api21Impl {\n" +
+              "            private Api21Impl() {\n" +
+              "                // This class is non-instantiable.\n" +
+              "            }\n" +
+              "\n" +
+              "        static void setBackgroundTintList(View obj, ColorStateList tint) {\n" +
+              "            obj.setBackgroundTintList(tint);\n" +
+              "        }\n"
+          )
+          .build()
+      val fix = fix().name("Extract to static inner class").composite(part1, part2)
+      context.report(
+        ISSUE,
+        context.getCallLocation(node, false, false),
+        "This call references a method added in API level 21; however, the containing class " +
+          "`androidx.AutofixUnsafeVoidMethodReferenceJava` is reachable from earlier API levels and " +
+          "will fail run-time class verification.",
+        fix,
+      )
+    }
+
+    companion object {
+      val ISSUE =
+        Issue.create(
+            "_BrokenClassVerificationFailure",
+            "Blah blah",
+            "Blah blah blah",
+            Category.CORRECTNESS,
+            5,
+            Severity.ERROR,
+            Implementation(
+              BrokenClassVerificationFailureDetector::class.java,
+              Scope.JAVA_FILE_SCOPE,
+            ),
           )
           .setAndroidSpecific(true)
     }

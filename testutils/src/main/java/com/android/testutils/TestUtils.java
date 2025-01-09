@@ -72,6 +72,17 @@ public class TestUtils {
      */
     public static final String KOTLIN_VERSION_FOR_COMPOSE_TESTS = "1.9.23";
 
+    /**
+     * The latest Kotlin version in prebuilts.
+     *
+     * <p>This should be updated in step with the dev version of Kotlin used to check for sync
+     * performance regressions (b/365509858).
+     *
+     * <p>The following script updates the dev Kotlin version:
+     * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
+     */
+    public static final String LATEST_KOTLIN_VERSION = "2.1.20-dev-8262";
+
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";
 

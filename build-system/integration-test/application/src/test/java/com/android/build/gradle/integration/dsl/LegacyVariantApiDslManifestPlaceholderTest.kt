@@ -55,7 +55,7 @@ class LegacyVariantApiDslManifestPlaceholderTest {
             android {
                 defaultConfig.minSdk = 14
             }
-            pluginCallback = AppCallback::class.java
+            pluginCallbacks += AppCallback::class.java
             dependencies {
                 implementation(project(":lib2"))
             }
@@ -71,7 +71,7 @@ class LegacyVariantApiDslManifestPlaceholderTest {
                     testImplementation(project(":lib2"))
                 }
             }
-            pluginCallback = LibCallback::class.java
+            pluginCallbacks += LibCallback::class.java
         }
         androidLibrary(":lib2") {
             files.update("src/main/AndroidManifest.xml").replaceWith(libraryManifest)

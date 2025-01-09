@@ -29,8 +29,8 @@ import org.junit.Test
  *
  * See [BasicDslProxyTest] for usage integrated with the [DslProxy]
  */
-class DslContentHolderTest: ExtensionAwareDefinitionImpl() {
-    private val contentHolder = DefaultDslContentHolder(this)
+class DslContentHolderTest {
+    private val contentHolder = DefaultDslContentHolder()
 
     @Test
     fun simple() {

@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
@@ -97,12 +97,12 @@ class CyclicPomDependencyTest: ModelComparator() {
         genericProject(":bar1") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallback = Bar1Callback::class.java
+            pluginCallbacks += Bar1Callback::class.java
         }
         genericProject(":bar2") {
             applyPlugin(PluginType.JAVA_LIBRARY)
             applyPlugin(PluginType.MAVEN_PUBLISH)
-            pluginCallback = Bar2Callback::class.java
+            pluginCallbacks += Bar2Callback::class.java
         }
         settings {
             addRepository("repo")

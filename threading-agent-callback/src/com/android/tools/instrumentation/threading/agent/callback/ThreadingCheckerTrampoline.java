@@ -118,6 +118,57 @@ public final class ThreadingCheckerTrampoline {
         }
     }
 
+    // This method is called from instrumented bytecode.
+    public static void verifyReadLock() {
+        if (hooks.isEmpty()) {
+            skippedChecksCounter.incrementAndGet();
+            return;
+        }
+        if (insideIgnoredCounter.get() > 0) {
+            return;
+        }
+        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
+            return;
+        }
+        for (ThreadingCheckerHook hook : hooks) {
+            hook.verifyReadLock();
+        }
+    }
+
+    // This method is called from instrumented bytecode.
+    public static void verifyWriteLock() {
+        if (hooks.isEmpty()) {
+            skippedChecksCounter.incrementAndGet();
+            return;
+        }
+        if (insideIgnoredCounter.get() > 0) {
+            return;
+        }
+        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
+            return;
+        }
+        for (ThreadingCheckerHook hook : hooks) {
+            hook.verifyWriteLock();
+        }
+    }
+
+    // This method is called from instrumented bytecode.
+    public static void verifyNoReadLock() {
+        if (hooks.isEmpty()) {
+            skippedChecksCounter.incrementAndGet();
+            return;
+        }
+        if (insideIgnoredCounter.get() > 0) {
+            return;
+        }
+        if (getBaselineViolations().isIgnored(getInstrumentedMethodStackTrace())) {
+            return;
+        }
+        for (ThreadingCheckerHook hook : hooks) {
+            hook.verifyNoReadLock();
+        }
+    }
+
     private static void warnIfSkippedChecksAndReset() {
         long skippedChecksCount = skippedChecksCounter.getAndSet(0L);
         if (skippedChecksCount > 0) {

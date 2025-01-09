@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule
 import java.nio.file.Path
 
@@ -33,7 +32,7 @@ import java.nio.file.Path
 interface GradleRule: TestRule {
     companion object {
         /**
-         * Returns a [GradleRule] for a project configured with the [TestProjectBuilder].
+         * Returns a [GradleRule] for a project configured with the [GradleBuildDefinition].
          *
          * To configure the rule, use [configure] instead
          *

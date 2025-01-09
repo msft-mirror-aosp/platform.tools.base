@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.fixture
 
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType.KTS
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicBuilds
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType.KTS
 import org.junit.Rule
 import org.junit.Test
 

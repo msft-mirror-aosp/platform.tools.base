@@ -18,8 +18,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.testutils.TestUtils
 import org.junit.Before
 import org.junit.Rule

@@ -16,92 +16,139 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
+import com.android.build.api.variant.ApkOutput
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForAppVariant
-import com.android.build.gradle.integration.privacysandbox.PrivacySandboxDefaultApkOutputTest.Companion.getBuildFileContentWithFetchTaskForAndroidVariant
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
 class VariantApkOutputProvidersTest {
-    @JvmField
-    @Rule
-    val project =  GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+    @get:Rule
+    val rule =  GradleRule.from {
+        androidApplication {
+            HelloWorldAndroid.setupJava(files)
+        }
+    }
 
-    private fun executor() = project.executor()
+    private fun executor() = rule.build.executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
         .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
 
+    class VerificationInAppCallback: FetchTaskForAppCallback<VAOPT_VerificationForAppTask>() {
+        override val taskType: Class<VAOPT_VerificationForAppTask>
+            get() = VAOPT_VerificationForAppTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (VAOPT_VerificationForAppTask) -> Property<ApkOutput>
+            get() = VAOPT_VerificationForAppTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (VAOPT_VerificationForAppTask) -> Property<ApkOutput>
+            get() = VAOPT_VerificationForAppTask::privacySandboxDisabledApkOutput
+    }
+
     @Test
     fun getAppApkOutput() {
-        project.buildFile.appendText(getBuildFileContentWithFetchTaskForAppVariant(
-            """
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 1 || apkInstall[0].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("project-debug.apk") }
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 1 || apkInstall[0].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("project-debug.apk") }
-        """.trimIndent()
-        ))
+        rule.build {
+            androidApplication {
+                pluginCallbacks += VerificationInAppCallback::class.java
+            }
+        }
+
         executor()
             .with(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE, true)
             .run("fetchApks")
+    }
+
+    class AndroidTestVerificationInAppCallback: FetchTaskForAppAndroidTestCallback<VAOPT_VerificationForAndroidTestTask>() {
+        override val taskType: Class<VAOPT_VerificationForAndroidTestTask>
+            get() = VAOPT_VerificationForAndroidTestTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (VAOPT_VerificationForAndroidTestTask) -> Property<ApkOutput>
+            get() = VAOPT_VerificationForAndroidTestTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (VAOPT_VerificationForAndroidTestTask) -> Property<ApkOutput>
+            get() = VAOPT_VerificationForAndroidTestTask::privacySandboxDisabledApkOutput
     }
 
     @Test
     fun getAndroidTestApkOutput() {
-        project.buildFile.appendText(getBuildFileContentWithFetchTaskForAndroidVariant(
-            """
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("project-debug.apk") }
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("project-debug-androidTest.apk") }
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 2 || apkInstall[0].apks.size() != 1 || apkInstall[1].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("project-debug.apk") }
-                    assert apkInstall[1].apks.any { it.getAsFile().name.contains("project-debug-androidTest.apk") }
-        """.trimIndent()
-            ))
+        rule.build {
+            androidApplication {
+                pluginCallbacks += AndroidTestVerificationInAppCallback::class.java
+            }
+        }
+
         executor()
             .with(BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE, true)
             .run("fetchApks")
     }
 
+    class ViaBundleVerificationCallback: FetchTaskForAppCallback<VAOPT_ViaBundleVerificationTask>() {
+        override val taskType: Class<VAOPT_ViaBundleVerificationTask>
+            get() = VAOPT_ViaBundleVerificationTask::class.java
+        override val privacySandboxEnabledApkOutputProperty: (VAOPT_ViaBundleVerificationTask) -> Property<ApkOutput>
+            get() = VAOPT_ViaBundleVerificationTask::privacySandboxEnabledApkOutput
+        override val privacySandboxDisabledApkOutputProperty: (VAOPT_ViaBundleVerificationTask) -> Property<ApkOutput>
+            get() = VAOPT_ViaBundleVerificationTask::privacySandboxDisabledApkOutput
+    }
+
     @Test
     fun getViaBundleApkOutput() {
-        project.buildFile.appendText(getBuildFileContentWithFetchTaskForAppVariant(
-            """
-                    def apkInstall = getPrivacySandboxEnabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 1 || apkInstall[0].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.first().asFile.name.contains("base-master_2.apk")
-                    assert apkInstall[0].description.contains("Apks from Main Bundle")
+        rule.build {
+            androidApplication {
+                pluginCallbacks += ViaBundleVerificationCallback::class.java
+            }
+        }
 
-                    apkInstall = getPrivacySandboxDisabledApkOutput().get().apkInstallGroups
-                    if (apkInstall.size() != 1 || apkInstall[0].apks.size() != 1) {
-                        throw new GradleException("Unexpected number of apks")
-                    }
-                    assert apkInstall[0].apks.any { it.getAsFile().name.contains("base-master_2.apk") }
-        """.trimIndent()
-        ))
-        executor()
-            .run("fetchApks")
+        executor().run("fetchApks")
+    }
+}
+
+abstract class VAOPT_VerificationForAndroidTestTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(0, "app-debug.apk")
+            checkGroupFiles(1, "app-debug-androidTest.apk")
+        }
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(2)
+            checkGroupFiles(0, "app-debug.apk")
+            checkGroupFiles(1, "app-debug-androidTest.apk")
+        }
+    }
+}
+
+abstract class VAOPT_VerificationForAppTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(1)
+            checkGroupFiles( 0, "app-debug.apk")
+        }
+
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(1)
+            checkGroupFiles(0, "app-debug.apk")
+        }
+    }
+}
+
+abstract class VAOPT_ViaBundleVerificationTask: FetchApkTask() {
+    @TaskAction
+    fun execute() {
+        privacySandboxEnabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(1)
+            checkGroupFiles(0, "base-master_2.apk")
+            checkGroupDescription(0,"Apks from Main Bundle")
+        }
+
+        privacySandboxDisabledApkOutput.get().apkInstallGroups.apply {
+            checkGroupCount(1)
+            checkGroupFiles( 0, "base-master_2.apk")
+        }
     }
 }

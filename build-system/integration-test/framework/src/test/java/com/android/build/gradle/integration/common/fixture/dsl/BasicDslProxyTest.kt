@@ -27,8 +27,8 @@ import org.junit.Test
 // this should really test the event content of the holder instead of relying on
 // the BuildWriter but it's so much more convenient...
 
-class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
-    private val contentHolder = DefaultDslContentHolder(this)
+class BasicDslProxyTest: ExtensionAwareDefinition{
+    private val contentHolder = DefaultDslContentHolder()
 
     @Test
     fun basicTest() {
@@ -123,6 +123,29 @@ class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
     }
 
     @Test
+    fun multiChainedBlockUsage() {
+        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
+            mountainView.mayor {
+                name = "bob"
+
+            }
+            mountainView.mayor.address.street = "1600 Amphitheatre Parkway"
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            california {
+              mountainView.mayor {
+                name = 'bob'
+              }
+              mountainView.mayor.address.street = '1600 Amphitheatre Parkway'
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
     fun methodCall() {
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"
@@ -191,7 +214,6 @@ class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
         // this tests a nested extension to make sure it gets written inside the right block
         contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
-            surname = null
             address {
                 street = "1600 Amphitheatre Parkway"
                 city = "Mountain View"
@@ -208,7 +230,6 @@ class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
         Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'
-              surname = null
               address {
                 street = '1600 Amphitheatre Parkway'
                 city = 'Mountain View'
@@ -222,4 +243,31 @@ class BasicDslProxyTest: ExtensionAwareDefinitionImpl() {
 
         """.trimIndent())
     }
+
+    @Test
+    fun chainedExtension() {
+        // this tests a nested extension via a chained call, to make sure it gets written inside
+        // the right block
+        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+            name = "BugDroid"
+            address.viaExtension("landlord", Person::class) {
+                name = "Sundar"
+                surname = "Pichai"
+            }
+        }
+
+        val groovy = GroovyBuildWriter()
+        contentHolder.writeContent(groovy)
+        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
+            person {
+              name = 'BugDroid'
+              address.landlord {
+                name = 'Sundar'
+                surname = 'Pichai'
+              }
+            }
+
+        """.trimIndent())
+    }
+
 }

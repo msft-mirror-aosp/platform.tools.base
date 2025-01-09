@@ -16,8 +16,8 @@
 
 package com.android.compose.screenshot.tasks
 
-import com.android.tools.render.compose.readComposeRenderingJson
-import com.android.tools.render.compose.readComposeRenderingResultJson
+import com.android.tools.render.common.readPreviewRenderingJson
+import com.android.tools.render.common.readPreviewRenderingResultJson
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.workers.WorkAction
@@ -30,7 +30,7 @@ import kotlin.io.path.exists
 
 abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.RenderWorkActionParameters> {
     companion object {
-        private const val MAIN_CLASS = "com.android.tools.render.compose.MainKt"
+        private const val MAIN_CLASS = "com.android.tools.render.common.MainKt"
         private val logger: Logger = Logger.getLogger(PreviewRenderWorkAction::class.qualifiedName)
     }
     abstract class RenderWorkActionParameters : WorkParameters {
@@ -44,7 +44,7 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
     }
 
     private fun render() {
-        Class.forName(MAIN_CLASS).getMethod("renderCompose", File::class.java)(
+        Class.forName(MAIN_CLASS).getMethod("renderPreview", File::class.java)(
             null, parameters.cliToolArgumentsFile.asFile.get())
     }
 
@@ -56,10 +56,10 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
                     "Unable to open the rendering result file from ${resultFile.absolutePath}")
         }
 
-        val composeRenderingResult = readComposeRenderingResultJson(resultFile.reader())
-        val outputFolder = readComposeRenderingJson(parameters.cliToolArgumentsFile.get().asFile.reader()).outputFolder
+        val previewRenderingResult = readPreviewRenderingResultJson(resultFile.reader())
+        val outputFolder = readPreviewRenderingJson(parameters.cliToolArgumentsFile.get().asFile.reader()).outputFolder
 
-        val hasAtLeastOneRendering = composeRenderingResult.screenshotResults.any {
+        val hasAtLeastOneRendering = previewRenderingResult.screenshotResults.any {
             Paths.get(outputFolder, it.imagePath).exists()
         }
         if (!hasAtLeastOneRendering) {
@@ -67,8 +67,8 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
                 "Rendering failed. For more details, check ${resultFile.absolutePath}")
         }
 
-        val hasRenderingErrors = composeRenderingResult.screenshotResults.any { it.error != null }
-        if (hasRenderingErrors || composeRenderingResult.globalError != null) {
+        val hasRenderingErrors = previewRenderingResult.screenshotResults.any { it.error != null }
+        if (hasRenderingErrors || previewRenderingResult.globalError != null) {
             logger.log(
                 Level.WARNING,
                 "There were some issues with rendering one or more previews. " +

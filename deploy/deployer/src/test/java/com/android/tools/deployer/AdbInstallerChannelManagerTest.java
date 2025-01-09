@@ -99,7 +99,7 @@ public class AdbInstallerChannelManagerTest {
         // Even though we send two requests and both timed out, we should have pushed the binary
         // only once (so we should have only one set of rm/mkdir/chmod).
         String[] expectedHistory = {
-            "getprop", RM_DIR, MK_DIR, CHMOD_DIR, CHOWN_DIR, CHMOD_INSTALLER
+            "getprop", RM_DIR, MK_DIR, CHMOD_INSTALLER, CHMOD_DIR, CHOWN_DIR
         };
         assertHistory(device, expectedHistory);
     }

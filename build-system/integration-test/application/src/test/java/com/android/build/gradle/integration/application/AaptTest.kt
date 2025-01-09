@@ -55,7 +55,7 @@ class AaptTest {
         Truth.assertThat(tracesFolder.listFiles()!!.size).isEqualTo(1)
         FileUtils.deleteDirectoryContents(tracesFolder)
 
-        build.androidApplication().reconfigure(buildFileOnly = true) {
+        build.androidApplication().reconfigure {
             android.androidResources.additionalParameters.clear()
         }
 
@@ -87,7 +87,7 @@ class AaptTest {
 
         val build = rule.build {
             androidApplication {
-                pluginCallback = TraceFolderCallback::class.java
+                pluginCallbacks += TraceFolderCallback::class.java
             }
             gradleProperties {
                 add("_aaptTest_", windowsFriendlyFilePath)
@@ -154,7 +154,7 @@ class AaptTest {
     fun testIgnoreAssetsPatterns_variantApi() {
         val build = rule.build {
             androidApplication {
-                pluginCallback = IgnorePatternCallback::class.java
+                pluginCallbacks += IgnorePatternCallback::class.java
             }
         }
 
@@ -228,7 +228,7 @@ class AaptTest {
                         ignoreAssetsPattern = ".ignoreAssetsPatternDsl"
                     }
                 }
-                pluginCallback = IgnorePatternCallback2::class.java
+                pluginCallbacks += IgnorePatternCallback2::class.java
             }
         }
 
@@ -237,7 +237,7 @@ class AaptTest {
         val app = build.androidApplication()
 
         // test that tasks run when aapt options changed via the DSL
-        app.reconfigure(buildFileOnly = true) {
+        app.reconfigure {
             android.androidResources{
                 noCompress.clear()
                 noCompress += "noCompressDsl2"
@@ -248,7 +248,7 @@ class AaptTest {
                 .containsAtLeastElementsIn(expectedTasksThatDidWorkOnANoCompressChange)
         }
 
-        app.reconfigure(buildFileOnly = true) {
+        app.reconfigure {
             android.androidResources{
                 ignoreAssetsPattern = ".ignoreAssetsPatternDsl2"
             }

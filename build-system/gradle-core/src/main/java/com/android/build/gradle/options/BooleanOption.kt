@@ -287,9 +287,6 @@ enum class BooleanOption(
     PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES(
             "android.experimental.privacysandboxsdk.requireServices", true, FeatureStage.Experimental),
 
-    PRIVACY_SANDBOX_SDK_ENABLE_LINT(
-        "android.experimental.privacysandboxsdk.enableLint", false, FeatureStage.Experimental),
-
     VERIFY_AAR_CLASSES("android.experimental.verifyLibraryClasses", false, FeatureStage.Experimental),
     DISABLE_COMPILE_SDK_CHECKS("android.experimental.disableCompileSdkChecks", false, FeatureStage.Experimental),
     ADDITIONAL_ARTIFACTS_IN_MODEL("android.experimental.additionalArtifactsInModel", false, FeatureStage.Experimental),
@@ -354,6 +351,18 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * When enabled, R8 will perform both code and resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if resource shrinking is enabled AND
+     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_SHRINKING(
+        "android.r8.optimizedShrinking",
+        false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
@@ -411,6 +420,12 @@ enum class BooleanOption(
      */
     R8_INTEGRATED_RESOURCE_SHRINKING(
         "android.r8.integratedResourceShrinking",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0)
+    ),
+
+    PRIVACY_SANDBOX_SDK_ENABLE_LINT(
+        "android.experimental.privacysandboxsdk.enableLint",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0)
     ),

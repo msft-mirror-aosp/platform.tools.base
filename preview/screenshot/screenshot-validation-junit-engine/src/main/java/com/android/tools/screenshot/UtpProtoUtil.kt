@@ -16,7 +16,7 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.compose.ComposeScreenshotResult
+import com.android.tools.render.common.PreviewScreenshotResult
 import com.google.protobuf.Timestamp
 import com.google.testing.platform.proto.api.core.ErrorProto.Error
 import com.google.testing.platform.proto.api.core.LabelProto
@@ -39,13 +39,13 @@ private const val TIMESTAMP_SECONDS_MAX = 253402300799L
  * Creates a TestCase for a preview screenshot test.
  */
 fun createTestCase(
-    composeScreenshot: ComposeScreenshotResult,
+    previewScreenshotResult: PreviewScreenshotResult,
     testCaseName: String,
     testStartTime: Long,
     testEndTime: Long
     ): TestCase {
     return TestCase.newBuilder().apply {
-        val packageName: String = composeScreenshot.methodFQN.substringBeforeLast(".")
+        val packageName: String = previewScreenshotResult.methodFQN.substringBeforeLast(".")
         val className: String = packageName.split(".").last()
         testClass = className
         testPackage = packageName.dropLast(className.length + 1)

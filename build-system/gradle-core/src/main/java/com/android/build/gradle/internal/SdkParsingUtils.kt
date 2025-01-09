@@ -17,16 +17,15 @@
 package com.android.build.gradle.internal
 
 import com.android.Version
+import com.android.build.gradle.internal.utils.ConsoleProgressIndicatorFactory
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.errors.IssueReporter
 import com.android.ide.common.repository.AgpVersion
 import com.android.io.CancellableFileIo
 import com.android.repository.Revision
-import com.android.repository.api.ConsoleProgressIndicator
 import com.android.repository.api.LocalPackage
 import com.android.repository.api.Repository
 import com.android.repository.impl.meta.SchemaModuleUtil
-import com.android.sdklib.AndroidTargetHash.getPlatformHashString
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.OptionalLibrary
@@ -35,7 +34,6 @@ import com.android.sdklib.repository.meta.DetailsTypes
 import com.android.sdklib.repository.targets.PlatformTarget
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableList
-import org.jetbrains.kotlin.gradle.utils.`is`
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -56,25 +54,12 @@ fun buildBuildTools(sdkDirectory: File, revision: Revision): BuildToolInfo? {
 /**
  * Load and parse a {@link LocalPackage} ('package.xml') file from the disk.
  */
-fun parsePackage(packageXml: File): LocalPackage? {
+fun parsePackage(packageXml: File, consoleProgressIndicatorFactory: ConsoleProgressIndicatorFactory): LocalPackage? {
     if (!packageXml.exists()) {
         return null
     }
 
-    val progress = object : ConsoleProgressIndicator() {
-        val prefix = "SDK processing. "
-        override fun logWarning(s: String, e: Throwable?) {
-            super.logWarning(prefix + s, e)
-        }
-
-        override fun logError(s: String, e: Throwable?) {
-            super.logError(prefix + s, e)
-        }
-
-        override fun logInfo(s: String) {
-            super.logInfo(prefix + s)
-        }
-    }
+    val progress = consoleProgressIndicatorFactory.create(prefix = "SDK processing. ")
 
     lateinit var repo: Repository
     try {

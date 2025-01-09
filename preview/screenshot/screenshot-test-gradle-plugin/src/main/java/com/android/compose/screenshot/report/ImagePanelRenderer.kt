@@ -16,7 +16,7 @@
 
 package com.android.compose.screenshot.report
 
-import com.android.tools.render.compose.ImagePathOrMessage
+import com.android.tools.render.common.ImagePathOrMessage
 import org.gradle.reporting.ReportRenderer
 import java.io.File
 import java.util.Base64

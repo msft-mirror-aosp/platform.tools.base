@@ -22,7 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.truth.PathSubject
@@ -101,7 +101,7 @@ class BuiltInKotlinForAppTest2 {
                     }
                 }
 
-                pluginCallback = KotlinTaskCallback::class.java
+                pluginCallbacks += KotlinTaskCallback::class.java
             }
         }
 

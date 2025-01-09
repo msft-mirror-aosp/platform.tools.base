@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import java.nio.file.Path
 
@@ -52,9 +51,10 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     fun resetAndroidDsl()
 
     /**
-     * Method to configure the built-in kotlin extension.
+     * Method to configure the new kotlin extension.
      *
-     * This requires [PluginType.ANDROID_BUILT_IN_KOTLIN] to be applied
+     * When using [PluginType.ANDROID_BUILT_IN_KOTLIN] you must use this instead of
+     * [legacyKotlin]
      */
     fun kotlin(action: KotlinExtension.() -> Unit)
 
@@ -64,7 +64,7 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     fun resetKotlinDsl()
 
     /**
-     * Method to configure the KGP extension.
+     * Method to configure the old Kotlin extension that is added as `android.kotlinOptions`.
      *
      * This requires [PluginType.KOTLIN_ANDROID] to be applied
      */
@@ -89,7 +89,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     // For kotlin, because we want this to be separate from the android extension, we have
     // to create a separate content holder and proxy.
     // custom content holder for kotlin so that it's not under the android one
-    private val kotlinContentHolder = DefaultDslContentHolder(this)
+    private val kotlinContentHolder = DefaultDslContentHolder()
     private val kotlinExtension: KotlinExtension = DslProxy.createProxy(KotlinExtension::class.java, kotlinContentHolder)
     private var kotlinActionRan = false
 
@@ -119,9 +119,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     }
 
     override fun android(action: ExtensionT.() -> Unit) {
-        handleNestedBlock(contentHolder) {
-            action(android)
-        }
+        action(android)
     }
 
     override fun resetAndroidDsl() {
@@ -133,9 +131,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
             throw RuntimeException("Cannot configure kotlin without plugin ANDROID_BUILT_IN_KOTLIN or KOTLIN_ANDROID")
 
         kotlinActionRan = true
-        handleNestedBlock(kotlinContentHolder) {
-            action(kotlinExtension)
-        }
+        action(kotlinExtension)
     }
 
     override fun resetKotlinDsl() {

@@ -20,8 +20,6 @@ import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
-import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
@@ -64,11 +62,11 @@ interface GradleSettingsDefinition: ExtensionAwareDefinition {
     fun addRepository(location: String)
 }
 
-internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), GradleSettingsDefinition {
+internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     private val featurePreviews = mutableListOf<String>()
 
     private val plugins = mutableListOf<AppliedPlugin>()
-    private val androidContentHolder = DefaultDslContentHolder(this)
+    private val androidContentHolder = DefaultDslContentHolder()
 
     // cache or the repositories as we need to keep this around for reconfiguration.
     private var repositoriesCache: Collection<Path>? = null
@@ -114,9 +112,7 @@ internal class GradleSettingsDefinitionImpl: ExtensionAwareDefinitionImpl(), Gra
     }
 
     override fun android(action: SettingsExtension.() -> Unit) {
-        handleNestedBlock(androidContentHolder) {
-            action(android)
-        }
+        action(android)
     }
 
     override fun enableFeaturePreview(name: String) {

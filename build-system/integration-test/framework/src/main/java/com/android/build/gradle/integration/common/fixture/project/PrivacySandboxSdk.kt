@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -27,7 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Direc
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import java.nio.file.Path
 
 /*
@@ -91,10 +90,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
 /**
  * Specialized interface for privacy sandbox SDK [AndroidProject] to use in the test
  */
-interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition> {
-    /** the object that allows to add/update/remove files from the project */
-    val files: GradleProjectFiles
-}
+interface PrivacySandboxSdkProject: BaseAndroidProject<PrivacySandboxSdkDefinition>
 
 /**
  * Implementation of [PrivacySandboxSdkProject]
@@ -120,7 +116,6 @@ internal class ReversiblePrivacySandboxSdkProject(
     parentProject: PrivacySandboxSdkProject,
     projectModification: TemporaryProjectModification
 ) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
-    parentProject
-), PrivacySandboxSdkProject {
-    override val files: GradleProjectFiles = ReversibleProjectFiles(projectModification, parentProject.location)
-}
+    parentProject,
+    projectModification
+), PrivacySandboxSdkProject

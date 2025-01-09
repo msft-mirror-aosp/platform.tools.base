@@ -18,8 +18,10 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -45,7 +47,7 @@ interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition>
     val namespace: String
 
     /** the object that allows to add/update/remove files from the project */
-    val files: AndroidProjectFiles
+    override val files: AndroidProjectFiles
 }
 
 /**
@@ -143,7 +145,7 @@ internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDef
     projectDefinition,
 ), AndroidProject<ProjectDefinitionT> {
 
-    override val files: AndroidProjectFiles = DirectAndroidProjectFiles(location, namespace)
+    final override val files: AndroidProjectFiles = DirectAndroidProjectFiles(location, namespace)
 }
 
 /**

@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION

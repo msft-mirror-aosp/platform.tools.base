@@ -37,7 +37,7 @@ class CompileSdkSetThroughDSLFinalizeBlock {
                 namespace = "com.example.app"
             }
             files.setupMinimumManifest()
-            pluginCallback = MyCallback::class.java
+            pluginCallbacks += MyCallback::class.java
         }
     }
 

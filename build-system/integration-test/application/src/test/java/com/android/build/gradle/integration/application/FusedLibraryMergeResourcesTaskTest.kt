@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
@@ -27,7 +27,6 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.readLines
 
 class FusedLibraryMergeResourcesTaskTest {
@@ -218,7 +217,7 @@ class FusedLibraryMergeResourcesTaskTest {
             file
         }
 
-        app.reconfigure(buildFileOnly = true) {
+        app.reconfigure {
             dependencies {
                 implementation(files(aarFile))
             }

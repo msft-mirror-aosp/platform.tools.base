@@ -16,7 +16,7 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.compose.ImagePathOrMessage
+import com.android.tools.render.common.ImagePathOrMessage
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 
 /*

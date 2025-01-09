@@ -1735,21 +1735,41 @@ package com.android.build.api.dsl {
   }
 
   @org.gradle.api.Incubating public interface ManagedVirtualDevice extends com.android.build.api.dsl.Device {
-    method public int getApiLevel();
-    method @org.gradle.api.Incubating public String? getApiPreview();
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public int getApiLevel();
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public String? getApiPreview();
     method public String getDevice();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment getPageAlignment();
     method public boolean getRequire64Bit();
+    method @org.gradle.api.Incubating public Integer? getSdkExtensionVersion();
+    method @org.gradle.api.Incubating public String? getSdkPreview();
+    method @org.gradle.api.Incubating public int getSdkVersion();
     method public String getSystemImageSource();
-    method public void setApiLevel(int);
-    method @org.gradle.api.Incubating public void setApiPreview(String?);
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public void setApiLevel(int);
+    method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public void setApiPreview(String?);
     method public void setDevice(String);
+    method @org.gradle.api.Incubating public void setPageAlignment(com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment);
     method public void setRequire64Bit(boolean);
+    method @org.gradle.api.Incubating public void setSdkExtensionVersion(Integer?);
+    method @org.gradle.api.Incubating public void setSdkPreview(String?);
+    method @org.gradle.api.Incubating public void setSdkVersion(int);
     method public void setSystemImageSource(String);
-    property public abstract int apiLevel;
-    property @org.gradle.api.Incubating public abstract String? apiPreview;
+    property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public abstract int apiLevel;
+    property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public abstract String? apiPreview;
     property public abstract String device;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment pageAlignment;
     property public abstract boolean require64Bit;
+    property @org.gradle.api.Incubating public abstract Integer? sdkExtensionVersion;
+    property @org.gradle.api.Incubating public abstract String? sdkPreview;
+    property @org.gradle.api.Incubating public abstract int sdkVersion;
     property public abstract String systemImageSource;
+  }
+
+  @org.gradle.api.Incubating public enum ManagedVirtualDevice.PageAlignment {
+    method public static com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
+    method public static com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment[] values();
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment DEFAULT_FOR_SDK_VERSION;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment FORCE_16KB_PAGES;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment FORCE_4KB_PAGES;
   }
 
   @org.gradle.api.Incubating public interface ModelDependency {
@@ -2485,6 +2505,7 @@ package com.android.build.api.variant {
   }
 
   public interface AndroidComponentsExtension<DslExtensionT extends com.android.build.api.dsl.CommonExtension<?, ?, ?, ?, ?, ?>, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
+    method @org.gradle.api.Incubating public void addSourceSetConfigurations(String suffix);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantBuilderT,kotlin.Unit> callback);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantBuilderT> callback);
     method @Deprecated public void finalizeDSl(org.gradle.api.Action<DslExtensionT> callback);
@@ -2700,6 +2721,7 @@ package com.android.build.api.variant {
     method @org.gradle.api.Incubating public com.android.build.api.variant.JavaCompilation getJavaCompilation();
     method @org.gradle.api.Incubating public com.android.build.api.variant.LifecycleTasks getLifecycleTasks();
     method public org.gradle.api.provider.Provider<java.lang.String> getNamespace();
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getResolvableConfiguration(String sourceSetConfigurationsAffix);
     method public org.gradle.api.artifacts.Configuration getRuntimeConfiguration();
     method public com.android.build.api.variant.Sources getSources();
     method @Deprecated public void setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode mode);

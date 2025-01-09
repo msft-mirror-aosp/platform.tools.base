@@ -731,5 +731,25 @@ https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/380074867
   * com.android.build.api.dsl.FusedLibraryExtension.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
+https://issuetracker.google.com/382716517
+  * com.android.build.api.dsl.ManagedVirtualDevice.getSdkVersion: int ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setSdkVersion: void (int)
+https://issuetracker.google.com/382716889
+  * com.android.build.api.dsl.ManagedVirtualDevice.getSdkPreview: java.lang.String ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
 https://issuetracker.google.com/383364112
   * com.android.build.api.variant.BuiltArtifact.getOutputFilePath: java.nio.file.Path ()
+https://issuetracker.google.com/384516080
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment extends java.lang.Enum
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.getEntries: kotlin.enums.EnumEntries<com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment> ()
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.valueOf: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment (java.lang.String)
+  * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.values: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment[] ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.getPageAlignment: com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setPageAlignment: void (com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment)
+https://issuetracker.google.com/385406230
+  * com.android.build.api.dsl.ManagedVirtualDevice.getSdkExtensionVersion: java.lang.Integer ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setSdkExtensionVersion: void (java.lang.Integer)
+https://issuetracker.google.com/387328291
+  * com.android.build.api.variant.AndroidComponentsExtension.addKspConfigurations: void (boolean)
+  * com.android.build.api.variant.AndroidComponentsExtension.addSourceSetConfigurations: void (java.lang.String)
+  * com.android.build.api.variant.Component.getResolvableConfiguration: org.gradle.api.artifacts.Configuration (java.lang.String)

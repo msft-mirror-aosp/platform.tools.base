@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test

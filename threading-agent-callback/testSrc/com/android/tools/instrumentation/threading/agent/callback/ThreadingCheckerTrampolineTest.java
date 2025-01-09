@@ -25,6 +25,9 @@ import org.junit.Test;
 public class ThreadingCheckerTrampolineTest {
     int verifyOnUiThreadCallCount = 0;
     int verifyOnWorkerThreadCallCount = 0;
+    int verifyReadLockCount = 0;
+    int verifyWriteLockCount = 0;
+    int verifyNoReadLockCount = 0;
 
     @Before
     public void setUp() {
@@ -40,6 +43,15 @@ public class ThreadingCheckerTrampolineTest {
 
         ThreadingCheckerTrampoline.verifyOnWorkerThread();
         assertThat(verifyOnWorkerThreadCallCount).isEqualTo(1);
+
+        ThreadingCheckerTrampoline.verifyReadLock();
+        assertThat(verifyReadLockCount).isEqualTo(1);
+
+        ThreadingCheckerTrampoline.verifyWriteLock();
+        assertThat(verifyWriteLockCount).isEqualTo(1);
+
+        ThreadingCheckerTrampoline.verifyNoReadLock();
+        assertThat(verifyNoReadLockCount).isEqualTo(1);
     }
 
     @Test
@@ -116,6 +128,21 @@ public class ThreadingCheckerTrampolineTest {
             @Override
             public void verifyOnWorkerThread() {
                 ++verifyOnWorkerThreadCallCount;
+            }
+
+            @Override
+            public void verifyReadLock() {
+                ++verifyReadLockCount;
+            }
+
+            @Override
+            public void verifyWriteLock() {
+                ++verifyWriteLockCount;
+            }
+
+            @Override
+            public void verifyNoReadLock() {
+                ++verifyNoReadLockCount;
             }
         };
     }

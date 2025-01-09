@@ -18,6 +18,9 @@ package com.android.tools.render.compose
 
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
+import com.android.tools.render.common.PreviewRendering
+import com.android.tools.render.common.readPreviewRenderingResultJson
+import com.android.tools.render.common.writePreviewRenderingToJson
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -50,7 +53,7 @@ class PerfMainTest {
         val apk = gradleProject.projectRoot.resolve("app/build/outputs/apk/debug/app-debug.apk")
         val classPath = gradleProject.projectRoot.resolve("deps.txt").readLines()
 
-        val composeRendering = ComposeRendering(
+        val previewRendering = PreviewRendering(
             TestUtils.getSdk().absolutePathString(),
             TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString(),
             outputFolder.absolutePath,
@@ -64,7 +67,7 @@ class PerfMainTest {
         )
 
         val jsonSettings = tmpFolder.newFile()
-        writeComposeRenderingToJson(jsonSettings.bufferedWriter(), composeRendering)
+        writePreviewRenderingToJson(jsonSettings.bufferedWriter(), previewRendering)
         return jsonSettings
     }
 
@@ -192,7 +195,7 @@ class PerfMainTest {
             metric.beforeTest()
             runComposeCliRender(jsonSettings)
             metric.afterTest()
-            val result = readComposeRenderingResultJson(resultsFile.bufferedReader())
+            val result = readPreviewRenderingResultJson(resultsFile.bufferedReader())
             assertNull(result.globalError)
             result.screenshotResults.forEach {
                 assertNull(it.error)

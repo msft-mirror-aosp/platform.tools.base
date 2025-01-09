@@ -17,21 +17,18 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createGradleProjectBuilder
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkLibraryProject
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkProject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.build.GenericBuiltArtifactsLoader
 import com.android.testutils.apk.Apk
-import com.android.utils.FileUtils
 import com.google.common.truth.Truth
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -39,59 +36,49 @@ import java.io.File
 class PrivacySandboxSdkMinimalTest {
 
     @get:Rule
-    val project = createGradleProjectBuilder {
+    val rule = GradleRule.from {
         privacySandboxSdkLibraryProject(":androidlib3") {
             android {
                 namespace = "com.example.androidlib3"
-                minSdk = 19
+                defaultConfig.minSdk = 19
             }
             dependencies {}
         }
-        privacySandboxSdkProject(":empty-privacy-sandbox-sdk") {
+        privacySandboxSdk(":empty-privacy-sandbox-sdk", createMinimumProject = false) {
             android {
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
                 minSdk = 19
-            }
-            appendToBuildFile {
-                """
-                        android {
-                            bundle {
-                                applicationId = "com.example.emptyprivacysandboxsdk"
-                                sdkProviderClassName = "Test"
-                                setVersion(1, 2, 3)
-                            }
-                        }
-                    """.trimIndent()
+                bundle {
+                    applicationId = "com.example.emptyprivacysandboxsdk"
+                    sdkProviderClassName = "Test"
+                    setVersion(1, 2, 3)
+                }
             }
             dependencies {
                 include(project(":androidlib3"))
             }
         }
-        subProject(":minimal-app") {
-            plugins.add(PluginType.ANDROID_APP)
+        androidApplication(":minimal-app", createMinimumProject = false) {
             android {
-                defaultCompileSdk()
-                minSdk = 19
                 namespace = "com.example.emptyprivacysandboxsdk.consumer"
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                defaultConfig {
+                    minSdk = 19
+                    versionCode = 1
+                }
             }
+            files.setupMinimumManifest()
             dependencies {
                 implementation(project(":empty-privacy-sandbox-sdk"))
             }
-            appendToBuildFile { //language=groovy
-                """
-                    android {
-                        defaultConfig {
-                            versionCode = 1
-                        }
-                    }
-                """.trimIndent()
-            }
         }
-    }.withKotlinGradlePlugin(true)
-            .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=true")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .create()
+        gradleProperties {
+            add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
+            add(BooleanOption.USE_ANDROID_X, true)
+        }
+    }
 
-    private fun executor() = project.executor()
+    private fun GradleBuild.configuredExecutor() = executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT, true)
@@ -102,13 +89,16 @@ class PrivacySandboxSdkMinimalTest {
 
     @Test
     fun privacySandboxWithMinimalConfigAndDependency() {
-        executor().run(":minimal-app:buildPrivacySandboxSdkApksForDebug")
-        val ideModelFile = project.getSubproject(":minimal-app")
-            .getIntermediateFile(
-                InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName(),
-                "debug",
-                "buildPrivacySandboxSdkApksForDebug",
-                "ide_model.json")
+        val build = rule.build
+
+        build.configuredExecutor().run(":minimal-app:buildPrivacySandboxSdkApksForDebug")
+        val folderName =
+            InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName()
+        val ideModelFile = build.androidApplication(":minimal-app")
+            .intermediatesDir
+            .resolve("$folderName/debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
+            .toFile()
+
         val extractedPssApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
             LoggerWrapper.getLogger(PrivacySandboxSdkMinimalTest::class.java))
             .single { it.applicationId == "com.example.emptyprivacysandboxsdk_10002" }
@@ -262,46 +252,45 @@ class PrivacySandboxSdkMinimalTest {
 
     @Test
     fun testAssemble() {
-        val androidLib3SrcMainSrcJava =
-                FileUtils.join(project.getSubproject("androidlib3").mainSrcDir,
-                        "com",
-                        "example",
-                        "androidlib3")
-        androidLib3SrcMainSrcJava.mkdirs()
-
-        val sdkServiceFile = File(androidLib3SrcMainSrcJava, "MySdk.kt").also {
-            it.writeText(
-                    """package com.example.androidlib3
-                            import androidx.privacysandbox.tools.PrivacySandboxService
-                            @PrivacySandboxService
-                            public interface MySdk {
-                                suspend fun foo(bar: Int): String
-                            }
-                        """
-            )
+        val sdkServiceFile = "src/main/java/com/example/androidlib3/MySdk.kt"
+        val build = rule.build {
+            androidLibrary(":androidlib3") {
+                files.add(
+                    sdkServiceFile,
+                    //language=kotlin
+                    """
+                        package com.example.androidlib3
+                        import androidx.privacysandbox.tools.PrivacySandboxService
+                        @PrivacySandboxService
+                        interface MySdk {
+                            suspend fun foo(bar: Int): String
+                        }
+                    """.trimIndent()
+                )
+            }
         }
 
+        build.configuredExecutor().run(":minimal-app:assembleDebug")
 
-        executor().run(":minimal-app:assembleDebug")
+        build.androidLibrary(":androidlib3").files.remove(sdkServiceFile)
 
-        FileUtils.delete(sdkServiceFile)
-
-        executor().expectFailure().run(":minimal-app:assembleDebug").also {
+        build.configuredExecutor().expectFailure().run(":minimal-app:assembleDebug").also {
             Truth.assertThat(it.failureMessage).contains(
                     "Unable to proceed generating shim with no provided sdk descriptor entries in: ")
         }
-
     }
 
     @Test
     fun checkPrivacySandboxOptInRequired() {
-        TestFileUtils.searchAndReplace(
-                project.file("gradle.properties"),
-                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName,
-                "# " + BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName)
-        val result = project.executor()
-                .expectFailure()
-                .run(":minimal-app:buildPrivacySandboxSdkApksForDebug")
+        val build = rule.build {
+            gradleProperties {
+                remove(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT)
+            }
+        }
+        val result = build.executor
+            .expectFailure()
+            .run(":minimal-app:buildPrivacySandboxSdkApksForDebug")
+
         assertThat(result.stderr).contains(
                 """
                     Privacy Sandbox SDK Plugin support must be explicitly enabled.
@@ -310,6 +299,5 @@ class PrivacySandboxSdkMinimalTest {
                     to your project's gradle.properties file.
                 """.trimIndent()
         )
-
     }
 }

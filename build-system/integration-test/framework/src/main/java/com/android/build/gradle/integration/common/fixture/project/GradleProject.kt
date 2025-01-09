@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
+import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -29,14 +30,18 @@ import java.nio.file.Path
  * [GenericProject] and [AndroidProject].
  */
 interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
-    /** the location on disk of the project */
-    @Deprecated("Use resolve instead")
-    val location: Path
 
     /**
-     * resolve a path relative to the project location
+     * Resolves a path relative to the project location.
+     *
+     * While this can be used to edit files, prefer [files] which provides helper methods, and
+     * automatically creates intermediates directories. It is also consistent with
+     * [GradleProjectDefinition.files]
      */
     fun resolve(path: String): Path
+
+    /** the object that allows to add/update/remove files from the project */
+    val files: GradleProjectFiles
 
     /** The build folder for the project. This does NOT support build dir relocation */
     val buildDir: Path
@@ -46,21 +51,20 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
      *
      * This is useful to make "edits" to the build file during a test.
      *
-     * This can also be used to update [GradleProjectFiles], but when only touching project files
-     * (and not the build files) consider using [GenericProject.files] directly instead
+     * While you can use [GradleProjectDefinition.files] to make edits to other files, this
+     * is no different than directly using [GradleProject.files].
      *
-     * @param buildFileOnly whether to only update the build files, or do a full reset, including files added via [GradleProjectDefinition.files]
      * @param action the action to configure the [GradleProjectDefinition]
      *
      */
-    fun reconfigure(buildFileOnly: Boolean = false, action: ProjectDefinitionT.() -> Unit)
+    fun reconfigure(action: ProjectDefinitionT.() -> Unit)
 }
 
 /**
  * Base implementation for all [GradleProject]
  */
 internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
-    final override val location: Path,
+    internal val location: Path,
     protected val projectDefinition: ProjectDefinitionT,
 ) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider {
 
@@ -71,6 +75,8 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
             throw RuntimeException("Unauthorized access to the build file. Use the DSL to edit the file instead")
         return location.resolve(path)
     }
+
+    override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
     /**
      * the build that contains this project.
@@ -89,10 +95,7 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         return location.resolve(path).toFile()
     }
 
-    override fun reconfigure(
-        buildFileOnly: Boolean,
-        action: ProjectDefinitionT.() -> Unit
-    ) {
+    override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
         // gather previous data
         val previousPlugins = projectDefinition.pluginCallbacks.toSet()
 
@@ -114,7 +117,6 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
 
         (projectDefinition as GradleProjectDefinitionImpl).writeSubProject(
             location,
-            buildFileOnly,
             allPlugins,
             customPluginMap,
             useOldPluginStyle,

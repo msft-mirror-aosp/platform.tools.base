@@ -18,8 +18,6 @@ package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import org.junit.Rule
 import org.junit.Test
 

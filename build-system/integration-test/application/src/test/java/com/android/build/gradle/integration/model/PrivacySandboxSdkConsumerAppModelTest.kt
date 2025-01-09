@@ -17,24 +17,24 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.createGradleProjectWithPrivacySandboxLibrary
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.setUpHelloWorld
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
 class PrivacySandboxSdkConsumerAppModelTest : ModelComparator() {
     @get:Rule
-    val project = createGradleProjectWithPrivacySandboxLibrary {
-        subProject(":app") {
-            plugins.add(PluginType.ANDROID_APP)
+    val rule = GradleRule.from {
+        createGradleProjectWithPrivacySandboxLibrary {}
+        androidApplication(":app") {
             android {
-                minSdk = 33
-                setUpHelloWorld()
-                dependencies {
-                    implementation(project(":privacy-sandbox-sdk"))
-                }
+                defaultConfig.minSdk = 33
+            }
+            HelloWorldAndroid.setupJava(files)
+            dependencies {
+                implementation(project(":privacy-sandbox-sdk"))
             }
         }
     }
@@ -42,7 +42,8 @@ class PrivacySandboxSdkConsumerAppModelTest : ModelComparator() {
 
     @Test
     fun `test models`() {
-        val result = project.modelV2()
+        val result = rule.build
+            .modelBuilder
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 

@@ -20,6 +20,7 @@ import com.android.SdkConstants
 import com.android.SdkConstants.FN_CORE_FOR_SYSTEM_MODULES
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.internal.utils.ConsoleProgressIndicatorFactory
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.internal.compiler.RenderScriptProcessor
 import com.android.builder.packaging.JarFlinger
@@ -29,6 +30,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.internal.provider.DefaultProviderFactory
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -408,7 +410,12 @@ class SdkLoadingStrategyTest {
                 systemProperties = Properties()
             )
         sdkHandler =
-            SdkHandler(AndroidLocationsSingleton, sdkLocationSourceSet, issueReporter, null)
+            SdkHandler(
+                AndroidLocationsSingleton, sdkLocationSourceSet, issueReporter, null,
+                ConsoleProgressIndicatorFactory(
+                    FakeProviderFactory.factory
+                )
+            )
     }
 
     @After

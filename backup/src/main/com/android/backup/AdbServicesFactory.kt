@@ -16,7 +16,7 @@
 
 package com.android.backup
 
-internal fun interface AdbServicesFactory {
+fun interface AdbServicesFactory {
 
   fun createAdbServices(
     serialNumber: String,

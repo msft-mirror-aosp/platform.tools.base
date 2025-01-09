@@ -23,19 +23,29 @@ import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
+import java.time.Duration
 
 class PrivacySandboxSdkTestModuleConnectedTest {
-    @get:Rule var project = privacySandboxSdkAppLargeSampleProjectWithTestModule()
+    @get:Rule
+    val rule = privacySandboxSdkAppLargeSampleProjectWithTestModule {
+        androidTest(":client-app-test") {
+            android {
+                installation {
+                    timeOutInMs = Duration.ofSeconds(30).toMillis().toInt()
+                }
+            }
+        }
+    }
+
     @Before
     fun setUp() {
         // fail fast if no response
-        project.addAdbTimeout()
         setupDevice()
     }
 
     @Test
     fun `connectedAndroidTest task for application using test-only module`() {
-        executor(project)
+        rule.build.customExecutor()
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT, true)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)

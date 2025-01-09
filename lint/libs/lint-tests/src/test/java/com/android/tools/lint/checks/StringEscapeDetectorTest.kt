@@ -73,6 +73,7 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
                         <item quantity="few">%d piose'nki.</item>
                         <item quantity="other">%d piosenek.</item>
                     </plurals>
+                    <string name="foo">Letzte Freischaltung:\\ </string> <!-- b/387281249 -->
                     </resources>
                     """,
           )

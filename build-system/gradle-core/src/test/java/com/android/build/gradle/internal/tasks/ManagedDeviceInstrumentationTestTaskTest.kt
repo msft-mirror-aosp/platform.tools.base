@@ -198,7 +198,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         doReturn(mock<ListProperty<*>>()).whenever(task).installOptions
         val mockManagedDevice = mock<ManagedVirtualDevice>()
         doReturn("testDevice1").whenever(mockManagedDevice).getName()
-        doReturn(29).whenever(mockManagedDevice).apiLevel
+        doReturn(29).whenever(mockManagedDevice).sdkVersion
         doReturn("aosp").whenever(mockManagedDevice).systemImageSource
         doReturn(false).whenever(mockManagedDevice).require64Bit
         doReturn(FakeGradleProperty(mockManagedDevice)).whenever(task).device
@@ -271,7 +271,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         val coverageOutputDir = temporaryFolderRule.newFolder("coverageOutputDir")
         val managedDevice = ManagedVirtualDevice("someNameHere").also {
             it.device = "Pixel 2"
-            it.apiLevel = 27
+            it.sdkVersion = 27
             it.systemImageSource = "aosp"
         }
         val emulatorControl = mock<EmulatorControl>()
@@ -372,7 +372,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
             managedDevice = argThat {
                 getName() == "testDevice1"
                         && this is ManagedVirtualDevice
-                        && apiLevel == 29
+                        && sdkVersion == 29
                         && systemImageSource == "aosp"
                         && require64Bit == false
             },
@@ -431,7 +431,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
             managedDevice = argThat {
                 getName() == "testDevice1"
                         && this is ManagedVirtualDevice
-                        && apiLevel == 29
+                        && sdkVersion == 29
                         && systemImageSource == "aosp"
                         && require64Bit == false
             },

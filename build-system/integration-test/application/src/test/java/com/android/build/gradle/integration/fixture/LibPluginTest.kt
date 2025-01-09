@@ -34,7 +34,7 @@ class LibPluginTest {
     @get:Rule
     val rule = GradleRule.from {
         androidLibrary(":lib") {
-            pluginCallback = LibCallback::class.java
+            pluginCallbacks += LibCallback::class.java
 
             files {
                 HelloWorldAndroid.setupJava(this)

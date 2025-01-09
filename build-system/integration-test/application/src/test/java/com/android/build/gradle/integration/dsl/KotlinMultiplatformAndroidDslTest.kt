@@ -98,7 +98,10 @@ class KotlinMultiplatformAndroidDslTest {
             "public abstract java.lang.Object getExtension(java.lang.Class)",
             "public abstract java.lang.String computeTaskName(java.lang.String,java.lang.String)",
             "public abstract boolean getViewBinding()",
-            "public abstract boolean getDataBinding()"
+            "public abstract boolean getDataBinding()",
+
+            // TODO(b/317215060) - implement for KMP
+            "public abstract org.gradle.api.artifacts.Configuration getResolvableConfiguration(java.lang.String)",
         )
     }
 }

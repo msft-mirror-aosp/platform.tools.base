@@ -30,7 +30,7 @@ class CustomSourceDirectoryTest: ReferenceModelComparator(
     },
     deltaConfig = {
         androidLibrary {
-            pluginCallback = TomlCallback::class.java
+            pluginCallbacks += TomlCallback::class.java
         }
     },
     syncOptions = {

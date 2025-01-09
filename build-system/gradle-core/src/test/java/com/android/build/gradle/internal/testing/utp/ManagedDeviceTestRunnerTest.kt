@@ -71,7 +71,7 @@ class ManagedDeviceTestRunnerTest {
     private val mockRetentionConfig: RetentionConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
-    private val mockDslDevice: ManagedVirtualDevice = mock()
+    private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockManagedDeviceShard0: UtpManagedDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockManagedDeviceShard1: UtpManagedDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockUtpTestResultListenerServerRunner: UtpTestResultListenerServerRunner = mock()
@@ -130,6 +130,9 @@ class ManagedDeviceTestRunnerTest {
                 anyOrNull<ShardConfig>(),)).then {
             RunnerConfigProto.RunnerConfig.getDefaultInstance()
         }
+
+        whenever(mockDslDevice.pageAlignmentSuffix).thenReturn("")
+
         whenever(mockUtpConfigFactory.createServerConfigProto())
                 .thenReturn(ServerConfig.getDefaultInstance())
 

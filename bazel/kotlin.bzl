@@ -271,7 +271,7 @@ def kotlin_library(
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"] + lint_custom_rules,
             tags = ["noci:studio-win"],
             is_test_sources = lint_is_test_sources,
-            extra_args = lint_extra_args,
+            extra_args = ["--java-language-level", jvm_target] + lint_extra_args,
             timeout = lint_timeout if lint_timeout else None,
         )
 
@@ -447,7 +447,7 @@ _kotlin_library = rule(
             # We need this to be able to target JRE 8 in Kotlin, because
             # Kotlinc does not support the --release 8 Javac option.
             # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk:jdk_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk8:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
@@ -455,7 +455,7 @@ _kotlin_library = rule(
             # We need this to be able to target JRE 11 in Kotlin, because
             # Kotlinc does not support the --release 11 Javac option.
             # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk/jdk11:jdk11_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk11:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
@@ -463,7 +463,7 @@ _kotlin_library = rule(
             # We need this to be able to target JRE 17 in Kotlin, because
             # Kotlinc does not support the --release 17 Javac option.
             # see https://youtrack.jetbrains.com/issue/KT-29974
-            default = Label("//prebuilts/studio/jdk/jdk17:jdk17_runtime"),
+            default = Label("//prebuilts/studio/jdk/jdk17:java_runtime"),
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),

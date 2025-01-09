@@ -20,14 +20,9 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
-import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
-import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.DependenciesBuilderImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependency
-import com.android.build.gradle.integration.common.fixture.testprojects.LocalJarDependencyImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.fixture.testprojects.createLocalJar
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
@@ -69,13 +64,6 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
     val dependencies: DependenciesBuilder
 
     /**
-     * Provides a callback to use with a binary plugin.
-     *
-     * Using this setter provides a single callback. To provide more, use [pluginCallbacks]
-     */
-    var pluginCallback: Class<out PluginCallback>
-
-    /**
      * The list of plugin callbacks for this project
      */
     val pluginCallbacks: MutableList<Class<out PluginCallback>>
@@ -84,6 +72,13 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
      * Configures the buildscript for this project
      */
     fun buildscript(action: BuildscriptBuilder.() -> Unit)
+
+    /**
+     * returns a [File] that encodes the call to `project.file()`.
+     *
+     * This can be used to provide File instance into the DSL.
+     */
+    fun projectDotFile(relativePath: String): File
 }
 
 /**
@@ -114,26 +109,16 @@ internal data class AppliedPlugin(
  */
 internal abstract class GradleProjectDefinitionImpl(
     override val path: String
-): ExtensionAwareDefinitionImpl(), GradleProjectDefinition {
+): GradleProjectDefinition {
 
-    protected val contentHolder = DefaultDslContentHolder(this)
+    protected val contentHolder = DefaultDslContentHolder()
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 
     private val buildscriptBuilder = BuildscriptBuilderImpl()
 
-    override var pluginCallback: Class<out PluginCallback>
-        set(value) {
-            pluginCallbacks.clear()
-            pluginCallbacks.add(value)
-        }
-        get() = if (pluginCallbacks.isEmpty()) {
-            throw RuntimeException("plugin callback list is empty")
-        } else if (pluginCallbacks.size == 1) {
-            pluginCallbacks[0]
-        } else {
-            throw RuntimeException("plugin callback list has 2+ entries")
-        }
+    override val files: GradleProjectFiles = DelayedGradleProjectFiles()
+
     override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
 
 
@@ -181,9 +166,12 @@ internal abstract class GradleProjectDefinitionImpl(
         action(buildscriptBuilder)
     }
 
+    override fun projectDotFile(relativePath: String): File {
+        return MethodReturnedFile("project.file", relativePath)
+    }
+
     internal fun writeSubProject(
         location: Path,
-        buildFileOnly: Boolean = false,
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
         useOldPluginStyle: Boolean,
@@ -195,7 +183,6 @@ internal abstract class GradleProjectDefinitionImpl(
             allPlugins,
             customPluginMap,
             isRoot = false,
-            buildFileOnly,
             useOldPluginStyle,
             projectRepositories,
             buildWriter
@@ -215,7 +202,6 @@ internal abstract class GradleProjectDefinitionImpl(
             allPlugins,
             customPluginMap,
             isRoot = true,
-            buildFileOnly = false,
             useOldPluginStyle,
             projectRepositories,
             buildWriter
@@ -231,7 +217,6 @@ internal abstract class GradleProjectDefinitionImpl(
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
         isRoot: Boolean,
-        buildFileOnly: Boolean,
         useOldPluginStyle: Boolean,
         projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
@@ -375,8 +360,15 @@ internal abstract class GradleProjectDefinitionImpl(
         }
 
         // write the rest of the content.
-        if (!buildFileOnly) {
-            (files as DelayedGradleProjectFiles).write(location)
+        (files as? DelayedGradleProjectFiles)?.let { files->
+            if (!files.isDirect) {
+                files.write(location)
+                // once the project is written on disk, we want to move the files to a direct
+                // mode so that reconfigure can update them.
+                // Keeping them delayed would not work as they must be in memory and that would mean
+                // having to load all the files when doing a reconfigure.
+                files.makeDirect(location)
+            }
         }
     }
 

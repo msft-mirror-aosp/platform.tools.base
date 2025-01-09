@@ -27,18 +27,19 @@ import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.FakeDeviceLibrary;
 import com.android.utils.FileUtils;
-import com.android.utils.ILogger;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 public class DeployerRunnerDeviceSelectorTest {
     private static final long WAIT_TIME_MS = TimeUnit.SECONDS.toMillis(10);
@@ -129,6 +130,7 @@ public class DeployerRunnerDeviceSelectorTest {
         handler.connect(device1, fakeAdbServer);
 
         DeployerRunner runner = new DeployerRunner(cacheDb, dexDb, service);
+        runner.setDeviceWaitTimeout(1, TimeUnit.SECONDS);
         Path file = TestUtils.resolveWorkspacePath(BASE + "sample.apk");
         Path installersPath = DeployerTestUtils.prepareInstaller().toPath();
         String[] args = {
@@ -180,6 +182,7 @@ public class DeployerRunnerDeviceSelectorTest {
     @Test
     public void testNoDeviceConnected() throws Exception {
         DeployerRunner runner = new DeployerRunner(cacheDb, dexDb, service);
+        runner.setDeviceWaitTimeout(500, TimeUnit.MILLISECONDS);
         Path file = TestUtils.resolveWorkspacePath(BASE + "sample.apk");
         Path installersPath = DeployerTestUtils.prepareInstaller().toPath();
         String[] args = {

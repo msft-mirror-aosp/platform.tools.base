@@ -465,11 +465,11 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                         try {
                             localThis = new AndroidDebugBridge();
                             if (!start(localThis, timeout, unit)) {
-                                // We return without notifying listeners, since there were no changes
+                                // We return without notifying listeners, since there were no
+                                // changes
                                 return null;
                             }
-                        }
-                        catch (InvalidParameterException e) {
+                        } catch (InvalidParameterException e) {
                             // We return without notifying listeners, since there were no changes
                             return null;
                         }
@@ -478,17 +478,9 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                         sThis = localThis;
                     }
 
-                    // Notify the listeners of the change (outside of the lock to decrease the likelihood
-                    // of deadlocks)
-                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our thread
-                        try {
-                            listener.bridgeChanged(localThis);
-                        }
-                        catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
+                    // Notify the listeners of the change (outside of the lock to decrease the
+                    // likelihood of deadlocks)
+                    adbChangeEvents.notifyBridgeChanged(localThis);
 
                     return localThis;
                 });
@@ -552,19 +544,20 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                                 if (mAdbOsLocation != null
                                     && mAdbOsLocation.equals(osLocation)
                                     && !forceNewBridge) {
-                                    // We return without notifying listeners, since there were no changes
+                                    // We return without notifying listeners, since there were no
+                                    // changes
                                     return sThis;
-                                }
-                                else {
+                                } else {
                                     // stop the current server
                                     if (!stop(rem.getRemainingNanos(), TimeUnit.NANOSECONDS)) {
-                                        // We return without notifying listeners, since there were no changes
+                                        // We return without notifying listeners, since there were
+                                        // no changes
                                         return null;
                                     }
                                 }
 
-                                // We are successfully stopped. We need to notify listeners in all code paths
-                                // past this point.
+                                // We are successfully stopped. We need to notify listeners in all
+                                // code paths past this point.
                                 sThis = null;
                             }
                         }
@@ -576,8 +569,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                                 // Note: Don't return here, as we want to notify listeners
                                 localThis = null;
                             }
-                        }
-                        catch (InvalidParameterException e) {
+                        } catch (InvalidParameterException e) {
                             // Note: Don't return here, as we want to notify listeners
                             localThis = null;
                         }
@@ -586,17 +578,9 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                         sThis = localThis;
                     }
 
-                    // Notify the listeners of the change (outside of the lock to decrease the likelihood
-                    // of deadlocks)
-                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our thread
-                        try {
-                            listener.bridgeChanged(localThis);
-                        }
-                        catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
+                    // Notify the listeners of the change (outside of the lock to decrease the
+                    // likelihood of deadlocks)
+                    adbChangeEvents.notifyBridgeChanged(localThis);
 
                     return localThis;
                 });
@@ -648,18 +632,8 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                     }
 
                     // Notify the listeners of the change (outside of the lock to decrease the
-                    // likelihood
-                    // of deadlocks)
-                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener :
-                            sBridgeListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.bridgeChanged(null);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
+                    // likelihood of deadlocks)
+                    adbChangeEvents.notifyBridgeChanged(null);
 
                     return true;
                 });
@@ -677,7 +651,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
         logRun(
                 AdbDelegateUsageTracker.Method.ADD_DEBUG_BRIDGE_CHANGE_LISTENER,
                 () -> {
-                    sBridgeListeners.add(listener);
+                    adbChangeEvents.addDebugBridgeChangeListener(listener);
 
                     AndroidDebugBridge localThis = sThis;
 
@@ -703,14 +677,14 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
             AndroidDebugBridge.IDebugBridgeChangeListener listener) {
         logRun(
                 AdbDelegateUsageTracker.Method.REMOVE_DEBUG_BRIDGE_CHANGE_LISTENER,
-                () -> sBridgeListeners.remove(listener));
+                () -> adbChangeEvents.removeDebugBridgeChangeListener(listener));
     }
 
     @VisibleForTesting
     public int getDebugBridgeChangeListenerCount() {
         return logCall(
                 AdbDelegateUsageTracker.Method.GET_DEBUG_BRIDGE_CHANGE_LISTENER_COUNT,
-                sBridgeListeners::size);
+                adbChangeEvents::debugBridgeChangeListenerCount);
     }
 
     /**
@@ -725,7 +699,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
             @NonNull AndroidDebugBridge.IDeviceChangeListener listener) {
         logRun(
                 AdbDelegateUsageTracker.Method.ADD_DEVICE_CHANGE_LISTENER,
-                () -> sDeviceListeners.add(listener));
+                () -> adbChangeEvents.addDeviceChangeListener(listener));
     }
 
     /**
@@ -738,14 +712,14 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void removeDeviceChangeListener(AndroidDebugBridge.IDeviceChangeListener listener) {
         logRun(
                 AdbDelegateUsageTracker.Method.REMOVE_DEVICE_CHANGE_LISTENER,
-                () -> sDeviceListeners.remove(listener));
+                () -> adbChangeEvents.removeDeviceChangeListener(listener));
     }
 
     @VisibleForTesting
     public int getDeviceChangeListenerCount() {
         return logCall(
                 AdbDelegateUsageTracker.Method.GET_DEVICE_CHANGE_LISTENER_COUNT,
-                sDeviceListeners::size);
+                adbChangeEvents::deviceChangeListenerCount);
     }
 
     /**
@@ -758,7 +732,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void addClientChangeListener(AndroidDebugBridge.IClientChangeListener listener) {
         logRun(
                 AdbDelegateUsageTracker.Method.ADD_CLIENT_CHANGE_LISTENER,
-                () -> sClientListeners.add(listener));
+                () -> adbChangeEvents.addClientChangeListener(listener));
     }
 
     /**
@@ -770,7 +744,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void removeClientChangeListener(AndroidDebugBridge.IClientChangeListener listener) {
         logRun(
                 AdbDelegateUsageTracker.Method.REMOVE_CLIENT_CHANGE_LISTENER,
-                () -> sClientListeners.remove(listener));
+                () -> adbChangeEvents.removeClientChangeListener(listener));
     }
 
     /**
@@ -1272,16 +1246,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
                     TimeoutRemainder rem = new TimeoutRemainder(timeout, unit);
                     // Notify the listeners of the change (outside of the lock to decrease the
                     // likelihood of deadlocks)
-                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener :
-                            sBridgeListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.restartInitiated();
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
+                    adbChangeEvents.notifyBridgeRestartInitiated();
 
                     boolean isSuccessful;
                     synchronized (this) {
@@ -1302,16 +1267,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
 
                     // Notify the listeners of the change (outside of the lock to decrease the
                     // likelihood of deadlocks)
-                    for (AndroidDebugBridge.IDebugBridgeChangeListener listener :
-                            sBridgeListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.restartCompleted(isSuccessful);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
+                    adbChangeEvents.notifyBridgeRestartCompleted(isSuccessful);
 
                     return isSuccessful;
                 });
@@ -1329,17 +1285,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void deviceConnected(@NonNull IDevice device) {
         logRun(
                 AdbDelegateUsageTracker.Method.DEVICE_CONNECTED,
-                () -> {
-                    for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.deviceConnected(device);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
-                });
+                () -> adbChangeEvents.notifyDeviceConnected(device));
     }
 
     /**
@@ -1354,17 +1300,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void deviceDisconnected(@NonNull IDevice device) {
         logRun(
                 AdbDelegateUsageTracker.Method.DEVICE_DISCONNECTED,
-                () -> {
-                    for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.deviceDisconnected(device);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
-                });
+                () -> adbChangeEvents.notifyDeviceDisconnected(device));
     }
 
     /**
@@ -1379,18 +1315,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void deviceChanged(@NonNull IDevice device, int changeMask) {
         logRun(
                 AdbDelegateUsageTracker.Method.DEVICE_CHANGED,
-                () -> {
-                    // Notify the listeners
-                    for (AndroidDebugBridge.IDeviceChangeListener listener : sDeviceListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.deviceChanged(device, changeMask);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
-                });
+                () -> adbChangeEvents.notifyDeviceChanged(device, changeMask));
     }
 
     /**
@@ -1406,18 +1331,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     public void clientChanged(@NonNull Client client, int changeMask) {
         logRun(
                 AdbDelegateUsageTracker.Method.CLIENT_CHANGED,
-                () -> {
-                    // Notify the listeners
-                    for (AndroidDebugBridge.IClientChangeListener listener : sClientListeners) {
-                        // we attempt to catch any exception so that a bad listener doesn't kill our
-                        // thread
-                        try {
-                            listener.clientChanged(client, changeMask);
-                        } catch (Throwable t) {
-                            Log.e(DDMS, t);
-                        }
-                    }
-                });
+                () -> adbChangeEvents.notifyClientChanged(client, changeMask));
     }
 
     /**
@@ -1814,14 +1728,7 @@ class AndroidDebugBridgeImpl extends AndroidDebugBridgeBase {
     private static class MonitorErrorHandler implements DeviceMonitor.MonitorErrorHandler {
         @Override
         public void initializationError(@NonNull Exception e) {
-            for (AndroidDebugBridge.IDebugBridgeChangeListener listener : sBridgeListeners) {
-                // we attempt to catch any exception so that a bad listener doesn't kill our thread
-                try {
-                    listener.initializationError(e);
-                } catch (Throwable t) {
-                    Log.e(DDMS, t);
-                }
-            }
+            adbChangeEvents.notifyBridgeInitializationError(e);
         }
     }
 

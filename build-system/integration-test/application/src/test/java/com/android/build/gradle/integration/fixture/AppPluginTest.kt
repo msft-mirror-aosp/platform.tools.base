@@ -41,7 +41,7 @@ class AppPluginTest {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
-            pluginCallback = AppCallback::class.java
+            pluginCallbacks += AppCallback::class.java
 
             files {
                 add("src/main/assets/FileToTransform.txt", "initial content")

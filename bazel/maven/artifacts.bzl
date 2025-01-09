@@ -48,6 +48,7 @@ ARTIFACTS = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.10.1",
     "com.google.crypto.tink:tink:1.7.0",
+    "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.1.0-1.0.29",
     "com.google.errorprone:error_prone_annotations:2.28.0",
     "com.google.flatbuffers:flatbuffers-java:1.12.0",
     "com.google.flogger:flogger:0.8",
@@ -287,6 +288,7 @@ DATA = [
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
     "androidx.compose.runtime:runtime-livedata:1.3.0",
     "androidx.compose.runtime:runtime-saveable:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime-saveable:1.7.0",  # Compose BOM 2024.09.00
@@ -294,6 +296,7 @@ DATA = [
     "androidx.compose.ui:ui:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui:1.7.5",
+    "androidx.compose.ui:ui:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-graphics:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-graphics-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-android:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -304,6 +307,7 @@ DATA = [
     "androidx.compose.ui:ui-test-junit4:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-test-junit4:1.7.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-test-junit4:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-test-junit4-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-manifest:1.3.0",
     "androidx.compose.ui:ui-test-manifest:1.3.3",  # Dependency of architecture-samples
@@ -311,6 +315,7 @@ DATA = [
     "androidx.compose.ui:ui-test-manifest:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-test-manifest:1.7.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-test-manifest:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-tooling:1.2.0",  # Still needed from //tools/data-binding/compilationTests
     "androidx.compose.ui:ui-tooling:1.3.0",  # Still needed from //tools/base/build-system/integration-tests
@@ -321,6 +326,7 @@ DATA = [
     "androidx.compose.ui:ui-tooling:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-tooling:1.7.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-tooling:1.7.5",  # XR template
     "androidx.compose.ui:ui-tooling:1.8.0-alpha06",
     "androidx.compose.ui:ui-tooling-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-data-android:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -382,6 +388,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-common-java8:2.6.1",
     "androidx.lifecycle:lifecycle-common-java8:2.6.2",
     "androidx.lifecycle:lifecycle-common-java8:2.8.3",
+    "androidx.lifecycle:lifecycle-common-java8:2.8.7",  # XR template
     "androidx.lifecycle:lifecycle-extensions:2.2.0",
     "androidx.lifecycle:lifecycle-livedata:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-livedata:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
@@ -422,6 +429,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7",  # XR template
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1",  # Needed for AndroidTestRunConfigurationTest#testCanRunLibTestsInDebugBuildWithNoAndroidManifest
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1",
@@ -466,6 +474,7 @@ DATA = [
     "androidx.privacysandbox.activity:activity-client:1.0.0-alpha01",
     "androidx.privacysandbox.activity:activity-core:1.0.0-alpha01",
     "androidx.privacysandbox.activity:activity-provider:1.0.0-alpha01",
+    "androidx.privacysandbox.library:androidx.privacysandbox.library.gradle.plugin:pom:1.0.0-alpha02",
     "androidx.privacysandbox.plugins:plugins-privacysandbox-library:1.0.0-alpha01",
     "androidx.privacysandbox.plugins:plugins-privacysandbox-library:1.0.0-alpha02",
     "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha13",
@@ -533,6 +542,9 @@ DATA = [
     "androidx.wear.watchface:watchface-guava:1.2.1",
     "androidx.wear:wear:1.2.0",
     "androidx.wear:wear-tooling-preview:1.0.0",
+    "androidx.xr.compose:compose:1.0.0-alpha01",
+    "androidx.xr.runtime:runtime:1.0.0-alpha01",
+    "androidx.xr.scenecore:scenecore:1.0.0-alpha01",
     "com.adobe.marketing.mobile:core:1.5.1",  # Used by SdkIndexIssuesSyncListenerTest
     "com.android.application:com.android.application.gradle.plugin:pom:7.2.0",
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
@@ -850,9 +862,11 @@ DATA = [
     "com.google.protobuf:protobuf-java-util:3.19.3",
     "com.google.protobuf:protobuf-java-util:3.22.3",
     "com.google.protobuf:protobuf-java-util:3.24.4",
+    "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
+    "com.google.protobuf:protobuf-parent:pom:4.28.2",  # XR template
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
@@ -954,7 +968,7 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.9.24",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.0",
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20-dev-7612",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20-dev-8262",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
@@ -965,13 +979,13 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0",
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-dev-7612",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-dev-8262",
     "org.jetbrains.kotlin:jvm-abi-gen:2.0.21",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.0",
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20-dev-7612",
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-android-extensions:2.1.0",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
@@ -997,6 +1011,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-build-common:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.21",
@@ -1023,7 +1038,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20-dev-7612",
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle71:1.7.20",
@@ -1085,14 +1100,14 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.0",
-    "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-dev-7612",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.24",
     "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.0",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.20-dev-7612",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.31",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21",
@@ -1108,7 +1123,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-dev-7612",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-dev-8262",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:1.7.10",
@@ -1116,9 +1131,11 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-test-junit:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:2.1.0",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.8.21",
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.9.23",
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.0",
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.20-dev-7612",
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.20-dev-8262",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.1.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.1",

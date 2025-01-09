@@ -21,14 +21,9 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
-import com.android.build.gradle.integration.common.truth.AabSubject
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.utils.getApkLocations
 import com.android.build.gradle.integration.common.utils.getVariantByName
-import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Apk
-import com.android.tools.build.bundletool.model.AppBundle
 import java.io.File
 import java.nio.file.Path
 

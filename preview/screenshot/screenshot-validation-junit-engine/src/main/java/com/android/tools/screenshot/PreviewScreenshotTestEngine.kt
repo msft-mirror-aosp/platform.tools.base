@@ -16,11 +16,12 @@
 
 package com.android.tools.screenshot
 
-import com.android.tools.render.compose.readComposeScreenshotsJson
-import com.android.tools.render.compose.readComposeRenderingResultJson
+import com.android.tools.render.common.readPreviewScreenshotsJson
+import com.android.tools.render.common.readPreviewRenderingResultJson
+import com.android.tools.render.common.PreviewScreenshot
+import com.android.tools.render.common.PreviewScreenshotResult
+import com.android.tools.render.common.ImagePathOrMessage
 import com.android.tools.render.compose.ComposeScreenshot
-import com.android.tools.render.compose.ComposeScreenshotResult
-import com.android.tools.render.compose.ImagePathOrMessage
 import java.io.File
 import javax.imageio.ImageIO
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
@@ -70,8 +71,8 @@ class PreviewScreenshotTestEngine : TestEngine {
 
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
         val engineDescriptor = EngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
-        val screenshots: List<ComposeScreenshot> = readComposeScreenshotsJson(File(parameters.previewsDiscovered).reader())
-        val screenshotResults = readComposeRenderingResultJson(File(parameters.renderResultsFilePath).reader()).screenshotResults
+        val screenshots = readPreviewScreenshotsJson(File(parameters.previewsDiscovered).reader())
+        val screenshotResults = readPreviewRenderingResultJson(File(parameters.renderResultsFilePath).reader()).screenshotResults
         val testMap = mutableMapOf<String, MutableSet<Tests.TestMethod>>()
         for (screenshot in screenshots) {
             val methodName = screenshot.methodFQN.split(".").last()
@@ -119,8 +120,8 @@ class PreviewScreenshotTestEngine : TestEngine {
         if (request.rootTestDescriptor.children.isEmpty()) return
 
         val resultFile = File(parameters.renderResultsFilePath)
-        val screenshotResults = readComposeRenderingResultJson(resultFile.reader()).screenshotResults
-        val composeScreenshots: List<ComposeScreenshot> = readComposeScreenshotsJson(File(parameters.previewsDiscovered).reader())
+        val screenshotResults = readPreviewRenderingResultJson(resultFile.reader()).screenshotResults
+        val previewScreenshots = readPreviewScreenshotsJson(File(parameters.previewsDiscovered).reader())
         val listener = request.engineExecutionListener
         val resultsToSave = mutableListOf<PreviewResult>()
         val testSuiteResultsToSave = mutableListOf<TestSuiteResult>()
@@ -145,7 +146,7 @@ class PreviewScreenshotTestEngine : TestEngine {
                     val previewResults = runTestMethodThatGeneratesMultipleScreenshotTests(
                         methodDescriptor,
                         listener,
-                        composeScreenshots,
+                        previewScreenshots,
                         screenshotResults
                     )
                     resultsToSave.addAll(previewResults)
@@ -172,13 +173,13 @@ class PreviewScreenshotTestEngine : TestEngine {
     }
 
     private fun compareImages(
-        composeScreenshot: ComposeScreenshotResult,
+        previewScreenshot: PreviewScreenshotResult,
         testDisplayName: String,
         testStartTime: Long
     ): PreviewResult {
-        val referencePath = Path(parameters.referenceImageDirPath).resolve(composeScreenshot.imagePath)
-        val actualPath = Path("${parameters.renderTaskOutputDir}").resolve(composeScreenshot.imagePath)
-        val diffPath = Paths.get(parameters.diffImageDirPath, composeScreenshot.imagePath)
+        val referencePath = Path(parameters.referenceImageDirPath).resolve(previewScreenshot.imagePath)
+        val actualPath = Path("${parameters.renderTaskOutputDir}").resolve(previewScreenshot.imagePath)
+        val diffPath = Paths.get(parameters.diffImageDirPath, previewScreenshot.imagePath)
 
         val referenceImage = ImagePathOrMessage.ImagePath(referencePath.toString())
         val actualImage = ImagePathOrMessage.ImagePath(actualPath.toString())
@@ -189,7 +190,7 @@ class PreviewScreenshotTestEngine : TestEngine {
         val duration = getDurationInSeconds(testStartTime, testEndTime)
 
         val testResult = TestResult.newBuilder().apply {
-            testCase = createTestCase(composeScreenshot, testDisplayName, testStartTime, testEndTime)
+            testCase = createTestCase(previewScreenshot, testDisplayName, testStartTime, testEndTime)
             if (referencePath.toFile().exists()) {
                 addOutputArtifact(createTestArtifact("screenshotReferenceImage", referenceImage.path))
             }
@@ -200,11 +201,11 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         //renderer failed to generate images
         if (!actualPath.toFile().exists()) {
-            val errorMessage = getFirstError(composeScreenshot.error)
-            testResult.setTestStatus(TestStatusProto.TestStatus.ERROR)
-            testResult.setError(createError(errorMessage))
+            val errorMessage = getFirstError(previewScreenshot.error)
+            testResult.testStatus = TestStatusProto.TestStatus.ERROR
+            testResult.error = createError(errorMessage)
             return PreviewResult(2,
-                composeScreenshot.previewId,
+                previewScreenshot.previewId,
                 duration,
                 errorMessage,
                 referenceImage = if (referencePath.toFile().exists()) referenceImage else ImagePathOrMessage.ErrorMessage("Reference image missing"),
@@ -222,7 +223,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
         return when (val result = verifier.assertMatchReference(referencePath, ImageIO.read(actualPath.toFile()))) {
             is Verify.AnalysisResult.Failed -> {
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
                 testResult.apply {
                     addOutputArtifact(createTestArtifact("screenshotDiffImage", diffImage.path))
                 }
@@ -260,7 +261,7 @@ class PreviewScreenshotTestEngine : TestEngine {
                         )
                     )
                 }
-                testResult.setTestStatus(TestStatusProto.TestStatus.PASSED)
+                testResult.testStatus = TestStatusProto.TestStatus.PASSED
                 result.toPreviewResponse(0,
                     testDisplayName,
                     duration,
@@ -272,8 +273,8 @@ class PreviewScreenshotTestEngine : TestEngine {
 
             is Verify.AnalysisResult.MissingReference -> {
                 val errorMessage = "Reference image missing"
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
-                testResult.setError(createError(errorMessage))
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
+                testResult.error = createError(errorMessage)
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
@@ -284,8 +285,8 @@ class PreviewScreenshotTestEngine : TestEngine {
             }
 
             is Verify.AnalysisResult.SizeMismatch -> {
-                testResult.setTestStatus(TestStatusProto.TestStatus.FAILED)
-                testResult.setError(createError(result.message))
+                testResult.testStatus = TestStatusProto.TestStatus.FAILED
+                testResult.error = createError(result.message)
                 result.toPreviewResponse(1,
                     testDisplayName,
                     duration,
@@ -307,7 +308,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
     private fun reportResult(
         listener: EngineExecutionListener,
-        screenshot: ComposeScreenshotResult,
+        screenshot: PreviewScreenshotResult,
         testDescriptor: TestDescriptor,
         testDisplayName: String
     ): PreviewResult {
@@ -323,7 +324,7 @@ class PreviewScreenshotTestEngine : TestEngine {
 
     private fun runTestMethodThatGeneratesASingleScreenshotTest(methodDescriptor: TestMethodTestDescriptor,
         listener: EngineExecutionListener,
-        screenshotResults: List<ComposeScreenshotResult>): PreviewResult {
+        screenshotResults: List<PreviewScreenshotResult>): PreviewResult {
         val className: String = methodDescriptor.className
         val methodName: String = methodDescriptor.methodName
         val previewName: String? = methodDescriptor.previewName
@@ -339,8 +340,8 @@ class PreviewScreenshotTestEngine : TestEngine {
     private fun runTestMethodThatGeneratesMultipleScreenshotTests(
         methodDescriptor: TestMethodDescriptor,
         listener: EngineExecutionListener,
-        composeScreenshots: List<ComposeScreenshot>,
-        screenshotResults: List<ComposeScreenshotResult>): List<PreviewResult> {
+        previewScreenshots: List<PreviewScreenshot>,
+        screenshotResults: List<PreviewScreenshotResult>): List<PreviewResult> {
         val results = mutableListOf<PreviewResult>()
         listener.executionStarted(methodDescriptor)
         val className: String = methodDescriptor.className
@@ -350,24 +351,26 @@ class PreviewScreenshotTestEngine : TestEngine {
                 it.methodFQN == "$className.${methodName}"
             }
         for ((run, screenshot) in screenshots.withIndex()) {
-            val currentComposePreview = composeScreenshots.single {
+            val currentPreviewScreenshot = previewScreenshots.single {
                 it.methodFQN == "$className.$methodName" && screenshot.previewId == it.previewId
             }
             var suffix = ""
-            if (currentComposePreview.previewParams.containsKey("name")) {
-                suffix += "_${currentComposePreview.previewParams["name"]}"
-            }
-            val previewParamsSuffix = currentComposePreview.previewParams.filter { it.key != "name" }
-            if (previewParamsSuffix.isNotEmpty()) {
-                // Skip "name" parameter because it is added to the suffix above
-                suffix += "_${previewParamsSuffix}"
-            }
-            if (currentComposePreview.methodParams.isNotEmpty()) {
-                // Method parameters can generate multiple screenshots from one preview,
-                // add the method parameters and the count indicated by the previewId
-                suffix += "_${currentComposePreview.methodParams}"
-                val paramIndex = screenshot.imagePath.substringBeforeLast(".").substringAfterLast("_")
-                suffix += "_$paramIndex"
+            if (currentPreviewScreenshot is ComposeScreenshot) {
+                if (currentPreviewScreenshot.previewParams.containsKey("name")) {
+                    suffix += "_${currentPreviewScreenshot.previewParams["name"]}"
+                }
+                val previewParamsSuffix = currentPreviewScreenshot.previewParams.filter { it.key != "name" }
+                if (previewParamsSuffix.isNotEmpty()) {
+                    // Skip "name" parameter because it is added to the suffix above
+                    suffix += "_${previewParamsSuffix}"
+                }
+                if (currentPreviewScreenshot.methodParams.isNotEmpty()) {
+                    // Method parameters can generate multiple screenshots from one preview,
+                    // add the method parameters and the count indicated by the previewId
+                    suffix += "_${currentPreviewScreenshot.methodParams}"
+                    val paramIndex = screenshot.imagePath.substringBeforeLast(".").substringAfterLast("_")
+                    suffix += "_$paramIndex"
+                }
             }
             val previewTestDescriptor = PreviewTestDescriptor(methodDescriptor, methodName, run, suffix)
             methodDescriptor.addChild(previewTestDescriptor)

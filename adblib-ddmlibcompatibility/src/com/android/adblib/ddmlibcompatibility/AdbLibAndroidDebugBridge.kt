@@ -18,6 +18,7 @@ package com.android.adblib.ddmlibcompatibility
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
+import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION
@@ -28,8 +29,12 @@ import com.android.ddmlib.TimeoutRemainder
 import com.android.ddmlib.idevicemanager.IDeviceManager
 import com.android.ddmlib.idevicemanager.IDeviceManagerUtils
 import com.google.common.base.Throwables
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.guava.asListenableFuture
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
@@ -91,14 +96,7 @@ class AdbLibAndroidDebugBridge(
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
-        for (listener in sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(newBridgeInstance)
-            } catch (t: Throwable) {
-                Log.e(ADB, t)
-            }
-        }
+        adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
 
         return newBridgeInstance
     }
@@ -168,14 +166,7 @@ class AdbLibAndroidDebugBridge(
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
-        for (listener in sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(newBridgeInstance)
-            } catch (t: Throwable) {
-                Log.e(ADB, t)
-            }
-        }
+        adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
 
         return newBridgeInstance
     }
@@ -269,6 +260,28 @@ class AdbLibAndroidDebugBridge(
                 false
             }
         }
+    }
+
+    override fun getRawDeviceList(): ListenableFuture<List<AdbDevice>> {
+        val config = adbServerConfiguration.value
+        val adbPath = config.adbPath
+        val envVars = config.envVars
+
+        if (adbPath == null) {
+            return Futures.immediateFuture(emptyList())
+        }
+
+        return session.scope.async {
+            val processResult =
+                session.host.processRunner.runProcess(
+                    adbPath,
+                    listOf("devices", "-l"),
+                    envVars
+                )
+            // The first line of the output is a header, and not a part of the device list. Skip it.
+            val devices = processResult.stdout.drop(1).mapNotNull { AdbDevice.parseAdbLine(it) }
+            devices
+        }.asListenableFuture()
     }
 
     private fun initOsLocationAndCheckVersion(osLocation: String?) {
@@ -432,14 +445,7 @@ class AdbLibAndroidDebugBridge(
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
-        for (listener in sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(null)
-            } catch (t: Throwable) {
-                Log.e(ADB, t)
-            }
-        }
+        adbChangeEvents.notifyBridgeChanged(null)
 
         return true
     }
@@ -506,14 +512,7 @@ class AdbLibAndroidDebugBridge(
         val rem = TimeoutRemainder(timeout, unit)
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
-        for (listener in sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.restartInitiated()
-            } catch (t: Throwable) {
-                Log.e(ADB, t)
-            }
-        }
+        adbChangeEvents.notifyBridgeRestartInitiated()
 
         val isSuccessful = withLock {
             var success = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
@@ -534,14 +533,7 @@ class AdbLibAndroidDebugBridge(
 
         // Notify the listeners of the change (outside of the lock to decrease the likelihood
         // of deadlocks)
-        for (listener in sBridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.restartCompleted(isSuccessful)
-            } catch (t: Throwable) {
-                Log.e(ADB, t)
-            }
-        }
+        adbChangeEvents.notifyBridgeRestartCompleted(isSuccessful)
 
         return isSuccessful
     }

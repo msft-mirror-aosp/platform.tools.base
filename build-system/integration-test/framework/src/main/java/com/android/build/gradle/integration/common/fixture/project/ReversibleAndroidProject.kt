@@ -31,13 +31,17 @@ internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDef
     projectModification: TemporaryProjectModification,
 ) : BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(
     parentProject,
+    projectModification,
 ), AndroidProject<ProjectDefinitionT> {
 
     override val namespace: String
         get() = parentProject.namespace
 
-    override val files: AndroidProjectFiles =
-        ReversibleAndroidProjectFiles(parentProject.namespace, projectModification, parentProject.location)
+    @Suppress("UNCHECKED_CAST")
+    final override val files: AndroidProjectFiles =
+        ReversibleAndroidProjectFiles(
+            parentProject.namespace, projectModification,
+            (parentProject as GradleProjectImpl<ProjectDefinitionT>).location)
 }
 
 internal class ReversibleAndroidProjectFiles(

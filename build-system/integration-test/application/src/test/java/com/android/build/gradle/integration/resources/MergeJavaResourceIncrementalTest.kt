@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test

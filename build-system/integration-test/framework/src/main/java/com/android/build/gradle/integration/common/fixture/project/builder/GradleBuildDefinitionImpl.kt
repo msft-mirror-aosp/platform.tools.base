@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidApplic
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidTestDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.AndroidXPrivacySandboxLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
@@ -39,8 +40,6 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.fixture.testprojects.BuildFileType
-import com.android.build.gradle.integration.common.fixture.testprojects.PluginType
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
@@ -89,6 +88,7 @@ internal class GradleBuildDefinitionImpl(
         path: String,
         action: GenericProjectDefinition.() -> Unit
     ): GenericProjectDefinition {
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
         val project = if (path == ":") {
             rootProject
         } else {
@@ -109,6 +109,7 @@ internal class GradleBuildDefinitionImpl(
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidApplicationDefinitionImpl(it, createMinimumProject).also {
@@ -160,6 +161,7 @@ internal class GradleBuildDefinitionImpl(
         action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
     ): AndroidProjectDefinition<LibraryExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidLibraryDefinitionImpl(it, createMinimumProject)
@@ -179,6 +181,7 @@ internal class GradleBuildDefinitionImpl(
         action: AndroidProjectDefinition<DynamicFeatureExtension>.() -> Unit
     ): AndroidProjectDefinition<DynamicFeatureExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidDynamicFeatureDefinitionImpl(it, createMinimumProject).also {
@@ -202,6 +205,7 @@ internal class GradleBuildDefinitionImpl(
         action: AndroidProjectDefinition<TestExtension>.() -> Unit
     ): AndroidProjectDefinition<TestExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidTestDefinitionImpl(it, createMinimumProject).also {
@@ -225,6 +229,7 @@ internal class GradleBuildDefinitionImpl(
         action: PrivacySandboxSdkDefinition.() -> Unit
     ): PrivacySandboxSdkDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             PrivacySandboxSdkDefinitionImpl(it, createMinimumProject)
@@ -238,11 +243,32 @@ internal class GradleBuildDefinitionImpl(
         return project
     }
 
+    override fun androidXPrivacySandboxLibrary(
+        path: String,
+        createMinimumProject: Boolean,
+        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
+    ): AndroidProjectDefinition<LibraryExtension> {
+        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox library")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
+
+        val project = subProjects.computeIfAbsent(path) {
+            AndroidXPrivacySandboxLibraryDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? AndroidXPrivacySandboxLibraryDefinitionImpl
+            ?: errorOnWrongType(project, path, "AndroidX Privacy Sandbox Library")
+
+        action(project)
+
+        return project
+    }
+
     override fun aiPack(
         path: String,
         action: AiPackDefinition.() -> Unit
     ): AiPackDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an AI pack")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AiPackDefinitionImpl(it)
@@ -261,6 +287,7 @@ internal class GradleBuildDefinitionImpl(
         action: AssetPackDefinition.() -> Unit
     ): AssetPackDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an asset pack")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AssetPackDefinitionImpl(it)
@@ -280,6 +307,7 @@ internal class GradleBuildDefinitionImpl(
         action: AssetPackBundleDefinition.() -> Unit
     ): AssetPackBundleDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an asset pack bundle")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             AssetPackBundleDefinitionImpl(it, createMinimumProject)
@@ -299,6 +327,7 @@ internal class GradleBuildDefinitionImpl(
         action: FusedLibraryDefinition.() -> Unit
     ): FusedLibraryDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a fused library")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
 
         val project = subProjects.computeIfAbsent(path) {
             FusedLibraryDefinitionImpl(it, createMinimumProject)
@@ -364,7 +393,6 @@ internal class GradleBuildDefinitionImpl(
         subProjects.values.forEach {
             it.writeSubProject(
                 location.resolveGradlePath(it.path),
-                buildFileOnly = false,
                 allPlugins,
                 customPluginMap,
                 useOldPluginStyleForSeparateClassloaders,

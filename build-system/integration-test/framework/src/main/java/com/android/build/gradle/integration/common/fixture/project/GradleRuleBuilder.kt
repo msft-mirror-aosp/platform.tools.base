@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.options.Gradl
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.RuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.SdkConfigurationBuilder
-import com.android.build.gradle.integration.common.fixture.testprojects.TestProjectBuilder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -38,7 +37,7 @@ import org.junit.runners.model.Statement
 interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
 
     /**
-     * Returns the [GradleRule], for a project initialized with the [TestProjectBuilder]
+     * Returns the [GradleRule], for a project initialized with a [GradleBuildDefinition]
      *
      * @param folderName the name of the folder containing the build.
      * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name

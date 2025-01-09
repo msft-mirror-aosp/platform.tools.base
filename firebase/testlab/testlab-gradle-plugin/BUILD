@@ -77,7 +77,7 @@ maven_repository(
 gradle_build(
     name = "testlab-gradle-plugin",
     build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk:jdk11"] + FTL_GRADLE_PLUGIN_SOURCE_FILES,
+    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + FTL_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
     output_file = "testlab-gradle-plugin.zip",
     output_file_source = "dist/repo.zip",
@@ -98,7 +98,7 @@ gradle_test(
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = [
         ":agp_gradle_test_files",
-        "//prebuilts/studio/jdk:jdk11",
+        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
     ] + FTL_GRADLE_PLUGIN_SOURCE_FILES,
     gradle_properties = GRADLE_PROPERTIES,
     repos = [
