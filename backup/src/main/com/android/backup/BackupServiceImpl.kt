@@ -26,6 +26,7 @@ import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
 import com.android.backup.BackupService.Companion.TOKEN_FILE
 import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
+import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import java.nio.file.Path
 import java.util.Properties
 import java.util.zip.ZipEntry
@@ -83,16 +84,24 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   ): BackupResult {
     return try {
       val adbServices = factory.createAdbServices(serialNumber, listener, RESTORE_STEPS)
+
       with(adbServices) {
-        // Restore is always handled by the Cloud transport
-        withSetup(TRANSPORT_DTD) {
-          reportProgress("Initializing backup transport")
-          initializeTransport(TRANSPORT_DTD)
-          setTransport(TRANSPORT_CLOUD, true)
-          ZipFile(backupFile.pathString).use { zip ->
+        ZipFile(backupFile.pathString).use { zip ->
+          val metadata = zip.getMetaData()
+          val applicationId = metadata.applicationId
+          if (!isInstalled(applicationId)) {
+            throw BackupException(
+              APP_NOT_INSTALLED,
+              "Application '$applicationId' is not installed on the device",
+            )
+          }
+
+          // Restore is always handled by the Cloud transport
+          withSetup(TRANSPORT_DTD) {
+            reportProgress("Initializing backup transport")
+            initializeTransport(TRANSPORT_DTD)
+            setTransport(TRANSPORT_CLOUD, true)
             val token = zip.getRestoreToken()
-            val metadata = zip.getMetaData()
-            val applicationId = metadata.applicationId
             reportProgress("Pushing backup file")
             zip.pushBackup(adbServices)
             reportProgress("Restoring $applicationId")
