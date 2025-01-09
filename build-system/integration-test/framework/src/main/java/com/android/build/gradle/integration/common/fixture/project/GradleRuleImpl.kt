@@ -202,7 +202,7 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
-                is AndroidXPrivacySandboxLibraryDefinitionImpl -> AndroidXPrivacySandboxLibraryImpl(
+                is AndroidXPrivacySandboxLibraryDefinitionImpl -> AndroidLibraryImpl(
                     subProjectLocation,
                     definition,
                     definition.namespace
