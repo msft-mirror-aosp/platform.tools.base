@@ -743,6 +743,7 @@ com.android.tools.lint:lint-checks
     com.android.tools:sdklib (runtime)
     com.google.code.gson:gson (runtime)
     com.google.guava:guava (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.ow2.asm:asm-analysis (runtime)
 
@@ -764,7 +765,9 @@ com.android.tools.lint:lint-model
   dependencies:
     com.android.tools.build:builder-model (runtime)
     com.android.tools:common (runtime)
+    com.android.tools:repository (runtime)
     com.android.tools:sdk-common (runtime)
+    com.android.tools:sdklib (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
 
@@ -781,6 +784,7 @@ com.android.tools.lint:lint-tests
     com.android.tools.lint:lint (runtime)
     com.android.tools:sdk-common (runtime)
     com.android.tools:sdklib (runtime)
+    com.google.code.gson:gson (runtime)
     junit:junit (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.codehaus.groovy:groovy (runtime)
