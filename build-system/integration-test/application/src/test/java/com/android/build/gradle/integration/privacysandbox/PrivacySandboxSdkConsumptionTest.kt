@@ -143,7 +143,7 @@ class PrivacySandboxSdkConsumptionTest {
                             "            E: uses-sdk-library (line=0)",
                             "              A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"com.example.privacysandboxsdk\" (Raw: \"com.example.privacysandboxsdk\")",
                             "              A: http://schemas.android.com/apk/res/android:certDigest(0x01010548)=\"$certDigest\" (Raw: \"$certDigest\")",
-                            "              A: http://schemas.android.com/apk/res/android:versionMajor(0x01010577)=\"10002\" (Raw: \"10002\")"
+                            "              A: http://schemas.android.com/apk/res/android:versionMajor(0x01010577)=10002"
                     )
             )
             assertThat(manifestContentStr).doesNotContain(INTERNET_PERMISSION)
