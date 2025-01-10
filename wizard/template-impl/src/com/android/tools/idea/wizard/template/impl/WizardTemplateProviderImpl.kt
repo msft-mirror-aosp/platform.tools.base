@@ -22,6 +22,7 @@ import com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.
 import com.android.tools.idea.wizard.template.impl.activities.basicActivity.basicActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.bottomNavigationActivity.bottomNavigationActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.composeActivityMaterial3Template
+import com.android.tools.idea.wizard.template.impl.activities.composeNavigationUiActivityMaterial3.composeNavigationUiActivityMaterial3Template
 import com.android.tools.idea.wizard.template.impl.activities.composeTvActivity.composeTvActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.composeWearActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.composeWearActivityWithTileAndComplicationTemplate
@@ -76,6 +77,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
   override fun getTemplates(): List<Template> = listOf(
       composeActivityMaterial3Template,
       genAiActivityTemplate,
+      composeNavigationUiActivityMaterial3Template,
       xrActivityTemplate,
     androidTVActivityTemplate,
     basicActivityTemplate,
