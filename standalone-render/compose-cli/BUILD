@@ -10,8 +10,13 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
+        "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
+        "//tools/adt/idea/render-resources:tools.render-resources",
+        "//tools/adt/idea/rendering:tools.rendering",
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
+        "//tools/base/sdklib:tools.sdklib",
         "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
     ],

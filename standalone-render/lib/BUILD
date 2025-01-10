@@ -14,11 +14,19 @@ kotlin_library(
     deps = [
         "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/layoutlib:tools.layoutlib",
+        "//tools/adt/idea/layoutlib-loader:tools.layoutlib-loader",
         "//tools/adt/idea/render-resources:tools.render-resources",
         "//tools/adt/idea/rendering:tools.rendering",
         "//tools/analytics-library/crash:tools.analytics-crash",
+        "//tools/base/common:tools.common",
         "//tools/base/environment-services:tools.environment-services",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "//tools/base/sdk-common:tools.sdk-common",
+        "//tools/base/sdklib:tools.sdklib",
+        "@maven//:org.apache.httpcomponents.httpmime",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
+        "@maven//:org.ow2.asm.asm",
+        "@maven//:org.ow2.asm.asm-commons",
     ],
 )
 
@@ -39,6 +47,11 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.standalone-render.lib",
+        "//prebuilts/tools/common/lint-psi/intellij-core",
+        "//tools/adt/idea/render-resources:tools.render-resources",
+        "//tools/adt/idea/rendering:tools.rendering",
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
     ],
