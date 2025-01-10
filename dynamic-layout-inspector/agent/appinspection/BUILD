@@ -1,3 +1,7 @@
+load("//tools/adt/idea/studio:studio.bzl", "studio_data")
+load("//tools/base/app-inspection:app_inspection.bzl", "app_inspection_jar")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+
 package(default_visibility = ["//visibility:public"])
 
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
@@ -50,7 +54,7 @@ app_inspection_jar(
     nojarjar_deps = [
         ":nojarjar",
     ],
-    proto = "//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto",
+    protos = ["//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto"],
     # do not sort: fake_android must come before latest_runtime_jar in the classpath to override small pieces of it
     deps = [
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:fake_android",

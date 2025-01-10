@@ -49,7 +49,7 @@ app_inspection_jar(
     ],
     inspection_resource_strip_prefix = "tools/base/app-inspection/inspectors/database/resources",
     inspection_resources = glob(["resources/META-INF/**"]),
-    proto = ":database_inspector_java_proto",
+    protos = [":database_inspector_java_proto"],
     deps = agent_deps,
 )
 
