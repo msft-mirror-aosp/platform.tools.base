@@ -28,7 +28,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 private const val ROOT_PKG = "com/example/test"
-private const val BASE_ANNOTATION = "androidx/compose/ui/tooling/preview/Preview"
+private const val COMPOSE_PREVIEW_ANNOTATION = "androidx/compose/ui/tooling/preview/Preview"
 private const val COMPOSABLE_ANNOTATION = "androidx/compose/runtime/Composable"
 
 class PerfArtificialDataMultipreviewTest {
@@ -98,15 +98,18 @@ class PerfArtificialDataMultipreviewTest {
                     unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
                     unrelatedAnnotationsCount = 20,
                     multiAnnotations = listOf(
-                        MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                        MultiAnnotations(
+                            multiAnnotationsCount = 10,
+                            parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
+                            count = 10
+                        ),
                         MultiAnnotations(
                             multiAnnotationsCount = multiMultiMainId,
-                            isBase = true,
+                            parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
                             count = 40
                         ),
                         MultiAnnotations(
                             multiAnnotationsCount = 3,
-                            isBase = false,
                             count = 10,
                         ),
                     ),
@@ -129,8 +132,8 @@ class PerfArtificialDataMultipreviewTest {
                             methodsCount = 5,
                             annotations = listOf(
                                 TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
-                                TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("foo", "bar")),
-                                TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("qwe", "asd"))
+                                TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("foo", "bar")),
+                                TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("qwe", "asd"))
                             ),
                             count = 40
                         )
@@ -140,7 +143,7 @@ class PerfArtificialDataMultipreviewTest {
             // 1 + 100 classes
             // 0 compose preview methods
             createJar(rootFolder.toPath().resolve("base.jar"), sequence {
-                yield(BASE_ANNOTATION to TestClassesGenerator.annotationClass(BASE_ANNOTATION, listOf("param1", "param2")))
+                yield(COMPOSE_PREVIEW_ANNOTATION to TestClassesGenerator.annotationClass(COMPOSE_PREVIEW_ANNOTATION, listOf("param1", "param2")))
                 (0 until 100).map { "$ROOT_PKG/base/SimpleClass$it" }.forEach { name ->
                     yield(
                         name to TestClassesGenerator.classWithFieldsAndMethods(
@@ -161,15 +164,18 @@ class PerfArtificialDataMultipreviewTest {
                         unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
                         unrelatedAnnotationsCount = 20,
                         multiAnnotations = listOf(
-                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 10,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
+                                count = 10
+                            ),
                             MultiAnnotations(
                                 multiAnnotationsCount = multiMultiModuleId,
-                                isBase = true,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
                                 count = 40
                             ),
                             MultiAnnotations(
                                 multiAnnotationsCount = 3,
-                                isBase = false,
                                 count = 10,
                             ),
                         ),
@@ -192,8 +198,8 @@ class PerfArtificialDataMultipreviewTest {
                                 methodsCount = 3,
                                 annotations = listOf(
                                     TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
-                                    TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("foo$moduleId", "bar$moduleId")),
-                                    TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("qwe$moduleId", "asd$moduleId"))
+                                    TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("foo$moduleId", "bar$moduleId")),
+                                    TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("qwe$moduleId", "asd$moduleId"))
                                 ),
                                 count = 10
                             )
@@ -213,15 +219,18 @@ class PerfArtificialDataMultipreviewTest {
                         unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
                         unrelatedAnnotationsCount = 20,
                         multiAnnotations = listOf(
-                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 10,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
+                                count = 10
+                            ),
                             MultiAnnotations(
                                 multiAnnotationsCount = multiMultiLibId,
-                                isBase = true,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
                                 count = 40
                             ),
                             MultiAnnotations(
                                 multiAnnotationsCount = 3,
-                                isBase = false,
                                 count = 10,
                             ),
                         ),
@@ -246,15 +255,18 @@ class PerfArtificialDataMultipreviewTest {
                         unrelatedClasses = UnrelatedClasses(20, 100),
                         unrelatedAnnotationsCount = 20,
                         multiAnnotations = listOf(
-                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 10,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
+                                count = 10
+                            ),
                             MultiAnnotations(
                                 multiAnnotationsCount = multiMultiFolderId,
-                                isBase = true,
+                                parentAnnotation = COMPOSE_PREVIEW_ANNOTATION,
                                 count = 40
                             ),
                             MultiAnnotations(
                                 multiAnnotationsCount = 3,
-                                isBase = false,
                                 count = 10,
                             ),
                         ),
@@ -276,7 +288,7 @@ class PerfArtificialDataMultipreviewTest {
                     pkg = "$ROOT_PKG/verybig$bigJarId",
                     config = PackageConfig(
                         unrelatedAnnotationsCount = 100,
-                        annotatedClasses =  listOf(
+                        annotatedClasses = listOf(
                             AnnotatedClasses(
                                 methodsCount = 20,
                                 annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/verybig$bigJarId/UnrelatedAnnotation1")),
@@ -302,12 +314,13 @@ class PerfArtificialDataMultipreviewTest {
     }
 
     private fun createClasses(pkg: String, config: PackageConfig): Sequence<Pair<String, ByteArray>> = sequence {
-        config.multiAnnotations.forEach { (m, isBase, n) ->
+        config.multiAnnotations.forEach { (m, parentAnnotation, n) ->
             (0 until n).forEach { i ->
+                val isBase = parentAnnotation != null
                 val name = if (isBase) "$pkg/Multi${m}Annotation$i" else "$pkg/MultiMulti${m}Annotation$i"
                 yield(name to TestClassesGenerator.annotationClass(name, emptyList(), (0 until m).map { j ->
                     if (isBase)
-                        TestClassesGenerator.Annotation(BASE_ANNOTATION, (0..1).map { "val${j}_${it}" })
+                        TestClassesGenerator.Annotation(parentAnnotation, (0..1).map { "val${j}_${it}" })
                     else
                         TestClassesGenerator.Annotation("$pkg/Multi${m}Annotation${i * m + j}", emptyList())
                 }))
@@ -363,12 +376,13 @@ class PerfArtificialDataMultipreviewTest {
     /**
      * [multiAnnotationsCount] - number of (multipreview) annotations annotating each of this
      * multipreview annotations.
-     * [isBase] - whether the parent annotation is base
+     * [parentAnnotation] - optional parent annotation, if specified this multi annotation
+     *   is considered to be a base multi annotation
      * [count] - number of multi-multipreview annotations
      */
     private data class MultiAnnotations(
         val multiAnnotationsCount: Int,
-        val isBase: Boolean,
+        val parentAnnotation: String? = null,
         val count: Int,
     )
 
