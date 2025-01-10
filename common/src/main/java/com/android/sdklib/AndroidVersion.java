@@ -195,17 +195,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Creates an {@link AndroidVersion} with the given api level and codename.
-     * Codename should be null for a release version, otherwise it's a preview codename.
-     */
-    public AndroidVersion(int apiLevel, @Nullable String codename) {
-        mApiLevel = apiLevel;
-        mCodename = sanitizeCodename(codename);
-        mExtensionLevel = null;
-        mIsBaseExtension = true;
-    }
-
-    /**
      * Creates an {@link AndroidVersion} with the given api level of a release version (the codename
      * is null).
      */
@@ -214,44 +203,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
-     * codename. <Em>Important</em>: An important limitation of this method is that cannot possible
-     * recreate the API level integer from a pure string codename. This is only OK to use if the
-     * caller can guarantee that only {@link #getApiString()} will be used later. Wrong things will
-     * happen if the caller then tries to resolve the numeric {@link #getApiLevel()}.
-     *
-     * @param apiOrCodename A non-null API integer or a codename. "REL" is notable not a valid
-     *     codename.
-     * @throws AndroidVersionException if the input isn't a pure integer or doesn't look like a
-     *     valid string codename.
+     * Creates an {@link AndroidVersion} with the given api level and codename.
+     * Codename should be null for a release version, otherwise it's a preview codename.
      */
-    public AndroidVersion(@NonNull String apiOrCodename) throws AndroidVersionException {
-        int apiLevel = 0;
-        String codename = null;
-        try {
-            apiLevel = Integer.parseInt(apiOrCodename);
-        } catch (NumberFormatException ignore) {
-            // We don't know the API level.
-            // REL is a release-reserved keyword which we can use here.
-
-            if (!SdkConstants.CODENAME_RELEASE.equals(apiOrCodename)) {
-                if (PREVIEW_PATTERN.matcher(apiOrCodename).matches()) {
-                    codename = apiOrCodename;
-                }
-            }
-        }
-
-        mApiLevel = apiLevel;
-        mCodename = sanitizeCodename(codename);
-
-        mExtensionLevel = null;
-        mIsBaseExtension = true;
-
-        if (mApiLevel <= 0 && codename == null) {
-            throw new AndroidVersionException(
-                    "Invalid android API or codename " + apiOrCodename,     //$NON-NLS-1$
-                    null);
-        }
+    public AndroidVersion(int apiLevel, @Nullable String codename) {
+        this(apiLevel, codename, null, true);
     }
 
     /**
@@ -266,6 +222,34 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         mCodename = sanitizeCodename(codename);
         mExtensionLevel = extensionLevel;
         mIsBaseExtension = isBaseExtension;
+    }
+
+    /**
+     * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
+     * codename. <Em>Important</em>: An important limitation of this method is that it cannot
+     * possibly recreate the API level integer from a pure string codename. This is only OK to use
+     * if the caller can guarantee that only {@link #getApiString()} will be used later.
+     * {@link #getApiLevel()} will return 0.
+     *
+     * SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known codenames,
+     * and should be preferred.
+     *
+     * @param apiOrCodename A non-null API integer or a codename. "REL" is notable not a valid
+     *     codename.
+     * @throws IllegalArgumentException if the input isn't a pure integer or doesn't look like a
+     *     valid string codename.
+     */
+    public static AndroidVersion fromString(@NonNull String apiOrCodename) {
+        try {
+            return new AndroidVersion(Integer.parseInt(apiOrCodename));
+        } catch (NumberFormatException ignore) {}
+
+        String codename = sanitizeCodename(apiOrCodename);
+        if (codename == null || !PREVIEW_PATTERN.matcher(codename).matches()) {
+            throw new IllegalArgumentException("Invalid android API or codename " + apiOrCodename);
+        }
+
+        return new AndroidVersion(0, codename);
     }
 
     /**

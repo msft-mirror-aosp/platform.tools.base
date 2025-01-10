@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import org.junit.Test;
 
 /**
@@ -133,9 +132,9 @@ public class AndroidVersionTest {
     }
 
     @Test
-    public final void testAndroidVersion_apiOrCodename() throws AndroidVersionException {
+    public final void testAndroidVersion_fromString() {
         // A valid integer is considered an API level
-        AndroidVersion v = new AndroidVersion("15");
+        AndroidVersion v = AndroidVersion.fromString("15");
         assertEquals(15, v.getApiLevel());
         assertEquals("15", v.getApiStringWithExtension());
         assertFalse(v.isPreview());
@@ -144,12 +143,12 @@ public class AndroidVersionTest {
         assertEquals("API 15", v.toString());
 
         // A valid name is considered a codename
-        v = new AndroidVersion("CODE_NAME");
+        v = AndroidVersion.fromString("CODE_NAME");
         assertEquals("CODE_NAME", v.getApiStringWithExtension());
         assertTrue(v.isPreview());
         assertTrue(v.isBaseExtension());
         assertEquals("CODE_NAME", v.getCodename());
-        assertEquals(v, new AndroidVersion("CODE_NAME"));
+        assertEquals(v, AndroidVersion.fromString("CODE_NAME"));
         assertEquals(0, v.getApiLevel());
         assertEquals("API 0, CODE_NAME preview", v.toString());
 
@@ -157,9 +156,9 @@ public class AndroidVersionTest {
         for (String s : new String[] { "REL", "code.name", "10val", "" }) {
             try {
                 //noinspection ResultOfObjectAllocationIgnored
-                new AndroidVersion(s);
+                AndroidVersion.fromString(s);
                 fail("Invalid code name '" + s + "': Expected to fail. Actual: did not fail.");
-            } catch (AndroidVersionException e) {
+            } catch (IllegalArgumentException e) {
                 assertEquals("Invalid android API or codename " + s, e.getMessage());
             }
         }

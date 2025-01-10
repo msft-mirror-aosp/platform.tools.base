@@ -1834,8 +1834,8 @@ public class TestLintClient extends LintCliClient {
             String targetName =
                     StringsKt.removePrefix(targetHash, AndroidTargetHash.PLATFORM_HASH_PREFIX);
             try {
-                return new AndroidTestTargetWrapper(compileTarget, new AndroidVersion(targetName));
-            } catch (AndroidVersion.AndroidVersionException e) {
+                return new AndroidTestTargetWrapper(compileTarget, AndroidVersion.fromString(targetName));
+            } catch (IllegalArgumentException e) {
                 fail("Invalid `compileSdkVersion` " + targetName);
             }
         }
