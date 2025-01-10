@@ -90,43 +90,56 @@ class PerfArtificialDataMultipreviewTest {
         val multiMultiFolderId = 4
         return listOf(
             // 100 + 20 + 10 + 40 + 10 + 4 + 100 + 10 + 40 = 334 classes
+            // 100 + 200 = 300 compose preview methods
             createJar(
                 jarPath = rootFolder.toPath().resolve("main.jar"),
                 pkg = "$ROOT_PKG/main",
                 config = PackageConfig(
-                    UnrelatedClasses(20, 100),
-                    20,
-                    listOf(
-                        MultiAnnotations(10, true, 10),
-                        MultiAnnotations(multiMultiMainId, true, 40),
-                        MultiAnnotations(3, false, 10, multiMultiMainId),
+                    unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
+                    unrelatedAnnotationsCount = 20,
+                    multiAnnotations = listOf(
+                        MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                        MultiAnnotations(
+                            multiAnnotationsCount = multiMultiMainId,
+                            isBase = true,
+                            count = 40
+                        ),
+                        MultiAnnotations(
+                            multiAnnotationsCount = 3,
+                            isBase = false,
+                            count = 10,
+                            parentMultiId = multiMultiMainId
+                        ),
                     ),
-                    listOf(
+                    annotatedClasses = listOf(
                         AnnotatedClasses(
-                            20,
-                            listOf(TestClassesGenerator.Annotation("$ROOT_PKG/main/UnrelatedAnnotation0")),
-                            100
+                            methodsCount = 20,
+                            annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/main/UnrelatedAnnotation0")),
+                            count = 100
                         ),
+                        // 10 * 10 = 100 compose preview methods
                         AnnotatedClasses(
-                            10,
-                            listOf(
+                            methodsCount = 10,
+                            annotations = listOf(
                                 TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
-                                TestClassesGenerator.Annotation("$ROOT_PKG/main/Multi4Annotation0")),
-                            10
+                                TestClassesGenerator.Annotation("$ROOT_PKG/main/Multi${multiMultiMainId}Annotation0")),
+                            count = 10
                         ),
+                        // 5 * 40 = 200 compose preview methods
                         AnnotatedClasses(
-                            5,
-                            listOf(
+                            methodsCount = 5,
+                            annotations = listOf(
                                 TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
                                 TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("foo", "bar")),
                                 TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("qwe", "asd"))
                             ),
-                            40
+                            count = 40
                         )
                     )
                 )
             ),
             // 1 + 100 classes
+            // 0 compose preview methods
             createJar(rootFolder.toPath().resolve("base.jar"), sequence {
                 yield(BASE_ANNOTATION to TestClassesGenerator.annotationClass(BASE_ANNOTATION, listOf("param1", "param2")))
                 (0 until 100).map { "$ROOT_PKG/base/SimpleClass$it" }.forEach { name ->
@@ -140,39 +153,51 @@ class PerfArtificialDataMultipreviewTest {
                 }
             }),
             // 20 * (100 + 20 + 10 + 4 + 10 + 100 + 5 + 10) = 5180 classes
+            // 500 + 600 = 1100 compose preview methods
             *(0 until 20).map { moduleId ->
                 createJar(
                     jarPath = rootFolder.toPath().resolve("classes$moduleId.jar"),
                     pkg = "$ROOT_PKG/module$moduleId",
                     config = PackageConfig(
-                        UnrelatedClasses(20, 100),
-                        20,
-                        listOf(
-                            MultiAnnotations(10, true, 10),
-                            MultiAnnotations(multiMultiModuleId, true, 40),
-                            MultiAnnotations(3, false, 10, multiMultiModuleId),
+                        unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
+                        unrelatedAnnotationsCount = 20,
+                        multiAnnotations = listOf(
+                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = multiMultiModuleId,
+                                isBase = true,
+                                count = 40
+                            ),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 3,
+                                isBase = false,
+                                count = 10,
+                                parentMultiId = multiMultiModuleId
+                            ),
                         ),
-                        listOf(
+                        annotatedClasses = listOf(
                             AnnotatedClasses(
-                                20,
-                                listOf(TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/UnrelatedAnnotation0")),
-                                100
+                                methodsCount = 20,
+                                annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/UnrelatedAnnotation0")),
+                                count = 100
                             ),
+                            // 20 * 5 * 5 = 500 compose preview methods
                             AnnotatedClasses(
-                                5,
-                                listOf(
+                                methodsCount = 5,
+                                annotations = listOf(
                                     TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
-                                    TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/Multi4Annotation0")),
-                                5
+                                    TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/Multi${multiMultiModuleId}Annotation0")),
+                                count = 5
                             ),
+                            // 20 * 3 * 10 = 600 compose preview methods
                             AnnotatedClasses(
-                                3,
-                                listOf(
+                                methodsCount = 3,
+                                annotations = listOf(
                                     TestClassesGenerator.Annotation(COMPOSABLE_ANNOTATION),
                                     TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("foo$moduleId", "bar$moduleId")),
                                     TestClassesGenerator.Annotation(BASE_ANNOTATION, listOf("qwe$moduleId", "asd$moduleId"))
                                 ),
-                                10
+                                count = 10
                             )
 
                         )
@@ -180,54 +205,75 @@ class PerfArtificialDataMultipreviewTest {
                 )
             }.toTypedArray(),
             // 100 * (100 + 20 + 10 + 4 + 10 + 100) = 24400 classes
+            // 0 compose preview methods
             *(0 until 100).map { libId ->
                 val pkg = "$ROOT_PKG/lib$libId"
                 createJar(
                     jarPath = rootFolder.toPath().resolve("lib_classes$libId.jar"),
                     pkg = pkg,
                     config = PackageConfig(
-                        UnrelatedClasses(20, 100),
-                        20,
-                        listOf(
-                            MultiAnnotations(10, true, 10),
-                            MultiAnnotations(multiMultiLibId, true, 40),
-                            MultiAnnotations(3, false, 10, multiMultiLibId),
+                        unrelatedClasses = UnrelatedClasses(methodsCount = 20, count = 100),
+                        unrelatedAnnotationsCount = 20,
+                        multiAnnotations = listOf(
+                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = multiMultiLibId,
+                                isBase = true,
+                                count = 40
+                            ),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 3,
+                                isBase = false,
+                                count = 10,
+                                parentMultiId = multiMultiLibId
+                            ),
                         ),
-                        listOf(
+                        annotatedClasses = listOf(
                             AnnotatedClasses(
-                                20,
-                                listOf(TestClassesGenerator.Annotation("$pkg/UnrelatedAnnotation0")),
-                                100
+                                methodsCount = 20,
+                                annotations = listOf(TestClassesGenerator.Annotation("$pkg/UnrelatedAnnotation0")),
+                                count = 100
                             )
                         )
                     )
                 )
             }.toTypedArray(),
             // 20 * (100 + 20 + 10 + 4 + 10 + 100) = 4880 classes
+            // 0 compose preview methods
             *(0 until 20).map { folderId ->
                 val pkg = "$ROOT_PKG/generated$folderId"
                 createFolder(
                     folderPath = rootFolder.toPath().resolve("generated_classes$folderId"),
                     pkg = pkg,
                     config = PackageConfig(
-                        UnrelatedClasses(20, 100),
-                        20,
-                        listOf(
-                            MultiAnnotations(10, true, 10),
-                            MultiAnnotations(multiMultiFolderId, true, 40),
-                            MultiAnnotations(3, false, 10, multiMultiFolderId),
+                        unrelatedClasses = UnrelatedClasses(20, 100),
+                        unrelatedAnnotationsCount = 20,
+                        multiAnnotations = listOf(
+                            MultiAnnotations(multiAnnotationsCount = 10, isBase = true, count = 10),
+                            MultiAnnotations(
+                                multiAnnotationsCount = multiMultiFolderId,
+                                isBase = true,
+                                count = 40
+                            ),
+                            MultiAnnotations(
+                                multiAnnotationsCount = 3,
+                                isBase = false,
+                                count = 10,
+                                parentMultiId = multiMultiFolderId
+                            ),
                         ),
-                        listOf(
+                        annotatedClasses = listOf(
                             AnnotatedClasses(
-                                20,
-                                listOf(TestClassesGenerator.Annotation("$ROOT_PKG/lib$folderId/UnrelatedAnnotation$folderId")),
-                                100
+                                methodsCount = 20,
+                                annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/lib$folderId/UnrelatedAnnotation$folderId")),
+                                count = 100
                             )
                         )
                     )
                 )
             }.toTypedArray(),
             // 3 * (100 + 500) = 1800 classes
+            // 0 compose preview methods
             *(0 until 3).map { bigJarId ->
                 createJar(
                     jarPath = rootFolder.toPath().resolve("verybig_classes$bigJarId.jar"),
@@ -236,9 +282,9 @@ class PerfArtificialDataMultipreviewTest {
                         unrelatedAnnotationsCount = 100,
                         annotatedClasses =  listOf(
                             AnnotatedClasses(
-                                20,
-                                listOf(TestClassesGenerator.Annotation("$ROOT_PKG/verybig$bigJarId/UnrelatedAnnotation1")),
-                                500
+                                methodsCount = 20,
+                                annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/verybig$bigJarId/UnrelatedAnnotation1")),
+                                count = 500
                             )
                         )
                     )
