@@ -261,6 +261,7 @@ com.android.tools:sdk-common
     com.google.protobuf:protobuf-java (runtime)
     javax.inject:javax.inject (runtime)
     net.sf.kxml:kxml2 (runtime)
+    org.apache.commons:commons-compress (runtime)
     org.bouncycastle:bcpkix-jdk18on (runtime)
     org.bouncycastle:bcprov-jdk18on (runtime)
     org.glassfish.jaxb:jaxb-runtime (runtime)
@@ -311,6 +312,8 @@ com.android.tools.adblib:adblib-ddmlibcompatibility
   dependencies:
     com.android.tools.adblib:adblib (runtime)
     com.android.tools.adblib:adblib-tools (runtime)
+    com.android.tools:annotations (runtime)
+    com.android.tools:common (runtime)
     com.android.tools.ddms:ddmlib (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
@@ -321,6 +324,7 @@ com.android.tools.adblib:adblib-tools
   description=Tooling for the library used to communicate with Android devices
   dependencies:
     com.android.tools.adblib:adblib (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
@@ -664,6 +668,7 @@ com.android.tools.fakeadbserver:fakeadbserver
   description=Library implementing the ADB Server protocol
   dependencies:
     com.android.tools:common (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.jetbrains.kotlin:kotlin-reflect (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)

@@ -50,6 +50,7 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/adblib",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
@@ -66,6 +67,8 @@ kotlin_library(
     visibility = ["//visibility:public"],
     deps = [
         ":adblib.tools",
+        "//tools/base/adblib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -99,6 +102,7 @@ kotlin_test(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         # FakeAdbServer
         "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "@maven//:com.google.protobuf.protobuf-java",
     ],
 )
 

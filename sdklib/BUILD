@@ -137,6 +137,7 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.apache.httpcomponents.httpcore",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
         "@maven//:org.mockito.mockito-core",
     ],
 )
