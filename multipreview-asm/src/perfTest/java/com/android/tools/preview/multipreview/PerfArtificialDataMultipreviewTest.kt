@@ -108,7 +108,6 @@ class PerfArtificialDataMultipreviewTest {
                             multiAnnotationsCount = 3,
                             isBase = false,
                             count = 10,
-                            parentMultiId = multiMultiMainId
                         ),
                     ),
                     annotatedClasses = listOf(
@@ -172,7 +171,6 @@ class PerfArtificialDataMultipreviewTest {
                                 multiAnnotationsCount = 3,
                                 isBase = false,
                                 count = 10,
-                                parentMultiId = multiMultiModuleId
                             ),
                         ),
                         annotatedClasses = listOf(
@@ -225,7 +223,6 @@ class PerfArtificialDataMultipreviewTest {
                                 multiAnnotationsCount = 3,
                                 isBase = false,
                                 count = 10,
-                                parentMultiId = multiMultiLibId
                             ),
                         ),
                         annotatedClasses = listOf(
@@ -259,7 +256,6 @@ class PerfArtificialDataMultipreviewTest {
                                 multiAnnotationsCount = 3,
                                 isBase = false,
                                 count = 10,
-                                parentMultiId = multiMultiFolderId
                             ),
                         ),
                         annotatedClasses = listOf(
@@ -369,13 +365,11 @@ class PerfArtificialDataMultipreviewTest {
      * multipreview annotations.
      * [isBase] - whether the parent annotation is base
      * [count] - number of multi-multipreview annotations
-     * [parentMultiId] - id of parent annotation if not base.
      */
     private data class MultiAnnotations(
         val multiAnnotationsCount: Int,
         val isBase: Boolean,
         val count: Int,
-        val parentMultiId: Int = -1,
     )
 
     /**
