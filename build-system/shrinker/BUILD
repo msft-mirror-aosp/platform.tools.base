@@ -19,6 +19,7 @@ kotlin_library(
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdk-common:tools.sdk-common",
         "@maven//:com.google.guava.guava",
+        "@maven//:com.google.protobuf.protobuf-java",
     ],
 )
 
@@ -35,9 +36,15 @@ kotlin_test(
     # Specify gradle-api jar first, as kotlin-daemon-client contains older net.rubygrapefruit.platform classes
     deps = [
         ":shrinker",
+        "//tools/base/build-system/aapt2-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],
 )
 

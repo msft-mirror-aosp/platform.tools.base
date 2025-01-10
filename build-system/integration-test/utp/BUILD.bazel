@@ -13,5 +13,6 @@ kotlin_library(
         "//tools/base/utp/android-test-plugin-host-device-info-proto",
         "//tools/base/utp/android-test-plugin-host-emulator-control",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
+        "@maven//:com.google.testing.platform.core-proto",
     ],
 )

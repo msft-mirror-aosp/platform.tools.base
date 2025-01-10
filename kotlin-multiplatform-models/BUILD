@@ -18,6 +18,7 @@ kotlin_library(
         "//tools/base/kotlin-multiplatform-models/proto:kotlin_multiplatform_android_models_proto_for_agp",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
     ],
 )

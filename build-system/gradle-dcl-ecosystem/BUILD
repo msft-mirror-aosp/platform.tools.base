@@ -19,8 +19,10 @@ kotlin_library(
     resources = [":resources"],
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/build-system:gradle-api_neverlink",
         "//tools/base/build-system/gradle-core",
         "//tools/base/build-system/gradle-kotlin",
+        "@maven//:org.gradle.gradle-tooling-api",
     ],
 )
 
