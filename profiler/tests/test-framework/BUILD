@@ -10,6 +10,10 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/bazel:studio-grpc",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/fakeandroid",
+        "//tools/base/transport/proto:transport_java_proto",
         "//tools/base/transport/test-framework",
         "@maven//:com.google.truth.truth",
     ],
