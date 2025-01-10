@@ -29,7 +29,10 @@ import java.util.zip.ZipOutputStream
 
 private const val ROOT_PKG = "com/example/test"
 private const val COMPOSE_PREVIEW_ANNOTATION = "androidx/compose/ui/tooling/preview/Preview"
+private const val WEAR_TILE_PREVIEW_ANNOTATION = "androidx/wear/tiles/tooling/preview/Preview"
 private const val COMPOSABLE_ANNOTATION = "androidx/compose/runtime/Composable"
+private const val TILE_PREVIEW_DATA = "Landroidx/wear/tiles/tooling/preview/TilePreviewData;"
+private const val TILE_PREVIEW_METHOD_SIGNATURE = "()$TILE_PREVIEW_DATA"
 
 class PerfArtificialDataMultipreviewTest {
     @get:Rule
@@ -44,12 +47,14 @@ class PerfArtificialDataMultipreviewTest {
         ) {
             val metric = MultipreviewMetric()
             metric.beforeTest()
-            val multipreview =
+            val previewMethods =
                 PreviewMethodFinder(listOf(), files, listOf(), listOf(), listOf())
                 .findAllPreviewMethods()
             metric.afterTest()
             // Validity check
-            assertEquals(1400, multipreview.size)
+            assertEquals(2830, previewMethods.size)
+            assertEquals(1400, previewMethods.filterIsInstance<ComposePreviewMethod>().size)
+            assertEquals(1430, previewMethods.filterIsInstance<WearTilePreviewMethod>().size)
             metric
         }
     }
@@ -65,12 +70,14 @@ class PerfArtificialDataMultipreviewTest {
         ) {
             val metric = MultipreviewMetric()
             metric.beforeTest()
-            val multipreview =
+            val previewMethods =
                 PreviewMethodFinder(listOf(), mainJars, listOf(), listOf(), depsJars)
                     .findAllPreviewMethods()
             metric.afterTest()
             // Validity check
-            assertEquals(300, multipreview.size)
+            assertEquals(570, previewMethods.size)
+            assertEquals(300, previewMethods.filterIsInstance<ComposePreviewMethod>().size)
+            assertEquals(270, previewMethods.filterIsInstance<WearTilePreviewMethod>().size)
             metric
         }
     }
@@ -88,9 +95,12 @@ class PerfArtificialDataMultipreviewTest {
         val multiMultiModuleId = 4
         val multiMultiLibId = 4
         val multiMultiFolderId = 4
+        val multiMultiTileMainId = 5
         return listOf(
-            // 100 + 20 + 10 + 40 + 10 + 4 + 100 + 10 + 40 = 334 classes
+            // 100 + 20 + 10 + 40 + 10 + 30 + 4 + 100 + 10 + 40 + 100 + 20 + 10 = 494 classes
             // 100 + 200 = 300 compose preview methods
+            // 120 + 150 = 270 wear tile preview methods
+            // 300 + 270 = 570 preview methods
             createJar(
                 jarPath = rootFolder.toPath().resolve("main.jar"),
                 pkg = "$ROOT_PKG/main",
@@ -111,6 +121,11 @@ class PerfArtificialDataMultipreviewTest {
                         MultiAnnotations(
                             multiAnnotationsCount = 3,
                             count = 10,
+                        ),
+                        MultiAnnotations(
+                            multiAnnotationsCount = multiMultiTileMainId,
+                            parentAnnotation = WEAR_TILE_PREVIEW_ANNOTATION,
+                            count = 30
                         ),
                     ),
                     annotatedClasses = listOf(
@@ -136,12 +151,36 @@ class PerfArtificialDataMultipreviewTest {
                                 TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("qwe", "asd"))
                             ),
                             count = 40
-                        )
+                        ),
+                        AnnotatedClasses(
+                            methodsCount = 30,
+                            annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/main/UnrelatedAnnotation0")),
+                            count = 100,
+                            methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
+                        ),
+                        // 15 * 10 = 150 wear tile preview methods
+                        AnnotatedClasses(
+                            methodsCount = 15,
+                            annotations = listOf(
+                                TestClassesGenerator.Annotation(WEAR_TILE_PREVIEW_ANNOTATION, listOf("foo", "bar")),
+                                TestClassesGenerator.Annotation(WEAR_TILE_PREVIEW_ANNOTATION, listOf("qwe", "asd"))
+                            ),
+                            count = 10,
+                            methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
+                        ),
+                        // 6 * 20 = 120 wear tile preview methods
+                        AnnotatedClasses(
+                            methodsCount = 6,
+                            annotations = listOf(
+                                TestClassesGenerator.Annotation("$ROOT_PKG/main/Multi${multiMultiTileMainId}Annotation0")),
+                            count = 20,
+                            methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
+                        ),
                     )
                 )
             ),
             // 1 + 100 classes
-            // 0 compose preview methods
+            // 0 preview methods
             createJar(rootFolder.toPath().resolve("base.jar"), sequence {
                 yield(COMPOSE_PREVIEW_ANNOTATION to TestClassesGenerator.annotationClass(COMPOSE_PREVIEW_ANNOTATION, listOf("param1", "param2")))
                 (0 until 100).map { "$ROOT_PKG/base/SimpleClass$it" }.forEach { name ->
@@ -154,8 +193,10 @@ class PerfArtificialDataMultipreviewTest {
                     )
                 }
             }),
-            // 20 * (100 + 20 + 10 + 4 + 10 + 100 + 5 + 10) = 5180 classes
+            // 20 * (100 + 20 + 10 + 40 + 10 + 30 + 100 + 5 + 10 + 100 + 6 + 11) = 8840 classes
             // 500 + 600 = 1100 compose preview methods
+            // 720 + 440 = 1160 wear tile preview methods
+            // 1100 + 1160 = 2260 preview methods
             *(0 until 20).map { moduleId ->
                 createJar(
                     jarPath = rootFolder.toPath().resolve("classes$moduleId.jar"),
@@ -177,6 +218,11 @@ class PerfArtificialDataMultipreviewTest {
                             MultiAnnotations(
                                 multiAnnotationsCount = 3,
                                 count = 10,
+                            ),
+                            MultiAnnotations(
+                                multiAnnotationsCount = multiMultiTileMainId,
+                                parentAnnotation = WEAR_TILE_PREVIEW_ANNOTATION,
+                                count = 30
                             ),
                         ),
                         annotatedClasses = listOf(
@@ -202,14 +248,37 @@ class PerfArtificialDataMultipreviewTest {
                                     TestClassesGenerator.Annotation(COMPOSE_PREVIEW_ANNOTATION, listOf("qwe$moduleId", "asd$moduleId"))
                                 ),
                                 count = 10
+                            ),
+                            AnnotatedClasses(
+                                methodsCount = 30,
+                                annotations = listOf(TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/UnrelatedAnnotation0")),
+                                count = 100,
+                                methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
+                            ),
+                            // 20 * 5 * 5 = 720 wear tile preview methods
+                            AnnotatedClasses(
+                                methodsCount = 6,
+                                annotations = listOf(
+                                    TestClassesGenerator.Annotation("$ROOT_PKG/module$moduleId/Multi${multiMultiTileMainId}Annotation0")),
+                                count = 6,
+                                methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
+                            ),
+                            // 20 * 2 * 11 = 440 wear tile preview methods
+                            AnnotatedClasses(
+                                methodsCount = 2,
+                                annotations = listOf(
+                                    TestClassesGenerator.Annotation(WEAR_TILE_PREVIEW_ANNOTATION, listOf("foo$moduleId", "bar$moduleId")),
+                                    TestClassesGenerator.Annotation(WEAR_TILE_PREVIEW_ANNOTATION, listOf("qwe$moduleId", "asd$moduleId"))
+                                ),
+                                count = 11,
+                                methodSignature = TILE_PREVIEW_METHOD_SIGNATURE
                             )
-
                         )
                     )
                 )
             }.toTypedArray(),
             // 100 * (100 + 20 + 10 + 4 + 10 + 100) = 24400 classes
-            // 0 compose preview methods
+            // 0 preview methods
             *(0 until 100).map { libId ->
                 val pkg = "$ROOT_PKG/lib$libId"
                 createJar(
@@ -245,7 +314,7 @@ class PerfArtificialDataMultipreviewTest {
                 )
             }.toTypedArray(),
             // 20 * (100 + 20 + 10 + 4 + 10 + 100) = 4880 classes
-            // 0 compose preview methods
+            // 0 preview methods
             *(0 until 20).map { folderId ->
                 val pkg = "$ROOT_PKG/generated$folderId"
                 createFolder(
@@ -281,7 +350,7 @@ class PerfArtificialDataMultipreviewTest {
                 )
             }.toTypedArray(),
             // 3 * (100 + 500) = 1800 classes
-            // 0 compose preview methods
+            // 0 preview methods
             *(0 until 3).map { bigJarId ->
                 createJar(
                     jarPath = rootFolder.toPath().resolve("verybig_classes$bigJarId.jar"),
@@ -341,12 +410,12 @@ class PerfArtificialDataMultipreviewTest {
                 )
             }
         }
-        config.annotatedClasses.forEach { (m, annotations, n) ->
+        config.annotatedClasses.forEach { (m, annotations, n, methodSignature) ->
             (0 until n).map { "$pkg/AnnotatedMethods${m}Class$it" }.forEach { name ->
                 yield(
                     name to TestClassesGenerator.classWithAnnotatedMethods(
                         name,
-                        (0 until m).map { "AnnotatedMethod$it:(Ljava/lang/String;Ljava/lang/String;)V" },
+                        (0 until m).map { "AnnotatedMethod$it:$methodSignature" },
                         annotations,
                         m
                     )
@@ -391,11 +460,13 @@ class PerfArtificialDataMultipreviewTest {
      * [annotations] - annotations to annotate the methods (all methods annotated with the same
      * annotations)
      * [count] - number of classes
+     * [methodSignature] - method signature to use on generated methods
      */
     private data class AnnotatedClasses(
         val methodsCount: Int,
         val annotations: List<TestClassesGenerator.Annotation>,
-        val count: Int
+        val count: Int,
+        val methodSignature: String = "(Ljava/lang/String;Ljava/lang/String;)V"
     )
 
     private data class PackageConfig(
