@@ -30,20 +30,19 @@ sealed class PluginType(
     open val version: String? = null,
     open val hasMarker: Boolean = true,
 ) {
-    object JAVA_LIBRARY: PluginType(
-        id = "java-library",
-    )
-    object JAVA: PluginType(
-        id = "java",
-    )
-    object JAVA_PLATFORM: PluginType(
-        id = "java-platform",
-    )
-    object APPLICATION: PluginType(
-        id = "application",
-    )
+    // Core Java plugins
+    object JAVA_LIBRARY: PluginType("java-library")
+    object JAVA: PluginType("java")
+    object JAVA_PLATFORM: PluginType("java-platform")
+    object APPLICATION: PluginType("application")
+    object JAVA_TEST_FIXTURES: PluginType("java-test-fixtures")
+    object MAVEN_PUBLISH: PluginType("maven-publish")
+    object JAVA_GRADLE_PLUGIN: PluginType("java-gradle-plugin")
+    // --------------
+    // Kotlin plugins
     object KOTLIN_JVM: PluginType(
         id = "org.jetbrains.kotlin.jvm",
+        artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
     object KOTLIN_ANDROID: PluginType(
@@ -62,68 +61,33 @@ sealed class PluginType(
     )
     object KOTLIN_MPP: PluginType(
         id = "org.jetbrains.kotlin.multiplatform",
+        artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
         version = TestUtils.KOTLIN_VERSION_FOR_TESTS
     )
-    object ANDROID_APP: PluginType(
-        id = "com.android.application",
+    object COMPOSE_COMPILER_PLUGIN: PluginType(
+        id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
+    )
+    // -----------
+    // AGP Plugins
+    abstract class AgpPlugin(id: String): PluginType(
+        id = id,
         isAndroid = true,
         artifact = "com.android.tools.build:gradle",
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
-    object ANDROID_LIB: PluginType(
-        id = "com.android.library",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object ANDROID_TEST: PluginType(
-        id = "com.android.test",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object ANDROID_DYNAMIC_FEATURE: PluginType(
-        id = "com.android.dynamic-feature",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object FUSED_LIBRARY: PluginType(
-        id = "com.android.fused-library",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object PRIVACY_SANDBOX_SDK: PluginType(
-        id = "com.android.privacy-sandbox-sdk",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object ANDROIDX_PRIVACY_SANDBOX_LIBRARY: PluginType(
-        id = "androidx.privacysandbox.library",
-        isAndroid = true,
-        artifact = "androidx.privacysandbox.plugins:plugins-privacysandbox-library",
-        version = androidxPrivacySandboxLibraryPluginVersion,
-    )
-    object ANDROID_ASSET_PACK: PluginType(
-        id = "com.android.asset-pack",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
-    )
-    object ANDROID_AI_PACK: PluginType(
-        id = "com.android.ai-pack",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
-    )
-    object ANDROID_ASSET_PACK_BUNDLE: PluginType(
-        id = "com.android.asset-pack-bundle",
-        isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION,
-    )
+    object ANDROID_APP: AgpPlugin("com.android.application")
+    object ANDROID_LIB: AgpPlugin("com.android.library")
+    object ANDROID_TEST: AgpPlugin("com.android.test")
+    object ANDROID_DYNAMIC_FEATURE: AgpPlugin("com.android.dynamic-feature")
+    object FUSED_LIBRARY: AgpPlugin("com.android.fused-library")
+    object PRIVACY_SANDBOX_SDK: AgpPlugin("com.android.privacy-sandbox-sdk")
+    object ANDROID_ASSET_PACK: AgpPlugin("com.android.asset-pack")
+    object ANDROID_AI_PACK: AgpPlugin("com.android.ai-pack")
+    object ANDROID_ASSET_PACK_BUNDLE: AgpPlugin("com.android.asset-pack-bundle")
+    object ANDROID_KMP_LIBRARY: AgpPlugin("com.android.kotlin.multiplatform.library")
+    object ANDROID_BUILT_IN_KOTLIN: AgpPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+
     object ANDROID_SETTINGS: PluginType(
         id = "com.android.settings",
         isAndroid = true,
@@ -131,26 +95,19 @@ sealed class PluginType(
         artifact = "com.android.tools.build:gradle-settings",
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION
     )
-    object JAVA_TEST_FIXTURES: PluginType(
-        id = "java-test-fixtures",
-    )
-    object MAVEN_PUBLISH: PluginType(
-        id= "maven-publish",
-    )
-    object JAVA_GRADLE_PLUGIN: PluginType(
-        id="java-gradle-plugin"
-    )
-    object ANDROID_BUILT_IN_KOTLIN: PluginType(
-        id = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
+
+    // -----------
+    // AndroidX plugins
+    object ANDROIDX_PRIVACY_SANDBOX_LIBRARY: PluginType(
+        id = "androidx.privacysandbox.library",
         isAndroid = true,
-        artifact = "com.android.tools.build:gradle",
-        version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-    object COMPOSE_COMPILER_PLUGIN: PluginType(
-        id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
-        version = TestUtils.KOTLIN_VERSION_FOR_TESTS
+        artifact = "androidx.privacysandbox.plugins:plugins-privacysandbox-library",
+        version = androidxPrivacySandboxLibraryPluginVersion,
     )
 
+    /**
+     * A custom Plugin type
+     */
     data class Custom(
         override val id: String,
         override val version: String? = null,
@@ -163,5 +120,3 @@ sealed class PluginType(
         hasMarker = hasMarker
     )
 }
-
-internal fun Iterable<PluginType>.containsAndroid() = any { it.isAndroid }

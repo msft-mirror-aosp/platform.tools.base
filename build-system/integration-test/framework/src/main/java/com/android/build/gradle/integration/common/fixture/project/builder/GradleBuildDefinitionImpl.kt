@@ -21,6 +21,7 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformAndroidDefinition
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
@@ -35,6 +36,7 @@ import com.android.build.gradle.integration.common.fixture.project.FusedLibraryD
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformAndroidDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
@@ -335,6 +337,26 @@ internal class GradleBuildDefinitionImpl(
 
         project as? FusedLibraryDefinition
             ?: errorOnWrongType(project, path, "Fused Library")
+
+        action(project)
+
+        return project
+    }
+
+    override fun androidKotlinMultiplatformLibrary(
+        path: String,
+        createMinimumProject: Boolean,
+        action: KotlinMultiplatformAndroidDefinition.() -> Unit
+    ): KotlinMultiplatformAndroidDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be an Android Kotlin multiplatform library")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with :")
+
+        val project = subProjects.computeIfAbsent(path) {
+            KotlinMultiplatformAndroidDefinitionImpl(it, createMinimumProject)
+        }
+
+        project as? KotlinMultiplatformAndroidDefinition
+            ?: errorOnWrongType(project, path, "Android Kotlin Multiplatform Library")
 
         action(project)
 

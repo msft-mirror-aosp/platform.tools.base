@@ -39,17 +39,24 @@ class NamedDomainObjectContainerProxy<T>(
         name: String,
         configurationAction: Action<in T>
     ): NamedDomainObjectProvider<T> {
-        val item = contentHolder.runNestedBlock("named", listOf(name), theInterface) {
+        contentHolder.runNestedBlock("named", listOf(name), theInterface) {
             configurationAction.execute(this)
         }
 
-        return NamedDomainObjectProviderProxy(item)
+        // the returned object should not be used so we use a custom proxy for this that will
+        // prevent usage
+        @Suppress("UNCHECKED_CAST")
+        return UnusableObjectProxy.createProxy(NamedDomainObjectProvider::class.java) as NamedDomainObjectProvider<T>
     }
 
     override fun create(name: String, configureAction: Action<in T>): T {
-        return contentHolder.runNestedBlock("create", listOf(name), theInterface) {
+        contentHolder.runNestedBlock("create", listOf(name), theInterface) {
             configureAction.execute(this)
         }
+
+        // the returned object should not be used so we use a custom proxy for this that will
+        // prevent usage
+        return UnusableObjectProxy.createProxy(theInterface)
     }
 
     // -------

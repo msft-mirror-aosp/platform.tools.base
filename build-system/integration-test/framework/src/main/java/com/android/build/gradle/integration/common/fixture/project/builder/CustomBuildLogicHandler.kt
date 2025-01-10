@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.fixture.project.builder.bytecode.ReferenceFinderVisitor
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureCallbackPlugin
@@ -86,6 +88,9 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
             // legacy DSL callbacks
             PluginData(LegacyApplicationCallback::class, LegacyApplicationCallbackPlugin::class, "com/android/build/gradle/internal/dsl/BaseAppModuleExtension"),
             PluginData(LegacyLibraryCallback::class, LegacyLibraryCallbackPlugin::class, "com/android/build/gradle/LibraryExtension"),
+
+            // KMP callbacks
+            PluginData(AndroidKotlinMultiplatformCallback::class, AndroidKotlinMultiplatformCallbackPlugin::class, "org/jetbrains/kotlin/gradle/dsl/KotlinMultiplatformExtension"),
 
             // generic plugin with no extension
             PluginData(GenericCallback::class, GenericCallbackPlugin::class, null)

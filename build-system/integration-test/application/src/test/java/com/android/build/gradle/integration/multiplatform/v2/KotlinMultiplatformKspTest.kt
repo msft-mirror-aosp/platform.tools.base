@@ -17,58 +17,47 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.multiplatform.v2.KotlinMultiplatformGeneratedSourcesTest.Callback
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformKspTest {
 
-    private val sharedLib = MinimalSubProject.kotlinMultiplatformAndroid("com.shared.android")
-
     @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder().subproject(":shared", sharedLib).build()
-            )
-            .withKotlinGradlePlugin(true)
-            .withKspGradlePlugin(true)
-            .create()
+    val rule = GradleRule.configure()
+        .withGradleOptions {
+            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        }.from {
+            androidKotlinMultiplatformLibrary(":shared", createMinimumProject = false) {
+                applyPlugin(PluginType.KSP)
+                androidLibrary {
+                    namespace = "com.shared.android"
+                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
-    @Before
-    fun before() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("shared").buildFile,
-            """
-                apply plugin: "com.google.devtools.ksp"
-
-                kotlin {
-                    androidLibrary {
-                        withDeviceTest {}
-                        withHostTest {}
-                    }
+                    withDeviceTest {}
+                    withHostTest {}
                 }
-
                 dependencies {
                     add("kspAndroid", "com.google.dagger:hilt-compiler:2.40.1")
                     add("kspAndroidDeviceTest", "com.google.dagger:hilt-compiler:2.40.1")
                     add("kspAndroidHostTest", "com.google.dagger:hilt-compiler:2.40.1")
                 }
-            """.trimIndent()
-        )
-    }
+            }
+        }
 
     @Test
     fun testRunningKsp() {
-        getExecutor().run(":shared:kspAndroidMain")
-        getExecutor().run(":shared:kspAndroidDeviceTest")
-        getExecutor().run(":shared:kspAndroidHostTest")
+        val build = rule.build
+        build.executor.run(":shared:kspAndroidMain")
+        build.executor.run(":shared:kspAndroidDeviceTest")
+        build.executor.run(":shared:kspAndroidHostTest")
     }
-
-    private fun getExecutor() =
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
 }

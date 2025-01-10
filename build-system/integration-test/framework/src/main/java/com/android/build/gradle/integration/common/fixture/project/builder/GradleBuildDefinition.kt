@@ -21,6 +21,7 @@ import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformAndroidDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
@@ -214,6 +215,16 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: FusedLibraryDefinition.() -> Unit
     ): FusedLibraryDefinition
+
+    /**
+     * Configures a subProject with the Kotlin multiplatform plugin and the Android KMP library
+     * plugin, creating it if needed.
+     */
+    fun androidKotlinMultiplatformLibrary(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: KotlinMultiplatformAndroidDefinition.() -> Unit
+    ) : KotlinMultiplatformAndroidDefinition
 
     /**
      * configures the Gradle properties for this build

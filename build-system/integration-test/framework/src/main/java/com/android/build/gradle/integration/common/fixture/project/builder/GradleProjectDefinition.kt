@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContent
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
+import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -208,7 +209,8 @@ internal abstract class GradleProjectDefinitionImpl(
         )
     }
 
-    protected open fun writeExtension(writer: BuildWriter, location: Path) {
+    @VisibleForTesting
+    internal open fun writeExtension(writer: BuildWriter, location: Path) {
         // nothing to do here
     }
 

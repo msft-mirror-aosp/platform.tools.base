@@ -16,25 +16,16 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.utils.FileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformAndroidVitalsTest {
 
-    private val sharedLib = MinimalSubProject.kotlinMultiplatformAndroid("com.shared.android")
-
     @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder().subproject(":shared", sharedLib).build()
-        )
-        .withKotlinGradlePlugin(true)
-        .create()
+    val rule = GradleRule.from {
+        androidKotlinMultiplatformLibrary(":shared") { }
+    }
 
     /**
      * To ensure hooks against the kotlin multiplatform plugin can be invoked eagerly if kmp is
@@ -42,7 +33,6 @@ class KotlinMultiplatformAndroidVitalsTest {
      */
     @Test
     fun kotlinMultiplatformPluginIsAppliedFirst() {
-        project.executor()
-            .run(":shared:androidPrebuild")
+        rule.build.executor.run(":shared:androidPrebuild")
     }
 }

@@ -95,6 +95,12 @@ interface GradleBuild {
      */
     fun fusedLibrary(path: String): FusedLibraryProject
 
+    /**
+     * Queries for a Kotlin multiplatform project via its gradle path.
+     * The project must exist and be a Kotlin multiplatform project.
+     */
+    fun androidKotlinMultiplatformLibrary(path: String): KotlinMultiplatformAndroid
+
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
 
@@ -279,6 +285,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not a Fused Library project.
                 Possible options are ${getProjectListByType<FusedLibraryImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun androidKotlinMultiplatformLibrary(path: String): KotlinMultiplatformAndroid {
+        val project = subProject(path)
+        if (project is KotlinMultiplatformAndroid) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not a Kotling Multiplatform Project.
+                Possible options are ${getProjectListByType<KotlinMultiplatformAndroidImpl>()}
             """.trimIndent()
         )
     }

@@ -139,7 +139,7 @@ interface DslContentHolder {
         theInterface: Class<T>,
         parentChain: List<String> = listOf(),
         action: T.() -> Unit,
-    ): T
+    )
 
     /**
      * Create an instance of T via a chained proxy.
@@ -370,8 +370,8 @@ internal class DefaultDslContentHolder(
         theInterface: Class<T>,
         parentChain: List<String>,
         action: T.() -> Unit,
-    ): T {
-        return runNestedBlock(
+    ) {
+        runNestedBlock(
             name = name,
             parameters = parameters,
             instanceProvider = {
@@ -389,20 +389,16 @@ internal class DefaultDslContentHolder(
         instanceProvider: (DslContentHolder) -> T,
         parentChain: List<String> = listOf(),
         action: T.() -> Unit,
-    ): T {
+    ) {
         val contentHolder = DefaultDslContentHolder(name)
 
-        val instance = instanceProvider(contentHolder)
-
-        action(instance)
+        action(instanceProvider(contentHolder))
 
         eventList += Event(
             EventType.NESTED_BLOCK,
             NestedBlockData(name, contentHolder, parameters),
             parentChain
         )
-
-        return instance
     }
 
     override fun <T> chainedProxy(name: String, theInterface: Class<T>): T =
@@ -575,8 +571,8 @@ internal class ChainedDslContentHolder(
         theInterface: Class<T>,
         parentChain: List<String>,
         action: T.() -> Unit,
-    ): T {
-        return parent.runNestedBlock(
+    ) {
+        parent.runNestedBlock(
             name,
             parameters,
             theInterface,

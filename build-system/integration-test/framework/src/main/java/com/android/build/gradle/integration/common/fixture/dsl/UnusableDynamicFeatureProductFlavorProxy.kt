@@ -14,25 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2
+package com.android.build.gradle.integration.common.fixture.dsl
 
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import org.junit.Rule
-import org.junit.Test
+import com.android.build.api.dsl.DynamicFeatureProductFlavor
 
-class KotlinMultiplatformResourceParsingTest {
-
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":shared") {
-            androidLibrary {
-                experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
-            }
-        }
-    }
-
-    @Test
-    fun testResourceParsingWithoutDeviceTestEnabled() {
-        rule.build.executor.run(":shared:assemble")
-    }
-}
+class UnusableDynamicFeatureProductFlavorProxy(
+): UnusableProductFlavorProxy(), DynamicFeatureProductFlavor
