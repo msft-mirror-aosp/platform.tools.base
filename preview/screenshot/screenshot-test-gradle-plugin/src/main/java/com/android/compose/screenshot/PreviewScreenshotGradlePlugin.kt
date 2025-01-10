@@ -258,7 +258,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     val artifactImplObject = when {
                         artifactsImplClass.isInstance(artifacts) -> artifacts
                         analyticsEnabledArtifactsClass.isInstance(artifacts) -> analyticsEnabledArtifactsGetDelegateMethod.invoke(artifacts)
-                        else -> throw RuntimeException("Unexpected artifact type ${artifacts.javaClass}")
+                        else -> throw IllegalStateException("Unexpected artifact type ${artifacts.javaClass}")
                     }
                     val instance = apkForLocalTestClass.getField("INSTANCE").get(null)
                     // ArtifactsImpl::get(InternalArtifactType.APK_FOR_LOCAL_TEST)
