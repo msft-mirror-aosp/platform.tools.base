@@ -40,7 +40,6 @@ import com.android.backup.testing.asBackupResult
 import com.google.common.truth.Truth.assertThat
 import com.jetbrains.rd.generator.nova.fail
 import java.nio.file.Path
-import java.util.zip.ZipException
 import java.util.zip.ZipFile
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
@@ -565,55 +564,75 @@ class BackupServiceImplTest {
 
   @Test
   fun validateBackupFile_noApplicationId() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("@pm@", ""),
-          FileInfo("restore_token_file", "11223344556677889900"),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("@pm@", ""),
+            FileInfo("restore_token_file", "11223344556677889900"),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
   fun validateBackupFile_invalidToken() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(backupFileHelper.createBackupFile("com.app", "foobar"))
-    }
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(backupFileHelper.createBackupFile("com.app", "foobar"))
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain a valid token")
   }
 
   @Test
   fun validateBackupFile_notZipFile() {
-    assertThrows(ZipException::class.java) {
-      val path = Path.of(temporaryFolder.root.path, "file.backup").createFile()
-      BackupService.validateBackupFile(path)
-    }
+    val exception =
+      assertThrows(BackupException::class.java) {
+        val path = Path.of(temporaryFolder.root.path, "file.backup").createFile()
+        BackupService.validateBackupFile(path)
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("File is not a valid backup file")
   }
 
   @Test
   fun validateBackupFile_unexpectedFile() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("@pm@", ""),
-          FileInfo("restore_token_file", "11223344556677889900"),
-          FileInfo("com.app", ""),
-          FileInfo("extra file", ""),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("@pm@", ""),
+            FileInfo("restore_token_file", "11223344556677889900"),
+            FileInfo("com.app", ""),
+            FileInfo("extra file", ""),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
   fun validateBackupFile_missingPmFile() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("restore_token_file", "11223344556677889900"),
-          FileInfo("com.app", ""),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("restore_token_file", "11223344556677889900"),
+            FileInfo("com.app", ""),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
