@@ -194,13 +194,13 @@ class PreviewScreenshotTestEngine : TestEngine {
             if (referencePath.toFile().exists()) {
                 addOutputArtifact(createTestArtifact("screenshotReferenceImage", referenceImage.path))
             }
-            if (actualPath.toFile().exists()) {
+            if (actualPath.toFile().exists() && previewScreenshot.error == null) {
                 addOutputArtifact(createTestArtifact("screenshotActualImage", actualImage.path))
             }
         }
 
-        //renderer failed to generate images
-        if (!actualPath.toFile().exists()) {
+        //renderer error
+        if (previewScreenshot.error != null || !actualPath.toFile().exists()) {
             val errorMessage = getFirstError(previewScreenshot.error)
             testResult.testStatus = TestStatusProto.TestStatus.ERROR
             testResult.error = createError(errorMessage)

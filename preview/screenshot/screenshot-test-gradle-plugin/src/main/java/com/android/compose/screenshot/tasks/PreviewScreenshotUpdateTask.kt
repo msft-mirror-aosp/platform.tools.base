@@ -139,7 +139,7 @@ abstract class PreviewScreenshotUpdateTask : DefaultTask() {
     private fun verifyRender(results: List<PreviewScreenshotResult>) {
         if (results.isNotEmpty()) {
             for (result in results) {
-                if (!Paths.get(renderTaskOutputDir.get().asFile.absolutePath, result.imagePath).exists())
+                if (result.error != null || !Paths.get(renderTaskOutputDir.get().asFile.absolutePath, result.imagePath).exists())
                     throw GradleException("Cannot update reference images. Rendering failed for ${result.imagePath.substringBeforeLast(".")}. " +
                             "Error: ${result.error!!.message}. Check ${renderTaskResultFile.get().asFile.absolutePath} for additional info")
             }

@@ -59,16 +59,21 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
         val previewRenderingResult = readPreviewRenderingResultJson(resultFile.reader())
         val outputFolder = readPreviewRenderingJson(parameters.cliToolArgumentsFile.get().asFile.reader()).outputFolder
 
-        val hasAtLeastOneRendering = previewRenderingResult.screenshotResults.any {
-            Paths.get(outputFolder, it.imagePath).exists()
+        val hasAtLeastOneRenderingWithoutErrors = previewRenderingResult.screenshotResults.any {
+            Paths.get(outputFolder, it.imagePath).exists() && it.error == null
         }
-        if (!hasAtLeastOneRendering) {
-            throw GradleException(
-                "Rendering failed. For more details, check ${resultFile.absolutePath}")
+
+        if (previewRenderingResult.globalError != null || !hasAtLeastOneRenderingWithoutErrors) {
+            val errorMessage = if (previewRenderingResult.globalError != null) {
+                "Rendering failed with error: ${previewRenderingResult.globalError}"
+            } else {
+                "Rendering failed. For more details, check ${resultFile.absolutePath}"
+            }
+            throw GradleException(errorMessage)
         }
 
         val hasRenderingErrors = previewRenderingResult.screenshotResults.any { it.error != null }
-        if (hasRenderingErrors || previewRenderingResult.globalError != null) {
+        if (hasRenderingErrors) {
             logger.log(
                 Level.WARNING,
                 "There were some issues with rendering one or more previews. " +
