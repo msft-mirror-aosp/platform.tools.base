@@ -19,7 +19,6 @@ import static com.android.ddmlib.AdbHelper.formAdbRequest;
 import static com.android.ddmlib.AdbHelper.readAdbResponse;
 import static com.android.ddmlib.AdbHelper.write;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.clientmanager.ClientManager;
@@ -30,19 +29,10 @@ import com.android.ddmlib.internal.DeviceMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -62,9 +52,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
 
     // Where to find the ADB bridge.
     public static final int DEFAULT_ADB_PORT = 5037;
-
-    // ADB exit value when no Universal C Runtime on Windows
-    private static final int STATUS_DLL_NOT_FOUND = (int)(long)0xc0000135;
 
     // Only set when in unit testing mode. This is a hack until we move to devicelib.
     // http://b.android.com/221925
@@ -450,130 +437,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
     @Nullable
     public IDeviceUsageTracker getiDeviceUsageTracker() {
         return iDeviceUsageTracker;
-    }
-
-    /**
-     * @deprecated Use {@link #execute} which lets you inject an executor
-     */
-    @Deprecated
-    private static <T> ListenableFuture<T> runAdb(
-            @NonNull final File adb,
-            AndroidDebugBridge.AdbOutputProcessor<T> resultParser,
-            String... command) {
-        final SettableFuture<T> future = SettableFuture.create();
-        new Thread(
-                () -> {
-                    List<String> args = new ArrayList<>();
-                    args.add(adb.getPath());
-                    args.addAll(Arrays.asList(command));
-                    ProcessBuilder pb = new ProcessBuilder(args);
-                    pb.redirectErrorStream(true);
-
-                    Process p;
-                    try {
-                        p = pb.start();
-                    }
-                    catch (IOException e) {
-                        future.setException(e);
-                        return;
-                    }
-
-                    try (BufferedReader br =
-                                 new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-                        future.set(resultParser.process(p, br));
-                    }
-                    catch (IOException e) {
-                        future.setException(e);
-                        return;
-                    }
-                    catch (RuntimeException e) {
-                        future.setException(e);
-                    }
-                },
-                "Running adb")
-                .start();
-        return future;
-    }
-
-    public ListenableFuture<AdbVersion> getAdbVersion(@NonNull final File adb) {
-        return runAdb(
-                adb,
-                (Process process, BufferedReader br) -> {
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        AdbVersion version = AdbVersion.parseFrom(line);
-                        if (version != AdbVersion.UNKNOWN) {
-                            return version;
-                        }
-                        sb.append(line);
-                        sb.append('\n');
-                    }
-
-                    String errorMessage = "Unable to detect adb version";
-
-                    int exitValue = process.exitValue();
-                    if (exitValue != 0) {
-                        errorMessage += ", exit value: 0x" + Integer.toHexString(exitValue);
-
-                        // Display special message if it is the STATUS_DLL_NOT_FOUND code, and
-                        // ignore adb output since it's empty anyway
-                        if (exitValue == STATUS_DLL_NOT_FOUND
-                            && SdkConstants.currentPlatform()
-                               == SdkConstants.PLATFORM_WINDOWS) {
-                            errorMessage +=
-                                    ". ADB depends on the Windows Universal C Runtime, which is"
-                                    + " usually installed by default via Windows Update. You"
-                                    + " may need to manually fetch and install the runtime"
-                                    + " package here:"
-                                    + " https://support.microsoft.com/en-ca/help/2999226/update-for-universal-c-runtime-in-windows";
-                            throw new RuntimeException(errorMessage);
-                        }
-                    }
-                    if (sb.length() > 0) {
-                        errorMessage += ", adb output: " + sb.toString();
-                    }
-                    throw new RuntimeException(errorMessage);
-                },
-                "version");
-    }
-
-    private static ListenableFuture<List<AdbDevice>> getRawDeviceList(@NonNull final File adb) {
-        return runAdb(
-                adb,
-                (Process process, BufferedReader br) -> {
-                    // The first line of output is a header, not part of the device list. Skip it.
-                    br.readLine();
-                    List<AdbDevice> result = new ArrayList<>();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        AdbDevice device = AdbDevice.parseAdbLine(line);
-
-                        if (device != null) {
-                            result.add(device);
-                        }
-                    }
-
-                    return result;
-                },
-                "devices",
-                "-l");
-    }
-
-    /**
-     * Returns the set of devices reported by the adb command-line. This is mainly intended for the
-     * Connection Assistant or other diagnostic tools that need to validate the state of the
-     * {@link #getDevices()} list via another channel. Code that just needs to access the list of
-     * devices should call {@link #getDevices()} instead.
-     */
-    public ListenableFuture<List<AdbDevice>> getRawDeviceList() {
-        if (mAdbOsLocation == null) {
-            SettableFuture<List<AdbDevice>> result = SettableFuture.create();
-            result.set(Collections.emptyList());
-            return result;
-        }
-        File adb = new File(mAdbOsLocation);
-        return getRawDeviceList(adb);
     }
 
     /**
