@@ -16,11 +16,16 @@
 
 package com.android.sdklib;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -426,82 +431,58 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return s;
     }
 
-    /**
-     * Compares this object with the specified object for order. Returns a
-     * negative integer, zero, or a positive integer as this object is less
-     * than, equal to, or greater than the specified object.
-     *
-     * @param o the Object to be compared.
-     * @return a negative integer, zero, or a positive integer as this object is
-     *         less than, equal to, or greater than the specified object.
-     */
+    /** Comparator that looks at API level and codename only, not extension level. */
+    public static final Comparator<AndroidVersion> API_LEVEL_ORDERING =
+            comparing(AndroidVersion::getApiLevel)
+                    .thenComparing(AndroidVersion::getCodename, nullsFirst(naturalOrder()));
+
+    /** Comparator used to implement the natural order for this class. */
+    private static final Comparator<AndroidVersion> ORDERING =
+            API_LEVEL_ORDERING
+                    .thenComparing(AndroidVersion::getNonBaseExtensionLevel, nullsFirst(naturalOrder()));
+
     @Override
     public int compareTo(@NonNull AndroidVersion o) {
-        int apiLevelComparison = compareTo(o.getApiLevel(), o.getCodename());
-        if (apiLevelComparison == 0) {
-            if (this.mIsBaseExtension && o.mIsBaseExtension) {
-                // The presence or absence of an extension level is irrelevant if both
-                // AndroidVersions are the base extension,
-                return 0;
-            }
-            if (mExtensionLevel != null) {
-                if (o.getExtensionLevel() != null) {
-                    return mExtensionLevel - o.getExtensionLevel();
-                }
-                return 1;
-            }
-            else {
-                if (o.getExtensionLevel() != null) {
-                    return -1;
-                }
-                // Neither package have extension levels.
-                return 0;
-            }
-        }
-        else {
-            return apiLevelComparison;
-        }
+        return ORDERING.compare(this, o);
     }
 
-    public int compareTo(int apiLevel, @Nullable String codename) {
-        if (mCodename == null) {
-            if (codename != null) {
-                if (mApiLevel == apiLevel) {
-                    return -1; // same api level but argument is a preview for next version
-                }
-            }
-            return mApiLevel - apiLevel;
-        } else {
-            // 'this' is a preview
-            if (mApiLevel == apiLevel) {
-                if (codename == null) {
-                    return +1;
-                } else {
-                    return mCodename.compareTo(codename);    // strange case where the 2 previews
-                                                             // have different codename?
-                }
-            } else {
-                return mApiLevel - apiLevel;
-            }
-        }
+    @Nullable
+    private Integer getNonBaseExtensionLevel() {
+        // The presence or absence of an extension level is irrelevant if both
+        // AndroidVersions are the base extension. We assume that if an AndroidVersion has an
+        // extension level specified, it is at least equal to the base extension level.
+        return isBaseExtension() ? null : getExtensionLevel();
+    }
+
+    /**
+     * Returns true if this version is equal to or newer than the given API level.
+     */
+    public boolean isAtLeast(int apiLevel) {
+        return isAtLeast(apiLevel, null);
+    }
+
+    /**
+     * Returns true if this version is equal to or newer than the given API level. If a codename is
+     * given, then this version must also either be strictly greater than the given api level,
+     * or must have a codename that is greater than the given codename (by string comparison).
+     *
+     * This is typically used to check if a version is at least a preview for a certain API level,
+     * e.g. to check if this version contains "O" APIs: isAtLeast(VersionCodes.O - 1, "O")
+     */
+    public boolean isAtLeast(int apiLevel, @Nullable String codename) {
+        return compareTo(new AndroidVersion(apiLevel, codename)) >= 0;
     }
 
     /**
      * Compares this version with the specified API and returns true if this version
      * is greater or equal than the requested API -- that is the current version is a
      * suitable min-api-level for the argument API.
+     *
+     * @deprecated use the more grammatical isAtLeast
      */
+    @Deprecated
     public boolean isGreaterOrEqualThan(int api) {
-        return compareTo(api, null) >= 0;
-    }
-
-    /**
-     * Compares this version with the specified API and extension level, and returns true if this
-     * version is greater or equal than the requested API -- that is the current version is a
-     * suitable min-api-level for the argument API.
-     */
-    public boolean isGreaterOrEqualThan(int api, int extensionLevel) {
-        return compareTo(new AndroidVersion(api, null, extensionLevel, true)) >= 0;
+        return isAtLeast(api);
     }
 
     /**

@@ -32,7 +32,7 @@ import org.junit.Test;
 public class AndroidVersionTest {
 
     @Test
-    public final void testAndroidVersionWithExtensions() {
+    public void unspecifiedExtension() {
         // Extension levels for an API level are greater than versions where the extension level is
         // not given.
         AndroidVersion v = new AndroidVersion(30, null);
@@ -41,53 +41,78 @@ public class AndroidVersionTest {
         assertEquals("30", v.getApiStringWithoutExtension());
         assertEquals("30", v.getApiStringWithExtension());
 
-        // AndroidVersions that are base SDKs are equal no matter if the extension level is given or
-        // not (in the case where the SDK was downloaded by versions of studio before extensions
-        // were known).
-        assertEquals(v.hashCode(), new AndroidVersion(30, null, 4, true).hashCode());
-        assertNotEquals(
-                new AndroidVersion(30, null, 6, false).hashCode(),
-                new AndroidVersion(30, null, 4, false).hashCode());
+        assertTrue(v.isAtLeast(0));
+        assertTrue(v.isAtLeast(14));
+        assertFalse(v.isAtLeast(31));
+    }
 
-        assertTrue(v.isGreaterOrEqualThan(0));
-        assertTrue(v.isGreaterOrEqualThan(14));
-        assertTrue(v.isGreaterOrEqualThan(15));
-        assertFalse(v.isGreaterOrEqualThan(31));
-
-        assertTrue(v.isGreaterOrEqualThan(30, 1));
-        assertTrue(v.isGreaterOrEqualThan(30, 2));
-
-        v = new AndroidVersion(30, null, 4, false);
+    @Test
+    public void nonBaseExtension() {
+        AndroidVersion v = new AndroidVersion(30, null, 4, false);
         assertFalse(v.isPreview());
         assertNull(v.getCodename());
         assertEquals("30", v.getApiStringWithoutExtension());
         assertEquals("30-ext4", v.getApiStringWithExtension());
 
-        assertTrue(v.isGreaterOrEqualThan(0));
-        assertTrue(v.isGreaterOrEqualThan(14));
-        assertTrue(v.isGreaterOrEqualThan(15));
-        assertFalse(v.isGreaterOrEqualThan(31));
-
-        assertTrue(v.isGreaterOrEqualThan(30, 1));
-        assertTrue(v.isGreaterOrEqualThan(30, 2));
-        assertTrue(v.isGreaterOrEqualThan(30, 4));
-        assertFalse(v.isGreaterOrEqualThan(30, 5));
+        assertTrue(v.isAtLeast(0));
+        assertTrue(v.isAtLeast(14));
+        assertFalse(v.isAtLeast(31));
 
         assertThat(v).isGreaterThan(new AndroidVersion(29, "codename"));
         assertThat(v).isLessThan(new AndroidVersion(30, "codename"));
         assertEquals("API 30, extension level 4", v.toString());
 
-        // AndroidVersions with extension level but is the base SDK, is the same as an
-        // AndroidVersions with no extension information.
+        assertNotEquals(
+                new AndroidVersion(30, null, 6, false).hashCode(),
+                new AndroidVersion(30, null, 4, false).hashCode());
+    }
+
+    @Test
+    public void extensionLevelOrdering() {
+        // API 33 with default extension level
+        AndroidVersion api33base = new AndroidVersion(33, null);
+        // API 33 with explicit base extension level
+        AndroidVersion api33baseExt3 = new AndroidVersion(33, null, 3, true);
+        // Invalid version specification: this should not occur in practice
+        AndroidVersion api33ext1 = new AndroidVersion(33, null, 1, false);
+        // API 33 with non-base extension level
+        AndroidVersion api33ext4 = new AndroidVersion(33, null, 4, false);
+        // Previews for what will likely become API 34 (indicated by API 33 + codename)
+        AndroidVersion api34Preview = new AndroidVersion(33, "U");
+        AndroidVersion api34PreviewWithExtension = new AndroidVersion(33, "U", 4, false);
+
+        assertThat(api33base).isEquivalentAccordingToCompareTo(api33baseExt3);
+        assertThat(api33base).isLessThan(api33ext1);
+        // This is unintuitive, but necessary given that api33base == api33baseExt3.
+        // If we instead consider extension levels in the case when isBaseExtension differs between
+        // the operands, we have apiBase < api33ext1 < api33baseExt3, yet apiBase == api33baseExt3.
+        // A non-transitive comparator could cause sorting to fail. It is more important to properly
+        // handle the case of an unspecified extension level than the case of an extension level
+        // that is explicitly given and incorrect.
+        assertThat(api33baseExt3).isLessThan(api33ext1);
+        assertThat(api33baseExt3).isLessThan(api33ext4);
+        assertThat(api33ext1).isLessThan(api33ext4);
+        assertThat(api33ext4).isLessThan(api34Preview);
+        assertThat(api33ext4).isLessThan(api34PreviewWithExtension);
+        assertThat(api34Preview).isLessThan(api34PreviewWithExtension);
+    }
+
+    /**
+     * For AndroidVersions that have isBaseExtension set, we don't use the extension level for
+     * equivalence or comparison.
+     */
+    @Test
+    public void baseExtensionEquivalence() {
         AndroidVersion base = new AndroidVersion(10);
         AndroidVersion baseWithExtensionInfo = new AndroidVersion(10, null, 3, true);
         assertEquals(base, baseWithExtensionInfo);
+        assertEquals(base.hashCode(), baseWithExtensionInfo.hashCode());
 
         assertThat(base.compareTo(baseWithExtensionInfo)).isEqualTo(0);
     }
 
     @Test
-    public final void testAndroidVersion() {
+    public void testAndroidVersion() {
         AndroidVersion v = new AndroidVersion(1, "  CODENAME   ");
         assertEquals(1, v.getApiLevel());
         assertEquals("CODENAME", v.getApiStringWithExtension());
@@ -124,11 +149,11 @@ public class AndroidVersionTest {
         assertNull(v.getCodename());
         assertEquals("15", v.getApiStringWithExtension());
 
-        assertTrue(v.isGreaterOrEqualThan(0));
-        assertTrue(v.isGreaterOrEqualThan(14));
-        assertTrue(v.isGreaterOrEqualThan(15));
-        assertFalse(v.isGreaterOrEqualThan(16));
-        assertFalse(v.isGreaterOrEqualThan(Integer.MAX_VALUE));
+        assertTrue(v.isAtLeast(0));
+        assertTrue(v.isAtLeast(14));
+        assertTrue(v.isAtLeast(15));
+        assertFalse(v.isAtLeast(16));
+        assertFalse(v.isAtLeast(Integer.MAX_VALUE));
     }
 
     @Test

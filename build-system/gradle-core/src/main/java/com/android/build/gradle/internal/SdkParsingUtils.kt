@@ -138,7 +138,7 @@ internal fun warnIfCompileSdkTooNew(
     androidGradlePluginVersion: AgpVersion,
     suppressWarningIfTooNewForVersions: String? = null,
     ) {
-    if (version.compareTo(maxVersion.apiLevel, maxVersion.codename) <= 0) return
+    if (AndroidVersion.API_LEVEL_ORDERING.compare(version, maxVersion) <= 0) return
     // Don't warn about the next preview version when AGP is in dev/alpha
     if (version.isPreview && version.apiLevel == maxVersion.apiLevel && !maxVersion.isPreview &&
         (androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.ALPHA || androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.DEV)) return
