@@ -143,6 +143,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return factory.createAdbServices(serialNumber, null, 1).isInstalled(applicationId)
   }
 
+  override suspend fun isPlayStoreInstalled(serialNumber: String): Boolean {
+    return factory.createAdbServices(serialNumber, null, 1).isPlayStoreInstalled()
+  }
+
   private suspend fun pullBackup(
     adbServices: AdbServices,
     metadata: BackupMetadata,

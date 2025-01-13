@@ -164,4 +164,21 @@ class AbstractAdbServicesTest {
 
     assertThat(adbServices.isInstalled("com.app")).isFalse()
   }
+
+  @Test
+  fun isPlayStoreInstalled_installed() = runBlocking {
+    val adbServices = FakeAdbServices("serial", 10)
+
+    assertThat(adbServices.isPlayStoreInstalled()).isTrue()
+  }
+
+  @Test
+  fun isPlayStoreInstalled_not_installed() = runBlocking {
+    val adbServices = FakeAdbServices("serial", 10)
+    adbServices.addCommandOverride(
+      Output("pm resolve-activity market://details?id=com.android.vending", "No activity found\n")
+    )
+
+    assertThat(adbServices.isPlayStoreInstalled()).isFalse()
+  }
 }

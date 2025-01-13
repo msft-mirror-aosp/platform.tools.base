@@ -200,6 +200,21 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun isPlayStoreInstalled(): Boolean {
+    try {
+      val output =
+        executeCommand("pm resolve-activity market://details?id=com.android.vending").stdout.trim()
+      return output != "No activity found"
+    } catch (e: BackupException) {
+      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
+      // problem.
+      if (e.errorCode != DEVICE_DISCONNECTED) {
+        logger.warn(e.message, e)
+      }
+      return false
+    }
+  }
+
   private suspend fun withTestMode(block: suspend () -> Unit) {
     reportProgress("Enabling test mode")
     enableTestMode(true)

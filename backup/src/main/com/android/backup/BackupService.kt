@@ -48,6 +48,8 @@ interface BackupService {
 
   suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean
 
+  suspend fun isPlayStoreInstalled(serialNumber: String): Boolean
+
   companion object {
 
     const val TOKEN_FILE = "restore_token_file"
