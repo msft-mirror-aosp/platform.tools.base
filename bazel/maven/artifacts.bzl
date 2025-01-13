@@ -931,6 +931,7 @@ DATA = [
     "org.codehaus.mojo:animal-sniffer-annotations:1.19",
     "org.gradle:gradle-declarative-dsl-core:8.9-20240529002035+0000",  # Version used here should be in the list of verified bootstrap builds
     "org.gradle:gradle-declarative-dsl-tooling-models:8.9-20240529002035+0000",  # Version used here should be in the list of verified bootstrap builds
+    "org.gradle:gradle-tooling-api:8.12",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
     "org.jacoco:org.jacoco.agent:0.8.12",
     "org.jacoco:org.jacoco.agent:0.8.7",

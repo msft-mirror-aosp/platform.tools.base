@@ -61700,6 +61700,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.gradle.gradle-tooling-api_8.12",
+    pom = "repository/org/gradle/gradle-tooling-api/8.12/gradle-tooling-api-8.12.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/gradle-tooling-api/8.12",
+    deps = [
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.hamcrest.hamcrest-core_2.2",
     pom = "repository/org/hamcrest/hamcrest-core/2.2/hamcrest-core-2.2.pom",
     repo_root_path = "repository",
