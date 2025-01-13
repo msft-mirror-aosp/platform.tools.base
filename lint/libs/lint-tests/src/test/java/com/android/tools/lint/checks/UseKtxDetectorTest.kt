@@ -231,58 +231,271 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testObtainStyledAttributesWithApply() {
+  fun testObtainStyledAttributesWithScopingFunctions() {
+    // TODO: Other methods that have the contract
+    //   callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     lint()
       .files(
         kotlin(
             """
-            package test.pkg
+            @file:Suppress("unused", "UnusedVariable")
 
-            import android.app.Activity
+            package test.pkg
             import android.content.Context
-            import android.graphics.Color
-            import android.view.Menu
+            import android.content.res.TypedArray
 
             fun testUsingApply(context: Context, style: Int, attr: IntArray) {
                 context.obtainStyledAttributes(style, attr).apply { // WARN 1
                     var color = getDrawable(0)
+                    var color2 = this.getDrawable(0)
                 }.recycle()
+            }
+
+            fun testUsingWith(context: Context, style: Int, attr: IntArray) {
+                with(context.obtainStyledAttributes(style, attr)) { // WARN 2
+                    var color = getDrawable(0)
+                    var color2 = this.getDrawable(0)
+                    recycle()
+                }
+            }
+
+            fun testUsingRun(context: Context, style: Int, attr: IntArray) {
+                context.obtainStyledAttributes(style, attr).run { // WARN 3
+                    var color = getDrawable(0)
+                    var color2 = this.getDrawable(0)
+                    recycle()
+                }
+            }
+
+            fun testUsingLet(context: Context, style: Int, attr: IntArray) {
+                context.obtainStyledAttributes(style, attr).let { // WARN 4
+                    var color = it.getDrawable(0)
+                    it.recycle()
+                }
+            }
+
+            // Make sure we don't modify other lambda variables
+            fun testUnrelatedIt(context: Context, style: Int, attr: IntArray, unrelated: TypedArray) {
+                context.obtainStyledAttributes(style, attr).let { // WARN 5
+                    var color = it.getDrawable(0)
+                    run {
+                        val it = unrelated
+                        // Make sure we don't modify `it` here
+                        it.getDrawable(0)
+                    }
+                    it.recycle()
+                }
+            }
+
+            fun testReferenceVarAndThis(context: Context, style: Int, attr: IntArray) {
+                val array = context.obtainStyledAttributes(style, attr) // WARN 6
+                array.apply {
+                    val x = this.getDrawable(0)
+                    val y = array.getDrawable(0)
+                }.recycle()
+            }
+
+            fun testUsingThisRecycle(context: Context, style: Int, attr: IntArray) {
+                with(context.obtainStyledAttributes(style, attr)) { // WARN 7
+                    var color = getDrawable(0)
+                    var color2 = this.getDrawable(0)
+                    this.recycle()
+                }
+            }
+
+            fun testApplyWithParens(context: Context, style: Int, attr: IntArray) {
+               // Like 6B but with some extra parentheses
+               val array = (context).obtainStyledAttributes(style, attr) // WARN 8
+               ((array).apply {
+                   val x = this.getDrawable(0)
+                   val y = (array).getDrawable(0)
+               }).recycle()
+            }
+
+            // Can't offer replacement if there are other side effects
+            fun testNotLastStatement(context: Context, style: Int, attr: IntArray) {
+                context.obtainStyledAttributes(style, attr).let { // OK 1
+                    it.recycle()
+                    println("test")
+                }
+            }
+
+            fun testNotUnconditional(context: Context, style: Int, attr: IntArray) {
+                context.obtainStyledAttributes(style, attr).let { // OK 2
+                    println(it.recycle())
+                }
+            }
+
+            fun testWithParens(context: Context, style: Int, attr: IntArray) {
+                ((context).obtainStyledAttributes(style, attr)).let { // OK 3
+                    var color = (it).getDrawable(0)
+                    (it).recycle()
+                }
             }
             """
           )
           .indented()
       )
+      // Detector deliberately skips some unlikely scenarios because implementing the
+      // fix wasn't worth the trouble
+      .skipTestModes(TestMode.PARENTHESIZED)
       .run()
       .expect(
         """
-        src/test/pkg/test.kt:9: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+        src/test/pkg/test.kt:8: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
             context.obtainStyledAttributes(style, attr).apply { // WARN 1
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        src/test/pkg/test.kt:15: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            with(context.obtainStyledAttributes(style, attr)) { // WARN 2
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:23: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            context.obtainStyledAttributes(style, attr).run { // WARN 3
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:31: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            context.obtainStyledAttributes(style, attr).let { // WARN 4
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:39: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            context.obtainStyledAttributes(style, attr).let { // WARN 5
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:51: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            val array = context.obtainStyledAttributes(style, attr) // WARN 6
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:59: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+            with(context.obtainStyledAttributes(style, attr)) { // WARN 7
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:68: Warning: Use the KTX extension function Context.withStyledAttributes instead? [UseKtx]
+           val array = (context).obtainStyledAttributes(style, attr) // WARN 8
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 8 warnings
         """
       )
       .verifyFixes()
       .window(1)
       .expectFixDiffs(
         """
-        Autofix for src/test/pkg/test.kt line 9: Replace with the withStyledAttributes extension function:
-        @@ -7 +7
-          import android.view.Menu
+        Autofix for src/test/pkg/test.kt line 8: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
         + import androidx.core.content.withStyledAttributes
 
           fun testUsingApply(context: Context, style: Int, attr: IntArray) {
         -     context.obtainStyledAttributes(style, attr).apply { // WARN 1
         +     context.withStyledAttributes(style, attr) { // WARN 1
                   var color = getDrawable(0)
+                  var color2 = this.getDrawable(0)
         -     }.recycle()
         +     }
+          }
+        Autofix for src/test/pkg/test.kt line 15: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -15 +16
+          fun testUsingWith(context: Context, style: Int, attr: IntArray) {
+        -     with(context.obtainStyledAttributes(style, attr)) { // WARN 2
+        +     context.withStyledAttributes(style, attr) { // WARN 2
+                  var color = getDrawable(0)
+                  var color2 = this.getDrawable(0)
+        -         recycle()
+              }
+        Autofix for src/test/pkg/test.kt line 23: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -23 +24
+          fun testUsingRun(context: Context, style: Int, attr: IntArray) {
+        -     context.obtainStyledAttributes(style, attr).run { // WARN 3
+        +     context.withStyledAttributes(style, attr) { // WARN 3
+                  var color = getDrawable(0)
+                  var color2 = this.getDrawable(0)
+        -         recycle()
+              }
+        Autofix for src/test/pkg/test.kt line 31: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -31 +32
+          fun testUsingLet(context: Context, style: Int, attr: IntArray) {
+        -     context.obtainStyledAttributes(style, attr).let { // WARN 4
+        -         var color = it.getDrawable(0)
+        -         it.recycle()
+        +     context.withStyledAttributes(style, attr) { // WARN 4
+        +         var color = getDrawable(0)
+              }
+        Autofix for src/test/pkg/test.kt line 39: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -39 +40
+          fun testUnrelatedIt(context: Context, style: Int, attr: IntArray, unrelated: TypedArray) {
+        -     context.obtainStyledAttributes(style, attr).let { // WARN 5
+        -         var color = it.getDrawable(0)
+        +     context.withStyledAttributes(style, attr) { // WARN 5
+        +         var color = getDrawable(0)
+                  run {
+        @@ -46 +47
+                  }
+        -         it.recycle()
+              }
+        Autofix for src/test/pkg/test.kt line 51: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -51 +52
+          fun testReferenceVarAndThis(context: Context, style: Int, attr: IntArray) {
+        -     val array = context.obtainStyledAttributes(style, attr) // WARN 6
+        -     array.apply {
+        -         val x = this.getDrawable(0)
+        -         val y = array.getDrawable(0)
+        -     }.recycle()
+        +     context.withStyledAttributes(style, attr) { // WARN 6
+        +         apply {
+        +             val x = this.getDrawable(0)
+        +             val y = getDrawable(0)
+        +     }}
+          }
+        Autofix for src/test/pkg/test.kt line 59: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -59 +60
+          fun testUsingThisRecycle(context: Context, style: Int, attr: IntArray) {
+        -     with(context.obtainStyledAttributes(style, attr)) { // WARN 7
+        +     context.withStyledAttributes(style, attr) { // WARN 7
+                  var color = getDrawable(0)
+                  var color2 = this.getDrawable(0)
+        -         this.recycle()
+              }
+        Autofix for src/test/pkg/test.kt line 68: Replace with the withStyledAttributes extension function:
+        @@ -6 +6
+          import android.content.res.TypedArray
+        + import androidx.core.content.withStyledAttributes
+
+        @@ -68 +69
+             // Like 6B but with some extra parentheses
+        -    val array = (context).obtainStyledAttributes(style, attr) // WARN 8
+        -    ((array).apply {
+        -        val x = this.getDrawable(0)
+        -        val y = (array).getDrawable(0)
+        -    }).recycle()
+        +    (context).withStyledAttributes(style, attr) { // WARN 8
+        +        ((this).apply {
+        +            val x = this.getDrawable(0)
+        +            val y = (this).getDrawable(0)
+        +    })}
           }
         """
       )
   }
 
   fun testObtainStyledAttributesWithImportSettings() {
-    val canvasStub =
+    val stub =
       kotlin(
           "src/androidx/core/content/Context.kt",
           """
@@ -330,8 +543,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
     // *With* the class on the classpath
 
     lint()
-      .files(source, canvasStub)
+      .files(source, stub)
       .configureOption(UseKtxDetector.REQUIRE_LIBRARY, true)
+      // The detector deliberately doesn't offer these replacements for some
+      // niche parentheses scenarios
+      .skipTestModes(TestMode.PARENTHESIZED)
       .run()
       .expect(
         """
@@ -378,6 +594,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      // The detector deliberately doesn't offer these replacements for some
+      // niche parentheses scenarios
+      .skipTestModes(TestMode.PARENTHESIZED)
       .run()
       .expect(
         """
@@ -690,6 +909,17 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 canvas.drawPath(path, paint)
                 canvas.restore()
             }
+
+
+            fun canvasOptionalTranslate(canvas: Canvas, paint: Paint, translate: Boolean) {
+                // Make sure we use withSave rather than withTranslate since it's conditional
+                canvas.save() // WARN 13
+                if (translate) {
+                  canvas.translate(200f, 300f)
+                }
+                canvas.drawCircle(10f, 10f, 10f, paint)
+                canvas.restore()
+            }
             """
           )
           .indented()
@@ -733,13 +963,16 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         src/test/pkg/test.kt:118: Warning: Use the KTX extension function Canvas.withClip instead? [UseKtx]
             canvas.save() // WARN 12
             ~~~~~~~~~~~~~
-        0 errors, 12 warnings
+        src/test/pkg/test.kt:134: Warning: Use the KTX extension function Canvas.withSave instead? [UseKtx]
+            canvas.save() // WARN 13
+            ~~~~~~~~~~~~~
+        0 errors, 13 warnings
         """
       )
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 13: Replace with the withTranslation extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withTranslation
         @@ -13 +14
         -     canvas.save() // WARN 1
@@ -750,7 +983,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 22: Replace with the withTranslation extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withTranslation
         @@ -22 +23
         -     val state = canvas.save() // WARN 2
@@ -761,7 +994,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         canvas.drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 27: Replace with the withSave extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withSave
         @@ -27 +28
         -     val state2 = canvas.save() // WARN 3
@@ -771,7 +1004,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         canvas.drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 43: Replace with the withRotation extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withRotation
         @@ -43 +44
         -     val rotateCheckpoint = canvas.save() // WARN 4 -- innermost nest is allowed
@@ -780,7 +1013,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +     canvas.withRotation(45f) { // WARN 4 -- innermost nest is allowed
         +     }
         Autofix for src/test/pkg/test.kt line 62: Replace with the withScale extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withScale
         @@ -62 +63
         -     canvas.save() // WARN 5
@@ -791,7 +1024,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 69: Replace with the withSkew extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withSkew
         @@ -69 +70
         -     canvas.save() // WARN 6
@@ -802,7 +1035,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 76: Replace with the withMatrix extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withMatrix
         @@ -76 +77
         -     canvas.save() // WARN 7
@@ -813,7 +1046,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 83: Replace with the withClip extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withClip
         @@ -83 +84
         -     canvas.save() // WARN 8
@@ -824,7 +1057,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawRect(rect, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 90: Replace with the withClip extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withClip
         @@ -90 +91
         -     canvas.save() // WARN 9
@@ -835,7 +1068,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawRect(rect, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 97: Replace with the withClip extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withClip
         @@ -97 +98
         -     canvas.save() // WARN 10
@@ -846,7 +1079,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawRect(rect, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 104: Replace with the withClip extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withClip
         @@ -104 +105
         -     canvas.save() // WARN 11
@@ -857,7 +1090,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +         drawRect(rect, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 118: Replace with the withClip extension function:
-        @@ -11 +11
+        @@ -10 +10
         + import androidx.core.graphics.withClip
         @@ -118 +119
         -     canvas.save() // WARN 12
@@ -867,6 +1100,21 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +     canvas.withClip(path) { // WARN 12
         +         drawPath(path, paint)
         +     }
+        Autofix for src/test/pkg/test.kt line 134: Replace with the withSave extension function:
+        @@ -10 +10
+        + import androidx.core.graphics.withSave
+        @@ -134 +135
+        -     canvas.save() // WARN 13
+        -     if (translate) {
+        -       canvas.translate(200f, 300f)
+        +     canvas.withSave() { // WARN 13
+        +         if (translate) {
+        +           translate(200f, 300f)
+        +         }
+        +         drawCircle(10f, 10f, 10f, paint)
+        @@ -138 +141
+        -     canvas.drawCircle(10f, 10f, 10f, paint)
+        -     canvas.restore()
         """
       )
   }
@@ -1057,6 +1305,21 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                     return database
                 }
             }
+
+            private fun testConditionalSuccessful(database: SQLiteDatabase, report: Boolean): SQLiteDatabase {
+                // Don't flag this one: setTransactionSuccessful is applied conditionally.
+                database.beginTransaction() // OK
+                try {
+                    if (create(database)) {
+                        database.setTransactionSuccessful()
+                    }
+                } finally {
+                    database.endTransaction()
+                }
+                return database
+            }
+
+            private fun create(database: SQLiteDatabase): Boolean = false
             """
           )
           .indented(),
@@ -1350,6 +1613,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
           )
           .indented(),
       )
+      // The detector deliberately doesn't offer these replacements for some
+      // niche parentheses scenarios
+      .skipTestModes(TestMode.PARENTHESIZED)
       .run()
       .expect(
         """

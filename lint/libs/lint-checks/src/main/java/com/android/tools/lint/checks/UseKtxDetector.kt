@@ -31,10 +31,13 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.XmlScanner
 import com.android.tools.lint.detector.api.isBelow
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.isReturningLambdaResult
+import com.android.tools.lint.detector.api.isScopingFunction
 import com.android.tools.lint.detector.api.nextStatement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.parentOfType
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -62,11 +65,15 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UIfExpression
+import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULocalVariable
 import org.jetbrains.uast.ULoopExpression
+import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UQualifiedReferenceExpression
+import org.jetbrains.uast.UReturnExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.USwitchExpression
+import org.jetbrains.uast.UThisExpression
 import org.jetbrains.uast.UTryExpression
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.skipParenthesizedExprDown
@@ -327,10 +334,19 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       return
     }
 
+    // If we require the library to be present, make sure we can access this extension function
+    if (
+      REQUIRE_LIBRARY.getValue(context) &&
+        containingClass != null &&
+        context.evaluator.findClass(containingClass) == null
+    ) {
+      return
+    }
+
     val call = startCall.sourcePsi as? KtCallExpression ?: return
     val variable = findVariable(startCall)
 
-    val (target, requiredCall, chained, thisReferences) =
+    val (target, requiredCall, chained, thisReferences, scopingFunction) =
       findBlockInfo(
         variable,
         startCall,
@@ -341,6 +357,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         isRequiredCall,
         isTarget,
       ) ?: return
+
+    if (startCall.getParentOfType<UParenthesizedExpression>() != null) {
+      // Unlikely but can break fixes if there
+      return
+    }
 
     val source = context.getContents() ?: call.containingFile?.text ?: return
     // delete the left hand side of the variable; we don't need that anymore
@@ -360,113 +381,181 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       replaceAnchorEnd = rParenStart
     }
 
+    // Individual edit operations to be combined into a single composite lint fix
+    val fixList = mutableListOf<LintFix>()
+
+    // Delete variable declaration
+    if (deleteLhsStart != -1) {
+      fixList.add(
+        fix()
+          .replace()
+          .range(Location.create(context.file, source, deleteLhsStart, deleteLhsEnd))
+          .text(source.substring(deleteLhsStart, deleteLhsEnd))
+          .with("")
+          .build()
+      )
+    }
+
+    // Replace ( obtainStyledAttributes with withStyledAttributes before the argument list
+    fixList.add(
+      fix()
+        .replace()
+        .range(Location.create(context.file, source, replaceAnchorStart, replaceAnchorEnd))
+        .text(source.substring(replaceAnchorStart, replaceAnchorEnd))
+        .with(replacedAnchor)
+        .imports(import)
+        .reformat(true)
+        .build()
+    )
+
+    // Insert a "{" after the parameter list right parenthesis
+    val argListReplacement =
+      when {
+        // Special hack needed for the commit-style target prefs where we need an extra
+        // parameter
+        target.methodName == "commit" &&
+          targetClass == "android.content.SharedPreferences.Editor" -> "commit = true) {"
+        scopingFunction != null && scopingFunction.methodName == "with" -> ""
+        else -> ") {"
+      }
+    fixList.add(
+      fix()
+        .replace()
+        .range(Location.create(context.file, source, rParenStart, rParenEnd))
+        .text(source.substring(rParenStart, rParenEnd))
+        .with(argListReplacement)
+        .build()
+    )
+
     val receiver = target.receiver
+    val targetPsi = target.sourcePsi
     val recycleStart =
-      if (receiver is USimpleNameReferenceExpression) receiver.sourcePsi?.startOffset ?: return
+      if (receiver?.skipParenthesizedExprDown().isNameOrThis())
+        receiver?.sourcePsi?.startOffset ?: return
       else
-        (target.sourcePsi?.parent as? KtDotQualifiedExpression)?.operationTokenNode?.startOffset
+        (targetPsi?.parent as? KtDotQualifiedExpression)?.operationTokenNode?.startOffset
           ?: receiver?.sourcePsi?.startOffset
+          ?: targetPsi?.startOffset
           ?: return
-    val recycleEnd = target.sourcePsi?.endOffset ?: return
-
-    var isApply = false
+    val recycleEnd = targetPsi?.endOffset ?: return
     var indent = true
-    val replaceRefs =
-      if (chained) {
-        val list = mutableListOf<LintFix>()
 
-        val originalParent = skipParenthesizedExprUp(startCall.uastParent)
-        var p = originalParent
-        while (p is UQualifiedReferenceExpression) {
-          val sourcePsi = p.sourcePsi
-          if (p.receiver == originalParent) {
-            val selector = p.selector
-            if (
-              // TODO: Support other scoping functions (in particular, run and with)
-              selector is UCallExpression &&
-                selector.methodName == "apply" &&
-                // See libraries/stdlib/jvm/build/stdlib-declarations.json
-                selector.resolve().isInClass("kotlin.StandardKt__StandardKt")
-            ) {
-              // Apply block
-              val args = selector.valueArguments
-              val last = args.lastOrNull()?.sourcePsi ?: return
-              if (last is KtLambdaExpression && sourcePsi is KtDotQualifiedExpression) {
-                isApply = true
-                indent = false
-                val end = last.leftCurlyBrace.startOffset + 1
-                val offset = sourcePsi.operationTokenNode.startOffset
-                list.add(
-                  fix()
-                    .replace()
-                    .range(Location.create(context.file, source, offset, end))
-                    .text(source.substring(offset, end))
-                    .with("")
-                    .build()
-                )
-              } else {
-                return
-              }
-            } else {
-              if (sourcePsi is KtDotQualifiedExpression) {
-                val offset = sourcePsi.operationTokenNode.startOffset
-                list.add(
-                  fix()
-                    .replace()
-                    .range(Location.create(context.file, source, offset, offset + 1))
-                    .text(".")
-                    .with("")
-                    .build()
-                )
-              }
-            }
-            break
-          }
-          p = skipParenthesizedExprUp(p.uastParent)
-        }
-        list
-      } else {
-        val list =
-          thisReferences.mapNotNull { ref ->
-            val sourcePsi = ref.sourcePsi
-            if (sourcePsi != null) {
-              val refStart = sourcePsi.startOffset
-              var replacement = "this"
-              var refEnd = sourcePsi.endOffset
-              var content = source.substring(refStart, refEnd)
-              if (source[refEnd] == '.') {
-                content += "."
-                refEnd++
-                replacement = ""
-              }
-              fix()
-                .replace()
-                .range(Location.create(context.file, source, refStart, refEnd))
-                .text(content)
-                .with(replacement)
-                .build()
-            } else {
-              null
-            }
-          }
-        if (requiredCall != null) {
-          // Make sure the required call has no suffix or prefix with side effects
-          val begin = source.lineBegin(requiredCall.startOffset)
-          val end = source.lineEnd(requiredCall.endOffset) + 1 // +1: remove the \n as well
-          list +
-            fix()
-              .replace()
-              .range(Location.create(context.file, source, begin, end))
-              .text(source.substring(begin, end))
-              .with("")
-              .build()
-        } else {
-          list
-        }
+    if (scopingFunction != null) {
+      indent = false
+
+      if (scopingFunction.methodName == "with") {
+        val withStart = scopingFunction.sourcePsi?.startOffset ?: return
+        val withArgStart =
+          scopingFunction.valueArguments.firstOrNull()?.sourcePsi?.startOffset ?: return
+        fixList.add(
+          fix()
+            .replace()
+            .range(Location.create(context.file, source, withStart, withArgStart))
+            .text(source.substring(withStart, withArgStart))
+            .with("")
+            .build()
+        )
       }
 
+      // also/run/let: remove the call opening; keep the block body
+      val originalParent = skipParenthesizedExprUp(startCall.uastParent)
+      var p = originalParent
+      while (p is UQualifiedReferenceExpression) {
+        val sourcePsi = p.sourcePsi
+        if (p.receiver == originalParent) {
+          val selector = p.selector
+          if (selector is UCallExpression && selector == scopingFunction) {
+            val args = selector.valueArguments
+            val last = args.lastOrNull()?.sourcePsi ?: return
+            if (last is KtLambdaExpression && sourcePsi is KtDotQualifiedExpression) {
+              val end = last.leftCurlyBrace.startOffset + 1
+              val offset = sourcePsi.operationTokenNode.startOffset
+              fixList.add(
+                fix()
+                  .replace()
+                  .range(Location.create(context.file, source, offset, end))
+                  .text(source.substring(offset, end))
+                  .with("")
+                  .build()
+              )
+            } else {
+              return
+            }
+          }
+        }
+        p = skipParenthesizedExprUp(p.uastParent)
+      }
+    } else if (chained) {
+      val originalParent = skipParenthesizedExprUp(startCall.uastParent)
+      var p = originalParent
+      while (p is UQualifiedReferenceExpression) {
+        val sourcePsi = p.sourcePsi
+        if (p.receiver == originalParent) {
+          if (sourcePsi is KtDotQualifiedExpression) {
+            val offset = sourcePsi.operationTokenNode.startOffset
+            fixList.add(
+              fix()
+                .replace()
+                .range(Location.create(context.file, source, offset, offset + 1))
+                .text(".")
+                .with("")
+                .build()
+            )
+          }
+          break
+        }
+        p = skipParenthesizedExprUp(p.uastParent)
+      }
+    } else {
+      if (requiredCall != null) {
+        // Make sure the required call has no suffix or prefix with side effects
+        val begin = source.lineBegin(requiredCall.startOffset)
+        val end = source.lineEnd(requiredCall.endOffset) + 1 // +1: remove the \n as well
+        fixList.add(
+          fix()
+            .replace()
+            .range(Location.create(context.file, source, begin, end))
+            .text(source.substring(begin, end))
+            .with("")
+            .build()
+        )
+      }
+    }
+
+    thisReferences.forEach { ref ->
+      val sourcePsi = ref.sourcePsi
+      if (sourcePsi != null) {
+        val refStart = sourcePsi.startOffset
+        var replacement = "this"
+        var refEnd = sourcePsi.endOffset
+        var content = source.substring(refStart, refEnd)
+        if (source[refEnd] == '.') {
+          content += "."
+          refEnd++
+          replacement = ""
+        }
+        fixList.add(
+          fix()
+            .replace()
+            .range(Location.create(context.file, source, refStart, refEnd))
+            .text(content)
+            .with(replacement)
+            .build()
+        )
+      }
+    }
+
+    // Remove final recycle call and replace with `}`
+    fixList.add(
+      fix()
+        .replace()
+        .range(Location.create(context.file, source, recycleStart, recycleEnd))
+        .text(source.substring(recycleStart, recycleEnd))
+        .with(if (scopingFunction != null) "" else "}")
+        .build()
+    )
+
     // Try to indent the lines in the block as well
-    val indentation = mutableListOf<LintFix>()
     val containingFile = call.containingFile
     var lineBegin = source.lineEnd(rParenEnd) + 1
     val last = source.lastIndexOf('\n', recycleStart)
@@ -483,7 +572,8 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         // Make sure we don't add whitespace to any multi-line string literals
         // for example
         if (containingFile.findElementAt(lineBegin) is PsiWhiteSpace) {
-          indentation.add(
+          // Add indentation fix:
+          fixList.add(
             fix()
               .replace()
               .range(Location.create(context.file, source, lineBegin, lineBegin))
@@ -499,66 +589,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val fix =
       fix()
         .name("Replace with the $extensionMethod extension function", true)
-        .composite(
-          // Delete variable declaration
-          if (deleteLhsStart != -1) {
-            fix()
-              .replace()
-              .range(Location.create(context.file, source, deleteLhsStart, deleteLhsEnd))
-              .text(source.substring(deleteLhsStart, deleteLhsEnd))
-              .with("")
-              .build()
-          } else {
-            null
-          },
-          // Replace ( obtainStyledAttributes with withStyledAttributes before the argument list
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, replaceAnchorStart, replaceAnchorEnd))
-            .text(source.substring(replaceAnchorStart, replaceAnchorEnd))
-            .with(replacedAnchor)
-            .imports(import)
-            .reformat(true)
-            .build(),
-          // Insert a "{" after the parameter list right parenthesis
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, rParenStart, rParenEnd))
-            .text(source.substring(rParenStart, rParenEnd))
-            .with(
-              // Special hack needed for the commit-style target prefs where we need an extra
-              // parameter
-              if (
-                target.methodName == "commit" &&
-                  targetClass == "android.content.SharedPreferences.Editor"
-              )
-                "commit = true) {"
-              else ") {"
-            )
-            .build(),
-          // Remove final recycle call and replace with `}`
-          fix()
-            .replace()
-            .range(Location.create(context.file, source, recycleStart, recycleEnd))
-            .text(source.substring(recycleStart, recycleEnd))
-            .with(if (isApply) "" else "}")
-            .build(),
-          *replaceRefs.toTypedArray(),
-          *indentation.toTypedArray(),
-        )
+        .composite(fixList)
         .autoFix()
 
     // Make sure we don't have a symbol conflict
     if (context.definesConflictingSymbol(extensionMethod, import, isProperty = false)) {
-      return
-    }
-
-    // If we require the library to be present, make sure we can access this extension function
-    if (
-      REQUIRE_LIBRARY.getValue(context) &&
-        containingClass != null &&
-        context.evaluator.findClass(containingClass) == null
-    ) {
       return
     }
 
@@ -626,6 +661,11 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
      *  ```
      */
     val thisReferences: List<USimpleNameReferenceExpression>,
+    /**
+     * If this call body is using a scoping function (like also, run, let, with, etc.), that scoping
+     * function is provided here.
+     */
+    val scopingFunction: UCallExpression?,
   ) {
     operator fun component1() = targetCall
 
@@ -634,6 +674,8 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     operator fun component3() = chained
 
     operator fun component4() = thisReferences
+
+    operator fun component5() = scopingFunction
   }
 
   /**
@@ -654,12 +696,15 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val receiverIsThis = startClass == targetClass
     val variablePsi =
       variable?.javaPsi ?: if (receiverIsThis) startCall.receiver?.tryResolve() else null
+    val variableSourcePsi = variable?.sourcePsi
 
     var start: UCallExpression? = null
     var target: UCallExpression? = null
     var requiredCall: KtElement? = null
     var extractable = true
     var chained = false
+    var scopingFunction: UCallExpression? = null
+    var letLambda: PsiElement? = null
     val thisReferences = mutableListOf<USimpleNameReferenceExpression>()
     block.accept(
       object : AbstractUastVisitor() {
@@ -691,6 +736,28 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
 
           if (start == null && node == startCall) {
             start = node
+
+            // See if we have a scoping function call on it
+            // e.g. obtainStyledAttributes(...).run { ...; recycle() }
+            val parent = skipParenthesizedExprUp(node.uastParent)
+            val parentParent = skipParenthesizedExprUp(parent?.uastParent)
+            if (parentParent is UQualifiedReferenceExpression) {
+              if (parentParent.receiver.skipParenthesizedExprDown() === parent) {
+                val selector = parentParent.selector
+                if (selector is UCallExpression && isScopingFunction(selector)) {
+                  // apply, run, let.
+                  scopingFunction = selector
+                  if (selector.methodName == "let") {
+                    // collect `it`-references
+                    letLambda =
+                      (selector.valueArguments.singleOrNull() as? ULambdaExpression)?.sourcePsi
+                  }
+                }
+              }
+            } else if (parentParent is UCallExpression && isScopingFunction(parentParent)) {
+              // with
+              scopingFunction = parentParent
+            }
           } else if (
             start != null &&
               target == null &&
@@ -722,6 +789,42 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
                 return false
               }
 
+              if (!chained && scopingFunction != null) {
+                // Make sure it's the last statement in the block
+                var prev: UElement = node
+                var curr = node.uastParent
+                val lambda =
+                  // Most scoping functions take a single argument but with takes 2
+                  (scopingFunction.valueArguments.lastOrNull() as? ULambdaExpression)?.body
+                while (curr != null && curr != lambda) {
+                  if (curr is UQualifiedReferenceExpression) {
+                    if (
+                      prev !== curr.selector ||
+                        !curr.receiver.skipParenthesizedExprDown().isNameOrThis()
+                    ) {
+                      extractable = false
+                      return false
+                    }
+                  } else if (curr is UParenthesizedExpression || curr is UReturnExpression) {
+                    // OK
+                  } else {
+                    extractable = false
+                    return false
+                  }
+                  prev = curr
+                  curr = curr.uastParent
+                }
+                if (
+                  curr === lambda &&
+                    lambda is UBlockExpression &&
+                    prev !== lambda.expressions.last()
+                ) {
+                  // Make sure it's the last call in the block
+                  extractable = false
+                  return false
+                }
+              }
+
               target = node
 
               // Make sure we don't try to rewrite the final "variable.recycle()" call
@@ -736,14 +839,16 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
                 isRequiredCall != null &&
                 isRequiredCall(resolved)
             ) {
+              if (!sameBlockParent(start, node)) {
+                extractable = false
+              }
+
               var c: UElement? = node.uastParent
-              while (c != null) {
+              while (c != null && extractable) {
                 if (c is UQualifiedReferenceExpression) {
                   val receiver = c.receiver.skipParenthesizedExprDown()
                   if (receiver is USimpleNameReferenceExpression) {
-                    if (thisReferences.contains(receiver)) {
-                      thisReferences.remove(receiver)
-                    }
+                    thisReferences.remove(receiver)
                   } else {
                     extractable = false
                   }
@@ -763,6 +868,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           return super.visitCallExpression(node)
         }
 
+        @Suppress("LintImplPsiEquals")
         override fun visitSimpleNameReferenceExpression(
           node: USimpleNameReferenceExpression
         ): Boolean {
@@ -772,11 +878,16 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
             if (variables.contains(resolved) && target != null && !node.isBelow(target, true)) {
               extractable = false
             }
-          } else if (foundStart() && !foundEnd() && variablePsi != null) {
+          } else if (foundStart() && !foundEnd()) {
             val resolved = node.resolve()
-            //noinspection LintImplPsiEquals
-            if (resolved != null && (resolved == variable?.sourcePsi || resolved == variablePsi)) {
+            if (letLambda != null && resolved is PsiParameter && resolved.parent == letLambda) {
               thisReferences.add(node)
+            }
+            if (variablePsi != null) {
+              val resolved = node.resolve()
+              if (resolved != null && (resolved == variableSourcePsi || resolved == variablePsi)) {
+                thisReferences.add(node)
+              }
             }
           }
 
@@ -786,10 +897,15 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     )
 
     return if (extractable && target != null && !(isRequiredCall != null && requiredCall == null)) {
-      BlockInfo(target, requiredCall, chained, thisReferences)
+      BlockInfo(target, requiredCall, chained, thisReferences, scopingFunction)
     } else {
       null
     }
+  }
+
+  /** Returns true if the given expression is a simple name or `this`. */
+  private fun UExpression?.isNameOrThis(): Boolean {
+    return this is USimpleNameReferenceExpression || this is UThisExpression
   }
 
   private fun UExpression.parentBlock(): UExpression? {
@@ -801,6 +917,15 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
           curr is USwitchExpression ||
           curr is ULoopExpression
       ) {
+        // TODO: Use analysis API here to look at returns self
+        val parent = curr.uastParent
+        if (parent is ULambdaExpression) {
+          val pParent = parent.uastParent
+          if (pParent is UCallExpression && isReturningLambdaResult(pParent)) {
+            curr = pParent
+            continue
+          }
+        }
         return curr
       }
       curr = curr.uastParent
@@ -833,7 +958,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     val targetParent = end.parentBlock() ?: return false
     if (startParent != targetParent) {
       val parent = targetParent.uastParent
-      return parent is UTryExpression && parent.finallyClause === targetParent
+      return parent is UTryExpression && parent.uastParent === startParent
     }
 
     return true
