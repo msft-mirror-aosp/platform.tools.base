@@ -28,8 +28,7 @@ import kotlinx.collections.immutable.plus
  */
 typealias UnboundedSet<T> = PersistentSet<T>?
 
-fun <X, Y> UnboundedSet<X>.map(f: (X) -> Y): UnboundedSet<Y> =
-  this?.fold(persistentSetOf()) { s, x -> s + f(x) }
+fun <X, Y> UnboundedSet<X>.map(f: (X) -> Y): UnboundedSet<Y> = this?.map(f)
 
 fun <T> unboundedSetOf(vararg elements: T): UnboundedSet<T> = persistentSetOf(*elements)
 
