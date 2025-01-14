@@ -734,18 +734,20 @@ def iml_module(
             target_compatible_with = target_compatible_with,
         )
 
+        # b/373746515: K2 mode by default in presubmit,
+        # # and thus this is temporarily K1 in postsubmit
         if generate_k2_tests:
             _gen_tests(
-                name = name + "_k2",
+                name = name + "_k1",
                 split_test_targets = split_test_targets,
                 test_flaky = test_flaky,
                 test_shard_count = test_shard_count,
-                test_tags = (test_tags or []) + ["kotlin-plugin-k2"],
+                test_tags = (test_tags or []) + ["kotlin-plugin-k1"],
                 test_data = test_data,
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=true",
+                    "-Didea.kotlin.plugin.use.k2=false",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,

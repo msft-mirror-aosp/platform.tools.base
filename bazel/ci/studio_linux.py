@@ -93,8 +93,11 @@ _ARTIFACTS = [
 
 def studio_linux(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux target."""
+  # b/373746515: K2 mode by default in presubmit,
+  # and thus this is temporarily K1 in postsubmit
+  # We'll invert this again around the end of M.2 canary cycles
   setup_environment(build_env)
-  test_tag_filters = '-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release'
+  test_tag_filters = '-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2,-kotlin-plugin-k2'
 
   flags = build_flags(
       build_env,
@@ -165,15 +168,17 @@ def studio_linux_very_flaky(build_env: bazel.BuildEnv) -> None:
 
 def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux-k2 target."""
+  # b/373746515: K2 mode by default in presubmit,
+  # and thus this is temporarily K1 in postsubmit
+  # We'll invert this again around the end of M.2 canary cycles
   setup_environment(build_env)
   flags = build_flags(
       build_env,
-      test_tag_filters='-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2,-kotlin-plugin-k2',
+      test_tag_filters='-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k1,-kotlin-plugin-k1',
   )
   flags.extend([
-      '--bes_keywords=k2',
-      '--jvmopt=-Didea.kotlin.plugin.use.k2=true',
-      '--jvmopt=-Dlint.use.fir.uast=true',
+      '--bes_keywords=k1',
+      '--jvmopt=-Didea.kotlin.plugin.use.k2=false',
   ])
   result = studio.run_tests(build_env, flags, _BASE_TARGETS)
   copy_agp_supported_versions(build_env)

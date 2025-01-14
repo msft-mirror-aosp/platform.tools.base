@@ -66,6 +66,10 @@ build --jvmopt='--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED'
 build --//prebuilts/studio/jdk:jdk_bundle_version=next
 test --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr-next'
 
+# b/373746515: K2 mode
+# TODO(b/377539365): revert this in the release branch
+test --jvmopt='-Didea.kotlin.plugin.use.k2=true'
+
 # Local runs require longer timeouts.
 test:local --test_timeout=120,600,1800,7200
 
