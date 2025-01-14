@@ -473,7 +473,7 @@ abstract class PackageBundleTask : NonIncrementalTask() {
                 if (it.isFile) {
                     command.addMetadataFile(
                         "com.android.tools.build.bundletool",
-                        "DeviceGroupConfig.json",
+                        "DeviceGroupConfig.pb",
                         it.toPath()
                     )
                 }
@@ -781,7 +781,10 @@ abstract class PackageBundleTask : NonIncrementalTask() {
 
             if (creationConfig.global.bundleOptions.deviceTargetingConfig.isPresent) {
                 if (creationConfig.services.projectOptions[BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API]) {
-                    task.deviceTargetingConfig.setDisallowChanges(creationConfig.global.bundleOptions.deviceTargetingConfig)
+                    creationConfig.artifacts.setTaskInputToFinalProduct(
+                        InternalArtifactType.DEVICE_TARGETING_CONFIG,
+                        task.deviceTargetingConfig
+                    )
                 } else {
                     throw IllegalStateException("Feature deviceTargetingConfig is not enabled by default.")
                 }

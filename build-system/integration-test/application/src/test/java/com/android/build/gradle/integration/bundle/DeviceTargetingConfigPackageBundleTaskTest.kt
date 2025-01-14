@@ -21,39 +21,26 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.options.BooleanOption
 import com.android.bundle.Config
+import com.android.bundle.DeviceGroup
+import com.android.bundle.DeviceGroupConfig
+import com.android.bundle.DeviceId
+import com.android.bundle.DeviceRam
+import com.android.bundle.DeviceSelector
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.tools.build.bundletool.model.AppBundle
 import com.google.common.base.Throwables
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Files
 import java.util.zip.ZipFile
 import org.junit.Rule
 import org.junit.Test
 
 class DeviceTargetingConfigPackageBundleTaskTest {
 
-  private val config =
-    """
-    {
-      "device_groups": [
-        {
-          "name": "test_group",
-          "device_selectors": [
-            {
-              "included_device_ids": [
-                { "build_brand": "google", "build_device": "husky"}
-              ]
-            }
-          ]
-        }
-      ]
-    }
-    """
-      .trimIndent()
-
   private val app =
     MinimalSubProject.app("com.example.test")
-      .withFile("src/main/config.json", config)
+      .withFile("src/main/config.xml", CONFIG_XML)
 
   @get:Rule
   val project =
@@ -74,7 +61,7 @@ class DeviceTargetingConfigPackageBundleTaskTest {
                 enableSplit = true
                 defaultGroup = 'test_group'
               }
-              deviceTargetingConfig = file('src/main/config.json')
+              deviceTargetingConfig = file('src/main/config.xml')
             }
           }
           """.trimIndent())
@@ -86,14 +73,12 @@ class DeviceTargetingConfigPackageBundleTaskTest {
 
     assertThat(bundleFile).isNotNull()
     assertThat(bundleFile.toPath()).exists()
-    assertThat(bundleFile) {
-      it.containsFileWithContent(
-        "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.json",
-        config,
-      )
-    }
 
     ZipFile(bundleFile).use { zip ->
+      val configEntry = zip.getEntry(METADATA_ENTRY)
+      val configProto = DeviceGroupConfig.parseFrom(zip.getInputStream(configEntry))
+      assertThat(configProto).isEqualTo(EXPECTED_PROTO);
+
       val appBundle = AppBundle.buildFromZip(zip)
 
       val splitsConfigBuilder = Config.SplitsConfig.newBuilder()
@@ -117,7 +102,7 @@ class DeviceTargetingConfigPackageBundleTaskTest {
           """
           android {
             bundle {
-              deviceTargetingConfig = file('src/main/config.json')
+              deviceTargetingConfig = file('src/main/config.xml')
             }
           }
           """.trimIndent())
@@ -159,9 +144,7 @@ class DeviceTargetingConfigPackageBundleTaskTest {
     assertThat(bundleFile).isNotNull()
     assertThat(bundleFile.toPath()).exists()
     assertThat(bundleFile) {
-      it.doesNotContain(
-        "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.json"
-      )
+      it.doesNotContain(METADATA_ENTRY)
     }
 
     ZipFile(bundleFile).use { zip ->
@@ -170,5 +153,37 @@ class DeviceTargetingConfigPackageBundleTaskTest {
       assertThat(appBundle.bundleConfig.optimizations.splitsConfig)
           .isEqualTo(Config.SplitsConfig.getDefaultInstance())
     }
+  }
+
+  companion object {
+    private val METADATA_ENTRY =
+      "BUNDLE-METADATA/com.android.tools.build.bundletool/DeviceGroupConfig.pb"
+
+    private val CONFIG_XML =
+      """
+      <config:device-targeting-config
+        xmlns:config="http://schemas.android.com/apk/config">
+
+        <config:device-group name="test_group">
+          <config:device-selector ram-min-bytes="12345678">
+            <config:included-device-id brand="google" device="husky"/>
+          </config:device-selector>
+        </config:device-group>
+
+      </config:device-targeting-config>
+      """
+
+    private val EXPECTED_PROTO = DeviceGroupConfig.newBuilder()
+      .addDeviceGroups(
+        DeviceGroup.newBuilder()
+          .setName("test_group")
+          .addDeviceSelectors(
+            DeviceSelector.newBuilder()
+              .setDeviceRam(DeviceRam.newBuilder().setMinBytes(12345678L))
+              .addIncludedDeviceIds(
+                DeviceId.newBuilder()
+                  .setBuildBrand("google")
+                  .setBuildDevice("husky"))))
+      .build()
   }
 }

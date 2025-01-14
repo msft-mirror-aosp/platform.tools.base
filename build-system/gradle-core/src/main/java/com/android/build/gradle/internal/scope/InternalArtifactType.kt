@@ -540,6 +540,9 @@ InternalArtifactType<T : FileSystemLocation>(
     // Config file specifying how to protect app's integrity
     object APP_INTEGRITY_CONFIG: InternalArtifactType<RegularFile>(FILE), Replaceable
 
+    // Config file specifying device groups for conditional delivery and asset targeting
+    object DEVICE_TARGETING_CONFIG: InternalArtifactType<RegularFile>(FILE), Replaceable
+
     // A dummy output (folder) result of CheckDuplicateClassesTask execution
     object DUPLICATE_CLASSES_CHECK: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // A dummy output (folder) result of CheckAarMetadataTask execution

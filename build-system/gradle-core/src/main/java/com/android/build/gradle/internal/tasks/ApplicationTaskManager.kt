@@ -299,6 +299,10 @@ class ApplicationTaskManager(
         }
         if (variant.componentType.isBaseModule) {
             taskFactory.register(ParseIntegrityConfigTask.CreationAction(variant))
+            if (variant.global.bundleOptions.deviceTargetingConfig.isPresent && variant.services
+                    .projectOptions[BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API]) {
+                taskFactory.register(ParseDeviceTargetingConfigTask.CreationAction(variant))
+            }
             taskFactory.register(PackageBundleTask.CreationAction(variant))
             if (!debuggable) {
                 if (includeSdkInfoInBundle) {
