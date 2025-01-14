@@ -150,6 +150,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
             (methodName == "apply" || methodName == "commit") &&
               targetMethod.isInClass("android.content.SharedPreferences.Editor")
           },
+          removeArgList = true,
         )
       }
       "beginTransaction",
@@ -176,6 +177,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
               targetMethod.isInClass("android.database.sqlite.SQLiteDatabase")
           },
           replaceArgList = if (name == "beginTransactionNonExclusive") "(exclusive = false" else "",
+          removeArgList = name != "beginTransactionNonExclusive",
         )
       }
       "save" -> {
@@ -258,6 +260,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
                 methodName == deleteName && targetMethod.isInClass("android.graphics.Canvas")
               },
           replaceArgList = replaceArgs,
+          removeArgList = replaceArgs.isEmpty(),
         )
       }
     }
@@ -329,6 +332,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     isRequiredCall: ((PsiMethod) -> Boolean)? = null,
     allowNesting: Boolean = false,
     replaceArgList: String = "",
+    removeArgList: Boolean = false,
   ) {
     if (!method.isInClass(startClass)) {
       return
@@ -379,6 +383,9 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     if (replaceArgList.isNotEmpty()) {
       replacedAnchor = extensionMethod + replaceArgList.removeSuffix(")")
       replaceAnchorEnd = rParenStart
+    } else if (removeArgList) {
+      replacedAnchor = extensionMethod
+      replaceAnchorEnd = rParenStart
     }
 
     // Individual edit operations to be combined into a single composite lint fix
@@ -414,8 +421,9 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         // Special hack needed for the commit-style target prefs where we need an extra
         // parameter
         target.methodName == "commit" &&
-          targetClass == "android.content.SharedPreferences.Editor" -> "commit = true) {"
+          targetClass == "android.content.SharedPreferences.Editor" -> "(commit = true) {"
         scopingFunction != null && scopingFunction.methodName == "with" -> ""
+        removeArgList -> " {"
         else -> ") {"
       }
     fixList.add(

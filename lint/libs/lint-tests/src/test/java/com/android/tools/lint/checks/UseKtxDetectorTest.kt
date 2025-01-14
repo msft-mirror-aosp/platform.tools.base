@@ -706,6 +706,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
                 editor.putBoolean("key", value)
                 editor.commit()
             }
+
+            private const val FAVORITES_SETTINGS_KEY = "favorites"
+            fun testRemoveParens(prefs: SharedPreferences, value: String) {
+              prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
+            }
             """
           )
           .indented()
@@ -726,7 +731,10 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         src/test/pkg/test.kt:24: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
             val editor = sharedPreferences.edit() // WARN 4
                          ~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 4 warnings
+        src/test/pkg/test.kt:31: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+          prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
+          ~~~~~~~~~~~~
+        0 errors, 5 warnings
         """
       )
       .expectFixDiffs(
@@ -738,7 +746,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -     sharedPreferences.edit() // WARN 1
         -         .putBoolean("key", value)
         -         .apply()
-        +     sharedPreferences.edit() { // WARN 1
+        +     sharedPreferences.edit { // WARN 1
         +             putBoolean("key", value)
         +         }
         Autofix for src/test/pkg/test.kt line 12: Replace with the edit extension function:
@@ -758,7 +766,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -     val editor = sharedPreferences.edit() // WARN 3
         -     editor.putBoolean("key", value)
         -     editor.apply()
-        +     sharedPreferences.edit() { // WARN 3
+        +     sharedPreferences.edit { // WARN 3
         +         putBoolean("key", value)
         +     }
         Autofix for src/test/pkg/test.kt line 24: Replace with the edit extension function:
@@ -771,6 +779,12 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         +     sharedPreferences.edit(commit = true) { // WARN 4
         +         putBoolean("key", value)
         +     }
+        Autofix for src/test/pkg/test.kt line 31: Replace with the edit extension function:
+        @@ -4 +4
+        + import androidx.core.content.edit
+        @@ -31 +32
+        -   prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
+        +   prefs.edit {putString(FAVORITES_SETTINGS_KEY, value)} // WARN 5
         """
       )
   }
@@ -1000,7 +1014,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -     val state2 = canvas.save() // WARN 3
         -     canvas.drawCircle(10f, 10f, 10f, paint)
         -     canvas.restoreToCount(state2)
-        +     canvas.withSave() { // WARN 3
+        +     canvas.withSave { // WARN 3
         +         canvas.drawCircle(10f, 10f, 10f, paint)
         +     }
         Autofix for src/test/pkg/test.kt line 43: Replace with the withRotation extension function:
@@ -1107,7 +1121,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -     canvas.save() // WARN 13
         -     if (translate) {
         -       canvas.translate(200f, 300f)
-        +     canvas.withSave() { // WARN 13
+        +     canvas.withSave { // WARN 13
         +         if (translate) {
         +           translate(200f, 300f)
         +         }
@@ -1384,7 +1398,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -                 create(database)
         -             } else {
         -                 migrate(database)
-        +         database.transaction() { // WARN 1
+        +         database.transaction { // WARN 1
         +             try {
         +                 if (version > VERSION) {
         +                     error("Downgrade not supported")
@@ -1439,7 +1453,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -     db.version = 61
         -     db.setTransactionSuccessful()
         -     db.endTransaction()
-        +     db.transaction() { // WARN 3
+        +     db.transaction { // WARN 3
         +         execSQL("DROP TABLE IF EXISTS folders")
         +         execSQL(
         +             "CREATE TABLE folders (" +
