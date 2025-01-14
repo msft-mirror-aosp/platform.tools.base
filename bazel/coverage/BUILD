@@ -530,10 +530,11 @@ coverage_report(
 coverage_report(
     name = "parallel-device-test-report",
     srcpath_include = [
-        "tools/adt/idea/android/src/com/android/tools/idea/testartifacts/instrumented/testsuite",
+        "tools/adt/idea/testartifacts/src/com/android/tools/idea/testartifacts/instrumented/testsuite",
     ],
     tests = [
         "//tools/adt/idea/android:intellij.android.core.tests_tests",
+        "//tools/adt/idea/testartifacts:intellij.android.testartifacts.tests_tests",
     ],
 )
 
