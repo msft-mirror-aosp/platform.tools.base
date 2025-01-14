@@ -211,7 +211,7 @@ public class DeployerRunner {
                         .setFastRestartOnSwapFail(false)
                         .setOptimisticInstallSupport(optimisticInstallSupport)
                         .enableCoroutineDebugger(true)
-                        .setAllowAssumeVerified(device.getVersion().isGreaterOrEqualThan(35))
+                        .setAllowAssumeVerified(device.getVersion().isAtLeast(35))
                         .skipPostInstallTasks(parameters.getSkipPostInstallTasks())
                         .useRootPushInstall(parameters.getUseRootPushInstall())
                         .build();
