@@ -1295,7 +1295,10 @@ abstract class LintFixPerformer(
             }
           }
         } else if (d == '/') {
-          offset = skipCommentsAndWhitespace(source, offset - 1)
+          val after = skipCommentsAndWhitespace(source, offset - 1)
+          if (after > offset) { // otherwise, was just division etc
+            offset = after
+          }
         }
       }
       return offset
