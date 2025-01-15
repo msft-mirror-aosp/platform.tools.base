@@ -231,12 +231,7 @@ fun addComposeArgsToKotlinCompile(
 
     task.addPluginClasspath(kotlinVersion, compilerExtension)
 
-    task.addPluginOption(
-        kotlinVersion,
-        "androidx.compose.compiler.plugins.kotlin",
-        "sourceInformation",
-        "true"
-    )
+    task.maybeAddSourceInformationOption(kotlinVersion)
 
     if (debuggable && useLiveLiterals) {
         task.addPluginOption(
@@ -325,6 +320,32 @@ private fun KotlinVersion?.isVersionAtLeast(major: Int, minor: Int, patch: Int? 
         patch == null -> this.isAtLeast(major, minor)
         else -> this.isAtLeast(major, minor, patch)
     }
+
+/**
+ * Add the Compose Compiler Gradle Plugin's sourceInformation flag only if the kotlin version is
+ * below 2.1.20-Beta2. Starting at that version, the Compose Compiler Gradle Plugin adds the flag
+ * itself.
+ */
+private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinVersion?) {
+    if (kotlinVersion.isVersionAtLeast(2, 1, 21)) {
+        return
+    }
+    // Handle corner cases of 2.1.20 previews. For unknown corner cases, prefer not to add the
+    // sourceInformation flag because there will be an error if it's added by AGP and the Compose
+    // Compiler Gradle plugin.
+    val kotlinVersionString = getKotlinAndroidPluginVersion(project) ?: return
+    if (kotlinVersionString.startsWith("2.1.20")) {
+        if (!kotlinVersionString.contains("Beta1")) {
+            return
+        }
+    }
+    addPluginOption(
+        kotlinVersion,
+        "androidx.compose.compiler.plugins.kotlin",
+        "sourceInformation",
+        "true"
+    )
+}
 
 /**
  * Get information about Kotlin sources from KGP, until there is a KGP version that can work
