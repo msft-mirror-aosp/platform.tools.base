@@ -1500,7 +1500,7 @@ class LintModelSerializationTest {
   @Test
   fun testCodenameApiLevelWithAndroidSdk() {
     val codename = "Whatever"
-    val apiLevel = 42
+    val apiLevel = "42.0"
 
     val temp = temporaryFolder.newFolder()
     val projectDirectory = temp.resolve("projectDir").createDirectories()

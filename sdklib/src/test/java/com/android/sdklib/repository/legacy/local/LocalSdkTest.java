@@ -349,7 +349,7 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/sources");
         mFOp.recordExistingFolder("/sdk/sources/android-CUPCAKE");
         mFOp.recordExistingFolder("/sdk/sources/android-18");
-        mFOp.recordExistingFolder("/sdk/sources/android-42");
+        mFOp.recordExistingFolder("/sdk/sources/android-35");
         mFOp.recordExistingFile("/sdk/sources/android-CUPCAKE/source.properties",
                 "Archive.Os=ANY\n" +
                 "AndroidVersion.ApiLevel=3\n" +
@@ -363,9 +363,9 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.Revision=2\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/sources/android-42/source.properties",
+        mFOp.recordExistingFile("/sdk/sources/android-35/source.properties",
                 "Archive.Os=ANY\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.Revision=3\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
@@ -390,7 +390,7 @@ public class LocalSdkTest extends TestCase {
 
         assertEquals("[<LocalSourcePkgInfo <PkgDesc Type=source Android=API 3, CUPCAKE preview Rev=1>>, " +
                       "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 18 Rev=2>>, " +
-                      "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 42 Rev=3>>]",
+                      "<LocalSourcePkgInfo <PkgDesc Type=source Android=API 35 Rev=3>>]",
                      Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SOURCE)));
     }
 
@@ -403,16 +403,16 @@ public class LocalSdkTest extends TestCase {
         mLS.clearLocalPkg(PkgType.PKG_ALL);
         mFOp.recordExistingFolder("/sdk/samples");
         mFOp.recordExistingFolder("/sdk/samples/android-18");
-        mFOp.recordExistingFolder("/sdk/samples/android-42");
+        mFOp.recordExistingFolder("/sdk/samples/android-35");
         mFOp.recordExistingFile("/sdk/samples/android-18/source.properties",
                 "Archive.Os=ANY\n" +
                 "AndroidVersion.ApiLevel=18\n" +
                 "Pkg.Revision=2\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/samples/android-42/source.properties",
+        mFOp.recordExistingFile("/sdk/samples/android-35/source.properties",
                 "Archive.Os=ANY\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.Revision=3\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n");
@@ -431,7 +431,7 @@ public class LocalSdkTest extends TestCase {
 
         assertEquals(
                 "[<LocalSamplePkgInfo <PkgDesc Type=sample Android=API 18 Rev=2 MinToolsRev=0>>, " +
-                 "<LocalSamplePkgInfo <PkgDesc Type=sample Android=API 42 Rev=3 MinToolsRev=0>>]",
+                 "<LocalSamplePkgInfo <PkgDesc Type=sample Android=API 35 Rev=3 MinToolsRev=0>>]",
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SAMPLE)));
     }
 
@@ -444,16 +444,16 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/system-images/android-18");
         mFOp.recordExistingFolder("/sdk/system-images/android-18/armeabi-v7a");
         mFOp.recordExistingFolder("/sdk/system-images/android-18/x86");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/armeabi");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/x86");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/mips");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/somedir/armeabi-v7a");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-1/x86");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins/skinA");
-        mFOp.recordExistingFolder("/sdk/system-images/android-42/tag-2/mips/skins/skinB");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/armeabi");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/x86");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/mips");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/somedir/armeabi-v7a");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/tag-1/x86");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/tag-2/mips");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/tag-2/mips/skins");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/tag-2/mips/skins/skinA");
+        mFOp.recordExistingFolder("/sdk/system-images/android-35/tag-2/mips/skins/skinB");
         // without tags
         mFOp.recordExistingFile("/sdk/system-images/android-18/armeabi-v7a/source.properties",
                 "Pkg.Revision=1\n" +
@@ -469,17 +469,17 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/x86/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/x86/source.properties",
                 "Pkg.Revision=3\n" +
                 "SystemImage.Abi=x86\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/mips/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/mips/source.properties",
                 "Pkg.Revision=4\n" +
                 "SystemImage.Abi=mips\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
@@ -488,45 +488,45 @@ public class LocalSdkTest extends TestCase {
         It seems like LocalSdk used to detect and not include non-most-recent versions of packages
         with multiple versions installed, and so the below was not included in the final result.
         However, LocalSdk no longer behaves that way.
-        mFOp.recordExistingFile("/sdk/system-images/android-42/armeabi-v7a/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/armeabi-v7a/source.properties",
                 "Pkg.Revision=5\n" +
                 "SystemImage.Abi=armeabi-v7a\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
         */
         // with tags
-        mFOp.recordExistingFile("/sdk/system-images/android-42/somedir/armeabi-v7a/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/somedir/armeabi-v7a/source.properties",
                 "Pkg.Revision=6\n" +
         //        "SystemImage.TagId=default\n" +  // Prop TagId is used instead of the "somedir" name
                 "SystemImage.Abi=armeabi-v7a\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-1/x86/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/tag-1/x86/source.properties",
                 "Pkg.Revision=7\n" +
                 "SystemImage.TagId=tag-1\n" +
                 "SystemImage.TagDisplay=My Tag 1\n" +
                 "SystemImage.Abi=x86\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/source.properties",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/tag-2/mips/source.properties",
                 "Pkg.Revision=8\n" +
                 "SystemImage.TagId=tag-2\n" +
                 "SystemImage.TagDisplay=My Tag 2\n" +
                 "SystemImage.Abi=mips\n" +
-                "AndroidVersion.ApiLevel=42\n" +
+                "AndroidVersion.ApiLevel=35\n" +
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Os=ANY\n" +
                 "Archive.Arch=ANY\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/skins/skinA/layout",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/tag-2/mips/skins/skinA/layout",
                 "part {\n" +
                 "}\n");
-        mFOp.recordExistingFile("/sdk/system-images/android-42/tag-2/mips/skins/skinB/layout",
+        mFOp.recordExistingFile("/sdk/system-images/android-35/tag-2/mips/skins/skinB/layout",
                 "part {\n" +
                 "}\n");
 
@@ -539,29 +539,29 @@ public class LocalSdkTest extends TestCase {
                         + "Tag=default [Default] Path=x86 Rev=2" +
                         " ListDisp=Intel x86 Atom System Image "
                         + "DescShort=Intel x86 Atom System Image, Android API 18, revision 2>>, " +
-                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 35 "
                         + "Tag=default [Default] Path=armeabi-v7a Rev=6" +
                         " ListDisp=ARM EABI v7a System Image "
-                        + "DescShort=ARM EABI v7a System Image, Android API 42, revision 6>>, " +
+                        + "DescShort=ARM EABI v7a System Image, Android API 35, revision 6>>, " +
                         // Tag=default Path=armeabi-v7a Rev=5 is
                         // overridden by the Rev=6 above
-                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 35 "
                         + "Tag=default [Default] Path=mips Rev=4" +
                         " ListDisp=MIPS System Image "
-                        + "DescShort=MIPS System Image, Android API 42, revision 4>>, " +
-                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "DescShort=MIPS System Image, Android API 35, revision 4>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 35 "
                         + "Tag=default [Default] Path=x86 Rev=3" +
                         " ListDisp=Intel x86 Atom System Image "
-                        + "DescShort=Intel x86 Atom System Image, Android API 42, revision 3>>, " +
-                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "DescShort=Intel x86 Atom System Image, Android API 35, revision 3>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 35 "
                         + "Tag=tag-1 [My Tag 1] Path=x86 Rev=7" +
                         " ListDisp=My Tag 1 Intel x86 Atom System Image "
-                        + "DescShort=My Tag 1 Intel x86 Atom System Image, Android API 42, "
+                        + "DescShort=My Tag 1 Intel x86 Atom System Image, Android API 35, "
                         + "revision 7>>, " +
-                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 35 "
                         + "Tag=tag-2 [My Tag 2] Path=mips Rev=8" +
                         " ListDisp=My Tag 2 MIPS System Image "
-                        + "DescShort=My Tag 2 MIPS System Image, Android API 42, revision 8>>]",
+                        + "DescShort=My Tag 2 MIPS System Image, Android API 35, revision 8>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
 
         LocalPkgInfo pi = mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)[0];

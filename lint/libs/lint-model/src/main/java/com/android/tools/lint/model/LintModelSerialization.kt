@@ -1053,9 +1053,16 @@ private abstract class LintModelReader(
             val levelEnd = descriptor.indexOf("</api-level>", levelBegin)
             if (levelEnd != -1) {
               try {
-                val apiLevel = descriptor.substring(levelBegin, levelEnd).trim().toInt()
-                return AndroidVersion(apiLevel, this)
-              } catch (ignore: NumberFormatException) {}
+                val numericVersion =
+                  AndroidVersion.fromString(descriptor.substring(levelBegin, levelEnd).trim())
+                return AndroidVersion(
+                  numericVersion.apiLevel,
+                  numericVersion.apiMinorLevel,
+                  this,
+                  null,
+                  true,
+                )
+              } catch (ignore: IllegalArgumentException) {}
             }
           }
         }
