@@ -126,7 +126,7 @@ public class AndroidVersionTest {
         assertEquals("15", v.getApiString());
         assertFalse(v.isPreview());
         assertNull(v.getCodename());
-        assertTrue(v.equals(15));
+        assertEquals(new AndroidVersion(15), v);
         assertEquals("API 15", v.toString());
 
         v = new AndroidVersion(15, null);
@@ -135,7 +135,7 @@ public class AndroidVersionTest {
         assertEquals("15", v.getApiStringWithoutExtension());
         assertFalse(v.isPreview());
         assertNull(v.getCodename());
-        assertTrue(v.equals(15));
+        assertEquals(new AndroidVersion(15), v);
         assertEquals("API 15", v.toString());
 
         // An empty codename is like a null codename
@@ -164,7 +164,7 @@ public class AndroidVersionTest {
         assertEquals("15", v.getApiStringWithExtension());
         assertFalse(v.isPreview());
         assertNull(v.getCodename());
-        assertTrue(v.equals(15));
+        assertEquals(new AndroidVersion(15), v);
         assertEquals("API 15", v.toString());
 
         // A valid name is considered a codename

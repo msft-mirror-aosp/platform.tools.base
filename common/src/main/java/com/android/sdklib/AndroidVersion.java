@@ -389,14 +389,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return mApiLevel >= appVersion.mApiLevel;
     }
 
-    /**
-     * Returns <code>true</code> if the AndroidVersion is an API level equals to
-     * <var>apiLevel</var>.
-     */
-    public boolean equals(int apiLevel) {
-        return mCodename == null && apiLevel == mApiLevel;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof AndroidVersion)) {
