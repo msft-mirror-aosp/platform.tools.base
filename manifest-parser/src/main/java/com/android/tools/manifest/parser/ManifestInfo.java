@@ -21,6 +21,7 @@ import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestReceiverInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.xml.AndroidManifest;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +46,9 @@ public class ManifestInfo {
     private int versionCode;
 
     private boolean debuggable;
+
+    private String minSdk;
+    private String targetSdk;
 
     private ManifestInfo() {
         activities = new ArrayList<>();
@@ -101,6 +105,14 @@ public class ManifestInfo {
         return debuggable;
     }
 
+    public String getMinSdk() {
+        return minSdk == null ? "1" : minSdk;
+    }
+
+    public String getTargetSdk() {
+        return targetSdk == null ? getMinSdk() : targetSdk;
+    }
+
     private void parseNode(@NonNull XmlNode node) {
         for (String attribute : node.attributes().keySet()) {
             String value = node.attributes().get(attribute);
@@ -119,6 +131,8 @@ public class ManifestInfo {
                 parseApplication(child);
             } else if (AndroidManifest.NODE_INSTRUMENTATION.equals(child.name())) {
                 parseInstrumentation(child);
+            } else if (AndroidManifest.NODE_USES_SDK.equals(child.name())) {
+                parseUseSdk(child);
             }
         }
     }
@@ -148,6 +162,12 @@ public class ManifestInfo {
                 sdkLibraries.add(child.attributes().get("name"));
             }
         }
+    }
+
+    private void parseUseSdk(@NonNull XmlNode node) {
+        minSdk = node.attributes().getOrDefault(AndroidManifest.ATTRIBUTE_MIN_SDK_VERSION, "1");
+        targetSdk =
+                node.attributes().getOrDefault(AndroidManifest.ATTRIBUTE_TARGET_SDK_VERSION, null);
     }
 
     @NonNull
