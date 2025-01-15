@@ -50,7 +50,7 @@ public class LintDriverTest extends AbstractCheckTest {
         List<ClassEntry> expected = Arrays.asList(c0, c1, c2, c3, c4, c5);
         List<ClassEntry> list = new ArrayList<>(expected);
         Collections.sort(list);
-        assertEquals(list, list);
+        assertEquals(expected, list);
 
         List<ClassEntry> list2 = Arrays.asList(c5, c4, c3, c2, c1, c0);
         Collections.sort(list2);

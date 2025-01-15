@@ -379,6 +379,7 @@ public class ReadWriteProcessLockTest {
     }
 
     /** Returns a sample action. */
+    @SuppressWarnings("SelfAssertion")
     private static Function<Void, Void> getSampleAction() {
         return (Void arg) -> {
             // Do some artificial work here
