@@ -94,6 +94,34 @@ class DeviceTargetingConfigPackageBundleTaskTest {
   }
 
   @Test
+  fun testDeviceTargetingConfig_inconsistent() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+          """
+          android {
+            bundle {
+              deviceGroup {
+                enableSplit = true
+                defaultGroup = 'UNKNOWN_group'
+              }
+              deviceTargetingConfig = file('src/main/config.xml')
+            }
+          }
+          """.trimIndent())
+    val failure = project.executor()
+            .with(BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API, true)
+            .expectFailure()
+            .run(":app:bundleDebug")
+
+    val exception = Throwables.getRootCause(failure.exception!!)
+    assertThat(exception).hasMessageThat()
+        .contains(
+            "device group [UNKNOWN_group] which is not in the list [test_group, other]")
+  }
+
+  @Test
   fun testDeviceTargetingConfig_notEnabled() {
     project
       .getSubproject(":app")

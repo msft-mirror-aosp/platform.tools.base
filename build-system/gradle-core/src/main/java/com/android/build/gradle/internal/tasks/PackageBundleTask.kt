@@ -41,6 +41,7 @@ import com.android.builder.packaging.PackagingUtils
 import com.android.bundle.Config
 import com.android.bundle.Config.UncompressNativeLibraries.PageAlignment
 import com.android.tools.build.bundletool.commands.BuildBundleCommand
+import com.android.tools.build.bundletool.commands.ValidateBundleCommand
 import com.android.utils.FileUtils
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
@@ -421,6 +422,10 @@ abstract class PackageBundleTask : NonIncrementalTask() {
                 .setOutputPath(bundleFile.toPath())
                 .setModulesPaths(builder.build())
 
+            val validate = ValidateBundleCommand.builder()
+                .setBundlePath(bundleFile.toPath())
+                .build()
+
             if (parameters.binaryArtProfiler.isPresent
                 && parameters.binaryArtProfiler.get().asFile.exists()) {
                 command.addMetadataFile(
@@ -526,6 +531,11 @@ abstract class PackageBundleTask : NonIncrementalTask() {
             }
 
             command.build().execute()
+
+            // validate the resulting bundle if it contains a device targeting config.
+            if (parameters.deviceTargetingConfig.isPresent()) {
+                validate.execute()
+            }
         }
 
         private fun getBundlePath(folder: File): Path {
