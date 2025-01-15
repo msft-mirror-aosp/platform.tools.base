@@ -231,21 +231,20 @@ fun addComposeArgsToKotlinCompile(
 
     task.addPluginClasspath(kotlinVersion, compilerExtension)
 
-    if (debuggable) {
+    task.addPluginOption(
+        kotlinVersion,
+        "androidx.compose.compiler.plugins.kotlin",
+        "sourceInformation",
+        "true"
+    )
+
+    if (debuggable && useLiveLiterals) {
         task.addPluginOption(
             kotlinVersion,
             "androidx.compose.compiler.plugins.kotlin",
-            "sourceInformation",
+            "liveLiterals",
             "true"
         )
-        if (useLiveLiterals) {
-            task.addPluginOption(
-                kotlinVersion,
-                "androidx.compose.compiler.plugins.kotlin",
-                "liveLiterals",
-                "true"
-            )
-        }
     }
 
     if (kotlinVersion.isVersionAtLeast(1, 8)) {
