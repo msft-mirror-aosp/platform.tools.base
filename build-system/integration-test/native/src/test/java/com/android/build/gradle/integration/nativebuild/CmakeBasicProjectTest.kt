@@ -180,12 +180,12 @@ class CmakeBasicProjectTest(
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                  minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                  minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                   externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -197,7 +197,7 @@ class CmakeBasicProjectTest(
                 externalNativeBuild {
                   cmake {
                     path "$cmakeListsPath"
-                    version "$cmakeVersionInDsl"
+                    version = "$cmakeVersionInDsl"
                   }
                 }
 
@@ -227,12 +227,12 @@ class CmakeBasicProjectTest(
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.path"] = "$cmakeListsPath"
                       experimentalProperties["ninja.configure"] = "${cmakeExe.replace("\\", "\\\\")}"
@@ -320,12 +320,12 @@ class CmakeBasicProjectTest(
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.abiFilters"] = ["armeabi-v7a", "x86_64"];
                       experimentalProperties["ninja.cFlags"] = ["-DTEST_C_FLAG", "-DTEST_C_FLAG_2"];

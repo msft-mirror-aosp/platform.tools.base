@@ -38,7 +38,7 @@ fun createGradleTestProject(name: String, heapSize: String = "2048M"): GradleTes
                     android {
                         dynamicFeatures =  [':feature']
                         buildFeatures {
-                            buildConfig true
+                            buildConfig = true
                         }
                         buildTypes {
                             debug {
@@ -66,7 +66,7 @@ fun createGradleTestProject(name: String, heapSize: String = "2048M"): GradleTes
 
                     android {
                         buildFeatures {
-                            buildConfig true
+                            buildConfig = true
                         }
                         buildTypes {
                             debug {
@@ -91,7 +91,7 @@ fun createGradleTestProject(name: String, heapSize: String = "2048M"): GradleTes
 
                     android {
                         buildFeatures {
-                            buildConfig true
+                            buildConfig = true
                         }
                         buildTypes {
                             debug {

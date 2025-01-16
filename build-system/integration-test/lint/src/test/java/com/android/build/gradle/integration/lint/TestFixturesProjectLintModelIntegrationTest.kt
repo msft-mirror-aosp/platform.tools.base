@@ -44,12 +44,12 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
         project.getSubproject(":app").buildFile.appendText(
             """
                 android {
-                    testBuildType "release"
+                    testBuildType = "release"
                     lint {
                         disable "GradleDependency"
-                        enable 'StopShip'
-                        abortOnError false
-                        checkDependencies true
+                        enable('StopShip')
+                        abortOnError = false
+                        checkDependencies = true
                     }
                 }
             """.trimIndent()
@@ -64,7 +64,7 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
         project.getSubproject(":lib").buildFile.appendText(
             """
                 android {
-                    testBuildType "release"
+                    testBuildType = "release"
                 }
                 dependencies {
                     testFixturesApi 'androidx.annotation:annotation:1.1.0'

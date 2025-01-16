@@ -63,8 +63,8 @@ public class CmakeTargetsTest {
                 "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \"com.example.hellojni\"\n"
-                        + "    compileSdkVersion "
+                        + "    namespace =\"com.example.hellojni\"\n"
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion \""

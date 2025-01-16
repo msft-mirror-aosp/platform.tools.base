@@ -37,9 +37,9 @@ class LintVerbosityTest {
                         """
                             android {
                                 lintOptions {
-                                    abortOnError false
-                                    quiet false
-                                    error 'AccidentalOctal'
+                                    abortOnError = false
+                                    quiet = false
+                                    error = 'AccidentalOctal'
                                 }
                                 defaultConfig {
                                     versionCode 010
@@ -63,7 +63,7 @@ class LintVerbosityTest {
     // Regression test for b/187329866
     @Test
     fun testErrorMessage() {
-        TestFileUtils.searchAndReplace(project.buildFile, "abortOnError false", "abortOnError true")
+        TestFileUtils.searchAndReplace(project.buildFile, "abortOnError = false", "abortOnError true")
         project.executor().expectFailure().run("lintDebug")
         ScannerSubject.assertThat(project.buildResult.stderr)
             .contains("Lint found errors in the project; aborting build.")

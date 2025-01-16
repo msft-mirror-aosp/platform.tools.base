@@ -57,11 +57,11 @@ class NdkBuildBuildSettingsTest {
             """
             apply plugin: 'com.android.application'
                 android {
-                    namespace "com.example.hellojni"
+                    namespace = "com.example.hellojni"
                     compileSdkVersion $DEFAULT_COMPILE_SDK_VERSION
-                    ndkPath "${project.ndkPath}"
+                    ndkPath = "${project.ndkPath}"
                     defaultConfig {
-                      minSdk $DEFAULT_MIN_SDK_VERSION
+                      minSdk = $DEFAULT_MIN_SDK_VERSION
                       externalNativeBuild {
                           ndkBuild {
                             abiFilters.addAll("armeabi-v7a", "arm64-v8a")
