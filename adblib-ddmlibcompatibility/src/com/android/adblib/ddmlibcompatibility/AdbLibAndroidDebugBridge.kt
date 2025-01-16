@@ -613,6 +613,10 @@ class AdbLibAndroidDebugBridge(
         unsupportedMethod()
     }
 
+    override fun queryFeatures(adbFeaturesRequest: String): String {
+        unsupportedMethod()
+    }
+
     private inline fun <R> withLock(block: () -> R): R {
         return try {
             lock.lock()
