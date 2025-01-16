@@ -45,10 +45,10 @@ class ResourceSplitTestModuleConnectedTest {
             """
                 android.splits {
                     abi {
-                        enable true
+                        enable = true
                         reset()
                         include("x86", "x86_64", "arm64-v8a")
-                        universalApk true
+                        universalApk = true
                     }
                 }
             """.trimIndent()
@@ -82,8 +82,8 @@ class ResourceSplitTestModuleConnectedTest {
         project.executor().run(":test:connectedCheck")
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
-            "universalApk true",
-            "universalApk false"
+            "universalApk = true",
+            "universalApk = false"
         )
         project.executor().run(":test:connectedCheck")
     }

@@ -186,10 +186,10 @@ public class HelloWorldApp extends GradleProject {
                                 + "    defaultConfig.minSdkVersion "
                                 + minSdkVersion
                                 + "\n"
-                                + "    namespace \""
+                                + "    namespace = \""
                                 + namespace
                                 + "\"\n"
-                                + "    compileSdkVersion "
+                                + "    compileSdkVersion = "
                                 + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                                 + "\n"
                                 + "    lintOptions.checkReleaseBuilds = false\n"

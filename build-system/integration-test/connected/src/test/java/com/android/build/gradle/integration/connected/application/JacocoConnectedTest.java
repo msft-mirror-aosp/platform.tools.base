@@ -53,7 +53,7 @@ public class JacocoConnectedTest {
     public void setUp() throws IOException {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "\nandroid.buildTypes.debug.enableAndroidTestCoverage true");
+                "\nandroid.buildTypes.debug.enableAndroidTestCoverage = true");
         // fail fast if no response
         project.addAdbTimeout();
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning

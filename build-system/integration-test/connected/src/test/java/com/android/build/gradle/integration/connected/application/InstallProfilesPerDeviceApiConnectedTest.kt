@@ -57,16 +57,16 @@ class InstallProfilesPerDeviceApiConnectedTest {
 
                     signingConfigs {
                         myConfig {
-                            storeFile file("debug.keystore")
-                            storePassword "android"
-                            keyAlias "androiddebugkey"
-                            keyPassword "android"
+                            storeFile = file("debug.keystore")
+                            storePassword = "android"
+                            keyAlias = "androiddebugkey"
+                            keyPassword = "android"
                         }
                     }
 
                     buildTypes {
                         release {
-                            signingConfig signingConfigs.myConfig
+                            signingConfig = signingConfigs.myConfig
                         }
                     }
                 }
@@ -157,10 +157,10 @@ class InstallProfilesPerDeviceApiConnectedTest {
             """
                 android.splits {
                     abi {
-                      enable true
+                      enable = true
                       reset()
                       include "x86", "x86_64"
-                      universalApk false
+                      universalApk = false
                     }
                 }
             """.trimIndent()
@@ -304,7 +304,7 @@ class InstallProfilesPerDeviceApiConnectedTest {
                 apply plugin: 'maven-publish'
                 publishing {
                     repositories {
-                        maven { url 'testrepo' }
+                        maven { url = 'testrepo' }
                     }
                 }
                 android {

@@ -61,7 +61,7 @@ class MinimalSubProject private constructor(
             buildScript += if (isMultiplatform) {
                 "\nkotlin.androidLibrary.namespace = \"$it\"\n"
             } else {
-                "\n$androidExtension.namespace \"$it\"\n"
+                "\n$androidExtension.namespace = \"$it\"\n"
             }
         }
         addFile(TestSourceFile("build.gradle", buildScript))

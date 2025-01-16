@@ -60,7 +60,7 @@ class BuildFileBuilder {
         }
 
         if (namespace != null) {
-            contents.append("\n\nandroid.namespace \"$namespace\"")
+            contents.append("\n\nandroid.namespace = \"$namespace\"")
         }
 
         if (!dependencies.isEmpty()) {

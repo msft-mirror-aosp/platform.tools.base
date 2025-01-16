@@ -63,7 +63,7 @@ class D8DesugaringConnectedTest {
                 apply plugin: "com.android.application"
 
                 android {
-                    namespace "${HelloWorldApp.NAMESPACE}"
+                    namespace = "${HelloWorldApp.NAMESPACE}"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
 
                     defaultConfig {
@@ -77,7 +77,7 @@ class D8DesugaringConnectedTest {
                     productFlavors {
                         multidex {
                             dimension "whatever"
-                            multiDexEnabled true
+                            multiDexEnabled = true
                             multiDexKeepFile file('debug_main_dex_list.txt')
                         }
                         base {

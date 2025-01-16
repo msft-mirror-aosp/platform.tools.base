@@ -79,7 +79,7 @@ public class KotlinHelloWorldApp extends HelloWorldApp {
                                 + "'\n"
                                 + "apply plugin: 'kotlin-android'\n"
                                 + "android {\n"
-                                + "    namespace \""
+                                + "    namespace = \""
                                 + NAMESPACE
                                 + "\"\n"
                                 + "    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()\n"

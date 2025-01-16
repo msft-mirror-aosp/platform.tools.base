@@ -685,12 +685,12 @@ class NativeBuildBenchmarkProject(
         initScript.writeText("""allprojects {
                               buildscript {
                                 repositories {
-                                   maven { url '${repoDir.toURI()}'}
+                                   maven { url = '${repoDir.toURI()}'}
                                 }
                               }
                               repositories {
                                 maven {
-                                  url '${repoDir.toURI()}'
+                                  url = '${repoDir.toURI()}'
                                   metadataSources {
                                     mavenPom()
                                     artifact()
