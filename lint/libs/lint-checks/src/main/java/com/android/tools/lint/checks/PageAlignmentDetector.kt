@@ -218,8 +218,6 @@ class PageAlignmentDetector : Detector(), GradleScanner, TomlScanner {
         implementation = Implementation(PageAlignmentDetector::class.java, GRADLE_AND_TOML_SCOPE),
         androidSpecific = true,
         moreInfo = "https://developer.android.com/guide/practices/page-sizes",
-        // Not yet enabled. Consider tying this to a StudioFlag.
-        enabledByDefault = false,
       )
   }
 }
