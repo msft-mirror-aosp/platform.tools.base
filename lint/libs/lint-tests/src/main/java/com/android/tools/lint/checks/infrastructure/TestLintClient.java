@@ -1831,12 +1831,11 @@ public class TestLintClient extends LintCliClient {
             }
         } else if (targetHash != null && !compileTarget.hashString().equals(targetHash)) {
             // Pretend to the test that the target is the right one
-            String targetName =
-                    StringsKt.removePrefix(targetHash, AndroidTargetHash.PLATFORM_HASH_PREFIX);
-            try {
-                return new AndroidTestTargetWrapper(compileTarget, AndroidVersion.fromString(targetName));
-            } catch (IllegalArgumentException e) {
-                fail("Invalid `compileSdkVersion` " + targetName);
+            AndroidVersion version = AndroidTargetHash.getPlatformVersion(targetHash);
+            if (version != null) {
+                return new AndroidTestTargetWrapper(compileTarget, version);
+            } else {
+                fail("Invalid `compileSdkVersion` " + StringsKt.removePrefix(targetHash, AndroidTargetHash.PLATFORM_HASH_PREFIX));
             }
         }
 

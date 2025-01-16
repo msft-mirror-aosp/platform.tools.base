@@ -128,7 +128,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     public static final Pattern PREVIEW_PATTERN = Pattern.compile("^[A-Z][0-9A-Za-z_]*$");
-    public static final Pattern API_LEVEL_PATTERN = Pattern.compile("(\\d+)(\\.(\\d+))?");
+    public static final Pattern API_LEVEL_PATTERN = Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
 
     private static final long serialVersionUID = 1L;
 
@@ -279,30 +279,29 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known codenames,
      * and should be preferred.
      *
-     * @param apiOrCodename A non-null API integer or a codename. "REL" is notable not a valid
-     *     codename.
-     * @throws IllegalArgumentException if the input isn't a pure integer or doesn't look like a
-     *     valid string codename.
+     * @param apiString an API string that could have been produced by getApiStringWithExtension()
+     * @throws IllegalArgumentException if the input doesn't match API_LEVEL_PATTERN or
+     *   PREVIEW_PATTERN
      */
-    public static AndroidVersion fromString(@NonNull String apiOrCodename) {
+    public static AndroidVersion fromString(@NonNull String apiString) {
         try {
-            Matcher matcher = API_LEVEL_PATTERN.matcher(apiOrCodename);
+            Matcher matcher = API_LEVEL_PATTERN.matcher(apiString);
             if (matcher.matches()) {
-                if (matcher.group(3) != null) {
-                    return new AndroidVersion(
-                            Integer.parseInt(matcher.group(1)),
-                            Integer.parseInt(matcher.group(3)),
-                            null,
-                            null,
-                            true);
-                }
-                return new AndroidVersion(Integer.parseInt(apiOrCodename));
+                int majorVersion = Integer.parseInt(matcher.group(1));
+                int minorVersion = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
+                Integer extensionLevel = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
+                boolean isBaseExtension = extensionLevel == null || extensionLevel <= getBaseExtensionLevel(majorVersion);
+                return new AndroidVersion(
+                        majorVersion, minorVersion,
+                        null,
+                        extensionLevel,
+                        isBaseExtension);
             }
         } catch (NumberFormatException ignore) {}
 
-        String codename = sanitizeCodename(apiOrCodename);
+        String codename = sanitizeCodename(apiString);
         if (codename == null || !PREVIEW_PATTERN.matcher(codename).matches()) {
-            throw new IllegalArgumentException("Invalid android API or codename " + apiOrCodename);
+            throw new IllegalArgumentException("Invalid android API or codename " + apiString);
         }
 
         return new AndroidVersion(0, codename);
