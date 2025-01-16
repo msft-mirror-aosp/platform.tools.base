@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_PARCELABLE;
+
 import static org.jetbrains.kotlin.lexer.KtTokens.SEALED_KEYWORD;
 
 import com.android.annotations.NonNull;
@@ -31,16 +32,20 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierListOwner;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.kotlin.psi.KtClassOrObject;
 import org.jetbrains.uast.UAnonymousClass;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UastContextKt;
+
+import java.util.Collections;
+import java.util.List;
 
 /** Looks for Parcelable classes that are missing a CREATOR field */
 public class ParcelDetector extends Detector implements SourceCodeScanner {
@@ -54,10 +59,10 @@ public class ParcelDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "ParcelCreator",
                             "Missing Parcelable `CREATOR` field",
-                            "According to the `Parcelable` interface documentation, "
-                                    + "\"Classes implementing the Parcelable interface must also have a "
-                                    + "static field called `CREATOR`, which is an object implementing the "
-                                    + "`Parcelable.Creator` interface.\"",
+                            "According to the `Parcelable` interface documentation, \"Classes"
+                                + " implementing the Parcelable interface must also have a static"
+                                + " field called `CREATOR`, which is an object implementing the"
+                                + " `Parcelable.Creator` interface.\"",
                             Category.CORRECTNESS,
                             3,
                             Severity.ERROR,
@@ -106,15 +111,16 @@ public class ParcelDetector extends Detector implements SourceCodeScanner {
                 return;
             }
             // After b/177856520, @Parcelize is propagated to direct subclasses of a sealed class
-            UClass parent =
-                    UastContextKt.toUElement(
-                            declaration.getJavaPsi().getSuperClass(), UClass.class);
-            if (parent != null && hasParcelizeAnnotation(parent)) {
-                PsiElement parentSourcePsi = parent.getSourcePsi();
-                if (parentSourcePsi instanceof KtClassOrObject) {
-                    KtClassOrObject ktClassOrObject = (KtClassOrObject) parentSourcePsi;
-                    if (ktClassOrObject.hasModifier(SEALED_KEYWORD)) {
-                        return;
+            PsiClass[] superClasses = declaration.getJavaPsi().getSupers();
+            for (PsiClass superClass : superClasses) {
+                UClass parent = UastContextKt.toUElement(superClass, UClass.class);
+                if (parent != null && hasParcelizeAnnotation(parent)) {
+                    PsiElement parentSourcePsi = parent.getSourcePsi();
+                    if (parentSourcePsi instanceof KtClassOrObject) {
+                        KtClassOrObject ktClassOrObject = (KtClassOrObject) parentSourcePsi;
+                        if (ktClassOrObject.hasModifier(SEALED_KEYWORD)) {
+                            return;
+                        }
                     }
                 }
             }

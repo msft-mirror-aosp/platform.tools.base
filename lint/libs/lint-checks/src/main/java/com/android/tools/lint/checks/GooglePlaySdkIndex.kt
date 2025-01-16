@@ -541,7 +541,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
         val currentLibrary = LibraryToSdk(coordinate, sdk)
         // Add SDK deprecation issues
         val deprecation = library.libraryDeprecation
-        if (deprecation.isDeprecated()) {
+        // Store the information regardless of [showDeprecationIssues] to allow tests to switch the
+        // flag after initialization
+        if (deprecation != null && deprecation.deprecationTimestampSeconds > 0) {
           currentLibrary.deprecation = deprecation
         }
         for (version in library.versionsList) {

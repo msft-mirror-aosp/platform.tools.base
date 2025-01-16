@@ -28,9 +28,7 @@ import java.io.InputStream;
 
 /** Class providing access to a embedded java resource list of vendor devices. */
 public class VendorDevices {
-    private static final String[] DEVICE_FILES = {
-        "nexus", "wear", "tv", "automotive", "desktop", "xr"
-    };
+    private static final String[] DEVICE_FILES = {"nexus", "wear", "tv", "automotive", "desktop"};
 
     @NonNull private final ILogger mLog;
 

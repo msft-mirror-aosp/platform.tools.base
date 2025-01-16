@@ -503,7 +503,7 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                 .expectClean();
     }
 
-    public void testParcelizeOnSealedSuperclass() {
+    public void testParcelizeOnSealedSuperClass() {
         // Regression test for
         // 237421695: Wrong warning for `@Parcelize` on sealed class
         lint().files(
@@ -525,6 +525,34 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                                         + "sealed class ImageConfig : Parcelable {\n"
                                         + "    data class Square(val circleDimmed: Boolean) : ImageConfig()\n"
                                         + "    object Rectangle : ImageConfig()\n"
+                                        + "}\n"),
+                        SUPPORT_ANNOTATIONS_JAR)
+                .run()
+                .expectClean();
+    }
+
+    public void testParcelizeOnSealedSuperInterface() {
+        // Regression test for
+        // 389023409: Wrong warning for `@Parcelize` on sealed interface
+        lint().files(
+                        kotlin(
+                                ""
+                                        + "/* HIDE-FROM-DOCUMENTATION */\n"
+                                        + "package kotlinx.parcelize\n"
+                                        + "@Target(AnnotationTarget.CLASS)\n"
+                                        + "@Retention(AnnotationRetention.BINARY)\n"
+                                        + "annotation class Parcelize"),
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import kotlinx.parcelize.Parcelize\n"
+                                        + "import android.os.Parcelable\n"
+                                        + "\n"
+                                        + "@Parcelize\n"
+                                        + "sealed interface Foo : Parcelable {\n"
+                                        + "    data object Bar : Foo\n"
+                                        + "    data class Baz(val a: String) : Foo\n"
                                         + "}\n"),
                         SUPPORT_ANNOTATIONS_JAR)
                 .run()
