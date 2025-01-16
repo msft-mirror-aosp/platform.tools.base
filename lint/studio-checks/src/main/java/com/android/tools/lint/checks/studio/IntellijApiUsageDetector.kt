@@ -28,10 +28,12 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiPackage
+import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
@@ -72,6 +74,9 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
     usageInfo: AnnotationUsageInfo,
   ) {
     if (!isDeprecatedForRemoval(annotationInfo)) {
+      return
+    }
+    if (isInIgnoredPackage(annotationInfo.annotation)) {
       return
     }
     if (annotationInfo.origin == AnnotationOrigin.PACKAGE) {
@@ -125,6 +130,16 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
       context.getNameLocation(element),
       "$toBlame is $annotationDisplayName",
     )
+  }
+
+  private fun isInIgnoredPackage(annotation: UAnnotation): Boolean {
+    // Ignore our own packages, since the focus is on IntelliJ APIs that might change during platform updates.
+    // Also ignore JDK APIs since these are removed very infrequently.
+    val packageName = (annotation.javaPsi?.containingFile as? PsiClassOwner)?.packageName ?: return false
+    return packageName.startsWith("com.android.") ||
+        packageName.startsWith("com.google") ||
+        packageName.startsWith("org.jetbrains.android.") ||
+        packageName.startsWith("java.")
   }
 
   private fun isDeprecatedForRemoval(annotationInfo: AnnotationInfo): Boolean {
