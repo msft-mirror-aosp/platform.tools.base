@@ -324,8 +324,14 @@ internal class AdbServerControllerImpl(
             val port = config.serverPort
             val isUserManaged = config.isUserManaged
             val isUnitTest = config.isUnitTest
-            if (!isUserManaged && !isUnitTest) {
-                if (path != null && port != null) {
+            if (isUserManaged) {
+                throw IllegalStateException("Start adb triggered for user-managed adb mode")
+            }
+            if (!isUnitTest) {
+                if (path == null) {
+                    throw IllegalStateException("adb path must be provided")
+                }
+                if (port != null) {
                     runStartServerProcess(path, port, config.envVars)
                 }
             }
@@ -383,8 +389,16 @@ internal class AdbServerControllerImpl(
 
             val config = waitForServerConfigurationAvailable()
             val adbFilePath = config.adbPath
-            if (!config.isUserManaged && adbFilePath != null && config.serverPort != null) {
-                runKillServerProcess(adbFilePath, config.envVars)
+            if (config.isUserManaged) {
+                throw IllegalStateException("Stop adb triggered for user-managed adb mode")
+            }
+            if (!config.isUnitTest) {
+                if (adbFilePath == null) {
+                    throw IllegalStateException("adb path must be provided")
+                }
+                if (config.serverPort != null) {
+                    runKillServerProcess(adbFilePath, config.envVars)
+                }
             }
             params.isStartedFlow.update { false }
         }.also {

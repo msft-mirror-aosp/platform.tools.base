@@ -31,6 +31,7 @@ kotlin_test(
         # should be loaded first.
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
+        "//tools/base/utp/android-device-provider-profile-proto",
         ":android-device-provider-profile",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.protobuf.protobuf-java",

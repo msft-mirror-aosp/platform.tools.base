@@ -744,13 +744,16 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void codeTransparency(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCodeTransparency,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void countrySet(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet,kotlin.Unit> action);
     method public void density(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDensity,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void deviceGroup(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceGroup,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
     method public com.android.build.api.dsl.BundleAbi getAbi();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleAiModelVersion getAiModelVersion();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCodeTransparency getCodeTransparency();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCountrySet getCountrySet();
     method public com.android.build.api.dsl.BundleDensity getDensity();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceTier getDeviceTier();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceGroup getDeviceGroup();
+    method @org.gradle.api.Incubating public org.gradle.api.file.RegularFileProperty getDeviceTargetingConfig();
+    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceTier getDeviceTier();
     method @org.gradle.api.Incubating public org.gradle.api.file.DirectoryProperty getIntegrityConfigDir();
     method public com.android.build.api.dsl.BundleLanguage getLanguage();
     method public com.android.build.api.dsl.BundleStoreArchive getStoreArchive();
@@ -763,7 +766,9 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCodeTransparency codeTransparency;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCountrySet countrySet;
     property public abstract com.android.build.api.dsl.BundleDensity density;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceTier deviceTier;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceGroup deviceGroup;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.file.RegularFileProperty deviceTargetingConfig;
+    property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceTier deviceTier;
     property @org.gradle.api.Incubating public abstract org.gradle.api.file.DirectoryProperty integrityConfigDir;
     property public abstract com.android.build.api.dsl.BundleLanguage language;
     property public abstract com.android.build.api.dsl.BundleStoreArchive storeArchive;
@@ -803,6 +808,15 @@ package com.android.build.api.dsl {
   public interface BundleDensity {
     method @org.gradle.api.Incubating public Boolean? getEnableSplit();
     method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
+  }
+
+  @org.gradle.api.Incubating public interface BundleDeviceGroup {
+    method @org.gradle.api.Incubating public String? getDefaultGroup();
+    method @org.gradle.api.Incubating public Boolean? getEnableSplit();
+    method @org.gradle.api.Incubating public void setDefaultGroup(String?);
+    method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract String? defaultGroup;
     property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
   }
 
@@ -2619,12 +2633,10 @@ package com.android.build.api.variant {
 
   public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
     method public com.android.build.api.variant.ApplicationAndroidResourcesBuilder getAndroidResources();
-    method public boolean getDebuggable();
     method public com.android.build.api.variant.DependenciesInfoBuilder getDependenciesInfo();
     method @Deprecated @org.gradle.api.Incubating public boolean getProfileable();
     method @Deprecated @org.gradle.api.Incubating public void setProfileable(boolean);
     property public abstract com.android.build.api.variant.ApplicationAndroidResourcesBuilder androidResources;
-    property public abstract boolean debuggable;
     property public abstract com.android.build.api.variant.DependenciesInfoBuilder dependenciesInfo;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean profileable;
   }
@@ -2641,11 +2653,11 @@ package com.android.build.api.variant {
 
   public interface BuiltArtifact extends com.android.build.api.variant.VariantOutputConfiguration {
     method public String getOutputFile();
-    method @org.gradle.api.Incubating public java.nio.file.Path getOutputFilePath();
+    method public java.nio.file.Path getPath();
     method public Integer? getVersionCode();
     method public String? getVersionName();
     property public abstract String outputFile;
-    property @org.gradle.api.Incubating public abstract java.nio.file.Path outputFilePath;
+    property public abstract java.nio.file.Path path;
     property public abstract Integer? versionCode;
     property public abstract String? versionName;
   }
@@ -2954,12 +2966,15 @@ package com.android.build.api.variant {
   }
 
   public interface GeneratesApkBuilder {
+    method @Deprecated public boolean getDebuggable();
     method @Deprecated @org.gradle.api.Incubating public Boolean? getEnableMultiDex();
     method public Integer? getTargetSdk();
     method public String? getTargetSdkPreview();
+    method @Deprecated public void setDebuggable(boolean);
     method @Deprecated @org.gradle.api.Incubating public void setEnableMultiDex(Boolean?);
     method public void setTargetSdk(Integer?);
     method public void setTargetSdkPreview(String?);
+    property @Deprecated public abstract boolean debuggable;
     property @Deprecated @org.gradle.api.Incubating public abstract Boolean? enableMultiDex;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
@@ -2978,10 +2993,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.Property<java.lang.String> testLabel;
   }
 
-  @org.gradle.api.Incubating public interface GeneratesTestApkBuilder extends com.android.build.api.variant.GeneratesApkBuilder {
-    method @Deprecated @org.gradle.api.Incubating public boolean getDebuggable();
-    method @Deprecated @org.gradle.api.Incubating public void setDebuggable(boolean);
-    property @Deprecated @org.gradle.api.Incubating public abstract boolean debuggable;
+  public interface GeneratesTestApkBuilder extends com.android.build.api.variant.GeneratesApkBuilder {
   }
 
   public interface HasAndroidResources {
@@ -3152,6 +3164,7 @@ package com.android.build.api.variant {
   }
 
   @org.gradle.api.Incubating public interface LifecycleTasks {
+    method public void registerApkInstallation(java.lang.Object... objects);
     method public void registerPreBuild(java.lang.Object... objects);
   }
 

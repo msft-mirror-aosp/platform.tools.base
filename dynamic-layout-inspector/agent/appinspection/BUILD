@@ -23,6 +23,9 @@ kotlin_library(
     deps = [
         ":nojarjar-shared",
         "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -58,6 +61,7 @@ app_inspection_jar(
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "@maven//:androidx.annotation.annotation",
         ":nojarjar-shared",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -109,16 +113,22 @@ kotlin_test(
     runtime_deps = [
         "//prebuilts/studio/sdk:platforms/latest_runtime_jar",
     ],
+    # do not sort: fake_android must come before latest_runtime_jar in the classpath to override small pieces of it
     deps = [
         ":agent-sources_undexed",
         ":nojarjar",
+        ":nojarjar-shared",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:androidx.window-beta02",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:fake_android",
+        "//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
     ],
 )
 
@@ -134,16 +144,22 @@ kotlin_test(
     runtime_deps = [
         "//prebuilts/studio/sdk:platforms/latest_runtime_jar",
     ],
+    # do not sort: fake_android must come before latest_runtime_jar in the classpath to override small pieces of it
     deps = [
         ":agent-sources_undexed",
         ":nojarjar",
+        ":nojarjar-shared",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:androidx.window-beta04",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:fake_android",
+        "//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto",
         "//tools/base/testutils:tools.testutils",
+        "//tools/base/bazel:studio-proto",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
     ],
 )
 
@@ -159,16 +175,22 @@ kotlin_test(
     runtime_deps = [
         "//prebuilts/studio/sdk:platforms/latest_runtime_jar",
     ],
+    # do not sort: fake_android must come before latest_runtime_jar in the classpath to override small pieces of it
     deps = [
         ":agent-sources_undexed",
         ":nojarjar",
+        ":nojarjar-shared",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:androidx.window-beta03",
         "//tools/base/dynamic-layout-inspector/agent/appinspection/fake-android:fake_android",
+        "//tools/base/dynamic-layout-inspector/agent/appinspection/proto:layout_inspector_view_java_proto",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
     ],
 )
 

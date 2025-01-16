@@ -24,6 +24,7 @@ import com.android.adblib.tools.JavaBridge;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.Client;
+import com.android.ddmlib.ClientData;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -38,7 +39,10 @@ import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -378,7 +382,7 @@ public class AdbClient {
         throw DeployerException.unsupportedArch();
     }
 
-    public static Deploy.Arch getArchForAbi(String abi) throws DeployerException {
+    public static Deploy.Arch getArchForAbi(String abi) {
         return ABI_MAP.get(abi);
     }
 
@@ -386,20 +390,30 @@ public class AdbClient {
         for (Client client : device.getClients()) {
             if (client.getClientData().getPid() != pid) {
                 continue;
-            }
-
-            String abi = client.getClientData().getAbi();
-            if (abi == null) {
-                return Deploy.Arch.ARCH_UNKNOWN;
-            } else if (abi.startsWith("32-bit")) {
-                return Deploy.Arch.ARCH_32_BIT;
-            } else if (abi.startsWith("64-bit")) {
-                return Deploy.Arch.ARCH_64_BIT;
             } else {
-                return Deploy.Arch.ARCH_UNKNOWN;
+                return getArchFromDdmClient(client.getClientData());
             }
         }
         return Deploy.Arch.ARCH_UNKNOWN;
+    }
+
+    @VisibleForTesting
+    static Deploy.Arch getArchFromDdmClient(ClientData clientData) {
+        String abi = clientData.getAbi();
+        if (abi == null) {
+            return Deploy.Arch.ARCH_UNKNOWN;
+        } else if (abi.startsWith("32-bit")) {
+            return Deploy.Arch.ARCH_32_BIT;
+        } else if (abi.startsWith("64-bit")) {
+            return Deploy.Arch.ARCH_64_BIT;
+        } else {
+            Deploy.Arch fromMapping = getArchForAbi(abi);
+            if (fromMapping == null) {
+                return Deploy.Arch.ARCH_UNKNOWN;
+            } else {
+                return fromMapping;
+            }
+        }
     }
 
     public void push(String from, String to) throws IOException {

@@ -38,7 +38,7 @@ internal class StandaloneConfigurationSettings(
 ) : ConfigurationSettings {
 
     private val defaultDevices = DefaultDevices(NullLogger.getLogger()).also { it.init() }
-    private val vendorDevices = VendorDevices(NullLogger.getLogger()).also { it.init() }
+    private val vendorDevices = VendorDevices(NullLogger.getLogger()).also { it.init() { true } }
     override val defaultDevice = defaultDevices.getDevice("medium_phone", "Generic")
 
     override fun selectDevice(device: Device) { }

@@ -18,7 +18,9 @@ kotlin_library(
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-api",
         "//tools/base/build-system/gradle-core",
+        "//tools/base/build-system/gradle-core:proto",
         "//tools/base/build-system/gradle-settings",
+        "//tools/base/build-system/gradle-settings-api",
         "//tools/base/build-system/integration-test/framework/src/main/proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -54,6 +56,7 @@ kotlin_library(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
         "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
+        "@maven//:org.codehaus.groovy.groovy-all",
     ],
 )
 

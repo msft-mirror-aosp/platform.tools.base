@@ -172,4 +172,4 @@ fun findElfFile16kAlignmentProblems(file: File) : Map<String, Set<AlignmentProbl
     }
 }
 
-private fun is16kAligned(value : Long) = (value % PAGE_ALIGNMENT_16K) == 0L
+fun is16kAligned(value : Long) = (value % PAGE_ALIGNMENT_16K) == 0L

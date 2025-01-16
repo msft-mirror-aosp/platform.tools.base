@@ -35,9 +35,14 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":aaptcompiler",
+        "//tools/base/build-system/aapt2-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],
 )
 

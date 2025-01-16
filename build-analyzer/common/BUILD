@@ -45,7 +45,9 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":common",
+        "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

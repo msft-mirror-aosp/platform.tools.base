@@ -29,6 +29,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import java.io.IOException
 import java.nio.file.Paths
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -53,6 +54,34 @@ class AdbLibAndroidDebugBridgeTest {
         // Assert
         assertFalse(result)
 
+    }
+
+    @Test
+    fun startAdbReturnsFalse_whenAdbServerControllerThrows() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStart = IOException("my exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.startAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
+    }
+
+    @Test
+    fun stopAdbReturnsFalse_whenAdbServerControllerThrows() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStop = IOException("my exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.stopAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
     }
 
     @Test
@@ -125,9 +154,98 @@ class AdbLibAndroidDebugBridgeTest {
         }
     }
 
+    @Test
+    fun getAdbVersion_canParseProcessBuilderOutput() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        session.host.processRunner.resultToReturn =
+            ProcessResult(
+                listOf(
+                    "Android Debug Bridge version 1.0.41",
+                    "Version 35.0.2-12147458",
+                    "Installed as /usr/local/bin/adb",
+                    "Running on Darwin 24.2.0 (arm64)"
+                ), emptyList(), 0
+            )
+
+        // Act
+        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+
+        // Assert
+        val adbVersion = result.get()
+        assertEquals("1.0.41", adbVersion.toString())
+    }
+
+    @Test
+    fun getAdbVersion_throws_whenRunCommandEncounteredError() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        session.host.processRunner.resultToReturn =
+            ProcessResult(
+                listOf("sample out"), listOf("sample err"), 0xa23
+            )
+
+        // Act
+        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+
+        // Assert
+        try {
+            result.get()
+            fail("Should not reach")
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            assert(cause is RuntimeException)
+            assertEquals(
+                "Unable to detect adb version, exit value: 0xa23, adb stdout: sample out, adb stderr: sample err",
+                cause?.message
+            )
+        }
+    }
+
+    @Test
+    fun getAdbVersion_transparentToExceptions() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        val exception = RuntimeException("abc")
+        session.host.processRunner.throwOnNextCommand = exception
+
+        // Act
+        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+
+        // Assert
+        try {
+            result.get()
+            fail("Should not reach")
+        } catch (e: ExecutionException) {
+            val cause = e.cause
+            assertEquals(exception, cause)
+        }
+    }
+
     // TODO: Add many more tests
 
     private class FakeAdbServerController(private val startDelayMs: Long = 0) : AdbServerController {
+
+        var throwOnStart: Throwable? = null
+        var throwOnStop: Throwable? = null
 
         override val channelProvider: AdbServerChannelProvider
             get() {
@@ -138,12 +256,14 @@ class AdbLibAndroidDebugBridgeTest {
             private set
 
         override suspend fun start() {
+            throwOnStart?.let { throw it }
             delay(startDelayMs)
             isStarted = true
         }
 
         override suspend fun stop() {
-            throw UnsupportedOperationException("Not yet implemented")
+            throwOnStop?.let { throw it }
+            isStarted = false
         }
 
         override fun close() {

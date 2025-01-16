@@ -63,8 +63,6 @@ interface RecipeExecutor {
    */
   fun applyPlugin(plugin: String, revision: String?, minRev: String? = null)
 
-  fun applyPlugin(plugin: String, revision: AgpVersion)
-
   /**
    * Add plugins according to the existing project setup. First it adds plugin to catalog if project
    * has it. Then it add plugin project level declaration to first component that exists: settings
@@ -76,6 +74,8 @@ interface RecipeExecutor {
    */
   fun addPlugin(pluginId: String, classpath: String)
 
+  fun addPlugin(pluginId: String, classpathModule: String, version: String)
+
   /**
    * Adds "plugins { id '`plugin`' }" statement to the [module] build.gradle[.kts] file and if
    * settings.gradle[.kts] has a `pluginManagement` block, it also adds "plugins { id '`plugin`'
@@ -83,7 +83,7 @@ interface RecipeExecutor {
    */
   fun applyPluginInModule(plugin: String, module: Module, revision: String?, minRev: String? = null)
 
-  fun applyPluginInModule(plugin: String, module: Module, revision: AgpVersion)
+  fun applyPluginWithClasspathInModule(pluginId: String, module: Module, classpathModule: String, version: String)
 
   /**
    * Records a classpath dependency. If settings.gradle[.kts] has a `pluginManagement` block this

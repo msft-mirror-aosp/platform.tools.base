@@ -14,6 +14,7 @@ DATA = [
 
 # keep sorted
 DEPS_WITHOUT_UTILS = [
+    "//tools/analytics-library/protos/src/main/proto",
     "//tools/base/annotations",
     "//tools/base/build-system:gradle-api",
     "//tools/base/build-system/builder",

@@ -20,17 +20,21 @@ import static com.android.ide.common.rendering.api.ResourceNamespace.TOOLS;
 import static com.android.ide.common.rendering.api.ResourceNamespace.fromNamespacePrefix;
 import static com.android.ide.common.rendering.api.ResourceNamespace.fromNamespaceUri;
 import static com.android.ide.common.rendering.api.ResourceNamespace.fromPackageName;
+
 import static org.junit.Assert.*;
 
 import com.android.ide.common.rendering.api.AndroidConstants;
 import com.android.ide.common.rendering.api.ResourceNamespace;
+
 import com.google.common.collect.ImmutableMap;
+
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import org.junit.Test;
 
 public class ResourceNamespaceTest {
     @Test
@@ -78,7 +82,8 @@ public class ResourceNamespaceTest {
         ResourceNamespace bbb1 = fromPackageName("bbb");
         ResourceNamespace bbb2 = fromPackageName("bbb");
 
-        assertEquals(aaa, aaa);
+        //noinspection EqualsWithItself
+        assertTrue(aaa.equals(aaa));
         assertEquals(bbb1, bbb2);
         assertNotEquals(aaa, bbb1);
         assertNotEquals(bbb1, aaa);

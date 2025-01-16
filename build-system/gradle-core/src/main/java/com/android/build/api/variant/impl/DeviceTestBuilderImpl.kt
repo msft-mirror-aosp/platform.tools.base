@@ -32,7 +32,7 @@ open class DeviceTestBuilderImpl(
     val componentType: ComponentType,
     enableMultiDex: Boolean?,
     enableCodeCoverage: Boolean,
-    override var debuggable: Boolean,
+    @Suppress("OVERRIDE_DEPRECATION") override var debuggable: Boolean,
 ): DeviceTestBuilder {
 
     companion object {

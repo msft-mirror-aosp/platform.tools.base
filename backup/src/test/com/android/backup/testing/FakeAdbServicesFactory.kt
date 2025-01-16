@@ -18,9 +18,12 @@ package com.android.backup.testing
 import com.android.backup.AdbServices
 import com.android.backup.AdbServicesFactory
 import com.android.backup.BackupProgressListener
+import com.android.backup.testing.FakeAdbServices.CommandOverride.Output
 
-class FakeAdbServicesFactory(private val configure: (FakeAdbServices) -> Unit = {}) :
-  AdbServicesFactory {
+class FakeAdbServicesFactory(
+  private val appId: String,
+  private val configure: (FakeAdbServices) -> Unit = {},
+) : AdbServicesFactory {
 
   lateinit var adbServices: FakeAdbServices
 
@@ -30,6 +33,7 @@ class FakeAdbServicesFactory(private val configure: (FakeAdbServices) -> Unit = 
     steps: Int,
   ): AdbServices {
     adbServices = FakeAdbServices(serialNumber, steps)
+    adbServices.addCommandOverride(Output("pm list packages $appId", "package:$appId"))
     configure(adbServices)
     return adbServices
   }

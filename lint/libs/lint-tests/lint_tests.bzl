@@ -34,6 +34,7 @@ def lint_test(name, useK2):
         test_class = "com.android.testutils.JarTestSuite",
         deps = [
             ":lint-tests",
+            ":liblint-checks-proto",
             "//prebuilts/tools/common/lint-psi/intellij-core",
             "//prebuilts/tools/common/lint-psi/kotlin-compiler",
             "//prebuilts/tools/common/lint-psi/uast",
@@ -68,6 +69,7 @@ def lint_test(name, useK2):
             "@maven//:org.jetbrains.annotations",
             "@maven//:org.jetbrains.kotlin.kotlin-reflect",
             "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+            "@maven//:org.jetbrains.kotlin.kotlin-test",
             "@maven//:org.mockito.mockito-core",
             "@maven//:org.ow2.asm.asm-tree",
             "@maven//:org.ow2.asm.asm-util",

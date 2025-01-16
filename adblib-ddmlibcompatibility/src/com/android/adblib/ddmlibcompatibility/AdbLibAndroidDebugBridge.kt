@@ -15,9 +15,12 @@
  */
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.SdkConstants
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
+import com.android.adblib.adbLogger
+import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
@@ -31,6 +34,7 @@ import com.android.ddmlib.idevicemanager.IDeviceManagerUtils
 import com.google.common.base.Throwables
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.ListeningExecutorService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -41,6 +45,7 @@ import java.io.File
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.file.Path
 import java.security.InvalidParameterException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -53,6 +58,8 @@ class AdbLibAndroidDebugBridge(
     private val adbServerController: AdbServerController,
     private val adbServerConfiguration: MutableStateFlow<AdbServerConfiguration>
 ) : AndroidDebugBridgeBase() {
+
+    private val logger = adbLogger(session)
 
     var iDeviceManager: IDeviceManager? = null
 
@@ -224,7 +231,6 @@ class AdbLibAndroidDebugBridge(
                     return false
                 }
                 // Try to start adb
-                // TODO: handle exceptions thrown from `start` and return a correct value
                 if (!startAdb(timeout, unit)) {
                     return false
                 }
@@ -254,12 +260,68 @@ class AdbLibAndroidDebugBridge(
     override fun startAdb(timeout: Long, unit: TimeUnit): Boolean {
         return runBlocking {
             withTimeoutOrNull(unit.toMillis(timeout)) {
-                adbServerController.start()
-                true
+                try {
+                    adbServerController.start()
+                    true
+                } catch (t: Throwable) {
+                    t.rethrowCancellation()
+                    logger.warn(t, "Failed to start adb server")
+                    false
+                }
             } ?: run {
                 false
             }
         }
+    }
+
+    override fun getAdbVersion(adbFile: File): ListenableFuture<AdbVersion> {
+        return getAdbVersion(adbFile.toPath())
+    }
+
+    internal fun getAdbVersion(adbPath: Path): ListenableFuture<AdbVersion> {
+        return session.scope.async {
+            val processResult =
+                session.host.processRunner.runProcess(
+                    adbPath,
+                    listOf("version"),
+                    envVars = emptyMap()
+                )
+
+            processResult.stdout.forEach { line ->
+                val version = AdbVersion.parseFrom(line)
+                if (version != AdbVersion.UNKNOWN) {
+                    return@async version
+                }
+            }
+
+            val errorMessage = StringBuilder("Unable to detect adb version")
+            val exitCode = processResult.exitCode
+            if (exitCode != 0) {
+                errorMessage.append(", exit value: 0x" + Integer.toHexString(exitCode))
+                // Display special message if it is the STATUS_DLL_NOT_FOUND code, and
+                // ignore adb output since it's empty anyway
+                if (exitCode == STATUS_DLL_NOT_FOUND
+                    && SdkConstants.currentPlatform()
+                    == SdkConstants.PLATFORM_WINDOWS
+                ) {
+                    errorMessage.append(
+                        ". ADB depends on the Windows Universal C Runtime, which is"
+                                + " usually installed by default via Windows Update. You"
+                                + " may need to manually fetch and install the runtime"
+                                + " package here:"
+                                + " https://support.microsoft.com/en-ca/help/2999226/update-for-universal-c-runtime-in-windows"
+                    )
+                    throw RuntimeException(errorMessage.toString())
+                }
+            }
+            if (processResult.stdout.isNotEmpty()) {
+                errorMessage.append(", adb stdout: ${processResult.stdout.joinToString("\n")}")
+            }
+            if (processResult.stderr.isNotEmpty()) {
+                errorMessage.append(", adb stderr: ${processResult.stderr.joinToString("\n")}")
+            }
+            throw RuntimeException(errorMessage.toString())
+        }.asListenableFuture()
     }
 
     override fun getRawDeviceList(): ListenableFuture<List<AdbDevice>> {
@@ -401,9 +463,14 @@ class AdbLibAndroidDebugBridge(
 
         return runBlocking {
             withTimeoutOrNull(unit.toMillis(timeout)) {
-                // TODO: handle exceptions thrown from `stop` and return a correct value
-                adbServerController.stop()
-                true
+                try {
+                    adbServerController.stop()
+                    true
+                } catch (t: Throwable) {
+                    t.rethrowCancellation()
+                    logger.warn(t, "Failed to stop adb server")
+                    false
+                }
             } ?: run {
                 false
             }
@@ -538,6 +605,14 @@ class AdbLibAndroidDebugBridge(
         return isSuccessful
     }
 
+    override fun getVirtualDeviceId(
+        service: ListeningExecutorService,
+        adb: File,
+        device: IDevice
+    ): ListenableFuture<String?>? {
+        unsupportedMethod()
+    }
+
     private inline fun <R> withLock(block: () -> R): R {
         return try {
             lock.lock()
@@ -545,5 +620,14 @@ class AdbLibAndroidDebugBridge(
         } finally {
             lock.unlock()
         }
+    }
+
+    private fun unsupportedMethod(): Nothing {
+        throw UnsupportedOperationException("This method is not used in Android Studio")
+    }
+
+    companion object {
+        // ADB exit value when no Universal C Runtime on Windows
+        const val STATUS_DLL_NOT_FOUND: Int = -0x3FFFFECB // Signed version of 0xc0000135
     }
 }

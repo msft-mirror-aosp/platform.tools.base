@@ -11,8 +11,12 @@ kotlin_library(
     ]),
     visibility = ["//visibility:public"],
     deps = [
+        "//prebuilts/tools/common/lint-psi/intellij-core",
         "//tools/adt/idea/preview-elements:tools.preview-elements",
+        "//tools/adt/idea/rendering:tools.rendering",
+        "//tools/adt/idea/wear-preview-elements:tools.wear-preview-elements",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
+        "@maven//:com.google.code.gson.gson",
     ],
 )
 
@@ -27,6 +31,7 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.compose-preview-renderer-model",
+        "//tools/adt/idea/preview-elements:tools.preview-elements",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
     ],

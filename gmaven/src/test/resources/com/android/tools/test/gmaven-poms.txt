@@ -261,6 +261,7 @@ com.android.tools:sdk-common
     com.google.protobuf:protobuf-java (runtime)
     javax.inject:javax.inject (runtime)
     net.sf.kxml:kxml2 (runtime)
+    org.apache.commons:commons-compress (runtime)
     org.bouncycastle:bcpkix-jdk18on (runtime)
     org.bouncycastle:bcprov-jdk18on (runtime)
     org.glassfish.jaxb:jaxb-runtime (runtime)
@@ -311,6 +312,8 @@ com.android.tools.adblib:adblib-ddmlibcompatibility
   dependencies:
     com.android.tools.adblib:adblib (runtime)
     com.android.tools.adblib:adblib-tools (runtime)
+    com.android.tools:annotations (runtime)
+    com.android.tools:common (runtime)
     com.android.tools.ddms:ddmlib (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
@@ -321,6 +324,7 @@ com.android.tools.adblib:adblib-tools
   description=Tooling for the library used to communicate with Android devices
   dependencies:
     com.android.tools.adblib:adblib (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
@@ -387,6 +391,7 @@ com.android.tools.analytics-library:testing
     com.android.tools:testutils (runtime)
     com.google.guava:guava (runtime)
     com.google.protobuf:protobuf-java (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.analytics-library:tracker
   pomName=Android Tools Analytics Tracker
@@ -663,6 +668,7 @@ com.android.tools.fakeadbserver:fakeadbserver
   description=Library implementing the ADB Server protocol
   dependencies:
     com.android.tools:common (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.jetbrains.kotlin:kotlin-reflect (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
@@ -737,6 +743,7 @@ com.android.tools.lint:lint-checks
     com.android.tools:sdklib (runtime)
     com.google.code.gson:gson (runtime)
     com.google.guava:guava (runtime)
+    com.google.protobuf:protobuf-java (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.ow2.asm:asm-analysis (runtime)
 
@@ -758,7 +765,9 @@ com.android.tools.lint:lint-model
   dependencies:
     com.android.tools.build:builder-model (runtime)
     com.android.tools:common (runtime)
+    com.android.tools:repository (runtime)
     com.android.tools:sdk-common (runtime)
+    com.android.tools:sdklib (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
 
@@ -775,6 +784,7 @@ com.android.tools.lint:lint-tests
     com.android.tools.lint:lint (runtime)
     com.android.tools:sdk-common (runtime)
     com.android.tools:sdklib (runtime)
+    com.google.code.gson:gson (runtime)
     junit:junit (runtime)
     net.sf.kxml:kxml2 (runtime)
     org.codehaus.groovy:groovy (runtime)

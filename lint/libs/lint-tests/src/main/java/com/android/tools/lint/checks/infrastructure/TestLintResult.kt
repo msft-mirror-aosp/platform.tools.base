@@ -562,25 +562,6 @@ internal constructor(
       if (result.skipped) {
         continue
       }
-      if (
-        task.verifyFixedFileSyntax == null &&
-          expected.isBlank() &&
-          mode == task.testModes.firstOrNull()
-      ) {
-        // First time we're registering this fix; check that the generated
-        // files are valid across all test modes. Note that we do this
-        // *before* checking the fix diffs, and we check *all*
-        // the test modes in one go here since if we check the fix diff output
-        // for each mode, it will no longer be empty once the user inserts
-        // the correct golden file, and we never end up checking the
-        // potentially problematic fixes in other test modes. (Parentheses
-        // in particular seems to thwart some quickfixes.)
-        for (testMode in states.keys) {
-          verifyFixes(testMode)
-            .verifyFixedFileSyntax(true)
-            .verifyFixesValid(TestResultTransformer { it })
-        }
-      }
       if (mode == TestMode.DEFAULT || mode is SourceTransformationTestMode) {
         verifyFixes(mode).expectFixDiffs(expected)
       }

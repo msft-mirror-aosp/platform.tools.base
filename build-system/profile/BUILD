@@ -34,6 +34,7 @@ kotlin_test(
         ":profile",
         "//tools/analytics-library/protos/src/main/proto",
         "//tools/base/annotations",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",

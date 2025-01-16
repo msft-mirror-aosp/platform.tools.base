@@ -45,7 +45,8 @@ public class AndroidxNameTest {
         assertFalse(className.isEquals("foo.bar.widget.RecyclerView"));
         assertTrue(className.isEqualsIgnoreCase("androidx.recyclerview.widget.RecyclerView"));
         assertTrue(className.isEqualsIgnoreCase("androidx.recyclerview.widget.RECYCLERVIEW"));
-        assertEquals(className, className);
+        //noinspection EqualsWithItself
+        assertTrue(className.equals(className));
     }
 
     @Test(expected = IllegalStateException.class)

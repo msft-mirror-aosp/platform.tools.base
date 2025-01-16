@@ -42,7 +42,7 @@ class AnalyticsEnabledLifecycleTasksTest {
     }
 
     @Test
-    fun getPackagingOptions() {
+    fun registerPreBuild() {
         proxy.registerPreBuild()
 
 
@@ -53,5 +53,19 @@ class AnalyticsEnabledLifecycleTasksTest {
                 VariantPropertiesMethodType.REGISTER_PRE_BUILD_VALUE,
         )
         verify(delegate, times(1)).registerPreBuild()
+    }
+
+    @Test
+    fun registerApkInstallation() {
+        proxy.registerApkInstallation()
+
+
+        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.single().type
+        ).isEqualTo(
+            VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE,
+        )
+        verify(delegate, times(1)).registerApkInstallation()
     }
 }

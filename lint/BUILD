@@ -61,7 +61,9 @@ maven_library(
     deps = [
         "//tools/base/build-system/builder-model",
         "//tools/base/common:tools.common",
+        "//tools/base/repository:tools.repository",
         "//tools/base/sdk-common:tools.sdk-common",
+        "//tools/base/sdklib:tools.sdklib",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
@@ -211,6 +213,7 @@ maven_library(
         "//tools/base/sdklib:tools.sdklib",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.ow2.asm.asm-analysis",
     ],

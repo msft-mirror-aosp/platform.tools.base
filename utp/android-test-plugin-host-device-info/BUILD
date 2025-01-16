@@ -41,10 +41,13 @@ kotlin_test(
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
         ":android-test-plugin-host-device-info",
+        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "//tools/base/utp/utp-common",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.testing.platform.android-device-provider-local",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",

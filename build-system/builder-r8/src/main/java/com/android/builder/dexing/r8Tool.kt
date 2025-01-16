@@ -69,6 +69,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
+import java.util.concurrent.ExecutorService
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
@@ -128,6 +129,7 @@ fun runR8(
     inputProfileForDexStartupOptimization: Path? = null,
     r8Metadata: Path? = null,
     partialShrinkingConfig: PartialShrinkingConfig? = null,
+    r8ExecutorService: ExecutorService? = null
 ) {
     val logger: Logger = Logger.getLogger("R8")
     if (logger.isLoggable(Level.FINE)) {
@@ -321,7 +323,12 @@ fun runR8(
         ClassFileProviderFactory(classpath).use { classpathClasses ->
             r8CommandBuilder.addLibraryResourceProvider(libraryClasses.orderedProvider)
             r8CommandBuilder.addClasspathResourceProvider(classpathClasses.orderedProvider)
-            R8.run(r8CommandBuilder.build())
+            val r8Command = r8CommandBuilder.build()
+            r8ExecutorService?.let {
+                R8.run(r8Command, it)
+            } ?: run {
+                R8.run(r8Command)
+            }
         }
     }
 

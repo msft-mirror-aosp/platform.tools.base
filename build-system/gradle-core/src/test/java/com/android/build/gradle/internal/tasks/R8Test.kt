@@ -35,6 +35,7 @@ import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.utils.Pair
 import com.android.zipflinger.ZipArchive
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import org.gradle.api.file.RegularFile
 import org.junit.Assume
 import org.junit.Before
@@ -707,7 +708,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
             inputProfileForDexStartupOptimization = null,
             r8Metadata = null,
             resourceShrinkingConfig = null,
-            partialShrinkingConfig = null
+            partialShrinkingConfig = null,
+            r8ThreadPool = MoreExecutors.newDirectExecutorService()
         )
     }
 }

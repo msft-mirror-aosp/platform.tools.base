@@ -84,6 +84,8 @@ kotlin_test(
         "@maven//:junit.junit",
         # FakeAdbServer
         "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],
 )
 

@@ -147,7 +147,7 @@ class InstallProfilesPerDeviceApiConnectedTest {
 
         val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(appMetadataJson, NullLogger())
         val baselineProfileFile =
-            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfiles?.firstOrNull()
+            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
         Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile)
     }
 
@@ -217,7 +217,7 @@ class InstallProfilesPerDeviceApiConnectedTest {
 
         val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(appMetadataJson, NullLogger())
         val baselineProfileFile =
-            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfiles?.firstOrNull()
+            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
         Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile)
     }
 

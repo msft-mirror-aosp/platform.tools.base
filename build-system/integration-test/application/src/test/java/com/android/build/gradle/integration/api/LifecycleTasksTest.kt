@@ -64,4 +64,34 @@ class LifecycleTasksTest {
         Truth.assertThat(buildResult.didWorkTasks).contains(":customPreBuild")
         ScannerSubject.assertThat(buildResult.stdout).contains("PreBuildCustomTask ran !")
     }
+
+    @Test
+    fun testAddingApkInstallationDependent() {
+        project.buildFile.appendText(
+            """
+            abstract class CustomTask extends DefaultTask {
+                @OutputDirectory
+                abstract DirectoryProperty getOutputDirectory();
+
+                @TaskAction
+                void run() { }
+            }
+
+            def customTaskProvider = tasks.register("customTask", CustomTask) {
+                it.getOutputDirectory().set(new File("build/output"))
+            }
+            androidComponents {
+                onVariants(selector().all(),  { variant ->
+                    variant.lifecycleTasks.registerApkInstallation(customTaskProvider)
+                })
+            }
+        """.trimIndent()
+        )
+
+        val buildResult = project.executor()
+            .withArgument("--dry-run").run("installDebug")
+        Truth.assertThat(
+            buildResult.stdout.findAll(":customTask SKIPPED").findFirst().isPresent
+        ).isTrue()
+    }
 }

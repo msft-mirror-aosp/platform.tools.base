@@ -21,6 +21,7 @@ import com.android.backup.BackupResult.Success
 import com.android.backup.BackupType.CLOUD
 import com.android.backup.BackupType.CLOUD_UNENCRYPTED
 import com.android.backup.BackupType.DEVICE_TO_DEVICE
+import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
@@ -39,7 +40,6 @@ import com.android.backup.testing.asBackupResult
 import com.google.common.truth.Truth.assertThat
 import com.jetbrains.rd.generator.nova.fail
 import java.nio.file.Path
-import java.util.zip.ZipException
 import java.util.zip.ZipFile
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
@@ -62,7 +62,7 @@ class BackupServiceImplTest {
   @Test
   fun backup_d2d(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory(("com.app"))
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
@@ -105,7 +105,7 @@ class BackupServiceImplTest {
   @Test
   fun backup_cloud(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.backup("serial", "com.app", CLOUD, backupFile, null)
@@ -148,7 +148,7 @@ class BackupServiceImplTest {
   @Test
   fun backup_cloudUnencrypted(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.backup("serial", "com.app", CLOUD_UNENCRYPTED, backupFile, null)
@@ -191,7 +191,7 @@ class BackupServiceImplTest {
   @Test
   fun backup_bmgrAlreadyEnabled(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory { it.bmgrEnabled = true }
+    val adbServicesFactory = FakeAdbServicesFactory("com.app") { it.bmgrEnabled = true }
     val backupServices = BackupServiceImpl(adbServicesFactory)
 
     val result = backupServices.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
@@ -217,9 +217,10 @@ class BackupServiceImplTest {
   @Test
   fun backup_transportAlreadySelected(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory {
-      it.activeTransport = "com.google.android.gms/.backup.migrate.service.D2dTransport"
-    }
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.activeTransport = "com.google.android.gms/.backup.migrate.service.D2dTransport"
+      }
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
@@ -246,7 +247,7 @@ class BackupServiceImplTest {
   @Test
   fun backup_assertProgress(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
@@ -275,7 +276,8 @@ class BackupServiceImplTest {
   fun backup_deletesExistingFileBeforeRunning(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     backupFile.createFile()
-    val backupService = BackupServiceImpl(FakeAdbServicesFactory { it.transports = emptyList() })
+    val backupService =
+      BackupServiceImpl(FakeAdbServicesFactory("com.app") { it.transports = emptyList() })
 
     backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
 
@@ -285,7 +287,8 @@ class BackupServiceImplTest {
   @Test
   fun backup_pullFails_deletesFile(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val backupService = BackupServiceImpl(FakeAdbServicesFactory { it.failReadWriteContent = true })
+    val backupService =
+      BackupServiceImpl(FakeAdbServicesFactory("com.app") { it.failReadWriteContent = true })
 
     backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
 
@@ -297,7 +300,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Throw("bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport")
           )
@@ -314,7 +317,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Output(
               "dumpsys package com.google.android.gms",
@@ -335,7 +338,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Output("bmgr backupnow @pm@ com.app --non-incremental --monitor", "Error")
           )
@@ -352,7 +355,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Output(
               "bmgr backupnow @pm@ com.app --non-incremental --monitor",
@@ -377,7 +380,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Output(
               "bmgr backupnow @pm@ com.app --non-incremental --monitor",
@@ -400,7 +403,7 @@ class BackupServiceImplTest {
   @Test
   fun restore_cloud(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900", CLOUD)
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.restore("serial", backupFile, null)
@@ -409,6 +412,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -432,7 +436,7 @@ class BackupServiceImplTest {
   fun restore_d2d(): Unit = runBlocking {
     val backupFile =
       backupFileHelper.createBackupFile("com.app", "11223344556677889900", DEVICE_TO_DEVICE)
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.restore("serial", backupFile, null)
@@ -441,6 +445,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -463,7 +468,7 @@ class BackupServiceImplTest {
   @Test
   fun restore_bmgrAlreadyEnabled(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
-    val adbServicesFactory = FakeAdbServicesFactory { it.bmgrEnabled = true }
+    val adbServicesFactory = FakeAdbServicesFactory("com.app") { it.bmgrEnabled = true }
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     val result = backupService.restore("serial", backupFile, null)
@@ -473,6 +478,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -492,9 +498,10 @@ class BackupServiceImplTest {
   @Test
   fun restore_transportNotSet(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
-    val adbServicesFactory = FakeAdbServicesFactory {
-      it.activeTransport = "com.android.localtransport/.LocalTransport"
-    }
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.activeTransport = "com.android.localtransport/.LocalTransport"
+      }
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     backupService.restore("serial", backupFile, null)
@@ -502,6 +509,7 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -523,7 +531,7 @@ class BackupServiceImplTest {
   @Test
   fun restore_assertProgress(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
-    val adbServicesFactory = FakeAdbServicesFactory()
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     backupService.restore("serial", backupFile, null)
@@ -556,62 +564,84 @@ class BackupServiceImplTest {
 
   @Test
   fun validateBackupFile_noApplicationId() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("@pm@", ""),
-          FileInfo("restore_token_file", "11223344556677889900"),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("@pm@", ""),
+            FileInfo("restore_token_file", "11223344556677889900"),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
   fun validateBackupFile_invalidToken() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(backupFileHelper.createBackupFile("com.app", "foobar"))
-    }
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(backupFileHelper.createBackupFile("com.app", "foobar"))
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain a valid token")
   }
 
   @Test
   fun validateBackupFile_notZipFile() {
-    assertThrows(ZipException::class.java) {
-      val path = Path.of(temporaryFolder.root.path, "file.backup").createFile()
-      BackupService.validateBackupFile(path)
-    }
+    val exception =
+      assertThrows(BackupException::class.java) {
+        val path = Path.of(temporaryFolder.root.path, "file.backup").createFile()
+        BackupService.validateBackupFile(path)
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("File is not a valid backup file")
   }
 
   @Test
   fun validateBackupFile_unexpectedFile() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("@pm@", ""),
-          FileInfo("restore_token_file", "11223344556677889900"),
-          FileInfo("com.app", ""),
-          FileInfo("extra file", ""),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("@pm@", ""),
+            FileInfo("restore_token_file", "11223344556677889900"),
+            FileInfo("com.app", ""),
+            FileInfo("extra file", ""),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
   fun validateBackupFile_missingPmFile() {
-    assertThrows(BackupException::class.java) {
-      BackupService.validateBackupFile(
-        backupFileHelper.createZipFile(
-          FileInfo("restore_token_file", "11223344556677889900"),
-          FileInfo("com.app", ""),
+    val exception =
+      assertThrows(BackupException::class.java) {
+        BackupService.validateBackupFile(
+          backupFileHelper.createZipFile(
+            FileInfo("restore_token_file", "11223344556677889900"),
+            FileInfo("com.app", ""),
+          )
         )
-      )
-    }
+      }
+
+    assertThat(exception.errorCode).isEqualTo(INVALID_BACKUP_FILE)
+    assertThat(exception.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
   fun restore_enableBmgrFails(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
     val backupService =
-      BackupServiceImpl(FakeAdbServicesFactory { it.addCommandOverride(Throw("bmgr enabled")) })
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") { it.addCommandOverride(Throw("bmgr enabled")) }
+      )
 
     val result = backupService.restore("serial", backupFile, null)
 
@@ -619,11 +649,31 @@ class BackupServiceImplTest {
   }
 
   @Test
+  fun restore_appNotInstalled(): Unit = runBlocking {
+    val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
+    val backupService =
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(Output("pm list packages com.app", ""))
+        }
+      )
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    assertThat(result)
+      .isEqualTo(
+        APP_NOT_INSTALLED.asBackupResult("Application 'com.app' is not installed on the device")
+      )
+  }
+
+  @Test
   fun restore_setTransportFails(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory { it.addCommandOverride(Output("bmgr list transports", "")) }
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(Output("bmgr list transports", ""))
+        }
       )
 
     val result = backupService.restore("serial", backupFile, null)
@@ -635,14 +685,13 @@ class BackupServiceImplTest {
   fun restore_invalidBackupFile(): Unit = runBlocking {
     val backupFile = backupFileHelper.createZipFile(FileInfo("some-file", ""))
 
-    val backupService = BackupServiceImpl(FakeAdbServicesFactory())
+    val backupService = BackupServiceImpl(FakeAdbServicesFactory("com.app"))
 
     val error =
       backupService.restore("serial", backupFile, null) as? Error ?: fail("Expected an Error")
 
     assertThat(error.errorCode).isEqualTo(INVALID_BACKUP_FILE)
-    assertThat(error.throwable.message)
-      .isEqualTo("Backup file does not contain a valid token: ${backupFile.pathString}")
+    assertThat(error.throwable.message).startsWith("Backup file does not contain metadata")
   }
 
   @Test
@@ -650,7 +699,7 @@ class BackupServiceImplTest {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
     val backupService =
       BackupServiceImpl(
-        FakeAdbServicesFactory {
+        FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(Output("bmgr restore 9bc1546914997f6c com.app", "Error"))
         }
       )

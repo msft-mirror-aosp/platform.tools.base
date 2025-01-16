@@ -42,6 +42,7 @@ kotlin_library(
     ],
     deps = [
         "//tools/base/adblib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 

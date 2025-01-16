@@ -40,6 +40,8 @@ kotlin_test(
         # should be loaded first.
         "@maven//:com.google.testing.platform.launcher",
         # Test dependencies.
+        "//tools/base/utp/utp-common",
+        "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
         ":android-test-plugin-host-additional-test-output",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",

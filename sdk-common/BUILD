@@ -87,6 +87,7 @@ maven_library(
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:javax.inject.javax.inject",
         "@maven//:net.sf.kxml.kxml2",
+        "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
@@ -137,7 +138,9 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:nl.jqno.equalsverifier.equalsverifier",
+        "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.mockito.mockito-core",
     ],
 )

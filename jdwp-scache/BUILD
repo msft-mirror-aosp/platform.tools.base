@@ -47,6 +47,7 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":jdwp-scache",
+        "//tools/base/jdwp-packet",
         # For "JarTestSuite"
         "//tools/base/testutils:tools.testutils",
         # For JUnit4 support

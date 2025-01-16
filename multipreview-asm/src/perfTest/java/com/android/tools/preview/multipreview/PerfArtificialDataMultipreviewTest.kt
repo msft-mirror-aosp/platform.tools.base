@@ -315,7 +315,7 @@ class PerfArtificialDataMultipreviewTest {
         return folderPath.toString()
     }
 
-    /** [methodsCount] - numeber of methods per class, [count] - numeber of classes */
+    /** [methodsCount] - number of methods per class, [count] - number of classes */
     private data class UnrelatedClasses(val methodsCount: Int, val count: Int)
 
     /**

@@ -21,11 +21,14 @@ import com.android.tools.preview.multipreview.MethodRepresentation
 import com.android.tools.preview.multipreview.PreviewMethodFinder
 import com.android.tools.preview.multipreview.ParameterRepresentation
 import com.android.tools.preview.multipreview.PreviewMethod
+import com.android.tools.preview.multipreview.ComposePreviewMethod
+import com.android.tools.preview.multipreview.WearTilePreviewMethod
 import com.android.tools.render.common.PreviewRendering
 import com.android.tools.render.common.readPreviewScreenshotsJson
 import com.android.tools.render.common.writePreviewRenderingToJson
 import com.android.tools.render.common.writePreviewScreenshotsToJson
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.wear.WearTileScreenshot
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Files
@@ -87,14 +90,21 @@ private fun serializePreviewMethods(
     outputFile: Path
 ) {
     Files.newBufferedWriter(outputFile).use { fileWriter ->
-        val composeScreenshots = previews.flatMap { (method, previewAnnotations) ->
-            previewAnnotations.map { annotation ->
-                ComposeScreenshot(
-                    method.methodFqn,
-                    convertListMap(method.parameters),
-                    convertMap(annotation.parameters),
-                    calcPreviewId(method, annotation)
-                )
+        val composeScreenshots = previews.flatMap { preview ->
+            preview.previewAnnotations.map { annotation ->
+                when (preview) {
+                    is ComposePreviewMethod -> ComposeScreenshot(
+                        preview.method.methodFqn,
+                        convertListMap(preview.method.parameters),
+                        convertMap(annotation.parameters),
+                        calcPreviewId(preview.method, annotation)
+                    )
+                    is WearTilePreviewMethod -> WearTileScreenshot(
+                        preview.method.methodFqn,
+                        convertMap(annotation.parameters),
+                        calcPreviewId(preview.method, annotation)
+                    )
+                }
             }
         }
         writePreviewScreenshotsToJson(fileWriter, composeScreenshots.sortedBy { it.previewId })

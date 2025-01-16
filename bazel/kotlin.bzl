@@ -7,7 +7,7 @@ load(":functions.bzl", "create_option_file")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
-def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, transitive_classpath):
+def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts):
     """Runs kotlinc on the given source files.
 
     Args:
@@ -20,7 +20,6 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
         out_ijar: the output ijar file or None to disable ijar creation
         java_runtime: a JavaRuntimeInfo provider corresponding to the target JVM
         kotlinc_opts: list of additional flags to pass to the Kotlin compiler
-        transitive_classpath: whether to include transitive deps in the compile classpath
 
     Returns:
         JavaInfo for the resulting jar.
@@ -31,12 +30,7 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     sources, then you will also need to run javac after this action.
     """
 
-    # TODO: Either disable transitive_classpath in all cases, or otherwise
-    # implement strict-deps enforcement for Kotlin to ensure that targets
-    # declare dependencies on everything they directly use.
     merged_deps = java_common.merge(deps)
-    if transitive_classpath:
-        merged_deps = java_common.make_non_strict(merged_deps)
     classpath = merged_deps.compile_jars
 
     args = ctx.actions.args()
@@ -346,7 +340,6 @@ def _kotlin_library_impl(ctx):
             out_ijar = kotlin_ijar,
             java_runtime = kt_java_runtime,
             kotlinc_opts = ctx.attr.kotlinc_opts,
-            transitive_classpath = True,  # Matches Java rules (sans strict-deps enforcement)
         ))
         jars.append(kotlin_jar)
         ijars.append(kotlin_ijar)

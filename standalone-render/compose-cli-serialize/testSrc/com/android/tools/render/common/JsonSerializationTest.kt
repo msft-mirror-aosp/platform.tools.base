@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.wear.WearTileScreenshot
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.StringWriter
@@ -97,7 +98,8 @@ class JsonSerializationTest {
                     "name": "Dark theme",
                     "uiMode": "32"
                   },
-                  "previewId": "/path/to/image/pattern/name"
+                  "previewId": "/path/to/image/pattern/name",
+                  "previewType": "COMPOSE"
                 },
                 {
                   "methodFQN": "com.my.package.Cl2Kt.Method3",
@@ -105,7 +107,8 @@ class JsonSerializationTest {
                   "previewParams": {
                     "name": "Light theme"
                   },
-                  "previewId": "/path/to/image/pattern/name"
+                  "previewId": "/path/to/image/pattern/name",
+                  "previewType": "COMPOSE"
                 },
                 {
                   "methodFQN": "com.my.package.Cl3Kt.Method5",
@@ -115,7 +118,16 @@ class JsonSerializationTest {
                     }
                   ],
                   "previewParams": {},
-                  "previewId": "/path/to/image/pattern/name"
+                  "previewId": "/path/to/image/pattern/name",
+                  "previewType": "COMPOSE"
+                },
+                {
+                  "methodFQN": "com.my.package.Cl3Kt.TilePreviewMethod",
+                  "previewParams": {
+                    "name": "tile preview"
+                  },
+                  "previewId": "/path/to/image/pattern/name",
+                  "previewType": "WEAR_TILE"
                 }
               ]
             }
@@ -143,11 +155,54 @@ class JsonSerializationTest {
                     listOf(mapOf("provider" to "com.my.package2.SomeOtherParameterProvider")),
                     emptyMap(),
                     "/path/to/image/pattern/name",
+                ),
+                WearTileScreenshot(
+                    "com.my.package.Cl3Kt.TilePreviewMethod",
+                    mapOf("name" to "tile preview"),
+                    "/path/to/image/pattern/name"
                 )
             ),
             screenshots
         )
+    }
 
+    @Test
+    fun testScreenshotJsonWithoutPreviewTypeDefaultsToComposeScreenshot() {
+        // language=json
+        val jsonString = """
+            {
+              "screenshots": [
+                {
+                  "methodFQN": "com.my.package.ClKt.Method1",
+                  "methodParams": [
+                    {
+                      "provider": "com.my.package2.SomeParameterProvider"
+                    }
+                  ],
+                  "previewParams": {
+                    "name": "Dark theme",
+                    "uiMode": "32"
+                  },
+                  "previewId": "/path/to/image/pattern/name"
+                }
+              ]
+            }
+        """.trimIndent()
+
+
+        val screenshots = readPreviewScreenshotsJson(jsonString.reader())
+
+        assertEquals(
+            listOf(
+                ComposeScreenshot(
+                    "com.my.package.ClKt.Method1",
+                    listOf(mapOf("provider" to "com.my.package2.SomeParameterProvider")),
+                    mapOf("name" to "Dark theme", "uiMode" to "32"),
+                    "/path/to/image/pattern/name",
+                ),
+            ),
+            screenshots
+        )
     }
 
     @Test
@@ -200,6 +255,11 @@ class JsonSerializationTest {
                 listOf(mapOf("provider" to "com.my.package2.SomeOtherParameterProvider")),
                 emptyMap(),
                 "/path/to/image/pattern/name",
+            ),
+            WearTileScreenshot(
+                "com.my.package.Cl3Kt.TilePreviewMethod",
+                mapOf("name" to "tile preview"),
+                "/path/to/image/pattern/name"
             )
         )
 

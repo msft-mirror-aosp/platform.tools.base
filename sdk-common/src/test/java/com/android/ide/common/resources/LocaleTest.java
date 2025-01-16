@@ -49,6 +49,7 @@ public class LocaleTest extends TestCase {
         assertFalse(locale.hasRegion());
     }
 
+    @SuppressWarnings("EqualsWithItself")
     public void test() {
         LocaleQualifier qualifier1 = LocaleQualifier.getQualifier("nb");
         LocaleQualifier qualifier2 = LocaleQualifier.getQualifier("no");
@@ -61,7 +62,7 @@ public class LocaleTest extends TestCase {
         assertNotNull(qualifier4);
         assertNotNull(qualifier5);
 
-        assertEquals(Locale.ANY, Locale.ANY);
+        assertTrue(Locale.ANY.equals(Locale.ANY));
         assertFalse(Locale.ANY.hasLanguage());
         assertFalse(Locale.ANY.hasRegion());
         //noinspection ConstantConditions

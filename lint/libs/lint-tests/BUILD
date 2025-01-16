@@ -30,6 +30,7 @@ maven_library(
         "//tools/base/lint/cli",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:junit.junit",
         "@maven//:net.sf.kxml.kxml2",
         "@maven//:org.codehaus.groovy.groovy",

@@ -29,6 +29,8 @@ import java.util.zip.ZipFile
  * Note that this class is *not* thread-safe.
  */
 class MultipreviewAnnotationResolver(
+    private val previewAnnotationClassDescriptor: String,
+    private val previewAnnotationContainerClassDescriptor: String,
     private val screenshotTestDirectory: List<File>,
     private val screenshotTestJars: List<File>,
     private val mainDirectory: List<File>,
@@ -54,7 +56,7 @@ class MultipreviewAnnotationResolver(
         annotationClassDescriptor: String,
         onFindFinished: (Set<BaseAnnotationRepresentation>) -> Unit): AnnotationVisitor? {
         return when(annotationClassDescriptor) {
-            "Landroidx/compose/ui/tooling/preview/Preview;" -> {
+            previewAnnotationClassDescriptor -> {
                 object: AnnotationVisitor(Opcodes.ASM9) {
                     val parameters = mutableMapOf<String, Any>()
 
@@ -67,7 +69,7 @@ class MultipreviewAnnotationResolver(
                     }
                 }
             }
-            "Landroidx/compose/ui/tooling/preview/Preview\$Container;" -> {
+            previewAnnotationContainerClassDescriptor -> {
                 object: AnnotationVisitor(Opcodes.ASM9) {
                     val previewAnnotations = mutableSetOf<BaseAnnotationRepresentation>()
 

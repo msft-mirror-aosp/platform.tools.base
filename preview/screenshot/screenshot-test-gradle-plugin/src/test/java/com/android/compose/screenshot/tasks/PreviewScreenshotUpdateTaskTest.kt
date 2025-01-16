@@ -106,7 +106,7 @@ class PreviewScreenshotUpdateTaskTest {
     }
 
     @Test
-    fun testPreviewScreenshotUpdateWithErrors() {
+    fun testPreviewScreenshotUpdateWithRenderError_noImage() {
         val referenceImageDir = tempDirRule.newFolder("references")
         val imagePath = "com/example/agptest/ExampleInstrumentedTest"
         val referenceImageDirPath = Path(referenceImageDir.absolutePath + "/" + imagePath)
@@ -143,6 +143,50 @@ class PreviewScreenshotUpdateTaskTest {
 
         val referenceImages = File(referenceImageDir.absolutePath + "/" + imagePath)
         assert(referenceImages.listFiles().size == 2)
+    }
+
+    @Test
+    fun testPreviewScreenshotUpdateWithRenderError_withImage() {
+        val referenceImageDir = tempDirRule.newFolder("references")
+        val imagePath = "com/example/agptest/ExampleInstrumentedTest"
+        val referenceImageDirPath = Path(referenceImageDir.absolutePath + "/" + imagePath)
+        Files.createDirectories(referenceImageDirPath)
+        val renderTaskOutputDir = tempDirRule.newFolder("rendered")
+        val renderTaskOutputPath = Path(renderTaskOutputDir.absolutePath + "/" + imagePath)
+        Files.createDirectories(renderTaskOutputPath)
+        val resultsFile = tempDirRule.newFile("results.json")
+        val image1 = "com/example/agptest/ExampleInstrumentedTest/preview_a45d2556_da39a3ee_0.png"
+        val image2 = "com/example/agptest/ExampleInstrumentedTest/preview1_da39a3ee_4c0e9d96_0.png"
+        val image3 = "com/example/agptest/ExampleInstrumentedTest/preview1_da39a3ee_4c0e9d96_1.png"
+        val image1Ref = "com/example/agptest/ExampleInstrumentedTest/preview_a45d2556_da39a3ee_0.png"
+        val image2Ref = "com/example/agptest/ExampleInstrumentedTest/preview1_da39a3ee_4c0e9d96_0.png"
+        val image3Ref = "com/example/agptest/ExampleInstrumentedTest/preview1_da39a3ee_4c0e9d96_1.png"
+        val previewRenderingResult = listOf(PreviewScreenshotResult("com.example.agptest.ExampleInstrumentedTest.preview_a45d2556_da39a3ee_0", "com.example.agptest.ExampleInstrumentedTest.preview", image1,null ),
+            PreviewScreenshotResult("com.example.agptest.ExampleInstrumentedTest.preview1_da39a3ee_4c0e9d96_0", "com.example.agptest.ExampleInstrumentedTest.preview1", image2, null ),
+            PreviewScreenshotResult("com.example.agptest.ExampleInstrumentedTest.preview1_da39a3ee_4c0e9d96_1", "com.example.agptest.ExampleInstrumentedTest.preview1", image3, ScreenshotError("ERROR", "MESSAGE", "STACK_TRACE", listOf(), listOf(), listOf())))
+        writePreviewRenderingResult(resultsFile.writer(), PreviewRenderingResult(null, previewRenderingResult))
+        Files.createFile(renderTaskOutputDir.toPath().resolve(image1))
+        Files.createFile(renderTaskOutputDir.toPath().resolve(image2))
+        Files.createFile(renderTaskOutputDir.toPath().resolve(image3))
+        Files.createFile(referenceImageDir.toPath().resolve(image1Ref))
+        Files.createFile(referenceImageDir.toPath().resolve(image2Ref))
+        Files.createFile(referenceImageDir.toPath().resolve(image3Ref))
+        task.referenceImageDir.set(referenceImageDir)
+        task.renderTaskOutputDir.set(renderTaskOutputDir)
+        task.renderTaskResultFile.set(resultsFile)
+        task.analyticsService.set(object: AnalyticsService() {
+            override val buildServiceRegistry: BuildServiceRegistry =
+                mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
+            override fun getParameters(): Params = mock()
+        })
+        val previewScreenshot = previewRenderingResult[2]
+
+        assertFailsWith<GradleException>("Cannot update reference images. Rendering failed for ${previewScreenshot.previewId}. Error: ${previewScreenshot.error!!.message}. Check ${resultsFile.absolutePath} for additional info") {
+            task.run()
+        }
+
+        val referenceImages = File(referenceImageDir.absolutePath + "/" + imagePath)
+        assert(referenceImages.listFiles().size == 3)
     }
 
     @Test

@@ -30,10 +30,18 @@ import org.gradle.api.Task
 interface LifecycleTasks {
 
     /**
-     * Registers a task dependency on the PreBuild lifecycle task.
+     * Register PreBuild lifecycle task dependencies.
      *
      * @param objects must comply to Gradle's task dependency rules defined
      * [there](https://docs.gradle.org/current/javadoc/org/gradle/api/Task.html#dependencies)
      */
     fun registerPreBuild(vararg objects: Any)
+
+    /**
+     * Register a Install task dependencies.
+     *
+     * @param objects must comply to Gradle's task dependency rules defined
+     * [there](https://docs.gradle.org/current/javadoc/org/gradle/api/Task.html#dependencies)
+     */
+    fun registerApkInstallation(vararg objects: Any)
 }

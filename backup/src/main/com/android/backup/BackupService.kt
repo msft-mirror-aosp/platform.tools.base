@@ -19,6 +19,7 @@ package com.android.backup
 import com.android.adblib.AdbSession
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.tools.environment.Logger
+import java.io.IOException
 import java.math.BigInteger
 import java.nio.file.Path
 import java.util.Properties
@@ -47,6 +48,8 @@ interface BackupService {
 
   suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean
 
+  suspend fun isPlayStoreInstalled(serialNumber: String): Boolean
+
   companion object {
 
     const val TOKEN_FILE = "restore_token_file"
@@ -71,17 +74,25 @@ interface BackupService {
      * @throws Exception `backupFile` is not valid
      */
     fun validateBackupFile(backupFile: Path): BackupMetadata {
-      ZipFile(backupFile.pathString).use { zip ->
-        val metadata = zip.getMetaData()
-        zip.getRestoreToken()
-        val filenames = zip.entries().asSequence().mapTo(mutableSetOf()) { it.name }
-        if (!filenames.containsAll(BACKUP_FILES)) {
-          throw BackupException(
-            INVALID_BACKUP_FILE,
-            "File is not a valid backup file: ${backupFile.pathString} ($filenames)",
-          )
+      try {
+        ZipFile(backupFile.pathString).use { zip ->
+          val metadata = zip.getMetaData()
+          zip.getRestoreToken()
+          val filenames = zip.entries().asSequence().mapTo(mutableSetOf()) { it.name }
+          if (!filenames.containsAll(BACKUP_FILES)) {
+            throw BackupException(
+              INVALID_BACKUP_FILE,
+              "File is not a valid backup file: ${backupFile.pathString} ($filenames)",
+            )
+          }
+          return metadata
         }
-        return metadata
+      } catch (e: IOException) {
+        throw BackupException(
+          INVALID_BACKUP_FILE,
+          "File is not a valid backup file: ${backupFile.pathString}",
+          e,
+        )
       }
     }
 

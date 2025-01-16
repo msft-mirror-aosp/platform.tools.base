@@ -22,6 +22,7 @@ import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.AbstractCheckTest.assertTrue
 import com.android.tools.lint.checks.AbstractCheckTest.bytecode
 import com.android.tools.lint.checks.AbstractCheckTest.source
+import com.android.tools.lint.checks.SdCardDetector
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradle
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
@@ -747,6 +748,31 @@ class SuppressLintTest {
           .indented()
       )
       .issues(MyPropertyDetector.PROPERTY_ISSUE)
+      .sdkHome(TestUtils.getSdk().toFile())
+      .run()
+      .expectClean()
+  }
+
+  @Test
+  fun testNestedFunctionSuppress() {
+    lint()
+      .allowCompilationErrors()
+      .files(
+        kotlin(
+            """
+            class Test {
+              fun getPath() {
+                @Suppress("SdCardPath")
+                fun local() {
+                  val path = "/sdcard/test" // OK via suppress
+                }
+              }
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(SdCardDetector.ISSUE)
       .sdkHome(TestUtils.getSdk().toFile())
       .run()
       .expectClean()

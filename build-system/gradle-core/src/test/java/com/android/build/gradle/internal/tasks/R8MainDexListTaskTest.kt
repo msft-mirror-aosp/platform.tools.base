@@ -28,6 +28,7 @@ import com.android.testutils.apk.Dex
 import com.android.testutils.truth.DexSubject.assertThat
 import com.android.testutils.truth.DexSubject.assertThatDex
 import com.android.testutils.truth.PathSubject.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import org.gradle.api.file.RegularFile
 import org.junit.Before
 import org.junit.Rule
@@ -197,6 +198,7 @@ fun runR8(
         inputProfileForDexStartupOptimization = null,
         r8Metadata = null,
         resourceShrinkingConfig = null,
-        partialShrinkingConfig = null
+        partialShrinkingConfig = null,
+        r8ThreadPool = MoreExecutors.newDirectExecutorService()
     )
 }

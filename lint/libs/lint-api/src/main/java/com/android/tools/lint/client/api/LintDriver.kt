@@ -133,6 +133,7 @@ import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtModifierListOwner
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtProperty
@@ -4201,8 +4202,18 @@ class LintDriver(
     @JvmStatic
     fun isSuppressed(issue: Issue, annotated: UAnnotated, requireExactMatch: Boolean): Boolean {
       //noinspection ExternalAnnotations
-      val annotations = annotated.uAnnotations
-
+      val annotations =
+        annotated.uAnnotations.let {
+          if (it.isEmpty()) {
+            // Temporary workaround for https://youtrack.jetbrains.com/issue/KTIJ-32721
+            // (Example scenario in SuppressLintTest#testNestedFunctionSuppress.)
+            val function = annotated.sourcePsi as? KtModifierListOwner
+            function?.annotationEntries?.mapNotNull { it.toUElement() as? UAnnotation }
+              ?: emptyList()
+          } else {
+            it
+          }
+        }
       for (annotation in annotations) {
         val fqcn = annotation.qualifiedName
         if (

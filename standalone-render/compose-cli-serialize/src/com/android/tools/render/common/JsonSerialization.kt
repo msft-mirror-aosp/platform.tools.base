@@ -17,6 +17,7 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.compose.ComposeScreenshot
+import com.android.tools.render.wear.WearTileScreenshot
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import java.io.Reader
@@ -35,6 +36,7 @@ private const val METHOD_FQN = "methodFQN"
 private const val METHOD_PARAMS = "methodParams"
 private const val PREVIEW_PARAMS = "previewParams"
 private const val RESULTS_FILE_PATH = "resultsFilePath"
+private const val PREVIEW_TYPE = "previewType"
 
 private const val PREVIEW_ID = "previewId"
 private const val GLOBAL_ERROR = "globalError"
@@ -49,6 +51,11 @@ private const val HTML = "html"
 private const val CLASS_NAME = "className"
 private const val BROKEN_CLASSES = "brokenClasses"
 private const val MISSING_CLASSES = "missingClasses"
+
+private enum class PreviewType {
+    COMPOSE,
+    WEAR_TILE
+}
 
 /** Reads JSON text from [jsonReader] containing serialized [PreviewRendering]. */
 fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
@@ -116,15 +123,19 @@ fun readPreviewRenderingJson(jsonReader: Reader): PreviewRendering {
     )
 }
 
-private fun readComposeScreenshot(reader: JsonReader): ComposeScreenshot {
+private fun readPreviewScreenshot(reader: JsonReader): PreviewScreenshot {
     var methodFQN: String? = null
     val methodParams = mutableListOf<Map<String, String>>()
     var previewId: String? = null
     val previewParams = mutableMapOf<String, String>()
+    var previewType: PreviewType? = null
     reader.beginObject()
     while (reader.hasNext()) {
         when (reader.nextName()) {
-            METHOD_FQN -> { methodFQN = reader.nextString() }
+            METHOD_FQN -> {
+                methodFQN = reader.nextString()
+            }
+
             METHOD_PARAMS -> {
                 reader.beginArray()
                 while (reader.hasNext()) {
@@ -138,7 +149,11 @@ private fun readComposeScreenshot(reader: JsonReader): ComposeScreenshot {
                 }
                 reader.endArray()
             }
-            PREVIEW_ID -> { previewId = reader.nextString() }
+
+            PREVIEW_ID -> {
+                previewId = reader.nextString()
+            }
+
             PREVIEW_PARAMS -> {
                 reader.beginObject()
                 while (reader.hasNext()) {
@@ -146,22 +161,35 @@ private fun readComposeScreenshot(reader: JsonReader): ComposeScreenshot {
                 }
                 reader.endObject()
             }
+
+            PREVIEW_TYPE -> {
+                val rawPreviewType = reader.nextString()
+                previewType = PreviewType.valueOf(rawPreviewType)
+            }
         }
     }
     reader.endObject()
-    return ComposeScreenshot(
-        methodFQN ?: throw IllegalArgumentException("FQN of a method is missing"),
-        methodParams,
-        previewParams,
-        previewId ?: throw IllegalArgumentException("Preview Id is missing")
-    )
+    return when (previewType) {
+        null,
+        PreviewType.COMPOSE -> ComposeScreenshot(
+            methodFQN ?: throw IllegalArgumentException("FQN of a method is missing"),
+            methodParams,
+            previewParams,
+            previewId ?: throw IllegalArgumentException("Preview Id is missing")
+        )
+        PreviewType.WEAR_TILE -> WearTileScreenshot(
+            methodFQN = methodFQN ?: throw IllegalArgumentException("FQN of a method is missing"),
+            previewParams = previewParams,
+            previewId = previewId ?: throw IllegalArgumentException("Preview Id is missing")
+        )
+    }
 }
 
 private fun readPreviewScreenshots(reader: JsonReader): List<PreviewScreenshot> {
     val screenshots = mutableListOf<PreviewScreenshot>()
     reader.beginArray()
     while (reader.hasNext()) {
-        screenshots.add(readComposeScreenshot(reader))
+        screenshots.add(readPreviewScreenshot(reader))
     }
     reader.endArray()
     return screenshots
@@ -230,6 +258,21 @@ private fun writeComposeScreenshot(writer: JsonWriter, screenshot: ComposeScreen
     }
     writer.endObject()
     writer.name(PREVIEW_ID).value(screenshot.previewId)
+    writer.name(PREVIEW_TYPE).value(PreviewType.COMPOSE.name)
+    writer.endObject()
+}
+
+private fun writeWearTileScreenshot(writer: JsonWriter, screenshot: WearTileScreenshot) {
+    writer.beginObject()
+    writer.name(METHOD_FQN).value(screenshot.methodFQN)
+    writer.name(PREVIEW_PARAMS)
+    writer.beginObject()
+    screenshot.previewParams.forEach {
+        writer.name(it.key).value(it.value)
+    }
+    writer.endObject()
+    writer.name(PREVIEW_ID).value(screenshot.previewId)
+    writer.name(PREVIEW_TYPE).value(PreviewType.WEAR_TILE.name)
     writer.endObject()
 }
 
@@ -238,6 +281,7 @@ private fun writePreviewScreenshots(writer: JsonWriter, screenshots: List<Previe
     screenshots.forEach {
         when (it) {
             is ComposeScreenshot -> writeComposeScreenshot(writer, it)
+            is WearTileScreenshot -> writeWearTileScreenshot(writer, it)
             else -> throw IllegalArgumentException("Serialization of $it is not yet supported.")
         }
     }

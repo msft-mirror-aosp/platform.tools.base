@@ -28,6 +28,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static java.util.stream.Collectors.toList;
 
+import com.android.annotations.Nullable;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
@@ -36,7 +37,7 @@ import com.android.resources.ScreenRound;
 import com.android.sdklib.SystemImageTags;
 import com.android.sdklib.TempSdkManager;
 import com.android.sdklib.devices.Device.Builder;
-import com.android.sdklib.devices.DeviceManager.DeviceFilter;
+import com.android.sdklib.devices.DeviceManager.DeviceCategory;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.HardwareProperties;
 import com.android.sdklib.repository.AndroidSdkHandler;
@@ -44,7 +45,9 @@ import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.targets.SystemImage;
 import com.android.testutils.NoErrorsOrWarningsLogger;
+import com.android.utils.StdLogger;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -91,14 +94,14 @@ public class DeviceManagerTest {
     @Test
     public final void testGetDevices_Default() {
         // no user devices defined in the test's custom .android home folder
-        assertThat(dm.getDevices(DeviceFilter.USER)).isEmpty();
+        assertThat(dm.getDevices(DeviceCategory.USER)).isEmpty();
 
         // no system-images devices defined in the SDK by default
-        assertThat(dm.getDevices(DeviceFilter.SYSTEM_IMAGES)).isEmpty();
+        assertThat(dm.getDevices(DeviceCategory.SYSTEM_IMAGES)).isEmpty();
 
         // this list comes from devices.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/devices.xml
-        assertThat(listDisplayNames(dm.getDevices(DeviceFilter.DEFAULT)))
+        assertThat(listDisplayNames(dm.getDevices(DeviceCategory.DEFAULT)))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -129,7 +132,7 @@ public class DeviceManagerTest {
 
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
-        assertThat(listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)))
+        assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
                         "Television (4K)",
                         "Television (1080p)",
@@ -318,15 +321,15 @@ public class DeviceManagerTest {
                 .isEqualTo("My Custom Tablet");
 
         // 1 user device defined in the test's custom .android home folder
-        assertThat(listDisplayNames(dm2.getDevices(DeviceFilter.USER)))
+        assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.USER)))
                 .containsExactly("My Custom Tablet");
 
         // no system-images devices defined in the SDK by default
-        assertThat(dm2.getDevices(DeviceFilter.SYSTEM_IMAGES)).isEmpty();
+        assertThat(dm2.getDevices(DeviceCategory.SYSTEM_IMAGES)).isEmpty();
 
         // this list comes from devices.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/devices.xml
-        assertThat(listDisplayNames(dm2.getDevices(DeviceFilter.DEFAULT)))
+        assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.DEFAULT)))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -355,7 +358,7 @@ public class DeviceManagerTest {
 
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
-        assertThat(listDisplayNames(dm2.getDevices(DeviceFilter.VENDOR)))
+        assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
                         "Television (4K)",
                         "Television (1080p)",
@@ -533,11 +536,11 @@ public class DeviceManagerTest {
         sdkManager.makeSystemImageFolder(imageWithDevice, "tag-1");
 
         // no user devices defined in the test's custom .android home folder
-        assertThat(dm.getDevices(DeviceFilter.USER)).isEmpty();
+        assertThat(dm.getDevices(DeviceCategory.USER)).isEmpty();
 
         // find the system-images specific device added by makeSystemImageFolder above
         // using both the getDevices() API and the device-specific getDevice() API.
-        assertThat(listDisplayNames(dm.getDevices(DeviceFilter.SYSTEM_IMAGES)))
+        assertThat(listDisplayNames(dm.getDevices(DeviceCategory.SYSTEM_IMAGES)))
                 .containsExactly("Mock Tag 1 Device Name");
 
         assertThat(dm.getDevice("tag-1", "OEM").getDisplayName())
@@ -545,7 +548,7 @@ public class DeviceManagerTest {
 
         // this list comes from devices.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/devices.xml
-        assertThat(listDisplayNames(dm.getDevices(DeviceFilter.DEFAULT)))
+        assertThat(listDisplayNames(dm.getDevices(DeviceCategory.DEFAULT)))
                 .containsExactly(
                         "10.1\" WXGA (Tablet)",
                         "2.7\" QVGA",
@@ -574,7 +577,7 @@ public class DeviceManagerTest {
 
         // this list comes from the nexus.xml bundled in the JAR
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
-        assertThat(listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)))
+        assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
                         "Television (4K)",
                         "Television (1080p)",
@@ -872,7 +875,7 @@ public class DeviceManagerTest {
 
         // Create a local DeviceManager, get the number of devices, and verify one device
         DeviceManager localDeviceManager = createDeviceManager();
-        int count = localDeviceManager.getDevices(EnumSet.allOf(DeviceFilter.class)).size();
+        int count = localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size();
         Device localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");
         assertThat(localDevice.getDisplayName()).isEqualTo("Wear OS Small Round");
 
@@ -936,7 +939,8 @@ public class DeviceManagerTest {
         assertThat(localDevice.getDisplayName()).isEqualTo("Custom");
 
         // Verify that the total number of devices is unchanged
-        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceFilter.class)).size()).isEqualTo(count);
+        assertThat(localDeviceManager.getDevices(EnumSet.allOf(DeviceCategory.class)).size())
+                .isEqualTo(count);
     }
 
     @Test
@@ -992,5 +996,123 @@ public class DeviceManagerTest {
                 .isEqualTo("true");
         assertThat(testDeviceAfter.getState("Test State").getHardware().getChargeType())
                 .isEqualTo(PowerType.PLUGGEDIN);
+    }
+
+    @Test
+    public final void testDeviceManagerDeviceFilter() {
+        StringBuilder errorLog = new StringBuilder();
+        StdLogger log =
+                new StdLogger(StdLogger.Level.VERBOSE) {
+                    @Override
+                    public void error(
+                            @Nullable Throwable t, @Nullable String errorFormat, Object... args) {
+                        errorLog.append(String.format("Error: " + errorFormat, args)).append("\n");
+                        if (t != null) {
+                            errorLog.append(String.format(" (Throwable: %s)", t)).append("\n");
+                            ;
+                        }
+                    }
+
+                    @Override
+                    public void warning(@NotNull String warningFormat, Object... args) {
+                        errorLog.append(String.format("Warning: " + warningFormat, args))
+                                .append("\n");
+                        ;
+                    }
+                };
+        AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
+        DeviceManager deviceManagerWithFilter =
+                DeviceManager.createInstance(
+                        sdkHandler, log, (device) -> device.getId().startsWith("pixel_9"));
+
+        assertThat(listDisplayNames(deviceManagerWithFilter.getDevices(DeviceManager.ALL_DEVICES)))
+                .containsExactly(
+                        "10.1\" WXGA (Tablet)",
+                        "2.7\" QVGA",
+                        "2.7\" QVGA slider",
+                        "3.2\" HVGA slider (ADP1)",
+                        "3.2\" QVGA (ADP2)",
+                        "3.3\" WQVGA",
+                        "3.4\" WQVGA",
+                        "3.7\" FWVGA slider",
+                        "3.7\" WVGA (Nexus One)",
+                        "4\" WVGA (Nexus S)",
+                        "4.65\" 720p (Galaxy Nexus)",
+                        "4.7\" WXGA",
+                        "5.1\" WVGA",
+                        "5.4\" FWVGA",
+                        "6.7\" Horizontal Fold-in",
+                        "7\" WSVGA (Tablet)",
+                        "7.4\" Rollable",
+                        "7.6\" Fold-in with outer display",
+                        "8\" Fold-out",
+                        "Medium Phone",
+                        "Medium Tablet",
+                        "13.5\" Freeform",
+                        "Resizable (Experimental)",
+                        "Small Phone",
+                        "Pixel 9",
+                        "Pixel 9 Pro",
+                        "Pixel 9 Pro XL",
+                        "Pixel 9 Pro Fold");
+        assertThat(errorLog.toString())
+                .isEqualTo(
+                        "Warning: Unsupported device Nexus One\n"
+                            + "Warning: Unsupported device Nexus S\n"
+                            + "Warning: Unsupported device Galaxy Nexus\n"
+                            + "Warning: Unsupported device Nexus 7\n"
+                            + "Warning: Unsupported device Nexus 4\n"
+                            + "Warning: Unsupported device Nexus 10\n"
+                            + "Warning: Unsupported device Nexus 7 2013\n"
+                            + "Warning: Unsupported device Nexus 5\n"
+                            + "Warning: Unsupported device Nexus 6\n"
+                            + "Warning: Unsupported device Nexus 9\n"
+                            + "Warning: Unsupported device Nexus 5X\n"
+                            + "Warning: Unsupported device Nexus 6P\n"
+                            + "Warning: Unsupported device pixel_c\n"
+                            + "Warning: Unsupported device pixel\n"
+                            + "Warning: Unsupported device pixel_xl\n"
+                            + "Warning: Unsupported device pixel_2\n"
+                            + "Warning: Unsupported device pixel_2_xl\n"
+                            + "Warning: Unsupported device pixel_3\n"
+                            + "Warning: Unsupported device pixel_3_xl\n"
+                            + "Warning: Unsupported device pixel_3a\n"
+                            + "Warning: Unsupported device pixel_3a_xl\n"
+                            + "Warning: Unsupported device pixel_4\n"
+                            + "Warning: Unsupported device pixel_4_xl\n"
+                            + "Warning: Unsupported device pixel_4a\n"
+                            + "Warning: Unsupported device pixel_5\n"
+                            + "Warning: Unsupported device pixel_6\n"
+                            + "Warning: Unsupported device pixel_6_pro\n"
+                            + "Warning: Unsupported device pixel_6a\n"
+                            + "Warning: Unsupported device pixel_7_pro\n"
+                            + "Warning: Unsupported device pixel_7\n"
+                            + "Warning: Unsupported device pixel_fold\n"
+                            + "Warning: Unsupported device pixel_tablet\n"
+                            + "Warning: Unsupported device pixel_7a\n"
+                            + "Warning: Unsupported device pixel_8\n"
+                            + "Warning: Unsupported device pixel_8_pro\n"
+                            + "Warning: Unsupported device pixel_8a\n"
+                            + "Warning: Unsupported device wearos_large_round\n"
+                            + "Warning: Unsupported device wearos_small_round\n"
+                            + "Warning: Unsupported device wearos_rect\n"
+                            + "Warning: Unsupported device wearos_square\n"
+                            + "Warning: Unsupported device tv_4k\n"
+                            + "Warning: Unsupported device tv_1080p\n"
+                            + "Warning: Unsupported device tv_720p\n"
+                            + "Warning: Unsupported device automotive_1024p_landscape\n"
+                            + "Warning: Unsupported device automotive_1080p_landscape\n"
+                            + "Warning: Unsupported device automotive_1408p_landscape_with_play\n"
+                            + "Warning: Unsupported device"
+                            + " automotive_1408p_landscape_with_google_apis\n"
+                            + "Warning: Unsupported device automotive_portrait\n"
+                            + "Warning: Unsupported device automotive_distant_display\n"
+                            + "Warning: Unsupported device automotive_distant_display_with_play\n"
+                            + "Warning: Unsupported device automotive_ultrawide\n"
+                            + "Warning: Unsupported device automotive_large_portrait\n"
+                            + "Warning: Unsupported device desktop_small\n"
+                            + "Warning: Unsupported device desktop_medium\n"
+                            + "Warning: Unsupported device desktop_large\n"
+                            + "Warning: Unsupported device xr_device\n");
     }
 }

@@ -35,7 +35,10 @@ kotlin_test(
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
+        "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],
 )

@@ -38,12 +38,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
   }
 
   override fun lint(): TestLintTask {
-    // The following tests produce invalid XML files with verifyFixedFileSyntax(true):
-    // * #test_splitToWebAndCustomSchemes
-    // * #test_queryParameter_andFragment_insideUriRelativeFilterGroup
-    // * #test_fragment
-    // For now turn off validation until this (b/387508886) is fixed.
-    return super.lint().verifyFixedFileSyntax(false)
+    return super.lint().verifyFixedFileSyntax(true)
   }
 
   fun testIntentFilterDataDeclaration() {
@@ -3449,43 +3444,43 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         xml(
             "AndroidManifest.xml",
             """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    package="com.example.helloworld" >
-                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                package="com.example.helloworld" >
+                <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
 
-                    <application>
-                        <activity android:name=".FullscreenActivity" android:exported="true">
+                <application>
+                    <activity android:name=".FullscreenActivity" android:exported="true">
 
-                            <intent-filter android:autoVerify="true">
-                                <action android:name="android.intent.action.VIEW" />
-                                <category android:name="android.intent.category.DEFAULT" />
-                                <category android:name="android.intent.category.BROWSABLE" />
+                        <intent-filter android:autoVerify="true">
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
 
-                                <data android:scheme="http" />
-                                <data android:host="example.com" />
-                                <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
-                                <data android:pathPrefix="/gizmos#fragment!" /> <!-- Special character -->
-                                <data android:pathSuffix="/gizmos#fragment" />
-                                <data android:pathPattern="/gizmos#fragment" />
-                                <data android:pathAdvancedPattern="/gizmos#fragment" />
-                            </intent-filter>
-                            <intent-filter>
-                                <action android:name="android.intent.action.VIEW" />
-                                <category android:name="android.intent.category.DEFAULT" />
-                                <category android:name="android.intent.category.BROWSABLE" />
+                            <data android:scheme="http" />
+                            <data android:host="example.com" />
+                            <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
+                            <data android:pathPrefix="/gizmos#fragment!" /> <!-- Special character -->
+                            <data android:pathSuffix="/gizmos#fragment" />
+                            <data android:pathPattern="/gizmos#fragment" />
+                            <data android:pathAdvancedPattern="/gizmos#fragment" />
+                        </intent-filter>
+                        <intent-filter>
+                            <action android:name="android.intent.action.VIEW" />
+                            <category android:name="android.intent.category.DEFAULT" />
+                            <category android:name="android.intent.category.BROWSABLE" />
 
-                                <data android:scheme="custom" />
-                                <data android:host="example.com" />
-                                <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
-                                <data android:pathPrefix="/gizmos#fragment" />
-                                <data android:pathSuffix="/gizmos#fragment" />
-                                <data android:pathPattern="/gizmos#fragment" />
-                                <data android:pathAdvancedPattern="/gizmos#fragment" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-                """,
+                            <data android:scheme="custom" />
+                            <data android:host="example.com" />
+                            <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
+                            <data android:pathPrefix="/gizmos#fragment" />
+                            <data android:pathSuffix="/gizmos#fragment" />
+                            <data android:pathPattern="/gizmos#fragment" />
+                            <data android:pathAdvancedPattern="/gizmos#fragment" />
+                        </intent-filter>
+                    </activity>
+                </application>
+            </manifest>
+            """,
           )
           .indented(),
       )
@@ -3512,35 +3507,35 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
+        Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
         @@ -15 +15
         -                 <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
         +                 <uri-relative-filter-group>
         +                     <data android:path="/gizmos" />
-        +                     <data android:fragment="fragment=1&otherFragment=2" />
+        +                     <data android:fragment="fragment=1&amp;otherFragment=2" />
         +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
+        Autofix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
         @@ -16 +16
         -                 <data android:pathPrefix="/gizmos#fragment!" /> <!-- Special character -->
         +                 <uri-relative-filter-group>
         +                     <data android:pathPrefix="/gizmos" />
         +                     <data android:fragment="fragment!" />
         +                 </uri-relative-filter-group> <!-- Special character -->
-        Fix for src/main/AndroidManifest.xml line 17: Replace with <uri-relative-filter-group>...:
+        Autofix for src/main/AndroidManifest.xml line 17: Replace with <uri-relative-filter-group>...:
         @@ -17 +17
         -                 <data android:pathSuffix="/gizmos#fragment" />
         +                 <uri-relative-filter-group>
         +                     <data android:pathSuffix="/gizmos" />
         +                     <data android:fragment="fragment" />
         +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 18: Replace with <uri-relative-filter-group>...:
+        Autofix for src/main/AndroidManifest.xml line 18: Replace with <uri-relative-filter-group>...:
         @@ -18 +18
         -                 <data android:pathPattern="/gizmos#fragment" />
         +                 <uri-relative-filter-group>
         +                     <data android:pathPattern="/gizmos" />
         +                     <data android:fragment="fragment" />
         +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 19: Replace with <uri-relative-filter-group>...:
+        Autofix for src/main/AndroidManifest.xml line 19: Replace with <uri-relative-filter-group>...:
         @@ -19 +19
         -                 <data android:pathAdvancedPattern="/gizmos#fragment" />
         +                 <uri-relative-filter-group>
@@ -3947,15 +3942,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 16: Replace with <data android:path=/gizmos />...:
+        Autofix for src/main/AndroidManifest.xml line 16: Replace with <data android:path="/gizmos" />...:
         @@ -16 +16
         -                     <data android:path="/gizmos?queryParam" />
-        +                     <data android:path=/gizmos />
+        +                     <data android:path="/gizmos" />
         +                     <data android:query="queryParam" />
-        Fix for src/main/AndroidManifest.xml line 17: Replace with <data android:path=/gizmos />...:
+        Autofix for src/main/AndroidManifest.xml line 17: Replace with <data android:path="/gizmos" />...:
         @@ -17 +17
         -                     <data android:path="/gizmos#fragment" />
-        +                     <data android:path=/gizmos />
+        +                     <data android:path="/gizmos" />
         +                     <data android:fragment="fragment" />
         """
       )
@@ -4379,7 +4374,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
+        Autofix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
         @@ -15 +15
         +                 <action android:name="android.intent.action.SEND" />
         +                 <uri-relative-filter-group>
@@ -4395,8 +4390,8 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         @@ -22 +23
         -                 <!-- Test having tags underneath the host elements as well -->
         -                 <action android:name="android.intent.action.SEND"/>
-        +                 <data android:path="/&lt;&amp;&apos;'" />
-        +                 <data android:path="/single"quote" />
+        +                 <data android:path="/&lt;&amp;&apos;&apos;" />
+        +                 <data android:path="/single&quot;quote" />
         +                 <data android:path="@string/path" />
         +             </intent-filter>
         +             <intent-filter android:order="-1" android:priority="-1">
@@ -4412,8 +4407,8 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         +                 <data android:scheme="custom" />
         +                 <data android:host="example.com" />
         +                 <data android:path="" />
-        +                 <data android:path="/&lt;&amp;&apos;'" />
-        +                 <data android:path="/single"quote" />
+        +                 <data android:path="/&lt;&amp;&apos;&apos;" />
+        +                 <data android:path="/single&quot;quote" />
         +                 <data android:path="@string/path" />
         """
       )

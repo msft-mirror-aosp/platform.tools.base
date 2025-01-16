@@ -45,6 +45,8 @@ maven_library(
     deps = [
         "//tools/base/adblib",
         "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
@@ -73,9 +75,13 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/adblib",
         ":adblib.ddmlibcompatibility",
+        "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/adblib:adblib.tests.testlib",
         "//tools/base/adblib-tools:adblib.tools.tests.testlib",
+        "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/common:tools.common",
         # For "JarTestSuite"
         "//tools/base/testutils:tools.testutils",
         # For JUnit4 support
@@ -84,5 +90,7 @@ kotlin_test(
         "//tools/base/fakeadbserver:tools.fakeadbserver",
         # FakeAdbRule
         "//tools/base/ddmlib:test-utils",
+        "//tools/base/annotations",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )

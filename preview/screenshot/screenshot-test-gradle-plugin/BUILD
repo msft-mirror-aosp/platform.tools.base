@@ -114,6 +114,7 @@ kotlin_library(
         "//tools/base/preview/screenshot:__pkg__",
     ],
     deps = [
+        "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/gradle-core",
         "//tools/base/common:tools.common",

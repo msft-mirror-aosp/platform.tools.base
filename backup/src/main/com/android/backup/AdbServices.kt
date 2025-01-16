@@ -78,6 +78,8 @@ interface AdbServices {
 
   suspend fun isInstalled(applicationId: String): Boolean
 
+  suspend fun isPlayStoreInstalled(): Boolean
+
   class AdbOutput(val stdout: String, val stderr: String)
 
   suspend fun setTransport(transport: String, verify: Boolean): String

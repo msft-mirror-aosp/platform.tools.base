@@ -26,6 +26,9 @@ import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
 import com.android.backup.BackupService.Companion.TOKEN_FILE
 import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
+import com.android.backup.ErrorCode.APP_NOT_INSTALLED
+import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
+import java.io.IOException
 import java.nio.file.Path
 import java.util.Properties
 import java.util.zip.ZipEntry
@@ -83,21 +86,37 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   ): BackupResult {
     return try {
       val adbServices = factory.createAdbServices(serialNumber, listener, RESTORE_STEPS)
+
       with(adbServices) {
-        // Restore is always handled by the Cloud transport
-        withSetup(TRANSPORT_DTD) {
-          reportProgress("Initializing backup transport")
-          initializeTransport(TRANSPORT_DTD)
-          setTransport(TRANSPORT_CLOUD, true)
+        try {
           ZipFile(backupFile.pathString).use { zip ->
-            val token = zip.getRestoreToken()
             val metadata = zip.getMetaData()
             val applicationId = metadata.applicationId
-            reportProgress("Pushing backup file")
-            zip.pushBackup(adbServices)
-            reportProgress("Restoring $applicationId")
-            restore(token, applicationId, metadata.backupType)
+            if (!isInstalled(applicationId)) {
+              throw BackupException(
+                APP_NOT_INSTALLED,
+                "Application '$applicationId' is not installed on the device",
+              )
+            }
+
+            // Restore is always handled by the Cloud transport
+            withSetup(TRANSPORT_DTD) {
+              reportProgress("Initializing backup transport")
+              initializeTransport(TRANSPORT_DTD)
+              setTransport(TRANSPORT_CLOUD, true)
+              val token = zip.getRestoreToken()
+              reportProgress("Pushing backup file")
+              zip.pushBackup(adbServices)
+              reportProgress("Restoring $applicationId")
+              restore(token, applicationId, metadata.backupType)
+            }
           }
+        } catch (e: IOException) {
+          throw BackupException(
+            INVALID_BACKUP_FILE,
+            "File ${backupFile.pathString} is not a valid backup file",
+            e,
+          )
         }
         reportProgress("Done")
         Success
@@ -122,6 +141,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
 
   override suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean {
     return factory.createAdbServices(serialNumber, null, 1).isInstalled(applicationId)
+  }
+
+  override suspend fun isPlayStoreInstalled(serialNumber: String): Boolean {
+    return factory.createAdbServices(serialNumber, null, 1).isPlayStoreInstalled()
   }
 
   private suspend fun pullBackup(

@@ -82,7 +82,8 @@ public class IssueTest extends TestCase {
                         Severity.ERROR,
                         implementation);
 
-        assertEquals(issue1, issue1);
+        //noinspection EqualsWithItself
+        assertTrue(issue1.equals(issue1));
         assertEquals(issue1, issue2); // only id counts, not the other attributes
         assertNotEquals(issue1, issue3);
     }

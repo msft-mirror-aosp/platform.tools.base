@@ -27,7 +27,10 @@ kotlin_library(
         "src/libraries/androidx-window-beta-02/**/*.kt",
         "src/libraries/androidx-window-beta-02/**/*.java",
     ]),
-    deps = [":fake_android"],
+    deps = [
+        ":fake_android",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
 )
 
 kotlin_library(
@@ -36,7 +39,10 @@ kotlin_library(
         "src/libraries/androidx-window-beta-03/**/*.kt",
         "src/libraries/androidx-window-beta-03/**/*.java",
     ]),
-    deps = [":fake_android"],
+    deps = [
+        ":fake_android",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
 )
 
 kotlin_library(
@@ -45,5 +51,8 @@ kotlin_library(
         "src/libraries/androidx-window-beta-04/**/*.kt",
         "src/libraries/androidx-window-beta-04/**/*.java",
     ]),
-    deps = [":fake_android"],
+    deps = [
+        ":fake_android",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
 )

@@ -65,6 +65,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -82,6 +83,7 @@ import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import java.io.File
 import java.nio.file.Path
+import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 
 /**
@@ -249,6 +251,10 @@ abstract class R8Task @Inject constructor(
     @get:Optional
     abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
 
+    @Suppress("UnstableApiUsage")
+    @get:ServiceReference
+    abstract val r8ParallelBuildService: Property<R8ParallelBuildService>
+
     class PrivacySandboxSdkCreationAction(
         val creationConfig: PrivacySandboxSdkVariantScope,
         addCompileRClass: Boolean,
@@ -290,7 +296,7 @@ abstract class R8Task @Inject constructor(
 
             task.artProfileRewriting.set(false)
 
-            task.usesService(
+            task.r8ParallelBuildService.setDisallowChanges(
                 getBuildService(
                     creationConfig.services.buildServiceRegistry,
                     R8ParallelBuildService::class.java
@@ -464,7 +470,7 @@ abstract class R8Task @Inject constructor(
                 task.artProfileRewriting.set(false)
             }
 
-            task.usesService(
+            task.r8ParallelBuildService.setDisallowChanges(
                 getBuildService(
                     creationConfig.services.buildServiceRegistry,
                     R8ParallelBuildService::class.java
@@ -718,6 +724,10 @@ abstract class R8Task @Inject constructor(
             it.r8Metadata.set(r8Metadata)
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
             it.partialShrinkingConfig.set(partialShrinkingConfig.orNull)
+            // Build service can only be passed in Gradle worker non-isolation mode
+            if (!executionOptions.get().runInSeparateProcess) {
+                it.r8ParallelBuildService.set(r8ParallelBuildService)
+            }
         }
         if (executionOptions.get().runInSeparateProcess) {
             workerExecutor.processIsolation { spec ->
@@ -773,7 +783,8 @@ abstract class R8Task @Inject constructor(
             inputProfileForDexStartupOptimization: File?,
             r8Metadata: File?,
             resourceShrinkingConfig: ResourceShrinkingConfig?,
-            partialShrinkingConfig: PartialShrinkingConfig?
+            partialShrinkingConfig: PartialShrinkingConfig?,
+            r8ThreadPool: ExecutorService
         ) {
             val logger = LoggerWrapper.getLogger(R8Task::class.java)
 
@@ -851,7 +862,8 @@ abstract class R8Task @Inject constructor(
                 outputArtProfile?.toPath(),
                 inputProfileForDexStartupOptimization?.toPath(),
                 r8Metadata?.toPath(),
-                partialShrinkingConfig
+                partialShrinkingConfig,
+                r8ThreadPool
             )
         }
 
@@ -906,48 +918,62 @@ abstract class R8Task @Inject constructor(
             abstract val r8Metadata: RegularFileProperty
             abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
             abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
+            abstract val r8ParallelBuildService: Property<R8ParallelBuildService> // Set iff in Gradle worker non-isolation mode
         }
 
         override fun execute() {
-            shrink(
-                parameters.bootClasspath.files.toList(),
-                parameters.minSdkVersion.get(),
-                parameters.debuggable.get(),
-                parameters.enableDesugaring.get(),
-                parameters.disableTreeShaking.get(),
-                parameters.disableMinification.get(),
-                parameters.mainDexListFiles.files.toList(),
-                parameters.mainDexRulesFiles.files.toList(),
-                parameters.mainDexListOutput.orNull?.asFile,
-                parameters.legacyMultiDexEnabled.get(),
-                parameters.useFullR8.get(),
-                parameters.referencedInputs.files.toList(),
-                parameters.classes.files.toList(),
-                parameters.resourcesJar.asFile.get(),
-                parameters.proguardConfigurationFiles.files.toList(),
-                parameters.inputProguardMapping.orNull?.asFile,
-                parameters.proguardConfigurations.get(),
-                parameters.aar.get(),
-                parameters.mappingFile.get().asFile,
-                parameters.proguardSeedsOutput.get().asFile,
-                parameters.proguardUsageOutput.get().asFile,
-                parameters.proguardConfigurationOutput.get().asFile,
-                parameters.missingKeepRulesOutput.get().asFile,
-                parameters.output.get().asFile,
-                parameters.outputResources.get().asFile,
-                parameters.featureClassJars.files.toList(),
-                parameters.featureJavaResourceJars.files.toList(),
-                parameters.featureDexDir.orNull?.asFile,
-                parameters.featureJavaResourceOutputDir.orNull?.asFile,
-                parameters.libConfiguration.orNull,
-                parameters.errorFormatMode.get(),
-                parameters.inputArtProfile.orNull?.asFile,
-                parameters.outputArtProfile.orNull?.asFile,
-                parameters.inputProfileForDexStartupOptimization.orNull?.asFile,
-                parameters.r8Metadata.orNull?.asFile,
-                parameters.resourceShrinkingConfig.orNull,
-                parameters.partialShrinkingConfig.orNull
-            )
+            // In Gradle worker non-isolation mode, use the shared thread pool for all R8 tasks.
+            // In (classloader or process) isolation mode, use a new thread pool for each R8 task.
+            val r8ThreadPool = parameters.r8ParallelBuildService.orNull?.r8ThreadPool
+                ?: R8ParallelBuildService.newR8ThreadPool()
+            try {
+                shrink(
+                    parameters.bootClasspath.files.toList(),
+                    parameters.minSdkVersion.get(),
+                    parameters.debuggable.get(),
+                    parameters.enableDesugaring.get(),
+                    parameters.disableTreeShaking.get(),
+                    parameters.disableMinification.get(),
+                    parameters.mainDexListFiles.files.toList(),
+                    parameters.mainDexRulesFiles.files.toList(),
+                    parameters.mainDexListOutput.orNull?.asFile,
+                    parameters.legacyMultiDexEnabled.get(),
+                    parameters.useFullR8.get(),
+                    parameters.referencedInputs.files.toList(),
+                    parameters.classes.files.toList(),
+                    parameters.resourcesJar.asFile.get(),
+                    parameters.proguardConfigurationFiles.files.toList(),
+                    parameters.inputProguardMapping.orNull?.asFile,
+                    parameters.proguardConfigurations.get(),
+                    parameters.aar.get(),
+                    parameters.mappingFile.get().asFile,
+                    parameters.proguardSeedsOutput.get().asFile,
+                    parameters.proguardUsageOutput.get().asFile,
+                    parameters.proguardConfigurationOutput.get().asFile,
+                    parameters.missingKeepRulesOutput.get().asFile,
+                    parameters.output.get().asFile,
+                    parameters.outputResources.get().asFile,
+                    parameters.featureClassJars.files.toList(),
+                    parameters.featureJavaResourceJars.files.toList(),
+                    parameters.featureDexDir.orNull?.asFile,
+                    parameters.featureJavaResourceOutputDir.orNull?.asFile,
+                    parameters.libConfiguration.orNull,
+                    parameters.errorFormatMode.get(),
+                    parameters.inputArtProfile.orNull?.asFile,
+                    parameters.outputArtProfile.orNull?.asFile,
+                    parameters.inputProfileForDexStartupOptimization.orNull?.asFile,
+                    parameters.r8Metadata.orNull?.asFile,
+                    parameters.resourceShrinkingConfig.orNull,
+                    parameters.partialShrinkingConfig.orNull,
+                    r8ThreadPool
+                )
+            } finally {
+                // If r8ThreadPool is not a shared thread pool, we need to close it now.
+                // (If it's a shared thread pool, we will close it in the build service.)
+                if (r8ThreadPool != parameters.r8ParallelBuildService.orNull?.r8ThreadPool) {
+                    r8ThreadPool.shutdown()
+                }
+            }
         }
     }
 }

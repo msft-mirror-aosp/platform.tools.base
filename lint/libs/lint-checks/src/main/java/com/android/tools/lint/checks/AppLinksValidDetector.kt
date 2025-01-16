@@ -85,6 +85,8 @@ import com.android.tools.lint.detector.api.isDataBindingExpression
 import com.android.tools.lint.detector.api.isManifestPlaceHolderExpression
 import com.android.tools.lint.detector.api.resolvePlaceHolders
 import com.android.utils.XmlUtils
+import com.android.utils.XmlUtils.fromXmlAttributeValue
+import com.android.utils.XmlUtils.toXmlAttributeValue
 import com.android.utils.iterator
 import com.android.utils.subtagCount
 import com.android.xml.AndroidManifest.ATTRIBUTE_NAME
@@ -707,7 +709,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           customSchemeIntentFilterText.append(" ")
           customSchemeIntentFilterText.append(item.nodeName)
           customSchemeIntentFilterText.append("=\"")
-          customSchemeIntentFilterText.append(item.nodeValue)
+          customSchemeIntentFilterText.append(xmlEscape(item.nodeValue))
           customSchemeIntentFilterText.append('"')
         }
         customSchemeIntentFilterText.append(">")
@@ -749,7 +751,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           intentFilterTextAfterSchemes.append("\n")
           intentFilterTextAfterSchemes.append(intentFilterChildIndent)
           intentFilterTextAfterSchemes.append(
-            """<data $namespace:${path.attributeName}="${path.attributeValue}" />"""
+            """<data $namespace:${path.attributeName}="${xmlEscape(path.attributeValue)}" />"""
           )
         }
         for (mimeType in intentFilterData.dataTags.rawMimeTypes.sorted()) {
@@ -956,7 +958,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           .split('?')
           .let { if (it.size == 2) it[1] else "" }
           .substringBefore('#')
-          .splitToSequence('&')
+          .splitToSequence("&amp;", "&")
           .filter { it.isNotBlank() }
           .toSet()
       // Android treats the fragment as a single section.
@@ -1006,7 +1008,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                   "" -> ""
                   else -> """$newLineAndDataIndent<data $namespace:fragment="$fragmentInUri" />"""
                 }
-              "$otherAttributesText<data $namespace:$name=$pathBeforeQueryAndFragment />" +
+              """$otherAttributesText<data $namespace:$name="$pathBeforeQueryAndFragment" />""" +
                 concatenateWithIndent(queries, newLineAndDataIndent) +
                 newLineAndIndentedFragment
             }
@@ -1322,7 +1324,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/content/UriRelativeFilter.java;l=150;drc=36303b838229bcd21b0d72278dd6879497bc285b
         val patternMatcher =
           AndroidPatternMatcher(attributeValue, attrToAndroidPatternMatcher(attributeName))
-        var paramsToMatch = queryString.split('&')
+        var paramsToMatch = queryString.split("&amp;", "&")
         if (paramsToMatch.size == 1) paramsToMatch = queryString.split(';')
         return paramsToMatch.any { patternMatcher.match(URLDecoder.decode(it, Charsets.UTF_8)) }
       }
@@ -1402,27 +1404,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         attr.localName /* Exclude the namespace prefix */ ?: attr.name ?: ""
 
       override val rawValue: String? by
-        lazy(LazyThreadSafetyMode.NONE) {
-          val fallbackReturnValue = attr.value ?: return@lazy null
-          if (fallbackReturnValue.isEmpty()) return@lazy "" // Empty attributes aren't handled well.
-          // If we're not in an XML Context, just return the fallback.
-          // The most common scenario for this is that we're looking at the merged manifest.
-          if (context !is XmlContext) return@lazy fallbackReturnValue
-          // The below can actually be null, so the ?: return is needed.
-          val location =
-            try {
-              context.getValueLocation(attr)
-            } catch (_: StringIndexOutOfBoundsException) {
-              null
-            } ?: return@lazy fallbackReturnValue
-          val start = location.start?.offset ?: return@lazy fallbackReturnValue
-          val end = location.end?.offset ?: return@lazy fallbackReturnValue
-          return@lazy context.getContents()?.substring(start, end) ?: fallbackReturnValue
-        }
+        lazy(LazyThreadSafetyMode.NONE) { attr.value?.let { xmlEscape(it) } }
 
       override val substitutedValue: String? by
         lazy(LazyThreadSafetyMode.NONE) {
-          val value = attr.value ?: return@lazy null
+          val attrValue = attr.value ?: return@lazy null
+          val value = xmlEscape(attrValue)
           // If we're not in an XML Context, just return the fallback.
           // The most common scenario for this is that we're looking at the merged manifest.
           if (context !is XmlContext) return@lazy value
@@ -1845,6 +1832,13 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         sb.append(" ")
       }
       sb.append("</${element.tagName}>")
+    }
+
+    /** @return an XML-escaped version of [s]. */
+    private fun xmlEscape(s: String): String {
+      // Decoding and re-encoding allows s to have XML escape sequences in it.
+      // e.g. a&amp;b -> a&b -> a&amp;b, not a&amp;b -> a&amp;amp;b
+      return toXmlAttributeValue(fromXmlAttributeValue(s))
     }
 
     private val IMPLEMENTATION =

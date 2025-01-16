@@ -16,6 +16,8 @@
 
 package com.android.tools.preview.multipreview
 
+import com.android.tools.preview.multipreview.PreviewMethodFinder.Companion.COMPOSE_PREVIEW_ANNOTATION
+import com.android.tools.preview.multipreview.PreviewMethodFinder.Companion.COMPOSE_PREVIEW_ANNOTATION_CONTAINER
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -48,6 +50,8 @@ class MultipreviewAnnotationResolverTest {
 
         val rootDir = File(testClassesDir, "testJarsAndClasses")
         MultipreviewAnnotationResolver(
+            COMPOSE_PREVIEW_ANNOTATION,
+            COMPOSE_PREVIEW_ANNOTATION_CONTAINER,
             listOf(File(rootDir, "screenshotTestDirs/dir1")),
             listOf(File(rootDir, "screenshotTestJars/precompiledTestClasses.jar")),
             listOf(File(rootDir, "mainDirs/dir1")),

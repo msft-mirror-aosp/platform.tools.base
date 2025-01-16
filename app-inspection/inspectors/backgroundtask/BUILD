@@ -57,7 +57,12 @@ robolectric_test(
     friends = [":agent-jar"],
     deps = [
         ":agent-jar",
+        ":backgroundtask_inspector_java_proto",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common.testing",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/fakeandroid",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",

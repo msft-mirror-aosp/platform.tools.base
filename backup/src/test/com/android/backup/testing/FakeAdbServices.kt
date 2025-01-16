@@ -39,6 +39,7 @@ private const val DUMPSYS_GMSCORE = "dumpsys package com.google.android.gms"
 private const val LAUNCH_PLAY_STORE = "am start market://details?id=com.google.android.gms"
 private const val DUMPSYS_ACTIVITY = "dumpsys activity"
 private const val LIST_PACKAGES = "pm list packages"
+private const val CHECK_PLAY_STORE = "pm resolve-activity market://details?id=com.android.vending"
 
 /** A fake [com.android.backup.AdbServices] */
 class FakeAdbServices(
@@ -110,6 +111,7 @@ class FakeAdbServices(
         command.startsWith(BACKUP_NOW) -> handleBackupNow(command)
         command.startsWith(RESTORE) -> handleRestore()
         command.startsWith(LIST_PACKAGES) -> handleListPackages()
+        command == CHECK_PLAY_STORE -> handleCheckPlayStore()
         command == DUMPSYS_GMSCORE -> handleDumpsysGmsCore()
         command == LAUNCH_PLAY_STORE -> handleLaunchPlayStore()
         command == DUMPSYS_ACTIVITY -> handleDumpsysActivity()
@@ -225,6 +227,21 @@ class FakeAdbServices(
 
   private fun handleListPackages(): AdbOutput {
     return "".asStdout()
+  }
+
+  private fun handleCheckPlayStore(): AdbOutput {
+    return """
+      priority=0 preferredOrder=0 match=0x308000 specificIndex=-1 isDefault=true
+      ActivityInfo:
+        name=com.google.android.finsky.activities.MarketDeepLinkHandlerActivity
+        packageName=com.android.vending
+        enabled=true exported=true directBootAware=false
+        taskAffinity=com.android.vending.inlinedetails targetActivity=null persistableMode=PERSIST_ROOT_ONLY
+        ...
+
+    """
+      .trimIndent()
+      .asStdout()
   }
 
   private fun handleRestore(): AdbOutput {

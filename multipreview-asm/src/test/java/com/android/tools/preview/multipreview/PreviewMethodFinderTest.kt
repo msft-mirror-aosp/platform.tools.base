@@ -62,60 +62,85 @@ class PreviewMethodFinderTest {
         assertThat(previewMethods.flatMap { it.toDebugString() }.sorted()
             .joinToString("----\n").trim()).isEqualTo("""
                 com.example.myprecompiledtestclasses.PreviewableMethodsFromStaticLibraryKt.GreetingPreview1
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTest.GreetingPreview2
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.CustomMultipreviewAnnotationTest
+                type: Compose
                 showBackground: false
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.CustomMultipreviewAnnotationTest
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.CyclicPreviewableAnnotationTest
+                type: Compose
                 showBackground: false
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.CyclicPreviewableAnnotationTest
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.GreetingPreview1
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.GreetingPreviewWithRepeatedAnnotation
+                type: Compose
                 showBackground: false
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.GreetingPreviewWithRepeatedAnnotation
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.MultiPreviewWithMultipleCustomAnnotations
+                type: Compose
                 apiLevel: 29
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.MultiPreviewWithMultipleCustomAnnotations
+                type: Compose
                 apiLevel: 30
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.MultiPreviewWithMultipleCustomAnnotations
+                type: Compose
                 showBackground: false
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.MultiPreviewWithMultipleCustomAnnotations
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.PreviewAnnotationFromLibrary
+                type: Compose
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.PreviewAnnotationFromMain
+                type: Compose
                 showBackground: true
                 ----
                 com.example.myscreenshottestexample.screenshottest.ExampleScreenshotTestKt.PreviewWithParameterProvider
+                type: Compose
                 provider: Lcom/example/mylibrary/MyPreviewParameterProvider;
                 limit: 2
+                ----
+                com.example.myscreenshottestexample.tile.screenshottest.TileScreenshotTestKt.tilePreview
+                type: WearTile
+                device: id:wearos_large_round
                 """.trimIndent())
-        assertThat(previewMethods).hasSize(10)
+        assertThat(previewMethods).hasSize(11)
     }
 
     private fun PreviewMethod.toDebugString(): List<String> {
         return previewAnnotations.map { previewAnnotation ->
             StringBuilder().apply {
                 appendLine(method.methodFqn)
+                val type = when (this@toDebugString) {
+                    is ComposePreviewMethod -> "Compose"
+                    is WearTilePreviewMethod -> "WearTile"
+                }
+                appendLine("type: $type")
                 previewAnnotation.parameters.entries.forEach { (key, value) ->
                     appendLine("$key: $value")
                 }

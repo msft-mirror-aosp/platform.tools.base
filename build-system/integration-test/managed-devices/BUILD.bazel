@@ -11,7 +11,9 @@ kotlin_library(
     deps = [
         "//tools/base/build-system/gradle-core",
         "//tools/base/build-system/integration-test/framework",
+        "//tools/base/common:tools.common",
         "//tools/base/repository:tools.repository",
+        "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
     ],
 )
@@ -33,6 +35,13 @@ sdk_jvm_flags = [
 #keep sorted
 TEST_DEPS = [
     ":managed-devices",
+    "//tools/base/build-system/gradle-core",
+    "//tools/base/build-system/integration-test/framework",
+    "//tools/base/common:tools.common",
+    "//tools/base/testutils:tools.testutils",
+    "@maven//:com.google.truth.truth",
+    "@maven//:junit.junit",
+    "@maven//:org.jetbrains.kotlin.kotlin-test",
 ]
 
 #keep sorted
