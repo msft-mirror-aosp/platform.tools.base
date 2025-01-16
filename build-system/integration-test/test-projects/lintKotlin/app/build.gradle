@@ -19,7 +19,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.android.lint.kotlin"
+    namespace = "com.example.android.lint.kotlin"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -32,10 +32,10 @@ android {
 
     lintOptions {
         disable "GradleDependency" // such that we don't flag newly available Kotlin versions etc
-        xmlReport true
-        xmlOutput file("lint-report.xml")
-        textReport true
-        textOutput file("$buildDir/reports/lint-results.txt")
+        xmlReport = true
+        xmlOutput = file("lint-report.xml")
+        textReport = true
+        textOutput = file("$buildDir/reports/lint-results.txt")
         error 'SyntheticAccessor'
         error 'KotlinPropertyAccess'
     }

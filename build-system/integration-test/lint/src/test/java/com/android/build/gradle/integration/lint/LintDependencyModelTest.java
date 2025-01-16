@@ -135,8 +135,8 @@ public class LintDependencyModelTest {
     public void testMultipleJavaModuleDependencies() throws Exception {
         TestFileUtils.searchAndReplace(
                 project.getSubproject("app").getBuildFile(),
-                "checkDependencies true",
-                "checkDependencies false");
+                "checkDependencies = true",
+                "checkDependencies = false");
 
         project.executor().run(":app:lintDebug");
 

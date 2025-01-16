@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.test.lint.libmodel.app"
+    namespace = "com.android.test.lint.libmodel.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -11,17 +11,17 @@ android {
         targetSdkVersion 24
     }
     lintOptions {
-        textReport true
-        textOutput file("lint-results.txt")
+        textReport = true
+        textOutput = file("lint-results.txt")
         warning 'WeekBasedYear'
         // Only look for these two issues (which have been
         // planted in the project); otherwise newly added
         // lint issues may suddenly cause this test to fail
         // when it finds more than expected.
         checkOnly 'WeekBasedYear', 'SdCardPath'
-        absolutePaths false
-        explainIssues false
-        checkDependencies true
+        absolutePaths = false
+        explainIssues = false
+        checkDependencies = true
     }
 }
 

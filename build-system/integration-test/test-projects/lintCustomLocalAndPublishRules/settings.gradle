@@ -4,6 +4,6 @@ include ':app', ':library', ':library-publish-only', 'library-local-only',
 
 dependencyResolutionManagement {
     repositories {
-        maven { url 'localRepo' }
+        maven { url = 'localRepo' }
     }
 }
