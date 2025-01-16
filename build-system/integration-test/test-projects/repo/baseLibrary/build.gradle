@@ -5,7 +5,7 @@ apply plugin: 'maven-publish'
 
 publishing {
     repositories {
-        maven { url '../testrepo' }
+        maven { url = '../testrepo' }
     }
 }
 
@@ -15,7 +15,7 @@ dependencies {
 }
 
 android {
-    namespace "com.example.android.multiproject.library.base"
+    namespace = "com.example.android.multiproject.library.base"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

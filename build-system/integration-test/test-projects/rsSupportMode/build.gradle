@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.rs.image2"
+    namespace = "com.android.rs.image2"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -12,9 +12,9 @@ android {
         minSdkVersion libs.versions.supportLibMinSdk.get()
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion 16
-        renderscriptTargetApi 18
-        renderscriptSupportModeEnabled true
-        renderscriptSupportModeBlasEnabled false
+        renderscriptTargetApi = 18
+        renderscriptSupportModeEnabled = true
+        renderscriptSupportModeBlasEnabled = false
     }
 
     flavorDimensions 'abi'
@@ -37,7 +37,7 @@ android {
     }
 
     buildFeatures {
-        renderScript true
+        renderScript = true
     }
 }
 

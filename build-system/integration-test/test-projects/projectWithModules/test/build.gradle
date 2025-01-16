@@ -1,8 +1,8 @@
 apply plugin: 'com.android.test'
 
 android {
-    namespace "com.android.tests.basic.test"
-    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    namespace = "com.android.tests.basic.test"
+    compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
         minSdkVersion 16

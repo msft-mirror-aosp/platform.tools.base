@@ -11,7 +11,7 @@ java {
 
 publishing {
     repositories {
-        maven { url '../testrepo' }
+        maven { url = '../testrepo' }
     }
     publishing {
         publications {

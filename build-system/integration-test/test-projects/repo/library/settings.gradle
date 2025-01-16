@@ -1,5 +1,5 @@
 dependencyResolutionManagement {
     repositories {
-        maven { url '../testrepo' }
+        maven { url = '../testrepo' }
     }
 }

@@ -167,7 +167,7 @@ public class RenderscriptNdkTest {
     @Test
     public void checkOldVersionApi() throws IOException, InterruptedException {
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "renderscriptTargetApi 28", "renderscriptTargetApi 20");
+                project.getBuildFile(), "renderscriptTargetApi = 28", "renderscriptTargetApi = 20");
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(), "minSdkVersion 21", "minSdkVersion 20");
 
