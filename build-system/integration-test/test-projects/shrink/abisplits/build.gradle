@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-  namespace "com.android.tests.shrink"
+  namespace = "com.android.tests.shrink"
   compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
   buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -14,14 +14,14 @@ android {
 
   buildTypes {
       release {
-        shrinkResources true
+        shrinkResources = true
         minifyEnabled true
       }
   }
 
   splits {
     abi {
-      enable true
+      enable = true
     }
   }
 }

@@ -25,11 +25,11 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    publishNonDefault true
+    publishNonDefault = true
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()

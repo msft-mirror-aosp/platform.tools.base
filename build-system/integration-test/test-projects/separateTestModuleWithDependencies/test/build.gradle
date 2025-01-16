@@ -1,7 +1,7 @@
 apply plugin: 'com.android.test'
 
 android {
-    namespace "com.android.tests.basic.test"
+    namespace = "com.android.tests.basic.test"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
