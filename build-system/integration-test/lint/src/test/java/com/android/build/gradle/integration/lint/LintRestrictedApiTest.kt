@@ -48,8 +48,8 @@ class LintRestrictedApiTest(private val checkDependencies: Boolean) {
 
                     android {
                         lintOptions {
-                            abortOnError false
-                            textOutput file("lint-results.txt")
+                            abortOnError = false
+                            textOutput = file("lint-results.txt")
                         }
                     }
                 """.trimIndent()
@@ -151,7 +151,7 @@ class LintRestrictedApiTest(private val checkDependencies: Boolean) {
                 """
                     android {
                         lintOptions {
-                            checkDependencies true
+                            checkDependencies = true
                         }
                     }
                 """.trimIndent()

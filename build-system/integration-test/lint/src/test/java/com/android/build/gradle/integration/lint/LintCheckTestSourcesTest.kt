@@ -65,12 +65,12 @@ class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
             .appendText(
                 """
                     android {
-                        testBuildType "release"
+                        testBuildType = "release"
                         lintOptions {
-                            abortOnError false
-                            enable 'StopShip'
-                            textOutput file("lint-results.txt")
-                            checkDependencies true
+                            abortOnError = false
+                            enable('StopShip')
+                            textOutput = file("lint-results.txt")
+                            checkDependencies = true
                         }
                     }
                 """.trimIndent()
@@ -81,9 +81,9 @@ class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
             .appendText(
                 """
                     android {
-                        testBuildType "release"
+                        testBuildType = "release"
                         lintOptions {
-                            enable 'StopShip'
+                            enable('StopShip')
                         }
                     }
                 """.trimIndent()
@@ -96,7 +96,7 @@ class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
                     apply plugin: 'com.android.lint'
 
                     lintOptions {
-                        enable 'StopShip'
+                        enable('StopShip')
                     }
                 """.trimIndent()
             )
@@ -194,13 +194,13 @@ class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
         // Add "checkTestSources true" to all build files, and then check for errors.
         project.getSubproject(":app")
             .buildFile
-            .appendText("\nandroid.lintOptions.checkTestSources true\n")
+            .appendText("\nandroid.lintOptions.checkTestSources = true\n")
         project.getSubproject(":lib")
             .buildFile
-            .appendText("\nandroid.lintOptions.checkTestSources true\n")
+            .appendText("\nandroid.lintOptions.checkTestSources = true\n")
         project.getSubproject(":javaLib")
             .buildFile
-            .appendText("\nlintOptions.checkTestSources true\n")
+            .appendText("\nlintOptions.checkTestSources = true\n")
         getExecutor().run(":app:lintRelease")
         assertThat(reportFile).exists()
         assertThat(reportFile).containsAllOf(
@@ -224,7 +224,7 @@ class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
         // Add "ignoreTestSources true" to the app build file, and then check for the warning.
         project.getSubproject(":app")
             .buildFile
-            .appendText("\nandroid.lintOptions.ignoreTestSources true\n")
+            .appendText("\nandroid.lintOptions.ignoreTestSources = true\n")
         getExecutor().run(":app:lintRelease")
         assertThat(reportFile).exists()
         assertThat(reportFile).contains("Warning: The resource R.string.foo appears to be unused")

@@ -47,8 +47,8 @@ class LintProguardFilesTest {
                                 }
 
                                 lintOptions {
-                                    abortOnError false
-                                    textOutput file("lint-results.txt")
+                                    abortOnError = false
+                                    textOutput = file("lint-results.txt")
                                     error 'ByteOrderMark'
                                 }
                             }
@@ -71,8 +71,8 @@ class LintProguardFilesTest {
                                 }
 
                                 lintOptions {
-                                    abortOnError false
-                                    textOutput file("lint-results.txt")
+                                    abortOnError = false
+                                    textOutput = file("lint-results.txt")
                                     error 'ByteOrderMark'
                                 }
                             }

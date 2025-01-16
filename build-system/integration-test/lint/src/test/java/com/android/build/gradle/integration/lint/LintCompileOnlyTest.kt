@@ -34,7 +34,7 @@ class LintCompileOnlyTest {
                 """
                     android {
                         lintOptions {
-                            textOutput file("lint-results.txt")
+                            textOutput = file("lint-results.txt")
                             error 'StopShip'
                         }
                     }
@@ -142,8 +142,8 @@ class LintCompileOnlyTest {
             """
                     android {
                         lintOptions {
-                            checkDependencies true
-                            abortOnError false
+                            checkDependencies = true
+                            abortOnError = false
                         }
                     }
                     """.trimIndent()

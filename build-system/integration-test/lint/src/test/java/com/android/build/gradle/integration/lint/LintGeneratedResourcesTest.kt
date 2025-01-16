@@ -61,12 +61,12 @@ class LintGeneratedResourcesTest {
                             android.applicationVariants.all { variant ->
                                 ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.dirName}")
                                 def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
-                                    value '<resources>\n' +
+                                    value = '<resources>\n' +
                                             '    <!-- xml comment -->\n' +
                                             '    <string\n' +
                                             '        name="foo">Foo</string>\n' +
                                             '</resources>'
-                                    outputFile file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
+                                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
                                 }
                                 resFolder.builtBy(resGenerationTask)
                                 variant.registerGeneratedResFolders(resFolder)
@@ -75,12 +75,12 @@ class LintGeneratedResourcesTest {
                             android.testVariants.all { variant ->
                                 ConfigurableFileCollection resFolder = files("${"$"}{buildDir}/customRes/${"$"}{variant.name}")
                                 def resGenerationTask = tasks.create(name: "generateResFor${"$"}{variant.name.capitalize()}", type: GenerateRes) {
-                                    value '<resources>\n' +
+                                    value = '<resources>\n' +
                                             '    <!-- xml comment -->\n' +
                                             '    <string\n' +
                                             '        name="foo">Foo</string>\n' +
                                             '</resources>'
-                                    outputFile file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
+                                    outputFile = file("${"$"}{resFolder.singleFile.absolutePath}/values/generated.xml")
                                 }
                                 resFolder.builtBy(resGenerationTask)
                                 variant.registerGeneratedResFolders(resFolder)

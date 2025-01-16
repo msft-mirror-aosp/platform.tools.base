@@ -96,8 +96,8 @@ class LintDynamicFeatureTest {
                 """
                     android {
                         lintOptions {
-                            abortOnError false
-                            textOutput file("lint-results.txt")
+                            abortOnError = false
+                            textOutput = file("lint-results.txt")
                         }
                     }
                     """.trimIndent()
@@ -177,9 +177,9 @@ class LintDynamicFeatureTest {
             """
                 android {
                     lintOptions {
-                        checkDependencies true
-                        abortOnError false
-                        textOutput file("lint-results.txt")
+                        checkDependencies = true
+                        abortOnError = false
+                        textOutput = file("lint-results.txt")
                     }
                 }
             """.trimIndent()
@@ -365,7 +365,7 @@ class LintDynamicFeatureTest {
     fun testNoMisplacedOutputFiles() {
         TestFileUtils.appendToFile(
             project.getSubproject(":app").buildFile,
-            "\n\nbuildDir 'foo'\n\n"
+            "\n\nbuildDir = 'foo'\n\n"
         )
         project.executor().run("app:clean", ":app:lintDebug")
         val defaultAppBuildDir = File(project.getSubproject(":app").projectDir, "build")

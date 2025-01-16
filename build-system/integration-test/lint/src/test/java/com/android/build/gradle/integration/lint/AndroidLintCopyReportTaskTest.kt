@@ -38,7 +38,7 @@ class AndroidLintCopyReportTaskTest {
                         """
                             android {
                                 lintOptions {
-                                    textOutput file("lint-results.txt")
+                                    textOutput = file("lint-results.txt")
                                 }
                             }
                         """.trimIndent()

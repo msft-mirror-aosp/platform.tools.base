@@ -60,9 +60,9 @@ class LintDependencySdkIntCheckTest {
                 """
                     android {
                         lintOptions {
-                            abortOnError false
-                            textOutput file("lint-results.txt")
-                            checkDependencies false
+                            abortOnError = false
+                            textOutput = file("lint-results.txt")
+                            checkDependencies = false
                         }
                     }
 

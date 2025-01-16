@@ -62,10 +62,10 @@ class LintCheckDependenciesTest {
                 """
                     android {
                         lintOptions {
-                            abortOnError false
-                            enable 'StopShip'
-                            textOutput file("lint-results.txt")
-                            checkDependencies false
+                            abortOnError = false
+                            enable('StopShip')
+                            textOutput = file("lint-results.txt")
+                            checkDependencies = false
                         }
                     }
                 """.trimIndent()
@@ -77,7 +77,7 @@ class LintCheckDependenciesTest {
                 """
                     android {
                         lintOptions {
-                            enable 'StopShip'
+                            enable('StopShip')
                         }
                     }
                 """.trimIndent()
@@ -89,7 +89,7 @@ class LintCheckDependenciesTest {
                 """
                     android {
                         lintOptions {
-                            enable 'StopShip'
+                            enable('StopShip')
                         }
                     }
                 """.trimIndent()
@@ -150,8 +150,8 @@ class LintCheckDependenciesTest {
         // in app's lint report.
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
-            "checkDependencies false",
-            "checkDependencies true",
+            "checkDependencies = false",
+            "checkDependencies = true",
         )
         project.executor().run(":app:lintRelease")
         assertThat(reportFile).exists()
@@ -171,7 +171,7 @@ class LintCheckDependenciesTest {
         )
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
-            "abortOnError false",
+            "abortOnError = false",
             "abortOnError true",
         )
         // First run with checkDependencies false
@@ -182,8 +182,8 @@ class LintCheckDependenciesTest {
         // in app's lint report.
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
-            "checkDependencies false",
-            "checkDependencies true",
+            "checkDependencies = false",
+            "checkDependencies = true",
         )
         project.executor().expectFailure().run(":app:lintVitalRelease")
         ScannerSubject.assertThat(project.buildResult.stderr)
@@ -201,8 +201,8 @@ class LintCheckDependenciesTest {
         project.buildResult.stdout.use { ScannerSubject.assertThat(it).doesNotContain(warning) }
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
-            "checkDependencies false",
-            "checkDependencies true",
+            "checkDependencies = false",
+            "checkDependencies = true",
         )
         // We expect the warning when checkDependencies is true
         project.executor().run(":app:lintDebug")

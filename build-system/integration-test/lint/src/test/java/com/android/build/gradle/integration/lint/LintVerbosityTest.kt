@@ -39,7 +39,7 @@ class LintVerbosityTest {
                                 lintOptions {
                                     abortOnError = false
                                     quiet = false
-                                    error = 'AccidentalOctal'
+                                    error 'AccidentalOctal'
                                 }
                                 defaultConfig {
                                     versionCode 010
@@ -55,7 +55,7 @@ class LintVerbosityTest {
         project.executor().withArgument("--info").run("lintDebug")
         ScannerSubject.assertThat(project.buildResult.stdout).contains("Wrote HTML report to ")
         // then set quiet to true and check that stdout doesn't contain "Scanning".
-        TestFileUtils.searchAndReplace(project.buildFile, "quiet false", "quiet true")
+        TestFileUtils.searchAndReplace(project.buildFile, "quiet = false", "quiet = true")
         project.executor().withArgument("--info").run("lintDebug")
         ScannerSubject.assertThat(project.buildResult.stdout).doesNotContain("Wrote HTML report to ")
     }
