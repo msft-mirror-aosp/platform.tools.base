@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace "simple.app"
+    namespace = "simple.app"
     compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
 
     flavorDimensions 'api', 'version'

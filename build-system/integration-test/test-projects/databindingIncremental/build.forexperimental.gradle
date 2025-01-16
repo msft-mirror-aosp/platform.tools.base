@@ -20,7 +20,7 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        namespace "android.databinding.testapp"
+        namespace = "android.databinding.testapp"
         compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
         buildToolsVersion = libs.versions.buildToolsVersion.get()
         defaultConfig {
