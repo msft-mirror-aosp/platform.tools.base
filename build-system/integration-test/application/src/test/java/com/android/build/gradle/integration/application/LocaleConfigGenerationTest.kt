@@ -161,7 +161,7 @@ class LocaleConfigGenerationTest {
 
                 android {
                     androidResources {
-                        generateLocaleConfig $generateLocaleConfig
+                        generateLocaleConfig = $generateLocaleConfig
                     }
                 }
 
@@ -181,7 +181,7 @@ class LocaleConfigGenerationTest {
                 """.trimIndent()
         }
         if (pseudoLocalesEnabled) {
-            dslString += "\nandroid.buildTypes.debug.pseudoLocalesEnabled true\n"
+            dslString += "\nandroid.buildTypes.debug.pseudoLocalesEnabled = true\n"
         }
 
         project.getSubproject("app").buildFile.appendText(dslString)

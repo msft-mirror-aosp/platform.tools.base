@@ -37,7 +37,7 @@ class MissingNamespaceTest {
     fun before() {
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "namespace \"${HelloWorldApp.NAMESPACE}\"",
+            "namespace = \"${HelloWorldApp.NAMESPACE}\"",
             ""
         )
     }

@@ -58,7 +58,7 @@ class JacocoLibraryProjectTest {
             apply plugin: 'jacoco'
 
             $buildFile
-            android.buildTypes.debug.enableAndroidTestCoverage true
+            android.buildTypes.debug.enableAndroidTestCoverage = true
             dependencies {
                 testImplementation "junit:junit:4.12"
             }

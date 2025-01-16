@@ -69,7 +69,7 @@ class CoreLibraryDesugarConversionTest(val minSdkVersion: Int) {
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
                         targetCompatibility JavaVersion.VERSION_1_8
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
                 }
                 android.defaultConfig.multiDexEnabled = true

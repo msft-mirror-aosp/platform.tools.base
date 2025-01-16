@@ -93,7 +93,7 @@ class DifferentCompileSdkPerModuleTest {
                     """
                     |apply plugin: 'com.android.library'
                     |android {
-                    |    namespace "$namespace"
+                    |    namespace = "$namespace"
                     |    compileSdkVersion $compileSdkVersion
                     |}
                     |""".trimMargin()

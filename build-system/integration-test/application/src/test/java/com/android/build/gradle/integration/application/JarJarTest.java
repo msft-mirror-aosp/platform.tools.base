@@ -61,7 +61,7 @@ public class JarJarTest {
                         + "android.defaultConfig {\n"
                         + "    minSdkVersion 21\n"
                         + "    targetSdkVersion 21\n"
-                        + "    multiDexEnabled true\n"
+                        + "    multiDexEnabled = true\n"
                         + "}\n");
 
         // legacy incremental transform uses deprecated gradle api
@@ -80,7 +80,7 @@ public class JarJarTest {
                 "\n"
                         + "android.defaultConfig {\n"
                         + "    minSdkVersion 19\n"
-                        + "    multiDexEnabled true\n"
+                        + "    multiDexEnabled = true\n"
                         + "}\n");
 
         // legacy incremental transform uses deprecated gradle api

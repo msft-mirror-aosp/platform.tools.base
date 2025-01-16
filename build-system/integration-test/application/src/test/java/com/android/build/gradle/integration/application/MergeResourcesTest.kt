@@ -367,7 +367,7 @@ class MergeResourcesTest {
                     buildTypes {
                         debug {
                             minifyEnabled true
-                            shrinkResources true
+                            shrinkResources = true
                         }
                     }
                 }
@@ -386,7 +386,7 @@ class MergeResourcesTest {
         // Run an incremental build with shrinkResources disabled, the MergeResources task should
         // not be UP-TO-DATE and the apk size should be larger
         TestFileUtils.searchAndReplace(
-            appBuildFile, "shrinkResources true", "shrinkResources false"
+            appBuildFile, "shrinkResources = true", "shrinkResources = false"
         )
         result = project.executor().run(":app:assembleDebug")
         assertThat(result.getTask(":app:mergeDebugResources")).didWork()
@@ -397,7 +397,7 @@ class MergeResourcesTest {
         // Run an incremental build again with shrinkResources enabled, the MergeResources task
         // again should not be UP-TO-DATE and the apk size must be exactly the same as the first
         TestFileUtils.searchAndReplace(
-            appBuildFile, "shrinkResources false", "shrinkResources true"
+            appBuildFile, "shrinkResources = false", "shrinkResources = true"
         )
         result = project.executor().run(":app:assembleDebug")
         assertThat(result.getTask(":app:mergeDebugResources")).didWork()
@@ -501,7 +501,7 @@ class MergeResourcesTest {
         TestFileUtils.appendToFile(
                 appProject.buildFile,
                 "android.buildTypes.release.minifyEnabled true\n" +
-                        "android.buildTypes.release.shrinkResources true"
+                        "android.buildTypes.release.shrinkResources = true"
         )
         FileUtils.createFile(noCompileLayout,
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +

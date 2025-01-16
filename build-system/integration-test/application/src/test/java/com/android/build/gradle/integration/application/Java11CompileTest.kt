@@ -62,7 +62,7 @@ class Java11CompileTest {
                         targetCompatibility JavaVersion.VERSION_11
                     }
                     lintOptions {
-                        checkReleaseBuilds false
+                        checkReleaseBuilds = false
                     }
                 }
             """.trimIndent()
@@ -150,7 +150,7 @@ class Java11CompileTest {
                         android {
                           buildTypes {
                             debug {
-                                testCoverageEnabled true
+                                testCoverageEnabled = true
                             }
                           }
                           compileOptions {
