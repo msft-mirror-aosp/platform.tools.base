@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
-    namespace "com.example.helloworldcompose"
+    namespace = "com.example.helloworldcompose"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
 

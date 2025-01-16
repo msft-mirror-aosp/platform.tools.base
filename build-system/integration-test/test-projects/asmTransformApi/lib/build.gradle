@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.lib"
+    namespace = "com.example.lib"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8

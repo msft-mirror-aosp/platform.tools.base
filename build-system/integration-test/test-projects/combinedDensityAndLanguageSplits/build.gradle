@@ -5,7 +5,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-  namespace "com.android.tests.basic"
+  namespace = "com.android.tests.basic"
   compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -20,11 +20,11 @@ android {
 
   splits {
     density {
-      enable true
+      enable = true
       exclude "ldpi", "tvdpi", "xxxhdpi"
     }
     language {
-        enable true
+        enable = true
         include "fr,fr-rBE", "fr-rCA", "en"
     }
   }
