@@ -52,9 +52,13 @@ internal class MdnsServiceListParser {
 
         // ADB Host code, OpenScreen implementation
         // https://cs.android.com/android/platform/superproject/+/fbcbf2500b2887952f862fa882741f80464bdbca:packages/modules/adb/client/transport_mdns.cpp;l=290;drc=fbcbf2500b2887952f862fa882741f80464bdbca
+        val dedupedMdnsServiceInfos = mutableSetOf<MdnsServiceInfo>()
         text.split(ADB_NEW_LINE)
-            .filter { it.trim().isNotBlank() }
             .forEachIndexed { lineIndex, line ->
+                if (line.trim().isBlank()) {
+                    return@forEachIndexed
+                }
+
                 val matchResult = lineRegex.find(line)
 
                 if (matchResult == null) {
@@ -68,7 +72,16 @@ internal class MdnsServiceListParser {
                     val instanceName = matchResult.groupValues[1]
                     val serviceName = matchResult.groupValues[2]
                     val deviceAddress = DeviceAddress(matchResult.groupValues[3])
-                    builder.addEntry(MdnsServiceInfo(instanceName, serviceName, deviceAddress))
+
+                    val mdnsServiceInfo = MdnsServiceInfo(instanceName, serviceName, deviceAddress)
+                    if (dedupedMdnsServiceInfos.add(mdnsServiceInfo)) {
+                        builder.addEntry(mdnsServiceInfo)
+                    } else {
+                        val error = ErrorLine(
+                            "Duplicate mDNS service entry detected", lineIndex, line
+                        )
+                        builder.addError(error)
+                    }
                 } catch (ignored: Exception) {
                     val error =
                         ErrorLine(

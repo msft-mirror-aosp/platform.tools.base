@@ -26,7 +26,7 @@ import java.net.InetSocketAddress
  * consumer, [DeviceAddress] allows round-tripping an arbitrary address from/to the ADB server
  * without relying on the specific format of the address.
  */
-class DeviceAddress(
+data class DeviceAddress(
     /**
      * The [String] representation of the [DeviceAddress], typically in the form `host:port`.
      */
