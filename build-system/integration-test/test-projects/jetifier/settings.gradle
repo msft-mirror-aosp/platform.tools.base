@@ -3,7 +3,7 @@ include ':app'
 dependencyResolutionManagement {
     repositories {
         maven {
-            url 'localRepo'
+            url = 'localRepo'
             metadataSources {
                 mavenPom()
                 artifact()

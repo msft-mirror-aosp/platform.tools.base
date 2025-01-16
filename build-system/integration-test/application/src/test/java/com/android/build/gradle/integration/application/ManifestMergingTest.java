@@ -441,7 +441,7 @@ public class ManifestMergingTest {
     @Test
     public void checkNoAvailableNamespace() throws Exception {
         TestFileUtils.searchAndReplace(
-                flavors.getBuildFile(), "namespace \"com.android.tests.flavors\"", "");
+                flavors.getBuildFile(), "namespace = \"com.android.tests.flavors\"", "");
         GradleBuildResult buildResult =
                 flavors.executor().expectFailure().run("clean", "assembleF1FaDebug");
         ScannerSubject.assertThat(buildResult.getStderr()).contains("Namespace not specified");

@@ -211,9 +211,9 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("old_variant_api.build.gradle")))
-            .isEqualTo("6f5bcddd76198403d48e8ea1acf0a50f4c78762b")
+            .isEqualTo("f048e4df45934e6bbb8c48efb55cb1732bf6f903")
         Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("new_variant_api.build.gradle")))
-            .isEqualTo("3e32c2339d7a88e0840e3fc7a304c57c99b2cd80")
+            .isEqualTo("3b98a3744866d60e9034538ca805f1b0285ab873")
     }
 
     private fun getCustomPath(sourceType: String, variantName: String, index: String = ""): String =

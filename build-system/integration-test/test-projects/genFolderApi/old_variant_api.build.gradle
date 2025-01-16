@@ -8,7 +8,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 }
@@ -51,9 +51,9 @@ android.applicationVariants.all { variant ->
     // create a task that generates a java class
     File sourceFolder = file("${buildDir}/customJava/${variant.dirName}")
     def javaGenerationTask = tasks.create(name: "generatedJavaFor${variant.name.capitalize()}", type: GenerateCode) {
-        value java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())
-        className "Foo"
-        outputFile file("${sourceFolder.absolutePath}/com/custom/Foo.java")
+        value = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())
+        className = "Foo"
+        outputFile = file("${sourceFolder.absolutePath}/com/custom/Foo.java")
     }
 
     variant.registerJavaGeneratingTask(javaGenerationTask, sourceFolder)
@@ -61,9 +61,9 @@ android.applicationVariants.all { variant ->
     // register another similar task, and wire it using the other registerJavaGeneratingTask API
     File sourceFolder2 = file("${buildDir}/customJava2/${variant.dirName}")
     def javaGenerationTask2 = tasks.register("generatedJavaFor${variant.name.capitalize()}2", GenerateCode) {
-        value java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())
-        className "Bar"
-        outputFile file("${sourceFolder.absolutePath}/com/custom/Bar.java")
+        value = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now())
+        className = "Bar"
+        outputFile = file("${sourceFolder.absolutePath}/com/custom/Bar.java")
     }
 
     variant.registerJavaGeneratingTask(javaGenerationTask2, sourceFolder2)
@@ -71,8 +71,8 @@ android.applicationVariants.all { variant ->
     // create a task that generates an XML file class
     File resFolder = file("${buildDir}/customRes/${variant.dirName}")
     def resGenerationTask = tasks.create(name: "generatedResFor${variant.name.capitalize()}", type: GenerateRes) {
-        value '<xml>' + java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now()) + '</xml>'
-        outputFile file("${resFolder.absolutePath}/xml/generated.xml")
+        value = '<xml>' + java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm'Z'").withZone(ZoneId.from(ZoneOffset.UTC)).format(Instant.now()) + '</xml>'
+        outputFile = file("${resFolder.absolutePath}/xml/generated.xml")
     }
 
     variant.registerResGeneratingTask(resGenerationTask, resFolder)
@@ -80,11 +80,11 @@ android.applicationVariants.all { variant ->
     // create a task that generates a values class
     ConfigurableFileCollection resFolder2 = files("${buildDir}/customRes2/${variant.dirName}")
     def resGenerationTask2 = tasks.create(name: "generatedRes2For${variant.name.capitalize()}", type: GenerateRes) {
-        value '<resources>\n' +
+        value = '<resources>\n' +
                 '    <string\n' +
                 '        name="generated_string">Hello World</string>\n' +
                 '</resources>'
-        outputFile file("${resFolder2.singleFile.absolutePath}/values/generated.xml")
+        outputFile = file("${resFolder2.singleFile.absolutePath}/values/generated.xml")
     }
     resFolder2.builtBy(resGenerationTask2)
 

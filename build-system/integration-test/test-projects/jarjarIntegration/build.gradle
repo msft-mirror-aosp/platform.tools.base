@@ -9,7 +9,7 @@ if (buildToolsVersion < '21.0.0') {
 apply plugin: 'com.android.application'
 
 android {
-  namespace "com.android.tests.basic"
+  namespace = "com.android.tests.basic"
   compileSdkVersion 24 // TODO: b/120411432 (was libs.versions.latestCompileSdk.get())
   buildToolsVersion = libs.versions.buildToolsVersion.get()
 
