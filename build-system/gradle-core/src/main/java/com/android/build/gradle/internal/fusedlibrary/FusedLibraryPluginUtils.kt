@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.dependency.FilterShrinkerRulesTransform
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.getAarOrJarTypeToConsume
+import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.DslServicesImpl
 import com.android.build.gradle.internal.services.ProjectServices
@@ -124,29 +125,21 @@ fun configureElements(
         publications: Map<Artifact.Single<RegularFile>, AndroidArtifacts.ArtifactType>,
 ) {
     elements.attributes.attribute(
-            Usage.USAGE_ATTRIBUTE,
-            project.objects.named(Usage::class.java, usage)
+        Usage.USAGE_ATTRIBUTE,
+        project.objects.named(Usage::class.java, usage)
     )
     elements.isCanBeResolved = false
     elements.isCanBeConsumed = true
     elements.isTransitive = true
 
-    elements.outgoing.variants { variants ->
+    elements.outgoing.variants {
         for (publication in publications) {
-            // we are only interested in the last provider in the chain of transformers for this bundle.
-            // Obviously, this is theoretical at this point since there is no variant API to replace
-            // artifacts, there is always only one.
-            val bundleTaskProvider = publication.key.let {
-                artifacts
-                        .getArtifactContainer(it)
-                        .getTaskProviders()
-                        .last()
-            }
-            variants.create(publication.value.type) { variant ->
-                variant.artifact(bundleTaskProvider) { artifact ->
-                    artifact.type = publication.value.type
-                }
-            }
+            val artifactProvider = artifacts.get(publication.key)
+            publishArtifactToConfiguration(
+                elements,
+                artifactProvider,
+                publication.value
+            )
         }
     }
 }
