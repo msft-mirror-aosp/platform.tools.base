@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.test.myapplication"
+    namespace = "com.example.test.myapplication"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -13,9 +13,9 @@ android {
         versionName "1.0"
     }
     lintOptions {
-        checkDependencies true
-        textReport true
-        textOutput file("lint-report.txt")
+        checkDependencies = true
+        textReport = true
+        textOutput = file("lint-report.txt")
         disable 'MissingApplicationIcon'
     }
 }

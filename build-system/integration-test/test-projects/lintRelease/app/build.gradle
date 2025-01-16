@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.test.lint"
+    namespace = "com.android.test.lint"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -11,24 +11,24 @@ android {
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion libs.versions.latestCompileSdk.get()
 
-        signingConfig signingConfigs.debug
+        signingConfig = signingConfigs.debug
     }
 
     lintOptions {
-        xmlReport true
-        xmlOutput file("lint-report.xml")
-        textReport true
-        textOutput file("$buildDir/reports/lint-results.txt")
+        xmlReport = true
+        xmlOutput = file("lint-report.xml")
+        textReport = true
+        textOutput = file("$buildDir/reports/lint-results.txt")
     }
 
     buildTypes {
         debug {
             minifyEnabled false
-            shrinkResources false
+            shrinkResources = false
         }
         release {
             minifyEnabled true
-            shrinkResources true
+            shrinkResources = true
         }
     }
 

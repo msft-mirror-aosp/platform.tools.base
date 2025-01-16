@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -11,9 +11,9 @@ android {
     }
 
     lintOptions {
-        xmlOutput file("lint-results.xml")
+        xmlOutput = file("lint-results.xml")
         checkOnly 'ShortUniqueIdA', 'ShortUniqueIdB'
-        absolutePaths false
+        absolutePaths = false
     }
 }
 

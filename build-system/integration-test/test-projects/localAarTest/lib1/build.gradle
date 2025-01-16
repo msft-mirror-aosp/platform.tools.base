@@ -6,7 +6,7 @@ artifacts.add("default", file('lib1.aar'))
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.android.tests.libstest.lib1"
+    namespace = "com.android.tests.libstest.lib1"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

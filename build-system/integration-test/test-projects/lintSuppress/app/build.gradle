@@ -18,7 +18,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.android.lint.suppress"
+    namespace = "com.example.android.lint.suppress"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -29,12 +29,12 @@ android {
     }
 
     lintOptions {
-        checkAllWarnings true
-        checkTestSources false
-        checkReleaseBuilds false
-        checkDependencies false
+        checkAllWarnings = true
+        checkTestSources = false
+        checkReleaseBuilds = false
+        checkDependencies = false
         lintConfig file('extra.xml')
-        xmlReport true
-        xmlOutput file("lint-report.xml")
+        xmlReport = true
+        xmlOutput = file("lint-report.xml")
     }
 }

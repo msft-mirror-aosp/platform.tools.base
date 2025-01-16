@@ -10,9 +10,9 @@ dependencies {
 }
 
 lintOptions {
-    textReport true
-    textOutput file("lint-results.txt")
+    textReport = true
+    textOutput = file("lint-results.txt")
     disable 'DuplicatePlatformClasses'
-    absolutePaths false
-    abortOnError false
+    absolutePaths = false
+    abortOnError = false
 }

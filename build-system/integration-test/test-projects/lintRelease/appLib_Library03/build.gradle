@@ -1,12 +1,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.android.test.applib_library03"
+    namespace = "com.android.test.applib_library03"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
     defaultConfig {
-        minSdk 21
+        minSdk = 21
         targetSdk 30
         versionCode 1
         versionName "1.0"
@@ -15,11 +15,11 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
-            shrinkResources false
+            shrinkResources = false
         }
         release {
             minifyEnabled true
-            shrinkResources false
+            shrinkResources = false
         }
     }
 

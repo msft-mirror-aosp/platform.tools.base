@@ -10,7 +10,7 @@ lintOptions {
 
     htmlReport true
     htmlOutput file("lint-report.html")
-    textReport true
-    textOutput file("lint-results.txt")
-    absolutePaths false
+    textReport = true
+    textOutput = file("lint-results.txt")
+    absolutePaths = false
 }

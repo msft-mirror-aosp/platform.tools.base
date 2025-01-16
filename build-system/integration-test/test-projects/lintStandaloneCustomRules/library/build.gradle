@@ -5,11 +5,11 @@ plugins {
 }
 
 lintOptions {
-    textReport true
-    textOutput file("lint-results.txt")
+    textReport = true
+    textOutput = file("lint-results.txt")
     checkOnly 'UnitTestLintCheck2', 'UseValueOf'
-    absolutePaths false
-    abortOnError false
+    absolutePaths = false
+    abortOnError = false
 }
 
 dependencies {
