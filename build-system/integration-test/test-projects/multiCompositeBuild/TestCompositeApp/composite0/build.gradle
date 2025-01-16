@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.test.composite0.mylibrary"
+    namespace = "com.test.composite0.mylibrary"
     compileSdkVersion rootProject.ext.latestCompileSdk
 
     defaultConfig {

@@ -9,16 +9,16 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
     signingConfigs {
         myConfig {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
 
@@ -34,12 +34,12 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            signingConfig signingConfigs.myConfig
+            signingConfig = signingConfigs.myConfig
             proguardFile getDefaultProguardFile('proguard-android.txt')
         }
     }
 
     dexOptions {
-        incremental false
+        incremental = false
     }
 }
