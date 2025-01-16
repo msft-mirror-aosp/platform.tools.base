@@ -793,15 +793,7 @@ public class Main {
         protected @Nullable Set<File> getBootClassPath(
                 @NonNull Collection<? extends Project> knownProjects) {
             if (metadata != null && !metadata.getJdkBootClasspath().isEmpty()) {
-                boolean isAndroid = knownProjects.stream().anyMatch(Project::isAndroidProject);
-                if (!isAndroid) {
-                    return new HashSet<>(metadata.getJdkBootClasspath());
-                }
-
-                var fromSuper = super.getBootClassPath(knownProjects);
-                return fromSuper != null
-                        ? fromSuper
-                        : new HashSet<>(metadata.getJdkBootClasspath());
+                return new HashSet<>(metadata.getJdkBootClasspath());
             }
 
             return super.getBootClassPath(knownProjects);
