@@ -43,12 +43,12 @@ class RenderscriptDeprecationTest {
                         minSdkVersion 14
                         targetSdkVersion 28
 
-                        renderscriptTargetApi 28
-                        renderscriptSupportModeEnabled true
+                        renderscriptTargetApi = 28
+                        renderscriptSupportModeEnabled = true
                     }
 
                     buildFeatures {
-                        renderScript true
+                        renderScript = true
                     }
                 }
             """.trimIndent()
@@ -98,13 +98,13 @@ class RenderscriptDeprecationTest {
         // We expect no warning if renderscript is disabled
         TestFileUtils.appendToFile(
             project.buildFile,
-            "\nandroid.buildFeatures.renderScript false\n"
+            "\nandroid.buildFeatures.renderScript = false\n"
         )
         result  = project.executor().run("clean", "assembleDebug")
         assertThat(result.stdout).doesNotContain(expectedWarning)
 
         // We expect no warning if renderscript is enabled but there are no renderscript sources
-        TestFileUtils.searchAndReplace(project.buildFile, "renderScript false", "renderScript true")
+        TestFileUtils.searchAndReplace(project.buildFile, "renderScript = false", "renderScript = true")
         FileUtils.deleteIfExists(renderscriptFile)
         result  = project.executor().run("clean", "assembleDebug")
         assertThat(result.stdout).doesNotContain(expectedWarning)

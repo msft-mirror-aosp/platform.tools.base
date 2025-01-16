@@ -98,11 +98,11 @@ class DeterministicTaskOutputsTest {
     fun setUpProjects() {
         project1.getSubproject("app").buildFile.appendText("""
 
-            android.buildTypes.debug.testCoverageEnabled true
+            android.buildTypes.debug.testCoverageEnabled = true
         """.trimIndent())
         project2.getSubproject("app").buildFile.appendText("""
 
-            android.buildTypes.debug.testCoverageEnabled true
+            android.buildTypes.debug.testCoverageEnabled = true
         """.trimIndent())
     }
 

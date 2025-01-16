@@ -89,7 +89,7 @@ class DependenciesReportDslTest {
             """
                 android {
                     dependenciesInfo {
-                        includeInBundle true
+                        includeInBundle = true
                     }
                 }
             """
@@ -118,7 +118,7 @@ class DependenciesReportDslTest {
             """
                 android {
                     dependenciesInfo {
-                        includeInBundle false
+                        includeInBundle = false
                     }
                 }
             """

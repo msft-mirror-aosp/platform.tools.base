@@ -79,7 +79,7 @@ class CheckJetifierTaskTest {
                 """
                     dependencyResolutionManagement {
                         repositories {
-                            maven { url 'mavenRepo' }
+                            maven { url = 'mavenRepo' }
                         }
                     }
                 """.trimIndent()

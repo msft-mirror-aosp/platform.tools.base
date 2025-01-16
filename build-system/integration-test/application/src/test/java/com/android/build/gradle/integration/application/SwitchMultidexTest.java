@@ -55,11 +55,11 @@ public class SwitchMultidexTest {
                 "android {\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion Integer.parseInt(property('inject.minsdk')) \n"
-                        + "        multiDexEnabled Boolean.valueOf(property('inject.multidex'))\n"
+                        + "        multiDexEnabled = Boolean.valueOf(property('inject.multidex'))\n"
                         + "        multiDexKeepFile = project.file('keep.txt')\n"
                         + "    }\n"
                         + "    buildFeatures {\n"
-                        + "        buildConfig true\n"
+                        + "        buildConfig = true\n"
                         + "    }\n"
                         + "}\n"
                         + "\n");

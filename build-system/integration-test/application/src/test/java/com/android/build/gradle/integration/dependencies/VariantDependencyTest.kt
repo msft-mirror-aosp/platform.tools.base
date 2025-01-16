@@ -60,7 +60,7 @@ class VariantDependencyTest : ModelComparator() {
                         freeLollipopDebugImplementation
                         paidIcsImplementation
                     }
-                    namespace '${HelloWorldApp.NAMESPACE}'
+                    namespace = '${HelloWorldApp.NAMESPACE}'
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                     buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
                     flavorDimensions "model", "api"

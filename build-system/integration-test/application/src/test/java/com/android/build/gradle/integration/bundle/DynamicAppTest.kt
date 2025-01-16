@@ -1036,10 +1036,10 @@ class DynamicAppTest {
                 keyAlias, keyPass, keyStoreFile, storePass ->
             """
                 android.bundle.codeTransparency.signing {
-                    keyAlias '${StringEscapeUtils.escapeJava(keyAlias)}'
-                    keyPassword '${StringEscapeUtils.escapeJava(keyPass)}'
-                    storeFile file('${StringEscapeUtils.escapeJava(keyStoreFile.absolutePath)}')
-                    storePassword '${StringEscapeUtils.escapeJava(storePass)}'
+                    keyAlias = '${StringEscapeUtils.escapeJava(keyAlias)}'
+                    keyPassword = '${StringEscapeUtils.escapeJava(keyPass)}'
+                    storeFile = file('${StringEscapeUtils.escapeJava(keyStoreFile.absolutePath)}')
+                    storePassword = '${StringEscapeUtils.escapeJava(storePass)}'
                 }"""
         }
     }
@@ -1051,10 +1051,10 @@ class DynamicAppTest {
             """
                 android.signingConfigs {
                     forBundle {
-                        keyAlias '${StringEscapeUtils.escapeJava(keyAlias)}'
-                        keyPassword '${StringEscapeUtils.escapeJava(keyPass)}'
-                        storeFile file('${StringEscapeUtils.escapeJava(keyStoreFile.absolutePath)}')
-                        storePassword '${StringEscapeUtils.escapeJava(storePass)}'
+                        keyAlias = '${StringEscapeUtils.escapeJava(keyAlias)}'
+                        keyPassword = '${StringEscapeUtils.escapeJava(keyPass)}'
+                        storeFile = file('${StringEscapeUtils.escapeJava(keyStoreFile.absolutePath)}')
+                        storePassword = '${StringEscapeUtils.escapeJava(storePass)}'
                     }
                 }
                 androidComponents {

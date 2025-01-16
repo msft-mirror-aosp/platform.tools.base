@@ -40,7 +40,7 @@ public class D8DexingTest {
                         + "android {\n"
                         + "  defaultConfig {\n"
                         + "    minSdkVersion 26 \n"
-                        + "    multiDexEnabled true\n"
+                        + "    multiDexEnabled = true\n"
                         + "  }\n"
                         + "}\n");
         project.executor().run("assembleDebug");

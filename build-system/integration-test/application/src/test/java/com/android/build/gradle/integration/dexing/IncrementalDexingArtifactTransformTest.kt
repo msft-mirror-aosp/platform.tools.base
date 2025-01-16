@@ -58,7 +58,7 @@ class IncrementalDexingArtifactTransformTest {
             """
                 android {
                     buildFeatures {
-                        buildConfig true
+                        buildConfig = true
                     }
                 }
             """.trimIndent()

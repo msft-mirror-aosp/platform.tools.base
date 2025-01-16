@@ -126,7 +126,7 @@ class ArtProfileExternalDependenciesTest {
                         release {
                             optimization {
                                 baselineProfile {
-                                    ignoreFromAllExternalDependencies true
+                                    ignoreFromAllExternalDependencies = true
                                 }
                             }
                         }

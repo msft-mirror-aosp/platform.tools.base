@@ -121,7 +121,7 @@ class ProfileableTest {
     fun `test variant api the release build type to be profileable on Api 29`() {
         val app = project.getSubproject(":app")
         app.buildFile.apply {
-            appendText("android.compileSdk 29\n")
+            appendText("android.compileSdk = 29\n")
             appendText("""
             androidComponents {
                  beforeVariants(selector().withBuildType("release"), { builder ->
@@ -154,8 +154,8 @@ class ProfileableTest {
     fun `test dsl setting the release build type to be profileable on Api 29`() {
         val app = project.getSubproject(":app")
         app.buildFile.apply {
-            appendText("android.buildTypes.release.profileable true\n")
-            appendText("android.compileSdk 29")
+            appendText("android.buildTypes.release.profileable = true\n")
+            appendText("android.compileSdk = 29")
         }
 
         project.executor()
@@ -324,7 +324,7 @@ class ProfileableTest {
     fun `test fail on reading profileable from builder`() {
         val app = project.getSubproject(":app")
         app.buildFile.apply {
-            appendText("android.compileSdk 29\n")
+            appendText("android.compileSdk = 29\n")
             appendText(
                 """
             androidComponents {

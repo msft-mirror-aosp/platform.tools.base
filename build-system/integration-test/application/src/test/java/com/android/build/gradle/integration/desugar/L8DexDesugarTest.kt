@@ -51,7 +51,7 @@ class L8DexDesugarTest {
             android {
                 compileOptions.coreLibraryDesugaringEnabled = true
                 buildFeatures {
-                    buildConfig true
+                    buildConfig = true
                 }
             }
             dependencies {

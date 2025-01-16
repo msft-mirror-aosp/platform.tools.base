@@ -568,10 +568,10 @@ class ResourceShrinkerTest(
                 "android {\n" +
                         "    splits {\n" +
                         "        abi {\n" +
-                        "            enable true\n" +
+                        "            enable = true\n" +
                         "            reset()\n" +
                         "            include \"x86\", \"x86_64\", \"armeabi-v7a\", \"arm64-v8a\"\n" +
-                        "            universalApk true\n" +
+                        "            universalApk = true\n" +
                         "        }\n" +
                         "    }\n" +
                         "  }\n"

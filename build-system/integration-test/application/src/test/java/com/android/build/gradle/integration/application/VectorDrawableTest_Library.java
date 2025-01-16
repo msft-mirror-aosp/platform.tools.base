@@ -96,10 +96,10 @@ public class VectorDrawableTest_Library {
                         + "        apply plugin: \"com.android.library\"\n"
                         + "\n"
                         + "        android {\n"
-                        + "            namespace \""
+                        + "            namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "            compileSdkVersion "
+                        + "            compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "            buildToolsVersion \""
@@ -163,7 +163,7 @@ public class VectorDrawableTest_Library {
                 "\n"
                         + "                android.defaultConfig.vectorDrawables {\n"
                         + "                    // Try the DSL method without \"=\".\n"
-                        + "                    useSupportLibrary true\n"
+                        + "                    useSupportLibrary = true\n"
                         + "                }\n"
                         + "        ");
 
