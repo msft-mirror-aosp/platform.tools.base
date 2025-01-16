@@ -5,11 +5,11 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    testBuildType "proguard"
+    testBuildType = "proguard"
 
     defaultConfig {
         versionCode 12
@@ -30,7 +30,7 @@ android {
     }
 
     dexOptions {
-        incremental false
+        incremental = false
     }
 }
 

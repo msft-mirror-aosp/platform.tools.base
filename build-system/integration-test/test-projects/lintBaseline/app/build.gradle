@@ -17,7 +17,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.android.lint.kotlin"
+    namespace = "com.example.android.lint.kotlin"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
