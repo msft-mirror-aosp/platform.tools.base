@@ -113,7 +113,7 @@ class ExtractNativeDebugMetadataTaskTest(private val debugSymbolLevel: DebugSymb
             }
         project.getSubproject(":app").buildFile.appendText(
             """
-                android.buildTypes.release.ndk.debugSymbolLevel '$debugSymbolLevel'
+                android.buildTypes.release.ndk.debugSymbolLevel = '$debugSymbolLevel'
 
                 """.trimIndent()
         )

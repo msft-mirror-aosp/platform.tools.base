@@ -42,12 +42,12 @@ class NdkRiscvBuildTest {
             project.buildFile,
             """apply plugin: ${if (isLibrary) "\"com.android.library\"" else "\"com.android.application\""}
                 android {
-                    namespace "com.example.hellojni"
+                    namespace = "com.example.hellojni"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                    ndkVersion '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
+                    ndkVersion = '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
                     buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                     defaultConfig {
-                        minSdk 21
+                        minSdk = 21
                     }
                     externalNativeBuild {
                         cmake {
@@ -56,8 +56,8 @@ class NdkRiscvBuildTest {
                     }
                     splits {
                         abi {
-                            enable true
-                            universalApk true
+                            enable = true
+                            universalApk = true
                             reset()
                             include 'x86', 'riscv64'
                         }

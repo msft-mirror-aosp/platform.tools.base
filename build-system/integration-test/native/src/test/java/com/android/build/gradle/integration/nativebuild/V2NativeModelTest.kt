@@ -75,16 +75,16 @@ class V2NativeModelTest(private val cmakeVersion: String) : ModelComparator() {
           project.buildFile, """
                 apply plugin: 'com.android.application'
                 android {
-                    namespace "com.example.hellojni"
+                    namespace = "com.example.hellojni"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                     buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
                     defaultConfig {
-                      minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                      minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     }
                     externalNativeBuild {
                       cmake {
                         path "CMakeLists.txt"
-                        version "$cmakeVersion"
+                        version = "$cmakeVersion"
                       }
                     }
                 }

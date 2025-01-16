@@ -277,15 +277,15 @@ abstract class AbstractModuleToModuleDepsTest(
 
             android {
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                ndkVersion "$ndkVersion"
-                ndkPath "${getTestProject().ndkPath}"
+                ndkVersion = "$ndkVersion"
+                ndkPath = "${getTestProject().ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     $appAbiFilters
                 }
 
                 buildFeatures {
-                    prefab $appUsesPrefab
+                    prefab = $appUsesPrefab
                 }
             }
 
@@ -319,25 +319,25 @@ abstract class AbstractModuleToModuleDepsTest(
                 """.trimIndent()
             else -> error(libStl)
         }
-        val headerStanza = if (headerType.createHeaderDir) "headers \"src/main/cpp/include\"\n" else ""
+        val headerStanza = if (headerType.createHeaderDir) "headers = \"src/main/cpp/include\"\n" else ""
 
         getTestProject().getSubproject(":lib").buildFile.appendText(
             """
             android {
-                ndkVersion "$ndkVersion"
-                ndkPath "${getTestProject().ndkPath}"
+                ndkVersion = "$ndkVersion"
+                ndkPath = "${getTestProject().ndkPath}"
 
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     $libAbiFilters
                 }
                 buildFeatures {
-                    prefabPublishing $libUsesPrefabPublish
+                    prefabPublishing = $libUsesPrefabPublish
                 }
                 prefab {
                     foo {
                         $headerStanza
-                        libraryName "libfoo"
+                        libraryName = "libfoo"
                     }
                 }
             }

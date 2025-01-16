@@ -325,7 +325,7 @@ class PrefabPublishingTest(
             }
 
             android {
-                namespace "com.example.foo"
+                namespace = "com.example.foo"
                 compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
                 buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -356,14 +356,14 @@ class PrefabPublishingTest(
                 }
 
                 buildFeatures {
-                    version "1.0.0-rc01"
-                    prefabPublishing true
+                    version = "1.0.0-rc01"
+                    prefabPublishing = true
                 }
 
                 prefab {
                     foo {
-                        headers "src/main/cpp/include"
-                        libraryName "libfoo_static"
+                        headers = "src/main/cpp/include"
+                        libraryName = "libfoo_static"
                     }
                 }
             }
@@ -458,7 +458,7 @@ class PrefabPublishingTest(
             }
 
             android {
-                namespace "com.example.foo"
+                namespace = "com.example.foo"
                 compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
                 buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -486,13 +486,13 @@ class PrefabPublishingTest(
                 }
 
                 buildFeatures {
-                    prefabPublishing true
+                    prefabPublishing = true
                 }
 
                 prefab {
                     foo {
-                        headers "src/main/cpp/include"
-                        headerOnly true
+                        headers = "src/main/cpp/include"
+                        headerOnly = true
                     }
                 }
             }

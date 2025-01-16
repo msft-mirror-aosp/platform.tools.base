@@ -51,15 +51,15 @@ public class NoSplitNdkVariantsTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \"com.example.hellojni\"\n"
-                        + "    compileSdkVersion "
+                        + "    namespace = \"com.example.hellojni\"\n"
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
                         + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
                         + "'\n"
                         + "        defaultConfig {\n"
-                        + "          minSdk "
+                        + "          minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n}\n"
                         + "    externalNativeBuild {\n"

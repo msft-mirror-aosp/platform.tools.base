@@ -20,11 +20,11 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion libs.versions.buildToolsVersion.get()
 
-    testBuildType "debug"
+    testBuildType = "debug"
 
     defaultConfig {
         versionCode 12
@@ -37,7 +37,7 @@ android {
 
     lintOptions {
         // HardcodeDebugMode to test copying files from non-debuggable apks.
-        abortOnError false
+        abortOnError = false
     }
 }
 

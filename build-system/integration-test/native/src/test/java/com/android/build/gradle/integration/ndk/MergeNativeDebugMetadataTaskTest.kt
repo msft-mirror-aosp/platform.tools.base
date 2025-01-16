@@ -72,7 +72,7 @@ class MergeNativeDebugMetadataTaskTest(private val debugSymbolLevel: DebugSymbol
             }
         project.getSubproject(":app").buildFile.appendText(
             """
-                android.buildTypes.debug.ndk.debugSymbolLevel '$debugSymbolLevel'
+                android.buildTypes.debug.ndk.debugSymbolLevel = '$debugSymbolLevel'
 
                 """.trimIndent()
         )

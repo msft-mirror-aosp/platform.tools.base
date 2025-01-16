@@ -99,7 +99,7 @@ public class RenderscriptNdkTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    ndkVersion '"
+                        + "    ndkVersion = '"
                         + NDK_WITH_RENDERSCRIPT_VERSION
                         + "'\n"
                         + "    defaultConfig {\n"
@@ -121,7 +121,7 @@ public class RenderscriptNdkTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    ndkVersion '"
+                        + "    ndkVersion = '"
                         + NDK_WITH_RENDERSCRIPT_VERSION
                         + "'\n"
                         + "    defaultConfig {\n"
@@ -141,7 +141,7 @@ public class RenderscriptNdkTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    ndkVersion '"
+                        + "    ndkVersion = '"
                         + NDK_WITH_RENDERSCRIPT_VERSION
                         + "'\n"
                         + "    defaultConfig {\n"
@@ -160,7 +160,7 @@ public class RenderscriptNdkTest {
     public void checkEmptyAbiFilter() throws IOException, InterruptedException {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "android {\n" + "    ndkVersion '" + NDK_WITH_RENDERSCRIPT_VERSION + "'\n" + "}");
+                "android {\n" + "    ndkVersion = '" + NDK_WITH_RENDERSCRIPT_VERSION + "'\n" + "}");
         checkPackagedFiles(true, true, true);
     }
 
@@ -173,7 +173,7 @@ public class RenderscriptNdkTest {
 
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "android {\n" + "    ndkVersion '" + NDK_WITH_RENDERSCRIPT_VERSION + "'\n" + "}");
+                "android {\n" + "    ndkVersion = '" + NDK_WITH_RENDERSCRIPT_VERSION + "'\n" + "}");
 
         GradleBuildResult result = project.executor().expectFailure().run("clean", "assembleDebug");
         assertNotNull(result.getException());
