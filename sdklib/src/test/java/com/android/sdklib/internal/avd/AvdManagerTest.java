@@ -36,6 +36,7 @@ import com.android.sdklib.PathFileWrapper;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.repository.AndroidSdkHandler;
+import com.android.sdklib.repository.targets.SystemImage;
 import com.android.sdklib.testing.TestSystemImages;
 import com.android.testutils.MockLog;
 import com.android.testutils.file.InMemoryFileSystems;
@@ -264,10 +265,15 @@ public final class AvdManagerTest {
                 false,
                 false);
 
+        Path metadataIniFile = mAvdFolder.getParent().resolve(name.getMethodName() + ".ini");
+        Map<String, String> metadata = AvdManager.parseIniFile(new PathFileWrapper(metadataIniFile), null);
+        assertEquals("android-23", metadata.get("target"));
+
         Path avdConfigFile = mAvdFolder.resolve("config.ini");
         assertTrue("Expected config.ini in " + mAvdFolder, CancellableFileIo.exists(avdConfigFile));
         Map<String, String> properties =
                 AvdManager.parseIniFile(new PathFileWrapper(avdConfigFile), null);
+        assertEquals("android-23", properties.get("target"));
         assertFalse(CancellableFileIo.exists(mAvdFolder.resolve("boot.prop")));
         assertEquals(
                 "system-images/android-23/default/x86/".replace('/', File.separatorChar),
@@ -1110,10 +1116,11 @@ public final class AvdManagerTest {
 
     @Test
     public void parseAvdInfoWithExtensionLevel() throws Exception {
+        SystemImage image = systemImages.getApi33ext4().getImage();
         mAvdManager.createAvd(
                 mAvdFolder,
                 name.getMethodName(),
-                systemImages.getApi33ext4().getImage(),
+                image,
                 null,
                 null,
                 null,
@@ -1132,11 +1139,7 @@ public final class AvdManagerTest {
         assertThat(avdInfo.getStatus()).isEqualTo(AvdInfo.AvdStatus.OK);
         PathSubject.assertThat(avdInfo.getDataFolderPath()).isEqualTo(mAvdFolder);
 
-        // check that the properties of the AVD contain the extension
-        String extension = avdInfo.getProperty(ConfigKey.ANDROID_EXTENSION);
-        String isBaseExtension = avdInfo.getProperty(ConfigKey.ANDROID_IS_BASE_EXTENSION);
-
-        assertThat(extension).isEqualTo("4");
-        assertThat(isBaseExtension).isEqualTo("false");
+        // check that the AndroidVersion survives the round trip
+        assertThat(avdInfo.getAndroidVersion()).isEqualTo(image.getAndroidVersion());
     }
 }

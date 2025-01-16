@@ -23,6 +23,7 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
+import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.ISystemImage
 import com.android.sdklib.SystemImageTags
@@ -193,7 +194,7 @@ fun makeAvdInfo(
     mapOf(
       ConfigKey.DEVICE_MANUFACTURER to LocalEmulatorProvisionerPluginTest.MANUFACTURER,
       ConfigKey.DEVICE_NAME to LocalEmulatorProvisionerPluginTest.MODEL,
-      ConfigKey.ANDROID_API to androidVersion.apiStringWithoutExtension,
+      ConfigKey.TARGET to AndroidTargetHash.getPlatformHashString(androidVersion),
       ConfigKey.ABI_TYPE to LocalEmulatorProvisionerPluginTest.ABI.toString(),
       ConfigKey.DISPLAY_NAME to "Fake Device $index",
       ConfigKey.PLAYSTORE_ENABLED to hasPlayStore.toString(),
