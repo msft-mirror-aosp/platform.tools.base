@@ -1,5 +1,5 @@
 apply plugin: 'java-library'
 apply plugin: 'idea'
 
-group "org.sample"
-version "1.0"
+group = "org.sample"
+version = "1.0"

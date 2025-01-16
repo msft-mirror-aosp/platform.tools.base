@@ -2,7 +2,7 @@ apply plugin: 'com.android.dynamic-feature'
 
 android {
 
-    namespace "com.android.tests.shrink.feature"
+    namespace = "com.android.tests.shrink.feature"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion libs.versions.buildToolsVersion.get()
 

@@ -18,7 +18,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.example.android.build.transform.jarjar'
 
 android {
-  namespace "com.android.tests.basic"
+  namespace = "com.android.tests.basic"
   compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
   buildToolsVersion = libs.versions.buildToolsVersion.get()
 

@@ -5,7 +5,7 @@ dependencies {
 }
 
 android {
-    namespace "com.example.android.tictactoe"
+    namespace = "com.example.android.tictactoe"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
