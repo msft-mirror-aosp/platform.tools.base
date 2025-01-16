@@ -78,8 +78,8 @@ public class NativeSoPackagingDirectSubprojectAarTest {
                                 + "}\n"
                                 + "\n"
                                 + "android {\n"
-                                + "     namespace \"com.example.app\"\n"
-                                + "     compileSdkVersion "
+                                + "     namespace = \"com.example.app\"\n"
+                                + "     compileSdkVersion = "
                                 + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                                 + "\n"
                                 + "     buildToolsVersion '"

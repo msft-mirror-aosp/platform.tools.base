@@ -86,7 +86,7 @@ class AarMetadataTaskTest {
             """
                 android {
                     defaultConfig {
-                        multiDexEnabled true
+                        multiDexEnabled = true
                         aarMetadata {
                             minCompileSdk 27
                             minAgpVersion '3.0.0'
@@ -94,7 +94,7 @@ class AarMetadataTaskTest {
                         }
                     }
                     compileOptions {
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
 
                     dependencies {
@@ -144,7 +144,7 @@ class AarMetadataTaskTest {
                     productFlavors {
                         premium {
                             aarMetadata {
-                                minCompileSdk 28
+                                minCompileSdk = 28
                                 minAgpVersion '3.1.0'
                                 minCompileSdkExtension 3
                             }
@@ -194,7 +194,7 @@ class AarMetadataTaskTest {
                     productFlavors {
                         premium {
                             aarMetadata {
-                                minCompileSdk 28
+                                minCompileSdk = 28
                                 minAgpVersion '3.1.0'
                                 minCompileSdkExtension 3
                             }

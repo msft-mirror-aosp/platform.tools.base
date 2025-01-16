@@ -46,7 +46,7 @@ class LibraryNoPrecompiledResourcesTest {
                 android {
                     buildTypes {
                         release {
-                            shrinkResources true
+                            shrinkResources = true
                             minifyEnabled true
                         }
                     }

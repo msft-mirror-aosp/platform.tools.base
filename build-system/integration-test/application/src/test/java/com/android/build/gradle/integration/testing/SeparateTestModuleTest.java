@@ -153,7 +153,7 @@ public class SeparateTestModuleTest {
                         + "    buildTypes {\n"
                         + "        nodebug {\n"
                         + "            debuggable false\n"
-                        + "            signingConfig signingConfigs.debug\n"
+                        + "            signingConfig = signingConfigs.debug\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");

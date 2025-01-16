@@ -61,7 +61,7 @@ class LibraryPublishingTest {
                 """
                    dependencyResolutionManagement {
                        repositories {
-                           maven { url 'testrepo' }
+                           maven { url = 'testrepo' }
                        }
                    }
                 """.trimIndent()
@@ -83,7 +83,7 @@ class LibraryPublishingTest {
                 afterEvaluate {
                     publishing {
                         repositories {
-                            maven { url '../testrepo' }
+                            maven { url = '../testrepo' }
                         }
                     }
                 }

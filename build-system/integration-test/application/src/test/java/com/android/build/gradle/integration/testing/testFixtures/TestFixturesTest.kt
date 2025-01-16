@@ -444,12 +444,12 @@ class TestFixturesTest {
         project.getSubproject(":app").buildFile.appendText(
             """
                 android {
-                    testBuildType "release"
+                    testBuildType = "release"
                     lint {
-                        abortOnError false
-                        enable 'StopShip'
-                        textOutput file("lint-results.txt")
-                        checkDependencies true
+                        abortOnError = false
+                        enable('StopShip')
+                        textOutput = file("lint-results.txt")
+                        checkDependencies = true
                         ignoreTestFixturesSources $ignoreTestFixturesSourcesInApp
                     }
                 }
@@ -464,7 +464,7 @@ class TestFixturesTest {
         project.getSubproject(":lib").buildFile.appendText(
             """
                 android {
-                    testBuildType "release"
+                    testBuildType = "release"
                 }
 
                 dependencies {

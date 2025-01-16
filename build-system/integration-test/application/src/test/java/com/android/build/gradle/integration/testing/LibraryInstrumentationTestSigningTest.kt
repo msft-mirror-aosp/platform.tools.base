@@ -45,7 +45,7 @@ class LibraryInstrumentationTestSigningTest {
     @Test
     fun checkReleaseSigning() {
         project.buildFile.appendText("""
-            android.testBuildType 'release'
+            android.testBuildType = 'release'
             """)
         project.executor().run("assembleReleaseAndroidTest")
         project.getApk(ANDROIDTEST_RELEASE).use { testApk ->

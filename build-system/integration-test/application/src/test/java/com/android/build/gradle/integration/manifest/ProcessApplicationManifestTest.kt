@@ -37,7 +37,7 @@ class ProcessApplicationManifestTest {
                     android {
                         packaging {
                             jniLibs {
-                                useLegacyPackaging false
+                                useLegacyPackaging = false
                             }
                         }
                     }
@@ -108,7 +108,7 @@ class ProcessApplicationManifestTest {
     @Test
     fun testApplicationDeviceTestManifestDoesNotContainDebuggableFlag() {
         // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
-        project.getSubproject(":app").buildFile.appendText("\n\nandroid.testBuildType \"release\"\n\n")
+        project.getSubproject(":app").buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
         project.executor().run("assembleReleaseAndroidTest")
         val releaseManifestContent =
             getManifestContent(project.getSubproject(":app").getApk(GradleTestProject.ApkType.ANDROIDTEST_RELEASE).file)

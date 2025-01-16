@@ -56,7 +56,7 @@ class LibraryBuildConfigTest {
                             apply plugin: 'com.android.library'
 
                             android {
-                              namespace "${HelloWorldApp.NAMESPACE}"
+                              namespace = "${HelloWorldApp.NAMESPACE}"
                               compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
 
                               defaultConfig {
@@ -88,7 +88,7 @@ class LibraryBuildConfigTest {
                               }
 
                               buildFeatures {
-                                buildConfig true
+                                buildConfig = true
                               }
 
                               libraryVariants.all { variant ->

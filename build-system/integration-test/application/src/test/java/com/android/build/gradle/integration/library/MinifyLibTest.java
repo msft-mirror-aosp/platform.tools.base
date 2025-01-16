@@ -134,7 +134,7 @@ public class MinifyLibTest {
                 ""
                         + "android {\n"
                         + "    defaultConfig {\n"
-                        + "        multiDexEnabled true\n"
+                        + "        multiDexEnabled = true\n"
                         + "    }\n"
                         + "}");
         project.executor().run(":lib:assembleDebug");

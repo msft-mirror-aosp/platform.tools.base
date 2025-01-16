@@ -43,12 +43,12 @@ class CoreLibraryDesugarConnectedTest {
                 """
                     android {
                         compileOptions {
-                            coreLibraryDesugaringEnabled true
+                            coreLibraryDesugaringEnabled = true
                         }
                         buildTypes {
                             release {
                                 minifyEnabled true
-                                signingConfig signingConfigs.debug
+                                signingConfig = signingConfigs.debug
                                 testProguardFiles 'proguard-rules.pro'
                             }
                         }
@@ -99,7 +99,7 @@ class CoreLibraryDesugarConnectedTest {
         TestFileUtils.appendToFile(
                 project.buildFile,
                 """
-                    android.testBuildType "release"
+                    android.testBuildType = "release"
                 """.trimIndent()
         )
         project.executor()

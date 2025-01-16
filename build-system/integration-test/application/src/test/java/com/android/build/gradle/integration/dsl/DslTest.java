@@ -113,7 +113,7 @@ public class DslTest {
                 "\n"
                         + "android {\n"
                         + "  buildFeatures {\n"
-                        + "    buildConfig true\n"
+                        + "    buildConfig = true\n"
                         + "  }\n"
                         + "  defaultConfig {\n"
                         + "    buildConfigField 'String', 'test2', '\"\\u0105\"'\n"

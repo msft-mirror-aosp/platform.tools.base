@@ -45,10 +45,10 @@ class BuildTypeDslTest {
                     buildTypes {
                         release {
                             postprocessing {
-                                removeUnusedCode true
-                                optimizeCode true
-                                obfuscate true
-                                removeUnusedResources true
+                                removeUnusedCode = true
+                                optimizeCode = true
+                                obfuscate = true
+                                removeUnusedResources = true
                                 proguardFiles file("proguard-rules.pro")
                             }
                         }
@@ -83,7 +83,7 @@ class BuildTypeDslTest {
                 android {
                     buildTypes {
                         release {
-                            shrinkResources true
+                            shrinkResources = true
                             minifyEnabled true
                         }
                         secondRelease {

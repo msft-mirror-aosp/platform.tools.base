@@ -95,7 +95,7 @@ class UseEmbeddedDexPackagingTest(
                     """
                         apply plugin: 'com.android.application'
                         android {
-                            namespace "com.test"
+                            namespace = "com.test"
                             compileSdk = ${DEFAULT_COMPILE_SDK_VERSION}
                             defaultConfig {
                                 minSdk = $minSdk
