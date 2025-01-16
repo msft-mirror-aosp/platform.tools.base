@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.android.tools.test.mylibrary2"
+    namespace = "com.android.tools.test.mylibrary2"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     resourcePrefix 'mylib2_'

@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.android.prefabaartest"
+    namespace = "com.android.prefabaartest"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -13,7 +13,7 @@ android {
     }
 
     buildFeatures {
-        prefab true
+        prefab = true
     }
 
     kotlinOptions {
