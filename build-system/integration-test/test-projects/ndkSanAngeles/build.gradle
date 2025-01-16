@@ -6,18 +6,18 @@ apply plugin: 'com.android.application'
 project.ext['android.useDeprecatedNdk'] = true
 
 android {
-    namespace "com.example.SanAngeles"
+    namespace = "com.example.SanAngeles"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
     defaultConfig {
         minSdkVersion libs.versions.ndk19SupportLibMinSdk.get()
         ndk {
-            moduleName "sanangeles"
-            cFlags "-DANDROID_NDK -DDISABLE_IMPORTGL"
+            moduleName = "sanangeles"
+            cFlags = "-DANDROID_NDK -DDISABLE_IMPORTGL"
             ldLibs "GLESv1_CM", "dl", "log"
-            stl "stlport_static"
-            jobs 4
+            stl = "stlport_static"
+            jobs = 4
         }
 
         // This actual the app version code. Giving ourselves 1,000,000 values
@@ -33,10 +33,10 @@ android {
     }
     splits {
         abi {
-            enable true
+            enable = true
             reset()
             include 'x86', 'armeabi-v7a'
-            universalApk true
+            universalApk = true
         }
     }
 }
