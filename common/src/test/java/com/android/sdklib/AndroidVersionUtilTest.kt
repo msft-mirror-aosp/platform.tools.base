@@ -112,6 +112,25 @@ class AndroidVersionUtilTest {
   }
 
   @Test
+  fun testFromProperties_api36_1() {
+    assertStrictlyEqual(
+      androidVersionFromDeviceProperties(
+        mapOf(
+          "ro.build.version.sdk" to "36",
+          "ro.build.version.sdk_minor" to "1",
+          "ro.build.version.codename" to "Baklava",
+          "build.version.extensions.r" to "15",
+          "build.version.extensions.s" to "15",
+          "build.version.extensions.t" to "15",
+          "build.version.extensions.u" to "15",
+          "build.version.extensions.ad_services" to "15",
+        )
+      ),
+      AndroidVersion(36, 1, "Baklava", 15, true)
+    )
+  }
+
+  @Test
   fun testFromProperties_noSdk() {
     assertThat(androidVersionFromDeviceProperties(mapOf())).isNull()
   }
