@@ -146,10 +146,16 @@ enum class Scope {
       if (scopes.contains(TEST_SOURCES)) {
         expected++
       }
-      if (scopes.contains(CLASS_FILE) && scopes.contains(JAVA_FILE)) {
-        // When single checking a Java source file, we check both its Java source
-        // and the associated class files
-        expected++
+      if (scopes.contains(JAVA_FILE)) {
+        if (scopes.contains(CLASS_FILE)) {
+          // When single checking a Java source file, we check both its Java source
+          // and the associated class files
+          expected++
+        } else if (scopes.contains(GRADLE_FILE)) {
+          // When analyzing build.gradle.kts files in the IDE, we look up
+          // both Kotlin checks and Gradle checks
+          expected++
+        }
       }
 
       // Filter out non-file-type scopes
