@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     testOptions {

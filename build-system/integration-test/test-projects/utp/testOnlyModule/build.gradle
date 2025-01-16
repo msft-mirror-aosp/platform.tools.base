@@ -20,7 +20,7 @@ apply plugin: 'com.android.test'
 apply plugin: 'com.android.experimental.built-in-kotlin'
 
 android {
-    namespace "com.example.android.kotlin.test"
+    namespace = "com.example.android.kotlin.test"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

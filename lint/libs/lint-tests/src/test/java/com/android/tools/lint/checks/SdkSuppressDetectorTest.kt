@@ -44,7 +44,7 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
             """
             android {
                 lintOptions {
-                    checkTestSources true
+                    checkTestSources = true
                 }
             }
             """
@@ -133,7 +133,7 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
             """
             android {
                 lintOptions {
-                    checkTestSources true
+                    checkTestSources = true
                 }
             }
             """

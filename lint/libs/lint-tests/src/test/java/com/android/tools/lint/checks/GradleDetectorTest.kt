@@ -4356,8 +4356,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         "            minSdkVersion 21\n" +
         "            ~~~~~~~~~~~~~~~~\n" +
         "build.gradle:10: Warning: You no longer need a dev mode to enable multi-dexing during development, and this can break API version checks [DevModeObsolete]\n" +
-        "            minSdk 21\n" +
-        "            ~~~~~~~~~\n" +
+        "            minSdk = 21\n" +
+        "            ~~~~~~~~~~~\n" +
         "0 errors, 2 warnings"
     lint()
       .files(
@@ -4372,7 +4372,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "        dev {\n" +
             "            // To avoid using legacy multidex, set minSdkVersion to 21 or higher.\n" +
             "            minSdkVersion 21\n" +
-            "            minSdk 21\n" +
+            "            minSdk = 21\n" +
             "            versionNameSuffix \"-dev\"\n" +
             "            applicationIdSuffix '.dev'\n" +
             "        }\n" +

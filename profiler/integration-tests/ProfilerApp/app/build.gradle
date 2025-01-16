@@ -13,7 +13,7 @@ android {
 
         ndk {
             moduleName "profilermodule"
-            stl "c++_shared"
+            stl = "c++_shared"
             ldLibs "log"
         }
     }

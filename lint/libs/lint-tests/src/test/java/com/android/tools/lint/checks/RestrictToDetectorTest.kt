@@ -1312,7 +1312,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
             """
                 android {
                     lintOptions {
-                        checkTestSources true
+                        checkTestSources = true
                     }
                 }
                 """

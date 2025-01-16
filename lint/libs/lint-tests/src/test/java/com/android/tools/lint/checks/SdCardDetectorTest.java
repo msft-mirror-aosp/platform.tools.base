@@ -262,7 +262,7 @@ public class SdCardDetectorTest extends AbstractCheckTest {
                                 ""
                                         + "android {\n"
                                         + "    lintOptions {\n"
-                                        + "        checkTestSources true\n"
+                                        + "        checkTestSources = true\n"
                                         + "    }\n"
                                         + "}\n"))
                 .run()
@@ -300,7 +300,7 @@ public class SdCardDetectorTest extends AbstractCheckTest {
                                 ""
                                         + "android {\n"
                                         + "    lintOptions {\n"
-                                        + "        checkTestSources false\n"
+                                        + "        checkTestSources = false\n"
                                         + "    }\n"
                                         + "}\n"))
                 .run()
@@ -322,7 +322,7 @@ public class SdCardDetectorTest extends AbstractCheckTest {
                                 ""
                                         + "android {\n"
                                         + "    lintOptions {\n"
-                                        + "        checkGeneratedSources false\n"
+                                        + "        checkGeneratedSources = false\n"
                                         + "    }\n"
                                         + "}\n"))
                 .run()
@@ -344,7 +344,7 @@ public class SdCardDetectorTest extends AbstractCheckTest {
                                 ""
                                         + "android {\n"
                                         + "    lintOptions {\n"
-                                        + "        checkGeneratedSources true\n"
+                                        + "        checkGeneratedSources = true\n"
                                         + "    }\n"
                                         + "}\n"))
                 .run()

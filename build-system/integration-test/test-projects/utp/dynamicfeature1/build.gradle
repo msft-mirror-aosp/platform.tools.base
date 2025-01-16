@@ -20,7 +20,7 @@ apply plugin: 'com.android.dynamic-feature'
 apply plugin: 'com.android.experimental.built-in-kotlin'
 
 android {
-    namespace "com.example.android.kotlin.feature"
+    namespace = "com.example.android.kotlin.feature"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

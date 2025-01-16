@@ -1075,20 +1075,20 @@ dependencies {
       createMocker(
         """android {
     lintOptions {
-        quiet true
-        abortOnError false
-        ignoreWarnings true
-        absolutePaths false
-        checkAllWarnings true
-        warningsAsErrors true
+        quiet = true
+        abortOnError = false
+        ignoreWarnings = true
+        absolutePaths = false
+        checkAllWarnings = true
+        warningsAsErrors = true
         disable 'TypographyFractions','TypographyQuotes'
         enable 'RtlHardcoded','RtlCompat', 'RtlEnabled'
         check 'NewApi', 'InlinedApi'
-        noLines true
-        showAll true
-        lintConfig file("default-lint.xml")
+        noLines = true
+        showAll = true
+        lintConfig = file("default-lint.xml")
         informational 'LogConditional'
-        checkTestSources true
+        checkTestSources = true
     }
 }
 """
