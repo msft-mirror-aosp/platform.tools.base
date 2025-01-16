@@ -9,7 +9,7 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.libstest.lib1"
+    namespace = "com.android.tests.libstest.lib1"
     resourcePrefix 'lib1_'
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
@@ -18,8 +18,8 @@ android {
         minSdkVersion libs.versions.supportLibMinSdk.get()
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion 19
-        renderscriptTargetApi 18
-        renderscriptSupportModeEnabled true
-        renderscriptSupportModeBlasEnabled false
+        renderscriptTargetApi = 18
+        renderscriptSupportModeEnabled = true
+        renderscriptSupportModeBlasEnabled = false
    }
 }
