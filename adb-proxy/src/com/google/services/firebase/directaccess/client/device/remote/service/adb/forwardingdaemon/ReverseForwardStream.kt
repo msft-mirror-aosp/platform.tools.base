@@ -138,12 +138,12 @@ internal class ReverseForwardStream(
    * we send OKAY back to Android Studio ensuring screen sharing agent starts after everything is
    * set up.
    *
-   * We only wait for 1 second since this process is usually pretty fast. If we do not receive the
-   * ready signal because something went wrong on ReverseDaemon,the behavior remains the same as
-   * receiving the signal.
+   * We wait for 5 seconds since this process is pretty fast but sometimes slower for non-Google
+   * devices. If we do not receive the ready signal because something went wrong on ReverseDaemon,
+   * the behavior remains the same as receiving the signal.
    */
   private suspend fun waitForReverseDaemonReady() =
-    withTimeoutOrNull(1000) {
+    withTimeoutOrNull(5000) {
       reverseDaemonReady.await()
       logger.info("Reverse daemon ready")
     } ?: run { logger.warning("Timeout waiting for ReverseDaemon READY signal. Proceeding.") }
