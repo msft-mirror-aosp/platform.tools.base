@@ -164,7 +164,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
 
         val containingClass = node.getContainingUClass() ?: return
         val memberClass = member.containingClass
-        if (memberClass == null || memberClass == containingClass.psi) {
+        if (memberClass == null || memberClass.isEquivalentTo(containingClass.javaPsi)) {
           return
         }
 
