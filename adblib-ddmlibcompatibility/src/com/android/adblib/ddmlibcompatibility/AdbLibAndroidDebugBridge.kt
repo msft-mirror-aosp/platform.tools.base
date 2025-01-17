@@ -411,28 +411,20 @@ class AdbLibAndroidDebugBridge(
         return passes
     }
 
-    override fun getSocketAddress(): InetSocketAddress {
-        if (!sUnitTestMode) {
-            // Use synchronized access to ensure we only ever open one connection to ADB when we
-            // need to check which local address to use.
-            synchronized(sLastKnownGoodAddressLock) {
-                if (sLastKnownGoodAddress != null) {
-                    return sLastKnownGoodAddress
-                }
-                try {
-                    // TODO: convert to using adblib
-                    openConnection().use { adbChannel ->
-                        // SocketAddress from adbChannel is created by openConnection and should always
-                        // be an InetSocketAddress.
-                        sLastKnownGoodAddress = adbChannel.remoteAddress as InetSocketAddress
-                        return sLastKnownGoodAddress
-                    }
-                } catch (_: IOException) {
-                    // Ignore the failure and fallback to old implementation.
-                }
+    override fun getSocketAddress(): InetSocketAddress = runBlocking {
+        val knownRemoteAddress = if (!sUnitTestMode) {
+            adbServerController.lastKnownRemoteAddress ?: run {
+                // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
+                // can fail for many reasons (server not started, server not available) so we have
+                // to ignore errors.
+                runCatching { adbServerController.channelProvider.createChannel().use {} }
+                adbServerController.lastKnownRemoteAddress
             }
+        } else {
+            null
         }
-        return InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort)
+
+        knownRemoteAddress ?: InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort)
     }
 
     private fun startMonitoringServices(bridgeInstance: AndroidDebugBridge) {

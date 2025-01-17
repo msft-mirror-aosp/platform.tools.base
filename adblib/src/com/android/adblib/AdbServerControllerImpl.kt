@@ -51,6 +51,8 @@ internal class AdbServerControllerImpl(
      */
     private var currentState = State.initial(host, configurationFlow)
 
+    private var lastKnownRemoteAddressStateFlow = MutableStateFlow<InetSocketAddress?>(null)
+
     /**
      * * Returns `true` after the [start] method has successfully completed, i.e. after ADB server
      * was successfully started.
@@ -76,6 +78,9 @@ internal class AdbServerControllerImpl(
         transitionCurrentState { stop() }
     }
 
+    override val lastKnownRemoteAddress: InetSocketAddress?
+        get() = lastKnownRemoteAddressStateFlow.value
+
     override fun close() {
         synchronized(stateLock) {
             currentState.close()
@@ -93,6 +98,7 @@ internal class AdbServerControllerImpl(
         }.also {
             // Wait for transition to complete (suspending)
             it.await()
+            lastKnownRemoteAddressStateFlow.update { null }
         }
     }
 
@@ -145,7 +151,11 @@ internal class AdbServerControllerImpl(
             }
 
         override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
-            return createChannelWithRetryOnFailure(connectProvider, timeout, unit)
+            return createChannelWithRetryOnFailure(connectProvider, timeout, unit).also { channel ->
+                lastKnownRemoteAddressStateFlow.update {
+                    (channel as? AdbSocketChannel)?.remoteAddress
+                }
+            }
         }
     }
 

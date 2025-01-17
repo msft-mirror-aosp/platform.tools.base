@@ -59,8 +59,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
     /** Don't automatically manage ADB server. */
     protected static boolean sUserManagedAdbMode = false;
 
-    protected static final Object sLastKnownGoodAddressLock = new Object();
-
     /** Last known good {@link InetSocketAddress} to ADB. */
     protected volatile InetSocketAddress sLastKnownGoodAddress;
 

@@ -37,6 +37,8 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.nio.file.Paths
 
 class AdbServerControllerImplTest {
@@ -199,6 +201,32 @@ class AdbServerControllerImplTest {
         registerCloseable(controller.channelProvider.createChannel())
         assertTrue(controller.isStarted)
     }
+
+    @Test
+    fun testLastKnownRemoteAddress(): Unit =
+        runBlockingWithTimeout {
+            // Prepare
+            val controller = registerCloseable(AdbServerControllerImpl(host, configFlow))
+            configFlow.update { it.copy(serverPort = fakeAdb.port) }
+
+            // Act: `createChannel` should set `lastKnownRemoteAddress`
+            controller.start()
+            registerCloseable(controller.channelProvider.createChannel())
+
+            // Assert
+            assertTrue(controller.isStarted)
+            assertEquals(
+                InetSocketAddress(InetAddress.getLoopbackAddress(), fakeAdb.port),
+                controller.lastKnownRemoteAddress
+            )
+
+            // Act: `stop` should reset `lastKnownRemoteAddress` to `null`
+            controller.stop()
+
+            // Assert
+            assertFalse(controller.isStarted)
+            assertNull(controller.lastKnownRemoteAddress)
+        }
 
     @Test
     fun testCreateChannelThrowsTimeoutException_whenTimesOutWaitingForControllerIsStarted(): Unit =
