@@ -24,6 +24,7 @@ import com.android.SdkConstants.DOT_KT
 import com.android.SdkConstants.DOT_KTS
 import com.android.SdkConstants.DOT_PNG
 import com.android.SdkConstants.DOT_PROPERTIES
+import com.android.SdkConstants.DOT_TOML
 import com.android.SdkConstants.DOT_WEBP
 import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE
@@ -220,6 +221,8 @@ enum class Scope {
               scope.add(RESOURCE_FILE)
               scope.add(BINARY_RESOURCE_FILE)
               scope.add(RESOURCE_FOLDER)
+            } else if (name.endsWith(DOT_TOML)) {
+              scope.add(TOML_FILE)
             }
           }
         } else {
