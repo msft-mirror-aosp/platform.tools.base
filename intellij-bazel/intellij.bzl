@@ -214,7 +214,9 @@ def _intellij_remote_platform_impl(ctx):
     content += "    spec = SPEC,\n"
     content += ")\n"
     ctx.file("BUILD.bazel", content)
-    ctx.execute([ctx.path(ctx.attr.cmd)], quiet = False)
+    exec_result = ctx.execute([ctx.path(ctx.attr.cmd)], quiet = False)
+    if exec_result.return_code != 0:
+        fail("received non-zero exit code from " + str(ctx.attr.cmd))
 
 intellij_remote_platform = repository_rule(
     attrs = {
