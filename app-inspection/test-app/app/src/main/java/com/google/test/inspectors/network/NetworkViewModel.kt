@@ -70,6 +70,13 @@ internal class NetworkViewModel @Inject constructor(private val settingsDao: Set
     }
   }
 
+  override fun doPostMultipart(client: OkHttp3, url: String, data: ByteArray, type: String) {
+    scope.launch {
+      val result = client.doPostMultipart(url, data, type)
+      setSnack("${client.name} Result: ${result.rc}")
+    }
+  }
+
   override fun doProtoGrpc(name: String) {
     scope.launch {
       val response = newGrpcClient().use { it.doProtoGrpc(protoRequest { this.name = name }) }

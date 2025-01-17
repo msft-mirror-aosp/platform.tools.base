@@ -26,6 +26,8 @@ internal interface NetworkScreenActions {
 
   fun doPostDuplex(client: OkHttp3, url: String, data: ByteArray, type: String) {}
 
+  fun doPostMultipart(client: OkHttp3, url: String, data: ByteArray, type: String) {}
+
   fun doProtoGrpc(name: String) {}
 
   fun doJsonGrpc(name: String) {}

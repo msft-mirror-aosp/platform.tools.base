@@ -20,6 +20,7 @@ import com.google.test.inspectors.network.HttpClient.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -69,6 +70,17 @@ internal class OkHttp3 : AbstractHttpClient<Request.Builder>() {
         object : DelegatingRequestBody(data.toRequestBody(type.toMediaType())) {
           override fun isDuplex() = true
         }
+      post(body)
+    }
+  }
+
+  suspend fun doPostMultipart(url: String, data: ByteArray, type: String): Result {
+    return doRequest(url, "gzip") {
+      val body =
+        MultipartBody.Builder()
+          .setType(MultipartBody.PARALLEL)
+          .addPart(data.toRequestBody(type.toMediaType()))
+          .build()
       post(body)
     }
   }
