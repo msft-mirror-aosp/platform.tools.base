@@ -92,10 +92,6 @@ Agent::Agent(const AgentConfig& config)
     }
     StartHeartbeat();
   }
-
-#ifdef NDEBUG
-  gpr_set_log_verbosity(static_cast<gpr_log_severity>(SHRT_MAX));
-#endif
 }
 
 Agent::~Agent() {
@@ -433,8 +429,13 @@ void Agent::ConnectToDaemon(const std::string& target) {
   // experience very much.
   grpc::ChannelArguments channel_args;
   channel_args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
-  channel_ = grpc::CreateCustomChannel(
-      target, grpc::InsecureChannelCredentials(), channel_args);
+  if (target.rfind("unix:&", 0) == 0) {
+    int fd = std::stoi(target.substr(6));
+    channel_ = grpc::CreateCustomInsecureChannelFromFd("transport-fd-grpc", fd, channel_args);
+  } else {
+    channel_ = grpc::CreateCustomChannel(
+        target, grpc::InsecureChannelCredentials(), channel_args);
+  }
 
   agent_stub_ = AgentService::NewStub(channel_);
   cpu_stub_ = InternalCpuService::NewStub(channel_);
