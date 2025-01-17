@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sysimg="http://schemas.android.com/sdk/android/repo/sys-img2/04">
+    <localPackage path="system-images;android-36.1;google_apis_playstore;arm64-v8a" obsolete="false">
+        <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="sysimg:sysImgDetailsType">
+            <api-level>36.1</api-level>
+            <extension-level>17</extension-level>
+            <base-extension>true</base-extension>
+            <tag>
+                <id>google_apis_playstore</id>
+                <display>Google Play</display>
+            </tag>
+            <tag>
+                <id>tablet</id>
+                <display>Tablet</display>
+            </tag>
+            <vendor>
+                <id>google</id>
+                <display>Google Inc.</display>
+            </vendor>
+            <abi>arm64-v8a</abi>
+            <abis>arm64-v8a</abis>
+            <abis>armeabi-v7a</abis>
+            <translatedAbis>riscv64</translatedAbis>
+        </type-details>
+        <revision>
+            <major>1</major>
+            <minor>2</minor>
+            <micro>3</micro>
+            <preview>4</preview>
+        </revision>
+        <display-name>System image display name</display-name>
+    </localPackage>
+</common:repository>

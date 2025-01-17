@@ -31,6 +31,7 @@ import com.android.repository.impl.meta.RemotePackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SystemImageTags;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.testutils.file.InMemoryFileSystems;
 import com.google.common.collect.ImmutableList;
@@ -251,6 +252,46 @@ public class UnmarshalTest extends TestCase {
         xmlStream = getClass().getResourceAsStream(filename);
         repo = SchemaModule.unmarshal(xmlStream, ImmutableList.of(repoEx, addonEx));
         assertTrue(repo.getPackage().get(0).getTypeDetails() instanceof DetailsTypes.AddonDetailsType);*/
+    }
+
+    public void testUnmarshalSysImg04() throws Exception {
+        String filename = "/sys-img-04_sample.xml";
+
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+
+        Repository repo =
+                (Repository)
+                        SchemaModuleUtil.unmarshal(
+                                getClass().getResourceAsStream(filename),
+                                AndroidSdkHandler.getAllModules(),
+                                true,
+                                progress,
+                                filename);
+        LocalPackage remotePackage = repo.getLocalPackage();
+
+        DetailsTypes.SysImgDetailsType details =
+                (DetailsTypes.SysImgDetailsType) remotePackage.getTypeDetails();
+        assertThat(details.getApiLevelString()).isEqualTo("36.1");
+        assertThat(details.getApiLevel()).isEqualTo(36);
+        assertThat(details.getApiMinorLevel()).isEqualTo(1);
+        assertThat(details.getExtensionLevel()).isEqualTo(17);
+        assertThat(details.isBaseExtension()).isTrue();
+        assertThat(details.getAndroidVersion())
+                .isEqualTo(new AndroidVersion(36, 1, null, 17, true));
+        assertThat(details.getTags())
+                .containsExactly(SystemImageTags.PLAY_STORE_TAG, SystemImageTags.TABLET_TAG)
+                .inOrder();
+        assertThat(details.getAbi()).isEqualTo("arm64-v8a");
+        assertThat(details.getAbis()).containsExactly("arm64-v8a", "armeabi-v7a").inOrder();
+        assertThat(details.getTranslatedAbis()).containsExactly("riscv64");
+
+        Revision version = remotePackage.getVersion();
+        assertThat(version.getMajor()).isEqualTo(1);
+        assertThat(version.getMinor()).isEqualTo(2);
+        assertThat(version.getMicro()).isEqualTo(3);
+        assertThat(version.getPreview()).isEqualTo(4);
+
+        assertThat(remotePackage.getDisplayName()).isEqualTo("System image display name");
     }
 
     private static final String INVALID_XML =
