@@ -4368,6 +4368,7 @@ class UastTest : TestCase() {
 
   fun testResolutionToInternal_binary() {
     // b/347623812
+    // b/390221826
     val testFiles =
       arrayOf(
         kotlin(
@@ -4377,6 +4378,7 @@ class UastTest : TestCase() {
             fun foo() {
               Lib.internalFun()
               Lib.internalVal
+              Lib.myInc(42)
             }
           """
         ),
@@ -4389,32 +4391,58 @@ class UastTest : TestCase() {
               object Lib {
                 internal fun internalFun() {}
                 internal val internalVal = 42
+                internal val myInc: (Int) -> Int = { x -> x + 1 }
               }
             """
             )
             .indented(),
-          0xcc4d4078,
+          0x9b48252a,
           """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uViLshOF2ILSS0u8S5RYtBiAABU
                 vEmiJwAAAA==
                 """,
           """
+                pkg/Lib＄myInc＄1.class:
+                H4sIAAAAAAAA/31Ua08TQRQ9sy19LKstqLyq+AB5Kgv4phWtCHGTWhIhTQxf
+                nLZLGbqdJd1tA9/4Lf4CiQkYTQzxoz/KeGe7ChHkw8zcnjn33Lnnbvrz19fv
+                AB7iNUNqp14zC6I82tizZGV0Lg7GUC3UXd8R0txuN0whfbspuWMWeKNc5dnT
+                d5stWfGFKz1zJYzmcoVt3uamw2XNtCi1Zjez50CLWYah/1eJI8owfHGlOGIM
+                sZyQwl9kiExMlhiiE9ZkyUACuo4udBPgbwmPoafwT59UPiZk263bDH2UdM4T
+                GUYKbrNmbtt+uckFleZSuj7vPKPo+sWW4xCr50xqHL0M8TZ3WvbqpoGrSOu4
+                gmsMbJeWxTA2careannbrvjZybMQQ/oEK7YaZSU9xJAgt0pKPWjbMnAdN3Rk
+                MGwgpWppuMWg7cwx9J4nmshVnMA1ZVRS0e8SaBXX1vPFpWUD47icJHBC2RaO
+                4K3t8yr3OWVrjXaEvh6mtqTaQD3VVRChy12holmKqlR+/Hhf12lp6YSuJSLp
+                4/0hbZbNx9KaOt/oPz7GogRHFX2eoTvHpSv3Gm7Lo4mSbjycWhxPaV4UzNR9
+                mumSW7VVb26FOyXeFLzs2Otqo++5IKTdsSpEMu9a0hcN25Jt4QmC8idTZDAs
+                Ke3mksM9z6afqWVZcVxPyBp1vOVWGZJroia532qSlL7mtpoVe0Uo3cFQt3RG
+                FbPkXpd6Pq1BZSdZEqVFbhOSpWiUGNQhYlPRIxgHgYk52o0OiktBTo8aJzFV
+                RpZOjc54JvrhC/o+UajheUDupKj0vg4lTFdRPwbofjHk9QDpPIkOhs94GYoa
+                U9PHyBzi5iFuX6Rs/FU2cAcjdJ+gVv401R9wgO5v0N4fYewzJg8CoAsvaNeJ
+                1iEMUGHlyDPa80G5CF4F5wKW6Fwg5hRlTW8gYuGehfsWZmBaZOychXk82ADz
+                6P/r0Qa6PDz28MRDv4eUh/RvoRtMe9wEAAA=
+                """,
+          """
                 pkg/Lib.class:
-                H4sIAAAAAAAA/2VRTW/TQBB9u3YSx0lbpy2QpHy3QBpQ3VbcqJBKocIoDVJb
-                RaBISE5ihU0cG8WbiGNO/BDOXEoPlUBCUbnxoxCzxrRVseydmbfz3qzf/vr9
-                7QeAx3jEkPnQ79o10cqAMVg9d+zavht07detnteWGWgM6S0RCPmUQausNvJI
-                IW1CR4ZBl+9FxJCtJRpPSEEE0hsGrr87ClYGrggYFrqedBK04foJSloOQ06c
-                bzAwJ49ZzGXBYTEYW20/HmxSTdMMp35wuF3feZHHIkzVdIVhuRYOu3bPk60h
-                yUa2GwShdKUIKa+Hsj7yfTpVodYPJYnZe550O650CeODsUYmMLVk1QI6QJ/w
-                j0JV65R1NhjeTSdlkxe5ya3pxOSGSgyKGkVuTifGz0+8OJ1s8nX2LGPw089p
-                wl/NWJkyXzdeTicKMLL7i5ZGgP7mdPKcEIOIZd1IWWk1ZZOp2bkLzpHnZOda
-                XzIs7Y8CKQaeE4xFJFq+t33+h3QDO2HHY5iricCrjwYtb3joUg/DfC1sK1eH
-                QtUJaB6Eo2Hb2xWqKCXCjf9ksUHe6uQBR0lZTYe7T1Wa4jWKZXVHFHXaT8Xo
-                A6psZR/FVPUExlFMriQkQMMqrfm/DciSJFBA7oz8MHafvstE/QKRnRHzmEmI
-                a8lU/SsKXy5xUxe4esI1MH82tELd6rG+g789wcIxrlrVYxSO4ln/dEzS4ajG
-                2vfigzqEFgktNaE5KDtYcnAdNyjFTQe3cLsJFuEO7jZhRupdjpCOMBsn+Qgz
-                EVbiPPcH4t7VsogDAAA=
+                H4sIAAAAAAAA/61UW28TRxT+Zr221+t1vHZCiENL0yRAEi5rp0AvSZFoIGIj
+                Y6QEIlCe1s5iJlmPq511BG9+6kv/Bc99KOQhUitVFn3rj6p6Zr254EblpZY8
+                58w35zu3ObN//f3bHwBu4x5D9sf9tlPnzSwYg73nHXhO4Im286S557eiLFIM
+                mVUueES2qYXFbQtpZEzoyDLo0SsuGXL1xMcKeeAi8kPhBes9Md/xuGAYb/uR
+                m6DbXpCg5MtlyPPTAwbmWhhDMQcNNkOBeI/fuKKVMGYXFuv73Sjgwtk76Dgv
+                e6IV8a6Qznqi1Sj+xieNVuunRaq02n64cg50j5zN1bth29nzo2ZIGUjHE6Ib
+                eUN/jW7U6AUBWaU7KkmGmU9lZ2ESF1VxUwzGaiuIu2rSnlppuI2tp/cbaw8t
+                fAZTGX3OUEz6Oh9HmK9l8QVDqT6CrijKlznMYJbh8n/nkMU8w6P/r0OlY1eP
+                /cjb9SKPMK1zkKLpYmrJqQV0s/uEv+ZqVyVtt8bw86A/a2pTmqnZg76pGUox
+                SKaGoJK2Zg76xp8/aVOD/rJWZT9kDe3D2wzhGwU7P61VrUeDvgKMwuaEnSJA
+                f/6h/4AQg4jTupG2M5szdnZ6rKyX6XC4Vg0y0k+NcrapUlpmKtHycUFnhyp/
+                ZqjpOVDvb+1HDJc2eyLiHd8VB1zyZuDfP50PehVbvC28qBf69FDWurskinUu
+                /Eav0/TDpx7Zq3Ddlhr+kKt9AlquEH64FnhS+uTI3Or2wpa/ztVZJYm5/a+I
+                qNHQ6NTgFCpqhqiYu7TLkLxAclq9rFjSEJLl16RruPqRTZqQdLz7hnaOujeF
+                Lh3BeBebf5sYqyDf0WoNDZCjcEAJ+RPy9fja6T9K1M8Q2QnRQiEh3kqi6u9R
+                +mWEmz7D1U+4ZYxTOiPcyq8j3Mw53GEPJj7qgUEdOi7iDp2qX+V3aC+OcOkQ
+                l+2lQ5TeY26AK4eovIuLUEHUMzYpwSKRU1iJEfokxPQprMaB7uB7ks8Iv0aW
+                CztIuVh0seRSt26QipsuleDsgElUUdvBmIQpsSyRkUonxZIoSExKfCVRlhiX
+                uB3j+X8AjPRf/9MFAAA=
                 """,
         ),
       )
@@ -4422,21 +4450,32 @@ class UastTest : TestCase() {
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitCallExpression(node: UCallExpression): Boolean {
+            val txt = node.sourcePsi?.text
+            if (!useFirUast() && txt?.contains("myInc") == true) {
+              // K1 UAST: passing -Xfriend-paths seems not enough...
+              return super.visitCallExpression(node)
+            }
             val resolved = node.resolve()
-            assertNotNull(resolved)
-            assertEquals("internalFun\$main", resolved?.name)
+            assertNotNull(txt, resolved)
+            assertTrue(resolved is PsiMethod)
+            if (txt == "internalFun()") {
+              assertEquals(txt, "internalFun\$main", resolved?.name)
+            } else {
+              assertEquals(txt, "invoke", resolved?.name)
+            }
             return super.visitCallExpression(node)
           }
 
           override fun visitSimpleNameReferenceExpression(
             node: USimpleNameReferenceExpression
           ): Boolean {
-            if (node.sourcePsi?.text != "internalVal") {
+            val txt = node.sourcePsi?.text
+            if (txt != "internalVal") {
               return super.visitSimpleNameReferenceExpression(node)
             }
             val resolved = node.resolve()
-            assertTrue(resolved is PsiField)
-            assertEquals("internalVal", (resolved as? PsiField)?.name)
+            assertTrue(txt, resolved is PsiField)
+            assertEquals(txt, "internalVal", (resolved as? PsiField)?.name)
             return super.visitSimpleNameReferenceExpression(node)
           }
         }
