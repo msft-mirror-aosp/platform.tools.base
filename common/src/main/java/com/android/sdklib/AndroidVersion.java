@@ -230,6 +230,22 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
+     * Returns an AndroidVersion with the same API level and codename, and a base extension level.
+     * This will set the extensionLevel property based on the API level if known.
+     */
+    public AndroidVersion withBaseExtensionLevel() {
+        int baseExtensionLevel = getBaseExtensionLevel(mApiLevel);
+        return new AndroidVersion(mApiLevel, mCodename, baseExtensionLevel <= 0 ? null : baseExtensionLevel, true);
+    }
+
+    /**
+     * Returns this AndroidVersion with the same API level and codename and the specified extension level.
+     */
+    public AndroidVersion withExtensionLevel(int extensionLevel) {
+        return new AndroidVersion(mApiLevel, mCodename, extensionLevel, extensionLevel == getBaseExtensionLevel(mApiLevel));
+    }
+
+    /**
      * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
      * codename. <Em>Important</em>: An important limitation of this method is that it cannot
      * possibly recreate the API level integer from a pure string codename. This is only OK to use

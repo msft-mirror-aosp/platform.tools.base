@@ -47,6 +47,25 @@ public class AndroidVersionTest {
     }
 
     @Test
+    public void withBaseExtensionLevel() {
+        assertThat(new AndroidVersion(30).withBaseExtensionLevel())
+            .isEqualTo(new AndroidVersion(30, null, null, true));
+        assertThat(new AndroidVersion(33).withBaseExtensionLevel())
+            .isEqualTo(new AndroidVersion(33, null, 3, true));
+        assertThat(new AndroidVersion(33).withBaseExtensionLevel().getExtensionLevel()).isEqualTo(3);
+    }
+
+    @Test
+    public void withExtensionLevel() {
+        assertThat(new AndroidVersion(30).withExtensionLevel(5))
+            .isEqualTo(new AndroidVersion(30, null, 5, false));
+        assertThat(new AndroidVersion(33).withExtensionLevel(3))
+            .isEqualTo(new AndroidVersion(33, null, 3, true));
+        assertThat(new AndroidVersion(33).withExtensionLevel(4))
+            .isEqualTo(new AndroidVersion(33, null, 4, false));
+    }
+
+    @Test
     public void nonBaseExtension() {
         AndroidVersion v = new AndroidVersion(30, null, 4, false);
         assertFalse(v.isPreview());
