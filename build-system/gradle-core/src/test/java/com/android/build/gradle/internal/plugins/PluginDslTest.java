@@ -163,7 +163,7 @@ public class PluginDslTest {
                         + "\n"
                         + "    buildTypes {\n"
                         + "        staging {\n"
-                        + "            signingConfig signingConfigs.debug\n"
+                        + "            signingConfig = signingConfigs.debug\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");
@@ -618,7 +618,7 @@ public class PluginDslTest {
                         + "\n"
                         + "    buildTypes {\n"
                         + "        debug {\n"
-                        + "            shrinkResources true\n"
+                        + "            shrinkResources = true\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n"
@@ -732,7 +732,7 @@ public class PluginDslTest {
                         + "\n"
                         + "\n"
                         + "    testFixtures {\n"
-                        + "        enable true\n"
+                        + "        enable = true\n"
                         + "    }\n"
                         + "}\n"
                         + "\n");

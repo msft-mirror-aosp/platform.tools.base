@@ -35,7 +35,7 @@ class ComposeFlagsTest {
         .appendToBuild("""
 android {
     buildFeatures {
-        compose true
+        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "+"
@@ -49,7 +49,7 @@ android {
         .appendToBuild("""
 android {
     buildFeatures {
-        compose false
+        compose = false
     }
 }
         """.trimIndent())

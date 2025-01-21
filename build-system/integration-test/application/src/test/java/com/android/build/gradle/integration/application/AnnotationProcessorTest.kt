@@ -65,7 +65,7 @@ class AnnotationProcessorTest {
                 apply plugin: 'com.android.application'
 
                 android {
-                    namespace "${HelloWorldApp.NAMESPACE}"
+                    namespace = "${HelloWorldApp.NAMESPACE}"
                     compileSdkVersion $DEFAULT_COMPILE_SDK_VERSION
 
                     buildToolsVersion '$DEFAULT_BUILD_TOOL_VERSION'

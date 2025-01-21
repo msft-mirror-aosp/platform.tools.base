@@ -347,7 +347,7 @@ public class Gradle implements Closeable {
                 "settingsEvaluated { settings ->\n"
                         + "settings.pluginManagement {\n"
                         + "  repositories {\n"
-                        + "    maven { url '"
+                        + "    maven { url = '"
                         + repoDir.toURI().toString()
                         + "'}\n"
                         + "    }\n"
@@ -356,14 +356,14 @@ public class Gradle implements Closeable {
                         + "allprojects {\n"
                         + "  buildscript {\n"
                         + "    repositories {\n"
-                        + "       maven { url '"
+                        + "       maven { url = '"
                         + repoDir.toURI().toString()
                         + "'}\n"
                         + "    }\n"
                         + "  }\n"
                         + "  repositories {\n"
                         + "    maven {\n"
-                        + "      url '"
+                        + "      url = '"
                         + repoDir.toURI().toString()
                         + "'\n"
                         + "      metadataSources {\n"

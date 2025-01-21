@@ -49,8 +49,8 @@ class AbiRelatedDslUsageTest {
         TestFileUtils.appendToFile(project.buildFile, "\n" +
                 "apply plugin: 'com.android.application'\n" +
                 "android {\n" +
-                "    namespace \"${HelloWorldApp.NAMESPACE}\"\n" +
-                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    namespace = \"${HelloWorldApp.NAMESPACE}\"\n" +
+                "    compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
                 "    buildToolsVersion '" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "'\n" +
                 "    defaultConfig {\n" +
                 "        applicationId \"demo.bug\"\n" +
@@ -66,10 +66,10 @@ class AbiRelatedDslUsageTest {
                 "      }\n" +
                 "      splits {\n" +
                 "        abi {\n" +
-                "            enable true\n" +
+                "            enable = true\n" +
                 "            reset()\n" +
                 "            include 'armeabi-v7a'\n" +
-                "            universalApk $isUniversalApkRequested \n" +
+                "            universalApk = $isUniversalApkRequested \n" +
                 "        }\n" +
                 "      }\n" +
                 "}\n")
@@ -98,9 +98,9 @@ class AbiRelatedDslUsageTest {
                 """
                     apply plugin: 'com.android.application'
                     android {
-                        namespace "${HelloWorldApp.NAMESPACE}"
+                        namespace = "${HelloWorldApp.NAMESPACE}"
                         compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                        ndkVersion '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
+                        ndkVersion = '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
                         buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                         defaultConfig {
                             applicationId "demo.bug"
@@ -124,9 +124,9 @@ class AbiRelatedDslUsageTest {
             """
                     apply plugin: 'com.android.application'
                     android {
-                        namespace "${HelloWorldApp.NAMESPACE}"
+                        namespace = "${HelloWorldApp.NAMESPACE}"
                         compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                        ndkVersion '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
+                        ndkVersion = '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
                         buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                         defaultConfig {
                             applicationId "demo.bug"
@@ -136,7 +136,7 @@ class AbiRelatedDslUsageTest {
                             versionName "1.0"
                             splits {
                                 abi {
-                                    enable true
+                                    enable = true
                                     reset()
                                     include 'riscv64'
                                 }
@@ -154,9 +154,9 @@ class AbiRelatedDslUsageTest {
             """
                     apply plugin: 'com.android.application'
                     android {
-                        namespace "${HelloWorldApp.NAMESPACE}"
+                        namespace = "${HelloWorldApp.NAMESPACE}"
                         compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                        ndkVersion '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
+                        ndkVersion = '$DEFAULT_NDK_SIDE_BY_SIDE_VERSION'
                         buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                         defaultConfig {
                             applicationId "demo.bug"
@@ -185,7 +185,7 @@ class AbiRelatedDslUsageTest {
     private fun validateRenderScriptRiscvIssueExist() {
         TestFileUtils.appendToFile(
             project.buildFile,
-            "\nandroid.buildFeatures.renderScript true\n"
+            "\nandroid.buildFeatures.renderScript = true\n"
         )
 
         // Query the model to get the incorrect ABI target.
@@ -208,8 +208,8 @@ class AbiRelatedDslUsageTest {
         TestFileUtils.appendToFile(project.buildFile, "\n" +
                 "apply plugin: 'com.android.application'\n" +
                 "android {\n" +
-                "    namespace \"${HelloWorldApp.NAMESPACE}\"\n" +
-                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    namespace = \"${HelloWorldApp.NAMESPACE}\"\n" +
+                "    compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
                 "    buildToolsVersion '" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "'\n" +
                 "    defaultConfig {\n" +
                 "        applicationId \"demo.bug\"\n" +
@@ -245,8 +245,8 @@ class AbiRelatedDslUsageTest {
         TestFileUtils.appendToFile(project.buildFile, "\n" +
                 "apply plugin: 'com.android.application'\n" +
                 "android {\n" +
-                "    namespace \"${HelloWorldApp.NAMESPACE}\"\n" +
-                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    namespace = \"${HelloWorldApp.NAMESPACE}\"\n" +
+                "    compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
                 "    buildToolsVersion '" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "'\n" +
                 "    defaultConfig {\n" +
                 "        applicationId \"demo.bug\"\n" +
@@ -258,10 +258,10 @@ class AbiRelatedDslUsageTest {
                 "      }\n" +
                 "      splits {\n" +
                 "        abi {\n" +
-                "            enable true\n" +
+                "            enable = true\n" +
                 "            reset()\n" +
                 "            include 'armeabi-v7a'\n" +
-                "            universalApk false\n" +
+                "            universalApk = false\n" +
                 "        }\n" +
                 "      }\n" +
                 "}\n")
@@ -309,7 +309,7 @@ class AbiRelatedDslUsageTest {
             """
                 apply plugin: "com.android.application"
                 android {
-                    namespace "${HelloWorldApp.NAMESPACE}"
+                    namespace = "${HelloWorldApp.NAMESPACE}"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                     defaultConfig {
                         minSdkVersion 21

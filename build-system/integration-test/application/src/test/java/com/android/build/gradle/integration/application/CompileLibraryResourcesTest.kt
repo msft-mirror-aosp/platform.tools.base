@@ -93,7 +93,7 @@ class CompileLibraryResourcesTest {
                 android {
                     buildTypes {
                         release {
-                            shrinkResources true
+                            shrinkResources = true
                             minifyEnabled true
                         }
                     }

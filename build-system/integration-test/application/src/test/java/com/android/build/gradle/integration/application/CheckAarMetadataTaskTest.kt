@@ -61,7 +61,7 @@ class CheckAarMetadataTaskTest {
     fun testBasic() {
         // Test that app builds successfully when compatible minCompileSdkVersion set library.
         project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk 28"
+            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
         )
         project.executor().run(":app:assembleDebug")
     }
@@ -93,8 +93,8 @@ class CheckAarMetadataTaskTest {
         project.getSubproject("app").buildFile
         TestFileUtils.searchRegexAndReplace(
             project.getSubproject("app").buildFile,
-            "compileSdkVersion \\d+",
-            "compileSdkVersion 24"
+            "compileSdkVersion = \\d+",
+            "compileSdkVersion = 24"
         )
 
         // First test that the build fails when minCompileSdkVersion isn't set.
@@ -108,7 +108,7 @@ class CheckAarMetadataTaskTest {
 
         // Then test that setting minCompileSdkVersion results in a better error message.
         project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk 28"
+            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
         )
         try {
             project.executor().run(":app:assembleDebug")
@@ -161,7 +161,7 @@ class CheckAarMetadataTaskTest {
                 """.trimIndent()
         )
         project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk 28"
+            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
         )
         project.executor().run(":lib:assembleDebug")
         // Copy lib's .aar build output to the app's libs directory
@@ -177,7 +177,7 @@ class CheckAarMetadataTaskTest {
         project.getSubproject("app").buildFile
         TestFileUtils.searchRegexAndReplace(
             project.getSubproject("app").buildFile,
-            "compileSdkVersion \\d+",
+            "compileSdkVersion = \\d+",
             "compileSdkVersion 24"
         )
 
