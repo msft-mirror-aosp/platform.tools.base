@@ -77,6 +77,9 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
     abstract val sdkVersion: Property<Int>
 
     @get: Input
+    abstract val sdkMinorVersion: Property<Int>
+
+    @get: Input
     abstract val systemImageVendor: Property<String>
 
     @get: Input
@@ -102,6 +105,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
 
     override fun doTaskAction() {
         assertSourceDoesNotIncludePageAlignment()
+        assertNoMinorVersionOnOldApi()
         assertNoTvOrAuto()
 
         workerExecutor.noIsolation().submit(ManagedDeviceSetupRunnable::class.java) {
@@ -113,6 +117,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             it.deviceName.set(
                 computeAvdName(
                     sdkVersion.get(),
+                    sdkMinorVersion.get(),
                     sdkExtensionVersion.orNull,
                     systemImageVendor.get(),
                     pageAlignmentSuffix.get(),
@@ -124,6 +129,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             it.systemImageVendor.set(systemImageVendor)
             it.pageAlignmentSuffix.set(pageAlignmentSuffix)
             it.sdkVersion.set(sdkVersion)
+            it.sdkMinorVersion.set(sdkMinorVersion)
             it.sdkExtensionVersion.set(sdkExtensionVersion)
             it.require64Bit.set(require64Bit)
             it.abi.set(abi)
@@ -169,6 +175,20 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         }
     }
 
+    private fun assertNoMinorVersionOnOldApi() {
+        // Developers should not specify a minor api version on an old major version
+        // Major version is less than or equal to 35 minor version is not supported.
+        if (sdkVersion.get() <= 35 && sdkMinorVersion.get() != 0) {
+            error(
+                """
+                    ${managedDeviceName.get()} has a minor version specified for
+                    sdkVersion = ${sdkVersion.get()}. The minimum api version that supports minor
+                    versions is 36.
+                """.trimIndent()
+            )
+        }
+    }
+
     abstract class ManagedDeviceSetupRunnable : ProfileAwareWorkAction<ManagedDeviceSetupParams>() {
         override fun run() {
             val versionedSdkLoader = parameters.sdkService.get().sdkLoader(
@@ -182,6 +202,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 error(generateSystemImageErrorMessage(
                     parameters.managedDeviceName.get(),
                     parameters.sdkVersion.get(),
+                    parameters.sdkMinorVersion.get(),
                     parameters.sdkExtensionVersion.orNull,
                     parameters.systemImageVendor.get(),
                     parameters.pageAlignmentSuffix.get(),
@@ -207,6 +228,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         private fun computeImageHash(): String =
             computeSystemImageHashFromDsl(
                 parameters.sdkVersion.get(),
+                parameters.sdkMinorVersion.get(),
                 parameters.sdkExtensionVersion.orNull,
                 parameters.systemImageVendor.get(),
                 parameters.pageAlignmentSuffix.get(),
@@ -225,6 +247,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         abstract val systemImageVendor: Property<String>
         abstract val pageAlignmentSuffix: Property<String>
         abstract val sdkVersion: Property<Int>
+        abstract val sdkMinorVersion: Property<Int>
         abstract val sdkExtensionVersion: Property<Int>
         abstract val require64Bit: Property<Boolean>
         abstract val abi: Property<String>
@@ -235,6 +258,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         private val systemImageSource: String,
         private val pageAlignmentSuffix: String,
         private val sdkVersion: Int,
+        private val sdkMinorVersion: Int,
         private val sdkExtensionVersion: Int?,
         private val abi: String,
         private val hardwareProfile: String,
@@ -252,6 +276,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             managedDevice.systemImageSource,
             managedDevice.pageAlignmentSuffix,
             managedDevice.sdkVersion,
+            managedDevice.sdkMinorVersion,
             managedDevice.sdkExtensionVersion,
             computeAbiFromArchitecture(managedDevice),
             managedDevice.device,
@@ -276,6 +301,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             task.systemImageVendor.setDisallowChanges(systemImageSource)
             task.pageAlignmentSuffix.setDisallowChanges(pageAlignmentSuffix)
             task.sdkVersion.setDisallowChanges(sdkVersion)
+            task.sdkMinorVersion.setDisallowChanges(sdkMinorVersion)
             task.sdkExtensionVersion.setDisallowChanges(sdkExtensionVersion)
             task.abi.setDisallowChanges(abi)
             task.hardwareProfile.setDisallowChanges(hardwareProfile)
@@ -294,6 +320,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         fun generateSystemImageErrorMessage(
             deviceName: String,
             sdkVersion: Int,
+            sdkMinorVersion: Int,
             extensionVersion: Int?,
             systemImageSource: String,
             pageAlignmentSuffix: String,
@@ -314,6 +341,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 osArchitecture,
                 deviceName,
                 sdkVersion,
+                sdkMinorVersion,
                 extensionVersion,
                 systemImageSource,
                 pageAlignmentSuffix,

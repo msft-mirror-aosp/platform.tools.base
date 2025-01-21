@@ -23,23 +23,40 @@ class SystemImageHashUtilsTest {
 
     @Test
     fun testComputeSystemImageHashFromDsl() {
+        // in earlier versions if minor == 0, then it should not be included in the hash.
         var expectedHash = "system-images;android-29;default;x86"
-        var computedHash = computeSystemImageHashFromDsl(29, null, "aosp", "", "x86")
+        var computedHash = computeSystemImageHashFromDsl(29, 0,null, "aosp", "", "x86")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-30;google_apis;x86_64"
-        computedHash = computeSystemImageHashFromDsl(30, null, "google", "", "x86_64")
+        computedHash = computeSystemImageHashFromDsl(30, 0, null, "google", "", "x86_64")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-31;android-wear;x86_64"
-        computedHash = computeSystemImageHashFromDsl(31, null,"android-wear", "", "x86_64")
+        computedHash = computeSystemImageHashFromDsl(31, 0, null,"android-wear", "", "x86_64")
 
         assertEquals(expectedHash, computedHash)
 
         expectedHash = "system-images;android-31;google_apis_ps16k;arm64-v8a"
-        computedHash = computeSystemImageHashFromDsl(31, null, "google", "_ps16k", "arm64-v8a")
+        computedHash = computeSystemImageHashFromDsl(31, 0, null, "google", "_ps16k", "arm64-v8a")
+
+        assertEquals(expectedHash, computedHash)
+
+        expectedHash = "system-images;android-37.1;google_apis;arm64-v8a"
+        computedHash = computeSystemImageHashFromDsl(37, 1, null, "google", "", "arm64-v8a")
+
+        assertEquals(expectedHash, computedHash)
+
+        expectedHash = "system-images;android-45.7-ext100;google_apis;arm64-v8a"
+        computedHash = computeSystemImageHashFromDsl(45, 7, 100, "google", "", "arm64-v8a")
+
+        assertEquals(expectedHash, computedHash)
+
+        // starting in 37, minor version should be included regardless of value.
+        expectedHash = "system-images;android-37.0;google_apis;arm64-v8a"
+        computedHash = computeSystemImageHashFromDsl(37, 0, null, "google", "", "arm64-v8a")
 
         assertEquals(expectedHash, computedHash)
     }
@@ -78,6 +95,21 @@ class SystemImageHashUtilsTest {
         assertEquals(
             30,
             parseApiFromHash("system-images;android-30-ext12;default;x86_64"))
+        assertEquals(
+            300,
+            parseApiFromHash("system-images;android-300.5;default;x86_64")
+        )
+    }
+
+    @Test
+    fun testParseMinorApiFromHash() {
+        assertEquals(0, parseMinorApiFromHash("system-images;android-35;default;x86_64"))
+        assertEquals(0, parseMinorApiFromHash("system-images;android-35-ext17;default;x86_64"))
+        assertEquals(1, parseMinorApiFromHash("system-images;android-37.1;default;x86_64"))
+        assertEquals(
+            2,
+            parseMinorApiFromHash("system-images;android-300.2-ext1000;default;x86_64")
+        )
     }
 
     @Test
