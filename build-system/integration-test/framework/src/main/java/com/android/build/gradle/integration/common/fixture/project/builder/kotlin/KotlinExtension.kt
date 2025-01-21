@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder.kotlin
 
-import net.bytebuddy.ByteBuddy
 import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -25,8 +24,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  * Top level interface for the `kotlin {}` in test projects.
  *
  * The actual Kotlin top level type is an abstract class so we cannot use it with
- * [com.android.build.gradle.integration.common.fixture.dsl.DslProxy], and it also fails with
- * [ByteBuddy]
+ * [com.android.build.gradle.integration.common.fixture.dsl.DslProxy], and it also fails with ByteBuddy
  *
  * Therefore, this is used as an entry point. This exposes only what we need. This is implemented
  * via the proxy so that we don't have to bother with the implementation and the writing into
