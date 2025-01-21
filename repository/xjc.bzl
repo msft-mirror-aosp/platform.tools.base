@@ -138,6 +138,7 @@ def xsd_java_library(
 
     native.java_library(
         name = name + ".lib",
+        javacopts = ["-source 17", "-target 17"],
         srcs = [":" + name],
         deps = java_deps + ["@maven//:org.glassfish.jaxb.jaxb-runtime"],
         **kwargs
