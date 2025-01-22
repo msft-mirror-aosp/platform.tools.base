@@ -1092,6 +1092,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           return
         }
       }
+      "com.android.tools" -> {
+        // Only desugar_jdk_libs has version 1; desugar_jdk_libs_nio and desugar_jdk_libs_minimal
+        // starts with v2
+        if (
+          artifactId == "desugar_jdk_libs" &&
+            checkCoreLibraryDesugaringCompatibility(context, dependency, cookie)
+        ) {
+          return
+        }
+      }
       "com.google.guava" -> {
         // TODO: 24.0-android
         if ("guava" == artifactId) {
@@ -1682,6 +1692,34 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun Version.isOldApacheCommonsVersion() = major?.toString()?.length == 8
+
+  private fun checkCoreLibraryDesugaringCompatibility(
+    context: Context,
+    dependency: Dependency,
+    cookie: Any,
+  ): Boolean {
+    val version = dependency.version
+    if (version != null && version.lowerBound.major == 1) {
+      val compileTarget = context.project.buildModule?.compileTarget ?: return false
+      val targetVersion = AndroidTargetHash.getPlatformVersion(compileTarget) ?: return false
+      if (targetVersion.isAtLeast(35)) {
+        val minimum = RichVersion.parse("2.+")
+        val artifact = dependency.name
+        val group = dependency.group!!
+        val query = Dependency(group, artifact, minimum)
+        val filter = getUpgradeVersionFilter(context, group, query.name, minimum.lowerBound)
+        val suggestedVersion = getGoogleMavenRepoVersion(context, query, filter)
+        val message =
+          "Core library desugaring runtime library version ${version.lowerBound} does not " +
+            "support `compileSdk=35` or later; please upgrade to version $suggestedVersion"
+        val fix =
+          version.toIdentifier()?.let { getUpdateDependencyFix(it, suggestedVersion.toString()) }
+        report(context, cookie, CORE_LIB_DESUGARING_V2, message, fix)
+        return true
+      }
+    }
+    return false
+  }
 
   // Important: This is called without the PSI read lock, since it may make network requests.
   // Any interaction with PSI or issue reporting should be wrapped in a read action.
@@ -2801,6 +2839,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         priority = 4,
         severity = Severity.WARNING,
         implementation = IMPLEMENTATION_WITH_TOML,
+      )
+
+    /** Using version 1.x of the core library desugaring with Android 15 or later */
+    @JvmField
+    val CORE_LIB_DESUGARING_V2 =
+      Issue.create(
+        id = "CoreLibDesugaringV1",
+        briefDescription = "Android 15 requires `desugar_jdk_libs` 2.+",
+        explanation =
+          """
+          Core library desugaring with `compileSdk` 35 or later (Android 15) \
+          requires using version 2.+ of the core library desugaring libraries. \
+          The code may compile successfully, but can crash at runtime.
+          """,
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION_WITH_TOML,
+        androidSpecific = true,
       )
 
     /** A dependency on an obsolete version of the Android Gradle Plugin. */

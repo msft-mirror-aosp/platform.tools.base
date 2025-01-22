@@ -1148,7 +1148,8 @@ constructor(
           updateVectorDrawableOptionsUseSupportLibrary { true }
         }
       }
-      key.startsWith("android.compileOptions.coreLibraryDesugaringEnabled ") -> {
+      key.startsWith("android.compileOptions.coreLibraryDesugaringEnabled ") ||
+        key.startsWith("android.compileOptions.isCoreLibraryDesugaringEnabled ") -> {
         val value = getUnquotedValue(key)
         updateBuildFeatures { it.copy(coreLibraryDesugaringEnabled = toBoolean(value)) }
       }

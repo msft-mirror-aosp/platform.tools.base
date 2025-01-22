@@ -135,6 +135,7 @@ class CoreLibraryDesugarTest {
                 android.defaultConfig.multiDexEnabled = true
                 dependencies {
                     implementation project("$LIBRARY_MODULE")
+                    //noinspection CoreLibDesugaringV1
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
             """.trimIndent())
@@ -173,6 +174,7 @@ class CoreLibraryDesugarTest {
                     android.defaultConfig.multiDexEnabled = true
                 }
                 dependencies {
+                    //noinspection CoreLibDesugaringV1
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
             """.trimIndent()
