@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -32,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import java.net.URLClassLoader
 import java.nio.file.Files
 
 class MergeResourcesTest {
@@ -40,9 +42,11 @@ class MergeResourcesTest {
     val project = GradleTestProject.builder()
         .fromTestProject("projectWithModules")
         .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-        // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-        .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
         .create()
+
+    fun executor() = project.executor()
+            // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
 
     @Test
     fun mergesRawWithLibraryWithOverride() {
@@ -54,7 +58,7 @@ class MergeResourcesTest {
             "dependencies { api project(':library') }${System.lineSeparator()}"
         )
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         val rDef = FileUtils.join(
             project.getSubproject("library").intermediatesDir,
@@ -76,7 +80,7 @@ class MergeResourcesTest {
         FileUtils.mkdirs(libraryRaw)
         Files.write(File(libraryRaw, "me.raw").toPath(), byteArrayOf(0, 1, 2))
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         assertThat(rDef).exists()
         assertThat(rDef).contains("raw me")
@@ -122,7 +126,7 @@ class MergeResourcesTest {
         FileUtils.mkdirs(appRaw)
         Files.write(File(appRaw, "me.raw").toPath(), byteArrayOf(3))
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         assertThat(project.getSubproject("app").getApkAsFile(GradleTestProject.ApkType.DEBUG)) {
             it.containsFileWithContent("res/raw/me.raw", byteArrayOf(3))
@@ -138,7 +142,7 @@ class MergeResourcesTest {
 
         Files.write(File(libraryRaw, "me.raw").toPath(), byteArrayOf(0, 1, 2, 4))
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         assertThat(project.getSubproject("app").getApkAsFile(GradleTestProject.ApkType.DEBUG)) {
             it.containsFileWithContent("res/raw/me.raw", byteArrayOf(3))
@@ -158,7 +162,7 @@ class MergeResourcesTest {
         val raw = FileUtils.join(project.projectDir, "app", "src", "main", "res", "raw")
         FileUtils.mkdirs(raw)
         Files.write(File(raw, "me.raw").toPath(), byteArrayOf(0, 1, 2))
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file is merged and in the apk.
@@ -182,7 +186,7 @@ class MergeResourcesTest {
          * Remove the resource from the project and build the project incrementally.
          */
         assertTrue(File(raw, "me.raw").delete())
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file has been removed from the intermediates and from the apk.
@@ -199,7 +203,7 @@ class MergeResourcesTest {
         val raw = FileUtils.join(project.projectDir, "app", "src", "main", "res", "raw")
         FileUtils.mkdirs(raw)
         Files.write(File(raw, "me.raw").toPath(), byteArrayOf(0, 1, 2))
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file is merged and in the apk.
@@ -223,7 +227,7 @@ class MergeResourcesTest {
          * Change the resource file from the project and build the project incrementally.
          */
         Files.write(File(raw, "me.raw").toPath(), byteArrayOf(1, 2, 3, 4))
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file has been updated in the intermediates directory and in the project.
@@ -260,8 +264,7 @@ class MergeResourcesTest {
             "<resources>\n" +
                     "<string name=\"foo_string\">flavor1</string>\n" +
                     "</resources>")
-        project.executor().run("clean", ":app:assembleDebug")
-        project.executor().run(":app:assembleDebug")
+        executor().run("clean", ":app:assembleDebug")
         FileUtils.createFile(
             app.file("src/main/res/layout/additional.xml"),
             """<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -270,13 +273,13 @@ class MergeResourcesTest {
                             android:orientation="vertical" >
                         </LinearLayout>"""
         )
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         // Verify the resource can be moved to a different source set.
         val flavor1Layout = File(flavor1, "layout").also { it.mkdirs() }
         val movedFile = File(flavor1Layout, "additional.xml")
         Files.move(app.file("src/main/res/layout/additional.xml").toPath(), movedFile.toPath())
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
         val apk = app.getApk(GradleTestProject.ApkType.DEBUG, "flavor1")
         assertThat(apk.getEntry("/res/layout/additional.xml")).isNotNull()
     }
@@ -289,7 +292,7 @@ class MergeResourcesTest {
         val raw = FileUtils.join(project.projectDir, "app", "src", "main", "res", "raw")
         FileUtils.mkdirs(raw)
         Files.write(File(raw, "me.raw").toPath(), byteArrayOf(0, 1, 2))
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file is merged and in the apk.
@@ -315,7 +318,7 @@ class MergeResourcesTest {
          */
         assertTrue(File(raw, "me.raw").delete())
         Files.write(File(raw, "me.war").toPath(), byteArrayOf(1, 2, 3, 4))
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         /*
          * Check that the file has been updated in the intermediates directory and in the project.
@@ -353,7 +356,7 @@ class MergeResourcesTest {
             "public int useFoo() { return R.id.foo; }"
         )
 
-        project.executor().with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleDebug")
+        executor().with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleDebug")
     }
 
     @Test
@@ -378,7 +381,7 @@ class MergeResourcesTest {
         )
 
         // Run a full build with shrinkResources enabled
-        var result = project.executor().run(":app:clean", ":app:assembleDebug")
+        var result = executor().run(":app:clean", ":app:assembleDebug")
         assertThat(result.getTask(":app:mergeDebugResources")).didWork()
         val apkSizeWithShrinkResources =
             appProject.getApk(GradleTestProject.ApkType.DEBUG).contentsSize
@@ -388,7 +391,7 @@ class MergeResourcesTest {
         TestFileUtils.searchAndReplace(
             appBuildFile, "shrinkResources = true", "shrinkResources = false"
         )
-        result = project.executor().run(":app:assembleDebug")
+        result = executor().run(":app:assembleDebug")
         assertThat(result.getTask(":app:mergeDebugResources")).didWork()
         val apkSizeWithoutShrinkResources =
             appProject.getApk(GradleTestProject.ApkType.DEBUG).contentsSize
@@ -399,7 +402,7 @@ class MergeResourcesTest {
         TestFileUtils.searchAndReplace(
             appBuildFile, "shrinkResources = false", "shrinkResources = true"
         )
-        result = project.executor().run(":app:assembleDebug")
+        result = executor().run(":app:assembleDebug")
         assertThat(result.getTask(":app:mergeDebugResources")).didWork()
         val sameApkSizeShrinkResources =
             appProject.getApk(GradleTestProject.ApkType.DEBUG).contentsSize
@@ -422,7 +425,7 @@ class MergeResourcesTest {
             File(libraryValues, "lib_values.xml"),
             "<resources><string name=\"my_library_string\">lib string</string></resources>")
 
-        project.executor()
+        executor()
             .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
             .run("clean", ":app:assembleDebug")
 
@@ -451,7 +454,7 @@ class MergeResourcesTest {
 
         assertThat(inMergedDir).contains("my_library_string")
 
-        project.executor()
+        executor()
             .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, true)
             .run("clean", ":app:generateDebugRFile")
 
@@ -478,7 +481,7 @@ class MergeResourcesTest {
         val generatedPngs = FileUtils.join(appProject.projectDir,
                 "build", "generated", "res", "pngs", "debug")
 
-        project.executor()
+        executor()
                 .run(":app:assembleDebug")
 
         assertThat(FileUtils.join(generatedPngs, "drawable-anydpi-v21", "icon.xml")
@@ -506,14 +509,60 @@ class MergeResourcesTest {
         FileUtils.createFile(noCompileLayout,
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                         "<merge/>")
-        project.execute(":app:mergeReleaseResources")
+        executor().run(":app:mergeReleaseResources")
 
         TestFileUtils.appendToFile(
                 noCompileLayout,
                 "<!-- Comment causing incremental run. -->"
         )
 
-        project.execute(":app:mergeReleaseResources")
+        executor().run(":app:mergeReleaseResources")
+    }
+
+    // Regression test b/387371071
+    @Test
+    fun testSameNamedStringAndIdAppearInRClass() {
+        val appProject = project.getSubproject(":app")
+        val libraryProject = project.getSubproject(":library")
+
+        TestFileUtils.appendToFile(
+            appProject.buildFile,
+            "dependencies { api project(':library') }${System.lineSeparator()}"
+        )
+
+        val libraryValuesIds = libraryProject.file("src/main/res/values/ids.xml")
+
+        // A string resource called `app_name` is already present in the project.
+        FileUtils.createFile(
+            libraryValuesIds, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<resources>\n" +
+                    "    <item name=\"app_name\" type=\"id\" />\n" +
+                    "</resources>"
+        )
+
+        TestFileUtils.searchAndReplace(
+            libraryProject.buildFile,
+                    "namespace = \"com.example.android.multiproject.library.base\"",
+                    "namespace = \"com.example.android.multiproject\""
+        )
+
+        project.executor()
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run(":app:assembleDebug")
+
+        val rJar = appProject.intermediatesDir
+            .resolve(
+                InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR.getFolderName() +
+                        "/debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}")
+        URLClassLoader.newInstance(arrayOf(rJar.toURI().toURL())).use { urlClassLoader ->
+            val rClassStrings =
+                urlClassLoader.loadClass("com.example.android.multiproject.R\$string")?.fields
+            val rClassIds =
+                urlClassLoader.loadClass("com.example.android.multiproject.R\$id")?.fields
+
+            assertThat(rClassStrings?.map { it.name }).contains("app_name")
+            assertThat(rClassIds?.map { it.name }).contains("app_name")
+        }
     }
 
     private fun GradleTestProject.getLinkedResourcesFile(): File =
