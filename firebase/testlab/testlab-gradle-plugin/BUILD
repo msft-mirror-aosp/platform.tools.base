@@ -50,7 +50,7 @@ maven_repository(
         "@maven//:com.google.apis.google-api-services-testing_v1-rev82-1.22.0",
         "@maven//:com.google.apis.google-api-services-toolresults_v1beta3-rev82-1.22.0",
         "@maven//:com.google.http-client.google-http-client-jackson2",
-        "@maven//:com.google.http-client.google-http-client_1.41.0",
+        "@maven//:com.google.http-client.google-http-client_1.43.3",
         "@maven//:com.google.oauth-client.google-oauth-client_1.22.0",
         "@maven//:com.google.protobuf.protobuf-java-util",
         "@maven//:com.google.testing.platform.android-device-provider-local",

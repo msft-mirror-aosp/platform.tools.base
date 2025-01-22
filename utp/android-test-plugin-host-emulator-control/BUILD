@@ -48,6 +48,7 @@ kotlin_test(
         # Test dependencies.
         ":android-test-plugin-host-emulator-control",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-stub",
         "@maven//:io.grpc.grpc-testing",
         "//tools/base/common:tools.common",

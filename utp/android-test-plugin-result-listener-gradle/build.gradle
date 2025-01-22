@@ -32,6 +32,7 @@ dependencies {
     implementation libs.unified_test_platform_grpc_protobuf
     implementation libs.unified_test_platform_grpc_stub
     implementation libs.unified_test_platform_grpc_netty
+    implementation libs.unified_test_platform_grpc_inprocess
     implementation libs.protobuf
     implementation libs.guava
     implementation libs.unified_test_platform
@@ -42,7 +43,7 @@ dependencies {
     testImplementation libs.unified_test_platform_launcher
     testImplementation libs.mockito_core
     testImplementation libs.junit
-    testImplementation "io.grpc:grpc-testing:1.57.0"
+    testImplementation "io.grpc:grpc-testing:1.69.1"
 }
 
 project.ext.pomName = 'UTP plugins for Android Tools'

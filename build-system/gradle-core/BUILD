@@ -117,6 +117,7 @@ kotlin_library(
         "@maven//:com.squareup.javapoet",
         "@maven//:commons-io.commons-io",  # TODO: remove?
         "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-netty",
         "@maven//:io.grpc.grpc-protobuf",
         "@maven//:io.grpc.grpc-stub",
@@ -260,6 +261,7 @@ kotlin_test(
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.google.truth.truth",
         "@maven//:commons-io.commons-io",  # TODO: remove?
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-testing",
         "@maven//:junit.junit",
         "@maven//:nl.jqno.equalsverifier.equalsverifier",

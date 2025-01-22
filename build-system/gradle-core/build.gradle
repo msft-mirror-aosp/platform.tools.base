@@ -183,6 +183,7 @@ dependencies {
     implementation libs.grpc_netty
     implementation libs.grpc_protobuf
     implementation libs.grpc_stub
+    implementation libs.grpc_inprocess
     implementation libs.tink
     implementation libs.unified_test_platform
 

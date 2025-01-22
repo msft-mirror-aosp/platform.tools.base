@@ -27,6 +27,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/android-test-framework:intellij.android.testFramework[module, test]",
         "@intellij//:intellij.libraries.grpc",
-        "//prebuilts/tools/common/m2:grpc-inprocess-1.66.0",
+        "//prebuilts/tools/common/m2:grpc-inprocess-1.69.1",
     ],
 )
