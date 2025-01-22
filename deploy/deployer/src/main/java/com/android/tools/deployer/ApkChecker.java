@@ -16,13 +16,17 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deployer.model.Apk;
+import com.android.tools.deployer.model.ApkEntry;
 import com.android.utils.ILogger;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Log information about the APKs that was targeted for deployment.
@@ -60,16 +64,33 @@ public class ApkChecker {
                 logger.error(e, "Unable to perform APKChecker logging on file %s", path.toString());
             }
 
+            LinkedHashMap<String, Long> dexChecksumSorted = new LinkedHashMap<>();
+            for (Map.Entry<String, ApkEntry> entry : apk.apkEntries.entrySet()) {
+                String name = entry.getKey();
+                if (name.endsWith(".dex")) {
+                    dexChecksumSorted.put(entry.getKey(), entry.getValue().getChecksum());
+                }
+            }
+
+            StringBuilder dexChecksums = new StringBuilder();
+            for (Map.Entry<String, Long> entry : dexChecksumSorted.entrySet()) {
+                dexChecksums.append(entry.getKey());
+                dexChecksums.append("='");
+                dexChecksums.append(entry.getValue());
+                dexChecksums.append("' ");
+            }
+
             logger.info(
                     "Deploy APK Check session='%s', path='%s', size='%,d', fingerprint='%s', "
-                            + "crTime='%s', modTime='%s', acTime='%s'",
+                            + "crTime='%s', modTime='%s', acTime='%s' %s",
                     deploySessionId,
                     apk.path,
                     size,
                     fingerprint,
                     creationTime,
                     lastModifiedTime,
-                    lastAccessTime);
+                    lastAccessTime,
+                    dexChecksums);
         }
         return true;
     }
