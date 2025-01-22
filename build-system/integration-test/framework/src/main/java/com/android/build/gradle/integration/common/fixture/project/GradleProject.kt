@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.api.artifact.Artifact
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
@@ -24,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
+import java.util.Locale
 
 /**
  * Base interface for all projects, including but not limited to
@@ -39,6 +41,11 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
      * [GradleProjectDefinition.files]
      */
     fun resolve(path: String): Path
+
+    /**
+     * Resolves a path that leads to the storage of this task output artifact.
+     */
+    fun resolve(artifact: Artifact<*>): Path
 
     /** the object that allows to add/update/remove files from the project */
     val files: GradleProjectFiles
@@ -75,6 +82,9 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
             throw RuntimeException("Unauthorized access to the build file. Use the DSL to edit the file instead")
         return location.resolve(path)
     }
+
+    override fun resolve(artifact: Artifact<*>): Path =
+        location.resolve("build/${artifact.category.name.lowercase(Locale.US)}/${artifact.getFolderName()}")
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 

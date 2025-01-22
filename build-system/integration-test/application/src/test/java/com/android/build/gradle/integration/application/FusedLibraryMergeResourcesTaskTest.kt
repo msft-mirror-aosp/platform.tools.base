@@ -228,9 +228,9 @@ class FusedLibraryMergeResourcesTaskTest {
             contains("/res/layout/layout.xml")
         }
 
-        val mergeFolder = InternalArtifactType.MERGED_RES_INCREMENTAL_FOLDER.getFolderName()
-        val incrementalMergedResDir = app.intermediatesDir.resolve(
-            "$mergeFolder/debug/mergeDebugResources/merged.dir")
+        val incrementalMergedResDir = app
+            .resolve(InternalArtifactType.MERGED_RES_INCREMENTAL_FOLDER)
+            .resolve("debug/mergeDebugResources/merged.dir")
         assertThat(
             incrementalMergedResDir.resolve("values/values.xml").readLines().map(String::trim)
         ).containsExactly(

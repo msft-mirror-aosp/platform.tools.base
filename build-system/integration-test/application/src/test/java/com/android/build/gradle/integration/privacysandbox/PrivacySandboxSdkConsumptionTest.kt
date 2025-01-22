@@ -90,11 +90,10 @@ class PrivacySandboxSdkConsumptionTest {
 
         // Check building the SDK itself
         build.configuredExecutor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
-        val folderName = InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName()
         val ideModelFile = build
             .androidApplication(":example-app")
-            .intermediatesDir
-            .resolve("${folderName}/debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
+            .resolve(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL)
+            .resolve("debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
             .toFile()
         val privacySandboxSdkApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,
             LoggerWrapper.getLogger(PrivacySandboxSdkConsumptionTest::class.java))
@@ -305,8 +304,7 @@ class PrivacySandboxSdkConsumptionTest {
 
         val extractedSdkApksDir = build
             .androidApplication(":example-app")
-            .intermediatesDir
-            .resolve(InternalArtifactType.EXTRACTED_SDK_APKS.getFolderName())
+            .resolve(InternalArtifactType.EXTRACTED_SDK_APKS)
             .toFile()
         val extractedSdkApks = extractedSdkApksDir
                 .walkTopDown()

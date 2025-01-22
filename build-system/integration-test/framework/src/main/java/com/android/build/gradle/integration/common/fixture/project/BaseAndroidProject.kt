@@ -59,16 +59,6 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
     override fun getIntermediatePath(vararg paths: String?): Path {
         return intermediatesDir.resolve(paths.joinToString(separator = "/"))
     }
-
-    protected fun computeOutputPath(outputSelector: OutputSelector): Path {
-        val root = if (outputSelector.fromIntermediates) {
-            intermediatesDir
-        } else {
-            outputsDir
-        }
-
-        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
-    }
 }
 
 internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(

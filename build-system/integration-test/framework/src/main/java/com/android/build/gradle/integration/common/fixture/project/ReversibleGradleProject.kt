@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.api.artifact.Artifact
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.FileUpdateBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
@@ -42,6 +43,8 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     )
 
     override fun resolve(path: String): Path = parentProject.resolve(path)
+
+    override fun resolve(artifact: Artifact<*>): Path = parentProject.resolve(artifact)
 
     override val buildDir: Path
         get() = parentProject.buildDir

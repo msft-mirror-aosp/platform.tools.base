@@ -184,8 +184,7 @@ class BuiltInKotlinForAppTest2 {
         build.executor.run(":app:compileDebugKotlin", ":app:compileDebugAndroidTestKotlin")
 
         val kotlincOutputDir = build.androidApplication()
-            .intermediatesDir
-            .resolve(InternalArtifactType.BUILT_IN_KOTLINC.getFolderName())
+            .resolve(InternalArtifactType.BUILT_IN_KOTLINC)
         PathSubject.assertThat(kotlincOutputDir).exists()
 
         val fooMainClassFile = kotlincOutputDir.resolve(
