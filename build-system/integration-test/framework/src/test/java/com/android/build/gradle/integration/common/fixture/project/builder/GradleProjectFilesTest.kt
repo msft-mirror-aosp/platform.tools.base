@@ -24,6 +24,7 @@ import org.junit.rules.ExpectedException
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.io.File
 import java.nio.file.Path
 
 @RunWith(Parameterized::class)
@@ -88,14 +89,15 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
 
             instance as? DirectGradleProjectFiles ?: throw RuntimeException("Wrong instance type")
             val file = instance.location.toFile()
-            val nameToContentActual = file.listFiles()!!.map { it ->
-                val expectedValue = expectedContentMap[it.name] ?: fail("unexpected result: ${it.name}")
-                it.name to when (expectedValue) {
+            val nameToContentActual = file.walkTopDown().filter { it.isFile }.map { it: File ->
+                val relativePath = it.relativeTo(file).invariantSeparatorsPath
+                val expectedValue = expectedContentMap[relativePath] ?: fail("unexpected result: ${it.name}")
+                relativePath to when (expectedValue) {
                     is String -> it.readText()
                     is ByteArray -> it.readBytes()
                     else -> fail("Unexpected actual type for key: ${it.name}")
                 }
-            }
+            }.toList()
 
             // because the content can be a byte array we have to manually tests the results.
             // Using Truth to check the content of the list isn't going to work, unless we check
@@ -148,14 +150,15 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
             val file = instance.directFiles?.location?.toFile()
                 ?: throw RuntimeException("DelayedGradleProjectFiles.directFiles is null")
 
-            val nameToContentActual = file.listFiles()!!.map { it ->
-                val actual = expectedContentMap[it.name] ?: fail("unexpected result: ${it.name}")
-                it.name to when (actual) {
+            val nameToContentActual = file.walkTopDown().filter { it.isFile }.map { it ->
+                val relativePath = it.relativeTo(file).invariantSeparatorsPath
+                val actual = expectedContentMap[relativePath] ?: fail("unexpected result: ${it.name}")
+                relativePath to when (actual) {
                     is String -> it.readText()
                     is ByteArray -> it.readBytes()
                     else -> fail("Unexpected actual type for key: ${it.name}")
                 }
-            }
+            }.toList()
 
             // because the content can be a byte array we have to manually tests the results.
             // Using Truth to check the content of the list isn't going to work, unless we check
@@ -385,6 +388,23 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
         }
 
         checker.checkContent(files, "foo" to "my text with my content")
+    }
+
+    @Test
+    fun updateMoveTo() {
+        val files = getInstance()
+        files.add("original/path/to/a.txt", "content")
+        files.update("original/path/to/a.txt").moveTo("new/path/to/a.txt")
+        checker.checkContent(files, "new/path/to/a.txt" to "content")
+    }
+
+    @Test
+    fun updateReplaceWithBytes() {
+        val files = getInstance()
+        files.add("res/a.raw", byteArrayOf(0,1))
+        val replacement = byteArrayOf(2,3,4)
+        files.update("res/a.raw").replaceWith(replacement)
+        checker.checkContent(files, "res/a.raw" to replacement)
     }
 
     private fun getInstance() = checker.getInstance(temporaryFolder.newFolder().toPath())

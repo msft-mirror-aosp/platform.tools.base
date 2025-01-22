@@ -30,9 +30,12 @@ import com.google.common.io.Files;
 
 import org.junit.runners.model.InitializationError;
 
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -59,10 +62,9 @@ public class TemporaryProjectModification implements Closeable {
      */
     private static class FileEvent {
         private final FileChangeType type;
-        private final String fileContent;
+        private final byte[] fileContent;
 
-        private FileEvent(
-                FileChangeType type, String fileContent) {
+        private FileEvent(FileChangeType type, byte[] fileContent) {
             this.type = type;
             this.fileContent = fileContent;
         }
@@ -71,16 +73,27 @@ public class TemporaryProjectModification implements Closeable {
             return type;
         }
 
-        public String getFileContent() {
+        public byte[] getFileContent() {
             return fileContent;
         }
 
         /**
          * Creates a {@link FileChangeType#CHANGED} FileEvent with a given original file content.
+         *
          * @param content the original file content
          * @return a FileEvent instance
          */
         static FileEvent changed(@NonNull String content) {
+            return new FileEvent(FileChangeType.CHANGED, content.getBytes(StandardCharsets.UTF_8));
+        }
+
+        /**
+         * Creates a {@link FileChangeType#CHANGED} FileEvent with a given original file content.
+         *
+         * @param content the original file content
+         * @return a FileEvent instance
+         */
+        static FileEvent changed(@NonNull byte[] content) {
             return new FileEvent(FileChangeType.CHANGED, content);
         }
 
@@ -90,6 +103,15 @@ public class TemporaryProjectModification implements Closeable {
          * @return a FileEvent instance
          */
         static FileEvent removed(@NonNull String content) {
+            return removed(content.getBytes(StandardCharsets.UTF_8));
+        }
+
+        /**
+         * Creates a {@link FileChangeType#REMOVED} FileEvent with a given original file content.
+         * @param content the original file content
+         * @return a FileEvent instance
+         */
+        static FileEvent removed(@NonNull byte[] content) {
             return new FileEvent(FileChangeType.REMOVED, content);
         }
 
@@ -233,21 +255,38 @@ public class TemporaryProjectModification implements Closeable {
     public void modifyFile(
             @NonNull String relativePath, @NonNull Function<String, String> modification)
             throws IOException, InterruptedException {
+        this.modifyFileWithBytes(
+                relativePath,
+                input ->
+                        modification
+                                .apply(new String(input, Charsets.UTF_8))
+                                .getBytes(StandardCharsets.UTF_8));
+    }
+
+    public void modifyFileWithBytes(
+            @NonNull String relativePath, @NonNull Function<byte[], byte[]> modification)
+            throws IOException, InterruptedException {
         File file = getFile(relativePath);
 
-        String currentContent = Files.toString(file, Charsets.UTF_8);
+        byte[] currentContent;
+        try (FileInputStream is = new FileInputStream(file); ) {
+            BufferedInputStream bos = new BufferedInputStream(is);
+            currentContent = bos.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // We can modify multiple times, but we only want to store the original.
         if (!mFileEvents.containsKey(relativePath)) {
             mFileEvents.put(relativePath, FileEvent.changed(currentContent));
         }
 
-        String newContent = modification.apply(currentContent);
+        byte[] newContent = modification.apply(currentContent);
 
         if (newContent == null) {
             assertTrue("File should have been deleted", file.delete());
         } else {
-            Files.asCharSink(file, Charsets.UTF_8).write(newContent);
+            Files.asByteSink(file).write(newContent);
         }
         TestUtils.waitForFileSystemTick();
     }
@@ -260,8 +299,7 @@ public class TemporaryProjectModification implements Closeable {
             switch (fileEvent.getType()) {
                 case REMOVED:
                 case CHANGED:
-                    Files.asCharSink(getFile(entry.getKey()), Charsets.UTF_8)
-                            .write(fileEvent.getFileContent());
+                    Files.asByteSink(getFile(entry.getKey())).write(fileEvent.getFileContent());
                     break;
                 case ADDED:
                     // it's fine if the file was already removed somehow.
