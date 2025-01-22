@@ -36,6 +36,10 @@ def robolectric_test(
         deps = depset(
             deps +
             [
+                # NOTE: The maven dependency org.robolectric.robolectric is supposed to
+                # include androidx.test.monitor on the compilepath, but the current @maven
+                # implementation does not support aar_import, and thus this dependency is
+                # not on the transitive compile classpath for org.robolectric.robolectric.
                 "//prebuilts/tools/common/m2:androidx-monitor",
             ],
         ).to_list(),

@@ -13,6 +13,17 @@ single_version_override(
     ],
     patch_strip = 1,
 )
+bazel_dep(name = "rules_go", version = "0.52.0")
+single_version_override(
+    module_name = "rules_go",
+    version = "0.52.0",
+    patches = [
+        # Workaround for https://github.com/bazelbuild/bazel/issues/11636
+        # TODO: b/371633138 - Remove this after updating to Bazel 8.
+        "//tools/base/bazel/bzlmod:rules_go_windows.patch",
+    ],
+    patch_strip = 1,
+)
 bazel_dep(name = "rules_cc", version = "0.0.15")
 bazel_dep(name = "rules_python", version = "1.1.0")
 bazel_dep(name = "rules_license", version = "1.0.0")
@@ -28,6 +39,8 @@ single_version_override(
 bazel_dep(name = "rules_jvm_external", version = "6.6")
 bazel_dep(name = "rules_java", version = "8.6.3")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
+compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy")
+use_repo(compat, "compatibility_proxy")
 bazel_dep(name = "rules_robolectric", version = "4.14.1.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
 bazel_dep(name = "grpc", version = "1.69.0")
@@ -45,6 +58,29 @@ single_version_override(
 bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "absl-py")
 bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
+
+bazel_dep(name = "rules_android", version = "0.6.0")
+single_version_override(
+    module_name = "rules_android",
+    version = "0.6.0",
+    patches = [
+        # Disables ImportDepsChecker for //prebuilts/tools/common/m2:androidx-monitor
+        # See https://github.com/bazelbuild/rules_android/issues/332
+        "//tools/base/bazel/bzlmod:rules_android_aar_import_fallback.patch",
+        # Disable ValidateAAR check on Windows, can be re-enabled on Bazel 8.
+        # Caused by https://github.com/bazelbuild/bazel/issues/11636
+        "//tools/base/bazel/bzlmod:rules_android_disable_validateaar_windows.patch",
+    ],
+    patch_strip = 1,
+)
+
+android_sdk_repository_extension = use_extension(
+    "@rules_android//rules/android_sdk_repository:rule.bzl",
+    "android_sdk_repository_extension",
+)
+use_repo(android_sdk_repository_extension, "androidsdk")
+
+register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
 
