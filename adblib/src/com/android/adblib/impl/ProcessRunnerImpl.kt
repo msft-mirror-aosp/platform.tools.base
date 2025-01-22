@@ -52,13 +52,14 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
         }
         val directory = executable.parent
         val command = listOf(executable.toString()) + args
-        logger.info { "runProcess: ${command.joinToString(" ")}" }
+        logger.info { "runProcess: '${command.joinToString(" ")}'" }
 
         val processResult = execute(command, directory, envVars)
         if (processResult.exitCode != 0) {
-            logger.debug {
-                "${command.joinToString(" ")} failed. Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
-            }
+            logger.warn(
+                "'${command.joinToString(" ")}' exited with code ${processResult.exitCode}\n"
+                        + "Stdout: ${processResult.stdout}\nStderr: ${processResult.stderr}"
+            )
         }
         return processResult
     }
@@ -98,7 +99,6 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
         envVars: Map<String, String>
     ): Process {
         return withContext(host.blockingIoDispatcher) {
-            logger.info { "runProcess: ${command.joinToString(" ")}" }
             val processBuilder = ProcessBuilder(command)
             directory?.let { processBuilder.directory(File(directory.toString())) }
             val env = processBuilder.environment()
