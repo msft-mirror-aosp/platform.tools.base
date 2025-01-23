@@ -52,7 +52,7 @@ internal class ProcessRunnerImpl(private val host: AdbSessionHost) : ProcessRunn
         }
         val directory = executable.parent
         val command = listOf(executable.toString()) + args
-        logger.info { "runProcess: '${command.joinToString(" ")}'" }
+        logger.debug { "runProcess: '${command.joinToString(" ")}'" }
 
         val processResult = execute(command, directory, envVars)
         if (processResult.exitCode != 0) {
