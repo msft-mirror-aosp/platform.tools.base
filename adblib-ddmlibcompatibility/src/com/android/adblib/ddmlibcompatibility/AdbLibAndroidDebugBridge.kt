@@ -477,7 +477,6 @@ class AdbLibAndroidDebugBridge(
 
             sInitialized = false
             sThis = null
-            sLastKnownGoodAddress = null
         }
     }
 

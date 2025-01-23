@@ -59,9 +59,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
     /** Don't automatically manage ADB server. */
     protected static boolean sUserManagedAdbMode = false;
 
-    /** Last known good {@link InetSocketAddress} to ADB. */
-    protected volatile InetSocketAddress sLastKnownGoodAddress;
-
     protected volatile AndroidDebugBridge sThis;
 
     protected volatile boolean sInitialized = false;
@@ -154,7 +151,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
         }
         sAdbEnvVars = options.adbEnvVars;
         sUserManagedAdbMode = options.userManagedAdbMode;
-        sLastKnownGoodAddress = null;
         DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService);
         DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService);
         DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize);
