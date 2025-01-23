@@ -31,6 +31,12 @@ def lint_test(name, useK2):
         tags = [
             "slow",
         ],
+        add_exports = [
+            "jdk.attach/sun.tools.attach",
+        ],
+        add_opens = [
+            "java.base/java.nio.charset",
+        ],
         test_class = "com.android.testutils.JarTestSuite",
         deps = [
             ":lint-tests",

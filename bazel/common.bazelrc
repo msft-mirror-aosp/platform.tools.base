@@ -24,42 +24,12 @@ build --jvmopt='-XX:+UseG1GC'
 build --jvmopt='-XX:+ErrorFileToStderr'
 build --verbose_failures
 
-# TODO(b/242203555) cleanup opens/exports that was added for JDK17 migration
-build --jvmopt='--add-opens=java.base/java.io=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.lang=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.nio=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.nio.charset=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.util=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.util.concurrent=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/java.awt=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/java.awt.event=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/javax.swing=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/javax.swing.text=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/sun.awt=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/sun.font=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.desktop/sun.awt.X11=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.time=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/java.lang.ref=ALL-UNNAMED'
-build --jvmopt='--add-opens=java.base/sun.nio.fs=ALL-UNNAMED'
-build --jvmopt='--add-opens=jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED'
-
 # TODO(b/270757509) remove after tests switched to flags from product-info.json (//tools/adt/idea/studio:default_user_jvm_args)
 build --jvmopt='-XX:CompileCommand=quiet -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend'
 
 #  Workaround for C2 crashes b/377324522
 test  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType'
 test  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes'
-
-build --jvmopt='--add-exports java.base/jdk.internal.vm=ALL-UNNAMED'
-build --jvmopt='--add-exports=java.desktop/sun.awt.image=ALL-UNNAMED'
-build --jvmopt='--add-exports=java.desktop/sun.java2d=ALL-UNNAMED'
-build --jvmopt='--add-exports=java.desktop/sun.swing=ALL-UNNAMED'
-build --jvmopt='--add-exports=jdk.attach/sun.tools.attach=ALL-UNNAMED'
-build --jvmopt='--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
-build --jvmopt='--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED'
 
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests

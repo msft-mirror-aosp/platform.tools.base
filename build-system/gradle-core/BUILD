@@ -182,6 +182,9 @@ kotlin_test(
         "src/test/java/**/*.kt",
         "src/test/java/**/*.java",
     ]),
+    add_opens = [
+        "java.base/java.lang",
+    ],
     data = [
         ":TestData",
         ":runtime_test_dependencies",
