@@ -248,11 +248,15 @@ abstract class AbstractAdbServices(
   }
 
   private suspend fun isBmgrEnabled(): Boolean {
-    return when (val out = executeCommand("bmgr enabled", CANNOT_ENABLE_BMGR).stdout.trim()) {
+    val output = executeCommand("bmgr enabled", CANNOT_ENABLE_BMGR)
+    return when (output.stdout.trim()) {
       "Backup Manager currently enabled" -> true
       "Backup Manager currently disabled" -> false
       else ->
-        throw BackupException(CANNOT_ENABLE_BMGR, "Unexpected output from 'bmgr enabled':\n$out")
+        throw BackupException(
+          CANNOT_ENABLE_BMGR,
+          "Unexpected output from 'bmgr enabled':\n${output.out}",
+        )
     }
   }
 
