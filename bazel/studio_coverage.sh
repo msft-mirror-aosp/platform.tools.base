@@ -83,7 +83,6 @@ fi
   --build_metadata=cov_phase=tests-and-baseline \
   --jvmopt="-Dstudio.is.coverage.build=true" \
   ${auth_options} \
-  --test_tag_filters=-perfgate,-perfgate-release \
   --define agent_coverage=true \
   --remote_download_regex=".*.coverage.baseline.srcs" \
   "${extra_test_flags[@]}" \
