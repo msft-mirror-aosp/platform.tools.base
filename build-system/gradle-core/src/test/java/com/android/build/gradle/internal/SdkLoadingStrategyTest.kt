@@ -930,12 +930,12 @@ class SdkLoadingStrategyTest {
         assertThat(androidVersion.isBaseExtension).isEqualTo(expectedAndroidVersion.isBaseExtension)
         assertThat(sdkDirectLoadingStrategy.getTargetBootClasspath()).containsExactly(
             sdkRoot.resolve("platforms/$platformHash/${SdkConstants.FN_FRAMEWORK_LIBRARY}"))
-        if (AndroidTargetHash.getVersionFromHash(platformHash).isGreaterOrEqualThan(30)) {
+        if (AndroidTargetHash.getVersionFromHash(platformHash).isAtLeast(30)) {
             assertThat(sdkDirectLoadingStrategy.getCoreForSystemModulesJar()).isEqualTo(
                 sdkRoot.resolve("platforms/$platformHash/$FN_CORE_FOR_SYSTEM_MODULES")
             )
         }
-        if (AndroidTargetHash.getVersionFromHash(platformHash).isGreaterOrEqualThan(26)) {
+        if (AndroidTargetHash.getVersionFromHash(platformHash).isAtLeast(26)) {
             assertThat(sdkDirectLoadingStrategy.getApiVersionsFile()).isEqualTo(
                 sdkRoot.resolve("platforms/$platformHash/data/api-versions.xml")
             )

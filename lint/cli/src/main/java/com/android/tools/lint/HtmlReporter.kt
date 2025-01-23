@@ -361,7 +361,13 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">$title: """ +
-        describeCounts(stats.errorCount, stats.warningCount, comma = false, capitalize = true) +
+        describeCounts(
+          stats.errorCount,
+          stats.warningCount,
+          stats.hintCount,
+          comma = false,
+          capitalize = true,
+        ) +
         "</span>\n" +
         "      <div class=\"mdl-layout-spacer\"></div>\n" +
         "      <nav class=\"mdl-navigation mdl-layout--large-screen-only\">"

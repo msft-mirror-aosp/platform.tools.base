@@ -115,7 +115,7 @@ class LintTestUtilsTest {
             src/some/sub/dir/kotlin3.kt:1: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
             const val path = "/sdcard/test"
                               ~~~~~~~~~~~~
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """
         .trimIndent(),
       bucketSize = 2,

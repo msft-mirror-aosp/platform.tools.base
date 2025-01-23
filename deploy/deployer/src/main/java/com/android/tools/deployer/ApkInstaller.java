@@ -274,7 +274,7 @@ public class ApkInstaller {
         // We use "cmd" on the device side which was only added in Android N (API 24)
         // Note that we also use "install-create" which was only added in Android LOLLIPOP (API 21)
         // so this check should factor in these limitations.
-        if (!adb.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.N)) {
+        if (!adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.N)) {
             return new DeltaInstallResult(DeltaInstallStatus.API_NOT_SUPPORTED);
         }
 

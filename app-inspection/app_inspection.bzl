@@ -78,7 +78,7 @@ def app_inspection_proto(name, jar, proto_file_name, visibility = None):
 # inspector by jarjar.
 def app_inspection_jar(
         name,
-        proto,
+        protos,
         inspection_resources,
         inspection_resource_strip_prefix,
         bundle_srcs = [],
@@ -105,8 +105,7 @@ def app_inspection_jar(
         jars = [
             ":" + name + "-bundled",
             "//tools/base/bazel:studio-proto",
-            proto,
-        ] + nojarjar_deps,
+        ] + protos + nojarjar_deps,
     )
 
     native.java_library(

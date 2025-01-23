@@ -71,8 +71,12 @@ private fun NetworkScreen(actions: NetworkScreenActions) {
   ButtonGrid {
     val okHttp3 = OkHttp3()
     listOf(JavaNet, OkHttp2(), okHttp3).forEach { client ->
-      button("${client.name} GET (gz)") { actions.doGet(client, "https://reqres.in/api/users", "gzip") }
-      button("${client.name} GET (br)") { actions.doGet(client, "https://reqres.in/api/users", "br") }
+      button("${client.name} GET (gz)") {
+        actions.doGet(client, "https://reqres.in/api/users", "gzip")
+      }
+      button("${client.name} GET (br)") {
+        actions.doGet(client, "https://reqres.in/api/users", "br")
+      }
       button("${client.name} POST") {
         actions.doPost(client, "https://reqres.in/api/users", POST_DATA, JSON_TYPE)
       }
@@ -82,6 +86,9 @@ private fun NetworkScreen(actions: NetworkScreenActions) {
     }
     button("OKHTTP3 Duplex") {
       actions.doPostDuplex(okHttp3, "https://reqres.in/api/users", POST_DATA, JSON_TYPE)
+    }
+    button("OKHTTP3 Multipart") {
+      actions.doPostMultipart(okHttp3, "https://reqres.in/api/users", POST_DATA, JSON_TYPE)
     }
     button("gRPC Proto") { actions.doProtoGrpc("Proto") }
     button("gRPC Json") { actions.doJsonGrpc("Json") }

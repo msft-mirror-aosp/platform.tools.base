@@ -47,7 +47,7 @@ class RootPushApkInstaller {
 
     public boolean install(@NonNull App app) {
         if (!adb.getVersion()
-                .isGreaterOrEqualThan(AndroidVersion.BINDER_CMD_AVAILABLE.getApiLevel())) {
+                .isAtLeast(AndroidVersion.BINDER_CMD_AVAILABLE.getApiLevel())) {
             logger.warning("RootPush: CMD service not available on target device");
             return false;
         }

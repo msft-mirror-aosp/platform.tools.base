@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -10,12 +10,12 @@ android {
     }
 
     lintOptions {
-        textReport true
-        textOutput file("lint-results.txt")
+        textReport = true
+        textOutput = file("lint-results.txt")
         checkOnly 'UnitTestLintCheck'
         checkOnly 'UnitTestLintCheck2'
         checkOnly 'UnitTestLintCheck3'
-        absolutePaths false
+        absolutePaths = false
     }
 }
 

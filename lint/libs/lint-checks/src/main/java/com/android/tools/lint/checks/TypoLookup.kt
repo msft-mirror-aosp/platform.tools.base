@@ -441,10 +441,10 @@ private constructor(
         if (!line.isEmpty() && Character.isLetter(line[0])) {
           var end = line.indexOf(WORD_SEPARATOR)
           if (end == -1) {
-            end = line.trim { it <= ' ' }.length
+            end = line.trim().length
           }
-          val typo = line.substring(0, end).trim { it <= ' ' }
-          val replacements = line.substring(end + WORD_SEPARATOR.length).trim { it <= ' ' }
+          val typo = line.substring(0, end).trim()
+          val replacements = line.substring(end + WORD_SEPARATOR.length).trim()
           if (replacements.isEmpty()) {
             // We don't support empty replacements
             continue

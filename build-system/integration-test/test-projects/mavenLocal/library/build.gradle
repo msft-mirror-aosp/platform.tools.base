@@ -13,7 +13,7 @@ dependencies {
 }
 
 android {
-    namespace "com.example.android.multiproject.library"
+    namespace = "com.example.android.multiproject.library"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 }

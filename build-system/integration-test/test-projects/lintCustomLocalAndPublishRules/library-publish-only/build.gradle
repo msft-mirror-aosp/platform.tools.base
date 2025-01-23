@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.example.library.publish"
+    namespace = "com.example.library.publish"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -12,11 +12,11 @@ android {
     }
 
     lintOptions {
-        textReport true
-        textOutput file("library-lint-results.txt")
+        textReport = true
+        textOutput = file("library-lint-results.txt")
         checkOnly 'UnitTestLintCheck'
         checkOnly 'UnitTestLintCheck2'
-        absolutePaths false
+        absolutePaths = false
     }
 }
 

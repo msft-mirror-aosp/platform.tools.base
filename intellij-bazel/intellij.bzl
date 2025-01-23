@@ -9,6 +9,8 @@ load("//tools/base/bazel:functions.bzl", "create_option_file")
 
 PlatformConfigInfo = provider(fields = ["platform"])
 
+PluginBundleInfo = provider(fields = ["platforms", "zips"])
+
 def _impl(ctx):
     return PlatformConfigInfo(platform = ctx.build_setting_value)
 
@@ -17,7 +19,7 @@ intellij_platform_setting = rule(
     build_setting = config.string(flag = True),
 )
 
-def _intellij_platform_transition_impl(settings, attr):
+def _intellij_platform_transition_impl(_settings, attr):
     return [{"//tools/base/intellij-bazel:intellij_platform": p} for p in attr.platforms]
 
 intellij_platform_transition = transition(
@@ -90,6 +92,7 @@ _platform_intellij_plugin = rule(
 
 def _intellij_plugin_impl(ctx):
     default_files = []
+    zips = {}
     for platform_plugin in ctx.attr.plugin:
         info = platform_plugin[PluginInfo]
         platform_provider = info.platform[PlatformConfigInfo]
@@ -119,8 +122,9 @@ def _intellij_plugin_impl(ctx):
             mnemonic = "zipper",
         )
         default_files.append(out)
+        zips[platform_provider.platform] = out
 
-    return [DefaultInfo(files = depset(default_files))]
+    return [DefaultInfo(files = depset(default_files)), PluginBundleInfo(platforms = ctx.attr.platforms, zips = zips)]
 
 _intellij_plugin = rule(
     attrs = {
@@ -157,6 +161,102 @@ def intellij_plugin(name, plugin_id, platforms, **kwargs):
         visibility = ["@bazel_tools//tools/whitelists/function_transition_whitelist"] + kwargs.get("visibility", []),
     )
 
+def _fixed_intellij_platform_transition_impl(_settings, attr):
+    return {"//tools/base/intellij-bazel:intellij_platform": attr.platform}
+
+fixed_intellij_platform_transition = transition(
+    implementation = _fixed_intellij_platform_transition_impl,
+    inputs = [],
+    outputs = ["//tools/base/intellij-bazel:intellij_platform"],
+)
+
+# Transition the java target to be built under the different platform
+# See https://bazel.build/rules/lib/builtins/transition
+def _transitioned_java_impl(ctx):
+    return [ctx.attr.target[DefaultInfo], ctx.attr.target[JavaInfo]]
+
+_transitioned_java = rule(
+    attrs = {
+        "target": attr.label(providers = [JavaInfo]),
+        "platform": attr.string(),
+    },
+    implementation = _transitioned_java_impl,
+    cfg = fixed_intellij_platform_transition,
+)
+
+def _plugin_data_impl(ctx):
+    info = ctx.attr.plugin[PluginBundleInfo]
+    if sorted(info.platforms) != sorted(ctx.attr.platforms):
+        fail("intellij_plugin_test should test the same platforms provided by the plugin")
+    files = []
+    if ctx.attr.platform in ctx.attr.platforms:
+        files = [info.zips[ctx.attr.platform]]
+
+    return [DefaultInfo(files = depset(files))]
+
+_plugin_data = rule(
+    attrs = {
+        "plugin": attr.label(providers = [PluginBundleInfo]),
+        "platforms": attr.string_list(),
+        "platform": attr.string(mandatory = True),
+    },
+    implementation = _plugin_data_impl,
+)
+
+def _intellij_plugin_test(
+        name,
+        module,
+        platform,
+        jvm_flags = [],
+        runtime_deps = [],
+        **kwargs):
+    _transitioned_java(
+        name = name + "_module",
+        platform = select({
+            "@platforms//os:windows": "studio-sdk",
+            "//conditions:default": platform,
+        }),
+        testonly = 1,
+        target = module + "_testlib",
+    )
+    native.java_test(
+        name = name,
+        jvm_flags = jvm_flags + ["-Dintellij.plugin.test.platform=" + platform],
+        runtime_deps = runtime_deps + [":" + name + "_module"],
+        **kwargs
+    )
+
+def intellij_plugin_test(name, module, plugin, platforms, data = [], visibility = None, **kwargs):
+    targets = []
+    for platform in platforms:
+        test_name = name + "_" + platform
+        targets.append(":" + test_name)
+        _plugin_data(
+            name = test_name + "_data",
+            platform = select({
+                "@platforms//os:windows": "studio-sdk",
+                "//conditions:default": platform,
+            }),
+            platforms = select({
+                "@platforms//os:windows": ["studio-sdk"],
+                "//conditions:default": platforms,
+            }),
+            plugin = plugin,
+        )
+        _intellij_plugin_test(
+            name = test_name,
+            module = module,
+            platform = platform,
+            visibility = visibility,
+            data = [test_name + "_data"] + data,
+            **kwargs
+        )
+    native.test_suite(
+        name = name,
+        tests = targets,
+        visibility = visibility,
+    )
+
 def setup_intellij_platforms(specs):
     all_plugins = {}
     for target, name, plugins in specs:
@@ -177,6 +277,7 @@ def setup_intellij_platforms(specs):
 
         api = {
             "intellij-sdk": "",
+            "distribution-zip": "-dist",
             "build-txt": "-build-txt",
             "product-info": "-product-info",
             "test-framework": "-test-framework",
@@ -214,7 +315,9 @@ def _intellij_remote_platform_impl(ctx):
     content += "    spec = SPEC,\n"
     content += ")\n"
     ctx.file("BUILD.bazel", content)
-    ctx.execute([ctx.path(ctx.attr.cmd)], quiet = False)
+    exec_result = ctx.execute([ctx.path(ctx.attr.cmd)], quiet = False)
+    if exec_result.return_code != 0:
+        fail("received non-zero exit code from " + str(ctx.attr.cmd))
 
 intellij_remote_platform = repository_rule(
     attrs = {

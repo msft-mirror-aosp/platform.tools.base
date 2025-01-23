@@ -74,8 +74,8 @@ class LintStandaloneTest(
         // But the analysis itself is not re-run in the new integration
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "textOutput file(\"lint-results.txt\")",
-            "textOutput file(\"lint-results2.txt\")"
+            "textOutput = file(\"lint-results.txt\")",
+            "textOutput = file(\"lint-results2.txt\")"
         )
         // Run twice to catch issues with configuration caching
         getExecutor().run(":lint")
@@ -149,8 +149,8 @@ class LintStandaloneTest(
     fun checkDuplicatePlatformClasses() {
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "ignoreTestSources true",
-            "ignoreTestSources false"
+            "ignoreTestSources = true",
+            "ignoreTestSources = false"
         )
 
         // We expect no DuplicatePlatformClasses issue for testImplementation dependency.
@@ -191,8 +191,8 @@ class LintStandaloneTest(
     fun checkExternalKmpDependency() {
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "ignoreTestSources true",
-            "ignoreTestSources false"
+            "ignoreTestSources = true",
+            "ignoreTestSources = false"
         )
 
         TestFileUtils.appendToFile(

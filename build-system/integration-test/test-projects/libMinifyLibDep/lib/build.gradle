@@ -8,7 +8,7 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic.lib"
+    namespace = "com.android.tests.basic.lib"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

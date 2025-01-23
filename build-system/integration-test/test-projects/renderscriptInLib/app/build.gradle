@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.android.rs.hellocompute"
+    namespace = "com.example.android.rs.hellocompute"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -11,7 +11,7 @@ android {
     }
 
     buildFeatures {
-        renderScript true
+        renderScript = true
     }
 }
 

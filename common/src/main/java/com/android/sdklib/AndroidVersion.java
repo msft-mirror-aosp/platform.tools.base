@@ -16,11 +16,16 @@
 
 package com.android.sdklib;
 
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.naturalOrder;
+import static java.util.Comparator.nullsFirst;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -195,17 +200,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Creates an {@link AndroidVersion} with the given api level and codename.
-     * Codename should be null for a release version, otherwise it's a preview codename.
-     */
-    public AndroidVersion(int apiLevel, @Nullable String codename) {
-        mApiLevel = apiLevel;
-        mCodename = sanitizeCodename(codename);
-        mExtensionLevel = null;
-        mIsBaseExtension = true;
-    }
-
-    /**
      * Creates an {@link AndroidVersion} with the given api level of a release version (the codename
      * is null).
      */
@@ -214,44 +208,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
-     * codename. <Em>Important</em>: An important limitation of this method is that cannot possible
-     * recreate the API level integer from a pure string codename. This is only OK to use if the
-     * caller can guarantee that only {@link #getApiString()} will be used later. Wrong things will
-     * happen if the caller then tries to resolve the numeric {@link #getApiLevel()}.
-     *
-     * @param apiOrCodename A non-null API integer or a codename. "REL" is notable not a valid
-     *     codename.
-     * @throws AndroidVersionException if the input isn't a pure integer or doesn't look like a
-     *     valid string codename.
+     * Creates an {@link AndroidVersion} with the given api level and codename.
+     * Codename should be null for a release version, otherwise it's a preview codename.
      */
-    public AndroidVersion(@NonNull String apiOrCodename) throws AndroidVersionException {
-        int apiLevel = 0;
-        String codename = null;
-        try {
-            apiLevel = Integer.parseInt(apiOrCodename);
-        } catch (NumberFormatException ignore) {
-            // We don't know the API level.
-            // REL is a release-reserved keyword which we can use here.
-
-            if (!SdkConstants.CODENAME_RELEASE.equals(apiOrCodename)) {
-                if (PREVIEW_PATTERN.matcher(apiOrCodename).matches()) {
-                    codename = apiOrCodename;
-                }
-            }
-        }
-
-        mApiLevel = apiLevel;
-        mCodename = sanitizeCodename(codename);
-
-        mExtensionLevel = null;
-        mIsBaseExtension = true;
-
-        if (mApiLevel <= 0 && codename == null) {
-            throw new AndroidVersionException(
-                    "Invalid android API or codename " + apiOrCodename,     //$NON-NLS-1$
-                    null);
-        }
+    public AndroidVersion(int apiLevel, @Nullable String codename) {
+        this(apiLevel, codename, null, true);
     }
 
     /**
@@ -266,6 +227,50 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         mCodename = sanitizeCodename(codename);
         mExtensionLevel = extensionLevel;
         mIsBaseExtension = isBaseExtension;
+    }
+
+    /**
+     * Returns an AndroidVersion with the same API level and codename, and a base extension level.
+     * This will set the extensionLevel property based on the API level if known.
+     */
+    public AndroidVersion withBaseExtensionLevel() {
+        int baseExtensionLevel = getBaseExtensionLevel(mApiLevel);
+        return new AndroidVersion(mApiLevel, mCodename, baseExtensionLevel <= 0 ? null : baseExtensionLevel, true);
+    }
+
+    /**
+     * Returns this AndroidVersion with the same API level and codename and the specified extension level.
+     */
+    public AndroidVersion withExtensionLevel(int extensionLevel) {
+        return new AndroidVersion(mApiLevel, mCodename, extensionLevel, extensionLevel == getBaseExtensionLevel(mApiLevel));
+    }
+
+    /**
+     * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
+     * codename. <Em>Important</em>: An important limitation of this method is that it cannot
+     * possibly recreate the API level integer from a pure string codename. This is only OK to use
+     * if the caller can guarantee that only {@link #getApiString()} will be used later.
+     * {@link #getApiLevel()} will return 0.
+     *
+     * SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known codenames,
+     * and should be preferred.
+     *
+     * @param apiOrCodename A non-null API integer or a codename. "REL" is notable not a valid
+     *     codename.
+     * @throws IllegalArgumentException if the input isn't a pure integer or doesn't look like a
+     *     valid string codename.
+     */
+    public static AndroidVersion fromString(@NonNull String apiOrCodename) {
+        try {
+            return new AndroidVersion(Integer.parseInt(apiOrCodename));
+        } catch (NumberFormatException ignore) {}
+
+        String codename = sanitizeCodename(apiOrCodename);
+        if (codename == null || !PREVIEW_PATTERN.matcher(codename).matches()) {
+            throw new IllegalArgumentException("Invalid android API or codename " + apiOrCodename);
+        }
+
+        return new AndroidVersion(0, codename);
     }
 
     /**
@@ -400,14 +405,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return mApiLevel >= appVersion.mApiLevel;
     }
 
-    /**
-     * Returns <code>true</code> if the AndroidVersion is an API level equals to
-     * <var>apiLevel</var>.
-     */
-    public boolean equals(int apiLevel) {
-        return mCodename == null && apiLevel == mApiLevel;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof AndroidVersion)) {
@@ -442,82 +439,46 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return s;
     }
 
-    /**
-     * Compares this object with the specified object for order. Returns a
-     * negative integer, zero, or a positive integer as this object is less
-     * than, equal to, or greater than the specified object.
-     *
-     * @param o the Object to be compared.
-     * @return a negative integer, zero, or a positive integer as this object is
-     *         less than, equal to, or greater than the specified object.
-     */
+    /** Comparator that looks at API level and codename only, not extension level. */
+    public static final Comparator<AndroidVersion> API_LEVEL_ORDERING =
+            comparing(AndroidVersion::getApiLevel)
+                    .thenComparing(AndroidVersion::getCodename, nullsFirst(naturalOrder()));
+
+    /** Comparator used to implement the natural order for this class. */
+    private static final Comparator<AndroidVersion> ORDERING =
+            API_LEVEL_ORDERING
+                    .thenComparing(AndroidVersion::getNonBaseExtensionLevel, nullsFirst(naturalOrder()));
+
     @Override
     public int compareTo(@NonNull AndroidVersion o) {
-        int apiLevelComparison = compareTo(o.getApiLevel(), o.getCodename());
-        if (apiLevelComparison == 0) {
-            if (this.mIsBaseExtension && o.mIsBaseExtension) {
-                // The presence or absence of an extension level is irrelevant if both
-                // AndroidVersions are the base extension,
-                return 0;
-            }
-            if (mExtensionLevel != null) {
-                if (o.getExtensionLevel() != null) {
-                    return mExtensionLevel - o.getExtensionLevel();
-                }
-                return 1;
-            }
-            else {
-                if (o.getExtensionLevel() != null) {
-                    return -1;
-                }
-                // Neither package have extension levels.
-                return 0;
-            }
-        }
-        else {
-            return apiLevelComparison;
-        }
+        return ORDERING.compare(this, o);
     }
 
-    public int compareTo(int apiLevel, @Nullable String codename) {
-        if (mCodename == null) {
-            if (codename != null) {
-                if (mApiLevel == apiLevel) {
-                    return -1; // same api level but argument is a preview for next version
-                }
-            }
-            return mApiLevel - apiLevel;
-        } else {
-            // 'this' is a preview
-            if (mApiLevel == apiLevel) {
-                if (codename == null) {
-                    return +1;
-                } else {
-                    return mCodename.compareTo(codename);    // strange case where the 2 previews
-                                                             // have different codename?
-                }
-            } else {
-                return mApiLevel - apiLevel;
-            }
-        }
+    @Nullable
+    private Integer getNonBaseExtensionLevel() {
+        // The presence or absence of an extension level is irrelevant if both
+        // AndroidVersions are the base extension. We assume that if an AndroidVersion has an
+        // extension level specified, it is at least equal to the base extension level.
+        return isBaseExtension() ? null : getExtensionLevel();
     }
 
     /**
-     * Compares this version with the specified API and returns true if this version
-     * is greater or equal than the requested API -- that is the current version is a
-     * suitable min-api-level for the argument API.
+     * Returns true if this version is equal to or newer than the given API level.
      */
-    public boolean isGreaterOrEqualThan(int api) {
-        return compareTo(api, null) >= 0;
+    public boolean isAtLeast(int apiLevel) {
+        return isAtLeast(apiLevel, null);
     }
 
     /**
-     * Compares this version with the specified API and extension level, and returns true if this
-     * version is greater or equal than the requested API -- that is the current version is a
-     * suitable min-api-level for the argument API.
+     * Returns true if this version is equal to or newer than the given API level. If a codename is
+     * given, then this version must also either be strictly greater than the given api level,
+     * or must have a codename that is greater than the given codename (by string comparison).
+     *
+     * This is typically used to check if a version is at least a preview for a certain API level,
+     * e.g. to check if this version contains "O" APIs: isAtLeast(VersionCodes.O - 1, "O")
      */
-    public boolean isGreaterOrEqualThan(int api, int extensionLevel) {
-        return compareTo(new AndroidVersion(api, null, extensionLevel, true)) >= 0;
+    public boolean isAtLeast(int apiLevel, @Nullable String codename) {
+        return compareTo(new AndroidVersion(apiLevel, codename)) >= 0;
     }
 
     /**

@@ -104,18 +104,36 @@ class LintUtilsTest : TestCase() {
   }
 
   fun testDescribeCounts() {
-    assertThat(describeCounts(0, 0, true, true)).isEqualTo("No errors or warnings")
-    assertThat(describeCounts(0, 0, true, false)).isEqualTo("no errors or warnings")
-    assertThat(describeCounts(0, 1, true, true)).isEqualTo("1 warning")
-    assertThat(describeCounts(1, 0, true, true)).isEqualTo("1 error")
-    assertThat(describeCounts(0, 2, true, true)).isEqualTo("2 warnings")
-    assertThat(describeCounts(2, 0, true, true)).isEqualTo("2 errors")
-    assertThat(describeCounts(2, 1, false, true)).isEqualTo("2 errors and 1 warning")
-    assertThat(describeCounts(1, 2, false, true)).isEqualTo("1 error and 2 warnings")
-    assertThat(describeCounts(5, 4, false, true)).isEqualTo("5 errors and 4 warnings")
-    assertThat(describeCounts(2, 1, true, true)).isEqualTo("2 errors, 1 warning")
-    assertThat(describeCounts(1, 2, true, true)).isEqualTo("1 error, 2 warnings")
-    assertThat(describeCounts(5, 4, true, true)).isEqualTo("5 errors, 4 warnings")
+    assertThat(describeCounts(0, 0, 0, true, true)).isEqualTo("No errors or warnings")
+    assertThat(describeCounts(0, 0, 0, true, false)).isEqualTo("no errors or warnings")
+    assertThat(describeCounts(0, 1, 0, true, true)).isEqualTo("1 warning")
+    assertThat(describeCounts(1, 0, 0, true, true)).isEqualTo("1 error")
+    assertThat(describeCounts(0, 2, 0, true, true)).isEqualTo("2 warnings")
+    assertThat(describeCounts(2, 0, 0, true, true)).isEqualTo("2 errors")
+    assertThat(describeCounts(2, 1, 0, false, true)).isEqualTo("2 errors and 1 warning")
+    assertThat(describeCounts(1, 2, 0, false, true)).isEqualTo("1 error and 2 warnings")
+    assertThat(describeCounts(5, 4, 0, false, true)).isEqualTo("5 errors and 4 warnings")
+    assertThat(describeCounts(2, 1, 0, true, true)).isEqualTo("2 errors, 1 warning")
+    assertThat(describeCounts(1, 2, 0, true, true)).isEqualTo("1 error, 2 warnings")
+    assertThat(describeCounts(5, 4, 0, true, true)).isEqualTo("5 errors, 4 warnings")
+
+    assertThat(describeCounts(0, 0, 1, true, true)).isEqualTo("1 hint")
+    assertThat(describeCounts(0, 0, 2, true, true)).isEqualTo("2 hints")
+    assertThat(describeCounts(0, 1, 1, true, true)).isEqualTo("1 warning, 1 hint")
+    assertThat(describeCounts(1, 0, 1, true, true)).isEqualTo("1 error, 1 hint")
+    assertThat(describeCounts(1, 0, 1, false, true)).isEqualTo("1 error and 1 hint")
+    assertThat(describeCounts(5, 4, 1, true, true)).isEqualTo("5 errors, 4 warnings, 1 hint")
+    assertThat(describeCounts(5, 4, 2, true, true)).isEqualTo("5 errors, 4 warnings, 2 hints")
+    assertThat(describeCounts(5, 4, 2, false, true)).isEqualTo("5 errors, 4 warnings and 2 hints")
+
+    assertThat(describeCounts(5, 4, 2, false, true, true))
+      .isEqualTo("5 errors, 4 warnings and 2 hints")
+    assertThat(describeCounts(0, 4, 0, false, true, true)).isEqualTo("0 errors, 4 warnings")
+    assertThat(describeCounts(0, 4, 1, false, true, true))
+      .isEqualTo("0 errors, 4 warnings and 1 hint")
+    assertThat(describeCounts(0, 0, 2, false, true, true))
+      .isEqualTo("0 errors, 0 warnings and 2 hints")
+    assertThat(describeCounts(0, 0, 2, true, true, true)).isEqualTo("0 errors, 0 warnings, 2 hints")
   }
 
   fun testEndsWith() {

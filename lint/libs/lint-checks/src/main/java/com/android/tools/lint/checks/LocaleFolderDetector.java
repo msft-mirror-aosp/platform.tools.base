@@ -411,7 +411,7 @@ public class LocaleFolderDetector extends Detector
         // Ensure that if a language has multiple scripts, either minSdkVersion >= 21 or
         // at most one folder does not have -v21 among the script options
         if (mBcp47Folders != null
-                && !context.getProject().getMinSdkVersion().isGreaterOrEqualThan(21)) {
+                && !context.getProject().getMinSdkVersion().isAtLeast(21)) {
             Map<FolderConfiguration, File> configToFile = Maps.newHashMap();
             Multimap<String, FolderConfiguration> languageToConfigs = ArrayListMultimap.create();
             for (String folderName : mBcp47Folders.keySet()) {

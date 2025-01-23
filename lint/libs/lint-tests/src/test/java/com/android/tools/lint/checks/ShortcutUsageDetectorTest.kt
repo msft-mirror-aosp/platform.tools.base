@@ -29,11 +29,11 @@ class ShortcutUsageDetectorTest : AbstractCheckTest() {
   fun testDocumentationExample() {
     val expected =
       """
-            src/test/pkg/TestDocumentationExample.java:16: Information: Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as pushDynamicShortcut or reportShortcutUsed. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage [ReportShortcutUsage]
-                    ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts);
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 0 warnings
-            """
+      src/test/pkg/TestDocumentationExample.java:16: Hint: Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as pushDynamicShortcut or reportShortcutUsed. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage [ReportShortcutUsage]
+              ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts);
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 0 warnings, 1 hint
+      """
     lint()
       .files(
         java(
@@ -74,11 +74,11 @@ class ShortcutUsageDetectorTest : AbstractCheckTest() {
   fun testAddDynamicShortcutsExample() {
     val expected =
       """
-            src/test/pkg/TestAddDynamicShortcutsExample.java:16: Information: Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as pushDynamicShortcut or reportShortcutUsed. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage [ReportShortcutUsage]
-                    ShortcutManagerCompat.addDynamicShortcuts(context, shortcuts);
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 0 warnings
-            """
+      src/test/pkg/TestAddDynamicShortcutsExample.java:16: Hint: Calling this method indicates use of dynamic shortcuts, but there are no calls to methods that track shortcut usage, such as pushDynamicShortcut or reportShortcutUsed. Calling these methods is recommended, as they track shortcut usage and allow launchers to adjust which shortcuts appear based on activation history. Please see https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage [ReportShortcutUsage]
+              ShortcutManagerCompat.addDynamicShortcuts(context, shortcuts);
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 0 warnings, 1 hint
+      """
     lint()
       .files(
         java(

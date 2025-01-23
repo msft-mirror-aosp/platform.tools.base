@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.foo"
+    namespace = "com.example.foo"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -13,16 +13,16 @@ android {
     }
 
     buildFeatures {
-        prefabPublishing true
+        prefabPublishing = true
     }
 
     prefab {
         foo {
-            headers "src/main/cpp/include"
+            headers = "src/main/cpp/include"
         }
 
         foo_static {
-            headers "src/main/cpp/include"
+            headers = "src/main/cpp/include"
         }
     }
 }

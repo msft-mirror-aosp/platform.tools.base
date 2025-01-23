@@ -26,6 +26,7 @@ import com.android.tools.lint.checks.KotlincFE10Detector
 import com.android.tools.lint.checks.LintDetectorDetector
 import com.android.tools.lint.checks.NoOpDetector
 import com.android.tools.lint.checks.RestrictToDetector
+import com.android.tools.lint.checks.TrimDetector
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.LintClient.Companion.isStudio
 import com.android.tools.lint.client.api.Vendor
@@ -43,6 +44,9 @@ class StudioIssueRegistry : IssueRegistry() {
     LintDetectorDetector.MISSING_DOC_EXAMPLE.setEnabledByDefault(true)
     if (isStudio) {
       LintDetectorDetector.PSI_COMPARE.setEnabledByDefault(true)
+    } else {
+      // Don't enforce the trim detector except for in the IDE
+      TrimDetector.ISSUE.setEnabledByDefault(false)
     }
 
     // Optionally enable extra checks to migrate away from deprecated platform APIs.

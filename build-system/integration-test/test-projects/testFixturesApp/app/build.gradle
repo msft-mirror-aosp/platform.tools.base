@@ -19,7 +19,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -28,7 +28,7 @@ android {
     }
 
     lintOptions {
-        checkReleaseBuilds false
+        checkReleaseBuilds = false
     }
 
     testFixtures.enable = true

@@ -46,7 +46,6 @@ dependencies {
     implementation libs.protobuf_util
     implementation libs.truth
     implementation libs.truth_java8_extension
-    implementation libs.bytebuddy
     implementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
     implementation libs.bundle_tool
     implementation libs.ksp_gradle_plugin // to acces the KSP extension in custom test project plugins

@@ -29,7 +29,10 @@ def studio_win(build_env: bazel.BuildEnv):
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
   ]
-  test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release'
+  # b/373746515: K2 mode by default in presubmit,
+  # and thus this is temporarily K1 in postsubmit
+  # We'll invert this again around the end of M.2 canary cycles
+  test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2,-kotlin-plugin-k2'
 
   profile_path = dist_path / f'winprof{build_env.build_number}.json.gz'
   flags = [

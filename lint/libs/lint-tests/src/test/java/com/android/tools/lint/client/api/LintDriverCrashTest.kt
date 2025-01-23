@@ -112,7 +112,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
           .contains(
             "ArithmeticException:LintDriverCrashTest＄CrashingDetector＄createUastHandler＄1.visitFile(LintDriverCrashTest.kt:"
           )
-        assertThat(it).contains("1 errors, 0 warnings")
+        assertThat(it).contains("1 error")
       })
     LintDriver.clearCrashCount()
   }
@@ -297,7 +297,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
                     proper way to install a dependency resolution strategy.
 
                     (Note that this breaks a lot of lint analysis so this report is incomplete.) [LintError]
-                    1 errors, 0 warnings"""
+                    1 error"""
       )
     LintDriver.clearCrashCount()
   }
@@ -347,7 +347,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         }
 
         assertThat(message).contains("[LintError]")
-        assertThat(message).contains("1 errors, 0 warnings")
+        assertThat(message).contains("1 error")
       })
 
     LintDriver.clearCrashCount()
@@ -450,7 +450,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
               "The issue registry class is test.pkg.MyIssueRegistry. The initialization problem is (NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
             )
           assertThat(message).contains("[LintError]")
-          assertThat(message).contains("1 errors, 0 warnings")
+          assertThat(message).contains("1 error")
         })
     } finally {
       LintDriver.clearCrashCount()

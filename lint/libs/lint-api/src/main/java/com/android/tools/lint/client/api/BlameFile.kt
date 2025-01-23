@@ -347,9 +347,9 @@ internal constructor(
             if (indent > 0) {
               // Indented: it's an attribute
               assert(attributeName != null)
-              last.setAttributeLocations(attributeName!!, line.trim { it <= ' ' })
+              last.setAttributeLocations(attributeName!!, line.trim())
             } else if (last.elementLocation == null) {
-              last.elementLocation = line.trim { it <= ' ' }
+              last.elementLocation = line.trim()
             }
           }
           continue
@@ -358,11 +358,11 @@ internal constructor(
         }
 
         if (indent > 0) {
-          attributeName = line.trim { it <= ' ' }
+          attributeName = line.trim()
           continue
         }
 
-        val key = line.trim { it <= ' ' }
+        val key = line.trim()
         val node = BlameNode(key)
         nodes[key] = node
         attributeName = null

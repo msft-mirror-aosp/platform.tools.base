@@ -1,7 +1,7 @@
 apply plugin: 'com.android.dynamic-feature'
 
 android {
-    namespace "com.example.feature1"
+    namespace = "com.example.feature1"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     defaultConfig {
@@ -9,11 +9,11 @@ android {
     }
 
     lintOptions {
-        textReport true
-        textOutput file("lint-results.txt")
-        explainIssues false
-        absolutePaths false
-        ignoreTestSources true
+        textReport = true
+        textOutput = file("lint-results.txt")
+        explainIssues = false
+        absolutePaths = false
+        ignoreTestSources = true
     }
 }
 

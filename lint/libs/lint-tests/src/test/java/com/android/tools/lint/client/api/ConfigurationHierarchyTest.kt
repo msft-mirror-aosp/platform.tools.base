@@ -374,10 +374,10 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
                         disable 'IllegalResourceRef'
                         // Also enabled by lint.xml in src/main folder: that setting should win
                         informational 'MultipleUsesSdk'
-                        lintConfig file("default-lint.xml")
+                        lintConfig = file("default-lint.xml")
                         // Also set in default-lint.xml, but this setting should win
                         disable 'DuplicateUsesFeature'
-                        checkTestSources true
+                        checkTestSources = true
                     }
                 }
                 """

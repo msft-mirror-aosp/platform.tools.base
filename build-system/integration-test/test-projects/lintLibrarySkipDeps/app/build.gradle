@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.test.lint.libmodel.app"
+    namespace = "com.android.test.lint.libmodel.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -11,8 +11,8 @@ android {
         targetSdkVersion 24
     }
     lintOptions {
-        textReport true
-        textOutput file("lint-results.txt")
+        textReport = true
+        textOutput = file("lint-results.txt")
         // Note that we have the presence of an id='RequiredSize' error in the
         // app project, but that issue should be off by default in Gradle projects;
         // this test makes sure of that (it should not be reported).
@@ -20,9 +20,9 @@ android {
         // in the dependent projects; this test ensures that those are not flagged
         // here since checkDependencies=false below.
         disable 'GradleDependency', 'UnusedResources', 'HardcodedText'
-        absolutePaths false
-        explainIssues false
-        checkDependencies false
+        absolutePaths = false
+        explainIssues = false
+        checkDependencies = false
     }
 }
 

@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.android.tests.libstest.lib2b"
+    namespace = "com.android.tests.libstest.lib2b"
     resourcePrefix 'lib2b_'
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()

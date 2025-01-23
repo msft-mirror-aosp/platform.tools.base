@@ -9,11 +9,11 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    testBuildType "release"
+    testBuildType = "release"
 
     defaultConfig {
         versionCode 12
@@ -27,7 +27,7 @@ android {
     buildTypes {
         release {
             debuggable true
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
@@ -36,6 +36,6 @@ android {
     }
 
     dexOptions {
-        incremental false
+        incremental = false
     }
 }

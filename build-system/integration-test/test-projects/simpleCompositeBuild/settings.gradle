@@ -7,8 +7,8 @@ file('modules').listFiles().each { File moduleDir ->
 dependencyResolutionManagement {
     repositories {
         ivy {
-            name 'localrepo'
-            url file("../../local-repo")
+            name = 'localrepo'
+            url = file("../../local-repo")
         }
     }
 }

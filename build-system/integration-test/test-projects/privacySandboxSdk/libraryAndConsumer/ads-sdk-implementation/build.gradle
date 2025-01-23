@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.example.ads_sdk_implementation'
+    namespace = 'com.example.ads_sdk_implementation'
     compileSdk = libs.versions.latestCompileSdk.get().toInteger()
 
     defaultConfig {

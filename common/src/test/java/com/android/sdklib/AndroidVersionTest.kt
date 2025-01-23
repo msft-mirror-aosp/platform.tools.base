@@ -26,7 +26,7 @@ class AndroidVersionTest {
     fun testAllowedCodenames() {
         val codenames = listOf("Tiramisu", "O_MR1", "S")
         codenames.forEach {
-            val androidVersion = AndroidVersion(it)
+            val androidVersion = AndroidVersion.fromString(it)
             Truth.assertThat(androidVersion.codename).isEqualTo(it)
         }
     }
@@ -36,9 +36,9 @@ class AndroidVersionTest {
         val codenames = listOf("tiramisu", "1S", "s")
         codenames.forEach {
             try {
-                AndroidVersion(it)
+                AndroidVersion.fromString(it)
                 fail("expecting exception")
-            } catch (expectedException: AndroidVersion.AndroidVersionException) {
+            } catch (expectedException: IllegalArgumentException) {
                 // do nothing
             }
         }

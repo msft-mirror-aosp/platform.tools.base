@@ -2,13 +2,14 @@ load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:expand_template.bzl", "expand_template")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load(
     "//tools/base/common:version.bzl",
     "BASE_VERSION",
     "DEV_COMMANDLINE_TOOLS_VERSION",
     "RELEASE_COMMANDLINE_TOOLS_VERSION",
 )
-load("//tools/base/repository:xjc.bzl", "xsd_to_java")
+load("//tools/base/repository:xjc.bzl", "xsd_java_library")
 load(":sdk.bzl", "combine_licenses", "sdk_java_binary", "sdk_package")
 
 # managed by go/iml_to_build
@@ -32,6 +33,7 @@ iml_module(
         "//tools/base/device_validator:studio.android.sdktools.dvlib",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/repository:studio.android.sdktools.repository",
+        "//tools/base/sdklib:schema-generated",
     ],
     # do not sort: must match IML order
     deps = [
@@ -48,6 +50,7 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api[module]",
         "//tools/base/repository:studio.android.sdktools.repository[module]",
         "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+        "//tools/base/sdklib:schema-generated",
     ],
 )
 
@@ -80,6 +83,28 @@ kotlin_library(
     ],
 )
 
+generated_libs = [
+    ":sdk-addon-1.lib",
+    ":sdk-addon-2.lib",
+    ":sdk-addon-3.lib",
+    ":sdk-common-1.lib",
+    ":sdk-common-2.lib",
+    ":sdk-common-3.lib",
+    ":sdk-repository-1.lib",
+    ":sdk-repository-2.lib",
+    ":sdk-repository-3.lib",
+    ":sdk-sites-list-1.lib",
+    ":sdk-sites-list-2.lib",
+    ":sdk-sites-list-3.lib",
+    ":sdk-sites-list-4.lib",
+    ":sdk-sites-list-5.lib",
+    ":sdk-sites-list-6.lib",
+    ":sdk-sysimg-1.lib",
+    ":sdk-sysimg-2.lib",
+    ":sdk-sysimg-3.lib",
+    ":sdk-sysimg-4.lib",
+]
+
 maven_library(
     name = "tools.sdklib",
     srcs = [],
@@ -87,7 +112,7 @@ maven_library(
         ":avdmanager_lib",
         ":sdkmanager_lib",
         ":tools.sdklib.core",
-    ],
+    ] + generated_libs,
     coordinates = "com.android.tools:sdklib",
     description = "A library to parse and download the Android SDK.",
     notice = "NOTICE",
@@ -152,7 +177,7 @@ java_library(
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/repository:tools.repository",
         "@maven//:com.google.guava.guava",
-    ],
+    ] + generated_libs,
 )
 
 java_library(
@@ -164,7 +189,7 @@ java_library(
         "//tools/base/common:tools.common",
         "//tools/base/repository:tools.repository",
         "@maven//:com.google.guava.guava",
-    ],
+    ] + generated_libs,
 )
 
 sdk_java_binary(
@@ -252,185 +277,283 @@ test_suite(
     tests = ["//tools/base/sdklib/src/integrationTest:integration-test.test"],
 )
 
-xsd_to_java(
+xsd_java_library(
+    name = "sdk-common-1",
+    binding = "src/main/resources/xsd/sdk-common-custom-01.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.common.v1",
+    xsd = "src/main/resources/xsd/sdk-common-01.xsd",
+    xsd_deps = ["//tools/base/repository:repo-common-1"],
+)
+
+xsd_java_library(
     name = "sdk-common-2",
-    binding_deps = ["//tools/base/repository:repo-common-02.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
-    custom_binding = "src/main/resources/xsd/sdk-common-custom-02.xjb",
-    episode = "sdk-common-02.xjb",
+    binding = "src/main/resources/xsd/sdk-common-custom-02.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
     package = "com.android.sdklib.repository.generated.common.v2",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-common-02.xsd",
-    deps = [
+    xsd_deps = ["//tools/base/repository:repo-common-2"],
+)
+
+xsd_java_library(
+    name = "sdk-repository-1",
+    java_deps = [
         ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.repository.v1",
+    xsd = "src/main/resources/xsd/sdk-repository-01.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-1",
+        "//tools/base/repository:generic-1",
+        ":sdk-common-1",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-repository-2",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        "//tools/base/repository:generic-02.xjb",
-        ":sdk-common-02.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.repository.v2",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-repository-02.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        "//tools/base/repository:generic-2",
+        ":sdk-common-2",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
+    name = "sdk-addon-1",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.addon.v1",
+    xsd = "src/main/resources/xsd/sdk-addon-01.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-1",
+        ":sdk-common-1",
+    ],
+)
+
+xsd_java_library(
     name = "sdk-addon-2",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        ":sdk-common-02.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.addon.v2",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-addon-02.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-2",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
+    name = "sdk-sysimg-1",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.generated.sysimg.v1",
+    xsd = "src/main/resources/xsd/sdk-sys-img-01.xsd",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-1",
+        ":sdk-common-1",
+    ],
+)
+
+xsd_java_library(
     name = "sdk-sysimg-2",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        ":sdk-common-02.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.sysimg.v2",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-sys-img-02.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-2",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
+    name = "sdk-sites-list-1",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.sources.generated.v1",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-1.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
+)
+
+xsd_java_library(
+    name = "sdk-sites-list-2",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.sources.generated.v2",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-2.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
+)
+
+xsd_java_library(
+    name = "sdk-sites-list-3",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.sources.generated.v3",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-3.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
+)
+
+xsd_java_library(
     name = "sdk-sites-list-4",
-    binding_deps = ["//tools/base/repository:sources/repo-sites-common-1.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
     package = "com.android.sdklib.repository.sources.generated.v4",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sources/sdk-sites-list-4.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
-    ],
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-common-3",
-    binding_deps = ["//tools/base/repository:repo-common-02.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
-    custom_binding = "src/main/resources/xsd/sdk-common-custom-03.xjb",
-    episode = "sdk-common-03.xjb",
+    binding = "src/main/resources/xsd/sdk-common-custom-03.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
+    ],
     package = "com.android.sdklib.repository.generated.common.v3",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-common-03.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
-    ],
+    xsd_deps = ["//tools/base/repository:repo-common-2"],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-repository-3",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        "//tools/base/repository:generic-02.xjb",
-        ":sdk-common-03.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.repository.v3",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-repository-03.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        "//tools/base/repository:generic-2",
+        ":sdk-common-3",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-addon-3",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        ":sdk-common-03.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.addon.v3",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-addon-03.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-3",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-sysimg-3",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        ":sdk-common-03.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.sysimg.v3",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-sys-img-03.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-3",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-sysimg-4",
-    binding_deps = [
-        "//tools/base/repository:repo-common-02.xjb",
-        ":sdk-common-03.xjb",
+    java_deps = [
+        ":tools.sdklib.core",
+        "//tools/base/repository:tools.repository",
     ],
-    catalog = "src/main/resources/xsd/catalog.xml",
     package = "com.android.sdklib.repository.generated.sysimg.v4",
-    src_location = "tools/base/sdklib/src/main/java",
     xsd = "src/main/resources/xsd/sdk-sys-img-04.xsd",
-    deps = [
-        ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+    xsd_deps = [
+        "//tools/base/repository:repo-common-2",
+        ":sdk-common-3",
     ],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-sites-list-5",
-    binding_deps = ["//tools/base/repository:sources/repo-sites-common-1.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
-    package = "com.android.sdklib.repository.sources.generated.v5",
-    src_location = "tools/base/sdklib/src/main/java",
-    xsd = "src/main/resources/xsd/sources/sdk-sites-list-5.xsd",
-    deps = [
+    java_deps = [
         ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+        "//tools/base/repository:tools.repository",
     ],
+    package = "com.android.sdklib.repository.sources.generated.v5",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-5.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
 )
 
-xsd_to_java(
+xsd_java_library(
     name = "sdk-sites-list-6",
-    binding_deps = ["//tools/base/repository:sources/repo-sites-common-1.xjb"],
-    catalog = "src/main/resources/xsd/catalog.xml",
-    package = "com.android.sdklib.repository.sources.generated.v6",
-    src_location = "tools/base/sdklib/src/main/java",
-    xsd = "src/main/resources/xsd/sources/sdk-sites-list-6.xsd",
-    deps = [
+    java_deps = [
         ":tools.sdklib.core",
-        "//tools/base/repository:tools.repository.lib",
+        "//tools/base/repository:tools.repository",
+    ],
+    package = "com.android.sdklib.repository.sources.generated.v6",
+    xsd = "src/main/resources/xsd/sources/sdk-sites-list-6.xsd",
+    xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
+)
+
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
+
+# managed by go/iml_to_build
+jvm_import(
+    name = "schema-generated",
+    # do not sort: must match IML order
+    jars = ["//tools/base/sdklib:sdklib-sdk-schema.jar"],
+    visibility = ["//visibility:public"],
+)
+
+merge_jars(
+    name = "sdklib-sdk-schema",
+    out = "sdklib-sdk-schema.jar",
+    jars = [
+        ":libsdk-addon-1.lib.jar",
+        ":libsdk-addon-2.lib.jar",
+        ":libsdk-addon-3.lib.jar",
+        ":libsdk-common-1.lib.jar",
+        ":libsdk-common-2.lib.jar",
+        ":libsdk-common-3.lib.jar",
+        ":libsdk-repository-1.lib.jar",
+        ":libsdk-repository-2.lib.jar",
+        ":libsdk-repository-3.lib.jar",
+        ":libsdk-sites-list-1.lib.jar",
+        ":libsdk-sites-list-2.lib.jar",
+        ":libsdk-sites-list-3.lib.jar",
+        ":libsdk-sites-list-4.lib.jar",
+        ":libsdk-sites-list-5.lib.jar",
+        ":libsdk-sites-list-6.lib.jar",
+        ":libsdk-sysimg-1.lib.jar",
+        ":libsdk-sysimg-2.lib.jar",
+        ":libsdk-sysimg-3.lib.jar",
+        ":libsdk-sysimg-4.lib.jar",
     ],
 )

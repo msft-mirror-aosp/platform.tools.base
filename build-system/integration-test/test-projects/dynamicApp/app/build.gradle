@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     dynamicFeatures = [':feature1', ':feature2']
 
     defaultConfig {
         minSdkVersion 18
-        multiDexEnabled true
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -19,13 +19,13 @@ android {
     }
 
     lintOptions {
-        htmlReport true
-        htmlOutput file("lint-report.html")
-        textReport true
-        textOutput file("lint-results.txt")
-        explainIssues false
-        absolutePaths false
-        ignoreTestSources true
+        htmlReport = true
+        htmlOutput = file("lint-report.html")
+        textReport = true
+        textOutput = file("lint-results.txt")
+        explainIssues = false
+        absolutePaths = false
+        ignoreTestSources = true
     }
 }
 

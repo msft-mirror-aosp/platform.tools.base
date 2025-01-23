@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.flavored"
+    namespace = "com.android.tests.flavored"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -37,12 +37,12 @@ android {
         staging {
             applicationIdSuffix = ".staging"
             versionNameSuffix = ".S"
-            signingConfig signingConfigs.debug
+            signingConfig = signingConfigs.debug
         }
     }
 
     buildFeatures {
-        buildConfig true
+        buildConfig = true
     }
 
     // This is not part of the test per se, it tests that adding dynamic properties on the

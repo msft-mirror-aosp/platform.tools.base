@@ -39,22 +39,33 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.manifest
 import com.android.tools.lint.checks.infrastructure.TestFiles.source
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.checks.infrastructure.dos2unix
 import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.LintListener
 import com.android.tools.lint.client.api.LintListener.EventType.REGISTERED_PROJECT
 import com.android.tools.lint.client.api.LintListener.EventType.STARTING
+import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
+import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import com.intellij.psi.PsiField
 import java.io.File
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.streams.toList
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
+import org.jetbrains.uast.UClass
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -359,23 +370,23 @@ class ProjectInitializerTest {
 
     MainTest.checkDriver(
       """
-            baseline.xml: Information: 1 error was filtered out because it is listed in the baseline file, baseline.xml [LintBaseline]
-            project.xml:5: Error: test.jar (relative to ROOT) does not exist [LintError]
-            <classpath jar="test.jar" />
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            res/values/strings.xml:3: Error: string1 has already been defined in this folder [DuplicateDefinition]
-                <string name="string1">String 2</string>
-                        ~~~~~~~~~~~~~~
-                res/values/strings.xml:2: Previously defined here
-            generated/Generated.java:3: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
-              String path = "/sdcard/file";
-                            ~~~~~~~~~~~~~~
-            ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
-                <permission android:name="bar.permission.SEND_SMS"
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:8: Previous permission here
-            2 errors, 2 warnings (1 error filtered by baseline baseline.xml)
-            """,
+      baseline.xml: Hint: 1 error was filtered out because it is listed in the baseline file, baseline.xml [LintBaseline]
+      project.xml:5: Error: test.jar (relative to ROOT) does not exist [LintError]
+      <classpath jar="test.jar" />
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      res/values/strings.xml:3: Error: string1 has already been defined in this folder [DuplicateDefinition]
+          <string name="string1">String 2</string>
+                  ~~~~~~~~~~~~~~
+          res/values/strings.xml:2: Previously defined here
+      generated/Generated.java:3: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
+        String path = "/sdcard/file";
+                      ~~~~~~~~~~~~~~
+      ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
+          <permission android:name="bar.permission.SEND_SMS"
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          AndroidManifest.xml:8: Previous permission here
+      2 errors, 2 warnings (and 1 error filtered by baseline baseline.xml)
+      """,
       expectedError,
 
       // Expected exit code
@@ -451,7 +462,7 @@ class ProjectInitializerTest {
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            3 errors, 0 warnings
+            3 errors
             """,
       "",
       ERRNO_SUCCESS,
@@ -492,7 +503,7 @@ class ProjectInitializerTest {
             project.xml:4: Error: Unexpected tag unknown [LintError]
               <unknown file="foo.Bar" />
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 0 warnings
+            2 errors
             """,
       "",
       ERRNO_SUCCESS,
@@ -596,7 +607,7 @@ class ProjectInitializerTest {
             AndroidManifest.xml:7: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
                     android:targetSdkVersion="22" />
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            2 errors, 1 warnings
+            2 errors, 1 warning
             """,
       "",
 
@@ -736,7 +747,7 @@ class ProjectInitializerTest {
             res/values/strings.xml:2: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
                 <string name="nam﻿e">Value</string>
                                  ~
-            1 errors, 0 warnings
+            1 error
             """,
       "",
 
@@ -853,7 +864,7 @@ class ProjectInitializerTest {
         "src/main/java/test/pkg/Private.java:5: Warning: The resource @string/my_private_string is marked as private in foo-bar.aar [PrivateResource]\n" +
         "                            int x = R.string.my_private_string; // ERROR\n" +
         "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 1 warnings\n",
+        "0 errors, 1 warning\n",
       "",
 
       // Expected exit code
@@ -952,7 +963,7 @@ class ProjectInitializerTest {
           .replace('/', File.separatorChar) +
         "public class Child extends Parent {\n" +
         "             ~~~~~\n" +
-        "1 errors, 0 warnings\n",
+        "1 error\n",
       "",
 
       // Expected exit code
@@ -1020,7 +1031,7 @@ class ProjectInitializerTest {
         "src/test/pkg/RequiresApiFieldTest.java:14: Error: Call requires API level 24 (current min is 1): Method24 [NewApi]\n" +
         "        Log.d(\"zzzz\", \"ReferenceField24: \" + Method24());\n" +
         "                                             ~~~~~~~~\n" +
-        "1 errors, 0 warnings\n",
+        "1 error\n",
       "",
 
       // Expected exit code
@@ -1140,7 +1151,7 @@ class ProjectInitializerTest {
             C.java:20: Error: Call requires API level 24 (current min is 1): java.util.Collection#parallelStream [NewApi]
                     Stream stream = collection.parallelStream(); // ERROR
                                                ~~~~~~~~~~~~~~
-            1 errors, 0 warnings
+            1 error
             """,
       "",
 
@@ -1261,7 +1272,7 @@ class ProjectInitializerTest {
         "src/test/pkg/Client.java:8: Error: Method method2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
         "        new test.pkg2.Library2().method2();\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "2 errors, 0 warnings",
+        "2 errors",
       "",
 
       // Expected exit code
@@ -1339,7 +1350,7 @@ class ProjectInitializerTest {
             src/test/pkg/Java14Test.java:17: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE [SwitchIntDef]
                     return switch (duration) {
                            ^
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1429,7 +1440,7 @@ class ProjectInitializerTest {
       name.some-ext:21: Error: Obsolete ProGuard file; use -keepclasseswithmembers instead of -keepclasseswithmembernames [Proguard]
       -keepclasseswithmembernames class * {
       ^
-      1 errors, 0 warnings
+      1 error
       """,
       "",
 
@@ -1630,7 +1641,7 @@ class ProjectInitializerTest {
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1660,7 +1671,7 @@ class ProjectInitializerTest {
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
-            0 errors, 1 warnings
+            0 errors, 1 warning
             """,
       "",
 
@@ -1739,7 +1750,7 @@ class ProjectInitializerTest {
                 <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
                  ~~~~~~~~
                 layout/SomethingNamedAndroidManifest.xml:5: Also appears here
-            1 errors, 0 warnings
+            1 error
             """,
       "Manifest merger failed with multiple errors, see logs",
 
@@ -2202,7 +2213,7 @@ class ProjectInitializerTest {
                 java/com/google/a/Activity.java:13: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
                         Log.d(TAG, "message");
                               ~~~
-                2 errors, 0 warnings""",
+                2 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2255,7 +2266,7 @@ class ProjectInitializerTest {
                 java/com/google/b/Activity.java:14: Error: The logging tag can be at most 23 characters, was 34 (SuperSuperLongLogTagThatExceedsMax) [LongLogTag]
                         Log.d(TAG, "message");
                               ~~~
-                3 errors, 0 warnings""",
+                3 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2364,7 +2375,7 @@ class ProjectInitializerTest {
                 java/com/google/a/res/values/strings.xml:5: Error: The resource R.string.a_string_unused appears to be unused [UnusedResources]
                     <string name="a_string_unused">a string unused</string>
                             ~~~~~~~~~~~~~~~~~~~~~~
-                8 errors, 0 warnings""",
+                8 errors""",
       "",
       // Expected exit code
       ERRNO_SUCCESS,
@@ -2847,7 +2858,7 @@ src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, the
 src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
         android:supportsRtl="true"
                              ~~~~
-1 errors, 5 warnings
+1 error, 5 warnings
       """,
       "",
       ERRNO_SUCCESS,
@@ -3266,7 +3277,7 @@ src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, the
 src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
         android:supportsRtl="true"
                              ~~~~
-1 errors, 5 warnings
+1 error, 5 warnings
       """,
       "",
       ERRNO_SUCCESS,
@@ -3283,6 +3294,321 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     )
   }
 
+  /** Copied from [testKMPProjectK2], with klib removed and `iosApp/Hello.kt` added */
+  @Test
+  fun testLightClassSupportForNonJvm() {
+    Assume.assumeTrue(useFirUast())
+
+    val shared =
+      project(
+          kt(
+            "src/commonMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            interface Platform {
+                val name: String
+            }
+            interface Hello {
+                fun hello(): String
+            }
+            expect fun getPlatform(): Platform
+            object CommonMainHello : Hello {
+                val commonMain = "commonMain"
+                override fun hello() = "Hello " + commonMain + "!"
+            }
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/commonMain/kotlin/pkg/Greeting.kt",
+            """
+            package pkg
+            class Greeting {
+                private val platform: Platform = getPlatform()
+            }
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = AndroidMainHello().hello()
+            }
+            class AndroidMainHello: Hello {
+                val androidMain = "androidMain"
+                override fun hello() = "Hello " + androidMain + "!"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/iosMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+
+            class IOSPlatform: Platform {
+                override val name: String = IosMainHello().hello()
+            }
+            class IosMainHello: Hello {
+                val iosMain = "iosMain"
+                override fun hello() = "Hello " + iosMain + "!"
+            }
+            actual fun getPlatform(): Platform = IOSPlatform()
+          """
+              .trimIndent(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("shared")
+
+    val androidApp =
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET"/>
+
+              <application
+                  android:allowBackup="false"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+        """,
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
+            <resources>
+                <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
+            </resources>
+          """,
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
+            package pkg.android
+
+            @Composable
+            fun GreetingView(text: String) {
+                Text(text = text)
+            }
+
+            val androidAppHello = object : pkg.Hello {
+                val androidApp = "androidApp"
+                override fun hello() = "Hello " + androidApp + "!"
+            }
+
+            @Preview
+            @Composable
+            fun DefaultPreview() {
+                MyApplicationTheme {
+                    GreetingView(androidAppHello.hello())
+                }
+            }
+          """,
+            )
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+          """
+              .trimIndent(),
+          ),
+        )
+        .name("androidApp")
+        .dependsOn(shared)
+
+    val iosApp =
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
+
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
+
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
+
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
+                                        }
+                                    }
+                                }
+                    }
+                }
+            }
+          """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
+
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/IosHello.kt",
+            """
+            class IosHello: pkg.Hello {
+                val iosApp = "iosApp"
+                fun hello(str: String) = "Hello " + iosApp + "!"
+            }
+          """
+              .trimIndent(),
+          ),
+        )
+        .name("iosApp")
+
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <root dir="$root" />
+
+          <module name="androidApp" android="true" library="false" compile-sdk-version='18'>
+            <manifest file="androidApp/src/main/AndroidManifest.xml" />
+            <resource file="androidApp/src/main/res/values/styles.xml" />
+            <src file="androidApp/src/main/java/pkg/android/MainActivity.kt" />
+            <src file="androidApp/src/main/java/pkg/android/expect.kt" />
+            <src file="androidApp/src/main/java/pkg/android/actual.kt" />
+            <dep module="commonMain" kind="dependsOn" />
+          </module>
+
+          <module name="iosApp" android="false" library="false">
+            <src file="iosApp/iosApp/ContentView.swift" />
+            <src file="iosApp/iosApp/iOSApp.swift" />
+            <src file="iosApp/src/IosHello.kt" />
+            <dep module="commonMain" kind="dependsOn"/>
+          </module>
+
+          <module name="commonMain" android="false">
+            <src file="shared/src/commonMain/kotlin/pkg/Platform.kt" />
+            <src file="shared/src/androidMain/kotlin/pkg/Platform.kt" />
+            <src file="shared/src/iosMain/kotlin/pkg/Platform.kt" />
+          </module>
+        </project>
+      """
+        .trimIndent()
+
+    val task =
+      lint().issues(HelloDetector.ISSUE).projects(shared, androidApp, iosApp).allowMissingSdk()
+    val projects = task.createProjects(root)
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+
+    MainTest.checkDriver(
+      """
+        src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/main/AndroidManifest.xml:6: Warning: Attribute allowBackup is only used in API level 4 and higher (current min is 1) [UnusedAttribute]
+        android:allowBackup="false"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/main/AndroidManifest.xml:1: Warning: Should set android:versionCode to specify the application version [MissingVersion]
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ ~~~~~~~~
+src/main/AndroidManifest.xml:1: Warning: Should set android:versionName to specify the application version [MissingVersion]
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ ~~~~~~~~
+src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]
+    <application
+     ~~~~~~~~~~~
+src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
+        android:supportsRtl="true"
+                             ~~~~
+1 error, 5 warnings
+      """,
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      object : LintListener {
+        override fun update(
+          driver: LintDriver,
+          type: LintListener.EventType,
+          project: Project?,
+          context: Context?,
+        ) {}
+      },
+    )
+
+    task
+      .configureOptions { it.setUseK2Uast(true) }
+      .skipTestModes(TestMode.PARTIAL) // TODO no iosApp with `TestMode.PARTIAL`
+      .run()
+      .expect(
+        """
+          ../iosApp/src/IosHello.kt:1: Warning: This class (with fields [iosApp] and methods [getIosApp, hello, IosHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+          class IosHello: pkg.Hello {
+          ^
+          src/main/java/pkg/android/MainActivity.kt:8: Warning: This class (with fields [androidApp] and methods [getAndroidApp, hello, ]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+          val androidAppHello = object : pkg.Hello {
+                                ^
+          ../shared/src/androidMain/kotlin/pkg/Platform.kt:5: Warning: This class (with fields [androidMain] and methods [getAndroidMain, hello, AndroidMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+          class AndroidMainHello: Hello {
+          ^
+          ../shared/src/iosMain/kotlin/pkg/Platform.kt:6: Warning: This class (with fields [iosMain] and methods [getIosMain, hello, IosMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+          class IosMainHello: Hello {
+          ^
+          ../shared/src/commonMain/kotlin/pkg/Platform.kt:9: Warning: This class (with fields [commonMain, INSTANCE] and methods [getCommonMain, hello, CommonMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+          object CommonMainHello : Hello {
+          ^
+          0 errors, 5 warnings
+        """
+          .trimIndent()
+      )
+  }
+
   @After
   fun tearDown() {
     UastEnvironment.disposeApplicationEnvironment()
@@ -3292,5 +3618,33 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     @ClassRule @JvmField var temp = TemporaryFolder()
 
     fun project(vararg files: TestFile): ProjectDescription = ProjectDescription(*files)
+  }
+
+  class HelloDetector : Detector(), SourceCodeScanner {
+    override fun applicableSuperClasses() = listOf(commonHello)
+
+    override fun visitClass(context: JavaContext, declaration: UClass) {
+      if (declaration.qualifiedName != commonHello) {
+        val flds = declaration.fields.joinToString { (it.javaPsi as? PsiField)?.name ?: "??" }
+        val mthds = declaration.methods.joinToString { it.javaPsi.name }
+        val msg =
+          "This class (with fields [$flds] and methods [$mthds]) shouldn't extend `$commonHello`"
+        context.report(ISSUE, declaration, context.getLocation(declaration.javaPsi), msg)
+      }
+    }
+
+    companion object {
+      const val commonHello = "pkg.Hello"
+      val ISSUE =
+        Issue.create(
+          id = "HelloDetectorIssue",
+          briefDescription = "Not applicable",
+          explanation = "Not applicable",
+          category = Category.CORRECTNESS,
+          priority = 10,
+          severity = Severity.WARNING,
+          implementation = Implementation(HelloDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+    }
   }
 }

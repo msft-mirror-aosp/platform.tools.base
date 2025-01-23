@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.test.compositeapp"
+    namespace = "com.test.compositeapp"
     compileSdkVersion rootProject.ext.latestCompileSdk
     defaultConfig {
         applicationId "com.test.compositeapp"

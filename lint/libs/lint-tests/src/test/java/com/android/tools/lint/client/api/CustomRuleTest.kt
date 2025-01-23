@@ -206,7 +206,7 @@ class CustomRuleTest {
               "com/android/tools/lint/detector/api/Detector＄JavaScanner:"
           )
         assertThat(it).contains("ClassLoader.defineClass1(")
-        assertThat(it).contains("0 errors, 1 warnings")
+        assertThat(it).contains("0 errors, 1 warning")
       })
   }
 
@@ -255,7 +255,7 @@ class CustomRuleTest {
               "com/android/tools/lint/detector/api/Detector＄JavaPsiScanner:"
           )
         assertThat(it).contains("ClassLoader.defineClass1(")
-        assertThat(it).contains("0 errors, 1 warnings")
+        assertThat(it).contains("0 errors, 1 warning")
       })
   }
 
@@ -291,7 +291,7 @@ class CustomRuleTest {
           "(com.example.google.lint.MyIssueRegistry) which requires a newer API " +
           "level. That means that the custom lint checks are intended for a" +
           " newer lint version; please upgrade. [ObsoleteLintCustomCheck]\n" +
-          "0 errors, 1 warnings"
+          "0 errors, 1 warning"
       )
   }
 

@@ -7,8 +7,8 @@ apply plugin: 'com.android.lint'
 lintOptions {
     htmlReport true
     htmlOutput file("lint-report.html")
-    textReport true
-    textOutput file("lint-results.txt")
-    absolutePaths false
-    ignoreTestSources true
+    textReport = true
+    textOutput = file("lint-results.txt")
+    absolutePaths = false
+    ignoreTestSources = true
 }

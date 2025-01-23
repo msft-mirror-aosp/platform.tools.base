@@ -967,7 +967,7 @@ class SuppressLintTest {
       src/test/pkg/test.kt:3: Warning: Found trigger [_TestIssueId]
           trigger() // ERROR
           ~~~~~~~~~
-      0 errors, 1 warnings
+      0 errors, 1 warning
       """
         .trimIndent(),
       "",
@@ -986,7 +986,7 @@ class SuppressLintTest {
       src/test/pkg/test.kt:3: Warning: Found trigger [_TestIssueId]
           trigger() // ERROR
           ~~~~~~~~~
-      1 errors, 1 warnings
+      1 error, 1 warning
       """
         .trimIndent(),
       "",

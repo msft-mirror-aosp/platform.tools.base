@@ -71,6 +71,10 @@ class LintBaseline(
   var foundWarningCount: Int = 0
     private set
 
+  /** The number of hints/info severity incidents that have been matched from the baseline. */
+  var foundHintCount: Int = 0
+    private set
+
   /** The total number of issues contained in this baseline. */
   var totalCount: Int = 0
     private set
@@ -129,7 +133,7 @@ class LintBaseline(
    * but have not been matched.)
    */
   val fixedCount: Int
-    get() = totalCount - foundErrorCount - foundWarningCount
+    get() = totalCount - foundErrorCount - foundWarningCount - foundHintCount
 
   /** Custom attributes defined for this baseline. */
   private var attributes: MutableMap<String, String>? = null
@@ -143,13 +147,14 @@ class LintBaseline(
    * if so reports them.)
    */
   internal fun reportBaselineIssues(driver: LintDriver, project: Project) {
-    if (foundErrorCount > 0 || foundWarningCount > 0) {
+    if (foundErrorCount > 0 || foundWarningCount > 0 || foundHintCount > 0) {
       val client = driver.client
       val baselineFile = file
       val message =
         describeBaselineFilter(
           foundErrorCount,
           foundWarningCount,
+          foundHintCount,
           getDisplayPath(client, project, baselineFile),
         )
       LintClient.report(
@@ -330,10 +335,13 @@ class LintBaseline(
             curr = curr.next
           }
 
-          if ((severity ?: issue.defaultSeverity).isError) {
-            foundErrorCount++
-          } else {
-            foundWarningCount++
+          val effectiveSeverity = severity ?: issue.defaultSeverity
+          when (effectiveSeverity) {
+            Severity.FATAL,
+            Severity.ERROR -> foundErrorCount++
+            Severity.WARNING -> foundWarningCount++
+            Severity.INFORMATIONAL -> foundHintCount++
+            Severity.IGNORE -> {}
           }
 
           return true
@@ -871,8 +879,13 @@ class LintBaseline(
         id != IssueRegistry.BASELINE_FIXED.id
     }
 
-    fun describeBaselineFilter(errors: Int, warnings: Int, baselineDisplayPath: String): String {
-      val counts = describeCounts(errors, warnings, comma = false, capitalize = true)
+    fun describeBaselineFilter(
+      errors: Int,
+      warnings: Int,
+      hints: Int,
+      baselineDisplayPath: String,
+    ): String {
+      val counts = describeCounts(errors, warnings, hints, comma = false, capitalize = true)
       val escapedPath = TextFormat.TEXT.convertTo(baselineDisplayPath, TextFormat.RAW)
       return if (errors + warnings == 1) {
         "$counts was filtered out because it is listed in the baseline file, $escapedPath"

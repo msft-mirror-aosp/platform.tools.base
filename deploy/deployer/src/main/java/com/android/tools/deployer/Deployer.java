@@ -347,7 +347,7 @@ public class Deployer {
         // --attach-agent was added on API 28. Furthermore before API 28 there is no guarantee
         // for the code_cache folder to be created during app install.
         return this.options.enableCoroutineDebugger
-                && adb.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.P);
+               && adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.P);
     }
 
     private Result swap(
@@ -357,7 +357,7 @@ public class Deployer {
             Canceller canceller)
             throws DeployerException {
 
-        if (!adb.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.O)) {
+        if (!adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.O)) {
             throw DeployerException.apiNotSupported();
         }
 
@@ -433,7 +433,7 @@ public class Deployer {
             Canceller canceller)
             throws DeployerException {
 
-        if (!adb.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.O)) {
+        if (!adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.O)) {
             throw DeployerException.apiNotSupported();
         }
 

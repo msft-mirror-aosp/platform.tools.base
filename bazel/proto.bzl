@@ -1,5 +1,5 @@
 load(":android.bzl", "select_android")
-load(":functions.bzl", "label_workspace_path", "workspace_path")
+load(":functions.bzl", "label_workspace_path")
 load(":maven.bzl", "maven_library")
 load(":utils.bzl", "java_jarjar")
 

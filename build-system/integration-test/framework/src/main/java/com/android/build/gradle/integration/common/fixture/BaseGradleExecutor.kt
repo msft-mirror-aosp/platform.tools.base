@@ -89,8 +89,8 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
     private var perTestPrefsRoot: Boolean = false
     private var failOnWarning: Boolean = true
     private var crashOnOutOfMemory: Boolean = false
+    private val adhocJvmArguments: MutableList<String> = mutableListOf()
     private val gradleOptionsDelegate = GradleOptionsDelegate(gradleOptions)
-
 
     init {
         gradleTestInfo.profileDirectory?.let {
@@ -190,6 +190,15 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
     /** Forces JVM exit in the event of an OutOfMemoryError, without collecting a heap dump.  */
     fun crashOnOutOfMemory(): T {
         this.crashOnOutOfMemory = true
+        return this as T
+    }
+
+    /** Adds an adhoc JVM argument (e.g., "-XX:CompileCommand=exclude,com.example.Foo::bar"). */
+    fun withAdhocJvmArgument(argument: String): T {
+        check(argument.startsWith("-XX")) {
+            "Adhoc JVM arguments should start with \"-XX:\". The given argument is: \"$argument\". Check for typos or use a different API."
+        }
+        adhocJvmArguments.add(argument)
         return this as T
     }
 
@@ -320,6 +329,8 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
             jvmArguments.add("-XX:+HeapDumpOnOutOfMemoryError")
             jvmArguments.add("-XX:HeapDumpPath=" + jvmLogDir.resolve("heapdump.hprof"))
         }
+
+        jvmArguments.addAll(adhocJvmArguments)
 
         val debugIntegrationTest: String? = System.getenv("DEBUG_INNER_TEST")
         if (!Strings.isNullOrEmpty(debugIntegrationTest)) {

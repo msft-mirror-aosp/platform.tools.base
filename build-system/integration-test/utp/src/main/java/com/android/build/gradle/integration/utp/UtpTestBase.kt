@@ -71,7 +71,7 @@ abstract class UtpTestBase {
         TestFileUtils.appendToFile(
             subProject.buildFile,
             """
-            android.testOptions.execution 'ANDROIDX_TEST_ORCHESTRATOR'
+            android.testOptions.execution = 'ANDROIDX_TEST_ORCHESTRATOR'
             // Orchestrator requires some setup time and it usually takes
             // about an minute. Increase the timeout for running "am instrument" command
             // to 3 minutes.
@@ -101,7 +101,7 @@ abstract class UtpTestBase {
         TestFileUtils.appendToFile(
             subProject.buildFile,
             """
-            android.buildTypes.debug.testCoverageEnabled true
+            android.buildTypes.debug.testCoverageEnabled = true
             android.defaultConfig.testInstrumentationRunnerArguments useTestStorageService: 'true'
 
             dependencies {

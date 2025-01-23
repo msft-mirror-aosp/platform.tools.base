@@ -1081,7 +1081,7 @@ private abstract class LintModelReader(
       }
     }
 
-    return AndroidVersion(this)
+    return AndroidVersion.fromString(this)
   }
 
   protected fun String.toMavenCoordinate(): LintModelMavenName? {

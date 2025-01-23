@@ -969,7 +969,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
-      3 errors, 0 warnings
+      3 errors
       """
         .trimIndent(),
       "",
@@ -1022,7 +1022,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
-      3 errors, 0 warnings
+      3 errors
       """
         .trimIndent(),
       "",
@@ -1054,7 +1054,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
           Object o = MyApi.class; // ERROR 3
                      ~~~~~~~~~~~
-      3 errors, 0 warnings
+      3 errors
       """
         .trimIndent(),
       "",

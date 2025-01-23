@@ -17,6 +17,7 @@ package com.android.tools.lint
 
 import com.android.tools.lint.UastEnvironment.Companion.getKlibPaths
 import com.android.tools.lint.UastEnvironment.Companion.kotlinLibrary
+import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
@@ -107,6 +108,7 @@ private constructor(
   // the work here is delegated to the Kotlin compiler.
   private val kotlinCompilerEnv: KotlinCoreEnvironment,
   override val projectDisposable: Disposable,
+  override val isKMP: Boolean,
 ) : UastEnvironment {
   override val coreAppEnv: CoreApplicationEnvironment
     get() = kotlinCompilerEnv.projectEnvironment.environment
@@ -230,7 +232,7 @@ private constructor(
     fun create(config: Configuration): Fe10UastEnvironment {
       val parentDisposable = Disposer.newDisposable("Fe10UastEnvironment.create")
       val kotlinEnv = createKotlinCompilerEnv(parentDisposable, config)
-      return Fe10UastEnvironment(kotlinEnv, parentDisposable).apply {
+      return Fe10UastEnvironment(kotlinEnv, parentDisposable, config.isKMP).apply {
         klibs.addAll(config.klibs.values)
       }
     }

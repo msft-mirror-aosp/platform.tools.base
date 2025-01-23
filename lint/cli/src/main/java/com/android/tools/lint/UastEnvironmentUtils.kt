@@ -191,13 +191,14 @@ internal fun configureAnalysisApiProjectStructure(
 
     fun KtModuleBuilder.addModuleDependencies(moduleName: String) {
       if (classPaths.isNotEmpty()) {
-        addRegularDependency(
-          buildKtLibraryModule {
-            platform = mPlatform
-            addBinaryPaths(classPaths)
-            libraryName = "Library for $moduleName"
-          }
-        )
+        val libModule = buildKtLibraryModule {
+          platform = mPlatform
+          addBinaryPaths(classPaths)
+          libraryName = "Library for $moduleName"
+        }
+        addRegularDependency(libModule)
+        // To allow the source module to access `internal` declarations in lib
+        addFriendDependency(libModule)
       }
 
       // Not necessary to set up JDK dependency for non-JVM modules

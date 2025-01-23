@@ -20,13 +20,13 @@ buildscript { apply from: "../../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.test.jacoco.annotation"
+    namespace = "com.test.jacoco.annotation"
     compileSdkVersion project.ext.latestCompileSdk
     buildToolsVersion = project.ext.buildToolsVersion
 
     buildTypes {
         debug {
-            enableAndroidTestCoverage true
+            enableAndroidTestCoverage = true
         }
     }
 }

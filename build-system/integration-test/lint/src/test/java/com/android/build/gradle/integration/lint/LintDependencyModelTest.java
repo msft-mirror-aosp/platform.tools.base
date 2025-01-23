@@ -84,7 +84,7 @@ public class LintDependencyModelTest {
         // in androidlib and indirectlib2 as error; in indirectlib1 there's more
         // ambiguity since it's imported from two contexts and either is fine.
 
-        assertThat(textReport).contains("androidlib/src/main/java/com/example/mylibrary/MyClass.java:4: Information: Do not hardcode");
+        assertThat(textReport).contains("androidlib/src/main/java/com/example/mylibrary/MyClass.java:4: Hint: Do not hardcode");
         assertThat(textReport).contains("javalib/src/main/java/com/example/MyClass.java:4: Warning: Do not hardcode");
         assertThat(textReport).contains("javalib2/src/main/java/com/example2/MyClass.java:4: Warning: Do not hardcode");
         // This issue is turned off in javalib but still returns to (default) enabled when processing
@@ -135,8 +135,8 @@ public class LintDependencyModelTest {
     public void testMultipleJavaModuleDependencies() throws Exception {
         TestFileUtils.searchAndReplace(
                 project.getSubproject("app").getBuildFile(),
-                "checkDependencies true",
-                "checkDependencies false");
+                "checkDependencies = true",
+                "checkDependencies = false");
 
         project.executor().run(":app:lintDebug");
 

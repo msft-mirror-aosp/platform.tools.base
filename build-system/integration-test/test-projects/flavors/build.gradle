@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.flavors"
+    namespace = "com.android.tests.flavors"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
@@ -31,7 +31,7 @@ android {
     }
 
     buildFeatures {
-        buildConfig true
+        buildConfig = true
     }
 }
 

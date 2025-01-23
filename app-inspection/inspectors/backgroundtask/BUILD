@@ -45,7 +45,7 @@ app_inspection_jar(
     ],
     inspection_resource_strip_prefix = "tools/base/app-inspection/inspectors/backgroundtask/resources",
     inspection_resources = glob(["resources/META-INF/**"]),
-    proto = ":backgroundtask_inspector_java_proto",
+    protos = [":backgroundtask_inspector_java_proto"],
     # do not sort: fake_android must come before latest_jar in the classpath to override small pieces of it
     deps = agent_deps,
 )

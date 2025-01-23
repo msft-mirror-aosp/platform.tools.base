@@ -18,6 +18,7 @@ package com.android.tools.lint.checks.fx
 import com.google.common.truth.Truth.assertThat
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 
 class MonotoneTest {
@@ -333,5 +334,31 @@ class MonotoneTest {
         unboundedSetOf(Expr.Const(0), Expr.Const(1), Expr.Const(2)),
       ),
     )
+  }
+
+  @Test
+  fun `fix uses widen`() {
+    val defns =
+      object :
+        Monotone<String, UnboundedSet<Int>>, Lattice<UnboundedSet<Int>> by possibilityLattice() {
+        override fun invoke(rec: (String) -> UnboundedSet<Int>, index: String) =
+          when (index) {
+            "natural_numbers" -> persistentSetOf(0) join rec(index)?.map { it + 1 }
+            "unproductive_cycle" -> persistentSetOf(42) join rec(index)
+            else -> throw IllegalArgumentException(index)
+          }
+
+        // the power set lattice's height is unbounded, so repeated `join` wouldn't necessarily
+        // converge
+        override fun widen(prev: UnboundedSet<Int>, now: UnboundedSet<Int>) =
+          when {
+            prev != bottom && now != bottom && prev != now -> top
+            else -> prev join now
+          }
+      }
+
+    val results = defns.leastFixPoint(listOf("natural_numbers", "unproductive_cycle"))
+    assertThat(results["natural_numbers"]).isEqualTo(defns.top)
+    assertThat(results["unproductive_cycle"]).isEqualTo(persistentSetOf(42))
   }
 }

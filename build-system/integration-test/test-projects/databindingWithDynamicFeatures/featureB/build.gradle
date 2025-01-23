@@ -17,7 +17,7 @@
 apply plugin: 'com.android.dynamic-feature'
 
 android {
-    namespace "com.example.featureB"
+    namespace = "com.example.featureB"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {

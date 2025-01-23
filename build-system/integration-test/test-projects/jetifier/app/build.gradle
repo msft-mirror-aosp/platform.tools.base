@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.app"
+    namespace = "com.example.app"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     defaultConfig {
         minSdkVersion 23

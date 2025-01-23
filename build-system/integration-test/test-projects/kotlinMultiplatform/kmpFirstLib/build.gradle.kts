@@ -16,28 +16,6 @@ kotlin {
         instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    sourceSets.getByName("androidMain") {
-      dependencies {
-        api(project(":androidLib"))
-        implementation(project(":kmpSecondLib"))
-        implementation(project(":kmpJvmOnly"))
-      }
-    }
-
-    sourceSets.getByName("androidDeviceTest") {
-      dependencies {
-        implementation("androidx.test:runner:1.4.0-alpha06", {
-            exclude(group="com.google.guava", module="listenablefuture")
-        })
-        implementation("androidx.test:core:1.4.0-alpha06", {
-            exclude(group="com.google.guava", module="listenablefuture")
-        })
-        implementation("androidx.test.ext:junit:1.1.5", {
-            exclude(group="com.google.guava", module="listenablefuture")
-        })
-      }
-    }
-
     compilations.getByName("deviceTest") {
         kotlinOptions.languageVersion = "1.8"
     }
@@ -56,12 +34,34 @@ kotlin {
      }
    }
 
-    sourceSets.getByName("commonMain") {
-        dependencies {
-            implementation("com.google.guava:guava:19.0", {
-                exclude(group="com.google.guava", module="listenablefuture")
-            })
-        }
+   sourceSets.getByName("commonMain") {
+     dependencies {
+       implementation("com.google.guava:guava:19.0", {
+         exclude(group="com.google.guava", module="listenablefuture")
+       })
+     }
+    }
+
+    sourceSets.getByName("androidMain") {
+      dependencies {
+        api(project(":androidLib"))
+        implementation(project(":kmpSecondLib"))
+        implementation(project(":kmpJvmOnly"))
+      }
+    }
+
+    sourceSets.getByName("androidDeviceTest") {
+      dependencies {
+        implementation("androidx.test:runner:1.4.0-alpha06", {
+          exclude(group="com.google.guava", module="listenablefuture")
+        })
+        implementation("androidx.test:core:1.4.0-alpha06", {
+          exclude(group="com.google.guava", module="listenablefuture")
+        })
+        implementation("androidx.test.ext:junit:1.1.5", {
+           exclude(group="com.google.guava", module="listenablefuture")
+        })
+      }
     }
 }
 

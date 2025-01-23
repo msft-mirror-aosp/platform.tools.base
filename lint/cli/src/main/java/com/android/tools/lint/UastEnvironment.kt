@@ -77,6 +77,8 @@ interface UastEnvironment {
 
   val kotlinCompilerConfig: CompilerConfiguration
 
+  val isKMP: Boolean
+
   /** A configuration is just a container for the classpath, compiler flags, etc. */
   interface Configuration {
     companion object {

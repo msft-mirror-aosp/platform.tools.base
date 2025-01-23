@@ -19,8 +19,12 @@ package com.android.build.gradle.integration.compose
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,12 +47,7 @@ class ComposePluginOptionsTest {
             kotlin {
                 compilerOptions {
                     jvmTarget.set(JvmTarget.JVM_1_8)
-                    freeCompilerArgs.addAll(
-                        "-P",
-                        "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
-                    )
                 }
-
             }
             dependencies {
                 implementation("androidx.compose.runtime:runtime:+")
@@ -60,16 +59,79 @@ class ComposePluginOptionsTest {
                 class KotlinClass
                 """.trimIndent()
             )
+            pluginCallbacks += PrintKotlinCompileInfoCallback::class.java
         }
         gradleProperties {
             add(BooleanOption.USE_ANDROID_X, true)
         }
     }
 
+    class PrintKotlinCompileInfoCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            project.afterEvaluate {
+                project.tasks.withType(KotlinCompile::class.java) { kotlinCompile ->
+                    kotlinCompile.doLast { task ->
+                        task as KotlinCompile
+                        val freeCompilerArgs =
+                            task.compilerOptions.freeCompilerArgs.get().joinToString()
+                        println("freeCompilerArgs: $freeCompilerArgs")
+                        val pluginOptions =
+                            task.pluginOptions
+                                .get()
+                                .joinToString {
+                                    it.getAsTaskInputArgs()
+                                        .map { input -> "${input.key}=${input.value}" }
+                                        .joinToString()
+                                }
+                        println("pluginOptions: $pluginOptions")
+                    }
+                }
+            }
+        }
+    }
+
     /** Regression test for b/318384658. */
     @Test
     fun `test AGP does not override user-specified plugin options`() {
-        rule.build.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:compileDebugKotlin")
+        val build = rule.build {
+            androidApplication {
+                kotlin {
+                    compilerOptions {
+                        freeCompilerArgs.addAll(
+                            "-P",
+                            "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
+                        )
+                    }
+                }
+            }
+        }
+        val result =
+            build.executor
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .run(":app:compileDebugKotlin")
+        ScannerSubject.assertThat(result.stdout)
+            .contains("androidx.compose.compiler.plugins.kotlin:sourceInformation=false")
+        ScannerSubject.assertThat(result.stdout)
+            .doesNotContain("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
+    }
+
+    /** Regression test for b/362780328. */
+    @Test
+    fun `test include source information by default`() {
+        val debugResult =
+            rule.build
+                .executor
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .run(":app:compileDebugKotlin")
+        ScannerSubject.assertThat(debugResult.stdout)
+            .contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
+
+        val releaseResult =
+            rule.build
+                .executor
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .run(":app:compileReleaseKotlin")
+        ScannerSubject.assertThat(releaseResult.stdout)
+            .contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
     }
 }

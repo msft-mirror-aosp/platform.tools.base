@@ -846,11 +846,11 @@ public class FontDetectorTest extends AbstractCheckTest {
                                         + "</issues>"));
         MainTest.checkDriver(
                 ""
-                        + "baseline.xml: Information: 1 error and 1 warning were filtered out because they are listed in the baseline file, baseline.xml [LintBaseline]\n"
+                        + "baseline.xml: Hint: 1 error and 1 warning were filtered out because they are listed in the baseline file, baseline.xml [LintBaseline]\n"
                         + "res/font/font3.xml:6: Error: Invalid numerical parameter [FontValidation]\n"
                         + "    app:fontProviderQuery=\"name=Monserrat&amp;width=1hundred\">\n"
                         + "                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "1 errors, 0 warnings (1 error, 1 warning filtered by baseline baseline.xml)",
+                        + "1 error (and 1 error, 1 warning filtered by baseline baseline.xml)",
                 "",
 
                 // Expected exit code

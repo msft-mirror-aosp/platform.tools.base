@@ -147,7 +147,10 @@ class AllDslMethodsTest(
         project
             .executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withFailOnWarning(false)
+            .withFailOnWarning(true)
+            // Workaround for b/382709449
+            .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType")
+            .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes")
             .run(
                 allProjects.map { projectName -> ":$projectName:clean" }
             )

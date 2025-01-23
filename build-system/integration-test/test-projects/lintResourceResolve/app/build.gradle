@@ -19,7 +19,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.android.lint.resolve"
+    namespace = "com.example.android.lint.resolve"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -33,8 +33,8 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     lintOptions {
-        textOutput file("lint-report.txt")
-        xmlOutput file("lint-report.xml")
+        textOutput = file("lint-report.txt")
+        xmlOutput = file("lint-report.xml")
         sarifReport true
         warningsAsErrors true
         checkOnly 'SupportAnnotationUsage'

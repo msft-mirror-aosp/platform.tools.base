@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.sample.kotlin_source_leak"
+    namespace = "com.sample.kotlin_source_leak"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
 	// Set source sets to match the layout of Eclipse based projects

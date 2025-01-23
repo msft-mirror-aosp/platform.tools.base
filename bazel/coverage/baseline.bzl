@@ -1,15 +1,5 @@
 load("@//tools/base/bazel:merge_archives.bzl", "merge_jars")
 
-def setup_bin_loop_repo():
-    native.new_local_repository(
-        name = "baseline",
-        path = "bazel-bin",
-        build_file_content = """
-load("@cov//:baseline.bzl", "construct_baseline_processing_graph")
-construct_baseline_processing_graph()
-""",
-    )
-
 # correctness requires that *.coverage.baseline.srcs be deleted
 # to ensure that any deleted targets do not hang around and interfere
 # studio_coverage.sh does this via a `bazel clean`

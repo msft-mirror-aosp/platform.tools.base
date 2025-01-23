@@ -99,7 +99,7 @@ public class LintCustomLocalAndPublishTest {
                         + "\n"
                         + "   Identifier: com.example.google.lint\n"
                         + "\n"
-                        + "1 errors, 1 warnings";
+                        + "1 error, 1 warning";
 
         File liblintfile =
                 new File(
@@ -149,7 +149,7 @@ public class LintCustomLocalAndPublishTest {
                         + "\n"
                         + "   Identifier: com.example.remote.lint\n"
                         + "\n"
-                        + "2 errors, 1 warnings";
+                        + "2 errors, 1 warning";
         File appLintFile =
                 new File(project.getSubproject("app").getProjectDir(), "lint-results.txt");
         assertThat(appLintFile).exists();

@@ -2,7 +2,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.manifest_merger_example"
+    namespace = "com.example.manifest_merger_example"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

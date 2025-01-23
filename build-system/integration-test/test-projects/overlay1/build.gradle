@@ -5,7 +5,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.overlay1"
+    namespace = "com.android.tests.overlay1"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

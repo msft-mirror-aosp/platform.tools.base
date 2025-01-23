@@ -69,6 +69,8 @@ fi
   || exit $?
 
 # Run Bazel with coverage instrumentation
+# b/373746515: K2 mode by default (temporarily),
+# and thus tests targeting K1 should be filtered out
 "${script_dir}/bazel" \
   test \
   --config=ci --config=remote-exec --config=ants \
@@ -83,7 +85,7 @@ fi
   --build_metadata=cov_phase=tests-and-baseline \
   --jvmopt="-Dstudio.is.coverage.build=true" \
   ${auth_options} \
-  --test_tag_filters=-perfgate,-perfgate-release \
+  --test_tag_filters=-perfgate,-perfgate-release,-no_k2 \
   --define agent_coverage=true \
   --remote_download_regex=".*.coverage.baseline.srcs" \
   "${extra_test_flags[@]}" \
@@ -115,7 +117,14 @@ fi
   @cov//:all.lcov \
   || exit $?
 
-readonly lcov_path="./bazel-bin/external/cov/all/lcov"
+readonly lcov_path="$( \
+  ${script_dir}/bazel \
+  cquery \
+  --output files \
+  --config=rcache \
+  --config=release \
+  @cov//:all.lcov \
+)"
 
 if [[ -d "${dist_dir}" ]]; then
   # Copy the report to ab/ outputs

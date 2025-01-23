@@ -18,7 +18,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.android.lint.desugaring.library"
+    namespace = "com.example.android.lint.desugaring.library"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -30,15 +30,15 @@ android {
 
     lintOptions {
         disable "GradleDependency" // such that we don't flag newly available Kotlin versions etc
-        xmlReport true
-        xmlOutput file("lint-report.xml")
-        textReport true
-        textOutput file("$buildDir/reports/lint-results.txt")
+        xmlReport = true
+        xmlOutput = file("lint-report.xml")
+        textReport = true
+        textOutput = file("$buildDir/reports/lint-results.txt")
         checkOnly 'NewApi'
     }
 
     compileOptions {
-        coreLibraryDesugaringEnabled true
+        coreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8

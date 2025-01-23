@@ -4,8 +4,8 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.test.ivyapp"
-    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    namespace = "com.android.test.ivyapp"
+    compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 }
 

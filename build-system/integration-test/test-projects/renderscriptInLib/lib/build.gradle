@@ -1,12 +1,12 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "com.example.android.rs.hellocompute.lib"
+    namespace = "com.example.android.rs.hellocompute.lib"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig.minSdkVersion = 17
 
     buildFeatures {
-        renderScript true
+        renderScript = true
     }
 }

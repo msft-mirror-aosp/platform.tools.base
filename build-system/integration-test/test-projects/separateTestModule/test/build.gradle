@@ -1,7 +1,7 @@
 apply plugin: 'com.android.test'
 
 android {
-    namespace 'com.example.android.testing.blueprint.test'
+    namespace = 'com.example.android.testing.blueprint.test'
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

@@ -15,10 +15,6 @@
  */
 package com.android.ddmlib;
 
-import static com.android.ddmlib.AdbHelper.formAdbRequest;
-import static com.android.ddmlib.AdbHelper.readAdbResponse;
-import static com.android.ddmlib.AdbHelper.write;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.clientmanager.ClientManager;
@@ -500,27 +496,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
      */
     public boolean isUserManagedAdbMode() {
         return sUserManagedAdbMode;
-    }
-
-    @Override
-    public String queryFeatures(String adbFeaturesRequest)
-            throws TimeoutException, AdbCommandRejectedException, IOException {
-        // TODO: implement using adblib
-        try (SocketChannel adbChan = AndroidDebugBridge.openConnection()) {
-            adbChan.configureBlocking(false);
-
-            byte[] request = formAdbRequest(adbFeaturesRequest);
-
-            write(adbChan, request);
-
-            AdbHelper.AdbResponse resp = readAdbResponse(adbChan, true /* readDiagString */);
-            if (!resp.okay) {
-                Log.w("features", "Error querying features: " + resp.message);
-                throw new AdbCommandRejectedException(resp.message);
-            }
-
-            return resp.message;
-        }
     }
 
     /** Instantiates sSocketAddr with the address of the host's adb process. */

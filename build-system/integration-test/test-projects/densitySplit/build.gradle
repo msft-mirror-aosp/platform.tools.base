@@ -6,7 +6,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-  namespace "com.android.tests.basic"
+  namespace = "com.android.tests.basic"
   compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
   buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -29,14 +29,14 @@ android {
 
   splits {
     density {
-      enable true
+      enable = true
       exclude "ldpi", "tvdpi", "xxxhdpi", "400dpi", "560dpi"
       compatibleScreens 'small', 'normal', 'large', 'xlarge'
     }
   }
 
   buildFeatures {
-    buildConfig true
+    buildConfig = true
   }
 }
 

@@ -280,7 +280,7 @@ public class AdbClient {
 
         List<File> files = paths.stream().map(Path::toFile).collect(Collectors.toList());
         try {
-            if (device.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.LOLLIPOP)) {
+            if (device.getVersion().isAtLeast(AndroidVersion.VersionCodes.LOLLIPOP)) {
                 device.installPackages(files, reinstall, options, 5, TimeUnit.MINUTES);
                 return new InstallResult(InstallStatus.OK, null, device.getLastInstallMetrics());
             } else {
@@ -465,7 +465,7 @@ public class AdbClient {
     // AbortSessionResponse.
     public String abortSession(String sessionId) {
         String prefix =
-                device.getVersion().isGreaterOrEqualThan(AndroidVersion.VersionCodes.N)
+                device.getVersion().isAtLeast(AndroidVersion.VersionCodes.N)
                         ? "cmd package"
                         : "pm";
 

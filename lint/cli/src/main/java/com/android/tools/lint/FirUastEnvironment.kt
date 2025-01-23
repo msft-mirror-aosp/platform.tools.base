@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint
 
+import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.android.tools.lint.uast.DecompiledPsiDeclarationProvider
 import com.android.tools.lint.uast.KotlinPsiDeclarationProviderFactory
 import com.android.tools.lint.uast.KotlinStaticPsiDeclarationProviderFactory
@@ -55,6 +56,7 @@ private constructor(
   override val ideaProject: MockProject,
   override val kotlinCompilerConfig: CompilerConfiguration,
   override val projectDisposable: Disposable,
+  override val isKMP: Boolean,
 ) : UastEnvironment {
 
   class Configuration
@@ -93,6 +95,7 @@ private constructor(
         analysisSession.mockProject,
         config.kotlinCompilerConfig,
         parentDisposable,
+        config.isKMP,
       )
     }
   }

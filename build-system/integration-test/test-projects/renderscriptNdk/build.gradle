@@ -31,7 +31,7 @@ dependencies {
 }
 
 android {
-    namespace "com.example.android.basicrenderscript"
+    namespace = "com.example.android.basicrenderscript"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     buildToolsVersion libs.versions.buildToolsVersion.get()
@@ -44,15 +44,15 @@ android {
         versionCode 1
         versionName "1.0"
 
-        renderscriptTargetApi 28
-        renderscriptSupportModeEnabled true
-        renderscriptNdkModeEnabled true
+        renderscriptTargetApi = 28
+        renderscriptSupportModeEnabled = true
+        renderscriptNdkModeEnabled = true
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         ndk {
-            moduleName "renderscript"
-            stl "c++_shared"
+            moduleName = "renderscript"
+            stl = "c++_shared"
         }
     }
 
@@ -63,6 +63,6 @@ android {
     }
 
     buildFeatures {
-        renderScript true
+        renderScript = true
     }
 }

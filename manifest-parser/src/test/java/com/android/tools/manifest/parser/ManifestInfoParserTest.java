@@ -20,12 +20,14 @@ import com.android.annotations.Nullable;
 import com.android.testutils.TestResources;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ManifestInfoParserTest {
 
@@ -138,6 +140,8 @@ public class ManifestInfoParserTest {
             Assert.assertFalse(manifest.getDebuggable());
             Assert.assertTrue(manifest.getInstrumentationTargetPackages()
                                       .contains("com.android.shell"));
+            Assert.assertEquals("21", manifest.getMinSdk());
+            Assert.assertEquals("30", manifest.getTargetSdk());
         }
     }
 

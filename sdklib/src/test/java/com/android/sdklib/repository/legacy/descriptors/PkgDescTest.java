@@ -243,14 +243,14 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescDoc() throws Exception {
         IPkgDesc p =
-                PkgDesc.Builder.newDoc(new AndroidVersion("19"), new Revision(1)).create();
+                PkgDesc.Builder.newDoc(new AndroidVersion(19), new Revision(1)).create();
 
         assertEquals(PkgType.PKG_DOC, p.getType());
 
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue(p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertFalse(p.hasPath());
         assertNull(p.getPath());
@@ -269,7 +269,7 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescDoc_Update() throws Exception {
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newDoc(api19, rev1).create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newDoc(api19, rev1).create();
@@ -284,7 +284,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2.isUpdateFor(p19_1));
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
-        final IPkgDesc p18_1  = PkgDesc.Builder.newDoc(new AndroidVersion("18"), rev1).create();
+        final IPkgDesc p18_1  = PkgDesc.Builder.newDoc(new AndroidVersion(18), rev1).create();
         assertTrue (p19_1.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_1));
         assertTrue (p19_1.compareTo(p18_1) > 0);
@@ -481,14 +481,14 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescSource() throws Exception {
         IPkgDesc p =
-                PkgDesc.Builder.newSource(new AndroidVersion("19"), new Revision(1)).create();
+                PkgDesc.Builder.newSource(new AndroidVersion(19), new Revision(1)).create();
 
         assertEquals(PkgType.PKG_SOURCE, p.getType());
 
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue  (p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertFalse(p.hasPath());
         assertNull (p.getPath());
@@ -507,7 +507,7 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescSource_Update() throws Exception {
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newSource(api19, rev1).create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newSource(api19, rev1).create();
@@ -524,7 +524,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final IPkgDesc p18_1  = PkgDesc.Builder.newSource(new AndroidVersion("18"), rev1).create();
+        final IPkgDesc p18_1  = PkgDesc.Builder.newSource(new AndroidVersion(18), rev1).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -533,7 +533,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescSample() throws Exception {
-        IPkgDesc p = PkgDesc.Builder.newSample(new AndroidVersion("19"),
+        IPkgDesc p = PkgDesc.Builder.newSample(new AndroidVersion(19),
                                        new Revision(1),
                                        new Revision(5, 6, 7, 8)).create();
 
@@ -542,7 +542,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue  (p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertFalse(p.hasPath());
         assertNull (p.getPath());
@@ -564,7 +564,7 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescSample_Update() throws Exception {
         final Revision min5670 = new Revision(5, 6, 7, 0);
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newSample(api19, rev1, min5670).create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newSample(api19, rev1, min5670).create();
@@ -590,7 +590,7 @@ public class PkgDescTest extends TestCase {
 
         // does not update a different API
         final IPkgDesc p18_1  =
-                PkgDesc.Builder.newSample(new AndroidVersion("18"), rev1, min5670).create();
+                PkgDesc.Builder.newSample(new AndroidVersion(18), rev1, min5670).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -599,7 +599,7 @@ public class PkgDescTest extends TestCase {
     //----
 
     public final void testPkgDescPlatform() throws Exception {
-        IPkgDesc p = PkgDesc.Builder.newPlatform(new AndroidVersion("19"),
+        IPkgDesc p = PkgDesc.Builder.newPlatform(new AndroidVersion(19),
                                          new Revision(1),
                                          new Revision(5, 6, 7, 8)).create();
 
@@ -608,7 +608,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue  (p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertTrue  (p.hasPath());
         assertEquals("android-19", p.getPath());
@@ -630,7 +630,7 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescPlatform_Update() throws Exception {
         final Revision min5670 = new Revision(5, 6, 7, 0);
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newPlatform(api19, rev1, min5670).create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newPlatform(api19, rev1, min5670).create();
@@ -656,7 +656,7 @@ public class PkgDescTest extends TestCase {
 
         // does not update a different API
         final IPkgDesc p18_1  =
-                PkgDesc.Builder.newPlatform(new AndroidVersion("18"), rev1, min5670).create();
+                PkgDesc.Builder.newPlatform(new AndroidVersion(18), rev1, min5670).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -668,7 +668,7 @@ public class PkgDescTest extends TestCase {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
         IPkgDesc p1 = PkgDesc.Builder
-                .newAddon(new AndroidVersion("19"), new Revision(1), vendor, name)
+                .newAddon(new AndroidVersion(19), new Revision(1), vendor, name)
                 .create();
 
         assertEquals(PkgType.PKG_ADDON, p1.getType());
@@ -676,7 +676,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new Revision(1), p1.getRevision());
 
         assertTrue  (p1.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p1.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p1.getAndroidVersion());
 
         assertTrue  (p1.hasPath());
         assertEquals("The Vendor:The Add-on:19", p1.getPath());
@@ -705,7 +705,7 @@ public class PkgDescTest extends TestCase {
     }
 
     public final void testPkgDescAddon_Update() throws Exception {
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
@@ -728,7 +728,7 @@ public class PkgDescTest extends TestCase {
         assertTrue (p19_2.compareTo(p19_1) > 0);
 
         // does not update a different API
-        final AndroidVersion api18 = new AndroidVersion("18");
+        final AndroidVersion api18 = new AndroidVersion(18);
         final IPkgDesc p18_1  = PkgDesc.Builder.newAddon(api18, rev2, vendor, name)
                                                .create();
         assertFalse(p19_2.isUpdateFor(p18_1));
@@ -755,7 +755,7 @@ public class PkgDescTest extends TestCase {
     public final void testPkgDescSysImg_Platform() throws Exception {
         IdDisplay tag = IdDisplay.create("tag", "My Tag");
         IPkgDesc p = PkgDesc.Builder.newSysImg(
-                new AndroidVersion("19"),
+                new AndroidVersion(19),
                 tag,
                 "eabi",
                 new Revision(1)).create();
@@ -765,7 +765,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue  (p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertTrue  (p.hasPath());
         assertEquals("eabi", p.getPath());
@@ -789,7 +789,7 @@ public class PkgDescTest extends TestCase {
 
     public final void testPkgDescSysImg_Platform_Update() throws Exception {
         IdDisplay tag1 = IdDisplay.create("tag1", "My Tag 1");
-        final AndroidVersion api19 = new AndroidVersion("19");
+        final AndroidVersion api19 = new AndroidVersion(19);
         final Revision rev1 = new Revision(1);
         final IPkgDesc p19_1  = PkgDesc.Builder.newSysImg(api19, tag1, "eabi", rev1).create();
         final IPkgDesc p19_1b = PkgDesc.Builder.newSysImg(api19, tag1, "eabi", rev1).create();
@@ -808,7 +808,7 @@ public class PkgDescTest extends TestCase {
 
         // does not update a different API
         final IPkgDesc p18_1  =
-                PkgDesc.Builder.newSysImg(new AndroidVersion("18"), tag1, "eabi", rev1).create();
+                PkgDesc.Builder.newSysImg(new AndroidVersion(18), tag1, "eabi", rev1).create();
         assertFalse(p19_2.isUpdateFor(p18_1));
         assertFalse(p18_1.isUpdateFor(p19_2));
         assertTrue (p19_2.compareTo(p18_1) > 0);
@@ -831,7 +831,7 @@ public class PkgDescTest extends TestCase {
         IdDisplay vendor = IdDisplay.create("vendor", "The Vendor");
         IdDisplay name   = IdDisplay.create("addon_name", "The Add-on");
         IPkgDesc p = PkgDesc.Builder.newAddonSysImg(
-                new AndroidVersion("19"),
+                new AndroidVersion(19),
                 vendor,
                 name,
                 "eabi",
@@ -842,7 +842,7 @@ public class PkgDescTest extends TestCase {
         assertEquals(new Revision(1), p.getRevision());
 
         assertTrue  (p.hasAndroidVersion());
-        assertEquals(new AndroidVersion("19"), p.getAndroidVersion());
+        assertEquals(new AndroidVersion(19), p.getAndroidVersion());
 
         assertTrue  (p.hasPath());
         assertEquals("eabi", p.getPath());

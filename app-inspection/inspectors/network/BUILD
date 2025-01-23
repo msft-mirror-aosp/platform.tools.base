@@ -51,7 +51,7 @@ app_inspection_jar(
     ],
     inspection_resource_strip_prefix = "tools/base/app-inspection/inspectors/network/resources",
     inspection_resources = glob(["resources/META-INF/**"]),
-    proto = ":network_inspector_java_proto",
+    protos = [":network_inspector_java_proto"],
     deps = agent_deps,
 )
 

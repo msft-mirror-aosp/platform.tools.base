@@ -513,13 +513,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../gradle/libs.versions.toml:6: Information: There are multiple dependencies joda-time:joda-time but with different version [SimilarGradleDependency]
+        ../gradle/libs.versions.toml:6: Hint: There are multiple dependencies joda-time:joda-time but with different version [SimilarGradleDependency]
         joda_library = { module = "joda-time:joda-time", version.ref = "jodaVersion"}
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../gradle/libs.versions.toml:7: Information: There are multiple dependencies joda-time:joda-time but with different version [SimilarGradleDependency]
+        ../gradle/libs.versions.toml:7: Hint: There are multiple dependencies joda-time:joda-time but with different version [SimilarGradleDependency]
         joda_library2 = { module = "joda-time:joda-time", version = "2.0"}
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 0 warnings
+        0 errors, 0 warnings, 2 hints
         """
       )
   }
@@ -543,14 +543,14 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-         ../gradle/libs.versions.toml:5: Information: There are multiple dependencies org.jetbrains.kotlin.jvm but with different version [SimilarGradleDependency]
-         kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         ../gradle/libs.versions.toml:6: Information: There are multiple dependencies org.jetbrains.kotlin.jvm but with different version [SimilarGradleDependency]
-         kotlinJvm2 = "org.jetbrains.kotlin.jvm:1.7.19"
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         0 errors, 0 warnings
-         """
+        ../gradle/libs.versions.toml:5: Hint: There are multiple dependencies org.jetbrains.kotlin.jvm but with different version [SimilarGradleDependency]
+        kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:6: Hint: There are multiple dependencies org.jetbrains.kotlin.jvm but with different version [SimilarGradleDependency]
+        kotlinJvm2 = "org.jetbrains.kotlin.jvm:1.7.19"
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 0 warnings, 2 hints
+        """
       )
   }
 
@@ -4356,8 +4356,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         "            minSdkVersion 21\n" +
         "            ~~~~~~~~~~~~~~~~\n" +
         "build.gradle:10: Warning: You no longer need a dev mode to enable multi-dexing during development, and this can break API version checks [DevModeObsolete]\n" +
-        "            minSdk 21\n" +
-        "            ~~~~~~~~~\n" +
+        "            minSdk = 21\n" +
+        "            ~~~~~~~~~~~\n" +
         "0 errors, 2 warnings"
     lint()
       .files(
@@ -4372,7 +4372,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "        dev {\n" +
             "            // To avoid using legacy multidex, set minSdkVersion to 21 or higher.\n" +
             "            minSdkVersion 21\n" +
-            "            minSdk 21\n" +
+            "            minSdk = 21\n" +
             "            versionNameSuffix \"-dev\"\n" +
             "            applicationIdSuffix '.dev'\n" +
             "        }\n" +
@@ -6676,11 +6676,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                build.gradle:7: Information: Add suffix -ktx to enable the Kotlin extensions for this library [KtxExtensionAvailable]
-                    implementation "androidx.core:core:1.2.0"
-                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 0 warnings
-            """
+        build.gradle:7: Hint: Add suffix -ktx to enable the Kotlin extensions for this library [KtxExtensionAvailable]
+            implementation "androidx.core:core:1.2.0"
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 0 warnings, 1 hint
+        """
       )
       .expectFixDiffs(
         """

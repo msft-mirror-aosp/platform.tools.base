@@ -115,8 +115,8 @@ private fun <K, V> DependentMonotone<K, V>.step(
   val lattice = latticeAt(point)
   // Check for new, un-subsumed result
   val recur = LoggedFunction(knownResults) { latticeAt(it).bottom }
-  val existingResult = knownResults[point] ?: lattice.bottom
-  val widenedResult = lattice.joinOf(existingResult, invoke(recur, point))
+  val existingResult = if (point in knownResults) knownResults[point] as V else lattice.bottom
+  val widenedResult = lattice.widen(existingResult, invoke(recur, point))
   val resultIsNew = !(lattice.precede(widenedResult, existingResult))
   // Accumulate new dependencies
   val newDeps = recur.log.filter { point !in (knownDeps[it] ?: persistentSetOf()) }

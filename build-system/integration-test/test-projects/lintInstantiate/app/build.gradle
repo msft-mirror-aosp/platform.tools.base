@@ -19,7 +19,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    namespace "com.example.myapplication"
+    namespace = "com.example.myapplication"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -30,13 +30,13 @@ android {
     }
 
     lintOptions {
-        xmlReport true
-        xmlOutput file("lint-report.xml")
-        textReport true
-        textOutput file("lint-results.txt")
+        xmlReport = true
+        xmlOutput = file("lint-report.xml")
+        textReport = true
+        textOutput = file("lint-results.txt")
         check "Instantiatable", "MissingRegistered"
-        checkDependencies true
-        ignoreTestSources true
+        checkDependencies = true
+        ignoreTestSources = true
         abortOnError true
         sarifOutput file("$buildDir/reports/lint-results.sarif")
     }

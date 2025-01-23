@@ -4,11 +4,11 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    testBuildType "minified"
+    testBuildType = "minified"
 
     defaultConfig {
         versionCode 12
@@ -25,13 +25,13 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
             testProguardFile "test-proguard-rules.pro"
-            enableAndroidTestCoverage true
-            enableUnitTestCoverage true
+            enableAndroidTestCoverage = true
+            enableUnitTestCoverage = true
         }
     }
 
     dexOptions {
-        incremental false
+        incremental = false
     }
 
     // Included in both hamcrest-core and hamcrest-library.

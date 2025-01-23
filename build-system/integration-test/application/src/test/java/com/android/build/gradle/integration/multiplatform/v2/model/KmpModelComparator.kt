@@ -111,6 +111,11 @@ class KmpModelComparator(
     fun fetchAndCompareModels(
         projects: List<String>
     ) {
+        // Generate project structure metadata json file for all subproject
+        // They are needed in order to resolve project dependencies
+        val executor = project.executor().withConfigurationCaching(configCacheMode)
+        executor.run("generateProjectStructureMetadata")
+
         projects.forEach { projectPath ->
             fetchModels(projectPath).forEach { (reportName, content) ->
                 runComparison(

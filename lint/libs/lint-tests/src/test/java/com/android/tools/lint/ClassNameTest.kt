@@ -315,4 +315,37 @@ class ClassNameTest {
     assertEquals(null, cls.className)
     assertEquals("kotlin/PreconditionsKt.kt", cls.relativePath())
   }
+
+  @Test
+  fun testSkip() {
+    @Language("KT")
+    val source =
+      """
+      package com.android.tools.idea.preview.animation
+      object InspectorPainter {
+        object Slider {
+          fun getTickIncrement(slider: JSlider, minimumTickSize: Int = MINIMUM_TICK_DISTANCE): Int {
+            if (slider.maximum == 0 || slider.width == 0) return slider.maximum
+            val increment =
+              (minimumTickSize.toFloat() / slider.width * (slider.maximum - slider.minimum)).toInt()
+            TICK_INCREMENTS.forEach {
+              if (increment >= it) return@getTickIncrement (increment / (it - 1)) * it
+            }
+            return 1
+          }
+        }
+      }
+      """
+        .trimIndent()
+
+    val path = "src/com/android/tools/idea/preview/animation/InspectorPainter.kt"
+    val className = ClassName(source, path.substring(path.lastIndexOf('.')))
+    assertEquals("InspectorPainter", className.jvmName)
+    assertEquals("InspectorPainter", className.className)
+    assertEquals("com.android.tools.idea.preview.animation", className.packageName)
+    assertEquals(
+      "com/android/tools/idea/preview/animation/InspectorPainter.kt",
+      className.relativePath(),
+    )
+  }
 }

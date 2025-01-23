@@ -34,6 +34,13 @@ interface Lattice<L> {
 
   fun meetOf(first: L, second: L): L
 
+  /**
+   * While not part of the standard [Lattice] definition, most uses for static analysis need
+   * [widen], so we include it here instead of a sub-interface. We require `widen(x, y) ⊒ x ⊔ y`,
+   * and give [widen] a default definition as just alias for [join].
+   */
+  fun widen(prev: L, now: L): L = prev join now
+
   // Syntactic sugar
   infix fun L.precedes(that: L) = precede(this, that)
 
@@ -92,6 +99,9 @@ interface Lattice<L> {
         override fun joinOf(first: T, second: T) =
           inj(onT1.joinOf(p1(first), p1(second)), onT2.joinOf(p2(first), p2(second)))
 
+        override fun widen(prev: T, now: T) =
+          inj(onT1.widen(p1(prev), p1(now)), onT2.widen(p2(prev), p2(now)))
+
         override fun precede(first: T, second: T) =
           onT1.precede(p1(first), p1(second)) && onT2.precede(p2(first), p2(second))
       }
@@ -121,6 +131,13 @@ interface Lattice<L> {
             onT1.joinOf(p1(first), p1(second)),
             onT2.joinOf(p2(first), p2(second)),
             onT3.joinOf(p3(first), p3(second)),
+          )
+
+        override fun widen(prev: T, now: T) =
+          inj(
+            onT1.widen(p1(prev), p1(now)),
+            onT2.widen(p2(prev), p2(now)),
+            onT3.widen(p3(prev), p3(now)),
           )
 
         override fun precede(first: T, second: T) =
@@ -158,6 +175,14 @@ interface Lattice<L> {
             onT2.joinOf(p2(first), p2(second)),
             onT3.joinOf(p3(first), p3(second)),
             onT4.joinOf(p4(first), p4(second)),
+          )
+
+        override fun widen(prev: T, now: T) =
+          inj(
+            onT1.widen(p1(prev), p1(now)),
+            onT2.widen(p2(prev), p2(now)),
+            onT3.widen(p3(prev), p3(now)),
+            onT4.widen(p4(prev), p4(now)),
           )
 
         override fun precede(first: T, second: T) =

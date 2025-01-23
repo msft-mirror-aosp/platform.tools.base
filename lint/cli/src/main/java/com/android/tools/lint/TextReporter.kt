@@ -16,6 +16,7 @@
 package com.android.tools.lint
 
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Option
@@ -75,13 +76,14 @@ class TextReporter(
             describeCounts(
               stats.baselineErrorCount,
               stats.baselineWarningCount,
+              stats.baselineHintCount,
               comma = true,
               capitalize = true,
             )
-          writer.write(" ($counts filtered by baseline ${baselineFile.name})")
+          writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
-        writer.write('.'.toInt())
-        writer.write('\n'.toInt())
+        writer.write('.'.code)
+        writer.write('\n'.code)
         writer.flush()
       }
     } else {
@@ -210,26 +212,35 @@ class TextReporter(
       explainIssue(output, lastIssue)
       writer.write(output.toString())
       if (writeStats) {
-        // TODO: Update to using describeCounts
-        writer.write("${stats.errorCount} errors, ${stats.warningCount} warnings")
+        writer.write(
+          describeCounts(
+            stats.errorCount,
+            stats.warningCount,
+            stats.hintCount,
+            comma = true,
+            capitalize = true,
+            includeZero = true,
+          )
+        )
         if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
           val baselineFile = flags.baselineFile!!
           val counts =
             describeCounts(
               stats.baselineErrorCount,
               stats.baselineWarningCount,
+              stats.baselineHintCount,
               comma = true,
               capitalize = true,
             )
-          writer.write(" ($counts filtered by baseline ${baselineFile.name})")
+          writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
       }
-      writer.write('\n'.toInt())
+      writer.write('\n'.code)
       writer.flush()
     }
     if (close) {
       writer.close()
-      if (!client.flags.isQuiet && this.output != null) {
+      if (!client.flags.isQuiet && this.output != null && !LintClient.isGradle) {
         val path = convertPath(this.output.absolutePath)
         println("Wrote text report to $path")
       }

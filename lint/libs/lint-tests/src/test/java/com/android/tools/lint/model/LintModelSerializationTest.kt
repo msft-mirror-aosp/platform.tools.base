@@ -105,23 +105,23 @@ class LintModelSerializationTest {
                 }
 
                 lintOptions {
-                    quiet true
-                    abortOnError false
-                    ignoreWarnings true
-                    absolutePaths false
-                    checkAllWarnings true
-                    warningsAsErrors true
+                    quiet = true
+                    abortOnError = false
+                    ignoreWarnings = true
+                    absolutePaths = false
+                    checkAllWarnings = true
+                    warningsAsErrors = true
                     disable 'TypographyFractions','TypographyQuotes'
                     enable 'RtlHardcoded','RtlCompat', 'RtlEnabled'
                     check 'NewApi', 'InlinedApi'
-                    noLines true
-                    showAll true
-                    lintConfig file("default-lint.xml")
-                    baseline file("baseline.xml")
+                    noLines = true
+                    showAll = true
+                    lintConfig = file("default-lint.xml")
+                    baseline = file("baseline.xml")
                     warning 'FooBar'
                     informational 'LogConditional'
-                    checkTestSources true
-                    checkDependencies true
+                    checkTestSources = true
+                    checkDependencies = true
                 }
 
                 buildTypes {

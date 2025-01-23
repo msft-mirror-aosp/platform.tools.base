@@ -793,15 +793,7 @@ public class Main {
         protected @Nullable Set<File> getBootClassPath(
                 @NonNull Collection<? extends Project> knownProjects) {
             if (metadata != null && !metadata.getJdkBootClasspath().isEmpty()) {
-                boolean isAndroid = knownProjects.stream().anyMatch(Project::isAndroidProject);
-                if (!isAndroid) {
-                    return new HashSet<>(metadata.getJdkBootClasspath());
-                }
-
-                var fromSuper = super.getBootClassPath(knownProjects);
-                return fromSuper != null
-                        ? fromSuper
-                        : new HashSet<>(metadata.getJdkBootClasspath());
+                return new HashSet<>(metadata.getJdkBootClasspath());
             }
 
             return super.getBootClassPath(knownProjects);
@@ -1055,6 +1047,7 @@ public class Main {
                 Writer writer;
                 boolean closeWriter;
                 String outputName = args[++index];
+                File output = null;
                 if (outputName.equals("stdout")) {
                     writer = printWriter(System.out);
                     closeWriter = false;
@@ -1062,7 +1055,7 @@ public class Main {
                     writer = printWriter(System.err);
                     closeWriter = false;
                 } else {
-                    File output = getOutArgumentPath(outputName);
+                    output = getOutArgumentPath(outputName);
 
                     // Get an absolute path such that we can ask its parent directory for
                     // write permission etc.
@@ -1090,7 +1083,7 @@ public class Main {
                     }
                     closeWriter = true;
                 }
-                flags.getReporters().add(new TextReporter(client, flags, writer, closeWriter));
+                flags.getReporters().add(new TextReporter(client, flags, output, writer, closeWriter));
             } else if (arg.equals(ARG_DISABLE) || arg.equals(ARG_IGNORE) || arg.equals("--hide")) {
                 if (index == args.length - 1) {
                     System.err.println("Missing categories or id's to disable");

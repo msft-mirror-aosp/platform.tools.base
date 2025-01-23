@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.android.tests.shrink"
+    namespace = "com.android.tests.shrink"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion libs.versions.buildToolsVersion.get()
 
@@ -18,7 +18,7 @@ android {
 
     buildTypes {
         debug {
-            shrinkResources false
+            shrinkResources = false
             minifyEnabled false
         }
         minifyDontShrink {
@@ -27,12 +27,12 @@ android {
         }
         release {
             initWith minifyDontShrink
-            shrinkResources true
+            shrinkResources = true
         }
     }
 
     dexOptions {
-        incremental false
+        incremental = false
     }
 }
 

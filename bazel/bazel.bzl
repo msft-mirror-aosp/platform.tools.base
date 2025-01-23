@@ -129,6 +129,9 @@ def _iml_module_jar_impl(
         # Ideally we use "--release 17" for javac too, but that is incompatible with "--add-exports".
         kotlinc_opts += ["-jvm-target", "17"]
         kt_java_runtime = ctx.attr._kt_java_runtime_17[java_common.JavaRuntimeInfo]
+    elif jvm_target == "21":
+        kotlinc_opts += ["-jvm-target", "21"]
+        kt_java_runtime = ctx.attr._kt_java_runtime_21[java_common.JavaRuntimeInfo]
     else:
         fail("JVM target " + jvm_target + " is not currently supported in iml_module")
 
@@ -440,6 +443,11 @@ _iml_module_ = rule(
             providers = [java_common.JavaRuntimeInfo],
             cfg = "exec",
         ),
+        "_kt_java_runtime_21": attr.label(
+            default = Label("//prebuilts/studio/jdk/jbr-next:java_runtime"),
+            providers = [java_common.JavaRuntimeInfo],
+            cfg = "exec",
+        ),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
             cfg = "exec",
@@ -513,7 +521,7 @@ def iml_module(
         visibility = [],
         module_visibility = [],
         exports = [],
-        jvm_target = None,
+        jvm_target = "17",
         javacopts = [],
         javacopts_from_jps = [],
         enable_tests = True,
@@ -624,13 +632,16 @@ def iml_module(
         target_compatible_with = select(compatible_platforms)
 
     # if jvm_target is specified, use JDK that compiles to that target
-    # otherwise use default JDK, controlled by `java_language_version_17` flag
     if jvm_target == "8":
         java_toolchain = "//prebuilts/studio/jdk:java8_compile_toolchain"
     elif jvm_target == "11":
         java_toolchain = "//prebuilts/studio/jdk:java11_compile_toolchain"
-    else:
+    elif jvm_target == "17":
         java_toolchain = "//prebuilts/studio/jdk:java17_compile_toolchain"
+    elif jvm_target == "21":
+        java_toolchain = "//prebuilts/studio/jdk:java21_compile_toolchain"
+    else:
+        fail("JVM target " + jvm_target + " is not currently supported in iml_module")
 
     _iml_module_(
         name = name,
@@ -734,18 +745,20 @@ def iml_module(
             target_compatible_with = target_compatible_with,
         )
 
+        # b/373746515: K2 mode by default in presubmit,
+        # # and thus this is temporarily K1 in postsubmit
         if generate_k2_tests:
             _gen_tests(
-                name = name + "_k2",
+                name = name + "_k1",
                 split_test_targets = split_test_targets,
                 test_flaky = test_flaky,
                 test_shard_count = test_shard_count,
-                test_tags = (test_tags or []) + ["kotlin-plugin-k2"],
+                test_tags = (test_tags or []) + ["kotlin-plugin-k1"],
                 test_data = test_data,
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=true",
+                    "-Didea.kotlin.plugin.use.k2=false",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,

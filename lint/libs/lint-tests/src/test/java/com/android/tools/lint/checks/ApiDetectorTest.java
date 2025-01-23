@@ -3293,7 +3293,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                         + "apply plugin: 'com.android.application'\n"
                                         + "\n"
                                         + "android {\n"
-                                        + "    compileSdkVersion '29'\n"
+                                        + "    compileSdkVersion = '29'\n"
                                         + "    defaultConfig {\n"
                                         + "        minSdkVersion 21\n"
                                         + "        targetSdkVersion 29\n"
@@ -8174,7 +8174,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 ""
                                         + "apply plugin: 'com.android.application'\n"
                                         + "android {\n"
-                                        + "     compileSdkVersion 'android-31'\n"
+                                        + "     compileSdkVersion = 'android-31'\n"
                                         + "}\n"),
                         SUPPORT_ANNOTATIONS_JAR)
                 .run()

@@ -204,7 +204,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
                   if (Character.isWhitespace(c)) {
                     break
                   } else if (c == '@' && text.startsWith(type.getName(), k + 1)) {
-                    val to = text.trim { it <= ' ' }
+                    val to = text.trim()
                     if (mReferences != null) {
                       val name = nameNode.value
                       if (mLocations != null) {
@@ -334,7 +334,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
             if (Character.isWhitespace(c)) {
               break
             } else if (c == '@' && text.startsWith(tagName, k + 1)) {
-              val to = text.trim { it <= ' ' }.substring(tagName.length + 2)
+              val to = text.trim().substring(tagName.length + 2)
               val name = element.getAttribute(ATTR_NAME)
               val type = ResourceType.fromXmlTagName(tagName)
               if (type != null) {
@@ -351,7 +351,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
     } else if (tagName == TAG_FONT) {
       val text = element.getAttributeNodeNS(ANDROID_URI, ATTR_FONT)
       if (text != null && text.value.startsWith(FONT_PREFIX)) {
-        val font = text.value.trim { it <= ' ' }.substring(FONT_PREFIX.length)
+        val font = text.value.trim().substring(FONT_PREFIX.length)
         val currentFont = getBaseName(context.file.name)
         handleReference(context, text, ResourceType.FONT, currentFont, font)
       }
@@ -566,7 +566,7 @@ class ResourceCycleDetector : ResourceXmlDetector() {
           when {
             Character.isWhitespace(c) -> return
             text.startsWith(NEW_ID_PREFIX, k) -> {
-              val name = text.trim { it <= ' ' }.substring(NEW_ID_PREFIX.length)
+              val name = text.trim().substring(NEW_ID_PREFIX.length)
               val message =
                 ("This construct can potentially crash `aapt` during a " +
                   "build. Change `@+id/" +
