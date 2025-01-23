@@ -15,7 +15,7 @@ android {
         reset()
       }
       abi {
-        enable true
+        enable = true
         reset()
       }
     }

@@ -18,13 +18,11 @@ package com.android.build.gradle.internal.res.namespaced
 
 import com.android.build.gradle.internal.dependency.IdentityTransform
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.createProjectServices
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithEmptyClasses
-import com.android.testutils.apk.Zip
 import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.google.common.collect.ImmutableList
@@ -35,11 +33,14 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.transform.TransformSpec
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
+import org.gradle.api.problems.internal.InternalProblems
+import org.gradle.api.problems.internal.ProblemsProgressEventEmitterHolder
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
 import java.io.File
 import java.nio.file.Path
 
@@ -94,6 +95,9 @@ class AutoNamespaceTransformFunctionalTest {
             reg.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.PROCESSED_JAR.type)
             reg.parameters.projectName.set(project.name)
         }
+
+        // TODO (b/400789167): initialize problems service (new failure from Gradle 8.12)
+        ProblemsProgressEventEmitterHolder.init(Mockito.mock<InternalProblems?>(InternalProblems::class.java))
     }
 
     /** Check that the jar does not interfere with the AAR processing */

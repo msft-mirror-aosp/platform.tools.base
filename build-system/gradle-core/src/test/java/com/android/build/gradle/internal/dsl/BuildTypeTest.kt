@@ -110,7 +110,9 @@ class BuildTypeTest {
                 "getIsDefault",
                 // Extensions are not copied as AGP doesn't manage them
                 "getExtensions",
-                "isZipAlignEnabled\$annotations"
+                "isZipAlignEnabled\$annotations",
+                "getUseProguard",
+                "getCrunchPngs"
             )
         ) { original: BuildType ->
             val copy = dslServices.newDecoratedInstance(BuildType::class.java,

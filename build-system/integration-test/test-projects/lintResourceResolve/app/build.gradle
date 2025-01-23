@@ -35,9 +35,11 @@ android {
     lintOptions {
         textOutput = file("lint-report.txt")
         xmlOutput = file("lint-report.xml")
-        sarifReport true
-        warningsAsErrors true
-        checkOnly 'SupportAnnotationUsage'
+        sarifReport = true
+        warningsAsErrors = true
+    }
+    lint {
+        checkOnly += 'SupportAnnotationUsage'
     }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8

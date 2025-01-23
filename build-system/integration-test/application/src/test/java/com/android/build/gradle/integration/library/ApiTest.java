@@ -20,11 +20,13 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import java.io.IOException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /** Assemble tests for api. */
 public class ApiTest {
@@ -54,6 +56,6 @@ public class ApiTest {
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("app/build.gradle")))
                 .isEqualTo("ab64fe556adbe864467b2c37856739d63cb2f7c6");
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("lib/build.gradle")))
-                .isEqualTo("a23be0f60840900a6c679db08714ea3b266adb77");
+                .isEqualTo("f30f95f36ce0720a820f48b26d908a1498c99ab2");
     }
 }

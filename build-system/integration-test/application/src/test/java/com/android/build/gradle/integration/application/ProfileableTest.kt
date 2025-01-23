@@ -51,7 +51,7 @@ class ProfileableTest {
     @Test
     fun `test dsl setting the release build type to be profileable`() {
         val app = project.getSubproject(":app")
-        app.buildFile.appendText("android.buildTypes.release.profileable true")
+        app.buildFile.appendText("android.buildTypes.release.profileable = true")
         project.executor()
                 .with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, true)
                 .run("assembleRelease")
@@ -179,8 +179,8 @@ class ProfileableTest {
     @Test
     fun `test dsl when profileable and debuggable enabled`() {
         val app = project.getSubproject(":app")
-        app.buildFile.appendText("android.buildTypes.debug.debuggable true\n")
-        app.buildFile.appendText("android.buildTypes.debug.profileable true\n")
+        app.buildFile.appendText("android.buildTypes.debug.debuggable = true\n")
+        app.buildFile.appendText("android.buildTypes.debug.profileable = true\n")
         val result = project.executor().run("assembleDebug")
         // Ensure profileable is not applied (debuggable dsl option overrides profileable).
         val manifest = ApkSubject.getManifestContent(

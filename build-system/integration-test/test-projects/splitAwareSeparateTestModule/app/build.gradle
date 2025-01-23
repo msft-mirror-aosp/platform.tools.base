@@ -6,7 +6,7 @@ android {
   buildToolsVersion = libs.versions.buildToolsVersion.get()
 
   publishNonDefault = true
-  generatePureSplits true
+  generatePureSplits = true
 
   defaultConfig {
     versionCode 12

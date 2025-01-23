@@ -10253,10 +10253,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_8.11.1",
-    pom = "repository/org/gradle/gradle-tooling-api/8.11.1/gradle-tooling-api-8.11.1.pom",
+    name = "org.gradle.gradle-tooling-api_8.13",
+    pom = "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/8.11.1",
+    repo_path = "org/gradle/gradle-tooling-api/8.13",
     deps = [
         "org.slf4j.slf4j-api_1.7.36",
     ],
@@ -10267,7 +10267,7 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/8.11.1/gradle-tooling-api-8.11.1.jar"
+        "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
@@ -10275,9 +10275,9 @@ maven_import(
     original_deps = [
         "org.slf4j.slf4j-api_1.7.36",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/8.11.1/gradle-tooling-api-8.11.1.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/8.11.1",
+    repo_path = "org/gradle/gradle-tooling-api/8.13",
     visibility = ["//visibility:public"],
 )
 

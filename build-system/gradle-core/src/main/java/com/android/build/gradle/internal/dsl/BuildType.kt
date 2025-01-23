@@ -510,7 +510,13 @@ abstract class BuildType @Inject constructor(
             return false
         }
 
+    // This method is present to resolve warning in Gradle 8.13: b/399393875
+    fun getUseProguard(): Boolean? = isUseProguard
+
     abstract override var isCrunchPngs: Boolean?
+
+    // This method is present to resolve warning in Gradle 8.13: b/399393875
+    abstract fun getCrunchPngs(): Boolean?
 
     var postProcessingBlockUsed = false
 

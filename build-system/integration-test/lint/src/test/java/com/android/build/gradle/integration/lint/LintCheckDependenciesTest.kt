@@ -172,7 +172,7 @@ class LintCheckDependenciesTest {
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
             "abortOnError = false",
-            "abortOnError true",
+            "abortOnError = true",
         )
         // First run with checkDependencies false
         project.executor().run(":app:lintVitalRelease")

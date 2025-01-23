@@ -101,7 +101,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "8.11.1"
+GRADLE_VERSION = "8.13"
 
 filegroup(
     name = "gradle-distrib",
@@ -115,12 +115,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-filegroup(
-    name = "gradle-distrib-8.10.2",
-    srcs = ["//tools/external/gradle:gradle-distrib-8.10.2"],
-    visibility = ["//visibility:public"],
-)
-
 # See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
 maven_repository(
     name = "gradle-runtime-maven",
@@ -129,6 +123,12 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-8.10.2",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.10.2"],
     visibility = ["//visibility:public"],
 )
 
@@ -572,7 +572,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.0",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

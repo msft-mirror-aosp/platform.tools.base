@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.library;
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.testutils.truth.DexSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -28,14 +29,17 @@ import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.builder.model.v2.ide.GraphItem;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
+
 import com.google.common.truth.Truth8;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Test for jacoco agent runtime dependencies. */
 public class JacocoDependenciesTest {
@@ -136,7 +140,7 @@ public class JacocoDependenciesTest {
     public void checkAgentRuntimeVersionWhenOverridden() throws IOException {
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
-                "\n" + "android.jacoco.version '" + oldJacocoVersion + "'\n");
+                "\n" + "android.jacoco.version ='" + oldJacocoVersion + "'\n");
 
         assertAgentMavenCoordinates("org.jacoco|org.jacoco.agent|" + oldJacocoVersion);
     }

@@ -78,7 +78,7 @@ class D8DesugaringConnectedTest {
                         multidex {
                             dimension "whatever"
                             multiDexEnabled = true
-                            multiDexKeepFile file('debug_main_dex_list.txt')
+                            multiDexKeepFile = file('debug_main_dex_list.txt')
                         }
                         base {
                             dimension "whatever"

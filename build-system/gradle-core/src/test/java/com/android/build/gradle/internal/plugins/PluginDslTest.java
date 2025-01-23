@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.plugins;
 
 import static com.android.build.gradle.internal.plugins.AppPluginInternalTest.getComponents;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.SdkConstants;
@@ -42,12 +43,29 @@ import com.android.builder.core.ToolsRevisionUtils;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.TestOptions.Execution;
 import com.android.utils.StringHelper;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
+
 import groovy.util.Eval;
+
+import org.gradle.api.JavaVersion;
+import org.gradle.api.Project;
+import org.gradle.api.file.RegularFile;
+import org.gradle.api.problems.internal.InternalProblems;
+import org.gradle.api.problems.internal.ProblemsProgressEventEmitterHolder;
+import org.gradle.api.tasks.compile.JavaCompile;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,16 +75,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import org.gradle.api.JavaVersion;
-import org.gradle.api.Project;
-import org.gradle.api.file.RegularFile;
-import org.gradle.api.tasks.compile.JavaCompile;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 /** Tests for checking the "application" and "atom" DSLs. */
 public class PluginDslTest {
@@ -264,33 +272,33 @@ public class PluginDslTest {
                 "project",
                 project,
                 "\n"
-                        + "project.android {\n"
-                        + "    flavorDimensions   'dimension1', 'dimension2'\n"
-                        + "\n"
-                        + "    productFlavors {\n"
-                        + "        f1 {\n"
-                        + "            dimension   'dimension1'\n"
-                        + "            javaCompileOptions.annotationProcessorOptions.className 'f1'\n"
-                        + "        }\n"
-                        + "        f2 {\n"
-                        + "            dimension   'dimension1'\n"
-                        + "            javaCompileOptions.annotationProcessorOptions.className 'f2'\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        fa {\n"
-                        + "            dimension   'dimension2'\n"
-                        + "            javaCompileOptions.annotationProcessorOptions.className 'fa'\n"
-                        + "        }\n"
-                        + "        fb {\n"
-                        + "            dimension   'dimension2'\n"
-                        + "            javaCompileOptions.annotationProcessorOptions.className 'fb'\n"
-                        + "        }\n"
-                        + "        fc {\n"
-                        + "            dimension   'dimension2'\n"
-                        + "            javaCompileOptions.annotationProcessorOptions.className 'fc'\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
+                    + "project.android {\n"
+                    + "    flavorDimensions   'dimension1', 'dimension2'\n"
+                    + "\n"
+                    + "    productFlavors {\n"
+                    + "        f1 {\n"
+                    + "            dimension   'dimension1'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'f1'\n"
+                    + "        }\n"
+                    + "        f2 {\n"
+                    + "            dimension   'dimension1'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'f2'\n"
+                    + "        }\n"
+                    + "\n"
+                    + "        fa {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fa'\n"
+                    + "        }\n"
+                    + "        fb {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fb'\n"
+                    + "        }\n"
+                    + "        fc {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fc'\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n");
 
         plugin.createAndroidTasks(project);
         ImmutableMap<String, Integer> map =
@@ -358,14 +366,14 @@ public class PluginDslTest {
                 "project",
                 project,
                 "\n"
-                        + "project.android {\n"
-                        + "    buildTypes {\n"
-                        + "        release {\n"
-                        + "            minifyEnabled true\n"
-                        + "            proguardFile getDefaultProguardFile('proguard-android.txt')\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
+                    + "project.android {\n"
+                    + "    buildTypes {\n"
+                    + "        release {\n"
+                    + "            minifyEnabled true\n"
+                    + "            proguardFile getDefaultProguardFile('proguard-android.txt')\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n");
 
         plugin.createAndroidTasks(project);
         VariantCheckers.checkDefaultVariants(getComponents(plugin.getVariantManager()));
@@ -569,6 +577,9 @@ public class PluginDslTest {
         Map<String, VariantCreationConfig> componentMap = getComponentMap();
         Map.Entry<String, VariantCreationConfig> vsentry =
                 componentMap.entrySet().iterator().next();
+
+        // TODO (b/400789167): initialize problems service (new failure from Gradle 8.12)
+        ProblemsProgressEventEmitterHolder.init(Mockito.mock(InternalProblems.class));
         File mockableJarFile =
                 vsentry.getValue().getGlobal().getMockableJarArtifact().getSingleFile();
         assertThat(mockableJarFile).isNotNull();
@@ -678,8 +689,9 @@ public class PluginDslTest {
                                 + "Android SDK Build Tools "
                                 + ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION
                                 + " will be used.\n"
-                                + "To suppress this warning, remove \"buildToolsVersion '19.0.0'\" from your build.gradle file, "
-                                + "as each version of the Android Gradle Plugin now has a default version of the build tools.");
+                                + "To suppress this warning, remove \"buildToolsVersion '19.0.0'\""
+                                + " from your build.gradle file, as each version of the Android"
+                                + " Gradle Plugin now has a default version of the build tools.");
     }
 
     private void checkNestedComponents(

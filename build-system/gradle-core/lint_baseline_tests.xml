@@ -2141,6 +2141,17 @@
         errorLine1="        TODO(&quot;Not yet implemented&quot;)"
         errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
+            file="src/test/java/com/android/build/gradle/internal/fixtures/FakeProjectLayout.kt"
+            line="50"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="StopShip"
+        message="`TODO` call found; points to code which must be fixed prior to release"
+        errorLine1="        TODO(&quot;Not yet implemented&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
             file="src/test/java/com/android/build/gradle/internal/fixtures/FakeResolutionResult.kt"
             line="37"
             column="9"/>

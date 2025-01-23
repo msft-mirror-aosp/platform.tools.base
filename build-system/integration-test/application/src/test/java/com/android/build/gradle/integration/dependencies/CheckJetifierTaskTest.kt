@@ -139,7 +139,7 @@ class CheckJetifierTaskTest {
 
             configurations {
                 aaa {
-                    canBeResolved(true)
+                    canBeResolved = true
                 }
             }
             afterEvaluate {

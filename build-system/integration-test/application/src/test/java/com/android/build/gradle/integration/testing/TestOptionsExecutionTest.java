@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.v2.ide.TestInfo;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -39,7 +40,7 @@ public class TestOptionsExecutionTest {
     public void returnsAto() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "android { testOptions.execution \"android_test_orchestrator\" }");
+                "android { testOptions.execution = \"android_test_orchestrator\" }");
 
         check(TestInfo.Execution.ANDROID_TEST_ORCHESTRATOR);
     }
@@ -48,7 +49,7 @@ public class TestOptionsExecutionTest {
     public void returnsAto_androidx() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "android { testOptions.execution \"androidx_test_orchestrator\" }");
+                "android { testOptions.execution = \"androidx_test_orchestrator\" }");
 
         check(TestInfo.Execution.ANDROIDX_TEST_ORCHESTRATOR);
     }

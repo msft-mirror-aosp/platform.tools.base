@@ -246,7 +246,7 @@ class InstallProfilesPerDeviceApiConnectedTest {
         TestFileUtils.appendToFile(project.buildFile,
             """
                 android.installation {
-                    enableBaselineProfile true
+                    enableBaselineProfile = true
                 }
             """.trimIndent()
         )
@@ -255,8 +255,8 @@ class InstallProfilesPerDeviceApiConnectedTest {
         Truth.assertThat(dexMetadataProperties.exists()).isTrue()
 
         TestFileUtils.searchAndReplace(project.buildFile,
-            "enableBaselineProfile true",
-            "enableBaselineProfile false"
+            "enableBaselineProfile = true",
+            "enableBaselineProfile = false"
         )
         project.execute("clean")
         project.execute("assembleRelease")
