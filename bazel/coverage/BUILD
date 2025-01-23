@@ -505,7 +505,8 @@ coverage_report(
     ],
     tests = [
         "//tools/adt/idea/nav/safeargs/tests/common:intellij.android.nav.safeargs.tests.common_tests",
-        "//tools/adt/idea/nav/safeargs/tests/k1:intellij.android.nav.safeargs.tests.k1_tests",
+        # TODO(b/373746515) K2 is enabled by default so K1 tests don't work
+        #"//tools/adt/idea/nav/safeargs/tests/k1:intellij.android.nav.safeargs.tests.k1_tests",
     ],
 )
 
@@ -1063,7 +1064,8 @@ coverage_report(
         "//tools/adt/idea/native-symbolizer:native-symbolizer.tests_tests",
         "//tools/adt/idea/nav/editor:intellij.android.nav.editor.tests_tests",
         "//tools/adt/idea/nav/safeargs/tests/common:intellij.android.nav.safeargs.tests.common_tests",
-        "//tools/adt/idea/nav/safeargs/tests/k1:intellij.android.nav.safeargs.tests.k1_tests",
+        # TODO(b/373746515) K2 is enabled by default so K1 tests don't work
+        #"//tools/adt/idea/nav/safeargs/tests/k1:intellij.android.nav.safeargs.tests.k1_tests",
         "//tools/adt/idea/observable:intellij.android.observable_tests",
         "//tools/adt/idea/observable-ui:intellij.android.observable.ui_tests",
         "//tools/adt/idea/profilers:intellij.android.profilers_tests",
