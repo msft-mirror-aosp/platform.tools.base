@@ -45,6 +45,7 @@ import java.io.File
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.nio.channels.SocketChannel
 import java.nio.file.Path
 import java.security.InvalidParameterException
 import java.util.concurrent.ExecutionException
@@ -601,6 +602,10 @@ class AdbLibAndroidDebugBridge(
         adb: File,
         device: IDevice
     ): ListenableFuture<String?>? {
+        unsupportedMethod()
+    }
+
+    override fun openConnection(): SocketChannel {
         unsupportedMethod()
     }
 
