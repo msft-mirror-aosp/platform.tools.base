@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_import")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")

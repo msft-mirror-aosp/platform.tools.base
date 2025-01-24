@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load("//tools/base/bazel:utils.bzl", "flat_archive", "java_jarjar")
 
 java_library(

@@ -1,3 +1,5 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
+
 java_binary(
     name = "dev-sdk-updater",
     srcs = ["src/com/android/tools/utils/DevSdkUpdater.java"],

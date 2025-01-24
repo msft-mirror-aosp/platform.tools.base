@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/adt/idea/android/integration:build_defs.bzl", "INTEGRATION_TEST_SYSTEM_IMAGE")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")

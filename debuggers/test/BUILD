@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_import")
 load(":agent_test.bzl", "agent_test")
 load(":coroutines_app_dex.bzl", "coroutines_app_dex")
 

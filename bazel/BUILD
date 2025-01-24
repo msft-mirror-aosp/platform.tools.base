@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:maven/artifacts.bzl", "ARTIFACTS", "DATA", "REMOTE_REPOS")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")

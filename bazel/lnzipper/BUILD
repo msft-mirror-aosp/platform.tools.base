@@ -1,5 +1,7 @@
 # Package ziplinker contains a binary for creating ZIP files while preserving symlinks
 
+load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
+
 java_library(
     name = "lnzipper_lib",
     srcs = ["src/main/java/com/android/tools/bazel/lnzipper/LnZipper.java"],

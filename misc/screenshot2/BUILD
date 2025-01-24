@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/sdklib:sdk.bzl", "sdk_java_binary")
 
 java_library(

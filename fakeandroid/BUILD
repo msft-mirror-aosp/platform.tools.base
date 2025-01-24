@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 

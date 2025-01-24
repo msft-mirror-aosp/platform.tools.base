@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")

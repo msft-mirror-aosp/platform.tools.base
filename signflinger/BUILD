@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BUILD_VERSION")
 

@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/bazel:proto.bzl", "java_proto_library")
@@ -210,8 +211,8 @@ kotlin_test(
     deps = ["//tools/base/build-system:gradle-api"] + [
         ":gradle-core",
         ":proto",
-        "//tools/analytics-library/protos/src/main/proto",
         "//tools/analytics-library/crash:tools.analytics-crash",
+        "//tools/analytics-library/protos/src/main/proto",
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/apkzlib",
         "//tools/base/annotations",
@@ -235,16 +236,16 @@ kotlin_test(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
-        "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/utp/android-device-provider-ddmlib-proto",
         "//tools/base/utp/android-device-provider-gradle-proto",
+        "//tools/base/utp/android-device-provider-profile-proto",
         "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
         "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
         "//tools/base/utp/android-test-plugin-host-coverage-proto",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
-        "//tools/base/utp/android-test-plugin-host-retention-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-device-provider-profile-proto",
+        "//tools/base/utp/android-test-plugin-host-retention-proto",
+        "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/zipflinger",
         "//tools/data-binding:tools.compilerCommon",
         "@maven//:com.android.tools.build.bundletool",

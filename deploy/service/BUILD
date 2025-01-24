@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_test")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
