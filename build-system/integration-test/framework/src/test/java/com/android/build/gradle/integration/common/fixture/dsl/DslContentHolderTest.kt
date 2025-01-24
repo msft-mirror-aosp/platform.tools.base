@@ -24,8 +24,7 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 /**
- * this tests the content holder only, by providing a manual instance of the object (unless it's
- * nested).
+ * this tests the content holder only, by providing a manual instance of the object
  *
  * See [BasicDslProxyTest] for usage integrated with the [DslProxy]
  */
@@ -270,7 +269,7 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
     //      action(it)
     //    }
     override val address: Address
-        get() = AddressImpl(ChainedDslContentHolder("address", dslContentHolder))
+        get() = AddressImpl(dslContentHolder.createChainedContentHolder("address"))
 
     override fun address(action: Address.() -> Unit) {
         (dslContentHolder as DefaultDslContentHolder).runNestedBlock(
@@ -303,7 +302,7 @@ class AddressImpl(private val dslContentHolder: DslContentHolder): Address {
 
     @Suppress("UNCHECKED_CAST")
     override val properties: MutableMap<String, String>
-        get() = dslContentHolder.getMap("properties") as MutableMap<String, String>
+        get() = MapProxy<String, String>(dslContentHolder.createChainedContentHolder("properties"))
 
     override var street: String
         get() = throw RuntimeException("get not supported")

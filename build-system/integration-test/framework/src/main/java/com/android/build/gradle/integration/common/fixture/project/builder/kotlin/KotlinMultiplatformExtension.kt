@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder.kotlin
 
-import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
+import com.android.build.gradle.integration.common.fixture.dsl.NamedDomainObjectContainerProxy
 import com.android.build.gradle.integration.common.fixture.dsl.NamedDomainObjectProviderProxy
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.NamedDomainObjectProvider
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
-import java.lang.reflect.Proxy
 
 /**
  * Top level interface for the `kotlin {}` in multi-platform test projects.
@@ -35,17 +34,22 @@ import java.lang.reflect.Proxy
  *
  * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension]
  */
-interface KotlinMultiplatformExtension: KotlinExtension {
+interface KotlinMultiplatformExtension: KotlinExtension
 
-    val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectProvider<KotlinSourceSet>
-        get() {
-            // we need to get access to the [DslContentHolder] from the proxied interface
-            val invocationHandler = Proxy.getInvocationHandler(this) as DslProxy
+// This is already an extension method in the original class from KMP, so we need to reimplement it the same
+// way except we directly handle the proxy/dslContentHolder
+val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectProvider<KotlinSourceSet>
+    get() {
+        return sourceSetGetterFor("androidMain")
+    }
 
-            return NamedDomainObjectProviderProxy(
-                KotlinSourceSet::class.java,
-                "sourceSets.androidMain",
-                invocationHandler.contentHolder
-            )
-        }
+
+private fun NamedDomainObjectContainer<KotlinSourceSet>.sourceSetGetterFor(name: String): NamedDomainObjectProviderProxy<KotlinSourceSet> {
+    // we need to get access to the [DslContentHolder] from the proxied interface
+    val invocationHandler = this as NamedDomainObjectContainerProxy<KotlinSourceSet>
+
+    return NamedDomainObjectProviderProxy(
+        KotlinSourceSet::class.java,
+        invocationHandler.contentHolder.createChainedContentHolder(name)
+    )
 }

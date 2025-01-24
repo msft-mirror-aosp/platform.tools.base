@@ -32,14 +32,18 @@ import java.util.SortedSet
 
 class NamedDomainObjectContainerProxy<T>(
     private val theInterface: Class<T>,
-    private val contentHolder: DslContentHolder,
+    internal val contentHolder: DslContentHolder,
 ): NamedDomainObjectContainer<T> {
 
     override fun named(
         name: String,
         configurationAction: Action<in T>
     ): NamedDomainObjectProvider<T> {
-        contentHolder.runNestedBlock("named", listOf(name), theInterface) {
+        contentHolder.runNestedBlock(
+            name = "named",
+            parameters = listOf(name),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
             configurationAction.execute(this)
         }
 
@@ -50,13 +54,27 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun create(name: String, configureAction: Action<in T>): T {
-        contentHolder.runNestedBlock("create", listOf(name), theInterface) {
+        contentHolder.runNestedBlock(
+            name = "create",
+            parameters = listOf(name),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
             configureAction.execute(this)
         }
 
         // the returned object should not be used so we use a custom proxy for this that will
         // prevent usage
         return UnusableObjectProxy.createProxy(theInterface)
+    }
+
+    override fun all(action: Action<in T>) {
+        contentHolder.runNestedBlock(
+            name = "all",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
+            action.execute(this)
+        }
     }
 
     // -------
@@ -204,10 +222,6 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun configureEach(action: Action<in T>) {
-        throw RuntimeException("Not Supported")
-    }
-
-    override fun all(action: Action<in T>) {
         throw RuntimeException("Not Supported")
     }
 

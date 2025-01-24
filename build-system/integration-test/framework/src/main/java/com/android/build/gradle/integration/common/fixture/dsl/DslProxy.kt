@@ -26,6 +26,7 @@ import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.JavaVersion
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -41,10 +42,16 @@ import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
 
 /**
- * a Proxy class over all the Android DSL interfaces.
+ * a Proxy class over any DSL interfaces.
  *
  * The proxy records all calls to the class and stores them (in [DslContentHolder]) so that they
  * can be rewritten in build files, with a choice of format (groovy, kts, declarative).
+ *
+ * Note that some classes are proxied manually.
+ *
+ * - *ProductFlavor is proxy manually due to [ProductFlavor.setDimension] colliding with [ProductFlavor.dimension]
+ * - List, and Map. This allows us to not implement some methods (like getters) that aren't safe.
+ * - (List)Property. This also allows us to not implement the getters.
  */
 class DslProxy private constructor(
     private val theInterface: Class<*>,
@@ -184,11 +191,11 @@ class DslProxy private constructor(
             // some custom proxies in order to ensure they are not called in the wrong way
             // (like querying for the collection content, or calling get on providers)
             MutableList::class.java,
-            MutableCollection::class.java -> contentHolder.getList(propName)
-            MutableSet::class.java -> contentHolder.getSet(propName)
-            MutableMap::class.java -> contentHolder.getMap(propName)
-            Property::class.java -> contentHolder.getProperty(propName)
-            ListProperty::class.java -> contentHolder.getListProperty(propName)
+            MutableCollection::class.java -> ListProxy<Any>(contentHolder.createChainedContentHolder(propName))
+            MutableSet::class.java -> SetProxy<Any>(contentHolder.createChainedContentHolder(propName))
+            MutableMap::class.java -> MapProxy<Any, Any>(contentHolder.createChainedContentHolder(propName))
+            Property::class.java -> PropertyProxy<Any>(contentHolder.createChainedContentHolder(propName))
+            ListProperty::class.java -> ListPropertyProxy<Any>(contentHolder.createChainedContentHolder(propName))
             // custom implementation for String in order to intercept set/get to namespace
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
@@ -200,11 +207,48 @@ class DslProxy private constructor(
             // Returned as chained proxies
             SourceDirectorySet::class.java,
             KotlinJvmCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
+            NamedDomainObjectContainer::class.java -> {
+                // the return type should be a Parameterized Type
+                val returnType = method.genericReturnType
+                // because it's a container it should be a parameterized type
+                returnType as ParameterizedType
+
+                // there should be a single type param for a container.
+                val containerTypeParam = returnType.actualTypeArguments.first()
+
+                // right now our type params in container are type variables. This
+                // may change in the future.
+                val blockTypeClass = when (containerTypeParam) {
+                    is TypeVariable<*> -> {
+                        // search in the class that defined the method for the index of the type param for
+                        // the type used in the function.
+                        val ownerClass = method.declaringClass
+                        val index = findTypeParameterIndex(ownerClass, containerTypeParam.name)
+
+                        // get the same info on the proxied interface to get the final type, and find the
+                        // type from the same index.
+                        val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
+
+                        ownerClass.classLoader.loadClass(resolvedType.typeName)
+                    }
+                    is WildcardType -> {
+                        containerTypeParam.upperBounds[0] as Class<*>
+                    }
+                    else -> {
+                        method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
+                    }
+                }
+
+                val chainedContentHolder = contentHolder.createChainedContentHolder(propName)
+
+                NamedDomainObjectContainerProxy(blockTypeClass, chainedContentHolder)
+            }
             // the rest
             else -> {
                 // AGP API objects. These are generally objects that also have a matching configuration
                 // method, so we return the objects as chained proxies
-                if (method.returnType.name.startsWith("com.android.build.api")) {
+                if (method.returnType.name.startsWith("com.android.build.api") ||
+                    method.returnType.name.startsWith("com.android.build.gradle.integration")) {
                     // FIXME should we check whether there is a matching action method?
                     method.getChainedProxyForReturn(propName)
                 } else {
@@ -232,7 +276,8 @@ class DslProxy private constructor(
             returnType
         }
 
-        contentHolder.chainedProxy(propName, actualReturnClass)
+        val chainedContentHolder = contentHolder.createChainedContentHolder(propName)
+        createProxy(actualReturnClass, chainedContentHolder)
     } catch (e: ClassNotFoundException) {
         throw RuntimeException(
             "Failed to load ${returnType.name} for ${theInterface.name}.$propName",
@@ -363,7 +408,11 @@ class DslProxy private constructor(
             }
         } else {
             // Normal nested block. the provided type is the direct nested block type.
-            contentHolder.runNestedBlock(method.name, listOf(), blockTypeClass) {
+            contentHolder.runNestedBlock(
+                name = method.name,
+                parameters = listOf(),
+                instanceProvider = { createProxy(blockTypeClass, it) }
+            ) {
                 // calls into the function configuring the nested block
                 // `this` here is the nested block
                 @Suppress("UNCHECKED_CAST")
@@ -417,6 +466,62 @@ class DslProxy private constructor(
         }
 
         throw Error("Unable to find Type info in ${theInterface.typeName} matching type parameter definition from $originalClass")
+    }
+
+    private fun <T : BuildType> DslContentHolder.buildTypes(
+        theInterface: Class<T>,
+        action: NamedDomainObjectContainerProxy<T>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "buildTypes",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            action = action,
+        )
+    }
+
+    private fun <T : ProductFlavor> DslContentHolder.productFlavors(
+        theInterface: Class<T>,
+        action: NamedDomainObjectContainerProxy<T>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "productFlavors",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            action = action,
+        )
+    }
+
+    private fun DslContentHolder.executionProfiles(
+        theInterface: Class<ExecutionProfile>,
+        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "profiles",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            action = action,
+        )
+    }
+
+    private fun DslContentHolder.kotlinSourceSets(
+        theInterface: Class<KotlinSourceSet>,
+        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "sourceSets",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            action = action,
+        )
     }
 }
 

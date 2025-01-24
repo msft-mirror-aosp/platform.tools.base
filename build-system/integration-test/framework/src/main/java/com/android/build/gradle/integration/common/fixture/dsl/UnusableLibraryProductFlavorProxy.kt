@@ -21,6 +21,10 @@ import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.LibraryProductFlavor
 import java.io.File
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("OVERRIDE_DEPRECATION", "UNCHECKED_CAST")
 class UnusableLibraryProductFlavorProxy(
 ): UnusableProductFlavorProxy(), LibraryProductFlavor {

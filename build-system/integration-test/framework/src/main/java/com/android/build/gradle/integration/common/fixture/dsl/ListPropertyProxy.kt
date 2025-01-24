@@ -23,24 +23,23 @@ import org.gradle.api.specs.Spec
 import java.util.function.BiFunction
 
 class ListPropertyProxy<T>(
-    private val name: String,
     private val contentHolder: DslContentHolder
 ): ListProperty<T> {
 
     override fun addAll(elements: MutableIterable<T>) {
-        contentHolder.call("$name.addAll", elements.toList(), isVarArgs = false)
+        contentHolder.call("addAll", elements.toList(), isVarArgs = false)
     }
 
     override fun addAll(vararg elements: T) {
-        contentHolder.call("$name.addAll", elements.toList(), isVarArgs = true)
+        contentHolder.call("addAll", elements.toList(), isVarArgs = true)
     }
 
     override fun add(element: T) {
-        contentHolder.call("$name.add", listOf(element), isVarArgs = false)
+        contentHolder.call("add", listOf(element), isVarArgs = false)
     }
 
     override fun set(elements: MutableIterable<T>?) {
-        contentHolder.call("$name.set", elements?.toList() ?: listOf(), isVarArgs = false)
+        contentHolder.call("set", elements?.toList() ?: listOf(), isVarArgs = false)
     }
 
 

@@ -44,8 +44,9 @@ interface ExtensionAwareDefinition {
         invocationHandler.contentHolder.runNestedBlock(
             name = name,
             parameters = listOf(),
-            theInterface = theClass.java,
-            parentChain = listOf(),
+            instanceProvider = {
+                DslProxy.createProxy(theClass.java, it)
+            },
             action = action
         )
     }

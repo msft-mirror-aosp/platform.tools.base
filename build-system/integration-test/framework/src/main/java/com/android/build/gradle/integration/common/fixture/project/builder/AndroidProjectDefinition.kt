@@ -143,9 +143,9 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
             throw RuntimeException("Cannot configure legacyKotlin without plugin KOTLIN_ANDROID")
         @Suppress("DEPRECATION")
         contentHolder.runNestedBlock(
-            "kotlinOptions",
+            name = "kotlinOptions",
             parameters = listOf(),
-            KotlinJvmOptions::class.java
+            instanceProvider = { DslProxy.createProxy(KotlinJvmOptions::class.java, it) }
         ) {
             action(this)
         }

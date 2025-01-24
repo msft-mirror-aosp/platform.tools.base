@@ -27,12 +27,11 @@ import java.util.function.BiFunction
  * the calls we care about.
  */
 class PropertyProxy<T>(
-    private val name: String,
     private val contentHolder: DslContentHolder
 ) : Property<T> {
 
     override fun set(value: T?) {
-        contentHolder.call("$name.set", listOf(value), isVarArgs = false)
+        contentHolder.call("set", listOf(value), isVarArgs = false)
     }
 
     override fun get(): T {

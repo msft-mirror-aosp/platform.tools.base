@@ -31,15 +31,14 @@ import java.util.function.BiFunction
  */
 class NamedDomainObjectProviderProxy<T>(
     private val theInterface: Class<T>,
-    private val name: String,
     private val contentHolder: DslContentHolder
 ): NamedDomainObjectProvider<T> {
 
     override fun configure(action: Action<in T>) {
         contentHolder.runNestedBlock(
-            "$name.configure",
+            "configure",
             listOf(),
-            theInterface,
+            instanceProvider = { DslProxy.createProxy(theInterface, it) },
         ) {
            action.execute(this)
         }

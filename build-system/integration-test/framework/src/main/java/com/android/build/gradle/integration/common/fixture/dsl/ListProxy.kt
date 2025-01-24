@@ -17,36 +17,35 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 class ListProxy<T>(
-    private val name: String,
     private val contentHolder: DslContentHolder
 ): MutableList<T> {
 
     override fun set(index: Int, element: T): T {
-        contentHolder.call("$name.set", listOf(index, element), isVarArgs = false)
+        contentHolder.call("set", listOf(index, element), isVarArgs = false)
         return element
     }
 
     override fun addAll(elements: Collection<T>): Boolean {
-        contentHolder.collectionAddAll(name, elements)
+        contentHolder.collectionAddAll(elements)
         return true
     }
 
     override fun addAll(index: Int, elements: Collection<T>): Boolean {
-        contentHolder.call("$name.addAll", listOf(index, elements), isVarArgs = false)
+        contentHolder.call("addAll", listOf(index, elements), isVarArgs = false)
         return true
     }
 
     override fun add(index: Int, element: T) {
-        contentHolder.call("$name.add", listOf(index, element), isVarArgs = false)
+        contentHolder.call("add", listOf(index, element), isVarArgs = false)
     }
 
     override fun add(element: T): Boolean {
-        contentHolder.collectionAdd(name, element)
+        contentHolder.collectionAdd(element)
         return true
     }
 
     override fun clear() {
-        contentHolder.call("$name.clear", listOf(), isVarArgs = false)
+        contentHolder.call("clear", listOf(), isVarArgs = false)
     }
 
     override fun removeAt(index: Int): T {
@@ -54,12 +53,12 @@ class ListProxy<T>(
     }
 
     override fun removeAll(elements: Collection<T>): Boolean {
-        contentHolder.call("$name.removeAll", listOf(elements), isVarArgs = false)
+        contentHolder.call("removeAll", listOf(elements), isVarArgs = false)
         return true
     }
 
     override fun remove(element: T): Boolean {
-        contentHolder.call("$name.remove", listOf(element), isVarArgs = false)
+        contentHolder.call("remove", listOf(element), isVarArgs = false)
         return true
     }
 

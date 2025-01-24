@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,21 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-import com.android.build.api.dsl.DynamicFeatureProductFlavor
-
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Utility method for test that always want to use DslProxy to run blocks
  */
-class DynamicFeatureProductFlavorProxy(
-    contentHolder: DslContentHolder
-): ProductFlavorProxy(contentHolder), DynamicFeatureProductFlavor {
+fun <T> DslContentHolder.runNestedBlock(
+    name: String,
+    parameters: List<Any>,
+    theInterface: Class<T>,
+    action: T.() -> Unit,
+) {
+    runNestedBlock(
+        name = name,
+        parameters = parameters,
+        instanceProvider = {
+            DslProxy.createProxy(theInterface, it)
+        },
+        action = action,
+    )
 }

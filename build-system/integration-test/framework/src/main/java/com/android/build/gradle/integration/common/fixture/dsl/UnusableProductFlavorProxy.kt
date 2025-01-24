@@ -27,6 +27,10 @@ import com.android.build.api.dsl.VectorDrawables
 import org.gradle.api.plugins.ExtensionContainer
 import java.io.File
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("UNCHECKED_CAST", "OVERRIDE_DEPRECATION")
 open class UnusableProductFlavorProxy(): ProductFlavor {
 

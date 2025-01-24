@@ -19,6 +19,10 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("OVERRIDE_DEPRECATION")
 class ApplicationProductFlavorProxy(
     contentHolder: DslContentHolder

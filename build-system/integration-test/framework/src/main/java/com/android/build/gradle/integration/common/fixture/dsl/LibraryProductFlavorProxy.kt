@@ -21,6 +21,10 @@ import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.LibraryProductFlavor
 import java.io.File
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("OVERRIDE_DEPRECATION", "UNCHECKED_CAST")
 class LibraryProductFlavorProxy(
 contentHolder: DslContentHolder
@@ -63,7 +67,7 @@ contentHolder: DslContentHolder
         }
 
     override val consumerProguardFiles: MutableList<File>
-        get() = contentHolder.getList("consumerProguardFiles") as MutableList<File>
+        get() = ListProxy<File>(contentHolder.createChainedContentHolder("consumerProguardFiles"))
 
     override fun consumerProguardFile(proguardFile: Any): Any {
         contentHolder.call("consumerProguardFile", listOf(proguardFile), isVarArgs = false)
@@ -82,10 +86,17 @@ contentHolder: DslContentHolder
         }
 
     override val aarMetadata: AarMetadata
-        get() = contentHolder.chainedProxy("aarMetadata", AarMetadata::class.java)
+        get() = DslProxy.createProxy(
+            AarMetadata::class.java,
+            contentHolder.createChainedContentHolder("consumerProguardFiles")
+        )
 
     override fun aarMetadata(action: AarMetadata.() -> Unit) {
-        contentHolder.runNestedBlock("aarMetadata", listOf(), aarMetadata::class.java) {
+        contentHolder.runNestedBlock(
+            name = "aarMetadata",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(AarMetadata::class.java, it) }
+        ) {
             action(this)
         }
     }

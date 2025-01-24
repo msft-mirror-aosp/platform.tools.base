@@ -27,6 +27,10 @@ import com.android.build.api.dsl.VectorDrawables
 import org.gradle.api.plugins.ExtensionContainer
 import java.io.File
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("UNCHECKED_CAST", "OVERRIDE_DEPRECATION")
 open class ProductFlavorProxy(
     protected val contentHolder: DslContentHolder
@@ -44,7 +48,7 @@ open class ProductFlavorProxy(
     }
 
     override val matchingFallbacks: MutableList<String>
-        get() = contentHolder.getList("matchingFallbacks") as MutableList<String>
+        get() = ListProxy<String>(contentHolder.createChainedContentHolder("matchingFallbacks"))
 
     override fun setMatchingFallbacks(vararg fallbacks: String) {
         contentHolder.call("setMatchingFallbacks", listOf(fallbacks), isVarArgs = true)
@@ -116,7 +120,7 @@ open class ProductFlavorProxy(
             contentHolder.set("testInstrumentationRunner", value)
         }
     override val testInstrumentationRunnerArguments: MutableMap<String, String>
-        get() = contentHolder.getMap("testInstrumentationRunnerArguments") as MutableMap<String, String>
+        get() = MapProxy<String, String>(contentHolder.createChainedContentHolder("testInstrumentationRunnerArguments"))
 
     override fun testInstrumentationRunnerArgument(key: String, value: String) {
         contentHolder.call(
@@ -166,7 +170,7 @@ open class ProductFlavorProxy(
     }
 
     override val resourceConfigurations: MutableSet<String>
-        get() = contentHolder.getSet("resourceConfigurations") as MutableSet<String>
+        get() = SetProxy<String>(contentHolder.createChainedContentHolder("resourceConfigurations"))
 
     override fun resConfigs(config: Collection<String>) {
         contentHolder.call("resConfigs", listOf(resConfigs()), isVarArgs = false)
@@ -181,10 +185,17 @@ open class ProductFlavorProxy(
     }
 
     override val vectorDrawables: VectorDrawables
-        get() = contentHolder.chainedProxy("vectorDrawables", VectorDrawables::class.java)
+        get() = DslProxy.createProxy(
+            VectorDrawables::class.java,
+            contentHolder.createChainedContentHolder("vectorDrawables")
+        )
 
     override fun vectorDrawables(action: VectorDrawables.() -> Unit) {
-        contentHolder.runNestedBlock("vectorDrawables", listOf(), VectorDrawables::class.java) {
+        contentHolder.runNestedBlock(
+            name = "vectorDrawables",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(VectorDrawables::class.java, it) }
+        ) {
             action(this)
         }
     }
@@ -234,16 +245,20 @@ open class ProductFlavorProxy(
             contentHolder.set("multiDexKeepFile", value)
         }
     override val ndk: Ndk
-        get() = contentHolder.chainedProxy("ndk", Ndk::class.java)
+        get() = DslProxy.createProxy(Ndk::class.java, contentHolder.createChainedContentHolder("ndk"))
 
     override fun ndk(action: Ndk.() -> Unit) {
-        contentHolder.runNestedBlock("ndk", listOf(), Ndk::class.java) {
+        contentHolder.runNestedBlock(
+            name = "ndk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(Ndk::class.java, it) }
+        ) {
             action(this)
         }
     }
 
     override val proguardFiles: MutableList<File>
-        get() = contentHolder.getList("proguardFiles") as MutableList<File>
+        get() = ListProxy<File>(contentHolder.createChainedContentHolder("proguardFiles"))
 
     override fun proguardFile(proguardFile: Any): Any {
         contentHolder.call("proguardFile", listOf(proguardFile), isVarArgs = false)
@@ -261,7 +276,7 @@ open class ProductFlavorProxy(
     }
 
     override val testProguardFiles: MutableList<File>
-        get() = contentHolder.getList("testProguardFiles") as MutableList<File>
+        get() = ListProxy<File>(contentHolder.createChainedContentHolder("testProguardFiles"))
 
     override fun testProguardFile(proguardFile: Any): Any {
         contentHolder.call("testProguardFile", listOf(proguardFile), isVarArgs = false)
@@ -274,7 +289,7 @@ open class ProductFlavorProxy(
     }
 
     override val manifestPlaceholders: MutableMap<String, Any>
-        get() = contentHolder.getMap("manifestPlaceholders") as MutableMap<String, Any>
+        get() = MapProxy<String, Any>(contentHolder.createChainedContentHolder("manifestPlaceholders"))
 
     override fun addManifestPlaceholders(manifestPlaceholders: Map<String, Any>) {
         contentHolder.call("addManifestPlaceholders", listOf(manifestPlaceholders), isVarArgs = false)
@@ -286,28 +301,49 @@ open class ProductFlavorProxy(
     }
 
     override val javaCompileOptions: JavaCompileOptions
-        get() = contentHolder.chainedProxy("javaCompileOptions", JavaCompileOptions::class.java)
+        get() = DslProxy.createProxy(
+            JavaCompileOptions::class.java,
+            contentHolder.createChainedContentHolder("javaCompileOptions")
+        )
 
     override fun javaCompileOptions(action: JavaCompileOptions.() -> Unit) {
-        contentHolder.runNestedBlock("javaCompileOptions", listOf(), JavaCompileOptions::class.java) {
+        contentHolder.runNestedBlock(
+            name = "javaCompileOptions",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(JavaCompileOptions::class.java, it) }
+        ) {
             action(this)
         }
     }
 
     override val shaders: Shaders
-        get() = contentHolder.chainedProxy("shaders", Shaders::class.java)
+        get() = DslProxy.createProxy(
+            Shaders::class.java,
+            contentHolder.createChainedContentHolder("shaders")
+        )
 
     override fun shaders(action: Shaders.() -> Unit) {
-        contentHolder.runNestedBlock("shaders", listOf(), Shaders::class.java) {
+        contentHolder.runNestedBlock(
+            name = "shaders",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(Shaders::class.java, it) }
+        ) {
             action(this)
         }
     }
 
     override val externalNativeBuild: ExternalNativeBuildFlags
-        get() = contentHolder.chainedProxy("externalNativeBuild", ExternalNativeBuildFlags::class.java)
+        get() = DslProxy.createProxy(
+            ExternalNativeBuildFlags::class.java,
+            contentHolder.createChainedContentHolder("externalNativeBuild")
+        )
 
     override fun externalNativeBuild(action: ExternalNativeBuildFlags.() -> Unit) {
-        contentHolder.runNestedBlock("externalNativeBuild", listOf(), ExternalNativeBuildFlags::class.java) {
+        contentHolder.runNestedBlock(
+            name = "externalNativeBuild",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(ExternalNativeBuildFlags::class.java, it) }
+        ) {
             action(this)
         }
     }
@@ -321,10 +357,17 @@ open class ProductFlavorProxy(
     }
 
     override val optimization: Optimization
-        get() = contentHolder.chainedProxy("optimization", Optimization::class.java)
+        get() = DslProxy.createProxy(
+            Optimization::class.java,
+            contentHolder.createChainedContentHolder("optimization")
+        )
 
     override fun optimization(action: Optimization.() -> Unit) {
-        contentHolder.runNestedBlock("optimization", listOf(), Optimization::class.java) {
+        contentHolder.runNestedBlock(
+            name = "optimization",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(Optimization::class.java, it) }
+        ) {
             action(this)
         }
     }

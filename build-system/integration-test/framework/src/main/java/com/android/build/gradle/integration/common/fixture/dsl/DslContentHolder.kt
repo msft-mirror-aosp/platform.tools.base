@@ -21,22 +21,29 @@ import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 /**
- * Class that contains the actual content of a DSL class that's generated on the fly.
+ * Class that record calls to DSL objects
+ *
+ * DSL objects are represented by Proxy objects (either automatically generated via [DslProxy] or
+ * manually implemented (e.g. [ListProxy], [ApplicationProductFlavorProxy], ...)
+ *
+ * Each proxy object records calls to it in its own instance of [DslContentHolder]. Calls are
+ * recorded as event. There are 3 major types of events:
+ * - method calls (including calls to setters).
+ * - calls to getters that return a new proxy instance with its own [DslContentHolder]
+ * - calls with lambda that run nested blocks. The object being acted on in the block is its own
+ *   proxy instance with its own [DslContentHolder]
+ *
  */
 interface DslContentHolder {
-    val name: String
-
     /**
      * Records a = b.
      *
      * For boolean, see [setBoolean]
      */
-    fun set(name: String, value: Any?, parentChain: List<String> = listOf())
+    fun set(name: String, value: Any?)
 
     /**
      * Records a = (boolean)
@@ -44,137 +51,63 @@ interface DslContentHolder {
      * This handles the case where the boolean is call `isName` because this is written
      * differently in kts and groovy file.
      */
-    fun setBoolean(
-        name: String,
-        value: Any?,
-        usingIsNotation: Boolean,
-        parentChain: List<String> = listOf()
-    )
+    fun setBoolean(name: String, value: Any?, usingIsNotation: Boolean)
 
-    fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String> = listOf())
+    fun call(name: String, args: List<Any?>, isVarArgs: Boolean)
 
     /**
      * Records Collection.addAll
      */
-    fun collectionAddAll(
-        name: String,
-        value: Collection<Any?>?,
-        parentChain: List<String> = listOf()
-    )
+    fun collectionAddAll(value: Collection<Any?>)
+
     /**
      * Records Collection.add
      */
-    fun collectionAdd(name: String, value: Any?, parentChain: List<String> = listOf())
+    fun collectionAdd(value: Any?)
 
     /**
      * Records Map.putAll
      */
-    fun mapPutAll(
-        name: String,
-        value: Map<out Any?, Any?>,
-        parentChain: List<String> = listOf()
-    )
+    fun mapPutAll(value: Map<out Any?, Any?>)
 
     /**
      * Records Map.put
      */
-    fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String> = listOf())
+    fun mapPut(key: Any, value: Any?)
 
     /**
-     * Returns a proxied [MutableList]
-     */
-    fun getList(name: String): MutableList<*>
-
-    /**
-     * Returns a proxied [MutableSet]
-     */
-    fun getSet(name: String): MutableSet<*>
-
-    /**
-     * Returns a proxied [MutableMap]
-     */
-    fun getMap(name: String): MutableMap<*,*>
-
-    /**
-     * Returns a proxied Gradle Property
-     */
-    fun getProperty(name: String): Property<Any>
-
-    /**
-     * Returns a proxied Gradle ListProperty
-     */
-    fun getListProperty(name: String): ListProperty<Any>
-
-
-    fun <T : BuildType> buildTypes(
-        theInterface: Class<T>,
-        parentChain: List<String> = listOf(),
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit,
-    )
-
-    fun <T : ProductFlavor> productFlavors(
-        theInterface: Class<T>,
-        parentChain: List<String> = listOf(),
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit,
-    )
-
-    fun executionProfiles(
-        theInterface: Class<ExecutionProfile>,
-        parentChain: List<String> = listOf(),
-        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit,
-    )
-
-    fun kotlinSourceSets(
-        theInterface: Class<KotlinSourceSet>,
-        parentChain: List<String> = listOf(),
-        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit,
-    )
-
-    /**
-     * records a nested block. The block must be run as part of `action`
+     * Records a nested block. The block must be run as part of `action`
+     *
+     * @param name the name of the method running the block
+     * @param parameters the other parameters to pass to the method running the block
+     * @param instanceProvider an action that will instantiate the proxy that the block applies to
+     * @param action the action that runs the block.
      */
     fun <T> runNestedBlock(
         name: String,
         parameters: List<Any>,
-        theInterface: Class<T>,
-        parentChain: List<String> = listOf(),
+        instanceProvider: (DslContentHolder) -> T,
         action: T.() -> Unit,
     )
 
     /**
-     * Create an instance of T via a chained proxy.
+     * Create a chained event and returns the chained Content holder.
      *
-     * This method is used to handle getters on nested blocks, to handle things like
-     *
-     * ```
-     * person {
-     *   address.city = "Mountain View"
-     * }
-     * ```
-     *
-     * In this case the proxy for `person`, will call [chainedProxy] to instantiate the result
-     * of `getAddress()`.
-     *
-     * The `Address` instance` is returned as a [DslProxy] using a [ChainedDslContentHolder]
-     * that sends its event to the parent holder (ie the `person` object).
-     *
-     * @param name the name of the nested property in the parent object
-     * @param theInterface the type of the nested property in the parent object.
+     * This must be passed to the matching Proxy object.
      */
-    fun <T> chainedProxy(name: String, theInterface: Class<T>): T
+    fun createChainedContentHolder(name: String): DslContentHolder
 
     // returns the content to write the
-    fun writeContent(writer: BuildWriter)
+    fun writeContent(writer: BuildWriter, parentName: String? = null)
 }
 
-internal class DefaultDslContentHolder(
-    override val name: String = ""
-): DslContentHolder {
+internal class DefaultDslContentHolder(): DslContentHolder {
 
     enum class EventType {
         ASSIGNMENT,
         CALL,
         NESTED_BLOCK,
+        CHAINED_CALL,
         COLLECTION_ADD_ALL,
         COLLECTION_ADD,
         MAP_PUT_ALL,
@@ -184,14 +117,10 @@ internal class DefaultDslContentHolder(
     data class Event(
         val type: EventType,
         val payload: NamedPayload,
-        val parentChain: List<String> = listOf()
     )
 
     interface NamedPayload {
         val name: String
-
-        fun nameWithParents(parentChain: List<String>, booleanNameHandler: BooleanNameHandler): String =
-            computeParentChain(name, parentChain)
     }
 
     open class NamedData(
@@ -209,25 +138,21 @@ internal class DefaultDslContentHolder(
         val isVarArgs: Boolean
     ): NamedPayload
 
-    class BooleanData(
-        name: String,
-        value: Any?,
-        private val usingIsNotation: Boolean
-    ): NamedData(name, value) {
+    class AssignmentData(
+        private val propName: String,
+        val value: Any?,
+        private val usingIsNotation: Boolean = false
+    ): NamedPayload {
 
-        override fun nameWithParents(
-            parentChain: List<String>,
-            booleanNameHandler: BooleanNameHandler
-        ): String {
+        override val name: String
+            get() = throw RuntimeException("Use computeName() instead")
+
+        fun computeName(booleanNameHandler: BooleanNameHandler) =
             // need to convert the name with isX as needed
-            val propName =
-                if (usingIsNotation) booleanNameHandler.toIsBooleanName(name) else name
-
-            return computeParentChain(propName, parentChain)
-        }
+            if (usingIsNotation) booleanNameHandler.toIsBooleanName(propName) else propName
 
         override fun toString(): String {
-            return "BooleanData(usingIsNotation=$usingIsNotation) ${super.toString()}"
+            return "AssignmentData(propName='$propName', usingIsNotation=$usingIsNotation, value=$value)"
         }
     }
 
@@ -243,358 +168,119 @@ internal class DefaultDslContentHolder(
         eventList.clear()
     }
 
-    override fun set(name: String, value: Any?, parentChain: List<String>) {
-        eventList += Event(EventType.ASSIGNMENT, NamedData(name, value), parentChain)
+    override fun set(name: String, value: Any?) {
+        eventList += Event(EventType.ASSIGNMENT, AssignmentData(name, value))
     }
 
     override fun setBoolean(
         name: String,
         value: Any?,
         usingIsNotation: Boolean,
-        parentChain: List<String>
     ) {
-        eventList += Event(EventType.ASSIGNMENT, BooleanData(name, value, usingIsNotation), parentChain)
+        eventList += Event(EventType.ASSIGNMENT, AssignmentData(name, value, usingIsNotation))
     }
 
-    override fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String>) {
-        eventList += Event(EventType.CALL, MethodInfo(name, args, isVarArgs), parentChain)
+    override fun call(name: String, args: List<Any?>, isVarArgs: Boolean) {
+        eventList += Event(EventType.CALL, MethodInfo(name, args, isVarArgs))
     }
 
-    override fun getList(name: String): MutableList<*> {
-        return ListProxy<Any>(name, this)
+    override fun collectionAddAll(value: Collection<Any?>) {
+        eventList += Event(EventType.COLLECTION_ADD_ALL, NamedData("", value))
     }
 
-    override fun getSet(name: String): MutableSet<*> {
-        return SetProxy<Any>(name, this)
+    override fun collectionAdd(value: Any?) {
+        eventList += Event(EventType.COLLECTION_ADD, NamedData("", value))
     }
 
-    override fun getMap(name: String): MutableMap<*, *> {
-        return MapProxy<Any,Any>(name, this)
+    override fun mapPutAll(value: Map<out Any?, Any?>) {
+        eventList += Event(EventType.MAP_PUT_ALL, NamedData("", value))
     }
 
-    override fun getProperty(name: String): Property<Any> {
-        return PropertyProxy(name, this)
-    }
-
-    override fun getListProperty(name: String): ListProperty<Any> {
-        return ListPropertyProxy(name, this)
-    }
-
-    override fun collectionAddAll(
-        name: String,
-        value: Collection<Any?>?,
-        parentChain: List<String>
-    ) {
-        eventList += Event(EventType.COLLECTION_ADD_ALL, NamedData(name, value), parentChain)
-    }
-
-    override fun collectionAdd(name: String, value: Any?, parentChain: List<String>) {
-        eventList += Event(EventType.COLLECTION_ADD, NamedData(name, value), parentChain)
-    }
-
-    override fun mapPutAll(name: String, value: Map<out Any?, Any?>, parentChain: List<String>) {
-        eventList += Event(EventType.MAP_PUT_ALL, NamedData(name, value), parentChain)
-    }
-
-    override fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String>) {
-        eventList += Event(EventType.MAP_PUT, NamedData(name, key to value), parentChain)
-    }
-
-    override fun <T : BuildType> buildTypes(
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit
-    ) {
-        runNestedBlock(
-            name = "buildTypes",
-            parameters = listOf(),
-            instanceProvider = {
-                NamedDomainObjectContainerProxy(theInterface, it)
-            },
-            parentChain = parentChain,
-            action = action,
-        )
-    }
-
-    override fun <T : ProductFlavor> productFlavors(
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit
-    ) {
-        runNestedBlock(
-            name = "productFlavors",
-            parameters = listOf(),
-            instanceProvider = {
-                NamedDomainObjectContainerProxy(theInterface, it)
-            },
-            parentChain = parentChain,
-            action = action,
-        )
-    }
-
-    override fun executionProfiles(
-        theInterface: Class<ExecutionProfile>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
-    ) {
-        runNestedBlock(
-            name = "profiles",
-            parameters = listOf(),
-            instanceProvider = {
-                NamedDomainObjectContainerProxy(theInterface, it)
-            },
-            parentChain = parentChain,
-            action = action,
-        )
-    }
-
-    override fun kotlinSourceSets(
-        theInterface: Class<KotlinSourceSet>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
-    ) {
-        runNestedBlock(
-            name = "sourceSets",
-            parameters = listOf(),
-            instanceProvider = {
-                NamedDomainObjectContainerProxy(theInterface, it)
-            },
-            parentChain = parentChain,
-            action = action,
-        )
+    override fun mapPut(key: Any, value: Any?) {
+        eventList += Event(EventType.MAP_PUT, NamedData("", key to value))
     }
 
     override fun <T> runNestedBlock(
         name: String,
         parameters: List<Any>,
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: T.() -> Unit,
-    ) {
-        runNestedBlock(
-            name = name,
-            parameters = parameters,
-            instanceProvider = {
-                DslProxy.createProxy(theInterface, it)
-            },
-            parentChain = parentChain,
-            action = action,
-        )
-    }
-
-    // for testing
-    internal fun <T> runNestedBlock(
-        name: String,
-        parameters: List<Any>,
         instanceProvider: (DslContentHolder) -> T,
-        parentChain: List<String> = listOf(),
         action: T.() -> Unit,
     ) {
-        val contentHolder = DefaultDslContentHolder(name)
+        val contentHolder = DefaultDslContentHolder()
 
         action(instanceProvider(contentHolder))
 
         eventList += Event(
             EventType.NESTED_BLOCK,
-            NestedBlockData(name, contentHolder, parameters),
-            parentChain
+            NestedBlockData(name, contentHolder, parameters)
         )
     }
 
-    override fun <T> chainedProxy(name: String, theInterface: Class<T>): T =
-        DslProxy.createProxy(theInterface, ChainedDslContentHolder(name, this))
+    override fun createChainedContentHolder(name: String): DslContentHolder {
+        val newHolder = DefaultDslContentHolder()
+        eventList += Event(
+            EventType.CHAINED_CALL,
+            NamedData(name, newHolder)
+        )
 
-    override fun writeContent(writer: BuildWriter) {
+        return newHolder
+    }
+
+    private fun String?.dot(name: String): String = this?.let {
+        "$this.$name"
+    } ?: name
+
+    override fun writeContent(writer: BuildWriter, parentName: String?) {
         for (event in eventList) {
-            val nameWithParents = event.payload.nameWithParents(event.parentChain, writer)
             when (event.type) {
                 EventType.ASSIGNMENT -> {
-                    val payload = event.payload as NamedData
-                    writer.set(nameWithParents, payload.value)
+                    val payload = event.payload as AssignmentData
+                    writer.set(parentName.dot(payload.computeName(writer)), payload.value)
                 }
                 EventType.CALL -> {
                     val info = event.payload as MethodInfo
-                    writer.method(nameWithParents, info.args, info.isVarArgs)
+                    writer.method(parentName.dot(info.name), info.args, info.isVarArgs)
                 }
                 EventType.NESTED_BLOCK -> {
                     val data = event.payload as NestedBlockData
-                    writer.block(
-                        computeParentChain(data.contentHolder.name, event.parentChain),
-                        data.args,
-                        data.contentHolder
-                    ) {
-                        it.writeContent(this)
+                    writer.block(parentName.dot(data.name), data.args, data.contentHolder) {
+                        // parent name is always empty inside a nested block
+                        it.writeContent(this, parentName = null)
                     }
+                }
+                EventType.CHAINED_CALL -> {
+                    val payload = event.payload as NamedData
+                    val chainedContentHolder = payload.value as DslContentHolder
+                    chainedContentHolder.writeContent(writer, parentName.dot(payload.name))
                 }
                 EventType.COLLECTION_ADD -> {
                     val info = event.payload as NamedData
-                    writer.writeCollectionAdd(nameWithParents, info.value)
+                    // There must be a parent since the collection must come from somewhere
+                    parentName ?: throw RuntimeException("Event COLLECTION_ADD without a parent!")
+                    writer.writeCollectionAdd(parentName, info.value)
                 }
                 EventType.COLLECTION_ADD_ALL -> {
                     val info = event.payload as NamedData
-                    writer.writeCollectionAddAll(nameWithParents, info.value as Collection<*>)
+                    // There must be a parent since the collection must come from somewhere
+                    parentName ?: throw RuntimeException("Event COLLECTION_ADD_ALL without a parent!")
+                    writer.writeCollectionAddAll(parentName, info.value as Collection<*>)
                 }
                 EventType.MAP_PUT -> {
                     val info = event.payload as NamedData
                     @Suppress("UNCHECKED_CAST")
                     val pair = info.value as Pair<Any, Any?>
-                    writer.writeMapPut(nameWithParents, pair.first, pair.second)
+                    // There must be a parent since the map must come from somewhere
+                    parentName ?: throw RuntimeException("Event MAP_PUT without a parent!")
+                    writer.writeMapPut(parentName, pair.first, pair.second)
                 }
                 EventType.MAP_PUT_ALL -> {
                     val info = event.payload as NamedData
-                    writer.writeMapPutAll(nameWithParents, info.value as Map<*,*>)
+                    // There must be a parent since the map must come from somewhere
+                    parentName ?: throw RuntimeException("Event MAP_PUT_ALL without a parent!")
+                    writer.writeMapPutAll(parentName, info.value as Map<*,*>)
                 }
                 else -> throw RuntimeException("Unsupported EventType: ${event.type}")
             }
         }
     }
-}
-
-private fun computeParentChain(name: String, parents: List<String>): String =
-    if (parents.isEmpty()) {
-        name
-    } else {
-        parents.joinToString(separator = ".") + "." + name
-    }
-
-/**
- * A [DslContentHolder] that does not actually hold content. It delegate all the operation
- * to its parent holder.
- *
- * This allows handling pattern like:
- *
- * ```
- * person {
- *   name = 'foo'
- *   address.city = "Mountain View"
- * }
- * ```
- *
- * In the example above, getAddress() will use a [ChainedDslContentHolder].
- *
- * setCity on the chained holder, will pass it back to its parent with parentChain containing
- * `address` which will be transformed to a `set("address.city", "value")
- */
-internal class ChainedDslContentHolder(
-    override val name: String,
-    private val parent: DslContentHolder
-): DslContentHolder {
-
-    override fun set(name: String, value: Any?, parentChain: List<String>) {
-        parent.set(name, value, parentChain.addFirst(this.name))
-    }
-
-    override fun setBoolean(
-        name: String,
-        value: Any?,
-        isNotation: Boolean,
-        parentChain: List<String>
-    ) {
-        parent.setBoolean(name, value, isNotation, parentChain.addFirst(this.name))
-    }
-
-    override fun call(name: String, args: List<Any?>, isVarArgs: Boolean, parentChain: List<String>) {
-        parent.call(name, args, isVarArgs, parentChain.addFirst(this.name))
-    }
-
-    override fun collectionAddAll(name: String, value: Collection<Any?>?, parentChain: List<String>) {
-        parent.collectionAddAll(name, value, parentChain.addFirst(this.name))
-    }
-
-    override fun collectionAdd(name: String, value: Any?, parentChain: List<String>) {
-        parent.collectionAdd(name, value, parentChain.addFirst(this.name))
-    }
-
-    override fun mapPutAll(name: String, value: Map<out Any?, Any?>, parentChain: List<String>) {
-        parent.mapPutAll(name, value, parentChain.addFirst(this.name))
-    }
-
-    override fun mapPut(name: String, key: Any, value: Any?, parentChain: List<String>) {
-        parent.mapPut(name, key, value, parentChain.addFirst(this.name))
-    }
-
-    override fun getList(name: String): MutableList<*> {
-        return ListProxy<Any>(name, this)
-    }
-
-    override fun getSet(name: String): MutableSet<*> {
-        return SetProxy<Any>(name, this)
-    }
-
-    override fun getMap(name: String): MutableMap<*, *> {
-        return MapProxy<Any,Any>(name, this)
-    }
-
-    override fun getProperty(name: String): Property<Any> {
-        return PropertyProxy(name, this)
-    }
-
-    override fun getListProperty(name: String): ListProperty<Any> {
-        return ListPropertyProxy(name, this)
-    }
-
-    override fun <T : BuildType> buildTypes(
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit
-    ) {
-        parent.buildTypes(theInterface, parentChain.addFirst(this.name), action)
-    }
-
-    override fun <T : ProductFlavor> productFlavors(
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<T>.() -> Unit
-    ) {
-        parent.productFlavors(theInterface, parentChain.addFirst(this.name), action)
-    }
-
-    override fun executionProfiles(
-        theInterface: Class<ExecutionProfile>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
-    ) {
-        parent.executionProfiles(theInterface, parentChain.addFirst(this.name), action)
-    }
-
-    override fun kotlinSourceSets(
-        theInterface: Class<KotlinSourceSet>,
-        parentChain: List<String>,
-        action: NamedDomainObjectContainerProxy<KotlinSourceSet>.() -> Unit
-    ) {
-        parent.kotlinSourceSets(theInterface, parentChain.addFirst(this.name), action)
-    }
-
-    override fun <T> runNestedBlock(
-        name: String,
-        parameters: List<Any>,
-        theInterface: Class<T>,
-        parentChain: List<String>,
-        action: T.() -> Unit,
-    ) {
-        parent.runNestedBlock(
-            name,
-            parameters,
-            theInterface,
-            parentChain.addFirst(this.name),
-            action)
-    }
-
-    override fun <T> chainedProxy(name: String, theInterface: Class<T>): T =
-        DslProxy.createProxy(theInterface, ChainedDslContentHolder(name, this))
-
-    override fun writeContent(writer: BuildWriter) {
-        throw RuntimeException("ChainedDslContentHolder do not write their own content")
-    }
-}
-
-/**
- * Returns a new list with the provided string plus the existing list.
- *
- * We need to add the new chained holder first because of how the chained called
- * are resolved (last to first).
- */
-private fun List<String>.addFirst(item: String): List<String> = buildList {
-    add(item)
-    addAll(this@addFirst)
 }

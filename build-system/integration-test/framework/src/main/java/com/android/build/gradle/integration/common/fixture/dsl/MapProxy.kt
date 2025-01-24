@@ -17,27 +17,26 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 internal class MapProxy<K, V>(
-    private val name: String,
     private val contentHolder: DslContentHolder
 ): MutableMap<K, V> {
 
     override fun put(key: K, value: V): V? {
         key ?: throw RuntimeException("null key value")
-        contentHolder.mapPut(name, key, value)
+        contentHolder.mapPut(key, value)
         return value
     }
 
     override fun clear() {
-        contentHolder.call("$name.clear", listOf(), isVarArgs = false)
+        contentHolder.call("clear", listOf(), isVarArgs = false)
     }
 
     override fun remove(key: K): V? {
-        contentHolder.call("$name.remove", listOf(key), isVarArgs = false)
+        contentHolder.call("remove", listOf(key), isVarArgs = false)
         return null // we cannot return the actual value. Don't rely on this!
     }
 
     override fun putAll(from: Map<out K, V>) {
-        contentHolder.mapPutAll(name, from)
+        contentHolder.mapPutAll(from)
     }
 
     // ----------
