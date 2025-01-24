@@ -79,11 +79,17 @@ class AdbDeviceFailResponseException(
             this(deviceSerial, service, extractMessageFromBuffer(buffer))
 
     override val message: String
-        get() = "'$failMessage' error on ${device.shortDescription} executing service '$service'"
+        get() = "'$failMessage' error on ${device.shortDescription} executing service " +
+                "'${service.sanitizeForLogging()}'"
 
     override fun createCopy(): AdbDeviceFailResponseException {
         return AdbDeviceFailResponseException(device, service, failMessage).also {
             it.initCause(this)
         }
     }
+}
+
+private fun String.sanitizeForLogging(): String {
+    // Service string may contain nulls as ABB or ABB_EXEC services use nulls to separate arguments
+    return this.replace("\u0000", "[NUL]")
 }
