@@ -739,3 +739,8 @@ https://issuetracker.google.com/387328291
   * com.android.build.api.variant.AndroidComponentsExtension.addKspConfigurations: void (boolean)
   * com.android.build.api.variant.AndroidComponentsExtension.addSourceSetConfigurations: void (java.lang.String)
   * com.android.build.api.variant.Component.getResolvableConfiguration: org.gradle.api.artifacts.Configuration (java.lang.String)
+https://issuetracker.google.com/392162853
+  * com.android.build.api.dsl.AgpTestSuite implements org.gradle.testing.base.TestSuite
+  * com.android.build.api.dsl.AgpTestSuite.getTargetProductFlavors: java.util.List<kotlin.Pair<java.lang.String, java.lang.String>> ()
+  * com.android.build.api.dsl.AgpTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()

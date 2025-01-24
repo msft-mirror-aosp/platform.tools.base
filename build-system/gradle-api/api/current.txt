@@ -290,6 +290,13 @@ package com.android.build.api.dsl {
   @Deprecated public interface AdbOptions extends com.android.build.api.dsl.Installation {
   }
 
+  @org.gradle.api.Incubating public interface AgpTestSuite extends org.gradle.testing.base.TestSuite {
+    method @org.gradle.api.Incubating public java.util.List<kotlin.Pair<java.lang.String,java.lang.String>> getTargetProductFlavors();
+    method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
+    property @org.gradle.api.Incubating public abstract java.util.List<kotlin.Pair<java.lang.String,java.lang.String>> targetProductFlavors;
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
+  }
+
   @org.gradle.api.Incubating public interface AiPackExtension {
     method @org.gradle.api.Incubating public void dynamicDelivery(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicDelivery,kotlin.Unit> action);
     method @org.gradle.api.Incubating public com.android.build.api.dsl.DynamicDelivery getDynamicDelivery();
@@ -2179,6 +2186,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedDevices getManagedDevices();
     method public String? getReportDir();
     method public String? getResultsDir();
+    method @org.gradle.api.Incubating public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> getSuites();
     method public Integer? getTargetSdk();
     method public String? getTargetSdkPreview();
     method public com.android.build.api.dsl.UnitTestOptions getUnitTests();
@@ -2200,6 +2208,7 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
     property public abstract String? reportDir;
     property public abstract String? resultsDir;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> suites;
     property public abstract Integer? targetSdk;
     property public abstract String? targetSdkPreview;
     property public abstract com.android.build.api.dsl.UnitTestOptions unitTests;
