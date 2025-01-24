@@ -20,14 +20,19 @@ PROTOC_GRPC_VERSION = "1.57.0"
 ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])
 
 def _gen_proto_impl(ctx):
-    inputs = []
-    inputs += ctx.files.srcs + ctx.files.include
+    inputs = ctx.files.srcs + ctx.files.include
 
     args = []
     needs_label_path = False
     proto_paths = []
     for src_target in ctx.attr.srcs:
-        proto_paths.append(src_target.label.workspace_root + "/" + ctx.attr.strip_prefix)
+        prefix = []
+        if src_target.label.workspace_root:
+            prefix.append(src_target.label.workspace_root)
+        if ctx.attr.strip_prefix:
+            prefix.append(ctx.attr.strip_prefix)
+        if prefix:
+            proto_paths.append("/".join(prefix))
         if ProtoPackageInfo in src_target:
             for path in src_target[ProtoPackageInfo].proto_paths:
                 proto_paths.append(path)
