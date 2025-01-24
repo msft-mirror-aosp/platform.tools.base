@@ -219,7 +219,6 @@ maven_repository(
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto:android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat:android-test-plugin-host-logcat",
         "//tools/base/utp/android-test-plugin-host-logcat-proto:android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-host-retention:android-test-plugin-host-retention",
         "//tools/base/utp/android-test-plugin-result-listener-gradle:android-test-plugin-result-listener-gradle",
         "//tools/base/utp/utp-common:utp-common",
         "@maven//:com.google.testing.platform.android-driver-instrumentation",

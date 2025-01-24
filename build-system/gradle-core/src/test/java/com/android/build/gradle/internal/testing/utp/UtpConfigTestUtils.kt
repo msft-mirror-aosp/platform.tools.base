@@ -65,7 +65,6 @@ fun assertRunnerConfigProto(
     useTestStorageService: Boolean = false,
     noWindowAnimation: Boolean = false,
     instrumentationArgs: Map<String, String> = mapOf(),
-    iceboxConfig: String = "",
     emulatorControlConfig: String = "",
     useGradleManagedDeviceProvider: Boolean = false,
     testCoverageConfig: String = "",
@@ -151,28 +150,6 @@ fun assertRunnerConfigProto(
             type_url: "type.googleapis.com/com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfig"
             value {
               ${"\n" + testCoverageConfig.trimIndent().prependIndent(" ".repeat(14))}
-            }
-          }
-          use_single_class_loader: true
-        }
-        """
-    } else {
-        ""
-    }
-
-    val iceboxPluginProto = if (iceboxConfig.isNotBlank()) { """
-        host_plugin {
-          label {
-            label: "ANDROID_TEST_PLUGIN_HOST_RETENTION"
-          }
-          class_name: "com.android.tools.utp.plugins.host.icebox.IceboxPlugin"
-          jar {
-            path: "path-to-TestPluginHostRetention.jar"
-          }
-          config {
-            type_url: "type.googleapis.com/com.android.tools.utp.plugins.host.icebox.proto.IceboxPlugin"
-            value {
-              ${"\n" + iceboxConfig.trimIndent().prependIndent(" ".repeat(14))}
             }
           }
           use_single_class_loader: true
@@ -327,7 +304,6 @@ fun assertRunnerConfigProto(
             id: "AGP_Test_Fixture"
           }
           ${"\n" + emulatorAccessPluginProto.trimIndent().prependIndent(" ".repeat(10))}
-          ${"\n" + iceboxPluginProto.trimIndent().prependIndent(" ".repeat(10))}
           ${"\n" + testApkInstallerConfigProto.trimIndent().prependIndent(" ".repeat(10))}
           host_plugin {
             label {

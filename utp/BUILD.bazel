@@ -15,7 +15,6 @@ UTP_SOURCE_FILES = [
     "//tools/base/utp/android-test-plugin-host-device-info:agp_gradle_build_files",
     "//tools/base/utp/android-test-plugin-host-emulator-control:agp_gradle_build_files",
     "//tools/base/utp/android-test-plugin-host-logcat:agp_gradle_build_files",
-    "//tools/base/utp/android-test-plugin-host-retention:agp_gradle_build_files",
     "//tools/base/utp/android-test-plugin-result-listener-gradle:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",

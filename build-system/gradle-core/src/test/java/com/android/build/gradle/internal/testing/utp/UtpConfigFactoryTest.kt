@@ -397,13 +397,8 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            instrumentationArgs = mapOf("debug" to "true"),
-            iceboxConfig = """
-                app_package: "com.example.application"
-                emulator_grpc_address: "localhost"
-                emulator_grpc_port: 8554
-                setup_strategy: CONNECT_BEFORE_ALL_TEST
-            """)
+            instrumentationArgs = mapOf("debug" to "true")
+        )
     }
 
     @Test
@@ -428,15 +423,8 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            instrumentationArgs = mapOf("debug" to "true"),
-            iceboxConfig = """
-                app_package: "com.example.application"
-                emulator_grpc_address: "localhost"
-                emulator_grpc_port: 8554
-                max_snapshot_number: 2
-                snapshot_compression: TARGZ
-                setup_strategy: CONNECT_BEFORE_ALL_TEST
-            """)
+            instrumentationArgs = mapOf("debug" to "true")
+        )
     }
 
     @Test
@@ -449,13 +437,8 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             useOrchestrator = true,
-            instrumentationArgs = mapOf("debug" to "true"),
-            iceboxConfig = """
-                app_package: "com.example.application"
-                emulator_grpc_address: "localhost"
-                emulator_grpc_port: 8554
-                setup_strategy: RECONNECT_BETWEEN_TEST_CASES
-            """)
+            instrumentationArgs = mapOf("debug" to "true")
+        )
     }
 
     @Test
@@ -519,11 +502,6 @@ class UtpConfigFactoryTest {
             deviceId = ":app:deviceNameDebugAndroidTest",
             useGradleManagedDeviceProvider = true,
             instrumentationArgs = mapOf("debug" to "true"),
-            iceboxConfig = """
-                app_package: "com.example.application"
-                emulator_grpc_address: "localhost"
-                setup_strategy: CONNECT_BEFORE_ALL_TEST
-            """
         )
     }
 

@@ -853,7 +853,6 @@ coverage_report(
         "//tools/base/utp/android-test-plugin-host-coverage:tests.test",
         "//tools/base/utp/android-test-plugin-host-device-info:tests.test",
         "//tools/base/utp/android-test-plugin-host-logcat:tests.test",
-        "//tools/base/utp/android-test-plugin-host-retention:tests.test",
         "//tools/base/utp/android-test-plugin-result-listener-gradle:tests.test",
     ],
 )
@@ -1206,7 +1205,6 @@ coverage_report(
         "//tools/base/utp/android-test-plugin-host-coverage:tests.test",
         "//tools/base/utp/android-test-plugin-host-device-info:tests.test",
         "//tools/base/utp/android-test-plugin-host-logcat:tests.test",
-        "//tools/base/utp/android-test-plugin-host-retention:tests.test",
         "//tools/base/utp/android-test-plugin-result-listener-gradle:tests.test",
         "//tools/data-binding:studio.compilerCommon_tests",
         "//tools/data-binding:studio.compiler_tests",

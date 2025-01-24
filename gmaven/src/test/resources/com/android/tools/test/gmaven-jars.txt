@@ -4370,20 +4370,6 @@ com/android/tools/utp/android-test-plugin-host-logcat-proto
   com/android/tools/utp/plugins/host/logcat/
   com/android/tools/utp/plugins/host/logcat/proto/
 
-com/android/tools/utp/android-test-plugin-host-retention
-  META-INF/
-  META-INF/MANIFEST.MF
-  META-INF/android-test-plugin-host-retention.kotlin_module
-  META-INF/services/
-  META-INF/services/com.google.testing.platform.api.plugin.HostPlugin
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/host/
-  com/android/tools/utp/plugins/host/icebox/
-
 com/android/tools/utp/android-test-plugin-host-retention-proto
   META-INF/
   META-INF/MANIFEST.MF
