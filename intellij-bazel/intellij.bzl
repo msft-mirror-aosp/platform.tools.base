@@ -150,20 +150,15 @@ def intellij_plugin(name, plugin_id, platforms, **kwargs):
     _platform_intellij_plugin(
         name = "%s.platform" % plugin_id,
         plugin = plugin_id,
-        target_compatible_with = select({
-            "@platforms//os:windows": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
     )
     _intellij_plugin(
         name = name,
         plugin = ":%s.platform" % plugin_id,
-        platforms = platforms,
-        visibility = ["@bazel_tools//tools/whitelists/function_transition_whitelist"] + kwargs.get("visibility", []),
-        target_compatible_with = select({
-            "@platforms//os:windows": ["@platforms//:incompatible"],
-            "//conditions:default": [],
+        platforms = select({
+            "@platforms//os:windows": ["studio-sdk"],
+            "//conditions:default": platforms,
         }),
+        visibility = ["@bazel_tools//tools/whitelists/function_transition_whitelist"] + kwargs.get("visibility", []),
     )
 
 def _fixed_intellij_platform_transition_impl(_settings, attr):
@@ -217,13 +212,12 @@ def _intellij_plugin_test(
         **kwargs):
     _transitioned_java(
         name = name + "_module",
-        platform = platform,
+        platform = select({
+            "@platforms//os:windows": "studio-sdk",
+            "//conditions:default": platform,
+        }),
         testonly = 1,
         target = module + "_testlib",
-        target_compatible_with = select({
-            "@platforms//os:windows": ["@platforms//:incompatible"],
-            "//conditions:default": [],
-        }),
     )
     native.java_test(
         name = name,
@@ -239,13 +233,15 @@ def intellij_plugin_test(name, module, plugin, platforms, data = [], visibility 
         targets.append(":" + test_name)
         _plugin_data(
             name = test_name + "_data",
-            platform = platform,
-            platforms = platforms,
-            plugin = plugin,
-            target_compatible_with = select({
-                "@platforms//os:windows": ["@platforms//:incompatible"],
-                "//conditions:default": [],
+            platform = select({
+                "@platforms//os:windows": "studio-sdk",
+                "//conditions:default": platform,
             }),
+            platforms = select({
+                "@platforms//os:windows": ["studio-sdk"],
+                "//conditions:default": platforms,
+            }),
+            plugin = plugin,
         )
         _intellij_plugin_test(
             name = test_name,
