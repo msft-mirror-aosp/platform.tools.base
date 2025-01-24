@@ -17,18 +17,25 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalBoolean
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.TestUtils
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.io.File
 
 /** Integration test checking for alignment of language version and UAST used by lint. */
 @RunWith(Parameterized::class)
@@ -41,7 +48,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
     }
 
     @get:Rule
-    val project: GradleTestProject = createGradleTestProject()
+    val rule = createGradleRule()
 
     private val kotlinLanguageVersion = TestUtils.KOTLIN_VERSION_FOR_TESTS.substringBeforeLast(".")
 
@@ -50,26 +57,27 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testDefaultBehavior() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = kotlinLanguageVersion,
+                libExpectedLanguageVersion = kotlinLanguageVersion,
+                featureExpectedLanguageVersion = kotlinLanguageVersion,
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
+                appExpectedUseK2Uast = true,
+                libExpectedUseK2Uast = true,
+                featureExpectedUseK2Uast = true,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = true,
+                kmpAndroidLibExpectedUseK2Uast = true,
+                kmpJvmLibExpectedUseK2Uast = true
+            )
+        }
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = kotlinLanguageVersion,
-            libExpectedLanguageVersion = kotlinLanguageVersion,
-            featureExpectedLanguageVersion = kotlinLanguageVersion,
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-            appExpectedUseK2Uast = true,
-            libExpectedUseK2Uast = true,
-            featureExpectedUseK2Uast = true,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = true,
-            kmpAndroidLibExpectedUseK2Uast = true,
-            kmpJvmLibExpectedUseK2Uast = true
-        )
-
-        executor().run("clean", "lint")
-        val result = executor().run("clean", "lint")
+        build.executor.run("clean", "lint")
+        val result = build.executor.run("clean", "lint")
         result.assertConfigurationCacheHit()
     }
 
@@ -78,26 +86,27 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testOldLanguageVersion() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = "1.9",
+                libExpectedLanguageVersion = "1.9",
+                featureExpectedLanguageVersion = "1.9",
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = "1.9",
+                kmpAndroidLibExpectedLanguageVersion = "1.9",
+                kmpJvmLibExpectedLanguageVersion = "1.9",
+                appExpectedUseK2Uast = false,
+                libExpectedUseK2Uast = false,
+                featureExpectedUseK2Uast = false,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = false,
+                kmpAndroidLibExpectedUseK2Uast = false,
+                kmpJvmLibExpectedUseK2Uast = false,
+                sourceSetsLanguageVersion = "1.9"
+            )
+        }
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = "1.9",
-            libExpectedLanguageVersion = "1.9",
-            featureExpectedLanguageVersion = "1.9",
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = "1.9",
-            kmpAndroidLibExpectedLanguageVersion = "1.9",
-            kmpJvmLibExpectedLanguageVersion = "1.9",
-            appExpectedUseK2Uast = false,
-            libExpectedUseK2Uast = false,
-            featureExpectedUseK2Uast = false,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = false,
-            kmpAndroidLibExpectedUseK2Uast = false,
-            kmpJvmLibExpectedUseK2Uast = false,
-            sourceSetsLanguageVersion = "1.9"
-        )
-
-        executor().run("clean", "lint")
+        build.executor.run("clean", "lint")
     }
 
     /**
@@ -105,25 +114,26 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testKotlinExperimentalTryNext() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = "2.2",
+                libExpectedLanguageVersion = "2.2",
+                featureExpectedLanguageVersion = "2.2",
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = "2.2",
+                kmpAndroidLibExpectedLanguageVersion = "2.2",
+                kmpJvmLibExpectedLanguageVersion = "2.2",
+                appExpectedUseK2Uast = true,
+                libExpectedUseK2Uast = true,
+                featureExpectedUseK2Uast = true,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = true,
+                kmpAndroidLibExpectedUseK2Uast = true,
+                kmpJvmLibExpectedUseK2Uast = true,
+            )
+        }
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = "2.2",
-            libExpectedLanguageVersion = "2.2",
-            featureExpectedLanguageVersion = "2.2",
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = "2.2",
-            kmpAndroidLibExpectedLanguageVersion = "2.2",
-            kmpJvmLibExpectedLanguageVersion = "2.2",
-            appExpectedUseK2Uast = true,
-            libExpectedUseK2Uast = true,
-            featureExpectedUseK2Uast = true,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = true,
-            kmpAndroidLibExpectedUseK2Uast = true,
-            kmpJvmLibExpectedUseK2Uast = true,
-        )
-
-        executor()
+        build.executor
             .withArgument("-Pkotlin.experimental.tryNext=true")
             .run("clean", "lint")
     }
@@ -133,26 +143,27 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testUseK2UastGlobally() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = "1.9",
+                libExpectedLanguageVersion = "1.9",
+                featureExpectedLanguageVersion = "1.9",
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = "1.9",
+                kmpAndroidLibExpectedLanguageVersion = "1.9",
+                kmpJvmLibExpectedLanguageVersion = "1.9",
+                appExpectedUseK2Uast = true,
+                libExpectedUseK2Uast = true,
+                featureExpectedUseK2Uast = true,
+                javaLibExpectedUseK2Uast = true,
+                kotlinLibExpectedUseK2Uast = true,
+                kmpAndroidLibExpectedUseK2Uast = true,
+                kmpJvmLibExpectedUseK2Uast = true,
+                sourceSetsLanguageVersion = "1.9"
+            )
+        }
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = "1.9",
-            libExpectedLanguageVersion = "1.9",
-            featureExpectedLanguageVersion = "1.9",
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = "1.9",
-            kmpAndroidLibExpectedLanguageVersion = "1.9",
-            kmpJvmLibExpectedLanguageVersion = "1.9",
-            appExpectedUseK2Uast = true,
-            libExpectedUseK2Uast = true,
-            featureExpectedUseK2Uast = true,
-            javaLibExpectedUseK2Uast = true,
-            kotlinLibExpectedUseK2Uast = true,
-            kmpAndroidLibExpectedUseK2Uast = true,
-            kmpJvmLibExpectedUseK2Uast = true,
-            sourceSetsLanguageVersion = "1.9"
-        )
-
-        executor()
+        build.executor
             .with(OptionalBooleanOption.LINT_USE_K2_UAST, true)
             .run("clean", "lint")
     }
@@ -162,34 +173,33 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testUseK2UastInAppOnly() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = "1.9",
+                libExpectedLanguageVersion = "1.9",
+                featureExpectedLanguageVersion = "1.9",
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = "1.9",
+                kmpAndroidLibExpectedLanguageVersion = "1.9",
+                kmpJvmLibExpectedLanguageVersion = "1.9",
+                appExpectedUseK2Uast = true,
+                libExpectedUseK2Uast = false,
+                featureExpectedUseK2Uast = false,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = false,
+                kmpAndroidLibExpectedUseK2Uast = false,
+                kmpJvmLibExpectedUseK2Uast = false,
+                sourceSetsLanguageVersion = "1.9"
+            )
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = "1.9",
-            libExpectedLanguageVersion = "1.9",
-            featureExpectedLanguageVersion = "1.9",
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = "1.9",
-            kmpAndroidLibExpectedLanguageVersion = "1.9",
-            kmpJvmLibExpectedLanguageVersion = "1.9",
-            appExpectedUseK2Uast = true,
-            libExpectedUseK2Uast = false,
-            featureExpectedUseK2Uast = false,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = false,
-            kmpAndroidLibExpectedUseK2Uast = false,
-            kmpJvmLibExpectedUseK2Uast = false,
-            sourceSetsLanguageVersion = "1.9"
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
+            androidApplication(":app") {
                 android {
-                    experimentalProperties["${OptionalBoolean.LINT_USE_K2_UAST.key}"] = true
+                    experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = true
                 }
-            """.trimIndent()
-        )
-        executor().run("clean", "lint")
+            }
+        }
+
+        build.executor.run("clean", "lint")
     }
 
     /**
@@ -197,34 +207,33 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testUseK2UastInLibOnly() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = "1.9",
+                libExpectedLanguageVersion = "1.9",
+                featureExpectedLanguageVersion = "1.9",
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = "1.9",
+                kmpAndroidLibExpectedLanguageVersion = "1.9",
+                kmpJvmLibExpectedLanguageVersion = "1.9",
+                appExpectedUseK2Uast = false,
+                libExpectedUseK2Uast = true,
+                featureExpectedUseK2Uast = false,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = false,
+                kmpAndroidLibExpectedUseK2Uast = false,
+                kmpJvmLibExpectedUseK2Uast = false,
+                sourceSetsLanguageVersion = "1.9"
+            )
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = "1.9",
-            libExpectedLanguageVersion = "1.9",
-            featureExpectedLanguageVersion = "1.9",
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = "1.9",
-            kmpAndroidLibExpectedLanguageVersion = "1.9",
-            kmpJvmLibExpectedLanguageVersion = "1.9",
-            appExpectedUseK2Uast = false,
-            libExpectedUseK2Uast = true,
-            featureExpectedUseK2Uast = false,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = false,
-            kmpAndroidLibExpectedUseK2Uast = false,
-            kmpJvmLibExpectedUseK2Uast = false,
-            sourceSetsLanguageVersion = "1.9"
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject(":lib").buildFile,
-            """
+            androidLibrary(":lib") {
                 android {
-                    experimentalProperties["${OptionalBoolean.LINT_USE_K2_UAST.key}"] = true
+                    experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = true
                 }
-            """.trimIndent()
-        )
-        executor().run("clean", "lint")
+            }
+        }
+
+        build.executor.run("clean", "lint")
     }
 
     /**
@@ -232,25 +241,26 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testDisableK2UastGlobally() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = kotlinLanguageVersion,
+                libExpectedLanguageVersion = kotlinLanguageVersion,
+                featureExpectedLanguageVersion = kotlinLanguageVersion,
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
+                appExpectedUseK2Uast = false,
+                libExpectedUseK2Uast = false,
+                featureExpectedUseK2Uast = false,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = false,
+                kmpAndroidLibExpectedUseK2Uast = false,
+                kmpJvmLibExpectedUseK2Uast = false,
+            )
+        }
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = kotlinLanguageVersion,
-            libExpectedLanguageVersion = kotlinLanguageVersion,
-            featureExpectedLanguageVersion = kotlinLanguageVersion,
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-            appExpectedUseK2Uast = false,
-            libExpectedUseK2Uast = false,
-            featureExpectedUseK2Uast = false,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = false,
-            kmpAndroidLibExpectedUseK2Uast = false,
-            kmpJvmLibExpectedUseK2Uast = false,
-        )
-
-        executor()
+        build.executor
             .with(OptionalBooleanOption.LINT_USE_K2_UAST, false)
             .run("clean", "lint")
     }
@@ -260,33 +270,32 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testDisableK2UastInAppOnly() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = kotlinLanguageVersion,
+                libExpectedLanguageVersion = kotlinLanguageVersion,
+                featureExpectedLanguageVersion = kotlinLanguageVersion,
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
+                appExpectedUseK2Uast = false,
+                libExpectedUseK2Uast = true,
+                featureExpectedUseK2Uast = true,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = true,
+                kmpAndroidLibExpectedUseK2Uast = true,
+                kmpJvmLibExpectedUseK2Uast = true,
+            )
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = kotlinLanguageVersion,
-            libExpectedLanguageVersion = kotlinLanguageVersion,
-            featureExpectedLanguageVersion = kotlinLanguageVersion,
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-            appExpectedUseK2Uast = false,
-            libExpectedUseK2Uast = true,
-            featureExpectedUseK2Uast = true,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = true,
-            kmpAndroidLibExpectedUseK2Uast = true,
-            kmpJvmLibExpectedUseK2Uast = true,
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
+            androidApplication(":app") {
                 android {
-                    experimentalProperties["${OptionalBoolean.LINT_USE_K2_UAST.key}"] = false
+                    experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = false
                 }
-            """.trimIndent()
-        )
-        executor().run("clean", "lint")
+            }
+        }
+
+        build.executor.run("clean", "lint")
     }
 
     /**
@@ -294,80 +303,76 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testDisableK2UastInLibOnly() {
+        val build = rule.build {
+            addLanguageVersionsToProject(
+                appExpectedLanguageVersion = kotlinLanguageVersion,
+                libExpectedLanguageVersion = kotlinLanguageVersion,
+                featureExpectedLanguageVersion = kotlinLanguageVersion,
+                javaLibExpectedLanguageVersion = null,
+                kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
+                kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
+                appExpectedUseK2Uast = true,
+                libExpectedUseK2Uast = false,
+                featureExpectedUseK2Uast = true,
+                javaLibExpectedUseK2Uast = false,
+                kotlinLibExpectedUseK2Uast = true,
+                kmpAndroidLibExpectedUseK2Uast = true,
+                kmpJvmLibExpectedUseK2Uast = true,
+            )
 
-        addLanguageVersionsToProject(
-            appExpectedLanguageVersion = kotlinLanguageVersion,
-            libExpectedLanguageVersion = kotlinLanguageVersion,
-            featureExpectedLanguageVersion = kotlinLanguageVersion,
-            javaLibExpectedLanguageVersion = null,
-            kotlinLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpAndroidLibExpectedLanguageVersion = kotlinLanguageVersion,
-            kmpJvmLibExpectedLanguageVersion = kotlinLanguageVersion,
-            appExpectedUseK2Uast = true,
-            libExpectedUseK2Uast = false,
-            featureExpectedUseK2Uast = true,
-            javaLibExpectedUseK2Uast = false,
-            kotlinLibExpectedUseK2Uast = true,
-            kmpAndroidLibExpectedUseK2Uast = true,
-            kmpJvmLibExpectedUseK2Uast = true,
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject(":lib").buildFile,
-            """
+            androidLibrary(":lib") {
                 android {
-                    experimentalProperties["${OptionalBoolean.LINT_USE_K2_UAST.key}"] = false
+                    experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = false
                 }
-            """.trimIndent()
-        )
-        executor().run("clean", "lint")
-    }
+            }
+        }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        build.executor.run("clean", "lint")
     }
 
     /**
      * Creates a multi-module android project
      */
-    private fun createGradleTestProject(): GradleTestProject {
+    private fun createGradleRule() = GradleRule.configure()
+        .withGradleOptions {
+            withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        }.from {
+            val kotlinPlugin =
+                if (useBuiltInKotlinSupport) {
+                    PluginType.ANDROID_BUILT_IN_KOTLIN
+                } else {
+                    PluginType.KOTLIN_ANDROID
+                }
 
-        val kotlinPluginId =
-            if (useBuiltInKotlinSupport) {
-                "com.android.experimental.built-in-kotlin"
-            } else {
-                "kotlin-android"
-            }
+            androidApplication(":app") {
+                applyPlugin(kotlinPlugin)
 
-        val app =
-            MinimalSubProject.app()
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "$kotlinPluginId"
+                android {
+                    dynamicFeatures += listOf(":feature")
+                    lint {
+                        checkDependencies = true
+                        textOutput = File("lint-report.txt")
+                        checkAllWarnings = true
+                        checkTestSources = true
+                    }
+                }
 
-                        android {
-                            dynamicFeatures = [":feature"]
-                            lint {
-                                checkDependencies = true
-                                textOutput = file("lint-report.txt")
-                                checkAllWarnings = true
-                                checkTestSources = true
-                            }
-                        }
+                kotlin {
+                    jvmToolchain(17)
+                }
 
-                        kotlin {
-                            jvmToolchain(17)
-                        }
+                dependencies {
+                    implementation(project(":lib"))
+                    implementation(project(":java-lib"))
+                    implementation(project(":kotlin-lib"))
+                    implementation(project(":kmp-android-lib"))
+                    implementation(project(":kmp-jvm-lib"))
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                    androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                }
 
-                        dependencies {
-                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                        }
-                    """.trimIndent()
-                )
-                .withFile(
+                files.add(
                     "src/main/kotlin/com/example/ExampleClass.kt",
                     // language=kotlin
                     """
@@ -376,129 +381,74 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
                         class ExampleClass
                     """.trimIndent()
                 )
+            }
 
-        val lib =
-            MinimalSubProject.lib()
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "$kotlinPluginId"
+            androidLibrary(":lib") {
+                applyPlugin(kotlinPlugin)
+                android {
+                    lint {
+                        checkAllWarnings = true
+                        checkTestSources = true
+                    }
+                }
 
-                        android {
-                            lint {
-                                checkAllWarnings = true
-                                checkTestSources = true
-                            }
-                        }
+                dependencies {
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                    androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                }
+            }
 
-                        dependencies {
-                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                        }
-                    """.trimIndent()
-                )
+            androidFeature(":feature") {
+                applyPlugin(kotlinPlugin)
+                android {
+                    lint {
+                        checkAllWarnings = true
+                        checkTestSources = true
+                    }
+                }
 
-        val feature =
-            MinimalSubProject.dynamicFeature("com.example.feature")
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "$kotlinPluginId"
+                dependencies {
+                    implementation(project(":app"))
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                    androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+                }
+            }
 
-                        android {
-                            lint {
-                                checkAllWarnings = true
-                                checkTestSources = true
-                            }
-                        }
+            genericProject(":java-lib") {
+                applyPlugin(PluginType.JAVA_LIBRARY)
+                applyPlugin(PluginType.LINT) {
+                    checkAllWarnings = true
+                    checkTestSources = true
+                }
+            }
 
-                        dependencies {
-                            implementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-                        }
-                    """.trimIndent()
-                )
+            genericProject(":kotlin-lib") {
+                applyPlugin(PluginType.KOTLIN_JVM) { }
+                applyPlugin(PluginType.LINT) {
+                    checkAllWarnings = true
+                    checkTestSources = true
+                }
+            }
 
-        val javaLib =
-            MinimalSubProject.javaLibrary()
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "com.android.lint"
+            // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
+            androidKotlinMultiplatformLibrary(":kmp-android-lib") {
+                applyPlugin(PluginType.LINT)
+            }
 
-                        lint {
-                            checkAllWarnings = true
-                            checkTestSources = true
-                        }
-                    """.trimIndent()
-                )
+            // kmpJvmLib is a KMP library with only a jvm target (no android target)
+            kotlinMultiplatformLibrary(":kmp-jvm-lib") {
+                applyPlugin(PluginType.LINT)
 
-        val kotlinLib =
-            MinimalSubProject.javaLibrary()
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "com.android.lint"
-                        apply plugin: "kotlin"
-
-                        lint {
-                            checkAllWarnings = true
-                            checkTestSources = true
-                        }
-                    """.trimIndent()
-                )
-
-        // kmpAndroidLib is a KMP library with only an android target (no jvm targets)
-        val kmpAndroidLib =
-            MinimalSubProject.kotlinMultiplatformAndroid("com.example.kmp")
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "com.android.lint"
-                    """.trimIndent()
-                )
-
-        // kmpJvmLib is a KMP library with only a jvm target (no android target)
-        val kmpJvmLib =
-            MinimalSubProject.kotlinMultiplatformJvmOnly()
-                .appendToBuild(
-                    // language=groovy
-                    """
-                        apply plugin: "com.android.lint"
-
-                        kotlin {
-                            jvm()
-                        }
-                    """.trimIndent()
-                )
-
-        return GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .subproject(":feature", feature)
-                    .subproject(":java-lib", javaLib)
-                    .subproject(":kotlin-lib", kotlinLib)
-                    .subproject(":kmp-android-lib", kmpAndroidLib)
-                    .subproject(":kmp-jvm-lib", kmpJvmLib)
-                    .dependency(app, lib)
-                    .dependency(feature, app)
-                    .dependency(app, javaLib)
-                    .dependency(app, kotlinLib)
-                    .dependency(app, kmpAndroidLib)
-                    .dependency(app, kmpJvmLib)
-                    .build()
-            )
-            .withBuiltInKotlinSupport(useBuiltInKotlinSupport)
-            .withKotlinGradlePlugin(!useBuiltInKotlinSupport)
-            .create()
-    }
+                kotlin {
+                    jvm()
+                }
+            }
+        }
 
     /**
      * Adds source set language versions and expected language versions to [project]
      */
-    private fun addLanguageVersionsToProject(
+    private fun GradleBuildDefinition.addLanguageVersionsToProject(
         appExpectedLanguageVersion: String?,
         libExpectedLanguageVersion: String?,
         featureExpectedLanguageVersion: String?,
@@ -515,206 +465,284 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
         kmpJvmLibExpectedUseK2Uast: Boolean,
         sourceSetsLanguageVersion: String? = null
     ) {
-        sourceSetsLanguageVersion?.let {
-            val kotlinSubProjectNames =
-                listOf("app", "lib", "feature", "kotlin-lib", "kmp-android-lib", "kmp-jvm-lib")
-            for (subprojectName in kotlinSubProjectNames) {
-                TestFileUtils.appendToFile(
-                    project.getSubproject(subprojectName).buildFile,
-                    """
-                        kotlin {
-                           sourceSets.all {
-                               languageSettings {
-                                   languageVersion = "$it"
-                               }
-                           }
-                        }
-                    """.trimIndent()
-                )
-                // TODO(b/341765853): Support setting language version via source sets with built-in
-                //  Kotlin support.
-                if (useBuiltInKotlinSupport) {
-                    TestFileUtils.appendToFile(
-                        project.getSubproject(subprojectName).buildFile,
-                        """
-                            tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-                                kotlinOptions {
-                                    languageVersion = "$it"
-                                }
+        sourceSetsLanguageVersion?.let { version ->
+            fun KotlinExtension.configureKotlinSourceSets() {
+                sourceSets.all {
+                    it.languageSettings {
+                        languageVersion = version
+                    }
+                }
+            }
+
+            val kotlinSubProjectPaths =
+                listOf(":app", ":lib", ":feature", ":kotlin-lib", ":kmp-android-lib", ":kmp-jvm-lib")
+            for (subprojectPath in kotlinSubProjectPaths) {
+                configure(subprojectPath) {
+                    when (this) {
+                        is AndroidProjectDefinition<*> -> {
+                            kotlin {
+                                configureKotlinSourceSets()
                             }
-                        """.trimIndent()
-                    )
+                        }
+                        is KotlinMultiplatformDefinition -> {
+                            kotlin.configureKotlinSourceSets()
+                        }
+                        is GenericProjectDefinition -> {
+                            reconfigurePlugin(PluginType.KOTLIN_JVM) {
+                                configureKotlinSourceSets()
+                            }
+                        }
+                        else -> throw RuntimeException("unsupported project type: ${javaClass}")
+                    }
+                    // TODO(b/341765853): Support setting language version via source sets with built-in
+                    //  Kotlin support.
+                    if (useBuiltInKotlinSupport) {
+                        pluginCallbacks += SourceSetsLanguageVersion::class.java
+                    }
+
+                }
+            }
+
+            if (useBuiltInKotlinSupport) {
+                gradleProperties {
+                    add(SourceSetsLanguageVersion.KEY, version)
                 }
             }
         }
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeDebug") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${appExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected app language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $appExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected app useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        // method to set up a project with its lint check callback
+        fun applyLintCheckCallback(
+            path: String,
+            callbackClass: Class<out LintAnalyzeCheck>,
+            useK2UastKey: String,
+            useK2UastExpected: Boolean,
+            languageVersionKey: String,
+            languageVersionExpected: String?
+
+        ) {
+            configure(path) {
+                pluginCallbacks += callbackClass
+            }
+            gradleProperties {
+                add(useK2UastKey, useK2UastExpected.toString())
+                languageVersionExpected?.let {
+                    add(languageVersionKey, it)
+                }
+            }
+        }
+
+        applyLintCheckCallback(
+            path = ":app",
+            callbackClass = AppLintAnalyzeCheck::class.java,
+            useK2UastKey = AppLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = appExpectedUseK2Uast,
+            languageVersionKey = AppLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = appExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("lib").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeDebug") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${libExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected lib language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $libExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected lib useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":lib",
+            callbackClass = LibLintAnalyzeCheck::class.java,
+            useK2UastKey = LibLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = libExpectedUseK2Uast,
+            languageVersionKey = LibLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = libExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("feature").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeDebug") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${featureExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected feature language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $featureExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected feature useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":feature",
+            callbackClass = FeatureLintAnalyzeCheck::class.java,
+            useK2UastKey = FeatureLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = featureExpectedUseK2Uast,
+            languageVersionKey = FeatureLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = featureExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("java-lib").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeJvmMain") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${javaLibExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected java-lib language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $javaLibExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected java-lib useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":java-lib",
+            callbackClass = JavaLibLintAnalyzeCheck::class.java,
+            useK2UastKey = JavaLibLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = javaLibExpectedUseK2Uast,
+            languageVersionKey = JavaLibLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = javaLibExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("kotlin-lib").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeJvmMain") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${kotlinLibExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected kotlin-lib language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $kotlinLibExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected kotlin-lib useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":kotlin-lib",
+            callbackClass = KotlinLibLintAnalyzeCheck::class.java,
+            useK2UastKey = KotlinLibLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = kotlinLibExpectedUseK2Uast,
+            languageVersionKey = KotlinLibLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = kotlinLibExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmp-android-lib").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeAndroidMain") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${kmpAndroidLibExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected kmp-android-lib language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $kmpAndroidLibExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected kmp-android-lib useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":kmp-android-lib",
+            callbackClass = KmpAndroidLibLintAnalyzeCheck::class.java,
+            useK2UastKey = KmpAndroidLibLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = kmpAndroidLibExpectedUseK2Uast,
+            languageVersionKey = KmpAndroidLibLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = kmpAndroidLibExpectedLanguageVersion
         )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmp-jvm-lib").buildFile,
-            // language=groovy
-            """
-               afterEvaluate {
-                    tasks.named("lintAnalyzeJvmMain") {
-                        doLast {
-                            def languageVersion = it.uastInputs.kotlinLanguageVersion ?: "null"
-                            if (languageVersion != "${kmpJvmLibExpectedLanguageVersion ?: "null"}") {
-                                throw new RuntimeException(
-                                    "Unexpected kmp-jvm-lib language version: " + languageVersion
-                                )
-                            }
-                            if (it.uastInputs.useK2Uast != $kmpJvmLibExpectedUseK2Uast) {
-                                throw new RuntimeException(
-                                    "Unexpected kmp-jvm-lib useK2Uast: " + it.uastInputs.useK2Uast
-                                )
-                            }
-                        }
-                    }
-               }
-            """.trimIndent()
+        applyLintCheckCallback(
+            path = ":kmp-jvm-lib",
+            callbackClass = KmpJvmLibLintAnalyzeCheck::class.java,
+            useK2UastKey = KmpJvmLibLintAnalyzeCheck.KEY_USE_K2_UAST,
+            useK2UastExpected = kmpJvmLibExpectedUseK2Uast,
+            languageVersionKey = KmpJvmLibLintAnalyzeCheck.KEY_LANGUAGE_VERSION,
+            languageVersionExpected = kmpJvmLibExpectedLanguageVersion
         )
-
     }
+}
+
+class SourceSetsLanguageVersion: GenericCallback {
+    companion object {
+        const val KEY = "LintAlignUastWithLanguageVersionTest.SourceSetsLanguageVersion"
+    }
+
+    override fun handleProject(project: Project) {
+        val version = project.providers.gradleProperty(KEY).orNull
+            ?: throw RuntimeException("Missing key for SourceSetsLanguageVersion callback")
+
+        project.tasks.withType(KotlinCompile::class.java).configureEach {
+            it.kotlinOptions {
+                languageVersion = version
+            }
+        }
+    }
+}
+
+/**
+ *  Generic call back to validate projects. This is not to be used directly. Instead,
+ *  each project extends this to provide the right task name, and key values
+ */
+abstract class LintAnalyzeCheck: GenericCallback {
+    abstract val lintTaskName: String
+    abstract val languageVersionKey: String
+    abstract val useK2UastKey: String
+
+    override fun handleProject(project: Project) {
+        val expectedLanguageVersion = project.expectedLanguageVersion()
+        val expectedUseK2Uast = project.expectedUseK2Uast()
+        val projectPath = project.path
+
+        project.afterEvaluate {
+            project.tasks.named(lintTaskName) { genericTask ->
+                val lintTask = genericTask as AndroidLintAnalysisTask
+
+                lintTask.doLast {
+                    if (lintTask.uastInputs.kotlinLanguageVersion != expectedLanguageVersion) {
+                        throw RuntimeException("Unexpected $projectPath language version: " + lintTask.uastInputs.kotlinLanguageVersion)
+                    }
+                    if (lintTask.uastInputs.useK2Uast != expectedUseK2Uast) {
+                        throw RuntimeException("Unexpected $projectPath useK2Uast: " + lintTask.uastInputs.useK2Uast)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun Project.expectedUseK2Uast(): Boolean = providers.gradleProperty(useK2UastKey).orNull?.toBoolean()
+        ?: throw RuntimeException("Missing value for $useK2UastKey")
+
+    private fun Project.expectedLanguageVersion(): String? = providers.gradleProperty(languageVersionKey).orNull
+}
+
+class AppLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.AppLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.AppLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeDebug"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class LibLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.LibLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.LibLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeDebug"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class FeatureLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.FeatureLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.FeatureLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeDebug"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class JavaLibLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.JavaLibLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.JavaLibLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeJvmMain"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class KotlinLibLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.KotlinLibLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.KotlinLibLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeJvmMain"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class KmpAndroidLibLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.KmpAndroidLibLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.KmpAndroidLibLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeAndroidMain"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
+}
+
+class KmpJvmLibLintAnalyzeCheck: LintAnalyzeCheck() {
+    companion object {
+        const val KEY_USE_K2_UAST = "LintAlignUastWithLanguageVersionTest.KmpJvmLibLintAnalyzeCheck.expectedUseK2Uast"
+        const val KEY_LANGUAGE_VERSION = "LintAlignUastWithLanguageVersionTest.KmpJvmLibLintAnalyzeCheck.expectedLanguageVersion"
+    }
+
+    override val lintTaskName: String
+        get() = "lintAnalyzeJvmMain"
+    override val languageVersionKey: String
+        get() = KEY_LANGUAGE_VERSION
+    override val useK2UastKey: String
+        get() = KEY_USE_K2_UAST
 }

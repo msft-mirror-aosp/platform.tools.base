@@ -161,29 +161,5 @@ class MinimalSubProject private constructor(
                 namespace = null,
             )
         }
-
-        fun kotlinMultiplatformAndroid(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.kotlin.multiplatform.library",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = namespace,
-                isMultiplatform = true,
-                requiredPlugins = listOf("org.jetbrains.kotlin.multiplatform"),
-            )
-        }
-
-        fun kotlinMultiplatformJvmOnly(): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "org.jetbrains.kotlin.multiplatform",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = null,
-            )
-        }
     }
 }

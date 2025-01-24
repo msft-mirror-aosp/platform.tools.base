@@ -59,6 +59,18 @@ internal open class GenericProjectDefinitionImpl(path: String): GradleProjectDef
         super.applyPlugin(type, version, applyFirst)
     }
 
+    override fun <T> applyPlugin(
+        type: PluginType.PluginTypeWithExtension<T>,
+        version: String?,
+        applyFirst: Boolean,
+        action: (T.() -> Unit)?
+    ) {
+        if (type.isAndroid) {
+            throw RuntimeException("Do not use genericProject for Android Plugins")
+        }
+        super.applyPlugin(type, version, applyFirst, action)
+    }
+
     override fun replaceAppliedPlugin(type: PluginType, version: String) {
         if (type.isAndroid) {
             throw RuntimeException("Do not use genericProject for Android Plugins")

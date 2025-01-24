@@ -99,7 +99,7 @@ interface GradleBuild {
      * Queries for a Kotlin multiplatform project via its gradle path.
      * The project must exist and be a Kotlin multiplatform project.
      */
-    fun androidKotlinMultiplatformLibrary(path: String): KotlinMultiplatformAndroid
+    fun kotlinMultiplatformLibrary(path: String): KotlinMultiplatformProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -289,14 +289,14 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
-    override fun androidKotlinMultiplatformLibrary(path: String): KotlinMultiplatformAndroid {
+    override fun kotlinMultiplatformLibrary(path: String): KotlinMultiplatformProject {
         val project = subProject(path)
-        if (project is KotlinMultiplatformAndroid) return project
+        if (project is KotlinMultiplatformProject) return project
 
         throw RuntimeException(
             """
-                Project with path '$path' is not a Kotling Multiplatform Project.
-                Possible options are ${getProjectListByType<KotlinMultiplatformAndroidImpl>()}
+                Project with path '$path' is not a Kotlin Multiplatform Project with Android.
+                Possible options are ${getProjectListByType<KotlinMultiplatformProjectImpl>()}
             """.trimIndent()
         )
     }

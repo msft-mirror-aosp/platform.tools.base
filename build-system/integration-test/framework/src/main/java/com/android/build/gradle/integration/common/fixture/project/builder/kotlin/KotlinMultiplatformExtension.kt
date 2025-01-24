@@ -34,7 +34,13 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  *
  * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension]
  */
-interface KotlinMultiplatformExtension: KotlinExtension
+interface KotlinMultiplatformExtension: KotlinExtension {
+    // we cannot put the androidLibrary() function here as we need to make this dynamic based on
+    // the plugin being applied
+
+    fun jvm()
+
+}
 
 // This is already an extension method in the original class from KMP, so we need to reimplement it the same
 // way except we directly handle the proxy/dslRecorder

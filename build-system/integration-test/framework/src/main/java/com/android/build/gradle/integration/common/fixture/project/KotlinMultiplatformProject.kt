@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
@@ -30,14 +29,23 @@ import com.android.build.gradle.integration.common.fixture.project.builder.kotli
 import java.nio.file.Path
 
 /*
- * Support for Android AI Pack in the [GradleRule] fixture
+ * Support for Kotlin Multiplatform project in the [GradleRule] fixture
  */
 
 /**
  * Specialized interface for [GenericProjectDefinition]
  */
-interface KotlinMultiplatformAndroidDefinition: GradleProjectDefinition {
+interface KotlinMultiplatformDefinition: GradleProjectDefinition {
+
+    /**
+     * the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is
+     * applied
+     */
     val androidLibrary: KotlinMultiplatformAndroidLibraryExtension
+    /**
+     * configures the Android DSL object. This is only available if the
+     * [PluginType.ANDROID_KMP_LIBRARY] is applied
+     */
     fun androidLibrary(action: KotlinMultiplatformAndroidLibraryExtension.() -> Unit)
 
     val kotlin: KotlinMultiplatformExtension
@@ -48,17 +56,15 @@ interface KotlinMultiplatformAndroidDefinition: GradleProjectDefinition {
 }
 
 /**
- * Implementation of [KotlinMultiplatformAndroidDefinition]
+ * Implementation of [KotlinMultiplatformDefinition]
  */
-internal class KotlinMultiplatformAndroidDefinitionImpl(
+internal class KotlinMultiplatformDefinitionImpl(
     path: String,
-    createMinimumProject: Boolean
 ) : GradleProjectDefinitionImpl(path),
-    KotlinMultiplatformAndroidDefinition {
+    KotlinMultiplatformDefinition {
 
     init {
         applyPlugin(PluginType.KOTLIN_MPP)
-        applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
     }
 
     override fun files (action: GradleProjectFiles.() -> Unit) {
@@ -69,14 +75,12 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
         DslProxy.createProxy(
             KotlinMultiplatformAndroidLibraryExtension::class.java,
             dslRecorder,
-        ).also {
-            if (createMinimumProject) {
-                it.namespace = "pkg.name${path.replace(':', '.')}"
-                it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
-            }
-        }
+        )
 
     override fun androidLibrary(action: KotlinMultiplatformAndroidLibraryExtension.() -> Unit) {
+        if (!hasPlugin(PluginType.ANDROID_KMP_LIBRARY))
+            throw RuntimeException("ANDROID_KMP_PLUGIN not applied")
+
         action(androidLibrary)
     }
 
@@ -95,8 +99,10 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("kotlin") {
-                block("androidLibrary") {
-                    dslRecorder.writeContent(this)
+                if (hasPlugin(PluginType.ANDROID_KMP_LIBRARY)) {
+                    block("androidLibrary") {
+                        dslRecorder.writeContent(this)
+                    }
                 }
                 kotlinDslRecorder.writeContent(this)
             }
@@ -107,32 +113,35 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
 }
 
 /**
- * Specialized interface for AI Pack [AndroidProject] to use in the test
+ * Specialized interface for KMP [GradleProject] to use in the test
+ *
+ * While it implements [GeneratesAar] this will only find AARs if the android kmp library plugin
+ * is applied (obviously)
  */
-interface KotlinMultiplatformAndroid: GradleProject<KotlinMultiplatformAndroidDefinition>, GeneratesAar
+interface KotlinMultiplatformProject: GradleProject<KotlinMultiplatformDefinition>, GeneratesAar
 
 /**
- * Implementation of [AndroidProject]
+ * Implementation of [GradleProject]
  */
-internal class KotlinMultiplatformAndroidImpl(
+internal class KotlinMultiplatformProjectImpl(
     location: Path,
-    projectDefinition: KotlinMultiplatformAndroidDefinition,
-) : GradleProjectImpl<KotlinMultiplatformAndroidDefinition>(
+    projectDefinition: KotlinMultiplatformDefinition,
+) : GradleProjectImpl<KotlinMultiplatformDefinition>(
     location,
     projectDefinition,
-), KotlinMultiplatformAndroid, GeneratesAar by GeneratesAarDelegate(location) {
+), KotlinMultiplatformProject, GeneratesAar by GeneratesAarDelegate(location) {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): KotlinMultiplatformAndroid =
-        ReversibleKotlinMultiplatformAndroid(this, projectModification)
+    override fun getReversibleInstance(projectModification: TemporaryProjectModification): KotlinMultiplatformProject =
+        ReversibleKotlinMultiplatformProject(this, projectModification)
 }
 
 /**
- * Reversible version of [AiPackProject]
+ * Reversible version of [KotlinMultiplatformProject]
  */
-internal class ReversibleKotlinMultiplatformAndroid(
-    parentProject: KotlinMultiplatformAndroid,
+internal class ReversibleKotlinMultiplatformProject(
+    parentProject: KotlinMultiplatformProject,
     projectModification: TemporaryProjectModification
-) : ReversibleGradleProject<KotlinMultiplatformAndroid, KotlinMultiplatformAndroidDefinition>(
+) : ReversibleGradleProject<KotlinMultiplatformProject, KotlinMultiplatformDefinition>(
     parentProject,
     projectModification
-), KotlinMultiplatformAndroid, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)
+), KotlinMultiplatformProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

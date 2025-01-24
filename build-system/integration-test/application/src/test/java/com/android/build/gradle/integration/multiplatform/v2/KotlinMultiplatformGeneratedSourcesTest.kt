@@ -69,7 +69,7 @@ class KotlinMultiplatformGeneratedSourcesTest {
         val build = rule.build
         build.executor.run(":library:assembleAndroidMain")
 
-        build.androidKotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
+        build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
             containsJavaResourceWithContent("res.txt", "foo")
         }
     }
