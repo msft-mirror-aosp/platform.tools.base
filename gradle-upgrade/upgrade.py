@@ -131,12 +131,6 @@ for i, line in enumerate(externalBuildLines):
 with open("../../external/gradle/BUILD", 'w') as f:
     f.writelines(externalBuildLines)
 
-currentDir = Path.cwd()
-toolsDir = currentDir.parent.parent
-oldDistPath = toolsDir / "external/gradle/gradle-{0}-bin.zip".format(oldGradleVersion)
-if oldDistPath.exists():
-    oldDistPath.unlink()
-
 print("Updated tools/external/gradle")
 
 # Commit all changes
