@@ -23,18 +23,18 @@ import org.junit.Test
 
 class NamedDomainObjectContainerProxyTest {
 
-    private val contentHolder = DefaultDslContentHolder()
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun allAction() {
-        contentHolder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
+        dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
            container.all {
                it.foo = 1
            }
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             root {
               container.all {
@@ -47,14 +47,14 @@ class NamedDomainObjectContainerProxyTest {
 
     @Test
     fun allActionChained() {
-        contentHolder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
+        dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
             objectWithContainer.container.all {
                 it.foo = 1
             }
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             root {
               objectWithContainer.container.all {
@@ -67,14 +67,14 @@ class NamedDomainObjectContainerProxyTest {
 
     @Test
     fun namedAndConfigure() {
-        contentHolder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
+        dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
             container.named("foo") {
                 it.foo = 1
             }
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             root {
               container.named('foo') {
@@ -87,14 +87,14 @@ class NamedDomainObjectContainerProxyTest {
 
     @Test
     fun namedAndConfigureChained() {
-        contentHolder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
+        dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
             objectWithContainer.container.named("foo") {
                 it.foo = 1
             }
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             root {
               objectWithContainer.container.named('foo') {

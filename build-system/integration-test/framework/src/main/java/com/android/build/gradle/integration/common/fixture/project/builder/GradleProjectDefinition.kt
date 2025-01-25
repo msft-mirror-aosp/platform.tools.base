@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
@@ -112,7 +112,7 @@ internal abstract class GradleProjectDefinitionImpl(
     override val path: String
 ): GradleProjectDefinition {
 
-    protected val contentHolder = DefaultDslContentHolder()
+    protected val dslRecorder = DefaultDslRecorder()
 
     internal val plugins = mutableListOf<AppliedPlugin>()
 

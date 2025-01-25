@@ -23,15 +23,15 @@ import org.gradle.api.specs.Spec
 import java.util.function.BiFunction
 
 /**
- * Proxy class used to implement Gradle's Property. This wraps a [DslContentHolder] to record
+ * Proxy class used to implement Gradle's Property. This wraps a [DslRecorder] to record
  * the calls we care about.
  */
 class PropertyProxy<T>(
-    private val contentHolder: DslContentHolder
+    private val dslRecorder: DslRecorder
 ) : Property<T> {
 
     override fun set(value: T?) {
-        contentHolder.call("set", listOf(value), isVarArgs = false)
+        dslRecorder.call("set", listOf(value), isVarArgs = false)
     }
 
     override fun get(): T {

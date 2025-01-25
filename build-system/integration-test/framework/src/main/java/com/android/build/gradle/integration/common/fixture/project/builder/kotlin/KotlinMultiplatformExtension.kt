@@ -37,7 +37,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 interface KotlinMultiplatformExtension: KotlinExtension
 
 // This is already an extension method in the original class from KMP, so we need to reimplement it the same
-// way except we directly handle the proxy/dslContentHolder
+// way except we directly handle the proxy/dslRecorder
 val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectProvider<KotlinSourceSet>
     get() {
         return sourceSetGetterFor("androidMain")
@@ -45,11 +45,11 @@ val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectPr
 
 
 private fun NamedDomainObjectContainer<KotlinSourceSet>.sourceSetGetterFor(name: String): NamedDomainObjectProviderProxy<KotlinSourceSet> {
-    // we need to get access to the [DslContentHolder] from the proxied interface
+    // we need to get access to the [DslRecorder] from the proxied interface
     val invocationHandler = this as NamedDomainObjectContainerProxy<KotlinSourceSet>
 
     return NamedDomainObjectProviderProxy(
         KotlinSourceSet::class.java,
-        invocationHandler.contentHolder.createChainedContentHolder(name)
+        invocationHandler.dslRecorder.createChainedRecorder(name)
     )
 }

@@ -64,7 +64,7 @@ internal class AssetPackDefinitionImpl(
     override val assetPack: AssetPackExtension =
         DslProxy.createProxy(
             AssetPackExtension::class.java,
-            contentHolder,
+            dslRecorder,
         )
 
     override fun assetPack(action: AssetPackExtension.() -> Unit) {
@@ -74,7 +74,7 @@ internal class AssetPackDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("assetPack") {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
 
             emptyLine()

@@ -62,7 +62,7 @@ internal class AssetPackBundleDefinitionImpl(
     override val bundle: AssetPackBundleExtension =
         DslProxy.createProxy(
             AssetPackBundleExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 it.applicationId = "pkg.name${path.replace(':', '.')}"
@@ -77,7 +77,7 @@ internal class AssetPackBundleDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("bundle") {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
 
             emptyLine()

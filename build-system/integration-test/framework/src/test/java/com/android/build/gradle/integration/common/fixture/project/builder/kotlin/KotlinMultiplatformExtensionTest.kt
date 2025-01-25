@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder.kotlin
 
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.runNestedBlock
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.google.common.truth.Truth
@@ -24,11 +24,11 @@ import org.junit.Test
 
 class KotlinMultiplatformExtensionTest {
 
-    private val contentHolder = DefaultDslContentHolder()
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun testApplication() {
-        contentHolder.runNestedBlock("kmp", listOf(), KotlinMultiplatformExtension::class.java) {
+        dslRecorder.runNestedBlock("kmp", listOf(), KotlinMultiplatformExtension::class.java) {
             sourceSets.androidMain.configure {
                 it.languageSettings {
                     languageVersion = "foo"
@@ -37,7 +37,7 @@ class KotlinMultiplatformExtensionTest {
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             kmp {
               sourceSets.androidMain.configure {

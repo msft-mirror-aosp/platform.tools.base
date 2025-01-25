@@ -58,7 +58,7 @@ internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(
     override val aiPack: AiPackExtension =
         DslProxy.createProxy(
             AiPackExtension::class.java,
-            contentHolder,
+            dslRecorder,
         )
 
     override fun aiPack(action: AiPackExtension.() -> Unit) {
@@ -68,7 +68,7 @@ internal class AiPackDefinitionImpl(path: String) : GradleProjectDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("aiPack") {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
 
             emptyLine()

@@ -24,16 +24,16 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 /**
- * this tests the content holder only, by providing a manual instance of the object
+ * this tests the dsl recorder only, by providing a manual instance of the object
  *
  * See [BasicDslProxyTest] for usage integrated with the [DslProxy]
  */
-class DslContentHolderTest {
-    private val contentHolder = DefaultDslContentHolder()
+class DslRecorderTest {
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun simple() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "address",
             parameters = listOf(),
             instanceProvider = { AddressImpl(it) }
@@ -44,7 +44,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             address {
               street = 'foo'
@@ -57,7 +57,7 @@ class DslContentHolderTest {
 
     @Test
     fun nested() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "person",
             parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
@@ -73,7 +73,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             person {
               name = 'bob'
@@ -91,7 +91,7 @@ class DslContentHolderTest {
 
     @Test
     fun skipNullAndBlock() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "person",
             parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
@@ -100,7 +100,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             person {
               name = 'bob'
@@ -111,7 +111,7 @@ class DslContentHolderTest {
 
     @Test
     fun testOrder() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "person",
             parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
@@ -130,7 +130,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             person {
               name = 'bo'
@@ -151,7 +151,7 @@ class DslContentHolderTest {
 
     @Test
     fun getterChain() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "person",
             parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
@@ -163,7 +163,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             person {
               name = 'bob'
@@ -177,7 +177,7 @@ class DslContentHolderTest {
 
     @Test
     fun methodCall() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "person",
             parameters = listOf(),
             instanceProvider = { PersonImpl(it) }
@@ -188,7 +188,7 @@ class DslContentHolderTest {
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             person {
               name = 'bob'
@@ -201,7 +201,7 @@ class DslContentHolderTest {
 
     @Test
     fun mapPut() {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             "address",
             parameters = listOf(),
             instanceProvider = { AddressImpl(it) }
@@ -211,7 +211,7 @@ class DslContentHolderTest {
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             address {
               properties['foo'] = 'bar'
@@ -221,7 +221,7 @@ class DslContentHolderTest {
         """.trimIndent())
 
         val kts = KtsBuildWriter()
-        contentHolder.writeContent(kts)
+        dslRecorder.writeContent(kts)
         Truth.assertThat(kts.toString()).isEqualTo("""
             address {
               properties["foo"] = "bar"
@@ -233,46 +233,40 @@ class DslContentHolderTest {
 }
 
 /**
- * Manual implementation of the [Person] interface using the [DslContentHolder].
+ * Manual implementation of the [Person] interface using the [DslRecorder].
  * This simulates the code generated by [DslProxy]
  */
-class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
+class PersonImpl(private val dslRecorder: DslRecorder): Person {
 
     override var name: String
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("name", value)
+            dslRecorder.set("name", value)
         }
 
     override var surname: String?
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("surname", value)
+            dslRecorder.set("surname", value)
         }
 
     override var age: Int?
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("age", value)
+            dslRecorder.set("age", value)
         }
 
     override var isRobot: Boolean
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.setBoolean("robot", value, usingIsNotation = false)
+            dslRecorder.setBoolean("robot", value, usingIsNotation = false)
         }
 
-    // normally here we'd ask the dslContentHolder to instantiate the class,
-    // but we want to avoid this for this test so we manually create the new instance
-    // Normal code would look like:
-    //    dslContentHolder.runNestedBlock("address", Address::class.java) {
-    //      action(it)
-    //    }
     override val address: Address
-        get() = AddressImpl(dslContentHolder.createChainedContentHolder("address"))
+        get() = AddressImpl(dslRecorder.createChainedRecorder("address"))
 
     override fun address(action: Address.() -> Unit) {
-        (dslContentHolder as DefaultDslContentHolder).runNestedBlock(
+        (dslRecorder as DefaultDslRecorder).runNestedBlock(
             "address",
             parameters = listOf(),
             { AddressImpl(it) }
@@ -282,43 +276,43 @@ class PersonImpl(private val dslContentHolder: DslContentHolder): Person {
     }
 
     override fun sendMessage(message: String?) {
-        dslContentHolder.call("sendMessage", listOf(message),false)
+        dslRecorder.call("sendMessage", listOf(message),false)
     }
 
     override fun something(vararg value: String) {
-        dslContentHolder.call("something", listOf(value), true)
+        dslRecorder.call("something", listOf(value), true)
     }
 
     override fun something(someInt: Int, vararg value: String) {
-        dslContentHolder.call("something", listOf(someInt, value), true)
+        dslRecorder.call("something", listOf(someInt, value), true)
     }
 
     override fun voteFor(candidate: Person) {
-        dslContentHolder.call("voteFor", listOf(candidate), false)
+        dslRecorder.call("voteFor", listOf(candidate), false)
     }
 }
 
-class AddressImpl(private val dslContentHolder: DslContentHolder): Address {
+class AddressImpl(private val dslRecorder: DslRecorder): Address {
 
     @Suppress("UNCHECKED_CAST")
     override val properties: MutableMap<String, String>
-        get() = MapProxy<String, String>(dslContentHolder.createChainedContentHolder("properties"))
+        get() = MapProxy<String, String>(dslRecorder.createChainedRecorder("properties"))
 
     override var street: String
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("street", value)
+            dslRecorder.set("street", value)
         }
 
     override var city: String
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("city", value)
+            dslRecorder.set("city", value)
         }
 
     override var zipCode: Int
         get() = throw RuntimeException("get not supported")
         set(value) {
-            dslContentHolder.set("zipCode", value)
+            dslRecorder.set("zipCode", value)
         }
 }

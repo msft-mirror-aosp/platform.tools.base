@@ -32,14 +32,14 @@ import java.util.SortedSet
 
 class NamedDomainObjectContainerProxy<T>(
     private val theInterface: Class<T>,
-    internal val contentHolder: DslContentHolder,
+    internal val dslRecorder: DslRecorder,
 ): NamedDomainObjectContainer<T> {
 
     override fun named(
         name: String,
         configurationAction: Action<in T>
     ): NamedDomainObjectProvider<T> {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "named",
             parameters = listOf(name),
             instanceProvider = { DslProxy.createProxy(theInterface, it) }
@@ -54,7 +54,7 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun create(name: String, configureAction: Action<in T>): T {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "create",
             parameters = listOf(name),
             instanceProvider = { DslProxy.createProxy(theInterface, it) }
@@ -68,7 +68,7 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun all(action: Action<in T>) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "all",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(theInterface, it) }

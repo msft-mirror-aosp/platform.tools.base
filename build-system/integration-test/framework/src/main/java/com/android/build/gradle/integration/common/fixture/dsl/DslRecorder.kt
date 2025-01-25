@@ -16,12 +16,8 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-import com.android.build.api.dsl.BuildType
-import com.android.build.api.dsl.ExecutionProfile
-import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 /**
  * Class that record calls to DSL objects
@@ -29,15 +25,15 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  * DSL objects are represented by Proxy objects (either automatically generated via [DslProxy] or
  * manually implemented (e.g. [ListProxy], [ApplicationProductFlavorProxy], ...)
  *
- * Each proxy object records calls to it in its own instance of [DslContentHolder]. Calls are
+ * Each proxy object records calls to it in its own instance of [DslRecorder]. Calls are
  * recorded as event. There are 3 major types of events:
  * - method calls (including calls to setters).
- * - calls to getters that return a new proxy instance with its own [DslContentHolder]
+ * - calls to getters that return a new proxy instance with its own [DslRecorder]
  * - calls with lambda that run nested blocks. The object being acted on in the block is its own
- *   proxy instance with its own [DslContentHolder]
+ *   proxy instance with its own [DslRecorder]
  *
  */
-interface DslContentHolder {
+interface DslRecorder {
     /**
      * Records a = b.
      *
@@ -86,22 +82,22 @@ interface DslContentHolder {
     fun <T> runNestedBlock(
         name: String,
         parameters: List<Any>,
-        instanceProvider: (DslContentHolder) -> T,
+        instanceProvider: (DslRecorder) -> T,
         action: T.() -> Unit,
     )
 
     /**
-     * Create a chained event and returns the chained Content holder.
+     * Create a chained event and returns the chained recorder.
      *
      * This must be passed to the matching Proxy object.
      */
-    fun createChainedContentHolder(name: String): DslContentHolder
+    fun createChainedRecorder(name: String): DslRecorder
 
     // returns the content to write the
     fun writeContent(writer: BuildWriter, parentName: String? = null)
 }
 
-internal class DefaultDslContentHolder(): DslContentHolder {
+internal class DefaultDslRecorder(): DslRecorder {
 
     enum class EventType {
         ASSIGNMENT,
@@ -158,7 +154,7 @@ internal class DefaultDslContentHolder(): DslContentHolder {
 
     data class NestedBlockData(
         override val name: String,
-        val contentHolder: DslContentHolder,
+        val dslRecorder: DslRecorder,
         val args: List<Any>
     ): NamedPayload
 
@@ -203,27 +199,27 @@ internal class DefaultDslContentHolder(): DslContentHolder {
     override fun <T> runNestedBlock(
         name: String,
         parameters: List<Any>,
-        instanceProvider: (DslContentHolder) -> T,
+        instanceProvider: (DslRecorder) -> T,
         action: T.() -> Unit,
     ) {
-        val contentHolder = DefaultDslContentHolder()
+        val dslRecorder = DefaultDslRecorder()
 
-        action(instanceProvider(contentHolder))
+        action(instanceProvider(dslRecorder))
 
         eventList += Event(
             EventType.NESTED_BLOCK,
-            NestedBlockData(name, contentHolder, parameters)
+            NestedBlockData(name, dslRecorder, parameters)
         )
     }
 
-    override fun createChainedContentHolder(name: String): DslContentHolder {
-        val newHolder = DefaultDslContentHolder()
+    override fun createChainedRecorder(name: String): DslRecorder {
+        val newRecorder = DefaultDslRecorder()
         eventList += Event(
             EventType.CHAINED_CALL,
-            NamedData(name, newHolder)
+            NamedData(name, newRecorder)
         )
 
-        return newHolder
+        return newRecorder
     }
 
     private fun String?.dot(name: String): String = this?.let {
@@ -243,15 +239,15 @@ internal class DefaultDslContentHolder(): DslContentHolder {
                 }
                 EventType.NESTED_BLOCK -> {
                     val data = event.payload as NestedBlockData
-                    writer.block(parentName.dot(data.name), data.args, data.contentHolder) {
+                    writer.block(parentName.dot(data.name), data.args, data.dslRecorder) {
                         // parent name is always empty inside a nested block
                         it.writeContent(this, parentName = null)
                     }
                 }
                 EventType.CHAINED_CALL -> {
                     val payload = event.payload as NamedData
-                    val chainedContentHolder = payload.value as DslContentHolder
-                    chainedContentHolder.writeContent(writer, parentName.dot(payload.name))
+                    val chainedRecorder = payload.value as DslRecorder
+                    chainedRecorder.writeContent(writer, parentName.dot(payload.name))
                 }
                 EventType.COLLECTION_ADD -> {
                     val info = event.payload as NamedData

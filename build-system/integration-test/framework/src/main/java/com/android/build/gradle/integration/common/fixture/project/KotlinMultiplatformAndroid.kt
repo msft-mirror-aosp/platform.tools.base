@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
@@ -68,7 +68,7 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
     override val androidLibrary: KotlinMultiplatformAndroidLibraryExtension =
         DslProxy.createProxy(
             KotlinMultiplatformAndroidLibraryExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 it.namespace = "pkg.name${path.replace(':', '.')}"
@@ -80,12 +80,12 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
         action(androidLibrary)
     }
 
-    private val kotlinContentHolder = DefaultDslContentHolder()
+    private val kotlinDslRecorder = DefaultDslRecorder()
 
     override val kotlin: KotlinMultiplatformExtension =
         DslProxy.createProxy(
             KotlinMultiplatformExtension::class.java,
-            kotlinContentHolder
+            kotlinDslRecorder
         )
 
     override fun kotlin(action: KotlinMultiplatformExtension.() -> Unit) {
@@ -96,9 +96,9 @@ internal class KotlinMultiplatformAndroidDefinitionImpl(
         writer.apply {
             block("kotlin") {
                 block("androidLibrary") {
-                    contentHolder.writeContent(this)
+                    dslRecorder.writeContent(this)
                 }
-                kotlinContentHolder.writeContent(this)
+                kotlinDslRecorder.writeContent(this)
             }
 
             emptyLine()

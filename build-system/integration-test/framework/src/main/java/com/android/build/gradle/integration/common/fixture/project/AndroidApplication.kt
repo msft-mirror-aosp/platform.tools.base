@@ -48,7 +48,7 @@ internal class AndroidApplicationDefinitionImpl(
     override val android: ApplicationExtension =
         DslProxy.createProxy(
             ApplicationExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 initDefaultValues(it)

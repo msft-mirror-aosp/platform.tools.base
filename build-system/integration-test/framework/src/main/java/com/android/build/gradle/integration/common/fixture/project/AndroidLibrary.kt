@@ -47,7 +47,7 @@ internal class AndroidLibraryDefinitionImpl(
     override val android: LibraryExtension =
         DslProxy.createProxy(
             LibraryExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 initDefaultValues(it)

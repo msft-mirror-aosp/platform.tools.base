@@ -33,29 +33,29 @@ import java.io.File
  */
 @Suppress("UNCHECKED_CAST", "OVERRIDE_DEPRECATION")
 open class ProductFlavorProxy(
-    protected val contentHolder: DslContentHolder
+    protected val dslRecorder: DslRecorder
 ): ProductFlavor {
 
     override var dimension: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("dimension", value)
+            dslRecorder.set("dimension", value)
         }
 
     override fun setDimension(dimension: String?): Void? {
-        contentHolder.set("dimension", dimension)
+        dslRecorder.set("dimension", dimension)
         return null
     }
 
     override val matchingFallbacks: MutableList<String>
-        get() = ListProxy<String>(contentHolder.createChainedContentHolder("matchingFallbacks"))
+        get() = ListProxy<String>(dslRecorder.createChainedRecorder("matchingFallbacks"))
 
     override fun setMatchingFallbacks(vararg fallbacks: String) {
-        contentHolder.call("setMatchingFallbacks", listOf(fallbacks), isVarArgs = true)
+        dslRecorder.call("setMatchingFallbacks", listOf(fallbacks), isVarArgs = true)
     }
 
     override fun setMatchingFallbacks(fallbacks: List<String>) {
-        contentHolder.call("setMatchingFallbacks", fallbacks, isVarArgs = false)
+        dslRecorder.call("setMatchingFallbacks", fallbacks, isVarArgs = false)
     }
 
     override fun getName(): String {
@@ -65,65 +65,65 @@ open class ProductFlavorProxy(
     override var testApplicationId: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("testApplicationId", value)
+            dslRecorder.set("testApplicationId", value)
         }
     override var minSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("minSdk", value)
+            dslRecorder.set("minSdk", value)
         }
 
     override fun setMinSdkVersion(minSdkVersion: Int) {
-        contentHolder.call("setMinSdkVersion", listOf(minSdkVersion), isVarArgs = false)
+        dslRecorder.call("setMinSdkVersion", listOf(minSdkVersion), isVarArgs = false)
     }
 
     override fun setMinSdkVersion(minSdkVersion: String?) {
-        contentHolder.call("setMinSdkVersion", listOf(minSdkVersion), isVarArgs = false)
+        dslRecorder.call("setMinSdkVersion", listOf(minSdkVersion), isVarArgs = false)
     }
 
     override fun minSdkVersion(minSdkVersion: Int) {
-        contentHolder.call("minSdkVersion", listOf(minSdkVersion), isVarArgs = false)
+        dslRecorder.call("minSdkVersion", listOf(minSdkVersion), isVarArgs = false)
     }
 
     override fun minSdkVersion(minSdkVersion: String?) {
-        contentHolder.call("minSdkVersion", listOf(minSdkVersion), isVarArgs = false)
+        dslRecorder.call("minSdkVersion", listOf(minSdkVersion), isVarArgs = false)
     }
 
     override var minSdkPreview: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("minSdkVersion", value)
+            dslRecorder.set("minSdkVersion", value)
         }
     override var renderscriptTargetApi: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("renderscriptTargetApi", value)
+            dslRecorder.set("renderscriptTargetApi", value)
         }
     override var renderscriptSupportModeEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("renderscriptSupportModeEnabled", value)
+            dslRecorder.set("renderscriptSupportModeEnabled", value)
         }
     override var renderscriptSupportModeBlasEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("renderscriptSupportModeBlasEnabled", value)
+            dslRecorder.set("renderscriptSupportModeBlasEnabled", value)
         }
     override var renderscriptNdkModeEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("renderscriptNdkModeEnabled", value)
+            dslRecorder.set("renderscriptNdkModeEnabled", value)
         }
     override var testInstrumentationRunner: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("testInstrumentationRunner", value)
+            dslRecorder.set("testInstrumentationRunner", value)
         }
     override val testInstrumentationRunnerArguments: MutableMap<String, String>
-        get() = MapProxy<String, String>(contentHolder.createChainedContentHolder("testInstrumentationRunnerArguments"))
+        get() = MapProxy<String, String>(dslRecorder.createChainedRecorder("testInstrumentationRunnerArguments"))
 
     override fun testInstrumentationRunnerArgument(key: String, value: String) {
-        contentHolder.call(
+        dslRecorder.call(
             "testInstrumentationRunnerArgument",
             listOf(key, value),
             isVarArgs = false
@@ -131,7 +131,7 @@ open class ProductFlavorProxy(
     }
 
     override fun setTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments: MutableMap<String, String>): Any? {
-        contentHolder.call(
+        dslRecorder.call(
             "setTestInstrumentationRunnerArguments",
             listOf(testInstrumentationRunnerArguments),
             isVarArgs = false
@@ -140,7 +140,7 @@ open class ProductFlavorProxy(
     }
 
     override fun testInstrumentationRunnerArguments(args: Map<String, String>) {
-        contentHolder.call(
+        dslRecorder.call(
             "testInstrumentationRunnerArguments",
             listOf(args),
             isVarArgs = false
@@ -150,48 +150,48 @@ open class ProductFlavorProxy(
     override var testHandleProfiling: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.setBoolean("testHandleProfiling", value, usingIsNotation = false)
+            dslRecorder.setBoolean("testHandleProfiling", value, usingIsNotation = false)
         }
 
     override fun setTestHandleProfiling(testHandleProfiling: Boolean): Any? {
-        contentHolder.call("setTestHandleProfiling", listOf(testHandleProfiling), isVarArgs = false)
+        dslRecorder.call("setTestHandleProfiling", listOf(testHandleProfiling), isVarArgs = false)
         return this
     }
 
     override var testFunctionalTest: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.setBoolean("testFunctionalTest", value, usingIsNotation = false)
+            dslRecorder.setBoolean("testFunctionalTest", value, usingIsNotation = false)
         }
 
     override fun setTestFunctionalTest(testFunctionalTest: Boolean): Any? {
-        contentHolder.call("setTestFunctionalTest", listOf(testFunctionalTest), isVarArgs = false)
+        dslRecorder.call("setTestFunctionalTest", listOf(testFunctionalTest), isVarArgs = false)
         return this
     }
 
     override val resourceConfigurations: MutableSet<String>
-        get() = SetProxy<String>(contentHolder.createChainedContentHolder("resourceConfigurations"))
+        get() = SetProxy<String>(dslRecorder.createChainedRecorder("resourceConfigurations"))
 
     override fun resConfigs(config: Collection<String>) {
-        contentHolder.call("resConfigs", listOf(resConfigs()), isVarArgs = false)
+        dslRecorder.call("resConfigs", listOf(resConfigs()), isVarArgs = false)
     }
 
     override fun resConfigs(vararg config: String) {
-        contentHolder.call("resConfigs", listOf(config), isVarArgs = true)
+        dslRecorder.call("resConfigs", listOf(config), isVarArgs = true)
     }
 
     override fun resConfig(config: String) {
-        contentHolder.call("resConfigs", listOf(config), isVarArgs = false)
+        dslRecorder.call("resConfigs", listOf(config), isVarArgs = false)
     }
 
     override val vectorDrawables: VectorDrawables
         get() = DslProxy.createProxy(
             VectorDrawables::class.java,
-            contentHolder.createChainedContentHolder("vectorDrawables")
+            dslRecorder.createChainedRecorder("vectorDrawables")
         )
 
     override fun vectorDrawables(action: VectorDrawables.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "vectorDrawables",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(VectorDrawables::class.java, it) }
@@ -203,11 +203,11 @@ open class ProductFlavorProxy(
     override var wearAppUnbundled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.setBoolean("wearAppUnbundled", value, usingIsNotation = false)
+            dslRecorder.setBoolean("wearAppUnbundled", value, usingIsNotation = false)
         }
 
     override fun missingDimensionStrategy(dimension: String, requestedValue: String) {
-        contentHolder.call(
+        dslRecorder.call(
             "missingDimensionStrategy",
             listOf(dimension, requestedValue),
             isVarArgs = false
@@ -215,7 +215,7 @@ open class ProductFlavorProxy(
     }
 
     override fun missingDimensionStrategy(dimension: String, vararg requestedValues: String) {
-        contentHolder.call(
+        dslRecorder.call(
             "missingDimensionStrategy",
             listOf(dimension, requestedValues),
             isVarArgs = true
@@ -223,7 +223,7 @@ open class ProductFlavorProxy(
     }
 
     override fun missingDimensionStrategy(dimension: String, requestedValues: List<String>) {
-        contentHolder.call(
+        dslRecorder.call(
             "missingDimensionStrategy",
             listOf(dimension, requestedValues),
             isVarArgs = false
@@ -237,18 +237,18 @@ open class ProductFlavorProxy(
     override var multiDexKeepProguard: File?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("multiDexKeepProguard", value)
+            dslRecorder.set("multiDexKeepProguard", value)
         }
     override var multiDexKeepFile: File?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("multiDexKeepFile", value)
+            dslRecorder.set("multiDexKeepFile", value)
         }
     override val ndk: Ndk
-        get() = DslProxy.createProxy(Ndk::class.java, contentHolder.createChainedContentHolder("ndk"))
+        get() = DslProxy.createProxy(Ndk::class.java, dslRecorder.createChainedRecorder("ndk"))
 
     override fun ndk(action: Ndk.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "ndk",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(Ndk::class.java, it) }
@@ -258,56 +258,56 @@ open class ProductFlavorProxy(
     }
 
     override val proguardFiles: MutableList<File>
-        get() = ListProxy<File>(contentHolder.createChainedContentHolder("proguardFiles"))
+        get() = ListProxy<File>(dslRecorder.createChainedRecorder("proguardFiles"))
 
     override fun proguardFile(proguardFile: Any): Any {
-        contentHolder.call("proguardFile", listOf(proguardFile), isVarArgs = false)
+        dslRecorder.call("proguardFile", listOf(proguardFile), isVarArgs = false)
         return this
     }
 
     override fun proguardFiles(vararg files: Any): Any {
-        contentHolder.call("proguardFiles", listOf(files), isVarArgs = true)
+        dslRecorder.call("proguardFiles", listOf(files), isVarArgs = true)
         return this
     }
 
     override fun setProguardFiles(proguardFileIterable: Iterable<*>): Any {
-        contentHolder.call("setProguardFiles", listOf(proguardFileIterable), isVarArgs = false)
+        dslRecorder.call("setProguardFiles", listOf(proguardFileIterable), isVarArgs = false)
         return this
     }
 
     override val testProguardFiles: MutableList<File>
-        get() = ListProxy<File>(contentHolder.createChainedContentHolder("testProguardFiles"))
+        get() = ListProxy<File>(dslRecorder.createChainedRecorder("testProguardFiles"))
 
     override fun testProguardFile(proguardFile: Any): Any {
-        contentHolder.call("testProguardFile", listOf(proguardFile), isVarArgs = false)
+        dslRecorder.call("testProguardFile", listOf(proguardFile), isVarArgs = false)
         return this
     }
 
     override fun testProguardFiles(vararg proguardFiles: Any): Any {
-        contentHolder.call("testProguardFiles", listOf(proguardFiles), isVarArgs = true)
+        dslRecorder.call("testProguardFiles", listOf(proguardFiles), isVarArgs = true)
         return this
     }
 
     override val manifestPlaceholders: MutableMap<String, Any>
-        get() = MapProxy<String, Any>(contentHolder.createChainedContentHolder("manifestPlaceholders"))
+        get() = MapProxy<String, Any>(dslRecorder.createChainedRecorder("manifestPlaceholders"))
 
     override fun addManifestPlaceholders(manifestPlaceholders: Map<String, Any>) {
-        contentHolder.call("addManifestPlaceholders", listOf(manifestPlaceholders), isVarArgs = false)
+        dslRecorder.call("addManifestPlaceholders", listOf(manifestPlaceholders), isVarArgs = false)
     }
 
     override fun setManifestPlaceholders(manifestPlaceholders: Map<String, Any>): Void? {
-        contentHolder.call("setManifestPlaceholders", listOf(manifestPlaceholders), isVarArgs = false)
+        dslRecorder.call("setManifestPlaceholders", listOf(manifestPlaceholders), isVarArgs = false)
         return null
     }
 
     override val javaCompileOptions: JavaCompileOptions
         get() = DslProxy.createProxy(
             JavaCompileOptions::class.java,
-            contentHolder.createChainedContentHolder("javaCompileOptions")
+            dslRecorder.createChainedRecorder("javaCompileOptions")
         )
 
     override fun javaCompileOptions(action: JavaCompileOptions.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "javaCompileOptions",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(JavaCompileOptions::class.java, it) }
@@ -319,11 +319,11 @@ open class ProductFlavorProxy(
     override val shaders: Shaders
         get() = DslProxy.createProxy(
             Shaders::class.java,
-            contentHolder.createChainedContentHolder("shaders")
+            dslRecorder.createChainedRecorder("shaders")
         )
 
     override fun shaders(action: Shaders.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "shaders",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(Shaders::class.java, it) }
@@ -335,11 +335,11 @@ open class ProductFlavorProxy(
     override val externalNativeBuild: ExternalNativeBuildFlags
         get() = DslProxy.createProxy(
             ExternalNativeBuildFlags::class.java,
-            contentHolder.createChainedContentHolder("externalNativeBuild")
+            dslRecorder.createChainedRecorder("externalNativeBuild")
         )
 
     override fun externalNativeBuild(action: ExternalNativeBuildFlags.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "externalNativeBuild",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(ExternalNativeBuildFlags::class.java, it) }
@@ -349,21 +349,21 @@ open class ProductFlavorProxy(
     }
 
     override fun buildConfigField(type: String, name: String, value: String) {
-        contentHolder.call("buildConfigField", listOf(type, name, value), isVarArgs = false)
+        dslRecorder.call("buildConfigField", listOf(type, name, value), isVarArgs = false)
     }
 
     override fun resValue(type: String, name: String, value: String) {
-        contentHolder.call("resValue", listOf(type, name, value), isVarArgs = false)
+        dslRecorder.call("resValue", listOf(type, name, value), isVarArgs = false)
     }
 
     override val optimization: Optimization
         get() = DslProxy.createProxy(
             Optimization::class.java,
-            contentHolder.createChainedContentHolder("optimization")
+            dslRecorder.createChainedRecorder("optimization")
         )
 
     override fun optimization(action: Optimization.() -> Unit) {
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "optimization",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(Optimization::class.java, it) }

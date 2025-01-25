@@ -17,30 +17,30 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 class SetProxy<T>(
-    private val contentHolder: DslContentHolder
+    private val dslRecorder: DslRecorder
 ): MutableSet<T> {
 
     override fun addAll(elements: Collection<T>): Boolean {
-        contentHolder.collectionAddAll(elements)
+        dslRecorder.collectionAddAll(elements)
         return true
     }
 
     override fun add(element: T): Boolean {
-        contentHolder.collectionAdd(element)
+        dslRecorder.collectionAdd(element)
         return true
     }
 
     override fun clear() {
-        contentHolder.call("clear", listOf(), isVarArgs = false)
+        dslRecorder.call("clear", listOf(), isVarArgs = false)
     }
 
     override fun removeAll(elements: Collection<T>): Boolean {
-        contentHolder.call("removeAll", listOf(elements), isVarArgs = false)
+        dslRecorder.call("removeAll", listOf(elements), isVarArgs = false)
         return true
     }
 
     override fun remove(element: T): Boolean {
-        contentHolder.call("remove", listOf(element), isVarArgs = false)
+        dslRecorder.call("remove", listOf(element), isVarArgs = false)
         return true
     }
 

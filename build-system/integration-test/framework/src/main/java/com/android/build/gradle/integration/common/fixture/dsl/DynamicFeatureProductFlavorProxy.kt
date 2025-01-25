@@ -23,6 +23,6 @@ import com.android.build.api.dsl.DynamicFeatureProductFlavor
  * the normal Java Proxy feature (class is considered broken)
  */
 class DynamicFeatureProductFlavorProxy(
-    contentHolder: DslContentHolder
-): ProductFlavorProxy(contentHolder), DynamicFeatureProductFlavor {
+    dslRecorder: DslRecorder
+): ProductFlavorProxy(dslRecorder), DynamicFeatureProductFlavor {
 }

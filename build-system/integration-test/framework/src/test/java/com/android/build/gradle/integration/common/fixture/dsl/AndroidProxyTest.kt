@@ -24,15 +24,15 @@ import org.junit.Test
 /**
  * Class to validate that we support all the methods from the Android extensions,
  *
- * This does not test the content, this is handled by [BasicDslProxyTest] and [DslContentHolderTest]
+ * This does not test the content, this is handled by [BasicDslProxyTest] and [DslRecorderTest]
  */
 class AndroidProxyTest {
 
-    private val contentHolder = DefaultDslContentHolder()
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun testApplication() {
-        contentHolder.runNestedBlock("android", listOf(), ApplicationExtension::class.java) {
+        dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java) {
             namespace = "foo"
 
             androidResources {
@@ -58,7 +58,7 @@ class AndroidProxyTest {
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             android {
               namespace = 'foo'

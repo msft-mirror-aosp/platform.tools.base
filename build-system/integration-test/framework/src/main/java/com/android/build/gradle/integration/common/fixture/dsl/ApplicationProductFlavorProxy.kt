@@ -25,77 +25,77 @@ import com.android.build.api.dsl.ApplicationProductFlavor
  */
 @Suppress("OVERRIDE_DEPRECATION")
 class ApplicationProductFlavorProxy(
-    contentHolder: DslContentHolder
-): ProductFlavorProxy(contentHolder), ApplicationProductFlavor {
+    dslRecorder: DslRecorder
+): ProductFlavorProxy(dslRecorder), ApplicationProductFlavor {
 
     override var isDefault: Boolean
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.setBoolean("isDefault", value, usingIsNotation = true)
+            dslRecorder.setBoolean("isDefault", value, usingIsNotation = true)
         }
     override var applicationId: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("applicationId", value)
+            dslRecorder.set("applicationId", value)
         }
     override var versionCode: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("versionCode", value)
+            dslRecorder.set("versionCode", value)
         }
     override var versionName: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("versionName", value)
+            dslRecorder.set("versionName", value)
         }
     override var targetSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdk", value)
+            dslRecorder.set("targetSdk", value)
         }
 
     override fun targetSdkVersion(targetSdkVersion: Int) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override fun targetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var targetSdkPreview: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdkPreview", value)
+            dslRecorder.set("targetSdkPreview", value)
         }
 
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var maxSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("maxSdk", value)
+            dslRecorder.set("maxSdk", value)
         }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
-        contentHolder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
+        dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
     }
 
     override var applicationIdSuffix: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("applicationIdSuffix", value)
+            dslRecorder.set("applicationIdSuffix", value)
         }
     override var versionNameSuffix: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("versionNameSuffix", value)
+            dslRecorder.set("versionNameSuffix", value)
         }
     override var multiDexEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("multiDexEnabled", value)
+            dslRecorder.set("multiDexEnabled", value)
         }
     override var signingConfig: ApkSigningConfig?
         get() = throw RuntimeException("Not yet supported")

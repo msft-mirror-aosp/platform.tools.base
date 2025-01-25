@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
@@ -87,10 +87,9 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
 ): GradleProjectDefinitionImpl(path), AndroidProjectDefinition<ExtensionT> {
 
     // For kotlin, because we want this to be separate from the android extension, we have
-    // to create a separate content holder and proxy.
-    // custom content holder for kotlin so that it's not under the android one
-    private val kotlinContentHolder = DefaultDslContentHolder()
-    private val kotlinExtension: KotlinExtension = DslProxy.createProxy(KotlinExtension::class.java, kotlinContentHolder)
+    // to create a separate dsl recorder and proxy.
+    private val kotlinDslRecorder = DefaultDslRecorder()
+    private val kotlinExtension: KotlinExtension = DslProxy.createProxy(KotlinExtension::class.java, kotlinDslRecorder)
     private var kotlinActionRan = false
 
     override val files: AndroidProjectFiles = DelayedAndroidProjectFiles(this::namespace)
@@ -123,7 +122,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     }
 
     override fun resetAndroidDsl() {
-        contentHolder.clear()
+        dslRecorder.clear()
     }
 
     override fun kotlin(action: KotlinExtension.() -> Unit) {
@@ -135,14 +134,14 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     }
 
     override fun resetKotlinDsl() {
-        kotlinContentHolder.clear()
+        kotlinDslRecorder.clear()
     }
 
     override fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit) {
         if (!hasPlugin(PluginType.KOTLIN_ANDROID))
             throw RuntimeException("Cannot configure legacyKotlin without plugin KOTLIN_ANDROID")
         @Suppress("DEPRECATION")
-        contentHolder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = "kotlinOptions",
             parameters = listOf(),
             instanceProvider = { DslProxy.createProxy(KotlinJvmOptions::class.java, it) }
@@ -154,13 +153,13 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
 
             if (kotlinActionRan) {
                 emptyLine()
                 block("kotlin") {
-                    kotlinContentHolder.writeContent(this)
+                    kotlinDslRecorder.writeContent(this)
                 }
             }
 

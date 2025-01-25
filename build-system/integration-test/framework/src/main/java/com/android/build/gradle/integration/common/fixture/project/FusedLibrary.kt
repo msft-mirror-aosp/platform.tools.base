@@ -66,7 +66,7 @@ internal class FusedLibraryDefinitionImpl(
     override val androidFusedLibrary: FusedLibraryExtension =
         DslProxy.createProxy(
             FusedLibraryExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 it.namespace = "pkg.name${path.replace(':', '.')}"
@@ -80,7 +80,7 @@ internal class FusedLibraryDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block(FusedLibraryConstants.EXTENSION_NAME) {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
 
             emptyLine()
