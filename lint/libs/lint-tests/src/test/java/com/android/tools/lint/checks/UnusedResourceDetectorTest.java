@@ -2727,6 +2727,31 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
           .expectClean();
     }
 
+    public void testSkipLibrary() {
+        // Regression test for b/391955627
+        ProjectDescription library =
+                project(
+                        mLibraryManifest,
+                        projectProperties().library(true),
+                        mLibraryCode,
+                        mLibraryStrings);
+
+        lint().projects(library).run().expectClean();
+        lint().projects(library)
+                .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, true)
+                .run()
+                .expectClean();
+        lint().projects(library)
+                .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, false)
+                .run()
+                .expect(
+                        "res/values/strings.xml:6: Warning: The resource R.string.string2 appears"
+                            + " to be unused [UnusedResources]\n"
+                            + "    <string name=\"string2\">String 2</string>\n"
+                            + "            ~~~~~~~~~~~~~~\n"
+                            + "0 errors, 1 warning");
+    }
+
     @SuppressWarnings("all") // Sample code
     private TestFile mAccessibility =
             xml(
