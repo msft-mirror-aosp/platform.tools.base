@@ -52,6 +52,11 @@ class TestOptionsTest {
             throw RuntimeException("Unexpected call to `getTargets()`")
         }
 
+        private val jUnitEngineSpec = object: JUnitEngineSpec {
+            override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+        }
+
+        override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
         override val targetProductFlavors = mutableListOf<Pair<String, String>>()
         override val targetVariants = mutableListOf<String>()
     }
@@ -87,6 +92,14 @@ class TestOptionsTest {
     fun testNewUnknownTestSuite() {
         open class RandomTestSuiteImpl(name: String) : AgpTestSuiteImpl(name), RandomTestSuite {
             override var instructions: String = ""
+            override val useJunitEngine: JUnitEngineSpec =
+                object: JUnitEngineSpec {
+                    override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+                }
+
+            init {
+                DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(this.useJunitEngine)
+            }
         }
         testOptions.suites.registerBinding(
             RandomTestSuite::class.java,
@@ -97,5 +110,22 @@ class TestOptionsTest {
         Truth.assertThat(testOptions.suites.size).isEqualTo(1)
         (testOptions.suites.getByName("random") as RandomTestSuite)
             .instructions = "some instructions"
+    }
+
+    @Test
+    fun testExtraProperties() {
+        // add a required test input parameter.
+        testOptions.suites.create("journeysTest") {
+            it.useJunitEngine.let { junitEngine ->
+                DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(junitEngine)
+                junitEngine.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
+            }
+        }
+        val testSuite = testOptions.suites.getByName("journeysTest")
+        Truth.assertThat(testSuite).isNotNull()
+        Truth.assertThat(testSuite.useJunitEngine.inputs).containsExactlyElementsIn(
+            DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties
+                .plus(AgpTestSuiteInputParameters.TESTING_APK)
+        )
     }
 }
