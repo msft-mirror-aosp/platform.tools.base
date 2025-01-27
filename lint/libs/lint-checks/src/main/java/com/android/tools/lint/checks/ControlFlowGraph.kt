@@ -38,8 +38,6 @@ import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.asJava.unwrapped
-import org.jetbrains.kotlin.js.translate.declaration.hasCustomGetter
-import org.jetbrains.kotlin.js.translate.declaration.hasCustomSetter
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtLambdaExpression
@@ -2004,6 +2002,10 @@ open class ControlFlowGraph<T : Any> private constructor() {
           override fun afterVisitQualifiedReferenceExpression(
             node: UQualifiedReferenceExpression
           ) {}
+
+          private fun KtProperty.hasCustomGetter() = getter?.hasBody() ?: false
+
+          private fun KtProperty.hasCustomSetter() = setter?.hasBody() ?: false
 
           // Skip simple atomic nodes?
           override fun visitSimpleNameReferenceExpression(

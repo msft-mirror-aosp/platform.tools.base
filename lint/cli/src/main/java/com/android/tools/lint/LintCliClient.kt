@@ -99,6 +99,8 @@ import java.net.URL
 import java.net.URLConnection
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.Collections
+import java.util.IdentityHashMap
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
 import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys.PERF_MANAGER
@@ -106,7 +108,6 @@ import org.jetbrains.kotlin.cli.common.CommonCompilerPerformanceManager
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.languageVersionSettings
-import org.jetbrains.kotlin.js.inline.util.toIdentitySet
 import org.jetbrains.kotlin.light.classes.symbol.withMultiplatformLightClassSupport
 import org.jetbrains.kotlin.util.PerformanceCounter.Companion.resetAllCounters
 import org.w3c.dom.Document
@@ -1400,6 +1401,19 @@ open class LintCliClient : LintClient {
       }
     }
     return false
+  }
+
+  private fun <T> identitySet(): MutableSet<T> {
+    return Collections.newSetFromMap(IdentityHashMap<T, Boolean>())
+  }
+
+  private fun <T> Sequence<T>.toIdentitySet(): MutableSet<T> {
+    val result = identitySet<T>()
+    for (element in this) {
+      result.add(element)
+    }
+
+    return result
   }
 
   public override fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) {
