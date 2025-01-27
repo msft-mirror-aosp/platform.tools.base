@@ -538,6 +538,18 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
+     * Compares this version with the specified API and returns true if this version
+     * is greater or equal than the requested API -- that is the current version is a
+     * suitable min-api-level for the argument API.
+     *
+     * @deprecated use isAtLeast
+     */
+    @Deprecated
+    public boolean isGreaterOrEqualThan(int api) {
+        return isAtLeast(api);
+    }
+
+    /**
      * Returns the base extension level of the given API version, i.e. the extension level at
      * release.
      */
