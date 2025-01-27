@@ -17,15 +17,22 @@
 package com.android.build.gradle.internal.services
 
 import org.gradle.api.Project
+import org.gradle.api.provider.Property
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.math.ceil
 import kotlin.math.min
+import kotlin.math.ceil
 
 /** Build service to manage R8 parallelism and shared thread pool. */
-abstract class R8ParallelBuildService : BuildService<BuildServiceParameters.None>, AutoCloseable {
+abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Parameters>, AutoCloseable {
+
+    abstract class Parameters : BuildServiceParameters {
+
+        abstract val threadPoolSize: Property<Int>
+
+    }
 
     /**
      * Shared thread pool used by all R8 tasks.
@@ -36,7 +43,7 @@ abstract class R8ParallelBuildService : BuildService<BuildServiceParameters.None
      */
     val r8ThreadPool: ExecutorService by lazy {
         r8ThreadPoolCreated = true
-        newR8ThreadPool()
+        newR8ThreadPool(parameters.threadPoolSize.get())
     }
 
     private var r8ThreadPoolCreated = false
@@ -47,27 +54,34 @@ abstract class R8ParallelBuildService : BuildService<BuildServiceParameters.None
         }
     }
 
-    class RegistrationAction(project: Project, maxParallelUsages: Int) :
-        ServiceRegistrationAction<R8ParallelBuildService, BuildServiceParameters.None>(
+    class RegistrationAction(project: Project, maxParallelUsages: Int, private val r8ThreadPoolSize: Int) :
+        ServiceRegistrationAction<R8ParallelBuildService, Parameters>(
             project,
             R8ParallelBuildService::class.java,
             maxParallelUsages
         ) {
 
-        override fun configure(parameters: BuildServiceParameters.None) {
-            // do nothing
+        override fun configure(parameters: Parameters) {
+            parameters.threadPoolSize.set(r8ThreadPoolSize)
         }
     }
 
     companion object {
 
-        fun newR8ThreadPool(): ExecutorService {
-            // Use the same executor and thread pool size that R8 is using
-            // (see b/375394051#comment7 and https://r8.googlesource.com/r8/+/c7f65e4/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#41).
-            val processors = Runtime.getRuntime().availableProcessors()
-            val threadPoolSize = if (processors <= 2) processors else ceil(min(processors, 16) / 2.0).toInt()
-
+        fun newR8ThreadPool(threadPoolSize: Int): ExecutorService {
+            // Use the same type of thread pool that R8 is using (see b/375394051#comment7)
             return Executors.newWorkStealingPool(threadPoolSize)
+        }
+
+        fun defaultR8ThreadPoolSize(): Int {
+            // Use the same thread pool size that R8 is using
+            // (see https://r8.googlesource.com/r8/+/c7f65e4/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#41)
+            val processors = Runtime.getRuntime().availableProcessors()
+            return if (processors <= 2) {
+                processors
+            } else {
+                ceil(min(processors, 16) / 2.0).toInt()
+            }
         }
     }
 }

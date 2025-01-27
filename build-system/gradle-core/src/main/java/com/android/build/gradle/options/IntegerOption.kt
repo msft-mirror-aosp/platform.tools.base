@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.services.R8ParallelBuildService
 import com.android.build.gradle.options.Version.VERSION_8_2
 import com.android.builder.model.AndroidProject
 import com.android.build.gradle.options.Version.VERSION_BEFORE_4_0
@@ -82,12 +83,18 @@ enum class IntegerOption(
      *   - The property was named "maxWorkers" because each R8 task launches 1 Gradle worker action.
      *     "maxParallelTasks" might be a better name, but it is a bit late to change the name at
      *     this point.
-     *   - The task/worker action runs R8 in a thread pool, which is not controlled by this
-     *     property.
+     *   - The task/worker action runs R8 in a thread pool. The thread pool's size is controlled by
+     *     another property ([R8_THREAD_POOL_SIZE]).
      *
      * See b/213907850 for more context.
      */
     R8_MAX_WORKERS("android.r8.maxWorkers", ApiStage.Experimental, defaultValue = 1),
+
+    /**
+     * The size of the thread pool ([java.util.concurrent.ExecutorService]) that runs R8 tasks.
+     * If no value is given, a default heuristics-based value will be used.
+     */
+    R8_THREAD_POOL_SIZE("android.r8.threadPoolSize", ApiStage.Experimental, R8ParallelBuildService.defaultR8ThreadPoolSize()),
 
     /**
      * Flags for Android Test Retention

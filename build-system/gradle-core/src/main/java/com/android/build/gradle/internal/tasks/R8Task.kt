@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexingType
@@ -255,6 +256,9 @@ abstract class R8Task @Inject constructor(
     @get:ServiceReference
     abstract val r8ParallelBuildService: Property<R8ParallelBuildService>
 
+    @get:Input
+    abstract val r8ThreadPoolSize: Property<Int>
+
     class PrivacySandboxSdkCreationAction(
         val creationConfig: PrivacySandboxSdkVariantScope,
         addCompileRClass: Boolean,
@@ -301,6 +305,10 @@ abstract class R8Task @Inject constructor(
                     creationConfig.services.buildServiceRegistry,
                     R8ParallelBuildService::class.java
                 )
+            )
+            task.r8ThreadPoolSize.setDisallowChanges(
+                // This `IntegerOption` has a default value so get() should return not-null
+                creationConfig.services.projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
             )
 
             task.enableDesugaring.setDisallowChanges(true)
@@ -475,6 +483,10 @@ abstract class R8Task @Inject constructor(
                     creationConfig.services.buildServiceRegistry,
                     R8ParallelBuildService::class.java
                 )
+            )
+            task.r8ThreadPoolSize.setDisallowChanges(
+                // This `IntegerOption` has a default value so get() should return not-null
+                creationConfig.services.projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
             )
 
             task.enableDesugaring.setDisallowChanges(
@@ -724,9 +736,11 @@ abstract class R8Task @Inject constructor(
             it.r8Metadata.set(r8Metadata)
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
             it.partialShrinkingConfig.set(partialShrinkingConfig.orNull)
-            // Build service can only be passed in Gradle worker non-isolation mode
-            if (!executionOptions.get().runInSeparateProcess) {
-                it.r8ParallelBuildService.set(r8ParallelBuildService)
+            // Note: Build service can only be passed in Gradle worker non-isolation mode
+            if (executionOptions.get().runInSeparateProcess) {
+                it.r8ThreadPoolSizeIfIsolationMode.set(r8ThreadPoolSize)
+            } else {
+                it.r8ParallelBuildServiceIfNonIsolationMode.set(r8ParallelBuildService)
             }
         }
         if (executionOptions.get().runInSeparateProcess) {
@@ -918,14 +932,19 @@ abstract class R8Task @Inject constructor(
             abstract val r8Metadata: RegularFileProperty
             abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
             abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
-            abstract val r8ParallelBuildService: Property<R8ParallelBuildService> // Set iff in Gradle worker non-isolation mode
+            abstract val r8ThreadPoolSizeIfIsolationMode: Property<Int> // Set iff in Gradle worker isolation mode
+            abstract val r8ParallelBuildServiceIfNonIsolationMode: Property<R8ParallelBuildService> // Set iff in Gradle worker non-isolation mode
         }
 
         override fun execute() {
-            // In Gradle worker non-isolation mode, use the shared thread pool for all R8 tasks.
-            // In (classloader or process) isolation mode, use a new thread pool for each R8 task.
-            val r8ThreadPool = parameters.r8ParallelBuildService.orNull?.r8ThreadPool
-                ?: R8ParallelBuildService.newR8ThreadPool()
+            // In Gradle worker isolation mode, use a new thread pool for each R8 task.
+            // In non-isolation mode, use the shared thread pool for all R8 tasks.
+            val isolationMode = parameters.r8ThreadPoolSizeIfIsolationMode.isPresent
+            val r8ThreadPool = if (isolationMode) {
+                R8ParallelBuildService.newR8ThreadPool(parameters.r8ThreadPoolSizeIfIsolationMode.get())
+            } else {
+                parameters.r8ParallelBuildServiceIfNonIsolationMode.get().r8ThreadPool
+            }
             try {
                 shrink(
                     parameters.bootClasspath.files.toList(),
@@ -968,9 +987,10 @@ abstract class R8Task @Inject constructor(
                     r8ThreadPool
                 )
             } finally {
-                // If r8ThreadPool is not a shared thread pool, we need to close it now.
-                // (If it's a shared thread pool, we will close it in the build service.)
-                if (r8ThreadPool != parameters.r8ParallelBuildService.orNull?.r8ThreadPool) {
+                // In isolation mode, we use a separate thread pool, so we need to close it now.
+                // In non-isolation mode, we use a shared thread pool, and we will close it in the
+                // build service.
+                if (isolationMode) {
                     r8ThreadPool.shutdown()
                 }
             }
