@@ -29,6 +29,8 @@ import com.android.tools.lint.detector.api.isKotlin
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UImportStatement
 
 /** Flags certain APIs that are forbidden in our codebase. */
 class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
@@ -38,6 +40,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
       Implementation(ForbiddenStudioCallDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     const val ADD_TO_STDLIB_PACKAGE_FQ_NAME = "org.jetbrains.kotlin.utils.addToStdlib"
+    private const val KOTLIN_JS_PACKAGE_PREFIX = "org.jetbrains.kotlin.js."
 
     @JvmField
     val ADD_TO_STDLIB_USAGE =
@@ -45,6 +48,24 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         id = "AddToStdlibUsage",
         briefDescription = "Do not use `addToStdlib`",
         explanation = "The `addToStdlib` package is unstable and should be avoided.",
+        category = CORRECTNESS,
+        severity = Severity.WARNING,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
+
+    @JvmField
+    val KOTLIN_JS_PACKAGE =
+      Issue.create(
+        id = "KotlinJsUsage",
+        briefDescription = "Do not use `org.jetbrains.kotlin.js.*`",
+        explanation =
+          """
+          The `org.jetbrains.kotlin.js` packages contain a lot of general, useful extension \
+          functions which can be accidentally imported. In some cases, there are alternatives \
+          in better packages; in other cases, it's best to create a local version. We \
+          generally don't want dependencies on javascript packages in the codebase.
+          """,
         category = CORRECTNESS,
         severity = Severity.WARNING,
         platforms = STUDIO_PLATFORMS,
@@ -127,10 +148,24 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes() = listOf(UCallExpression::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> =
+    listOf(UCallExpression::class.java, UImportStatement::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler {
     return object : UElementHandler() {
+      override fun visitImportStatement(node: UImportStatement) {
+        val reference = node.importReference
+        val name = reference?.sourcePsi?.text
+        if (name != null && name.startsWith(KOTLIN_JS_PACKAGE_PREFIX)) {
+          context.report(
+            KOTLIN_JS_PACKAGE,
+            node,
+            context.getLocation(reference),
+            "Avoid using methods from the `kotlin.js` package",
+          )
+        }
+      }
+
       override fun visitCallExpression(node: UCallExpression) {
         val resolved = node.resolve() ?: return
         if (
