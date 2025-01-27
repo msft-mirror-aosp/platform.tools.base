@@ -22,6 +22,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.ddmlib.AdbDevice
+import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION
@@ -606,6 +607,17 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun openConnection(): SocketChannel {
+        unsupportedMethod()
+    }
+
+    override fun optionsChanged(
+        options: AdbInitOptions,
+        osLocation: String,
+        forceNewBridge: Boolean,
+        terminateTimeout: Long,
+        initTimeout: Long,
+        unit: TimeUnit
+    ): Boolean {
         unsupportedMethod()
     }
 
