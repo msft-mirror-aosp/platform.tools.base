@@ -63,9 +63,11 @@ class AdbLibAndroidDebugBridge(
 
     private val logger = adbLogger(session)
 
-    var iDeviceManager: IDeviceManager? = null
+    private var iDeviceManager: IDeviceManager? = null
 
-    val lock = ReentrantLock()
+    private var mVersionCheck: Boolean = false
+
+    private val lock = ReentrantLock()
 
     /**
      * Creates a [AndroidDebugBridge] that is not linked to any particular executable.
@@ -355,8 +357,7 @@ class AdbLibAndroidDebugBridge(
         mAdbOsLocation = osLocation
 
         try {
-            mAdbVersion = fetchAdbVersion()
-            mVersionCheck = checkAdbVersion(mAdbVersion)
+            mVersionCheck = checkAdbVersion(fetchAdbVersion())
         } catch (e: IOException) {
             throw IllegalArgumentException(e)
         }
@@ -596,6 +597,10 @@ class AdbLibAndroidDebugBridge(
         adbChangeEvents.notifyBridgeRestartCompleted(isSuccessful)
 
         return isSuccessful
+    }
+
+    override fun getCurrentAdbVersion(): AdbVersion? {
+        unsupportedMethod()
     }
 
     override fun getVirtualDeviceId(

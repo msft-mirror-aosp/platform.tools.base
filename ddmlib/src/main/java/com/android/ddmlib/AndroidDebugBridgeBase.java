@@ -20,7 +20,6 @@ import com.android.annotations.Nullable;
 import com.android.ddmlib.clientmanager.ClientManager;
 import com.android.ddmlib.idevicemanager.IDeviceManagerFactory;
 import com.android.ddmlib.internal.ClientImpl;
-import com.android.ddmlib.internal.DeviceMonitor;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -72,10 +71,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
 
     /** Full path to adb. */
     protected String mAdbOsLocation = null;
-
-    protected AdbVersion mAdbVersion;
-
-    protected boolean mVersionCheck;
 
     protected boolean mStarted = false;
 
@@ -341,14 +336,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
         adbChangeEvents.removeClientChangeListener(listener);
     }
 
-    /**
-     * @return version of the ADB server if we were able to successfully retrieve it, {@code null}
-     * otherwise.
-     */
-    public @Nullable AdbVersion getCurrentAdbVersion() {
-        return mAdbVersion;
-    }
-
     @Nullable
     public IDeviceUsageTracker getiDeviceUsageTracker() {
         return iDeviceUsageTracker;
@@ -513,16 +500,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Not a valid port number");
-        }
-    }
-
-    // TODO: This class is currently unused so it could be removed, but before doing that
-    //  lets figure out how to trigger `initializationError` from `AdbLibAndroidDebugBridge`
-    private static class MonitorErrorHandler implements DeviceMonitor.MonitorErrorHandler {
-
-        @Override
-        public void initializationError(@NonNull Exception e) {
-            adbChangeEvents.notifyBridgeInitializationError(e);
         }
     }
 }
