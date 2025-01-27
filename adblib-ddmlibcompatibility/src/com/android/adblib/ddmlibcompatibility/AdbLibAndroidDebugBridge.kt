@@ -19,11 +19,13 @@ import com.android.SdkConstants
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
+import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.adbLogger
 import com.android.adblib.isTrackerConnecting
 import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.trackDevices
+import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbDelegateUsageTracker
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbInitOptions
@@ -50,6 +52,7 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.ListeningExecutorService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -63,6 +66,7 @@ import java.net.InetSocketAddress
 import java.nio.channels.SocketChannel
 import java.nio.file.Path
 import java.security.InvalidParameterException
+import java.time.Duration
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -756,25 +760,43 @@ class AdbLibAndroidDebugBridge(
         return passes
     }
 
-    override fun getSocketAddress(): InetSocketAddress = runBlocking {
-        val knownRemoteAddress = if (!isUnitTestMode) {
-            adbServerController.lastKnownRemoteAddress ?: run {
-                // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
-                // can fail for many reasons (server not started, server not available) so we have
-                // to ignore errors.
-                if (adbServerController.isStarted) {
-                    runCatching { adbServerController.channelProvider.createChannel().use {} }
+    override fun getSocketAddress(): InetSocketAddress {
+        val knownRemoteAddress = try {
+            runBlockingLegacy {
+                if (!isUnitTestMode) {
+                    adbServerController.lastKnownRemoteAddress ?: run {
+                        // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
+                        // can fail for many reasons (server not started, server not available) so we have
+                        // to ignore errors.
+                        if (adbServerController.isStarted) {
+                            runCatching {
+                                adbServerController.channelProvider.createChannel().use {}
+                            }
+                        }
+                        adbServerController.lastKnownRemoteAddress
+                    }
+                } else {
+                    null
                 }
-                adbServerController.lastKnownRemoteAddress
             }
-        } else {
+        } catch (t: Throwable) {
+            when (t) {
+                // `InterruptedException` can be thrown from `runBlocking`, and we simply ignore it,
+                // matching the behavior in `AndroidDebugBridgeImpl`, where
+                // `ClosedByInterruptException` is also caught and ignored
+                is InterruptedException,
+                is TimeoutException -> {
+                    logger.warn(t, "Exception while getting a socketAddress")
+                }
+
+                else -> {
+                    logger.warn(t, "Unexpected exception thrown while getting a socketAddress")
+                }
+            }
             null
         }
 
-        if (isUnitTestMode && knownRemoteAddress == null && sAdbServerPort == null) {
-            logger.warn("Trying to getSocketAddress after `sAdbServerPort` was set to null")
-        }
-        knownRemoteAddress ?: InetSocketAddress(
+        return knownRemoteAddress ?: InetSocketAddress(
             InetAddress.getLoopbackAddress(),
             sAdbServerPort ?: 0
         )
@@ -976,6 +998,28 @@ class AdbLibAndroidDebugBridge(
 
     override fun queryFeatures(adbFeaturesRequest: String): String {
         unsupportedMethod()
+    }
+
+    /**
+     * Similar to [runBlocking] but with a custom [timeout]
+     *
+     * For information about the exceptions that [runBlocking] may throw, see the [runBlocking]
+     * documentation. Additionally, this method
+     * @throws TimeoutException if [block] take more than [timeout] to execute
+     */
+    private fun <R> runBlockingLegacy(
+        timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
+        block: suspend CoroutineScope.() -> R
+    ): R {
+        return runBlocking {
+            if (timeout == INFINITE_DURATION) {
+                block()
+            } else {
+                session.withErrorTimeout(timeout) {
+                    block()
+                }
+            }
+        }
     }
 
     private inline fun <R> withLock(block: () -> R): R {
