@@ -18,8 +18,8 @@ package com.android.tools.apk.analyzer;
 public class ZipEntryInfo {
     public enum Alignment {
         ALIGNMENT_NONE(""),
-        ALIGNMENT_4K("4k"),
-        ALIGNMENT_16K("16k"),
+        ALIGNMENT_4K("4 KB"),
+        ALIGNMENT_16K("16 KB"),
         ;
 
         public final String text;
@@ -30,12 +30,15 @@ public class ZipEntryInfo {
     }
 
     public long size;
-    public Alignment alignment;
+    public Alignment zipAlignment;
+    public long elfLoadSectionAlignment;
     public boolean isCompressed;
 
-    public ZipEntryInfo(long size, Alignment alignment, boolean isCompressed) {
+    public ZipEntryInfo(
+            long size, Alignment zipAlignment, long elfLoadSectionAlignment, boolean isCompressed) {
         this.size = size;
-        this.alignment = alignment;
+        this.zipAlignment = zipAlignment;
+        this.elfLoadSectionAlignment = elfLoadSectionAlignment;
         this.isCompressed = isCompressed;
     }
 }

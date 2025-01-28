@@ -16,6 +16,8 @@
 
 package com.android.tools.apk.analyzer.internal;
 
+import static com.android.ide.common.pagealign.PageAlignUtilsKt.hasElfMagicNumber;
+import static com.android.ide.common.pagealign.PageAlignUtilsKt.readElfMinimumLoadSectionAlignment;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_16K;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_4K;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
@@ -137,7 +139,16 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
                 } else {
                     alignment = ALIGNMENT_NONE;
                 }
-                sizes.put("/" + entry.getName(), new ZipEntryInfo(size, alignment, isCompressed));
+                long loadAlignment = -1;
+                try (InputStream stream = zip.getInputStream(entry.getName())) {
+                    if (hasElfMagicNumber(stream)) {
+                        loadAlignment = readElfMinimumLoadSectionAlignment(stream);
+                    }
+                }
+
+                sizes.put(
+                        "/" + entry.getName(),
+                        new ZipEntryInfo(size, alignment, loadAlignment, isCompressed));
             }
         } catch (IOException ignored) {
         }

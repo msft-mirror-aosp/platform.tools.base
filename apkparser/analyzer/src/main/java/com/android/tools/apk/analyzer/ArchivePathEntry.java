@@ -25,7 +25,8 @@ import java.nio.file.Path;
 public class ArchivePathEntry extends ArchiveEntry {
     private long rawFileSize = -1;
     private long downloadFileSize = -1;
-    private ZipEntryInfo.Alignment alignment = ALIGNMENT_NONE;
+    private ZipEntryInfo.Alignment zipAlignment = ALIGNMENT_NONE;
+    private long loadAlignment = -1;
     private boolean isCompressed = false;
 
     public ArchivePathEntry(
@@ -40,12 +41,22 @@ public class ArchivePathEntry extends ArchiveEntry {
 
     @Override
     public void setFileAlignment(ZipEntryInfo.Alignment alignment) {
-        this.alignment = alignment;
+        this.zipAlignment = alignment;
     }
 
     @Override
     public ZipEntryInfo.Alignment getFileAlignment() {
-        return alignment;
+        return zipAlignment;
+    }
+
+    @Override
+    public void setElfMinimumLoadSectionAlignment(long loadAlignment) {
+        this.loadAlignment = loadAlignment;
+    }
+
+    @Override
+    public long getElfMinimumLoadSectionAlignment() {
+        return loadAlignment;
     }
 
     @Override
