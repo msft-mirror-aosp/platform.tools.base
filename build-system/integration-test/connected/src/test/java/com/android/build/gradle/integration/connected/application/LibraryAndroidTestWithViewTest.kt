@@ -1,7 +1,6 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION
 import com.android.build.gradle.integration.common.fixture.app.LayoutFileBuilder

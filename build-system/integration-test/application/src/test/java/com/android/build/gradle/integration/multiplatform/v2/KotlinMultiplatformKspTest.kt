@@ -17,15 +17,8 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.multiplatform.v2.KotlinMultiplatformGeneratedSourcesTest.Callback
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 

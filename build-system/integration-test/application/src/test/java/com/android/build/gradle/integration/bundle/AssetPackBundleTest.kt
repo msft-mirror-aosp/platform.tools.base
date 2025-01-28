@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.integration.bundle
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.bundle.Config
 import com.android.ide.common.signing.KeystoreHelper
@@ -27,8 +25,6 @@ import com.android.tools.build.bundletool.model.AndroidManifest.MODULE_TYPE_AI_V
 import com.android.tools.build.bundletool.model.BundleModule
 import com.android.tools.build.bundletool.model.BundleModuleName
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.Project
-import org.gradle.api.plugins.ExtraPropertiesExtension
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -49,7 +45,7 @@ class AssetPackBundleTest {
         assetPackBundle(":assetPackBundle") {
             bundle {
                 applicationId = APP_ID
-                compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
                 versionTag = VERSION_TAG
                 versionCodes += VERSION_CODES

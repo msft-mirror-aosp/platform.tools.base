@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.integration.dsl
 
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -36,7 +35,7 @@ class AndroidSettingsPluginExtension {
         settings {
             applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION.toInt()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
                 minSdk = 23
                 execution {
                 }

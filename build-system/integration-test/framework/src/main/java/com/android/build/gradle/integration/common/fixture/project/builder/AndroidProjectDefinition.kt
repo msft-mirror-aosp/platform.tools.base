@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
@@ -111,7 +110,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     protected open fun initDefaultValues(extension: ExtensionT) {
         if (extension is CommonExtension<*,*,*,*,*,*>) {
             extension.namespace = "pkg.name${path.replace(':', '.')}"
-            extension.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+            extension.compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
         } else {
             throw RuntimeException("Unsupported android extension type. Override initDefaultValues() in the specific AndroidProjectDefinition implementation!")
         }
