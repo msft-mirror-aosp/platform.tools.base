@@ -39,10 +39,10 @@ dependencies {
 // so we need to adjust them here. This is for testing only; in practice, the users don't need to do
 // this. This workaround can be removed once the expected versions are added to prebuilts.
 afterEvaluate {
-    configurations.all {
+    configurations.configureEach {
         resolutionStrategy.eachDependency {
             def groupAndName = requested.group + ":" + requested.name
-            if (findProperty("android.enableJetifier") == "true") {
+            if (providers.gradleProperty("android.enableJetifier").orNull == "true") {
                 if (groupAndName == 'androidx.annotation:annotation'
                         || groupAndName == 'androidx.appcompat:appcompat'
                         || groupAndName == 'androidx.legacy:legacy-support-v4'
