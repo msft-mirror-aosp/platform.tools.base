@@ -19,12 +19,23 @@ import junit.framework.TestCase
 
 class AndroidVersionUtilsTest : TestCase() {
 
-    fun testComputeApiNameAndDetails() {
+    fun testGetApiNameAndDetails() {
         assertEquals(
             NameDetails("API 16", "\"Jelly Bean\"; Android 4.1"),
-            computeApiNameAndDetails(
-                apiLevel = 16,
-                extensionLevel = null,
+            AndroidVersion(16).getApiNameAndDetails(
+                includeReleaseName = true,
+                includeCodeName = true,
+            )
+        )
+
+        assertEquals(
+            NameDetails("API 16", "\"Jelly Bean\"; Android 4.1"),
+            AndroidVersion(
+                /* apiLevel = */ 16,
+                /* codename = */ null,
+                /* extensionLevel = */ 14,
+                /* isBaseExtension = */ true
+            ).getApiNameAndDetails(
                 includeReleaseName = true,
                 includeCodeName = true,
             )
@@ -32,9 +43,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("API 20 ext. 4", "\"KitKat Wear\"; Android 4.4W"),
-            computeApiNameAndDetails(
-                apiLevel = 20,
-                extensionLevel = 4,
+            AndroidVersion(20).withExtensionLevel(4).getApiNameAndDetails(
                 includeReleaseName = true,
                 includeCodeName = true,
             )
@@ -42,9 +51,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("API 25", "Android 7.1.1"),
-            computeApiNameAndDetails(
-                apiLevel = 25,
-                extensionLevel = null,
+            AndroidVersion(25).getApiNameAndDetails(
                 includeReleaseName = true,
                 includeCodeName = false,
             )
@@ -52,9 +59,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("API 27", "\"Oreo\""),
-            computeApiNameAndDetails(
-                apiLevel = 27,
-                extensionLevel = null,
+            AndroidVersion(27).getApiNameAndDetails(
                 includeReleaseName = false,
                 includeCodeName = true,
             )
@@ -62,9 +67,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("API 28", null),
-            computeApiNameAndDetails(
-                apiLevel = 28,
-                extensionLevel = null,
+            AndroidVersion(28).getApiNameAndDetails(
                 includeReleaseName = false,
                 includeCodeName = false,
             )
@@ -72,36 +75,64 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("API 29 ext. 4", null),
-            computeApiNameAndDetails(
-                apiLevel = 29,
-                extensionLevel = 4,
+            AndroidVersion(29).withExtensionLevel(4).getApiNameAndDetails(
                 includeReleaseName = false,
                 includeCodeName = false,
             )
         )
 
+        assertEquals(
+            NameDetails("API 33.1", null),
+            AndroidVersion(33, 1).getApiNameAndDetails(
+                includeReleaseName = false,
+                includeCodeName = false,
+            )
+        )
+
+        assertEquals(
+            NameDetails("API 36.1", null),
+            AndroidVersion(36, 1).getApiNameAndDetails(
+                includeReleaseName = false,
+                includeCodeName = false,
+            )
+        )
+
+        assertEquals(
+            NameDetails("API 36.1 ext. 31", null),
+            AndroidVersion(36, 1).withExtensionLevel(31).getApiNameAndDetails(
+                includeReleaseName = false,
+                includeCodeName = false,
+            )
+        )
+
+        assertEquals(
+            NameDetails("API Foo Preview", null),
+            AndroidVersion(99, "Foo").getApiNameAndDetails(
+                includeReleaseName = true,
+                includeCodeName = true,
+            )
+        )
+
         // Future: if we don't have a name, don't include "null" as a name
-        assertEquals(NameDetails("API 500", null), computeApiNameAndDetails(500, null))
-        assertEquals(NameDetails("API 500 ext. 12", null), computeApiNameAndDetails(500, 12))
+        assertEquals(NameDetails("API 500.0", null), AndroidVersion(500).getApiNameAndDetails())
+        assertEquals(NameDetails("API 500.0 ext. 12", null), AndroidVersion(500).withExtensionLevel(12).getApiNameAndDetails())
     }
 
-    fun testComputeFullApiName() {
-        assertEquals("API 16 (\"Jelly Bean\"; Android 4.1)", computeFullApiName(
-            apiLevel = 16,
-            extensionLevel = null,
+    fun testGetFullApiName() {
+        assertEquals("API 16 (\"Jelly Bean\"; Android 4.1)", AndroidVersion(16).getFullApiName(
             includeReleaseName = true,
             includeCodeName = true,
         ))
 
-        assertEquals("API 28", computeFullApiName(
-            apiLevel = 28,
-            extensionLevel = null,
+        assertEquals("API 28", AndroidVersion(28).getFullApiName(
             includeReleaseName = false,
             includeCodeName = false,
         ))
-    }
 
-    fun testGetFullApiName() {
+        assertEquals("API 36.0", AndroidVersion(36).getFullApiName())
+
+        assertEquals("API 36.1", AndroidVersion(36, 1).getFullApiName())
+
         assertEquals(
             "API 16 ext. 14 (\"Jelly Bean\"; Android 4.1)",
             AndroidVersion(
@@ -137,48 +168,36 @@ class AndroidVersionUtilsTest : TestCase() {
         )
     }
 
-    fun testGetApiNameAndDetails() {
+    fun testGetReleaseNameAndDetails() {
         assertEquals(
-            NameDetails("API 16 ext. 14", "\"Jelly Bean\"; Android 4.1"),
-            AndroidVersion(
-                /* apiLevel = */ 16,
-                /* codename = */ null,
-                /* extensionLevel = */ 14,
-                /* isBaseExtension = */ false
-            ).getApiNameAndDetails(
-                includeReleaseName = true,
+            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16"),
+            AndroidVersion(16).getReleaseNameAndDetails(
+                includeApiLevel = true,
                 includeCodeName = true,
             )
         )
 
         assertEquals(
-            NameDetails("API 16", "\"Jelly Bean\"; Android 4.1"),
+            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16"),
             AndroidVersion(
                 /* apiLevel = */ 16,
                 /* codename = */ null,
                 /* extensionLevel = */ 14,
                 /* isBaseExtension = */ true
-            ).getApiNameAndDetails(
-                includeReleaseName = true,
+            ).getReleaseNameAndDetails(
+                includeApiLevel = true,
                 includeCodeName = true,
             )
         )
 
         assertEquals(
-            NameDetails("API Foo Preview", null),
-            AndroidVersion(99, "Foo").getApiNameAndDetails(
-                includeReleaseName = true,
-                includeCodeName = true,
-            )
-        )
-    }
-
-    fun testComputeReleaseNameAndDetails() {
-        assertEquals(
-            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16"),
-            computeReleaseNameAndDetails(
-                apiLevel = 16,
-                extensionLevel = null,
+            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16 ext. 14"),
+            AndroidVersion(
+                /* apiLevel = */ 16,
+                /* codename = */ null,
+                /* extensionLevel = */ 14,
+                /* isBaseExtension = */ false
+            ).getReleaseNameAndDetails(
                 includeApiLevel = true,
                 includeCodeName = true,
             )
@@ -186,9 +205,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("Android 4.4W", "\"KitKat Wear\"; API 20 ext. 4"),
-            computeReleaseNameAndDetails(
-                apiLevel = 20,
-                extensionLevel = 4,
+            AndroidVersion(20).withExtensionLevel(4).getReleaseNameAndDetails(
                 includeApiLevel = true,
                 includeCodeName = true,
             )
@@ -196,9 +213,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("Android 7.1.1", "API 25"),
-            computeReleaseNameAndDetails(
-                apiLevel = 25,
-                extensionLevel = null,
+            AndroidVersion(25).getReleaseNameAndDetails(
                 includeApiLevel = true,
                 includeCodeName = false,
             )
@@ -206,9 +221,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("Android 8.1", "\"Oreo\""),
-            computeReleaseNameAndDetails(
-                apiLevel = 27,
-                extensionLevel = null,
+            AndroidVersion(27).getReleaseNameAndDetails(
                 includeApiLevel = false,
                 includeCodeName = true,
             )
@@ -216,9 +229,7 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("Android 9.0", null),
-            computeReleaseNameAndDetails(
-                apiLevel = 28,
-                extensionLevel = 4,
+            AndroidVersion(28).withExtensionLevel(4).getReleaseNameAndDetails(
                 includeApiLevel = false,
                 includeCodeName = false,
             )
@@ -226,37 +237,43 @@ class AndroidVersionUtilsTest : TestCase() {
 
         assertEquals(
             NameDetails("Android 9.0", "\"Pie\""),
-            computeReleaseNameAndDetails(
-                apiLevel = 28,
-                extensionLevel = 4,
+            AndroidVersion(28).withExtensionLevel(4).getReleaseNameAndDetails(
                 includeApiLevel = false,
                 includeCodeName = true,
             )
         )
 
+        assertEquals(
+            NameDetails("Android 14.0", "\"UpsideDownCake\"; API 34.1"),
+            AndroidVersion(34, 1).getReleaseNameAndDetails(includeApiLevel = true, includeCodeName = true)
+        )
+
+        assertEquals(
+            NameDetails("Android API 99.1", null),
+            AndroidVersion(99, 1).getReleaseNameAndDetails(includeApiLevel = true, includeCodeName = true)
+        )
+
+        assertEquals(
+            NameDetails("Android Foo Preview", null),
+            AndroidVersion(99, "Foo").getReleaseNameAndDetails(
+                includeApiLevel = true,
+                includeCodeName = true,
+            )
+        )
+
         // Future: if we don't have a name, don't include "null" as a name
-        assertEquals(NameDetails("Android API 500", null), computeReleaseNameAndDetails(500, null))
-        assertEquals(NameDetails("Android API 500", null), computeReleaseNameAndDetails(500, 12))
+        assertEquals(NameDetails("Android API 500.0", null), AndroidVersion(500).getReleaseNameAndDetails())
+        assertEquals(NameDetails("Android API 500.0", null), AndroidVersion(500).withExtensionLevel(12).getReleaseNameAndDetails())
     }
 
 
-    fun testComputeFullReleaseName() {
-        assertEquals("Android 4.1 (\"Jelly Bean\"; API 16)", computeFullReleaseName(
-            apiLevel = 16,
-            extensionLevel = null,
+    fun testGetFullReleaseName() {
+        assertEquals("Android 4.1 (\"Jelly Bean\"; API 16)",
+                     AndroidVersion(16).getFullReleaseName(
             includeApiLevel = true,
             includeCodeName = true,
         ))
 
-        assertEquals("Android 9.0", computeFullReleaseName(
-            apiLevel = 28,
-            extensionLevel = 4,
-            includeApiLevel = false,
-            includeCodeName = false,
-        ))
-    }
-
-    fun testGetFullReleaseName() {
         assertEquals(
             "Android 4.1 (\"Jelly Bean\"; API 16 ext. 14)",
             AndroidVersion(
@@ -283,45 +300,24 @@ class AndroidVersionUtilsTest : TestCase() {
             )
         )
 
+        assertEquals("Android 9.0", AndroidVersion(28).withExtensionLevel(4).getFullReleaseName(
+            includeApiLevel = false,
+            includeCodeName = false,
+        ))
+
+        assertEquals(
+            "Android 14.0 (\"UpsideDownCake\"; API 34.1)",
+            AndroidVersion(34, 1).getFullReleaseName(includeApiLevel = true, includeCodeName = true)
+        )
+
+        assertEquals(
+            "Android API 99.1",
+            AndroidVersion(99, 1).getFullReleaseName(includeApiLevel = true, includeCodeName = true)
+        )
+
         assertEquals(
             "Android Foo Preview",
             AndroidVersion(99, "Foo").getFullReleaseName(
-                includeApiLevel = true,
-                includeCodeName = true,
-            )
-        )
-    }
-
-    fun testGetReleaseNameAndDetails() {
-        assertEquals(
-            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16 ext. 14"),
-            AndroidVersion(
-                /* apiLevel = */ 16,
-                /* codename = */ null,
-                /* extensionLevel = */ 14,
-                /* isBaseExtension = */ false
-            ).getReleaseNameAndDetails(
-                includeApiLevel = true,
-                includeCodeName = true,
-            )
-        )
-
-        assertEquals(
-            NameDetails("Android 4.1", "\"Jelly Bean\"; API 16"),
-            AndroidVersion(
-                /* apiLevel = */ 16,
-                /* codename = */ null,
-                /* extensionLevel = */ 14,
-                /* isBaseExtension = */ true
-            ).getReleaseNameAndDetails(
-                includeApiLevel = true,
-                includeCodeName = true,
-            )
-        )
-
-        assertEquals(
-            NameDetails("Android Foo Preview", null),
-            AndroidVersion(99, "Foo").getReleaseNameAndDetails(
                 includeApiLevel = true,
                 includeCodeName = true,
             )
