@@ -4,6 +4,10 @@ new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.
 
 local_archive = use_repo_rule("//tools/base/bazel:repositories.bzl", "local_archive")
 
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 # TODO(b/340640065): Replace with bazel_dep.
 local_repository(
     name = "googletest",
@@ -32,6 +36,12 @@ local_repository(
 local_repository(
     name = "io_bazel_rules_kotlin",
     path = "tools/external/bazelbuild-rules-kotlin",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "absl-py",
+    path = "external/python/absl-py",
 )
 
 new_local_repository(
@@ -80,4 +90,19 @@ local_archive(
     name = "upb",
     archive = "//prebuilts/tools/common/external-src-archives/upb/1.0.0:upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc.tar.gz",
     strip_prefix = "upb-d8f3d6f9d415b31f3ce56d46791706c38fa311bc",
+)
+
+http_jar(
+    name = "bazel_diff",
+    sha256 = "725e4012d8f68ecbe967138bc973bf0bca22b2b219a34cafbd3e392fb451b2e6",
+    urls = [
+        "https://github.com/Tinder/bazel-diff/releases/download/8.1.4/bazel-diff_deploy.jar",
+    ],
+)
+
+http_archive(
+    name = "with_cfg.bzl",
+    sha256 = "06a2b1b56a58c471ab40d8af166c4d51f0982e1c6bc46375b805915b3fc0658e",
+    strip_prefix = "with_cfg.bzl-0.2.4",
+    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.4/with_cfg.bzl-v0.2.4.tar.gz",
 )
