@@ -204,6 +204,7 @@ class FakeAdbServices(
     val applicationId = command.split(' ')[3]
     return """
     Package $applicationId with result: Success
+    => Event{AGENT / AGENT_LOGGING_RESULTS : package = $applicationId(v20230101), results = []}
     Backup finished with result: Success
   """
       .trimIndent()

@@ -297,13 +297,8 @@ private fun MatchResult.getGroup(name: String) =
   groups[name]?.value ?: throw BackupException(UNEXPECTED_ERROR, "Group $name not found")
 
 private fun String.isBackupSuccess(applicationId: String) =
-  endsWith(
-    """
-    Package $applicationId with result: Success
-    Backup finished with result: Success
-  """
-      .trimIndent()
-  )
+  contains("Package $applicationId with result: Success") &&
+    contains("Backup finished with result: Success")
 
 private fun String.isBackupNotAllowed() = contains(" with result: Backup is not allowed")
 
