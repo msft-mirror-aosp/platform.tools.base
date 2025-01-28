@@ -16,14 +16,14 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.SdkConstants
 import com.android.utils.toSystemLineSeparator
 import org.jetbrains.annotations.VisibleForTesting
 import org.junit.Assert
 import java.nio.file.Path
-import java.util.regex.Pattern
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
+import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.moveTo
 import kotlin.io.path.readText
@@ -100,11 +100,32 @@ interface FileUpdateBuilder {
     fun searchAndReplace(search: String, replace: String, lenient: Boolean = false): FileUpdateBuilder
 
     /**
+     * Search the content of the file with the given string and replace all occurrences with
+     * the new content.
+     *
+     * The file must always exist or an exception is thrown. If the string to search is not found
+     * an exception is thrown, unless `lenient` is set to `true`.
+     *
+     * @param search the string to search for
+     * @param replace the string with which to replace all occurrences of `search`
+     * @param lenient whether the call is lenient to content that don't have any occurrence of `search`
+     */
+    fun searchAndReplace(search: Regex, replace: String, lenient: Boolean = false): FileUpdateBuilder
+
+    /**
      * Appends the content of the file with the provided content.
      *
-     * If the file does not exist, a new file is created wit the provided content.
+     * If the file does not exist, a new file is created with the provided content.
      */
     fun append(newContent: String)
+
+    /**
+     * Appends the provided method body to the Kotlin/Java class.
+     *
+     * The file must always exist or an exception is thrown.
+     * The file extension must be '.kt'/'.java'.
+     */
+    fun appendMethod(method: String): FileUpdateBuilder
 
     /**
      * Transforms the file with the provided lambda.
@@ -263,12 +284,20 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
             replace: String,
             lenient: Boolean
         ): FileUpdateBuilder {
+            return searchAndReplace(search.toRegex(RegexOption.LITERAL), replace, lenient)
+        }
+
+        override fun searchAndReplace(
+            search: Regex,
+            replace: String,
+            lenient: Boolean
+        ): FileUpdateBuilder {
             val content = map[key] ?: throw RuntimeException("File $key not found. Cannot searchAndReplace")
 
             val stringContent = content as? String
                 ?: throw RuntimeException("Can only do searchAndReplace on string content (key: $key")
 
-            map[key] = stringContent.searchAndReplace(key, search, replace, Pattern.LITERAL, lenient)
+            map[key] = stringContent.searchAndReplace(key, search, replace, lenient)
             return this
         }
 
@@ -294,6 +323,16 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
 
             map[key] = action(stringContent)
             return this
+        }
+
+        override fun appendMethod(methodBody: String): FileUpdateBuilder {
+            if (!key.endsWith(SdkConstants.DOT_KT) && !key.endsWith(SdkConstants.DOT_JAVA)) {
+                throw RuntimeException(
+                    "Cannot append method to content at key '$key'." +
+                            "File must end in '${SdkConstants.DOT_KT}' or '${SdkConstants.DOT_JAVA}'"
+                )
+            }
+            return searchAndReplace(Regex("\n}\\s*$"), "\n    $methodBody\n\n}")
         }
 
         override fun moveTo(relativePath: String): FileUpdater {
@@ -365,6 +404,14 @@ internal open class DirectGradleProjectFiles(
             replace: String,
             lenient: Boolean
         ): FileUpdateBuilder {
+            return searchAndReplace(search.toRegex(RegexOption.LITERAL), replace, lenient)
+        }
+
+        override fun searchAndReplace(
+            search: Regex,
+            replace: String,
+            lenient: Boolean,
+        ): FileUpdateBuilder {
             val content = if (file.isRegularFile())
                 file.readText()
             else
@@ -375,7 +422,6 @@ internal open class DirectGradleProjectFiles(
                     file.toString(),
                     search,
                     replace,
-                    Pattern.LITERAL,
                     lenient
                 )
             )
@@ -389,6 +435,15 @@ internal open class DirectGradleProjectFiles(
             file.writeText(oldContent?.let {
                 it + newContent
             } ?: newContent)
+        }
+
+        override fun appendMethod(methodBody: String): FileUpdateBuilder {
+            if (file.extension != SdkConstants.EXT_JAVA && file.extension != SdkConstants.EXT_KT) {
+                throw RuntimeException(
+                    "Cannot append method to $file. " +
+                            "File extension must be '${SdkConstants.DOT_JAVA}' or ${SdkConstants.DOT_KT}")
+            }
+            return searchAndReplace(Regex("\n}\\s*$"), "\n    $methodBody\n\n}")
         }
 
         override fun transform(action: (String) -> String): FileUpdateBuilder {
@@ -435,23 +490,19 @@ internal class DirectAndroidProjectFiles(
 
 internal fun String.searchAndReplace(
     name: String,
-    search: String,
+    search: Regex,
     replace: String,
-    flags: Int,
     lenient: Boolean
 ): String {
-    var rwSearch = search
     var rwReplace = replace
 
     // Handle patterns that use unix-style line endings even on Windows where the test
     // projects are sometimes checked out with Windows-style endings depending on the .gitconfig
     // "autocrlf" property
     if (this.contains("\r\n")) {
-        rwSearch = search.toSystemLineSeparator()
         rwReplace = replace.toSystemLineSeparator()
     }
-
-    val newContent = Pattern.compile(rwSearch, flags).matcher(this).replaceAll(rwReplace)
+    val newContent = search.replace(this, rwReplace)
     if (!lenient) {
         Assert.assertNotEquals(
             """

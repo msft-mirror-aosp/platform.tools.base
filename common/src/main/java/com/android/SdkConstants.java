@@ -2198,6 +2198,10 @@ public final class SdkConstants {
     public static final String EXT_ATOM = "atom";
     /** Extension of java files, i.e. "java" */
     public static final String EXT_JAVA = "java";
+
+    /** Extension of kotlin files, i.e. "kt" */
+    public static final String EXT_KT = "kt";
+
     /** Extension of compiled java files, i.e. "class" */
     public static final String EXT_CLASS = "class";
     /** Extension of xml files, i.e. "xml" */

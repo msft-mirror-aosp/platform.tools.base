@@ -306,6 +306,14 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
     }
 
     @Test
+    fun searchAndReplaceWithRegex() {
+        val files = getInstance()
+        files.add("foo", "<color></colour>")
+        files.update("foo").searchAndReplace(Regex("colou?r"), "blue")
+        checker.checkContent(files, "foo" to "<blue></blue>")
+    }
+
+    @Test
     fun searchAndReplaceMissingFile() {
         val files = getInstance()
         exceptionRule.expect(RuntimeException::class.java)
@@ -405,6 +413,94 @@ class GradleProjectFilesTest(private val checker: ImplementationChecker) {
         val replacement = byteArrayOf(2,3,4)
         files.update("res/a.raw").replaceWith(replacement)
         checker.checkContent(files, "res/a.raw" to replacement)
+    }
+
+    @Test
+    fun addJavaMethod() {
+        val files = getInstance()
+
+        files.add("Main.java",
+            """
+            package pkg;
+
+            class Main {
+                void method1() {
+                }
+            }
+            """.trimIndent()
+            )
+        files.update("Main.java").appendMethod(
+            "public int useFoo() { return R.id.foo; }"
+        )
+        checker.checkContent(files, "Main.java" to
+            //language=java
+            """
+            package pkg;
+
+            class Main {
+                void method1() {
+                }
+                public int useFoo() { return R.id.foo; }
+
+            }
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun addKotlinMethod() {
+        val files = getInstance()
+
+        files.add("Main.kt",
+            //language=kotlin
+            """
+            package pkg
+
+            class Main {
+                fun method1() {
+                }
+            }
+            """.trimIndent()
+        )
+        files.update("Main.kt").appendMethod(
+            "fun useFoo(): Int = R.id.foo"
+        )
+
+        checker.checkContent(
+            files, "Main.kt" to
+            //language=kotlin
+            """
+            package pkg
+
+            class Main {
+                fun method1() {
+                }
+                fun useFoo(): Int = R.id.foo
+
+            }
+            """.trimIndent()
+        )
+
+        files.update("Main.kt").appendMethod(
+            "fun getBar(): String { return \"bar\" }"
+        )
+
+        checker.checkContent(
+            files, "Main.kt" to
+            //language=kotlin
+            """
+            package pkg
+
+            class Main {
+                fun method1() {
+                }
+                fun useFoo(): Int = R.id.foo
+
+                fun getBar(): String { return "bar" }
+
+            }
+            """.trimIndent()
+        )
     }
 
     private fun getInstance() = checker.getInstance(temporaryFolder.newFolder().toPath())
