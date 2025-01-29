@@ -19,7 +19,9 @@ import com.android.adblib.DeviceSelector
 import com.android.backup.BackupProgressListener.Step
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
+import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
+import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
 import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD
@@ -249,9 +251,15 @@ abstract class AbstractAdbServices(
 
   private suspend fun isBmgrEnabled(): Boolean {
     val output = executeCommand("bmgr enabled", CANNOT_ENABLE_BMGR)
-    return when (output.stdout.trim()) {
-      "Backup Manager currently enabled" -> true
-      "Backup Manager currently disabled" -> false
+    val stdout = output.stdout.trim()
+    val stderr = output.stderr.trim()
+    return when {
+      stdout == "Backup Manager currently enabled" -> true
+      stdout == "Backup Manager currently disabled" -> false
+      stderr.contains("Could not access the Backup Manager") ->
+        throw BackupException(BACKUP_NOT_SUPPORTED, "Backup is not supported on this device")
+      stderr.contains("Backup Manager is not activated") ->
+        throw BackupException(BACKUP_NOT_ACTIVATED, "Backup is not activated on this device")
       else ->
         throw BackupException(
           CANNOT_ENABLE_BMGR,
