@@ -37,7 +37,7 @@ class DetailsTypePathsTest {
         assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, null, 2, true)))
             .isEqualTo("platforms;android-30")
         assertThat(DetailsTypes.getPlatformPath(AndroidVersion(30, "X", 2, false)))
-            .isEqualTo("platforms;android-X-ext2")
+            .isEqualTo("platforms;android-X")
     }
 
     @Test
@@ -51,7 +51,7 @@ class DetailsTypePathsTest {
         assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, null, 2, true)))
             .isEqualTo("sources;android-30")
         assertThat(DetailsTypes.getSourcesPath(AndroidVersion(30, "X", 2, false)))
-            .isEqualTo("sources;android-X-ext2")
+            .isEqualTo("sources;android-X")
     }
 
     @Test
@@ -70,7 +70,7 @@ class DetailsTypePathsTest {
             .isEqualTo("system-images;android-30;id;abi")
         assertThat(DetailsTypes.getSysImgPath(null, AndroidVersion(30, "X", 2, false),
                                               IdDisplay.create("id", "display"), "abi"))
-            .isEqualTo("system-images;android-X-ext2;id;abi")
+            .isEqualTo("system-images;android-X;id;abi")
     }
 
     @Test
@@ -94,6 +94,6 @@ class DetailsTypePathsTest {
         assertThat(DetailsTypes.getAddonPath(IdDisplay.create("idVendor", "displayVendor"),
                                              AndroidVersion(30, "X", 2, false),
                                              IdDisplay.create("idName", "displayName")))
-            .isEqualTo("add-ons;addon-idName-idVendor-X-ext2")
+            .isEqualTo("add-ons;addon-idName-idVendor-X")
     }
 }
