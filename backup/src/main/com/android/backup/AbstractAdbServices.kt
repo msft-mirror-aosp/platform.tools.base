@@ -67,7 +67,7 @@ abstract class AbstractAdbServices(
   override suspend fun initializeTransport(transport: String) {
     val out = executeCommand("bmgr init $transport", TRANSPORT_INIT_FAILED)
     if (out.stdout.lines().last() != "Initialization result: 0") {
-      throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: $out")
+      throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: ${out.out}")
     }
   }
 
