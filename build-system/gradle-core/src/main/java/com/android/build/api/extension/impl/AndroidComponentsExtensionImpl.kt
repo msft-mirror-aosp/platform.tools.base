@@ -17,6 +17,7 @@
 package com.android.build.api.extension.impl
 
 import com.android.build.api.AndroidPluginVersion
+import com.android.build.api.component.analytics.AnalyticsEnabledComponent
 import com.android.build.api.component.impl.ComponentImpl
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.SdkComponents
@@ -262,7 +263,13 @@ abstract class AndroidComponentsExtensionImpl<
          */
         fun calculateSourceSetNames(component: Component): List<String> {
             val sourceSetNames = mutableSetOf<String>()
-            val sourceSetPrefix = (component as ComponentImpl<*>).componentType.prefix
+            val componentImpl =
+                if (component is AnalyticsEnabledComponent) {
+                    (component.delegate as? ComponentImpl<*>)
+                } else {
+                    component as? ComponentImpl<*>
+                } ?: throw RuntimeException("Unexpected type for component \"${component.name}\".")
+            val sourceSetPrefix = componentImpl.componentType.prefix
             if (sourceSetPrefix.isEmpty()) {
                 sourceSetNames.add("main")
             } else {
@@ -290,7 +297,7 @@ abstract class AndroidComponentsExtensionImpl<
             )
             val variantSourceSetSuffix =
                 component.name
-                    .removeSuffix(component.componentType.suffix)
+                    .removeSuffix(componentImpl.componentType.suffix)
                     .replaceFirstChar { it.uppercase() }
             sourceSetNames.add(
                 "$sourceSetPrefix$variantSourceSetSuffix".replaceFirstChar { it.lowercase() }
