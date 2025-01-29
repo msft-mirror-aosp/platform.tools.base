@@ -522,6 +522,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           WebViewApiAvailabilityDetector.ISSUE,
           WebViewClientDetector.PROCEEDS_ON_RECEIVED_SSL_ERROR,
           WebViewDetector.ISSUE,
+          WindowExtensionsDetector.ISSUE,
           WorkManagerDetector.ISSUE,
           WrongCallDetector.ISSUE,
           WrongCaseDetector.WRONG_CASE,
