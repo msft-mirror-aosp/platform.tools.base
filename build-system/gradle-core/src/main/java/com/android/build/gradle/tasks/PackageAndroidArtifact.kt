@@ -32,6 +32,8 @@ import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.dependency.AndroidAttributes
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
+import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalString
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.packaging.IncrementalPackagerBuilder
@@ -288,6 +290,9 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
     @get:Input
     abstract val pageSize: Property<Long>
 
+    @get:Input
+    abstract val buildAllAbis: Property<Boolean>
+
     override fun doTaskAction(inputChanges: InputChanges) {
         if (!inputChanges.isIncremental) {
             checkFileNameUniqueness()
@@ -392,7 +397,9 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             parameter.signingConfigVersionsFile
                     .set(signingConfigVersions.singleFile)
             if (baseModuleMetadata.isEmpty) {
-                parameter.abiFilters.set(abiFilters)
+                if (!buildAllAbis.get()) {
+                    parameter.abiFilters.set(abiFilters)
+                }
             } else {
                 // Dynamic feature
                 val appAbiFilters: List<String?> = try {
@@ -402,10 +409,12 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     throw RuntimeException(e)
                 }
                 if (appAbiFilters.isEmpty()) {
-                    // No ABI Filters were applied from the base application, but we still want
-                    // to respect injected filters from studio, so use the task field (rather than
-                    // just empty list)
-                    parameter.abiFilters.set(abiFilters)
+                    if (!buildAllAbis.get()) {
+                        // No ABI Filters were applied from the base application, but we still want
+                        // to respect injected filters from studio, so use the task field (rather
+                        // than just empty list)
+                        parameter.abiFilters.set(abiFilters)
+                    }
                 } else {
                     // Respect the build author's explicit choice, even in the presence of injected
                     // ABI information from Studio
@@ -739,14 +748,25 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             if (supportedAbis.isNotEmpty()) {
                 // If the build author has set the supported Abis that is respected
                 packageAndroidArtifact.abiFilters.set(supportedAbis)
+                packageAndroidArtifact.buildAllAbis.set(false)
             } else {
                 // Otherwise, use the injected Abis if set.
-                packageAndroidArtifact.abiFilters
-                        .set(
-                                if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]) firstValidInjectedAbi(
-                                        projectOptions[StringOption.IDE_BUILD_TARGET_ABI]) else setOf())
+                packageAndroidArtifact.abiFilters.set(
+                    if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]) {
+                        firstValidInjectedAbi(projectOptions[StringOption.IDE_BUILD_TARGET_ABI])
+                    } else {
+                        setOf()
+                    }
+                )
+                packageAndroidArtifact.abiFilters.disallowChanges()
+                // However, if the flag to build all ABIs ignoring IDE optimizations is true, we
+                // will remove the abiFilters in task execution
+                packageAndroidArtifact.buildAllAbis.setDisallowChanges(
+                    (creationConfig as? VariantCreationConfig)?.experimentalProperties?.map {
+                        BooleanWithDefault.BUILD_ALL_ABIS_IGNORING_IDE_OPTIMIZATIONS.getValue(it)
+                    } ?: creationConfig.services.provider { false }
+                )
             }
-            packageAndroidArtifact.abiFilters.disallowChanges()
             packageAndroidArtifact.createdBy.set(creationConfig.global.createdBy)
             if (creationConfig.componentType.isBaseModule
                     && creationConfig
