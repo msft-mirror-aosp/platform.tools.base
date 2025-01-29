@@ -17,7 +17,10 @@
 package com.android.build.api.artifact.impl
 
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.OutputFile
 import org.junit.Test
 
 class MultipleDirectoryArtifactTest : AbstractMultipleArtifactTest<Directory>(
@@ -25,27 +28,33 @@ class MultipleDirectoryArtifactTest : AbstractMultipleArtifactTest<Directory>(
 { directory, name -> directory.dir(name) },
 { tasks, name -> tasks.register(name, SingleDirectoryArtifactTest.DirectoryProducerTask::class.java)}) {
 
+    abstract class InitialProducerTask: MultipleProducerTask<Directory>()
+    abstract class MultipleFileProducerTask: MultipleArtifactTransformTask<Directory>() {
+        @get:OutputFile
+        abstract override val transformedOutput: DirectoryProperty
+    }
+
     @Test
     fun testReplace() {
-        abstract class MultipleDirectoryProducerTask: MultipleProducerTask<Directory>()
-        super.testReplace { tasks, taskName ->
-            tasks.register(taskName, MultipleDirectoryProducerTask::class.java)
-        }
+        super.testReplace(
+            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
+            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
+        )
     }
 
     @Test
     fun testAddAndReplace() {
-        abstract class MultipleFileProducerTask: MultipleProducerTask<Directory>()
-        super.testAddAndReplace() { tasks, taskName ->
-            tasks.register(taskName, MultipleFileProducerTask::class.java)
-        }
+        super.testAddAndReplace(
+            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
+            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
+        )
     }
 
     @Test
     fun testTransform() {
-        abstract class MultipleFileProducerTask: MultipleProducerTask<Directory>()
-        super.testTransform() { tasks, taskName ->
-            tasks.register(taskName, MultipleFileProducerTask::class.java)
-        }
+        super.testTransform(
+            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
+            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
+        )
     }
 }
