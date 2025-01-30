@@ -99,6 +99,14 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun clearAppData(applicationId: String) {
+    val out = executeCommand("pm clear $applicationId").stdout.trim()
+    if (out != "Success") {
+      // Don't throw if clear app data fails but log a warning.
+      logger.warn("Failed to clear app data for package $applicationId")
+    }
+  }
+
   override suspend fun restore(token: String, applicationId: String, type: BackupType) {
     setBackupType(type)
     val out = executeCommand("bmgr restore $token $applicationId", ErrorCode.RESTORE_FAILED)

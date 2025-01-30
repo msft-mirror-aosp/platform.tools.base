@@ -108,6 +108,8 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               val token = zip.getRestoreToken()
               reportProgress("Pushing backup file")
               zip.pushBackup(adbServices)
+              reportProgress("Clearing app data")
+              clearAppData(applicationId)
               reportProgress("Restoring $applicationId")
               restore(token, applicationId, metadata.backupType)
             }
@@ -189,6 +191,6 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   companion object {
 
     const val BACKUP_STEPS = 10
-    const val RESTORE_STEPS = 11
+    const val RESTORE_STEPS = 10
   }
 }
