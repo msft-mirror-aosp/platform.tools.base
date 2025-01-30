@@ -549,7 +549,6 @@ com.android.tools.build:gradle
     com.android.tools.utp:android-test-plugin-host-emulator-control-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-retention-proto (runtime)
     com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     com.android.tools.build:transform-api (runtime)
@@ -965,13 +964,6 @@ com.android.tools.utp:android-test-plugin-host-logcat-proto
   pomName=com.android.tools.utp.android-test-plugin-host-logcat-proto
   description=A protobuf message used in a UTP plugin to export logcat information
   dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-test-plugin-host-retention-proto
-  pomName=com.android.tools.utp.android-test-plugin-host-retention-proto
-  description=A protobuf message used in UTP plugin to take a device snapshot on test failures.
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (compile)
     com.google.protobuf:protobuf-java (runtime)
 
 com.android.tools.utp:android-test-plugin-result-listener-gradle

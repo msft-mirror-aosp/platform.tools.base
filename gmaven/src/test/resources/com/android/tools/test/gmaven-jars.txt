@@ -4370,21 +4370,6 @@ com/android/tools/utp/android-test-plugin-host-logcat-proto
   com/android/tools/utp/plugins/host/logcat/
   com/android/tools/utp/plugins/host/logcat/proto/
 
-com/android/tools/utp/android-test-plugin-host-retention-proto
-  META-INF/
-  META-INF/MANIFEST.MF
-  NOTICE
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/host/
-  com/android/tools/utp/plugins/host/icebox/
-  com/android/tools/utp/plugins/host/icebox/proto/
-  icebox_output.proto
-  icebox_plugin.proto
-
 com/android/tools/utp/android-test-plugin-result-listener-gradle
   META-INF/
   META-INF/MANIFEST.MF

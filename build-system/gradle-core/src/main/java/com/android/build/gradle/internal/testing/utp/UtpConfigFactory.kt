@@ -38,8 +38,6 @@ import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstaller
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.InstallableApk.InstallOption.ForceCompilation
 import com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfigProto.AndroidTestCoverageConfig
 import com.android.tools.utp.plugins.host.emulatorcontrol.proto.EmulatorControlPluginProto.EmulatorControlPlugin
-import com.android.tools.utp.plugins.host.icebox.proto.IceboxPluginProto
-import com.android.tools.utp.plugins.host.icebox.proto.IceboxPluginProto.IceboxPlugin
 import com.android.tools.utp.plugins.host.logcat.proto.AndroidTestLogcatConfigProto.AndroidTestLogcatConfig
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig
 import com.google.common.collect.Iterables

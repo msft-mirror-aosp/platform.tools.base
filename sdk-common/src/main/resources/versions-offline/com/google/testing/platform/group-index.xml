@@ -7,9 +7,7 @@
   <android-driver-instrumentation versions="0.0.9-alpha01"/>
   <android-test-plugin versions="0.0.9-alpha01"/>
   <android-test-plugin-host-device-info versions="0.0.9-alpha01"/>
-  <android-test-plugin-host-retention versions="0.0.9-alpha01"/>
   <core versions="0.0.9-alpha01"/>
   <core-proto versions="0.0.9-alpha01"/>
   <launcher versions="0.0.9-alpha01"/>
 </com.google.testing.platform>
-
