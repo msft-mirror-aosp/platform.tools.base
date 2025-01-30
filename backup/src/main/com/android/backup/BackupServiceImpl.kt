@@ -34,6 +34,7 @@ import java.util.Properties
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
@@ -152,6 +153,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     metadata: BackupMetadata,
     backupFile: Path,
   ) {
+    backupFile.parent.createDirectories()
     ZipOutputStream(backupFile.outputStream()).use { zip ->
       zip.putContent(adbServices, TOKEN_FILE)
       zip.putContent(adbServices, PM_DATA_FILE)

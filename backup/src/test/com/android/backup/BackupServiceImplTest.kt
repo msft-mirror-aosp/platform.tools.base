@@ -403,6 +403,17 @@ class BackupServiceImplTest {
   }
 
   @Test
+  fun backup_createsParentDirectories(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "foo/bar/file.backup")
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    backupService.backup("serial", "com.app", CLOUD, backupFile, null)
+
+    assertThat(backupFile.exists()).isTrue()
+  }
+
+  @Test
   fun restore_cloud(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900", CLOUD)
     val adbServicesFactory = FakeAdbServicesFactory("com.app")
