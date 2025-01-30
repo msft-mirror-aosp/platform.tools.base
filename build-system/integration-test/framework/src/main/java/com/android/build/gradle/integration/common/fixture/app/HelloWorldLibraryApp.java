@@ -50,8 +50,8 @@ public class HelloWorldLibraryApp extends MultiModuleTestProject implements Test
                                 + "}\n"
                                 + "\n"
                                 + "android {\n"
-                                + "    namespace \"com.example.app\"\n"
-                                + "    compileSdkVersion "
+                                + "    namespace = \"com.example.app\"\n"
+                                + "    compileSdkVersion = "
                                 + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                                 + "\n"
                                 + "    defaultConfig {\n"
@@ -92,10 +92,10 @@ public class HelloWorldLibraryApp extends MultiModuleTestProject implements Test
                         "apply plugin: 'com.android.library'\n"
                                 + "\n"
                                 + "android {\n"
-                                + "    namespace \""
+                                + "    namespace = \""
                                 + HelloWorldApp.NAMESPACE
                                 + "\"\n"
-                                + "    compileSdkVersion "
+                                + "    compileSdkVersion = "
                                 + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                                 + "\n"
                                 + "}\n"));

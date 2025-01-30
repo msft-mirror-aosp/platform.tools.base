@@ -73,7 +73,7 @@ class DexingArtifactTransformTest {
             """
                 android {
                     buildFeatures {
-                        buildConfig true
+                        buildConfig = true
                     }
                 }
             """.trimIndent()

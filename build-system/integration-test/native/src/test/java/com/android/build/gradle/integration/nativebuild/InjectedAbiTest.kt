@@ -55,9 +55,9 @@ class InjectedAbiTest {
         project.getSubproject(":lib").buildFile.appendText(
                 """
 android {
-    ndkPath "${project.ndkPath}"
+    ndkPath = "${project.ndkPath}"
     defaultConfig {
-        minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+        minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
         ndk {
             abiFilters "x86"
         }

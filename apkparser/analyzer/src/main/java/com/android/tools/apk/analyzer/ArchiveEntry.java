@@ -55,8 +55,20 @@ public abstract class ArchiveEntry {
 
     public void setFileAlignment(ZipEntryInfo.Alignment alignment) {}
 
+    /** The alignment of the offset of the file within the APK. */
     public ZipEntryInfo.Alignment getFileAlignment() {
         return ALIGNMENT_NONE;
+    }
+
+    public void setElfMinimumLoadSectionAlignment(long loadAlignment) {}
+
+    /**
+     * For ELF files only, the minimum alignment (within the ELF file) of the PT_LOAD sections. The
+     * value is in units of byte. So, for example, a value of 4096 indicates 4 KB alignment. -1L is
+     * used to for non-ELF files.
+     */
+    public long getElfMinimumLoadSectionAlignment() {
+        return -1L;
     }
 
     public void setIsFileCompressed(boolean isCompressed) {}

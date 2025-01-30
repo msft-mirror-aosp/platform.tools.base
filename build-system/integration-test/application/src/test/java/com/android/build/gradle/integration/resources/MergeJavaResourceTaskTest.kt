@@ -69,7 +69,7 @@ class MergeJavaResourceTaskTest {
             """
                 android {
                     buildFeatures {
-                        buildConfig true
+                        buildConfig = true
                     }
                 }
             """.trimIndent()

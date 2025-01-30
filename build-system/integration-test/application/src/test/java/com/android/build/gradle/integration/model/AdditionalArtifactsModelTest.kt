@@ -66,7 +66,7 @@ class AdditionalArtifactsModelTest {
                 """
                     dependencyResolutionManagement {
                         repositories {
-                            maven { url 'testrepo' }
+                            maven { url = 'testrepo' }
                         }
                     }
                 """.trimIndent()
@@ -89,7 +89,7 @@ class AdditionalArtifactsModelTest {
                 afterEvaluate {
                     publishing {
                         repositories {
-                            maven { url '../testrepo' }
+                            maven { url = '../testrepo' }
                         }
                     }
                 }

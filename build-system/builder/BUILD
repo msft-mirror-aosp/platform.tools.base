@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:utils.bzl", "fileset")
 load("//tools/base/common:version.bzl", "BUILD_VERSION")

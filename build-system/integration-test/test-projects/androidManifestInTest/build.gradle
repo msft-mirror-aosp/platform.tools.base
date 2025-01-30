@@ -15,11 +15,11 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
+    namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion libs.versions.buildToolsVersion.get()
 
-    testBuildType "debug"
+    testBuildType = "debug"
 
     defaultConfig {
         versionCode 12

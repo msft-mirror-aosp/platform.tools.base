@@ -43,12 +43,12 @@ class CmakeVariantApiTest {
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -108,12 +108,12 @@ class CmakeVariantApiTest {
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -173,12 +173,12 @@ class CmakeVariantApiTest {
             apply plugin: 'com.android.application'
 
             android {
-                namespace "com.example.hellojni"
+                namespace = "com.example.hellojni"
                 compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                 buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                ndkPath "${project.ndkPath}"
+                ndkPath = "${project.ndkPath}"
                 defaultConfig {
-                    minSdk ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");

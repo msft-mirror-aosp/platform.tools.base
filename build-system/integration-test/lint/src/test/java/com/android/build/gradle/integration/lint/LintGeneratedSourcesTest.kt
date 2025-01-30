@@ -38,14 +38,14 @@ class LintGeneratedSourcesTest {
                         """
                             android {
                                 buildFeatures {
-                                    buildConfig true
+                                    buildConfig = true
                                 }
                                 lint {
                                     abortOnError = false
                                     textOutput = file("lint-results.txt")
                                     ignoreTestSources = true
                                     checkGeneratedSources = true
-                                    enable 'StopShip'
+                                    enable('StopShip')
                                 }
                             }
 

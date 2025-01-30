@@ -19,13 +19,13 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.utils.toSystemLineSeparator
 import org.jetbrains.annotations.VisibleForTesting
 import org.junit.Assert
-import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.regex.Pattern
 import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.moveTo
 import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
@@ -78,6 +78,13 @@ interface FileUpdateBuilder {
     fun replaceWith(newContent: String)
 
     /**
+     * Replaces the content of the file with the provided content.
+     *
+     * If the file does not exist, a new file is created with the provided content.
+     */
+    fun replaceWith(newContent: ByteArray)
+
+    /**
      * Search the content of the file with the given string and replace all occurrences with
      * the new content.
      *
@@ -106,6 +113,11 @@ interface FileUpdateBuilder {
      * The file must always exist or an exception is thrown.
      */
     fun transform(action: (String) -> String): FileUpdateBuilder
+
+    /**
+     * Destination of the file to be moved. If there is an existing file, it will be overwritten.
+     */
+    fun moveTo(relativePath: String): FileUpdateBuilder
 }
 
 /**
@@ -239,6 +251,10 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
             map[key] = newContent
         }
 
+        override fun replaceWith(newContent: ByteArray) {
+            map[key] = newContent
+        }
+
         override fun searchAndReplace(
             search: String,
             replace: String,
@@ -274,6 +290,13 @@ internal open class DelayedGradleProjectFiles: GradleProjectFiles {
                 ?: throw RuntimeException("Can only do transform on string content (key: $key")
 
             map[key] = action(stringContent)
+            return this
+        }
+
+        override fun moveTo(relativePath: String): FileUpdater {
+            map[relativePath] = map[key]
+                ?: throw RuntimeException("File $key not found. Cannot move.")
+            map.remove(key)
             return this
         }
     }
@@ -313,13 +336,13 @@ internal open class DirectGradleProjectFiles(
     }
 
     override fun update(relativePath: String): FileUpdateBuilder =
-        FileUpdater(location.resolve(relativePath))
+        FileUpdater(location.resolve(relativePath), location)
 
     override fun remove(relativePath: String) {
         location.resolve(relativePath).deleteIfExists()
     }
 
-    private class FileUpdater(private val file: Path): FileUpdateBuilder {
+    private class FileUpdater(private val file: Path, private val location: Path): FileUpdateBuilder {
 
         override val exists: Boolean
             get() = file.isRegularFile()
@@ -327,6 +350,11 @@ internal open class DirectGradleProjectFiles(
         override fun replaceWith(newContent: String) {
             file.parent.createDirectories()
             file.writeText(newContent)
+        }
+
+        override fun replaceWith(newContent: ByteArray) {
+            file.parent.createDirectories()
+            file.writeBytes(newContent)
         }
 
         override fun searchAndReplace(
@@ -367,6 +395,13 @@ internal open class DirectGradleProjectFiles(
                 throw RuntimeException("File $file not found. Cannot update")
 
             file.writeText(action(content))
+            return this
+        }
+
+        override fun moveTo(relativePath: String): FileUpdateBuilder {
+            val destination = location.resolve(relativePath)
+            destination.parent.createDirectories()
+            file.moveTo(destination, true)
             return this
         }
     }

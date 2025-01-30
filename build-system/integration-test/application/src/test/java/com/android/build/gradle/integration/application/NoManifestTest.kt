@@ -75,7 +75,7 @@ class NoManifestTest {
         TestFileUtils.appendToFile(
             project.getSubproject(":app").buildFile, """
                 android {
-                    namespace "com.example.app"
+                    namespace = "com.example.app"
                     defaultConfig {
                         applicationId "com.example.app"
                         testApplicationId "com.example.app.test"
@@ -86,7 +86,7 @@ class NoManifestTest {
         TestFileUtils.appendToFile(
                 project.getSubproject(":lib").buildFile,
                 """
-                    android.namespace "com.example.lib"
+                    android.namespace = "com.example.lib"
                     """.trimIndent()
         )
         val issues = getProjectSyncIssuesWithNoManifestParsing(":app")
@@ -102,13 +102,13 @@ class NoManifestTest {
         TestFileUtils.appendToFile(
                 project.getSubproject(":app").buildFile,
                 """
-                    android.namespace "com.example.app"
+                    android.namespace = "com.example.app"
                     """.trimIndent()
         )
         TestFileUtils.appendToFile(
                 project.getSubproject(":lib").buildFile,
                 """
-                    android.namespace "com.example.lib"
+                    android.namespace = "com.example.lib"
                     """.trimIndent()
         )
         val issues = getProjectSyncIssuesWithNoManifestParsing(":app")
@@ -125,7 +125,7 @@ class NoManifestTest {
         TestFileUtils.appendToFile(
                 project.getSubproject(":lib").buildFile,
                 """
-                    android.namespace "com.example.lib"
+                    android.namespace = "com.example.lib"
                     """.trimIndent()
         )
         val result = project.executor().run(":lib:build", ":lib:assembleAndroidTest")

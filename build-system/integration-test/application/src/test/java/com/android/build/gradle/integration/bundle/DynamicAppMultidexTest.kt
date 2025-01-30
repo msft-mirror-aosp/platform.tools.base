@@ -33,7 +33,7 @@ class DynamicAppMultidexTest {
     @Test
     fun testSyncWarning() {
         project.getSubproject("feature1").buildFile.appendText(
-            "android.buildTypes.debug.multiDexEnabled true"
+            "android.buildTypes.debug.multiDexEnabled = true"
         )
 
         val container = project.modelV2().ignoreSyncIssues().fetchModels().container

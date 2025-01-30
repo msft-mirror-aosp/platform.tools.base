@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType.LINKED_MERGE_RES_FOR_ASB
 import com.android.build.gradle.internal.res.PrivacySandboxSdkLinkAndroidResourcesTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ToolsRevisionUtils
@@ -107,11 +108,8 @@ internal class PrivacySandboxSdkLinkAndroidResourcesTaskTest {
         build.executor.run(":privacySdkSandbox1:linkPrivacySandboxResources")
 
         val privacySandboxSdk = build.privacySandboxSdk(":privacySdkSandbox1")
-        val bundledResourcesFile = privacySandboxSdk.getIntermediatePath(
-                PrivacySandboxSdkInternalArtifactType.LINKED_MERGE_RES_FOR_ASB.getFolderName(),
-                "single",
-                "linkPrivacySandboxResources",
-                "bundled-res.ap_")
+        val bundledResourcesFile = privacySandboxSdk.resolve(LINKED_MERGE_RES_FOR_ASB)
+            .resolve("single/linkPrivacySandboxResources/bundled-res.ap_")
         assertThat(bundledResourcesFile.isRegularFile()).isTrue()
         ZipFile(bundledResourcesFile.toFile()).use { zip ->
             val entries = zip.entries().toList().map { it.name }

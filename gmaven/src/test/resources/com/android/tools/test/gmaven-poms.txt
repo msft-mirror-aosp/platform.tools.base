@@ -966,26 +966,6 @@ com.android.tools.utp:android-test-plugin-host-logcat-proto
   dependencies:
     com.google.protobuf:protobuf-java (runtime)
 
-com.android.tools.utp:android-test-plugin-host-retention
-  pomName=com.android.tools.utp.android-test-plugin-host-retention
-  description=A UTP plugin to take a device snapshot on test failures.
-  dependencies:
-    com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
-    commons-io:commons-io (runtime)
-    com.google.code.gson:gson (runtime)
-    io.grpc:grpc-core (runtime)
-    io.grpc:grpc-netty (runtime)
-    io.grpc:grpc-protobuf (runtime)
-    io.grpc:grpc-stub (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.google.guava:guava (runtime)
-    com.android.tools.utp:utp-common (runtime)
-    com.android.tools.utp:android-test-plugin-host-retention-proto (runtime)
-    com.android.tools.emulator:proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
 com.android.tools.utp:android-test-plugin-host-retention-proto
   pomName=com.android.tools.utp.android-test-plugin-host-retention-proto
   description=A protobuf message used in UTP plugin to take a device snapshot on test failures.

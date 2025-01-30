@@ -129,12 +129,13 @@ class CoreLibraryDesugarTest {
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
                         targetCompatibility JavaVersion.VERSION_1_8
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
                 }
                 android.defaultConfig.multiDexEnabled = true
                 dependencies {
                     implementation project("$LIBRARY_MODULE")
+                    //noinspection CoreLibDesugaringV1
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
             """.trimIndent())
@@ -168,11 +169,12 @@ class CoreLibraryDesugarTest {
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
                         targetCompatibility JavaVersion.VERSION_1_8
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
                     android.defaultConfig.multiDexEnabled = true
                 }
                 dependencies {
+                    //noinspection CoreLibDesugaringV1
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
             """.trimIndent()

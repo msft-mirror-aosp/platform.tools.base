@@ -133,12 +133,12 @@ class ListenToApiTest {
             """
                 android {
                     defaultConfig {
-                        multiDexKeepProguard file('default-rules')
+                        multiDexKeepProguard = file('default-rules')
                     }
                     buildTypes {
                         release {
                             minifyEnabled true
-                            multiDexKeepProguard file('rules')
+                            multiDexKeepProguard = file('rules')
                         }
                     }
                 }

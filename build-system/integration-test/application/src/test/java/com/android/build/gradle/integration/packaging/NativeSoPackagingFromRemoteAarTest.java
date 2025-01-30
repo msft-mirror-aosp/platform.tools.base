@@ -57,7 +57,7 @@ public class NativeSoPackagingFromRemoteAarTest {
                 project.getSettingsFile(),
                 "dependencyResolutionManagement {\n"
                         + "    repositories {\n"
-                        + "        maven { url 'testrepo' }\n"
+                        + "        maven { url = 'testrepo' }\n"
                         + "    }\n"
                         + "}\n"
         );

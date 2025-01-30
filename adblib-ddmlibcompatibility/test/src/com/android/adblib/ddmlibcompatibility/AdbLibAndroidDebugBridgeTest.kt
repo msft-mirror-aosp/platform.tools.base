@@ -15,6 +15,7 @@
  */
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.adblib.AdbChannel
 import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
@@ -30,6 +31,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.IOException
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.file.Paths
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
@@ -240,20 +244,126 @@ class AdbLibAndroidDebugBridgeTest {
         }
     }
 
+    @Test
+    fun getSocketAddress_inUnitTestMode_returnDefaultInetSocketAddress() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        val serverPort = 123
+        val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+
+        // Act / Assert
+        bridge.enableFakeAdbServerMode(serverPort)
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+    }
+
+    @Test
+    fun getSocketAddress_returnDefaultInetSocketAddress_whenAdbServerControllerThrows() {
+        val session = FakeAdbSession()
+        val adbServerChannelProvider = FakeAdbServerChannelProvider()
+        val adbServerController =
+            FakeAdbServerController(channelProvider = adbServerChannelProvider)
+        val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+        adbServerChannelProvider.exceptionToThrow = Exception("Test exception")
+
+        // Act / Assert
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+    }
+
+    @Test
+    fun getSocketAddress_getsAddressFromAdbServerController() {
+        val session = FakeAdbSession()
+        val adbServerChannelProvider = FakeAdbServerChannelProvider()
+        val adbServerController =
+            FakeAdbServerController(channelProvider = adbServerChannelProvider)
+        val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+
+        // Act / Assert: `socketAddress` set to default when AdbServerController's
+        // `lastKnownRemoteAddress` is not set. Assert a call to `createChannel` is happening.
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+        assertEquals(1, adbServerChannelProvider.createChannelCallCount)
+
+        // Act / Assert: Try again and assert that a call to `createChannel` happens again.
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+        assertEquals(2, adbServerChannelProvider.createChannelCallCount)
+
+        // Act / Assert: Have `AdbServerController`'s `lastKnownRemoteAddress` set to a non-null
+        // value and try getting `socketAddress` again.
+        val controllerConfiguredLastKnownRemoteAddress = InetSocketAddress(157)
+        adbServerController.lastKnownRemoteAddress = controllerConfiguredLastKnownRemoteAddress
+        assertEquals(controllerConfiguredLastKnownRemoteAddress, bridge.socketAddress)
+        assertEquals(2, adbServerChannelProvider.createChannelCallCount)
+    }
+
     // TODO: Add many more tests
 
-    private class FakeAdbServerController(private val startDelayMs: Long = 0) : AdbServerController {
+    private class FakeAdbServerChannelProvider(): AdbServerChannelProvider {
+        var exceptionToThrow: Throwable? = null
+        var createChannelCallCount = 0
+
+        override suspend fun createChannel(
+            timeout: Long,
+            unit: TimeUnit
+        ): AdbChannel {
+            ++createChannelCallCount
+            exceptionToThrow?.let { throw it }
+
+            return object : AdbChannel {
+                override suspend fun shutdownInput() {
+                    throw UnsupportedOperationException("Not yet implemented")
+                }
+
+                override suspend fun shutdownOutput() {
+                    throw UnsupportedOperationException("Not yet implemented")
+                }
+
+                override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+                    throw UnsupportedOperationException("Not yet implemented")
+                }
+
+                override fun close() {
+                    throw UnsupportedOperationException("Not yet implemented")
+                }
+
+                override suspend fun writeBuffer(
+                    buffer: ByteBuffer,
+                    timeout: Long,
+                    unit: TimeUnit
+                ) {
+                    throw UnsupportedOperationException("Not yet implemented")
+                }
+            }
+        }
+    }
+
+    private class FakeAdbServerController(private val startDelayMs: Long = 0,
+        override val channelProvider: AdbServerChannelProvider = FakeAdbServerChannelProvider()
+    ) : AdbServerController {
 
         var throwOnStart: Throwable? = null
         var throwOnStop: Throwable? = null
 
-        override val channelProvider: AdbServerChannelProvider
-            get() {
-                throw UnsupportedOperationException("Not yet implemented")
-            }
-
         override var isStarted: Boolean = false
             private set
+
+        override var lastKnownRemoteAddress: InetSocketAddress? = null
 
         override suspend fun start() {
             throwOnStart?.let { throw it }

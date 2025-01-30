@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.AssetPackBund
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
@@ -214,6 +215,35 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: FusedLibraryDefinition.() -> Unit
     ): FusedLibraryDefinition
+
+    /**
+     * Configures a subProject with the Kotlin multiplatform plugin, configured with the Android
+     * plugin, creating it if needed.
+     */
+    fun androidKotlinMultiplatformLibrary(
+        path: String,
+        createMinimumProject: Boolean = true,
+        action: KotlinMultiplatformDefinition.() -> Unit
+    ) : KotlinMultiplatformDefinition
+
+    /**
+     * Configures a subProject with the Kotlin multiplatform plugin, creating it if needed.
+     */
+    fun kotlinMultiplatformLibrary(
+        path: String,
+        action: KotlinMultiplatformDefinition.() -> Unit
+    ) : KotlinMultiplatformDefinition
+
+    /**
+     * Configures an existing project in a generic way.
+     *
+     * The project definition *must* have been created beforehand. The project can be of any
+     * type, but the action is generic.
+     */
+    fun configure(
+        path: String,
+        action: GradleProjectDefinition.() -> Unit
+    )
 
     /**
      * configures the Gradle properties for this build

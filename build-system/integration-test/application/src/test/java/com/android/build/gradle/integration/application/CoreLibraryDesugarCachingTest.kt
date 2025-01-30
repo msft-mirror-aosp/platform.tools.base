@@ -79,12 +79,12 @@ class CoreLibraryDesugarCachingTest {
                 android {
                     defaultConfig {
                         minSdkVersion 22
-                        multiDexEnabled true
+                        multiDexEnabled = true
                     }
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
                         targetCompatibility JavaVersion.VERSION_1_8
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
                 }
                 dependencies {

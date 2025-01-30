@@ -43,7 +43,7 @@ internal class AndroidTestDefinitionImpl(
     override val android: TestExtension =
         DslProxy.createProxy(
             TestExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 initDefaultValues(it)

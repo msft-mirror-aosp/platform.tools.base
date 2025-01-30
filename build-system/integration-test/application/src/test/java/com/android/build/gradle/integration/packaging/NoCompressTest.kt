@@ -60,7 +60,7 @@ class NoCompressTest {
                             }
                             testOptions {
                                 unitTests {
-                                    includeAndroidResources true
+                                    includeAndroidResources = true
                                 }
                             }
                         }

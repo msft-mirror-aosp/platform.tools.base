@@ -45,8 +45,8 @@ class LintStringFormatDetectorTest {
                 """
                     android {
                         lint {
-                            abortOnError false
-                            textOutput file("lint-results.txt")
+                            abortOnError = false
+                            textOutput = file("lint-results.txt")
                         }
                     }
                 """.trimIndent()

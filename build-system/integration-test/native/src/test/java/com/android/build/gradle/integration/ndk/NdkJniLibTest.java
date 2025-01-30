@@ -46,7 +46,7 @@ public class NdkJniLibTest {
                 "\n"
                         + "apply plugin: 'com.android.library'\n"
                         + "android {\n"
-                        + "    namespace \"com.example.hellojni.lib\"\n"
+                        + "    namespace = \"com.example.hellojni.lib\"\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion 21\n"
                         + "    }\n"

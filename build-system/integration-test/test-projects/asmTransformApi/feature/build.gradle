@@ -21,7 +21,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.feature"
+    namespace = "com.example.feature"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     defaultConfig {

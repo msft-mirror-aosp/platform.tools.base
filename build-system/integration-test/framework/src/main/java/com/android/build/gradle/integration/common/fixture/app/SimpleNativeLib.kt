@@ -30,7 +30,7 @@ class SimpleNativeLib : GradleProject() {
                     """
 apply plugin: 'com.android.library'
 android {
-    namespace "com.example.mylibrary"
+    namespace = "com.example.mylibrary"
     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
     externalNativeBuild {
         cmake {

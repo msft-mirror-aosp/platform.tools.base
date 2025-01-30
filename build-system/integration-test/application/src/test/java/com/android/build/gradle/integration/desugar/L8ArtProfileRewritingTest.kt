@@ -55,7 +55,7 @@ class L8ArtProfileRewritingTest {
                     android {
                         compileOptions.coreLibraryDesugaringEnabled = true
                         buildFeatures {
-                            buildConfig true
+                            buildConfig = true
                         }
                         buildTypes {
                             release {

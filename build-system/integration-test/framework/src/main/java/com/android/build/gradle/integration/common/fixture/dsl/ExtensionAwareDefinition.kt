@@ -38,14 +38,15 @@ interface ExtensionAwareDefinition {
      * are proxied by the fixture.
      */
     fun <T: Any> Any.viaExtension(name: String, theClass: KClass<T>, action: T.() -> Unit) {
-        // we need to get access to the [DslContentHolder] from the proxied interface
+        // we need to get access to the [DslRecorder] from the proxied interface
         val invocationHandler = Proxy.getInvocationHandler(this) as DslProxy
 
-        invocationHandler.contentHolder.runNestedBlock(
+        invocationHandler.dslRecorder.runNestedBlock(
             name = name,
             parameters = listOf(),
-            theInterface = theClass.java,
-            parentChain = listOf(),
+            instanceProvider = {
+                DslProxy.createProxy(theClass.java, it)
+            },
             action = action
         )
     }

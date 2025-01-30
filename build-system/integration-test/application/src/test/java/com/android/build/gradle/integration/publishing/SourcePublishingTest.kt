@@ -71,7 +71,7 @@ class SourcePublishingTest {
 
                 android {
                     buildFeatures {
-                        buildConfig true
+                        buildConfig = true
                     }
                 }
 
@@ -89,7 +89,7 @@ class SourcePublishingTest {
                 afterEvaluate {
                     publishing {
                         repositories {
-                            maven { url '../testrepo' }
+                            maven { url = '../testrepo' }
                         }
                     }
                 }

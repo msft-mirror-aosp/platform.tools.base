@@ -80,7 +80,20 @@ interface AdbServices {
 
   suspend fun isPlayStoreInstalled(): Boolean
 
-  class AdbOutput(val stdout: String, val stderr: String)
+  class AdbOutput(val stdout: String, val stderr: String) {
+    val out =
+      """
+      stdout:
+      ---------------------------
+      $stdout
+      ---------------------------
+      stderr:
+      ---------------------------
+      $stderr
+      ---------------------------
+    """
+        .trimIndent()
+  }
 
   suspend fun setTransport(transport: String, verify: Boolean): String
 }

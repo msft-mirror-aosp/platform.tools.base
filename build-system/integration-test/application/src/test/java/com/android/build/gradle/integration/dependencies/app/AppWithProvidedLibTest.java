@@ -53,7 +53,7 @@ public class AppWithProvidedLibTest {
                         "apply plugin: 'com.android.library'\n"
                                 + "\n"
                                 + "android {\n"
-                                + "    namespace 'com.example.android.multiproject.library.base'\n"
+                                + "    namespace = 'com.example.android.multiproject.library.base'\n"
                                 + "    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()\n"
                                 + "\n"
                                 + "}\n");

@@ -22,11 +22,11 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.basic"
-    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    namespace = "com.android.tests.basic"
+    compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    testBuildType "debug"
+    testBuildType = "debug"
 
     defaultConfig {
         versionCode 12
@@ -38,7 +38,7 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArgument "size", "medium"
 
-        testHandleProfiling false
+        testHandleProfiling = false
 
         buildConfigField "boolean", "DEFAULT", "true"
         buildConfigField "String", "FOO", "\"foo\""
@@ -56,7 +56,7 @@ android {
         debug {
             applicationIdSuffix ".debug"
 
-            testCoverageEnabled true
+            testCoverageEnabled = true
 
             buildConfigField "String", "FOO", "\"bar1\""
             buildConfigField "String", "FOO", "\"bar\""
@@ -67,7 +67,7 @@ android {
 
     aaptOptions {
         noCompress 'txt'
-        ignoreAssetsPattern "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
     }
 
     adbOptions {
@@ -76,17 +76,17 @@ android {
 
     lintOptions {
         // set to true to turn off analysis progress reporting by lint
-        quiet true
+        quiet = true
         // if true, stop the gradle build if errors are found
-        abortOnError false
+        abortOnError = false
         // if true, only report errors
-        ignoreWarnings true
+        ignoreWarnings = true
         // if true, emit full/absolute paths to files with errors (true by default)
         //absolutePaths true
         // if true, check all issues, including those that are off by default
-        checkAllWarnings true
+        checkAllWarnings = true
         // if true, treat all warnings as errors
-        warningsAsErrors true
+        warningsAsErrors = true
         // turn off checking the given issue id's
         disable 'TypographyFractions','TypographyQuotes'
         // turn on the given issue id's
@@ -94,33 +94,33 @@ android {
         // check *only* the given issue id's
         checkOnly 'NewApi', 'InlinedApi'
         // if true, don't include source code lines in the error output
-        noLines true
+        noLines = true
         // if true, show all locations for an error, do not truncate lists, etc.
-        showAll true
+        showAll = true
         // Fallback lint configuration (default severities, etc.)
-        lintConfig file("default-lint.xml")
+        lintConfig = file("default-lint.xml")
         // if true, generate a text report of issues (false by default)
-        textReport true
+        textReport = true
         // location to write the output; can be a file or 'stdout'
         textOutput 'stdout'
         // if true, generate an XML report for use by for example Jenkins
-        xmlReport false
+        xmlReport = false
         // file to write report to (if not specified, defaults to lint-results.xml)
-        xmlOutput file("lint-report.xml")
+        xmlOutput = file("lint-report.xml")
         // if true, generate an HTML report (with issue explanations, sourcecode, etc)
-        htmlReport true
+        htmlReport = true
         // optional path to report (default will be lint-results.html in the builddir)
-        htmlOutput file("lint-report.html")
+        htmlOutput = file("lint-report.html")
         // Reduce severity of this check to just informational
         informational 'LogConditional'
         // Run all lint checks on all test sources, not just production code
-        checkTestSources true
+        checkTestSources = true
         // Run all lint checks on generated sources
-        checkGeneratedSources true
+        checkGeneratedSources = true
     }
 
     buildFeatures {
-        buildConfig true
+        buildConfig = true
     }
 
     // Override the versionCode of the release version

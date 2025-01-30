@@ -154,7 +154,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(), "android.defaultConfig.minSdkVersion = 30");
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "android.namespace \"com.example.hellojni\"");
+                project.getBuildFile(), "android.namespace = \"com.example.hellojni\"");
     }
 
     /** Tests that the compile SDK target and build tools are automatically downloaded. */
@@ -163,7 +163,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -234,7 +234,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion 'MadeUp'"
+                        + "android.compileSdkVersion = 'MadeUp'"
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
                         + BUILD_TOOLS_VERSION
@@ -254,7 +254,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -279,11 +279,11 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.ndkVersion '"
+                        + "android.ndkVersion = '"
                         + NDK_VERSION
                         + "'"
                         + System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -292,7 +292,7 @@ public class SdkAutoDownloadTest {
                         + System.lineSeparator()
                         + "android.externalNativeBuild.cmake.path \"CMakeLists.txt\""
                         + System.lineSeparator()
-                        + "android.externalNativeBuild.cmake.version \""
+                        + "android.externalNativeBuild.cmake.version = \""
                         + CMAKE_VERSION
                         + "\"");
 
@@ -313,12 +313,12 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.ndkVersion "
+                        + "android.ndkVersion = "
                         + "\""
                         + NDK_VERSION
                         + "\""
                         + System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -327,7 +327,7 @@ public class SdkAutoDownloadTest {
                         + System.lineSeparator()
                         + "android.externalNativeBuild.cmake.path \"CMakeLists.txt\""
                         + System.lineSeparator()
-                        + "android.externalNativeBuild.cmake.version \""
+                        + "android.externalNativeBuild.cmake.version = \""
                         + CMAKE_VERSION
                         + "\"");
 
@@ -360,12 +360,12 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.ndkVersion "
+                        + "android.ndkVersion = "
                         + "\""
                         + NDK_VERSION
                         + "\""
                         + System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -421,7 +421,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -445,7 +445,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -498,7 +498,7 @@ public class SdkAutoDownloadTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 System.lineSeparator()
-                        + "android.compileSdkVersion "
+                        + "android.compileSdkVersion = "
                         + PLATFORM_VERSION
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
@@ -582,7 +582,7 @@ public class SdkAutoDownloadTest {
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
                     System.lineSeparator()
-                            + "android.compileSdkVersion "
+                            + "android.compileSdkVersion = "
                             + PLATFORM_VERSION
                             + System.lineSeparator()
                             + "android.buildToolsVersion \""

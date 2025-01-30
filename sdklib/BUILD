@@ -1,5 +1,7 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:expand_template.bzl", "expand_template")
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
@@ -521,8 +523,6 @@ xsd_java_library(
     xsd = "src/main/resources/xsd/sources/sdk-sites-list-6.xsd",
     xsd_deps = ["//tools/base/repository:repo-sites-common-1"],
 )
-
-load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 
 # managed by go/iml_to_build
 jvm_import(

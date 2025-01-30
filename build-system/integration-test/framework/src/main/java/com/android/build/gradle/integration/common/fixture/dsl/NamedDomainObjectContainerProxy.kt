@@ -32,23 +32,48 @@ import java.util.SortedSet
 
 class NamedDomainObjectContainerProxy<T>(
     private val theInterface: Class<T>,
-    private val contentHolder: DslContentHolder,
+    internal val dslRecorder: DslRecorder,
 ): NamedDomainObjectContainer<T> {
 
     override fun named(
         name: String,
         configurationAction: Action<in T>
     ): NamedDomainObjectProvider<T> {
-        val item = contentHolder.runNestedBlock("named", listOf(name), theInterface) {
+        dslRecorder.runNestedBlock(
+            name = "named",
+            parameters = listOf(name),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
             configurationAction.execute(this)
         }
 
-        return NamedDomainObjectProviderProxy(item)
+        // the returned object should not be used so we use a custom proxy for this that will
+        // prevent usage
+        @Suppress("UNCHECKED_CAST")
+        return UnusableObjectProxy.createProxy(NamedDomainObjectProvider::class.java) as NamedDomainObjectProvider<T>
     }
 
     override fun create(name: String, configureAction: Action<in T>): T {
-        return contentHolder.runNestedBlock("create", listOf(name), theInterface) {
+        dslRecorder.runNestedBlock(
+            name = "create",
+            parameters = listOf(name),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
             configureAction.execute(this)
+        }
+
+        // the returned object should not be used so we use a custom proxy for this that will
+        // prevent usage
+        return UnusableObjectProxy.createProxy(theInterface)
+    }
+
+    override fun all(action: Action<in T>) {
+        dslRecorder.runNestedBlock(
+            name = "all",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
+            action.execute(this)
         }
     }
 
@@ -197,10 +222,6 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun configureEach(action: Action<in T>) {
-        throw RuntimeException("Not Supported")
-    }
-
-    override fun all(action: Action<in T>) {
         throw RuntimeException("Not Supported")
     }
 

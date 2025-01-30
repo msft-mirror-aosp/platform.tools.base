@@ -709,6 +709,9 @@ public class AvdManager {
             }
             addCpuArch(systemImage, configValues);
 
+            // Store the Android version (target hash) in config.ini, not just the metadata ini
+            configValues.put(ConfigKey.TARGET, AndroidTargetHash.getPlatformHashString(systemImage.getAndroidVersion()));
+
             // We've done as much work as we can without writing to disk. Now start writing the
             // .ini files, creating the SD card (if necessary), copying userdata.img, etc. After
             // this point, we will delete the AVD if something goes wrong, since it will be in an
@@ -947,7 +950,7 @@ public class AvdManager {
      * @param avdFolder path for the data folder of the AVD.
      * @param removePrevious True if an existing ini file should be removed.
      * @throws AndroidLocationsException if there's a problem getting android root directory.
-     * @throws IOException if {@link Files#delete(Path)} ()} fails.
+     * @throws IOException if {@link Files#delete(Path)} fails.
      */
     private Path createAvdIniFile(
             @NonNull String avdName,
@@ -1373,32 +1376,14 @@ public class AvdManager {
             properties = new HashMap<>();
         }
 
-        if (!properties.containsKey(ConfigKey.ANDROID_API)
-                && !properties.containsKey(ConfigKey.ANDROID_CODENAME)) {
-            String targetHash = metadata.get(MetadataKey.TARGET);
-            if (targetHash != null) {
-                AndroidVersion version = AndroidTargetHash.getVersionFromHash(targetHash);
-                if (version != null) {
-                    properties.put(ConfigKey.ANDROID_API, Integer.toString(version.getApiLevel()));
-                    if (version.getExtensionLevel() != null) {
-                        properties.put(
-                                ConfigKey.ANDROID_EXTENSION,
-                                Integer.toString(version.getExtensionLevel()));
-                        properties.put(
-                                ConfigKey.ANDROID_IS_BASE_EXTENSION,
-                                Boolean.toString(version.isBaseExtension()));
-                    }
-                    if (version.getCodename() != null) {
-                        properties.put(ConfigKey.ANDROID_CODENAME, version.getCodename());
-                    }
-                    if (!version.isBaseExtension() && version.getExtensionLevel() != null) {
-                        properties.put(
-                                ConfigKey.ANDROID_EXTENSION_LEVEL,
-                                Integer.toString(version.getExtensionLevel()));
-                    }
-                }
+        // Copy the target to the properties
+        if (!properties.containsKey(ConfigKey.TARGET)) {
+           String target = metadata.get(MetadataKey.TARGET);
+            if (target != null) {
+                properties.put(ConfigKey.TARGET, target);
             }
         }
+
         // Set the "tag.ids" property if it is not present but the "tag.id" property is.
         if (!properties.containsKey(ConfigKey.TAG_IDS)) {
             String tagId = properties.get(ConfigKey.TAG_ID);
@@ -1453,11 +1438,6 @@ public class AvdManager {
             }
 
             ArrayList<String> keys = new ArrayList<>(values.keySet());
-            // Do not save these values (always recompute)
-            keys.remove(ConfigKey.ANDROID_API);
-            keys.remove(ConfigKey.ANDROID_EXTENSION);
-            keys.remove(ConfigKey.ANDROID_IS_BASE_EXTENSION);
-            keys.remove(ConfigKey.ANDROID_CODENAME);
             Collections.sort(keys);
 
             for (String key : keys) {

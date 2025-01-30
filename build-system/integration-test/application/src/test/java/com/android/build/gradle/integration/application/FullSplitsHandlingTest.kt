@@ -58,13 +58,13 @@ class FullSplitsHandlingTest {
             "android {\n"
                     + "    splits {\n"
                     + "        density {\n"
-                    + "            enable true\n"
+                    + "            enable = true\n"
                     + "            reset()\n"
                     + "            include \"ldpi\", \"hdpi\"\n"
                     + "        }\n"
                     + "    }\n"
                     + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources true\n" +
+                    "        unitTests.includeAndroidResources = true\n" +
                     "    }"
                     + "}")
 
@@ -78,19 +78,19 @@ class FullSplitsHandlingTest {
             "android {\n"
                     + "    splits {\n"
                     + "        abi {\n"
-                    + "            enable true\n"
+                    + "            enable = true\n"
                     + "            reset()\n"
                     + "            include 'x86', 'armeabi-v7a'\n"
-                    + "            universalApk false\n"
+                    + "            universalApk = false\n"
                     + "        }\n"
                     + "        density {\n"
-                    + "            enable true\n"
+                    + "            enable = true\n"
                     + "            reset()\n"
                     + "            include \"ldpi\", \"hdpi\"\n"
                     + "        }\n"
                     + "    }\n"
                     + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources true\n" +
+                    "        unitTests.includeAndroidResources = true\n" +
                     "    }"
                     + "}"
         )
@@ -104,7 +104,7 @@ class FullSplitsHandlingTest {
         Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
             "android {\n"
                     + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources true\n" +
+                    "        unitTests.includeAndroidResources = true\n" +
                     "    }"
                     + "}")
 
@@ -118,14 +118,14 @@ class FullSplitsHandlingTest {
             "android {\n"
                     + "    splits {\n"
                     + "        abi {\n"
-                    + "            enable true\n"
+                    + "            enable = true\n"
                     + "            reset()\n"
                     + "            include 'x86', 'armeabi-v7a'\n"
-                    + "            universalApk false\n"
+                    + "            universalApk = false\n"
                     + "        }\n"
                     + "    }\n"
                     + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources true\n" +
+                    "        unitTests.includeAndroidResources = true\n" +
                     "    }"
                     + "}")
 

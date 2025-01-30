@@ -140,5 +140,12 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals(3, version.getExtensionLevel().intValue());
         assertFalse(version.isBaseExtension());
         assertNull(version.getCodename());
+
+        assertEquals(
+            new AndroidVersion(36, 1, null, null, true),
+            AndroidTargetHash.getPlatformVersion("android-36.1"));
+        assertEquals(
+            new AndroidVersion(36, 1, null, 21, false),
+            AndroidTargetHash.getPlatformVersion("android-36.1-ext21"));
     }
 }

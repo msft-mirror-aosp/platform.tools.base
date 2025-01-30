@@ -69,11 +69,11 @@ class CoreLibraryDesugarConversionConnectedTest(minSdkVersion: Int) {
             """
                 android {
                     compileOptions {
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
 
                     defaultConfig {
-                        multiDexEnabled true
+                        multiDexEnabled = true
                     }
                 }
                 dependencies {
@@ -191,7 +191,7 @@ class CoreLibraryDesugarConversionConnectedTest(minSdkVersion: Int) {
     fun testFunctionWithDesugaredLibraryParamInNonMinifiedReleaseBuild() {
         // check non-minified release build (d8 with keep rules)
         setupKeyStore()
-        project.buildFile.appendText("\n\nandroid.testBuildType \"release\"\n\n")
+        project.buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
         project.executor().run("connectedReleaseAndroidTest")
     }
 
@@ -210,14 +210,14 @@ class CoreLibraryDesugarConversionConnectedTest(minSdkVersion: Int) {
             android {
                 signingConfigs {
                     release {
-                        storeFile file("$STORE_FILE_NAME")
-                        storePassword "$STORE_PASSWORD"
-                        keyAlias "$ALIAS_NAME"
-                        keyPassword "$KEY_PASSWORD"
+                        storeFile = file("$STORE_FILE_NAME")
+                        storePassword = "$STORE_PASSWORD"
+                        keyAlias = "$ALIAS_NAME"
+                        keyPassword = "$KEY_PASSWORD"
                     }
                 }
                 buildTypes {
-                    release.signingConfig signingConfigs.release
+                    release.signingConfig = signingConfigs.release
                 }
             }
         """.trimIndent())

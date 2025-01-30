@@ -1,4 +1,5 @@
-load("//tools/base/bazel/avd:avd.bzl", "avd", "DEFAULT_AVD_IMAGE")
+load("@rules_java//java:defs.bzl", "java_test")
+load("//tools/base/bazel/avd:avd.bzl", "DEFAULT_AVD_IMAGE", "avd")
 
 # This test demonstrates running an emulator on RBE and using it for a Java
 # test.

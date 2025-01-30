@@ -45,10 +45,10 @@ public class BuildConfigTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "  compileSdkVersion "
+                        + "  compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "  buildToolsVersion \""
@@ -89,7 +89,7 @@ public class BuildConfigTest {
                         + "  }\n"
                         + "\n"
                         + "  buildFeatures {\n"
-                        + "    buildConfig true\n"
+                        + "    buildConfig = true\n"
                         + "  }\n"
                         + "\n"
                         + "  applicationVariants.all { variant ->\n"

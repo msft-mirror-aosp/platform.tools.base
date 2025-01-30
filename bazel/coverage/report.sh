@@ -30,5 +30,6 @@ echo "Run tests to generate coverage data"
 echo "Processing raw coverage data"
 ./tools/base/bazel/bazel build -- "@cov//:${report_name}.lcov.notests" || exit $?
 echo "Generating HTML report in ${html_dir}"
-genhtml -o ${html_dir} -p $(pwd) --no-function-coverage "bazel-bin/external/cov/${report_name}/lcov.notests" || exit $?
+readonly lcov_path="$(./tools/base/bazel/bazel cquery --output files @cov//:${report_name}/lcov.notests)"
+genhtml -o ${html_dir} -p $(pwd) --no-function-coverage ${lcov_path} || exit $?
 echo "Done"

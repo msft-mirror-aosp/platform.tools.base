@@ -53,6 +53,8 @@ public class AndroidVersionTest {
         assertThat(new AndroidVersion(33).withBaseExtensionLevel())
             .isEqualTo(new AndroidVersion(33, null, 3, true));
         assertThat(new AndroidVersion(33).withBaseExtensionLevel().getExtensionLevel()).isEqualTo(3);
+        assertThat( new AndroidVersion(36, 1).withBaseExtensionLevel())
+            .isEqualTo(new AndroidVersion(36, 1, null, null, true));
     }
 
     @Test
@@ -63,6 +65,8 @@ public class AndroidVersionTest {
             .isEqualTo(new AndroidVersion(33, null, 3, true));
         assertThat(new AndroidVersion(33).withExtensionLevel(4))
             .isEqualTo(new AndroidVersion(33, null, 4, false));
+        assertThat(new AndroidVersion(36, 1).withExtensionLevel(99))
+            .isEqualTo(new AndroidVersion(36, 1, null, 99, false));
     }
 
     @Test
@@ -114,6 +118,22 @@ public class AndroidVersionTest {
         assertThat(api33ext4).isLessThan(api34Preview);
         assertThat(api33ext4).isLessThan(api34PreviewWithExtension);
         assertThat(api34Preview).isLessThan(api34PreviewWithExtension);
+    }
+
+    @Test
+    public void minorLevelOrdering() {
+        AndroidVersion api36 = new AndroidVersion(36);
+        AndroidVersion api36Baklava = new AndroidVersion(36, "Baklava");
+        AndroidVersion api36_1 = new AndroidVersion(36, 1);
+        AndroidVersion api36Baklava1 = new AndroidVersion(36, 1, "Baklava", null, true);
+        AndroidVersion api36_2 = new AndroidVersion(36, 2);
+        AndroidVersion api37 = new AndroidVersion(37);
+
+        assertThat(api36).isLessThan(api36Baklava);
+        assertThat(api36Baklava).isLessThan(api36_1);
+        assertThat(api36_1).isLessThan(api36Baklava1);
+        assertThat(api36Baklava1).isLessThan(api36_2);
+        assertThat(api36_2).isLessThan(api37);
     }
 
     /**
@@ -176,7 +196,7 @@ public class AndroidVersionTest {
     }
 
     @Test
-    public final void testAndroidVersion_fromString() {
+    public void fromString_apiLevel() {
         // A valid integer is considered an API level
         AndroidVersion v = AndroidVersion.fromString("15");
         assertEquals(15, v.getApiLevel());
@@ -185,9 +205,24 @@ public class AndroidVersionTest {
         assertNull(v.getCodename());
         assertEquals(new AndroidVersion(15), v);
         assertEquals("API 15", v.toString());
+    }
 
+    @Test
+    public void fromString_apiMinorLevel() {
+        AndroidVersion v = AndroidVersion.fromString("36.1");
+        assertEquals(36, v.getApiLevel());
+        assertEquals(1, v.getApiMinorLevel());
+        assertEquals("36.1", v.getApiStringWithExtension());
+        assertFalse(v.isPreview());
+        assertNull(v.getCodename());
+        assertEquals(new AndroidVersion(36, 1), v);
+        assertEquals("API 36.1", v.toString());
+    }
+
+    @Test
+    public void fromString_codename() {
         // A valid name is considered a codename
-        v = AndroidVersion.fromString("CODE_NAME");
+        AndroidVersion v = AndroidVersion.fromString("CODE_NAME");
         assertEquals("CODE_NAME", v.getApiStringWithExtension());
         assertTrue(v.isPreview());
         assertTrue(v.isBaseExtension());

@@ -39,9 +39,9 @@ class AppWithProvidedRemoteJarTest : ModelComparator() {
             """
                 apply plugin: "com.android.application"
                 android {
-                    namespace 'com.android.tests.libWithProvidedLocalJar'
-                    compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                    buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
+                    namespace = 'com.android.tests.libWithProvidedLocalJar'
+                    compileSdkVersion = ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
+                    buildToolsVersion = "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
 
                     dependencies {
                         compileOnly "com.google.guava:guava:18.0"

@@ -71,7 +71,7 @@ class AppAndLibNoBuildConfigTest {
                     """
                         defaultConfig contains custom BuildConfig fields, but the feature is disabled.
                         To enable the feature, add the following to your module-level build.gradle:
-                        `android.buildFeatures.buildConfig true`
+                        `android.buildFeatures.buildConfig = true`
                     """.trimIndent()
                 )
         }
@@ -88,7 +88,7 @@ class AppAndLibNoBuildConfigTest {
                     """
                         Build Type 'debug' contains custom BuildConfig fields, but the feature is disabled.
                         To enable the feature, add the following to your module-level build.gradle:
-                        `android.buildFeatures.buildConfig true`
+                        `android.buildFeatures.buildConfig = true`
                     """.trimIndent()
                 )
         }

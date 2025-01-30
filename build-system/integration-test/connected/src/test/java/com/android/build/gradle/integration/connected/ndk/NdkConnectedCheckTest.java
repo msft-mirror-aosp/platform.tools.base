@@ -91,11 +91,11 @@ public class NdkConnectedCheckTest {
                 "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n"
+                        + "    compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n"
                         + "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n"
                         + "    defaultConfig {\n"
                         + "        ndk {\n"
-                        + "            moduleName \"hello-jni\"\n"
+                        + "            moduleName = \"hello-jni\"\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");

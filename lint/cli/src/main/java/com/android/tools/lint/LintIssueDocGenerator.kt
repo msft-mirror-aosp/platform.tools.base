@@ -106,6 +106,7 @@ import java.util.TreeMap
 import java.util.jar.JarFile
 import java.util.jar.JarInputStream
 import java.util.regex.Pattern
+import java.util.zip.GZIPInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
@@ -197,6 +198,8 @@ class LintIssueDocGenerator(
     this.singleIssueDetectors = singleIssueDetectors
   }
 
+  private val exampleByteToUrl = mutableMapOf<ByteArray, String>()
+  private val exampleUrlToBytes = mutableMapOf<String, ByteArray>()
   private val knownIds: Set<String> = allIssues.map { it.id }.toSet()
   private val issues = allIssues.filter { !skipIssue(it) }.toList()
   private var environment: UastEnvironment = createUastEnvironment()
@@ -221,6 +224,12 @@ class LintIssueDocGenerator(
       for ((registry, artifact) in registryMap) {
         artifact ?: continue // e.g. built-in checks; no artifact page
         writeArtifactPage(registry, artifact, registry.vendor)
+      }
+
+      for ((url, bytes) in exampleUrlToBytes) {
+        val file = File(output, url)
+        file.parentFile?.mkdirs()
+        file.writeBytes(bytes)
       }
 
       if (includeStats) {
@@ -1026,7 +1035,7 @@ class LintIssueDocGenerator(
           sb.append(
             """
                         !!! Tip: $description
-                           Advice from this check is just a tip.
+                           Advice from this check is just a hint; it's a "weak" warning.
                     """
               .trimIndent()
           )
@@ -1298,6 +1307,8 @@ class LintIssueDocGenerator(
 
     if (example.files.size == 1) {
       sb.append("Here is the source file referenced above:\n\n")
+    } else if (example.files.any { it.binaryUrl != null }) {
+      sb.append("Here are the relevant test files:\n\n")
     } else {
       sb.append("Here are the relevant source files:\n\n")
     }
@@ -1319,19 +1330,28 @@ class LintIssueDocGenerator(
 
   private fun writeSourceFiles(example: Example, sb: StringBuilder) {
     for (file in example.files) {
-      val contents =
-        file.source.let {
-          if (file.language == "xml") {
-            escapeXml(it)
-          } else it
+      if (file.binaryUrl != null) {
+        // Binary file. Write out actual example and add link.
+        if (hasImageExtension(file.path)) {
+          sb.append("!")
         }
-      val lang = file.language.ifEmpty { "text" }
+        sb.append("[${file.path}](${file.binaryUrl})\n\n")
+      } else {
+        // Source file: show inline as a markdown fenced block
+        val contents =
+          file.source.let {
+            if (file.language == "xml") {
+              escapeXml(it)
+            } else it
+          }
+        val lang = file.language.ifEmpty { "text" }
 
-      sb.append("`${file.path}`:\n")
-      writeCodeLine(sb, lang, lineNumbers = lang.isNotEmpty())
-      sb.append(contents).append('\n')
-      writeCodeLine(sb)
-      sb.append("\n")
+        sb.append("`${file.path}`:\n")
+        writeCodeLine(sb, lang, lineNumbers = lang.isNotEmpty())
+        sb.append(contents).append('\n')
+        writeCodeLine(sb)
+        sb.append("\n")
+      }
     }
   }
 
@@ -2304,10 +2324,6 @@ class LintIssueDocGenerator(
           }
         }
 
-        if (path != null && hasImageExtension(path)) {
-          continue
-        }
-
         // Stub file? If the error output references the file, we'll assume not; otherwise,
         // look for other telltale signs
         if (
@@ -2328,6 +2344,26 @@ class LintIssueDocGenerator(
         }
 
         val lang = pathToMarkdownLanguage(path) ?: ""
+
+        if (fileType == "base64gzip") {
+          if (path == null) {
+            continue
+          }
+          val bytes =
+            getBase64gzippedTestData(source)
+              ?: throw RuntimeException(
+                "Couldn't convert base64gzip test data for $path in test ${method.name} for issue ${issue.id}"
+              )
+          val binaryUrl = getExampleBinaryRelativeUrl(path, bytes)
+          val exampleFile = ExampleFile(path, "", lang, binaryUrl)
+          exampleFiles.add(exampleFile)
+          continue
+        }
+
+        if (path != null && hasImageExtension(path)) {
+          continue
+        }
+
         val contents: String =
           source
             .let {
@@ -2462,8 +2498,67 @@ class LintIssueDocGenerator(
 
     return exampleFiles.filter {
       val path = it.path ?: ""
-      it.source.isNotBlank() && (!skipManifest || !path.endsWith(ANDROID_MANIFEST_XML))
+      it.hasContent() && (!skipManifest || !path.endsWith(ANDROID_MANIFEST_XML))
     }
+  }
+
+  /**
+   * Given a binary file byte array (for example for a .jar file or an image file), returns the
+   * relative URL to be used to reference this example when writing out the page. (This is done to
+   * avoid file name conflicts when tests are overlapping and still allow sharing the same resource
+   * when the contents are identical.)
+   */
+  private fun getExampleBinaryRelativeUrl(path: String, bytes: ByteArray): String {
+    val url = exampleByteToUrl[bytes]
+    if (url != null) {
+      return url
+    }
+    val name = path.substringAfterLast('/')
+    val extIndex = name.lastIndexOf('.')
+    val base: String
+    val ext: String
+    if (extIndex == -1) {
+      base = name
+      ext = ""
+    } else {
+      // Include one level of parent since for icons (etc.) that's useful context
+      // (drawable-mdpi and drawable-xhdpi instead of making a flat list of
+      // numbered name duplicates)
+      val parent = File(path).parentFile?.name
+      val nameWithoutExt = name.substring(0, extIndex)
+      base =
+        if (parent != null) {
+          "$parent/$nameWithoutExt"
+        } else {
+          nameWithoutExt
+        }
+      ext = name.substring(extIndex)
+    }
+    var count = 1
+    while (true) {
+      val url = "examples/$base${if (count > 1) count.toString() else ""}$ext"
+      if (exampleUrlToBytes[url] == null) {
+        // Found available URL
+        exampleUrlToBytes[url] = bytes
+        exampleByteToUrl[bytes] = url
+        return url
+      }
+      count++
+    }
+  }
+
+  private fun getBase64gzippedTestData(source: String): ByteArray? {
+    // See TestFiles.getByteProducerForBase64gzip
+    val escaped =
+      source // Recover any $'s we've converted to ＄ to better handle Kotlin raw strings
+        .replace('＄', '$') // Whitespace is not significant in base64 but isn't handled properly by
+        // the base64 decoder
+        .replace(" ", "")
+        .replace("\n", "")
+        .replace("\t", "")
+    val gzipBytes = Base64.getDecoder().decode(escaped)
+    val stream = GZIPInputStream(ByteArrayInputStream(gzipBytes))
+    return ByteStreams.toByteArray(stream)
   }
 
   private fun skipManifest(
@@ -2632,7 +2727,7 @@ class LintIssueDocGenerator(
 
     private val MESSAGE_PATTERN: Pattern =
       Pattern.compile(
-        """([^\n]+): (Error|Warning|Information): (.+?) \[([^]]+?)]$""",
+        """([^\n]+): (Error|Warning|Information|Hint): (.+?) \[([^]]+?)]$""",
         Pattern.MULTILINE or Pattern.DOTALL,
       )
     private val LOCATION_PATTERN: Pattern = Pattern.compile("""(.+):(\d+)""")
@@ -3260,6 +3355,7 @@ class LintIssueDocGenerator(
           issues.associate {
             it to it.implementation.detectorClass.name.replace('.', '/') + DOT_CLASS
           }
+        val issueIdMap = issues.associateBy { it.id }
         val detectorVersions = mutableMapOf<String, String>()
         val detectorToIssues = mutableMapOf<String, MutableList<Issue>>()
         for ((issue, detector) in issueToDetectorClass) {
@@ -3299,35 +3395,62 @@ class LintIssueDocGenerator(
               releaseDates[version] = date
             }
 
-            if (verbose) println("Checking individual issue versions for lint-checks $version")
-            JarFile(jar).use { jarFile ->
-              for (detector in detectorVersions.keys) {
-                val entry = jarFile.getJarEntry(detector)
-                if (entry != null) {
-                  // We can't JUST look at detector presence; we should also check the issues
-                  // themselves, since sometimes we add new issues to old detectors
-                  for (issue in detectorToIssues[detector]!!) {
-                    var found =
-                      classContainsIssueId(issue.id, jarFile.getInputStream(entry).readBytes())
-                    if (!found) {
-                      val companion = detector.removeSuffix(DOT_CLASS) + "\$Companion.class"
-                      val companionEntry = jarFile.getJarEntry(companion)
-                      if (companionEntry != null) {
-                        found =
-                          classContainsIssueId(
-                            issue.id,
-                            jarFile.getInputStream(companionEntry).readBytes(),
-                          )
+            if (verbose) print("Checking individual issue versions for lint-checks $version")
+
+            val presentInThisVersion: List<Issue>
+            val cachedFile = File(jar.path + "-issues")
+
+            if (cachedFile.isFile) {
+              presentInThisVersion =
+                cachedFile
+                  .readText()
+                  .lines()
+                  .filter { it.isNotBlank() }
+                  .mapNotNull { issueIdMap[it] }
+              if (verbose) {
+                println(" - cached")
+              }
+            } else {
+              if (verbose) {
+                println()
+              }
+              val present = mutableListOf<Issue>()
+              JarFile(jar).use { jarFile ->
+                for (detector in detectorVersions.keys) {
+                  val entry = jarFile.getJarEntry(detector)
+                  if (entry != null) {
+                    // We can't JUST look at detector presence; we should also check the issues
+                    // themselves, since sometimes we add new issues to old detectors
+                    for (issue in detectorToIssues[detector]!!) {
+                      var found =
+                        classContainsIssueId(issue.id, jarFile.getInputStream(entry).readBytes())
+                      if (!found) {
+                        val companion = detector.removeSuffix(DOT_CLASS) + "\$Companion.class"
+                        val companionEntry = jarFile.getJarEntry(companion)
+                        if (companionEntry != null) {
+                          found =
+                            classContainsIssueId(
+                              issue.id,
+                              jarFile.getInputStream(companionEntry).readBytes(),
+                            )
+                        }
                       }
-                    }
-                    if (found) {
-                      val currentVersion = sinceMap[issue]
-                      if (currentVersion == null || currentVersion > version) {
-                        sinceMap[issue] = version
+                      if (found) {
+                        present.add(issue)
                       }
                     }
                   }
                 }
+              }
+
+              cachedFile.writeText(present.sortedBy { it.id }.joinToString("\n"))
+              presentInThisVersion = present
+            }
+
+            for (issue in presentInThisVersion) {
+              val currentVersion = sinceMap[issue]
+              if (currentVersion == null || currentVersion > version) {
+                sinceMap[issue] = version
               }
             }
           }
@@ -4787,7 +4910,14 @@ class LintIssueDocGenerator(
     }
   }
 
-  class ExampleFile(val path: String?, val source: String, val language: String)
+  class ExampleFile(
+    val path: String?,
+    val source: String,
+    val language: String,
+    val binaryUrl: String? = null,
+  ) {
+    fun hasContent(): Boolean = source.isNotBlank() || binaryUrl != null && binaryUrl.isNotBlank()
+  }
 
   class Example(
     val testClass: String,

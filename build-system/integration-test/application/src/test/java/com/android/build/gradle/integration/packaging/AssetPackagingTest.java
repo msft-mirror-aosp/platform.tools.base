@@ -72,7 +72,7 @@ public class AssetPackagingTest {
                 appProject.getBuildFile(),
                 "\n"
                         + "android {\n"
-                        + "    publishNonDefault true\n"
+                        + "    publishNonDefault = true\n"
                         + "\n"
                         + "    aaptOptions {}\n"
                         + "}\n"
@@ -319,7 +319,7 @@ public class AssetPackagingTest {
                     it.replaceInFile(
                             appProject.getBuildFile().getPath(),
                             "aaptOptions \\{\\}",
-                            "aaptOptions \\{ ignoreAssetsPattern"
+                            "aaptOptions \\{ ignoreAssetsPattern = "
                                 + " \"!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~\""
                                 + " \\}");
 
@@ -458,7 +458,7 @@ public class AssetPackagingTest {
             it.addFile("src/main/assets/kept", "kept");
             it.appendToFile(
                     libProject.getBuildFile().getPath(),
-                    "android.aaptOptions.ignoreAssetsPattern 'ignored'");
+                    "android.aaptOptions.ignoreAssetsPattern = 'ignored'");
             execute("library:assembleDebug");
             checkAar(libProject, "ignored", null);
             checkAar(libProject, "kept", "kept");
@@ -599,7 +599,7 @@ public class AssetPackagingTest {
         File projectFile = appProject.getBuildFile();
         TestFileUtils.appendToFile(
                 projectFile,
-                "android { aaptOptions { ignoreAssets '*a:b*' } } ");
+                "android { aaptOptions { ignoreAssets = '*a:b*' } } ");
 
         byte[] aaData = new byte[] { 'e' };
         byte[] abData = new byte[] { 'f' };

@@ -1,3 +1,5 @@
+load("@rules_java//java:defs.bzl", "java_test")
+
 # Relies on remote execution (RBE) to test the docker container specified
 # in the exec_properties of //tools/base/bazel/platforms:linux. This test is
 # not guaranteed to pass on a regular linux machine.
@@ -23,7 +25,7 @@ py_test(
     name = "windows_path_test",
     srcs = ["windows_path_test.py"],
     tags = [
-        "noci:studio-linux"
+        "noci:studio-linux",
     ],
     deps = [
         "@absl-py//absl/testing:absltest",

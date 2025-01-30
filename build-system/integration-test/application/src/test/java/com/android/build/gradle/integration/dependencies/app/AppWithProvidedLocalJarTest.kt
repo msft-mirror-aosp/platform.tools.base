@@ -39,9 +39,9 @@ class AppWithProvidedLocalJarTest : ModelComparator() {
             """
                 apply plugin: "com.android.application"
                 android {
-                    namespace 'com.android.tests.libWithProvidedLocalJar'
-                    compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                    buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
+                    namespace = 'com.android.tests.libWithProvidedLocalJar'
+                    compileSdkVersion = ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
+                    buildToolsVersion = "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
 
                     dependencies {
                         compileOnly files("libs/util-1.0.jar")

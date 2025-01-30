@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")

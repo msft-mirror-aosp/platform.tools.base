@@ -118,8 +118,6 @@ public class GmavenZipTest {
                     "com/android/tools/utp/android-test-plugin-host-device-info:sources",
                     "com/android/tools/utp/android-test-plugin-host-emulator-control",
                     "com/android/tools/utp/android-test-plugin-host-emulator-control:sources",
-                    "com/android/tools/utp/android-test-plugin-host-retention",
-                    "com/android/tools/utp/android-test-plugin-host-retention:sources",
                     "com/android/tools/utp/android-test-plugin-host-apk-installer",
                     "com/android/tools/utp/android-test-plugin-host-apk-installer:sources",
                     "com/android/tools/utp/utp-common",

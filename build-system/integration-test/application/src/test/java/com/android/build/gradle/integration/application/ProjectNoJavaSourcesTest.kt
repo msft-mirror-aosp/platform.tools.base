@@ -77,7 +77,7 @@ class ProjectNoJavaSourcesTest(val testProject: MinimalSubProject) {
             android {
               defaultConfig {
                 minSdkVersion 19
-                multiDexEnabled true
+                multiDexEnabled = true
               }
             }
         """.trimIndent()

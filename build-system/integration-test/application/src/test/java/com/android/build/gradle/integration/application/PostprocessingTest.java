@@ -103,7 +103,7 @@ public class PostprocessingTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android.buildTypes.release.postprocessing {\n"
-                        + "removeUnusedCode true\n"
+                        + "removeUnusedCode = true\n"
                         + "proguardFile 'proguard-rules.pro'\n"
                         + "}\n");
 
@@ -136,9 +136,9 @@ public class PostprocessingTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android.buildTypes.release.postprocessing {\n"
-                        + "removeUnusedCode true\n"
-                        + "optimizeCode true\n"
-                        + "obfuscate true\n"
+                        + "removeUnusedCode = true\n"
+                        + "optimizeCode = true\n"
+                        + "obfuscate = true\n"
                         + "proguardFile 'proguard-rules.pro'\n"
                         + "}\n");
 
@@ -170,7 +170,7 @@ public class PostprocessingTest {
                 project.getBuildFile(),
                 "android {\n"
                         + "    buildTypes.release.postprocessing {\n"
-                        + "        removeUnusedCode true\n"
+                        + "        removeUnusedCode = true\n"
                         + "        proguardFile getDefaultProguardFile('proguard-android.txt')\n"
                         + "    }\n"
                         + "}\n");

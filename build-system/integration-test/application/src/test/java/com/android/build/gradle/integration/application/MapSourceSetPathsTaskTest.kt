@@ -26,7 +26,7 @@ class MapSourceSetPathsTaskTest {
         TestFileUtils.appendToFile(
                 project.buildFile,
                 "android.buildTypes.debug.minifyEnabled true\n" +
-                        "android.buildTypes.debug.shrinkResources true"
+                        "android.buildTypes.debug.shrinkResources = true"
         )
         val run = project.executor().run("mapF1FaDebugSourceSetPaths")
         val filePathMapsDir = FileUtils.join(project.intermediatesDir, InternalArtifactType

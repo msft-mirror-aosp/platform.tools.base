@@ -28,9 +28,6 @@ import kotlin.io.path.name
 interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition>
     : GradleProject<ProjectDefinitionT> {
 
-    /** Return a File under the intermediates directory from Android plugins.  */
-    fun getIntermediatePath(vararg paths: String?): Path
-
     /** Return the intermediates directory from Android plugins.  */
     val intermediatesDir: Path
     /** Return the generated directory from Android plugins.  */
@@ -55,20 +52,6 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
 
     override val outputsDir: Path
         get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
-
-    override fun getIntermediatePath(vararg paths: String?): Path {
-        return intermediatesDir.resolve(paths.joinToString(separator = "/"))
-    }
-
-    protected fun computeOutputPath(outputSelector: OutputSelector): Path {
-        val root = if (outputSelector.fromIntermediates) {
-            intermediatesDir
-        } else {
-            outputsDir
-        }
-
-        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
-    }
 }
 
 internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
@@ -78,7 +61,6 @@ internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidP
     parentProject,
     projectModification,
 ), BaseAndroidProject<ProjectDefinitionT> {
-    override fun getIntermediatePath(vararg paths: String?): Path = parentProject.getIntermediatePath(*paths)
 
     override val intermediatesDir: Path
         get() = parentProject.intermediatesDir

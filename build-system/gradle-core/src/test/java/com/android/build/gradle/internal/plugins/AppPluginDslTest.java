@@ -148,7 +148,7 @@ public class AppPluginDslTest {
                         + "\n"
                         + "        f2  {\n"
                         + "            vectorDrawables {\n"
-                        + "                useSupportLibrary true\n"
+                        + "                useSupportLibrary = true\n"
                         + "            }\n"
                         + "        }\n"
                         + "\n"

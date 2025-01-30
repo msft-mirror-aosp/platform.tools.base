@@ -92,11 +92,9 @@ class PrivacySandboxSdkMinimalTest {
         val build = rule.build
 
         build.configuredExecutor().run(":minimal-app:buildPrivacySandboxSdkApksForDebug")
-        val folderName =
-            InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL.getFolderName()
         val ideModelFile = build.androidApplication(":minimal-app")
-            .intermediatesDir
-            .resolve("$folderName/debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
+            .resolve(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL)
+            .resolve("debug/buildPrivacySandboxSdkApksForDebug/ide_model.json")
             .toFile()
 
         val extractedPssApk = GenericBuiltArtifactsLoader.loadListFromFile(ideModelFile,

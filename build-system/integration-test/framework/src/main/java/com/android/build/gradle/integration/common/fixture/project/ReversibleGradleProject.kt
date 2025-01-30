@@ -16,15 +16,18 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.build.api.artifact.Artifact
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.FileUpdateBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.searchAndReplace
 import java.io.File
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.regex.Pattern
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
 /**
@@ -42,6 +45,8 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     )
 
     override fun resolve(path: String): Path = parentProject.resolve(path)
+
+    override fun resolve(artifact: Artifact<*>): Path = parentProject.resolve(artifact)
 
     override val buildDir: Path
         get() = parentProject.buildDir
@@ -69,7 +74,7 @@ internal open class ReversibleProjectFiles(
     }
 
     override fun update(relativePath: String): FileUpdateBuilder =
-        FileUpdater(projectModification, relativePath, location.resolve(relativePath))
+        FileUpdater(projectModification, relativePath, location.resolve(relativePath), location)
 
     override fun remove(relativePath: String) {
         projectModification.removeFile(relativePath)
@@ -78,7 +83,8 @@ internal open class ReversibleProjectFiles(
     private class FileUpdater(
         private val projectModification: TemporaryProjectModification,
         private val relativePath: String,
-        private val file: Path
+        private val file: Path,
+        private val location: Path
     ): FileUpdateBuilder {
 
         override val exists: Boolean
@@ -86,6 +92,12 @@ internal open class ReversibleProjectFiles(
 
         override fun replaceWith(newContent: String) {
             projectModification.modifyFile(relativePath) {
+                newContent
+            }
+        }
+
+        override fun replaceWith(newContent: ByteArray) {
+            projectModification.modifyFileWithBytes(relativePath) {
                 newContent
             }
         }
@@ -126,6 +138,12 @@ internal open class ReversibleProjectFiles(
 
             projectModification.modifyFile(relativePath, action)
 
+            return this
+        }
+
+        override fun moveTo(relativePath: String): FileUpdater {
+            projectModification.addFile(relativePath, location.resolve(this.relativePath).readBytes())
+            projectModification.removeFile(this.relativePath)
             return this
         }
     }

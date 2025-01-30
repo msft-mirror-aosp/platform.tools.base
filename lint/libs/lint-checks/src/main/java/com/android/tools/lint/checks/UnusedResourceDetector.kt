@@ -40,6 +40,7 @@ import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.LintClient.Companion.isStudio
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.BinaryResourceScanner
+import com.android.tools.lint.detector.api.BooleanOption
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Implementation
@@ -71,7 +72,6 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import java.io.File
 import java.util.EnumSet
-import kotlin.text.Charsets
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
 import org.jetbrains.uast.UElement
@@ -139,7 +139,7 @@ class UnusedResourceDetector :
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
     // Only report unused resources when checking an app project.
-    if (context.project.isLibrary) {
+    if (context.project.isLibrary && SKIP_LIBRARIES.getValue(context)) {
       return
     }
 
@@ -267,6 +267,9 @@ class UnusedResourceDetector :
         if (context.isGlobalAnalysis()) {
           // In global analysis mode, we have analyzed the root module and dependencies, so report
           // the unused resources.
+          if (context.mainProject.isLibrary && SKIP_LIBRARIES.getValue(context)) {
+            return
+          }
           for (resource in unused) {
             val field = resource.field
             val message = "The resource `$field` appears to be unused"
@@ -667,6 +670,24 @@ class UnusedResourceDetector :
           Implementation(UnusedResourceDetector::class.java, scopeSet)
         }
 
+    @JvmField
+    val SKIP_LIBRARIES =
+      BooleanOption(
+        "skip-libraries",
+        "Whether the unused resource check should skip reporting unused resources in libraries",
+        true,
+        """
+        Many libraries will declare resources that are part of the library surface; other \
+        modules depending on the library will also reference the resources. To avoid reporting \
+        all these resources as unused (in the context of a library), the unused resource check \
+        normally skips reporting unused resources in libraries. Instead, run the unused resource \
+        check on the consuming app module (along with `checkDependencies=true`).
+
+        However, there are cases where you want to check that all the resources declared in \
+        a library are used; in that case, you can disable the skip option.
+        """,
+      )
+
     private const val EXCLUDING_TESTS_EXPLANATION =
       """
                 The unused resource check can ignore tests. If you want to include \
@@ -686,19 +707,20 @@ class UnusedResourceDetector :
     @JvmField
     val ISSUE =
       Issue.create(
-        id = "UnusedResources",
-        briefDescription = "Unused resources",
-        explanation =
-          """
+          id = "UnusedResources",
+          briefDescription = "Unused resources",
+          explanation =
+            """
                 Unused resources make applications larger and slow down builds.
 
                 $EXCLUDING_TESTS_EXPLANATION,
                 """,
-        category = Category.PERFORMANCE,
-        priority = 3,
-        severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
-      )
+          category = Category.PERFORMANCE,
+          priority = 3,
+          severity = Severity.WARNING,
+          implementation = IMPLEMENTATION,
+        )
+        .setOptions(listOf(SKIP_LIBRARIES))
 
     /** Unused id's */
     @JvmField

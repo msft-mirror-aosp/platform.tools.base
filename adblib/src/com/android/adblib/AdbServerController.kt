@@ -16,6 +16,7 @@
 package com.android.adblib
 
 import kotlinx.coroutines.flow.StateFlow
+import java.net.InetSocketAddress
 import java.nio.file.Path
 
 /**
@@ -45,6 +46,12 @@ interface AdbServerController : AutoCloseable {
 
     /** Stop if started, no-op otherwise */
     suspend fun stop()
+
+    /**
+     * Returns the remote address of a channel created by `channelProvider`.
+     * This value is reset to `null` when controller's [stop] method is called.
+     */
+    val lastKnownRemoteAddress: InetSocketAddress?
 
     companion object {
 

@@ -2,6 +2,7 @@ package com.android.adblib.impl.channels
 
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbSessionHost
+import com.android.adblib.AdbSocketChannel
 import com.android.adblib.adbLogger
 import com.android.adblib.impl.remainingTimeoutToString
 import kotlinx.coroutines.CancellableContinuation
@@ -22,7 +23,7 @@ import kotlin.coroutines.resumeWithException
 internal class AdbSocketChannelImpl(
     private val host: AdbSessionHost,
     private val socketChannel: AsynchronousSocketChannel
-) : AdbChannel {
+) : AdbSocketChannel {
 
     private val logger = adbLogger(host)
 
@@ -61,6 +62,13 @@ internal class AdbSocketChannelImpl(
      */
     internal val isOpen: Boolean
         get() = socketChannel.isOpen
+
+
+    override val localAddress: InetSocketAddress
+        get() = socketChannel.localAddress as InetSocketAddress
+
+    override val remoteAddress: InetSocketAddress
+        get() = socketChannel.remoteAddress as InetSocketAddress
 
     override fun toString(): String {
         val remoteAddress = try {

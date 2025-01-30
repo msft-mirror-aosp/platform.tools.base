@@ -35,10 +35,10 @@ public class OptionalLibraryTest {
                 "\n"
                         + "apply plugin: 'com.android.application'\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -68,10 +68,10 @@ public class OptionalLibraryTest {
                 "\n"
                         + "apply plugin: 'com.android.application'\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -113,10 +113,10 @@ public class OptionalLibraryTest {
                 "\n"
                         + "apply plugin: 'com.android.application'\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"

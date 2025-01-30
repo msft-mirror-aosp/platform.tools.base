@@ -16,56 +16,74 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.AarSubject
-import com.android.testutils.apk.Aar
+import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallback
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformGeneratedSourcesTest {
 
-    private val library = MinimalSubProject.kotlinMultiplatformAndroid("com.mylibrary.foo")
-
     @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder().fromTestApp(
-        MultiModuleTestProject.builder().subproject(":library", library).build()
-    ).withKotlinGradlePlugin(true).create()
+    val rule = GradleRule.from {
+        androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
+            androidLibrary {
+                namespace = "com.mylibrary.foo"
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+            }
+
+            pluginCallbacks += Callback::class.java
+        }
+    }
+
+    class Callback: AndroidKotlinMultiplatformCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: KotlinMultiplatformExtension
+        ) {
+            val generateJavaRes = project.tasks.register(
+                "generateJavaRes",
+                KMP_GenerateJavaRes::class.java
+            )
+            generateJavaRes.configure {
+                it.outputDir.set(project.layout.buildDirectory.dir("generated/javaRes"))
+            }
+
+            extension.apply {
+                sourceSets.androidMain.configure {
+                    it.resources.srcDir(generateJavaRes.map { it.outputDir })
+                }
+            }
+        }
+    }
 
     @Test
     fun testGeneratedKotlinSources() {
+        val build = rule.build
+        build.executor.run(":library:assembleAndroidMain")
 
-        project.getSubproject(":library").buildFile.appendText(
-            """
-                 abstract class GenerateJavaRes extends DefaultTask {
-                  @OutputDirectory
-                  abstract DirectoryProperty getOutputDir();
-
-                  @TaskAction
-                  void taskAction() {
-                    File d = getOutputDir().asFile.get();
-                    d.mkdirs();
-                    new File(d, "res.txt").createNewFile()
-                  }
-                }
-                TaskProvider<GenerateJavaRes> generateJavaRes = tasks.register("generateJavaRes", GenerateJavaRes.class)
-                generateJavaRes.configure {
-                  it.getOutputDir().set(project.layout.buildDirectory.dir("generated/javaRes"))
-                }
-
-                kotlin {
-                  sourceSets.androidMain.resources.srcDir(generateJavaRes.map { it.getOutputDir() })
-                }
-            """.trimIndent()
-        )
-
-        project.executor()
-            .run(":library:assembleAndroidMain")
-
-        Aar(project.getSubproject("library").getOutputFile("aar", "library.aar")).use {
-            AarSubject.assertThat(it).containsJavaResource("res.txt")
+        build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
+            containsJavaResourceWithContent("res.txt", "foo")
         }
     }
 }
+
+abstract class KMP_GenerateJavaRes : DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun taskAction() {
+        val d = outputDir.get().file("res.txt").asFile
+        d.parentFile.mkdirs()
+        d.writeText("foo")
+    }
+}
+

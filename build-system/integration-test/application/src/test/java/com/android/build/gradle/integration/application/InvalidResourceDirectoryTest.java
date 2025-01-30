@@ -66,7 +66,7 @@ public class InvalidResourceDirectoryTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
                         + "    compileSdkVersion  "

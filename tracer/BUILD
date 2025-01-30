@@ -1,5 +1,7 @@
-load("//tools/base/bazel:utils.bzl", "java_jarjar")
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library")
+load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 coverage_java_library(
     name = "tools.tracer",
@@ -56,8 +58,6 @@ sh_test(
         "noci:studio-win",
     ],
 )
-
-load("//tools/base/bazel:bazel.bzl", "iml_module")
 
 # managed by go/iml_to_build
 iml_module(

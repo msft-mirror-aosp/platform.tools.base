@@ -59,7 +59,7 @@ dependencies {
 }
 
 android {
-    namespace "com.android.tests.overlay2"
+    namespace = "com.android.tests.overlay2"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

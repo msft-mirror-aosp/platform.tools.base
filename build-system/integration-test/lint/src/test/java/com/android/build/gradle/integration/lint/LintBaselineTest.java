@@ -110,7 +110,7 @@ public class LintBaselineTest {
     public void checkMerging() throws Exception {
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
-                "\n\nandroid.lintOptions.textOutput file(\"lint-report.txt\")\n\n");
+                "\n\nandroid.lintOptions.textOutput = file(\"lint-report.txt\")\n\n");
         final GradleBuildResult result;
         if (lintBaselinesContinue) {
             result = getExecutor().run(":app:lint");
@@ -192,7 +192,7 @@ public class LintBaselineTest {
         FileUtils.createFile(new File(prefsLintDir, "sample-custom-checks.jar"), "FOO_BAR");
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
-                "\n\nandroid.lintOptions.textOutput file(\"lint-report.txt\")\n\n");
+                "\n\nandroid.lintOptions.textOutput = file(\"lint-report.txt\")\n\n");
         final GradleBuildResult result = executor.run(":app:lint");
 
         ScannerSubject.assertThat(result.getStderr()).contains("Created baseline file");

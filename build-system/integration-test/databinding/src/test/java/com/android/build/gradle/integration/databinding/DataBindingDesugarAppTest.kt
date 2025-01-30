@@ -47,7 +47,7 @@ class DataBindingDesugarAppTest {
                 """
                 |android.compileOptions.sourceCompatibility 1.8
                 |android.compileOptions.targetCompatibility 1.8
-                |android.buildFeatures.dataBinding true
+                |android.buildFeatures.dataBinding = true
                 |android.defaultConfig.minSdkVersion $SUPPORT_LIB_MIN_SDK
                 |dependencies {
                 |    implementation 'com.android.support:support-v4:$SUPPORT_LIB_VERSION'

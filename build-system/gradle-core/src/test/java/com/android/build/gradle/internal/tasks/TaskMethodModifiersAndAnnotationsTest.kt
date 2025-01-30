@@ -254,7 +254,6 @@ class TaskMethodModifiersAndAnnotationsTest {
 
         val currentPublicSetters =
             listOf(
-                "com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask::setType",
                 "com.android.build.gradle.internal.tasks.AndroidReportTask::setIgnoreFailures",
                 "com.android.build.gradle.internal.tasks.AndroidReportTask::setReportType",
                 "com.android.build.gradle.internal.tasks.AndroidReportTask::setWillRun",

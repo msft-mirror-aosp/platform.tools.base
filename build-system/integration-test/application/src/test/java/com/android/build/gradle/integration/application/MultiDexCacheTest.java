@@ -66,13 +66,13 @@ public class MultiDexCacheTest {
                         + "    productFlavors {\n"
                         + "        f1 {"
                         + "            minSdkVersion 21\n"
-                        + "            multiDexEnabled "
+                        + "            multiDexEnabled = "
                         + Boolean.toString(isF1Multidex)
                         + "\n"
                         + "        }\n"
                         + "        f2 {\n"
                         + "            minSdkVersion 21\n"
-                        + "            multiDexEnabled "
+                        + "            multiDexEnabled = "
                         + Boolean.toString(isF2Multidex)
                         + "\n"
                         + "        }\n"

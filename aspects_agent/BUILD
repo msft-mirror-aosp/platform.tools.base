@@ -1,5 +1,6 @@
-load("//tools/base/bazel:utils.bzl", "java_jarjar")
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 java_binary(
     name = "agent_binary",

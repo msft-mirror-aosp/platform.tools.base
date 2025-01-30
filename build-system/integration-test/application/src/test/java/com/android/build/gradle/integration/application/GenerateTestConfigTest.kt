@@ -37,7 +37,7 @@ class GenerateTestConfigTest {
             android {
                 splits {
                     abi {
-                        enable true
+                        enable = true
                         reset()
                         include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
                     }
@@ -54,7 +54,7 @@ class GenerateTestConfigTest {
             android {
                 splits {
                     abi {
-                        enable true
+                        enable = true
                         reset()
                         include "x86"
                     }
@@ -72,7 +72,7 @@ class GenerateTestConfigTest {
             android {
                 splits {
                     abi {
-                        enable false
+                        enable = false
                         reset()
                         include "x86", "x86_64", "armeabi-v7a", "arm64-v8a"
                     }

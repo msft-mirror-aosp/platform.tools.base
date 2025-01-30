@@ -2298,7 +2298,8 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         fun Path.readLines(charset: Charset = Charsets.UTF_8): List<String> { return Files.readAllLines(this, charset) }
         ```
         This lint check will by default automatically omit parameters that \
-        match the default, so if your code was calling \
+        match the default, so if your code was calling
+
         ```kotlin
         Files.readAllLines(file, Charset.UTF_8)
         ```
@@ -2307,6 +2308,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         file.readLines()
         ```
         rather than
+
         ```kotlin
         file.readLines(Charset.UTF_8
         ```

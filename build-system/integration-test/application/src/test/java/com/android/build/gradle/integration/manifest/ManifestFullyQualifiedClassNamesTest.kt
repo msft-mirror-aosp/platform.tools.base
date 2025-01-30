@@ -30,7 +30,7 @@ class ManifestFullyQualifiedClassNamesTest {
             .appendToBuild(
                 """
                     android {
-                        namespace 'com.example.app'
+                        namespace = 'com.example.app'
 
                         defaultConfig {
                             applicationId 'com.example.id'
@@ -69,7 +69,7 @@ class ManifestFullyQualifiedClassNamesTest {
             .appendToBuild(
                 """
                     android {
-                        namespace 'com.example.lib'
+                        namespace = 'com.example.lib'
                     }
                 """.trimIndent()
             ).withFile(

@@ -81,10 +81,10 @@ public class SigningConnectedTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -100,14 +100,14 @@ public class SigningConnectedTest {
                         + "\n"
                         + "    signingConfigs {\n"
                         + "        customDebug {\n"
-                        + "            storeFile file('the.keystore')\n"
-                        + "            storePassword '"
+                        + "            storeFile = file('the.keystore')\n"
+                        + "            storePassword = '"
                         + STORE_PASSWORD
                         + "'\n"
-                        + "            keyAlias '"
+                        + "            keyAlias = '"
                         + ALIAS_NAME
                         + "'\n"
-                        + "            keyPassword '"
+                        + "            keyPassword = '"
                         + KEY_PASSWORD
                         + "'\n"
                         + "        }\n"
@@ -115,7 +115,7 @@ public class SigningConnectedTest {
                         + "\n"
                         + "    buildTypes {\n"
                         + "        debug {\n"
-                        + "            signingConfig signingConfigs.customDebug\n"
+                        + "            signingConfig = signingConfigs.customDebug\n"
                         + "        }\n"
                         + "\n"
                         + "        customSigning {\n"

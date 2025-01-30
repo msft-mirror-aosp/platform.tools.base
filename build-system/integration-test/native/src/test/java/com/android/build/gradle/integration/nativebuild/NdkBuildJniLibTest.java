@@ -76,7 +76,7 @@ public class NdkBuildJniLibTest {
                 "\n"
                         + "apply plugin: 'com.android.library'\n"
                         + "android {\n"
-                        + "    namespace \"com.example.hellojni.lib\"\n"
+                        + "    namespace = \"com.example.hellojni.lib\"\n"
                         + "    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()\n"
                         + "    buildToolsVersion = libs.versions.buildToolsVersion.get()\n"
                         + "    defaultConfig {\n"

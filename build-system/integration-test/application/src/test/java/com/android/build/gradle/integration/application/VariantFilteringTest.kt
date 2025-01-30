@@ -509,7 +509,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         given {
             """
                 |    testFixtures {
-                |        it.enable true
+                |        it.enable = true
                 |    }
             """
         }

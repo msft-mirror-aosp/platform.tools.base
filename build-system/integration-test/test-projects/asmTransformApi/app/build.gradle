@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace "com.example.myapplication"
+    namespace = "com.example.myapplication"
     dynamicFeatures = [":feature"]
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
@@ -17,13 +17,13 @@ android {
 
     buildTypes {
         debug {
-            enableUnitTestCoverage true
-            enableAndroidTestCoverage true
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
     }
 
     lintOptions {
-        checkReleaseBuilds false
+        checkReleaseBuilds = false
     }
 
     kotlinOptions {

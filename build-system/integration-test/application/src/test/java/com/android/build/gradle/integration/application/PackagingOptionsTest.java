@@ -91,10 +91,10 @@ public class PackagingOptionsTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion \""

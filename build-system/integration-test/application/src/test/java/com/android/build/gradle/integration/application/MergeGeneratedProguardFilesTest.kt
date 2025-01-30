@@ -103,7 +103,7 @@ class MergeGeneratedProguardFilesTest(
                 apply plugin: 'com.android.application'
 
                 android {
-                    namespace "$NAMESPACE"
+                    namespace = "$NAMESPACE"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
 
                     defaultConfig {

@@ -48,7 +48,7 @@ internal fun GradleTestProject.publishLibs(
             dependencyResolutionManagement {
                 repositories {
                     maven {
-                        url 'testRepo'
+                        url = 'testRepo'
                     }
                 }
             }

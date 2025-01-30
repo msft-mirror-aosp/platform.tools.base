@@ -62,7 +62,7 @@ public class UnitTestingRClassLoadTest {
     private MinimalSubProject c =
             MinimalSubProject.Companion.lib("com.example.c")
                     .appendToBuild(
-                            "android.testOptions.unitTests.includeAndroidResources false\n"
+                            "android.testOptions.unitTests.includeAndroidResources = false\n"
                                     + "dependencies {\n"
                                     + "    testImplementation 'junit:junit:4.12'\n"
                                     + "}\n")

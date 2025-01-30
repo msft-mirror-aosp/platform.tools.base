@@ -41,14 +41,14 @@ class DynamicAppSigningConfigTest {
                     android {
                         signingConfigs {
                             myConfig {
-                                storeFile file("foo.keystore")
-                                storePassword "bar"
-                                keyAlias "foo"
-                                keyPassword "bar"
+                                storeFile = file("foo.keystore")
+                                storePassword = "bar"
+                                keyAlias = "foo"
+                                keyPassword = "bar"
                             }
                         }
                         buildTypes {
-                            debug.signingConfig signingConfigs.myConfig
+                            debug.signingConfig = signingConfigs.myConfig
                         }
                     }
                 """.trimIndent())

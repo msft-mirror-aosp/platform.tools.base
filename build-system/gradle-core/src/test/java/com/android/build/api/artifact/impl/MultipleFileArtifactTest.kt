@@ -16,7 +16,10 @@
 
 package com.android.build.api.artifact.impl
 
+import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.OutputFile
 import org.junit.Test
 
 /**
@@ -27,20 +30,26 @@ class MultipleFileArtifactTest: AbstractMultipleArtifactTest<RegularFile>(
     { directory, name -> directory.file(name) },
     { tasks, name -> tasks.register(name, SingleFileArtifactTest.FileProducerTask::class.java)}) {
 
+    abstract class InitialProducerTask: MultipleProducerTask<RegularFile>() {
+    }
+    abstract class MultipleFileProducerTask: MultipleArtifactTransformTask<RegularFile>() {
+        @get:OutputFile
+        abstract override val transformedOutput: RegularFileProperty
+    }
     @Test
     fun testReplace() {
-        abstract class MultipleFileProducerTask: MultipleProducerTask<RegularFile>()
-        super.testReplace { tasks, taskName ->
-            tasks.register(taskName, MultipleFileProducerTask::class.java)
-        }
+        super.testReplace(
+            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
+            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
+        )
     }
 
     @Test
     fun testTransform() {
-        abstract class MultipleFileProducerTask: MultipleProducerTask<RegularFile>()
-        super.testTransform() { tasks, taskName ->
-            tasks.register(taskName, MultipleFileProducerTask::class.java)
-        }
+        super.testTransform(
+            { tasks, taskName -> tasks.register(taskName, InitialProducerTask::class.java)} ,
+            { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
+        )
     }
 
 }

@@ -1,9 +1,10 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/common:version.bzl", "BASE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
 load("//tools/base/bazel/avd:avd.bzl", "avd")
+load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 # managed by go/iml_to_build
 iml_module(

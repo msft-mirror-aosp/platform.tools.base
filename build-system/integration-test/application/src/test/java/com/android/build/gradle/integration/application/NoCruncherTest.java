@@ -92,7 +92,7 @@ public class NoCruncherTest {
                     // QA is debuggable, but inits from release, so the cruncher is default enabled,
                     // but is is explicitly disabled here.
                     projectModification.replaceInFile(
-                            "build.gradle", "// crunchPngs false", "crunchPngs false");
+                            "build.gradle", "// crunchPngs false", "crunchPngs = false");
                     noPngCrunch.executor().run("assembleQa");
                     checkResource(ApkType.of("qa", false), "drawable/icon.png", false);
                 });

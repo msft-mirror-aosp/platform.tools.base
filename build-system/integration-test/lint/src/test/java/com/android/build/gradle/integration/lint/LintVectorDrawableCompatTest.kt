@@ -42,8 +42,8 @@ class LintVectorDrawableCompatTest {
                                 }
 
                                 lintOptions {
-                                    abortOnError false
-                                    textOutput file("lint-results.txt")
+                                    abortOnError = false
+                                    textOutput = file("lint-results.txt")
                                 }
                             }
 
@@ -89,7 +89,7 @@ class LintVectorDrawableCompatTest {
         TestFileUtils.searchAndReplace(
             project.buildFile,
             "vectorDrawables.useSupportLibrary false",
-            "vectorDrawables.useSupportLibrary true"
+            "vectorDrawables.useSupportLibrary = true"
         )
         project.executor().run("lintDebug")
         assertThat(project.file("lint-results.txt")).exists()

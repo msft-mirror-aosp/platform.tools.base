@@ -21,57 +21,61 @@ import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.LibraryProductFlavor
 import java.io.File
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 @Suppress("OVERRIDE_DEPRECATION", "UNCHECKED_CAST")
 class LibraryProductFlavorProxy(
-contentHolder: DslContentHolder
-): ProductFlavorProxy(contentHolder), LibraryProductFlavor {
+    dslRecorder: DslRecorder
+): ProductFlavorProxy(dslRecorder), LibraryProductFlavor {
 
     override var isDefault: Boolean
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.setBoolean("isDefault", value, usingIsNotation = true)
+            this@LibraryProductFlavorProxy.dslRecorder.setBoolean("isDefault", value, usingIsNotation = true)
         }
 
     override var targetSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdk", value)
+            this@LibraryProductFlavorProxy.dslRecorder.set("targetSdk", value)
         }
 
     override fun targetSdkVersion(targetSdkVersion: Int) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@LibraryProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override fun targetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@LibraryProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var targetSdkPreview: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdkPreview", value)
+            this@LibraryProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
         }
 
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@LibraryProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var multiDexEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("multiDexEnabled", value)
+            this@LibraryProductFlavorProxy.dslRecorder.set("multiDexEnabled", value)
         }
 
     override val consumerProguardFiles: MutableList<File>
-        get() = contentHolder.getList("consumerProguardFiles") as MutableList<File>
+        get() = ListProxy<File>(this@LibraryProductFlavorProxy.dslRecorder.createChainedRecorder("consumerProguardFiles"))
 
     override fun consumerProguardFile(proguardFile: Any): Any {
-        contentHolder.call("consumerProguardFile", listOf(proguardFile), isVarArgs = false)
+        this@LibraryProductFlavorProxy.dslRecorder.call("consumerProguardFile", listOf(proguardFile), isVarArgs = false)
         return this
     }
 
     override fun consumerProguardFiles(vararg proguardFiles: Any): Any {
-        contentHolder.call("consumerProguardFiles", listOf(proguardFiles), isVarArgs = true)
+        this@LibraryProductFlavorProxy.dslRecorder.call("consumerProguardFiles", listOf(proguardFiles), isVarArgs = true)
         return this
     }
 
@@ -82,10 +86,17 @@ contentHolder: DslContentHolder
         }
 
     override val aarMetadata: AarMetadata
-        get() = contentHolder.chainedProxy("aarMetadata", AarMetadata::class.java)
+        get() = DslProxy.createProxy(
+            AarMetadata::class.java,
+            this@LibraryProductFlavorProxy.dslRecorder.createChainedRecorder("consumerProguardFiles")
+        )
 
     override fun aarMetadata(action: AarMetadata.() -> Unit) {
-        contentHolder.runNestedBlock("aarMetadata", listOf(), aarMetadata::class.java) {
+        this@LibraryProductFlavorProxy.dslRecorder.runNestedBlock(
+            name = "aarMetadata",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(AarMetadata::class.java, it) }
+        ) {
             action(this)
         }
     }

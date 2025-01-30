@@ -67,7 +67,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
     override val android: PrivacySandboxSdkExtension =
         DslProxy.createProxy(
             PrivacySandboxSdkExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
@@ -81,7 +81,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
     override fun writeExtension(writer: BuildWriter, location: Path) {
         writer.apply {
             block("android") {
-                contentHolder.writeContent(this)
+                dslRecorder.writeContent(this)
             }
         }
     }

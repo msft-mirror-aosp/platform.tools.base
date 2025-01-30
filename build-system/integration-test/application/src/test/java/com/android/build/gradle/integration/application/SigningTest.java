@@ -114,10 +114,10 @@ public class SigningTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -132,14 +132,14 @@ public class SigningTest {
                         + "\n"
                         + "    signingConfigs {\n"
                         + "        customDebug {\n"
-                        + "            storeFile file('the.keystore')\n"
-                        + "            storePassword '"
+                        + "            storeFile = file('the.keystore')\n"
+                        + "            storePassword = '"
                         + STORE_PASSWORD
                         + "'\n"
-                        + "            keyAlias '"
+                        + "            keyAlias = '"
                         + ALIAS_NAME
                         + "'\n"
-                        + "            keyPassword '"
+                        + "            keyPassword = '"
                         + KEY_PASSWORD
                         + "'\n"
                         + "        }\n"
@@ -147,7 +147,7 @@ public class SigningTest {
                         + "\n"
                         + "    buildTypes {\n"
                         + "        debug {\n"
-                        + "            signingConfig signingConfigs.customDebug\n"
+                        + "            signingConfig = signingConfigs.customDebug\n"
                         + "        }\n"
                         + "\n"
                         + "        customSigning {\n"
@@ -352,7 +352,7 @@ public class SigningTest {
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
                 "customDebug {",
-                "customDebug {\nv1SigningEnabled false\nv2SigningEnabled false");
+                "customDebug {\nv1SigningEnabled = false\nv2SigningEnabled = false");
 
         TestUtils.waitForFileSystemTick();
         project.execute("clean", "assembleDebug");
@@ -364,7 +364,7 @@ public class SigningTest {
 
         // Specified: v1SigningEnabled true, v2SigningEnabled false
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "v1SigningEnabled false", "v1SigningEnabled true");
+                project.getBuildFile(), "v1SigningEnabled = false", "v1SigningEnabled = true");
 
         TestUtils.waitForFileSystemTick();
         project.execute("clean", "assembleDebug");
@@ -378,9 +378,9 @@ public class SigningTest {
 
         // Specified: v1SigningEnabled false, v2SigningEnabled true
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "v1SigningEnabled true", "v1SigningEnabled false");
+                project.getBuildFile(), "v1SigningEnabled = true", "v1SigningEnabled = false");
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "v2SigningEnabled false", "v2SigningEnabled true");
+                project.getBuildFile(), "v2SigningEnabled = false", "v2SigningEnabled = true");
 
         TestUtils.waitForFileSystemTick();
         project.execute("clean", "assembleDebug");
@@ -396,7 +396,7 @@ public class SigningTest {
 
         // Specified: v1SigningEnabled true, v2SigningEnabled true
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "v1SigningEnabled false", "v1SigningEnabled true");
+                project.getBuildFile(), "v1SigningEnabled = false", "v1SigningEnabled = true");
 
         TestUtils.waitForFileSystemTick();
         project.execute("clean", "assembleDebug");
@@ -479,7 +479,7 @@ public class SigningTest {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void failWithMissingKeyPassword() throws Exception {
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "keyPassword '" + KEY_PASSWORD + "'", "");
+                project.getBuildFile(), "keyPassword = '" + KEY_PASSWORD + "'", "");
         project.executeExpectingFailure("assembleDebug");
     }
 
@@ -490,9 +490,9 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    v1SigningEnabled false\n"
-                        + "    v2SigningEnabled false\n"
-                        + "    enableV3Signing true\n");
+                        + "    v1SigningEnabled = false\n"
+                        + "    v2SigningEnabled = false\n"
+                        + "    enableV3Signing = true\n");
         project.executor().run("assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
 
@@ -514,10 +514,10 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    v1SigningEnabled false\n"
-                        + "    v2SigningEnabled true\n"
-                        + "    enableV3Signing false\n"
-                        + "    enableV4Signing true\n");
+                        + "    v1SigningEnabled = false\n"
+                        + "    v2SigningEnabled = true\n"
+                        + "    enableV3Signing = false\n"
+                        + "    enableV4Signing = true\n");
         project.executor().run("assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
 
@@ -540,10 +540,10 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    v1SigningEnabled false\n"
-                        + "    v2SigningEnabled false\n"
-                        + "    enableV3Signing true\n"
-                        + "    enableV4Signing true\n");
+                        + "    v1SigningEnabled = false\n"
+                        + "    v2SigningEnabled = false\n"
+                        + "    enableV3Signing = true\n"
+                        + "    enableV4Signing = true\n");
         project.executor().run("assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
 
@@ -580,10 +580,10 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    enableV1Signing false\n"
-                        + "    enableV2Signing false\n"
-                        + "    enableV3Signing true\n"
-                        + "    enableV4Signing true\n");
+                        + "    enableV1Signing = false\n"
+                        + "    enableV2Signing = false\n"
+                        + "    enableV3Signing = true\n"
+                        + "    enableV4Signing = true\n");
         project.executor()
                 .with(StringOption.IDE_SIGNING_STORE_FILE, keystore.getPath())
                 .with(StringOption.IDE_SIGNING_STORE_PASSWORD, STORE_PASSWORD)
@@ -676,7 +676,7 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    enableV1Signing false\n");
+                        + "    enableV1Signing = false\n");
         project.executor().run("assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
 
@@ -696,7 +696,7 @@ public class SigningTest {
                 "customDebug {",
                 ""
                         + "customDebug {\n"
-                        + "    enableV2Signing false\n");
+                        + "    enableV2Signing = false\n");
         project.executor().run("assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
 

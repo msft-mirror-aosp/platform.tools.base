@@ -66,7 +66,7 @@ class DynamicAppLegacyMultidexTest {
             |apply plugin: 'com.android.dynamic-feature'
             |
             |android {
-            |  namespace 'foo.feature'
+            |  namespace = 'foo.feature'
             |  compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
             |  defaultConfig {
             |    minSdkVersion 18

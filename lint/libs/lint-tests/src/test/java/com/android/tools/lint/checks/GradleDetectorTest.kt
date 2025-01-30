@@ -28,6 +28,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.BOM_WITHOUT_PLATFO
 import com.android.tools.lint.checks.GradleDetector.Companion.BUNDLED_GMS
 import com.android.tools.lint.checks.GradleDetector.Companion.CHROMEOS_ABI_SUPPORT
 import com.android.tools.lint.checks.GradleDetector.Companion.COMPATIBILITY
+import com.android.tools.lint.checks.GradleDetector.Companion.CORE_LIB_DESUGARING_V2
 import com.android.tools.lint.checks.GradleDetector.Companion.DATA_BINDING_WITHOUT_KAPT
 import com.android.tools.lint.checks.GradleDetector.Companion.DEPENDENCY
 import com.android.tools.lint.checks.GradleDetector.Companion.DEPRECATED
@@ -1652,6 +1653,117 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(SWITCH_TO_TOML)
+      .run()
+      .expectClean()
+  }
+
+  fun testCoreLibV1() {
+    // Regression test for b/336925172
+    // Dependency directly in the Gradle file, with version explicitly there:
+    lint()
+      .files(
+        kts(
+            """
+            android {
+                compileSdk = 35
+                compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+                }
+            }
+            dependencies {
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") // OK
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // ERROR
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(CORE_LIB_DESUGARING_V2)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:9: Error: Core library desugaring runtime library version 1.2.3 does not support compileSdk=35 or later; please upgrade to version 2.1.4 [CoreLibDesugaringV1]
+            coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // ERROR
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 9: Change to 2.1.4:
+        @@ -9 +9
+        -     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // ERROR
+        +     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // ERROR
+        """
+      )
+
+    // Dependency version in TOML file:
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            androidDesugarJdkLibs = "1.1.2"
+
+            [libraries]
+            android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
+            """
+          )
+          .indented(),
+        kts(
+            """
+            android {
+                compileSdk = 35
+                compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+                }
+            }
+            dependencies {
+                coreLibraryDesugaring(libs.desugar.jdk.libs)
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(CORE_LIB_DESUGARING_V2)
+      .run()
+      .expect(
+        """
+        ../gradle/libs.versions.toml:2: Error: Core library desugaring runtime library version 1.1.2 does not support compileSdk=35 or later; please upgrade to version 2.1.4 [CoreLibDesugaringV1]
+        androidDesugarJdkLibs = "1.1.2"
+                                ~~~~~~~
+        1 error
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for gradle/libs.versions.toml line 2: Change to 2.1.4:
+        @@ -2 +2
+        - androidDesugarJdkLibs = "1.1.2"
+        + androidDesugarJdkLibs = "2.1.4"
+        """
+      )
+
+    // OK if compileSdkVersion < 35
+    lint()
+      .files(
+        kts(
+            """
+            android {
+                compileSdk = 34
+                compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+                }
+            }
+            dependencies {
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4") // OK
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // OK
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(CORE_LIB_DESUGARING_V2)
       .run()
       .expectClean()
   }
@@ -8558,6 +8670,17 @@ class GradleDetectorTest : AbstractCheckTest() {
           "<com.google.firebase.crashlytics>\n" +
           "  <com.google.firebase.crashlytics.gradle.plugin versions=\"2.8.1,2.9.0,2.9.1,2.9.2,2.9.3,2.9.4,2.9.5,2.9.6,2.9.7\"/>\n" +
           "</com.google.firebase.crashlytics>",
+      )
+      task.networkData(
+        "https://maven.google.com/com/android/tools/group-index.xml",
+        // language=xml
+        "" +
+          "<?xml version='1.0' encoding='UTF-8'?>\n" +
+          "<com.android.tools>\n" +
+          "  <desugar_jdk_libs versions=\"1.0.0,1.0.1,1.0.2,1.0.3,1.0.4,1.0.5,1.0.6,1.0.7,1.0.8,1.0.9,1.0.10,1.1.0,1.1.1,1.1.5,1.1.6,1.1.8,1.1.9,1.2.0,1.2.2,1.2.3,2.0.0,2.0.1,2.0.2,2.0.3,2.0.4,2.1.0,2.1.1,2.1.2,2.1.3,2.1.4\"/>\n" +
+          "  <desugar_jdk_libs_minimal versions=\"2.0.0,2.0.1,2.0.2,2.0.3,2.0.4,2.1.0,2.1.1,2.1.2,2.1.3,2.1.4\"/>\n" +
+          "  <desugar_jdk_libs_nio versions=\"2.0.0,2.0.1,2.0.2,2.0.3,2.0.4,2.1.0,2.1.1,2.1.2,2.1.3,2.1.4\"/>" +
+          "</com.android.tools>",
       )
       task.networkData(
         "https://maven.google.com/com/android/tools/build/group-index.xml",

@@ -24,6 +24,6 @@ public class ArtifactApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("build.gradle")))
-                .isEqualTo("8f48cd72e6aa6ff3fb15cb6fc3dc111fd4f5940d");
+                .isEqualTo("c7ec54f4cc4e3038a4851be5cbe59efd0c94e391");
     }
 }

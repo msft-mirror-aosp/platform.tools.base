@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 
 java_library(

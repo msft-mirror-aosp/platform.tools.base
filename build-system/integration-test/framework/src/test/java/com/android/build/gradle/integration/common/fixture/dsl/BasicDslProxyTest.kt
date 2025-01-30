@@ -24,22 +24,22 @@ import com.android.build.gradle.integration.common.fixture.project.builder.KtsBu
 import com.google.common.truth.Truth
 import org.junit.Test
 
-// this should really test the event content of the holder instead of relying on
-// the BuildWriter but it's so much more convenient...
+// this should really test the event content of the recorder instead of relying on
+// the BuildWriter, but it's so much more convenient...
 
 class BasicDslProxyTest: ExtensionAwareDefinition{
-    private val contentHolder = DefaultDslContentHolder()
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun basicTest() {
-        contentHolder.runNestedBlock("address", listOf(), Address::class.java) {
+        dslRecorder.runNestedBlock("address", listOf(), Address::class.java) {
             street = "1600 Amphitheatre Parkway"
             city = "Mountain View"
             zipCode = 94043
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             address {
               street = '1600 Amphitheatre Parkway'
@@ -52,7 +52,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
 
     @Test
     fun nestedTest() {
-        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             surname = null
             age = 17
@@ -65,7 +65,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'
@@ -82,7 +82,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         """.trimIndent())
 
         val kts = KtsBuildWriter()
-        contentHolder.writeContent(kts)
+        dslRecorder.writeContent(kts)
         Truth.assertThat(kts.toString()).named("KTS version").isEqualTo("""
             person {
               name = "BugDroid"
@@ -102,7 +102,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
 
     @Test
     fun chainedBlockUsage() {
-        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
+        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.mayor {
                 name = "bob"
                 address.street = "1600 Amphitheatre Parkway"
@@ -110,7 +110,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             california {
               mountainView.mayor {
@@ -124,7 +124,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
 
     @Test
     fun multiChainedBlockUsage() {
-        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
+        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.mayor {
                 name = "bob"
 
@@ -133,7 +133,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             california {
               mountainView.mayor {
@@ -147,7 +147,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
 
     @Test
     fun methodCall() {
-        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "bob"
             sendMessage("Hello!")
             sendMessage(null)
@@ -156,7 +156,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             person {
               name = 'bob'
@@ -170,10 +170,26 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
     }
 
     @Test
+    fun inlinedRootAccess() {
+        val person = DslProxy.createProxy(Person::class.java, dslRecorder)
+        person.name = "Bob"
+        val groovy = GroovyBuildWriter().block("person") {
+            dslRecorder.writeContent(this)
+        }
+
+        Truth.assertThat(groovy.toString()).isEqualTo("""
+            person {
+              name = 'Bob'
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
     fun extension() {
         // This tests an extension. Person has `address` but not `workAddress`.
         // We'll us the same type for both
-        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             surname = null
             address {
@@ -189,7 +205,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'
@@ -212,7 +228,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
     @Test
     fun nestedExtension() {
         // this tests a nested extension to make sure it gets written inside the right block
-        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             address {
                 street = "1600 Amphitheatre Parkway"
@@ -226,7 +242,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'
@@ -248,7 +264,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
     fun chainedExtension() {
         // this tests a nested extension via a chained call, to make sure it gets written inside
         // the right block
-        contentHolder.runNestedBlock("person", listOf(), Person::class.java) {
+        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
             name = "BugDroid"
             address.viaExtension("landlord", Person::class) {
                 name = "Sundar"
@@ -257,7 +273,7 @@ class BasicDslProxyTest: ExtensionAwareDefinition{
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
             person {
               name = 'BugDroid'

@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load(
     "//tools/base/common:version.bzl",
     "DEV_BASE_VERSION",

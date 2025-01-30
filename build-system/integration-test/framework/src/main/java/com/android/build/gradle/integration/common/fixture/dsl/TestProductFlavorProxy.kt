@@ -19,48 +19,52 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.TestProductFlavor
 
+/**
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
+ * the normal Java Proxy feature (class is considered broken)
+ */
 class TestProductFlavorProxy(
-    contentHolder: DslContentHolder
-): ProductFlavorProxy(contentHolder), TestProductFlavor {
+    dslRecorder: DslRecorder
+): ProductFlavorProxy(dslRecorder), TestProductFlavor {
 
     override var targetSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdk", value)
+            this@TestProductFlavorProxy.dslRecorder.set("targetSdk", value)
         }
 
     override fun targetSdkVersion(targetSdkVersion: Int) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override fun targetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var targetSdkPreview: String?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("targetSdkPreview", value)
+            this@TestProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
         }
 
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        contentHolder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+        this@TestProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
 
     override var maxSdk: Int?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("maxSdk", value)
+            this@TestProductFlavorProxy.dslRecorder.set("maxSdk", value)
         }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
-        contentHolder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
+        this@TestProductFlavorProxy.dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
     }
 
     override var multiDexEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {
-            contentHolder.set("multiDexEnabled", value)
+            this@TestProductFlavorProxy.dslRecorder.set("multiDexEnabled", value)
         }
     override var signingConfig: ApkSigningConfig?
         get() = throw RuntimeException("Not yet supported")

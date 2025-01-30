@@ -61,16 +61,16 @@ public class BuildToolsTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
                         + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
                         + "'\n"
-                        + "    buildFeatures.aidl true\n"
+                        + "    buildFeatures.aidl = true\n"
                         + "}\n");
 
         // Add an Aidl file so that it's not skipped due to no-source.
@@ -105,10 +105,10 @@ public class BuildToolsTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -127,7 +127,7 @@ public class BuildToolsTest {
                 project.getBuildFile(),
                 "\n"
                         + "android {\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion '"
@@ -158,7 +158,7 @@ public class BuildToolsTest {
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
                 "buildToolsVersion '" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "'",
-                "buildToolsVersion '30.0.2'");
+                "buildToolsVersion = '30.0.2'");
         ModelContainerV2 container =
                 project.modelV2().ignoreSyncIssues().fetchModels().getContainer();
         Collection<com.android.builder.model.v2.ide.SyncIssue> syncIssues = container.getProject()

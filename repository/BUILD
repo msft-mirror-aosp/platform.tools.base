@@ -1,11 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("//tools/base/bazel:utils.bzl", "fileset")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
-load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("xjc.bzl", "xsd_java_library")
 
 exports_files(

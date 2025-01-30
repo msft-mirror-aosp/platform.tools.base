@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.BaseAndroidPr
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_MANIFEST
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.EvalIssueException
@@ -136,12 +137,9 @@ internal class FusedLibraryManifestMergerTaskTest {
 
         build.executor.run(":fusedLib1:mergeManifest")
 
-        val mergedManifestFile = fusedLib1Project.getIntermediatePath(
-                FusedLibraryInternalArtifactType.MERGED_MANIFEST.getFolderName(),
-                "single",
-                "mergeManifest",
-                "AndroidManifest.xml"
-        ).toFile()
+        val mergedManifestFile = fusedLib1Project.resolve(MERGED_MANIFEST)
+            .resolve("single/mergeManifest/AndroidManifest.xml")
+            .toFile()
 
         val parsedManifestFile =
                 parseManifest(
@@ -216,12 +214,10 @@ internal class FusedLibraryManifestMergerTaskTest {
     fun testAppManifestMergesFusedLibraryManifest() {
         val build = rule.build
         build.executor.run(":app:assembleDebug")
-        val mergedManifest = build.androidApplication().getIntermediatePath(
-            "merged_manifest",
-            "debug",
-            "processDebugMainManifest",
-            "AndroidManifest.xml"
-        ).toFile()
+        val mergedManifest = build.androidApplication()
+            .intermediatesDir
+            .resolve("merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
+           .toFile()
 
         val parsedManifest =
                 parseManifest(

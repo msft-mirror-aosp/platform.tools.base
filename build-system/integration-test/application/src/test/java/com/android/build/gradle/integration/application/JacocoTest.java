@@ -63,7 +63,7 @@ public class JacocoTest {
     public void setup() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "\nandroid.buildTypes.debug.enableAndroidTestCoverage true\n");
+                "\nandroid.buildTypes.debug.enableAndroidTestCoverage = true\n");
     }
 
     @Test
@@ -87,12 +87,12 @@ public class JacocoTest {
     public void testDisablingAndEnablingJacoco() throws IOException, InterruptedException {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "\nandroid.buildTypes.debug.enableAndroidTestCoverage false\n");
+                "\nandroid.buildTypes.debug.enableAndroidTestCoverage = false\n");
         project.executor().run("assembleDebug");
 
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "\nandroid.buildTypes.debug.enableAndroidTestCoverage true\n");
+                "\nandroid.buildTypes.debug.enableAndroidTestCoverage = true\n");
         project.executor().run("assembleDebug");
     }
 
@@ -238,8 +238,8 @@ public class JacocoTest {
         // Verify jacoco ant configuration is not set when android test coverage disabled.
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
-                "android.buildTypes.debug.enableAndroidTestCoverage true",
-                "android.buildTypes.debug.enableAndroidTestCoverage false");
+                "android.buildTypes.debug.enableAndroidTestCoverage = true",
+                "android.buildTypes.debug.enableAndroidTestCoverage = false");
         GradleBuildResult result = project.executor().run(":dep");
         try (Scanner scanner = result.getStdout()) {
             ScannerSubject.assertThat(scanner)
@@ -250,8 +250,8 @@ public class JacocoTest {
         // present.
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
-                "android.buildTypes.debug.enableAndroidTestCoverage false",
-                "android.buildTypes.debug.enableAndroidTestCoverage true");
+                "android.buildTypes.debug.enableAndroidTestCoverage = false",
+                "android.buildTypes.debug.enableAndroidTestCoverage = true");
         result = project.executor().run(":dep");
         try (Scanner scanner = result.getStdout()) {
             ScannerSubject.assertThat(scanner)

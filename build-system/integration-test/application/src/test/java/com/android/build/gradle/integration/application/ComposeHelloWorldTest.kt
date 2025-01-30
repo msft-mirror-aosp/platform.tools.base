@@ -76,7 +76,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
                 """
                     android {
                         buildFeatures {
-                            compose true
+                            compose = true
                         }
                         composeOptions {
                             kotlinCompilerExtensionVersion = "${"$"}{libs.versions.composeCompilerVersion.get()}"
@@ -172,7 +172,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             """
                 android {
                     buildFeatures {
-                        compose true
+                        compose = true
                     }
                 }
             """.trimIndent()
@@ -197,7 +197,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             """
                 android {
                     buildFeatures {
-                        compose false
+                        compose = false
                     }
                 }
             """.trimIndent()

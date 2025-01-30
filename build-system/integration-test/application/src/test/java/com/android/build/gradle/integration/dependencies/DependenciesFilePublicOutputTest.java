@@ -47,10 +47,10 @@ public class DependenciesFilePublicOutputTest {
                         + "apply plugin: \"com.android.application\"\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "    buildToolsVersion \""

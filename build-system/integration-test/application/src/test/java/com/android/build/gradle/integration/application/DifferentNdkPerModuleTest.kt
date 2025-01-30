@@ -60,9 +60,9 @@ class DifferentNdkPerModuleTest {
                     """
                 |apply plugin: 'com.android.library'
                 |android {
-                |   namespace "$namespace"
+                |   namespace = "$namespace"
                 |   compileSdkVersion 24
-                |   ndkVersion "$ndkVersion"
+                |   ndkVersion = "$ndkVersion"
                 |}
                 |import com.android.build.gradle.internal.dsl.SdkComponentsImpl
                 |

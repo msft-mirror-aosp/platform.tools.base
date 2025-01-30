@@ -97,6 +97,7 @@ kotlin_test(
         "@maven//:com.google.protobuf.protobuf-java-util",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.google.truth.truth",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-tree",

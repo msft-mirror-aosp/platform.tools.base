@@ -18,10 +18,14 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
+import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
+import com.android.build.gradle.integration.common.fixture.dsl.DslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
+import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -44,12 +48,38 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
      * @param applyFirst if true, applies this plugin first, before other plugins
      */
     fun applyPlugin(type: PluginType, version: String? = null, applyFirst: Boolean = false)
+
+    /**
+     * Applies a plugin that has an associated extension, with an optional version string.
+     * If null, the default version is used.
+     *
+     * For core gradle plugin, the version should always be null.
+     *
+     * Optionally, an action can be provided to configure the extension associated with the plugin
+     *
+     * @param type the type of the plugin to apply
+     * @param version the version of the plugin.
+     * @param applyFirst if true, applies this plugin first, before other plugins
+     * @param action the action to configure the plugin's extension
+     */
+    fun <T> applyPlugin(
+        type: PluginTypeWithExtension<T>,
+        version: String? = null,
+        applyFirst: Boolean = false,
+        action: (T.() -> Unit)? = null)
+
     /**
      * Replaces an applied plugin, with a provided version
      *
      * This replaces the plugin in the same place as the previous one.
      */
     fun replaceAppliedPlugin(type: PluginType, version: String)
+
+    /**
+     * If a plugin was applied with a custom extension, then
+     * this call can be called later to update the plugin configuration
+     */
+    fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit)
 
     var group: String?
     var version: String?
@@ -104,6 +134,11 @@ internal data class AppliedPlugin(
     val version: String
 )
 
+private data class PluginExtensionData(
+    val name: String,
+    val dslRecorder: DslRecorder
+)
+
 /**
  * Implementation shared between [GenericProjectDefinition] and [AndroidProjectDefinition]
  */
@@ -111,16 +146,18 @@ internal abstract class GradleProjectDefinitionImpl(
     override val path: String
 ): GradleProjectDefinition {
 
-    protected val contentHolder = DefaultDslContentHolder()
+    protected val dslRecorder = DefaultDslRecorder()
 
+    // ordered list of applied plugins with their versions
     internal val plugins = mutableListOf<AppliedPlugin>()
+    // map of plugins to custom extensions
+    private val pluginExtensions = mutableMapOf<PluginType, PluginExtensionData>()
 
     private val buildscriptBuilder = BuildscriptBuilderImpl()
 
     override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
     override val pluginCallbacks: MutableList<Class<out PluginCallback>> = mutableListOf()
-
 
     override var group: String? = null
     override var version: String? = null
@@ -142,6 +179,22 @@ internal abstract class GradleProjectDefinitionImpl(
         }
     }
 
+    override fun <T> applyPlugin(
+        type: PluginTypeWithExtension<T>,
+        version: String?,
+        applyFirst: Boolean,
+        action: (T.() -> Unit)?
+    ) {
+        applyPlugin(type as PluginType, version, applyFirst)
+        action?.let {
+            val dslRecorder = DefaultDslRecorder()
+            val proxy = DslProxy.createProxy( type.extensionType, dslRecorder)
+            it(proxy)
+
+            pluginExtensions[type] = PluginExtensionData(type.extensionName, dslRecorder)
+        }
+    }
+
     override fun replaceAppliedPlugin(type: PluginType, version: String) {
         if (type.isSettings) {
             throw RuntimeException("Cannot apply settings plugin to a project")
@@ -152,6 +205,14 @@ internal abstract class GradleProjectDefinitionImpl(
         val appliedPlugin = AppliedPlugin(type, version)
         val index = plugins.indexOf(match)
         plugins[index] = appliedPlugin
+    }
+
+    override fun <T> reconfigurePlugin(plugin: PluginTypeWithExtension<T>, action: T.() -> Unit) {
+        val data = pluginExtensions[plugin]
+            ?: throw RuntimeException("Cannot reconfigurePlugin plugin $plugin has it has not yet been configured")
+
+        val proxy = DslProxy.createProxy(plugin.extensionType, data.dslRecorder)
+        action(proxy)
     }
 
     internal fun hasPlugin(plugin: PluginType): Boolean = plugins.any { it.plugin == plugin }
@@ -208,7 +269,8 @@ internal abstract class GradleProjectDefinitionImpl(
         )
     }
 
-    protected open fun writeExtension(writer: BuildWriter, location: Path) {
+    @VisibleForTesting
+    internal open fun writeExtension(writer: BuildWriter, location: Path) {
         // nothing to do here
     }
 
@@ -350,8 +412,16 @@ internal abstract class GradleProjectDefinitionImpl(
                 emptyLine()
             }
 
-            // write the Android extension if it exist
+            // write the Android extension if it exists
             writeExtension(this, location)
+
+            // write the other custom extensions
+            for (extensionData in pluginExtensions.values) {
+                block(extensionData.name) {
+                    extensionData.dslRecorder.writeContent(this)
+                }
+                emptyLine()
+            }
 
             dependencies.write(this, location)
         }.also {

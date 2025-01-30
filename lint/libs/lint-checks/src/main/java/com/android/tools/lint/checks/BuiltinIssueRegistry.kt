@@ -177,6 +177,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           GradleDetector.BUNDLED_GMS,
           GradleDetector.CHROMEOS_ABI_SUPPORT,
           GradleDetector.COMPATIBILITY,
+          GradleDetector.CORE_LIB_DESUGARING_V2,
           GradleDetector.DATA_BINDING_WITHOUT_KAPT,
           GradleDetector.DEPENDENCY,
           GradleDetector.DEPRECATED,
@@ -620,7 +621,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
     return if (scope == Scope.ALL) {
       issues.size
     } else {
-      var initialSize = 12
+      var initialSize = 15
       when {
         scope.contains(Scope.RESOURCE_FILE) -> initialSize += 117
         scope.contains(Scope.ALL_RESOURCE_FILES) -> initialSize += 12

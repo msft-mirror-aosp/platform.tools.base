@@ -16,41 +16,23 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import org.junit.Before
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformResourceParsingTest {
 
-    private val sharedLib = MinimalSubProject.kotlinMultiplatformAndroid("com.shared.android")
-
     @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder().subproject(":shared", sharedLib).build()
-            )
-            .withKotlinGradlePlugin(true)
-            .create()
-
-    @Before
-    fun before() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("shared").buildFile,
-            """
-                kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
-                }
-            """.trimIndent()
-        )
+    val rule = GradleRule.from {
+        androidKotlinMultiplatformLibrary(":shared") {
+            androidLibrary {
+                experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+            }
+        }
     }
 
     @Test
     fun testResourceParsingWithoutDeviceTestEnabled() {
-        project.executor().run(":shared:assemble")
+        rule.build.executor.run(":shared:assemble")
     }
 }

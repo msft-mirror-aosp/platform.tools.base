@@ -45,7 +45,7 @@ internal class AndroidDynamicFeatureDefinitionImpl(
     override val android: DynamicFeatureExtension =
         DslProxy.createProxy(
             DynamicFeatureExtension::class.java,
-            contentHolder,
+            dslRecorder,
         ).also {
             if (createMinimumProject) {
                 initDefaultValues(it)

@@ -55,9 +55,9 @@ class CmakeSysrootTest {
             project.buildFile,
             """
             apply plugin: 'com.android.application'
-            android.namespace "com.example.hellojni"
+            android.namespace = "com.example.hellojni"
             android.compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-            android.ndkPath "${project.ndkPath}"
+            android.ndkPath = "${project.ndkPath}"
             android.externalNativeBuild.cmake.path "src/main/cpp/CMakeLists.txt"
             android.defaultConfig.minSdk=${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
             """.trimIndent()

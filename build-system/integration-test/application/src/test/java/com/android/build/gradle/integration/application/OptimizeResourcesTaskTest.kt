@@ -21,7 +21,7 @@ class OptimizeResourcesTaskTest {
         project.buildFile.appendText("""android {
                 buildTypes {
                     release {
-                        shrinkResources true
+                        shrinkResources = true
                         minifyEnabled true
                     }
                 }

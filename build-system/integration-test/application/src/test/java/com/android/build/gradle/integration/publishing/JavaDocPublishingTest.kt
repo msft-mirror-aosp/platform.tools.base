@@ -48,7 +48,7 @@ class JavaDocPublishingTest {
                 afterEvaluate {
                     publishing {
                         repositories {
-                            maven { url '../testrepo' }
+                            maven { url = '../testrepo' }
                         }
                     }
                 }

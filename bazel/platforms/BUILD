@@ -45,7 +45,7 @@ platform(
     ],
     exec_properties = dicts.add(
         create_rbe_exec_properties_dict(
-            container_image = "docker://gcr.io/google.com/android-studio-alphasource/rbe-ubuntu22-as@sha256:bc96d9c2b2508641c1bc300ed38b1157b3dde53f77e2b0358740da0196795d36",
+            container_image = "docker://gcr.io/google.com/android-studio-alphasource/rbe-ubuntu22-as@sha256:94c34b28c82ab30d353bd5e2a5c326683d837c671541e0a1a41200351b5ede77",
             docker_add_capabilities = "SYS_NICE",
             docker_network = "off",
             docker_privileged = True,  # This is required to support emulators/nested KVM.

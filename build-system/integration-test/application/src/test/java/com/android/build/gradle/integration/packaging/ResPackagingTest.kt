@@ -73,7 +73,7 @@ class ResPackagingTest {
         TestFileUtils.appendToFile(
             appProject.buildFile,
             """android {
-                        publishNonDefault true
+                        publishNonDefault = true
                     }
 
                     dependencies {

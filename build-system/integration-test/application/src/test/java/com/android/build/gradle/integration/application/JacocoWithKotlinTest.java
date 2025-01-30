@@ -48,7 +48,7 @@ public class JacocoWithKotlinTest {
                 "android {\n"
                         + "  buildTypes {\n"
                         + "    debug {\n"
-                        + "      enableAndroidTestCoverage true\n"
+                        + "      enableAndroidTestCoverage = true\n"
                         + "    }\n"
                         + "  }\n"
                         + "}");

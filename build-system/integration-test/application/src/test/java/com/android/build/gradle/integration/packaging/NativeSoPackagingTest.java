@@ -91,7 +91,7 @@ public class NativeSoPackagingTest {
         TestFileUtils.appendToFile(
                 appProject.getBuildFile(),
                 "android {\n"
-                        + "    publishNonDefault true\n"
+                        + "    publishNonDefault = true\n"
                         + "}\n"
                         + "\n"
                         + "dependencies {\n"

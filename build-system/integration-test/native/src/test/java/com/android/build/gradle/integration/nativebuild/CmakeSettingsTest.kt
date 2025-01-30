@@ -88,12 +88,12 @@ class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
                 apply plugin: 'com.android.application'
 
                 android {
-                    namespace "com.example.hellojni"
+                    namespace = "com.example.hellojni"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
                     buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                    ndkVersion "$DEFAULT_NDK_SIDE_BY_SIDE_VERSION"
+                    ndkVersion = "$DEFAULT_NDK_SIDE_BY_SIDE_VERSION"
                     defaultConfig {
-                      minSdk $DEFAULT_MIN_SDK_VERSION
+                      minSdk = $DEFAULT_MIN_SDK_VERSION
                       externalNativeBuild {
                           cmake {
                             abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -106,7 +106,7 @@ class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
                     externalNativeBuild {
                       cmake {
                         path "CMakeLists.txt"
-                        version "$cmakeVersionInDsl"
+                        version = "$cmakeVersionInDsl"
                       }
                     }
                     buildTypes {

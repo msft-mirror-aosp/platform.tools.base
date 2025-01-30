@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    namespace "simple.library"
+    namespace = "simple.library"
     compileSdkVersion = libs.versions.latestCompileSdk.get().toInteger()
 
     flavorDimensions 'api', 'version'

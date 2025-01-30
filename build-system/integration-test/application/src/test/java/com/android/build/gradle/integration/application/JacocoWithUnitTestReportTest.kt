@@ -58,8 +58,8 @@ class JacocoWithUnitTestReportTest(
         // instrumented twice when AndroidTest coverage is enabled: b/281266702
         TestFileUtils.appendToFile(
             testProject.buildFile,
-            "android.buildTypes.debug.enableUnitTestCoverage true\n" +
-                    "android.buildTypes.debug.enableAndroidTestCoverage true"
+            "android.buildTypes.debug.enableUnitTestCoverage = true\n" +
+                    "android.buildTypes.debug.enableAndroidTestCoverage = true"
         )
     }
 

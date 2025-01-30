@@ -91,7 +91,7 @@ public class DataBindingExternalArtifactDependencyConnectedTest {
     public void buildLibraryThenBuildApp_connectedCheck() throws IOException, InterruptedException {
         TestFileUtils.appendToFile(
                 appProject.getSettingsFile(),
-                "dependencyResolutionManagement { repositories { maven { url '"
+                "dependencyResolutionManagement { repositories { maven { url = '"
                         + mavenRepo.getRoot().getAbsolutePath()
                         + "' } } }");
         List<String> args = createLibraryArtifact();

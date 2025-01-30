@@ -17,7 +17,6 @@ package com.android.adblib
 
 import org.junit.Assert
 import org.junit.Test
-import java.io.IOException
 
 class AdbFailResponseExceptionTest {
 
@@ -46,6 +45,21 @@ class AdbFailResponseExceptionTest {
         // Assert
         Assert.assertEquals(
             "'device not available' error on device 'usb' executing service 'foo-bar'",
+            exception.message
+        )
+    }
+
+    @Test
+    fun exceptionMessagePrintsNulls() {
+        // Prepare
+
+        // Act
+        val exception =
+            AdbDeviceFailResponseException(DeviceSelector.usb(), "p1\u0000p2", "sample error")
+
+        // Assert
+        Assert.assertEquals(
+            "'sample error' error on device 'usb' executing service 'p1[NUL]p2'",
             exception.message
         )
     }

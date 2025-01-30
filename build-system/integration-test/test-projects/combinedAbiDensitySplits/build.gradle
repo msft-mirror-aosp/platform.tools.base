@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle" }
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.example.combinedSplits"
+    namespace = "com.example.combinedSplits"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
@@ -12,7 +12,7 @@ android {
         minSdkVersion 21
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         ndk {
-            moduleName "hello-jni"
+            moduleName = "hello-jni"
         }
 
         // This actual the app version code. Giving ourselves 1,000,000 values
@@ -28,12 +28,12 @@ android {
 
     splits {
         abi {
-            enable true
+            enable = true
             reset()
             include 'x86', 'armeabi-v7a'
         }
         density {
-            enable true
+            enable = true
             exclude "ldpi", "tvdpi", "xxxhdpi"
         }
     }

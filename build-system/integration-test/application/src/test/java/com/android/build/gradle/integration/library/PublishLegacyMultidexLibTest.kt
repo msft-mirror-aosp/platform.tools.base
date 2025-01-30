@@ -40,14 +40,14 @@ class PublishLegacyMultidexLibTest {
 
         publishing {
             repositories {
-                maven { url 'testrepo' }
+                maven { url = 'testrepo' }
             }
         }
 
         android {
             buildTypes {
                 debug {
-                    multiDexEnabled true
+                    multiDexEnabled = true
                 }
             }
             defaultConfig {

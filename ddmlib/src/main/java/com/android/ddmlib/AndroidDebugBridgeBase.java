@@ -26,9 +26,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -58,11 +55,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
 
     /** Don't automatically manage ADB server. */
     protected static boolean sUserManagedAdbMode = false;
-
-    protected static final Object sLastKnownGoodAddressLock = new Object();
-
-    /** Last known good {@link InetSocketAddress} to ADB. */
-    protected volatile InetSocketAddress sLastKnownGoodAddress;
 
     protected volatile AndroidDebugBridge sThis;
 
@@ -156,7 +148,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
         }
         sAdbEnvVars = options.adbEnvVars;
         sUserManagedAdbMode = options.userManagedAdbMode;
-        sLastKnownGoodAddress = null;
         DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService);
         DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService);
         DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize);
@@ -240,40 +231,6 @@ public abstract class AndroidDebugBridgeBase implements AndroidDebugBridgeDelega
     @Nullable
     public ClientManager getClientManager() {
         return sClientManager;
-    }
-
-    /**
-     * Attempts to connect to the local android debug bridge server.
-     *
-     * @return a connected socket if success
-     * @throws IOException should errors occur when opening the connection
-     */
-    public SocketChannel openConnection() throws IOException {
-        SocketChannel adbChannel;
-        try {
-            adbChannel = SocketChannel.open(new InetSocketAddress("127.0.0.1", sAdbServerPort));
-        }
-        catch (IOException ipv4Exception) {
-            // Fallback to IPv6.
-            try {
-                adbChannel = SocketChannel.open(new InetSocketAddress("::1", sAdbServerPort));
-            }
-            catch (IOException ipv6Exception) {
-                IOException combinedException =
-                        new IOException(
-                                "Can't find adb server on port "
-                                + sAdbServerPort
-                                + ", IPv4 attempt: "
-                                + ipv4Exception.getMessage()
-                                + ", IPv6 attempt: "
-                                + ipv6Exception.getMessage(),
-                                ipv4Exception);
-                combinedException.addSuppressed(ipv6Exception);
-                throw combinedException;
-            }
-        }
-        adbChannel.socket().setTcpNoDelay(true);
-        return adbChannel;
     }
 
     /**

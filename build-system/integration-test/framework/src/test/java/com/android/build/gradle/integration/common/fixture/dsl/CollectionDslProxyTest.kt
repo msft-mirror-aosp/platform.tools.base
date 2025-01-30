@@ -25,16 +25,16 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 class CollectionDslProxyTest {
-    private val contentHolder = DefaultDslContentHolder()
+    private val dslRecorder = DefaultDslRecorder()
 
     @Test
     fun listAdd() {
-        contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
+        dslRecorder.runNestedBlock("town", listOf(), Town::class.java) {
             places += "Post Office"
         }
 
         val writer = GroovyBuildWriter()
-        contentHolder.writeContent(writer)
+        dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             town {
               places += 'Post Office'
@@ -45,12 +45,12 @@ class CollectionDslProxyTest {
 
     @Test
     fun listAddAll() {
-        contentHolder.runNestedBlock("town", listOf(), Town::class.java) {
+        dslRecorder.runNestedBlock("town", listOf(), Town::class.java) {
             places += listOf("Post Office", "City Hall")
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             town {
               places += ['Post Office', 'City Hall']
@@ -59,7 +59,7 @@ class CollectionDslProxyTest {
         """.trimIndent())
 
         val kts = KtsBuildWriter()
-        contentHolder.writeContent(kts)
+        dslRecorder.writeContent(kts)
         Truth.assertThat(kts.toString()).isEqualTo("""
             town {
               places += listOf("Post Office", "City Hall")
@@ -71,12 +71,12 @@ class CollectionDslProxyTest {
 
     @Test
     fun chainedListUsage() {
-        contentHolder.runNestedBlock("california", listOf(), California::class.java) {
+        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
             mountainView.places += listOf("Post Office", "City Hall")
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             california {
               mountainView.places += ['Post Office', 'City Hall']
@@ -87,12 +87,12 @@ class CollectionDslProxyTest {
 
     @Test
     fun mapPut() {
-        contentHolder.runNestedBlock("address", listOf(), Address::class.java) {
+        dslRecorder.runNestedBlock("address", listOf(), Address::class.java) {
             properties["foo"] = "bar"
         }
 
         val groovy = GroovyBuildWriter()
-        contentHolder.writeContent(groovy)
+        dslRecorder.writeContent(groovy)
         Truth.assertThat(groovy.toString()).isEqualTo("""
             address {
               properties['foo'] = 'bar'

@@ -142,7 +142,7 @@ public class DesugarAppTest {
     public void runsAfterJacoco() throws IOException, InterruptedException {
         enableJava8();
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "\nandroid.buildTypes.debug.testCoverageEnabled true");
+                project.getBuildFile(), "\nandroid.buildTypes.debug.testCoverageEnabled = true");
         TestFileUtils.addMethod(
                 FileUtils.join(project.getMainSrcDir(), "com/example/helloworld/HelloWorld.java"),
                 "Runnable r = () -> { };");
@@ -161,7 +161,7 @@ public class DesugarAppTest {
                 String.format(
                         Locale.US,
                         "\n"
-                                + "android.buildTypes.debug.testCoverageEnabled true\n"
+                                + "android.buildTypes.debug.testCoverageEnabled = true\n"
                                 + "android.defaultConfig.minSdkVersion %d\n"
                                 + "dependencies {\n"
                                 + "    api 'com.android.support:support-v4:%s'\n"
@@ -180,7 +180,7 @@ public class DesugarAppTest {
             throws IOException, InterruptedException, ProcessException {
         enableJava8();
         // using at least android-27 as ServiceConnection has a default method
-        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.compileSdkVersion " + DEFAULT_COMPILE_SDK_VERSION);
+        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.compileSdkVersion = " + DEFAULT_COMPILE_SDK_VERSION);
 
         Path newSource = project.getMainSrcDir().toPath().resolve("test").resolve("MyService.java");
         Files.createDirectories(newSource.getParent());
@@ -211,8 +211,8 @@ public class DesugarAppTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "\n"
-                        + "android.buildTypes.debug.multiDexKeepProguard file('rules')\n"
-                        + "android.defaultConfig.multiDexEnabled true\n"
+                        + "android.buildTypes.debug.multiDexKeepProguard = file('rules')\n"
+                        + "android.defaultConfig.multiDexEnabled = true\n"
                         + "android.defaultConfig.minSdkVersion 20");
         // just keep the HelloWorld, the lambda one should be inferred
         Files.write(
@@ -249,8 +249,8 @@ public class DesugarAppTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "\n"
-                        + "android.buildTypes.debug.multiDexKeepProguard file('rules')\n"
-                        + "android.defaultConfig.multiDexEnabled true\n"
+                        + "android.buildTypes.debug.multiDexKeepProguard = file('rules')\n"
+                        + "android.defaultConfig.multiDexEnabled = true\n"
                         + "android.defaultConfig.minSdkVersion 20");
         Files.write(
                 project.getBuildFile().toPath().resolveSibling("rules"),

@@ -21,6 +21,10 @@ import com.android.AndroidXConstants.LONG_DEF_ANNOTATION
 import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
+import com.android.tools.lint.detector.api.AnnotationUsageType.ASSIGNMENT_LHS
+import com.android.tools.lint.detector.api.AnnotationUsageType.ASSIGNMENT_RHS
+import com.android.tools.lint.detector.api.AnnotationUsageType.METHOD_CALL_PARAMETER
+import com.android.tools.lint.detector.api.AnnotationUsageType.METHOD_RETURN
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Implementation
@@ -71,6 +75,14 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       // such that we don't end up with a double set of warnings in the IDE (one
       // from Lint, one from IntelliJ's support for this annotation)
     )
+
+  override fun isApplicableAnnotationUsage(type: AnnotationUsageType) =
+    when (type) {
+      METHOD_CALL_PARAMETER,
+      ASSIGNMENT_RHS,
+      METHOD_RETURN -> true
+      else -> false
+    }
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -350,7 +362,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         // Try to resolve it; see if there's an annotation on the variable/parameter/field
         if (argument is UResolvable) {
           val referenceConstraint = getRangeConstraint(context, argument)
-          if (referenceConstraint != null && usageInfo.type != AnnotationUsageType.ASSIGNMENT_LHS) {
+          if (referenceConstraint != null && usageInfo.type != ASSIGNMENT_LHS) {
             val here = RangeConstraint.create(annotation)
             val error = getNonOverlapMessage(here, referenceConstraint, argument, usageInfo)
             if (error != null) {
@@ -527,7 +539,7 @@ class RangeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
         if (argumentSource.isNotBlank()) {
           actualLabel = "`$argumentSource`"
-        } else if (usageInfo.type == AnnotationUsageType.METHOD_CALL_PARAMETER) {
+        } else if (usageInfo.type == METHOD_CALL_PARAMETER) {
           allowedLabel = "the parameter "
           actualLabel = "the argument "
         }

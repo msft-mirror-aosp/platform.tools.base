@@ -37,7 +37,7 @@ class JacocoVersionTest {
             project.buildFile,
             """
                 apply plugin: 'jacoco'
-                android.buildTypes.debug.enableUnitTestCoverage true
+                android.buildTypes.debug.enableUnitTestCoverage = true
 
                 task jacocoTestReport(
                     type: JacocoReport,

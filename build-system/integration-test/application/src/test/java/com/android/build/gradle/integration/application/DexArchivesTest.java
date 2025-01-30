@@ -64,7 +64,7 @@ public class DexArchivesTest {
     @Before
     public void before() throws IOException {
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "android.buildFeatures.buildConfig true");
+                project.getBuildFile(), "android.buildFeatures.buildConfig = true");
     }
 
     @Test

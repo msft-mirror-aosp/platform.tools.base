@@ -24,7 +24,9 @@ import com.android.backup.BackupType.DEVICE_TO_DEVICE
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
+import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
+import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
@@ -707,6 +709,50 @@ class BackupServiceImplTest {
     val result = backupService.restore("serial", backupFile, null)
 
     assertThat(result).isEqualTo(RESTORE_FAILED.asBackupResult("Error restoring app: Error"))
+  }
+
+  @Test
+  fun restore_notSupported(): Unit = runBlocking {
+    val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
+    val backupService =
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(
+            Output(
+              "bmgr enabled",
+              stdout = "",
+              stderr = "Error: Could not access the Backup Manager.  Is the system running?\n",
+            )
+          )
+        }
+      )
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    assertThat(result)
+      .isEqualTo(BACKUP_NOT_SUPPORTED.asBackupResult("Backup is not supported on this device"))
+  }
+
+  @Test
+  fun restore_notActivated(): Unit = runBlocking {
+    val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
+    val backupService =
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(
+            Output(
+              "bmgr enabled",
+              stdout = "",
+              stderr = "Error: Backup Manager is not activated for user 0\n",
+            )
+          )
+        }
+      )
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    assertThat(result)
+      .isEqualTo(BACKUP_NOT_ACTIVATED.asBackupResult("Backup is not activated on this device"))
   }
 }
 

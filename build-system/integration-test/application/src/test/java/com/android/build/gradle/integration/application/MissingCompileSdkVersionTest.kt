@@ -56,7 +56,7 @@ class MissingCompileSdkVersionTest {
 
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION,
+            "compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION,
             ""
         )
     }

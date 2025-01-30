@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.ANDROID_ARCH_VERSION
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
@@ -98,7 +96,6 @@ class JetifierTest(private val withKotlin: Boolean) {
 
         // Build the project with Jetifier disabled
         project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.ENABLE_JETIFIER, false).run("assembleDebug")
         val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
@@ -122,7 +119,6 @@ class JetifierTest(private val withKotlin: Boolean) {
 
         // Build the project with Jetifier enabled and AndroidX enabled
         project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .run("assembleDebug")
@@ -285,25 +281,23 @@ class JetifierTest(private val withKotlin: Boolean) {
         val kotlinCompilerClasspath = "kotlinCompilerClasspath"
         val kotlinKaptWorkers = "kotlinKaptWorkerDependencies"
 
-        project.buildFile.appendText(
+        project.getSubproject(":app").buildFile.appendText("\n" +
             """
             def beforeTaskExecutionPhase = true
             gradle.taskGraph.whenReady {
                 beforeTaskExecutionPhase = false
             }
 
-            allprojects {
-                project.configurations.all {
-                    it.incoming.beforeResolve { configuration ->
-                        if (configuration.name != "classpath"
-                                && configuration.name != "$kotlinCompilerClasspath"
-                                && configuration.name != "$kotlinKaptWorkers"
-                                && beforeTaskExecutionPhase) {
-                            throw new RuntimeException(
-                                    configuration.name +
-                                            " is being resolved before task execution phase." +
-                                            " Run with --stacktrace for more details.")
-                        }
+            project.configurations.all {
+                it.incoming.beforeResolve { configuration ->
+                    if (configuration.name != "classpath"
+                            && configuration.name != "$kotlinCompilerClasspath"
+                            && configuration.name != "$kotlinKaptWorkers"
+                            && beforeTaskExecutionPhase) {
+                        throw new RuntimeException(
+                                configuration.name +
+                                        " is being resolved before task execution phase." +
+                                        " Run with --stacktrace for more details.")
                     }
                 }
             }

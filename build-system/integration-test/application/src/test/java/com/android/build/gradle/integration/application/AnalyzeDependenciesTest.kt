@@ -58,7 +58,7 @@ class AnalyzeDependenciesTest {
     private val app = MinimalSubProject.app("com.example.app")
             .appendToBuild("""
 
-                android.namespace "com.example.app"
+                android.namespace = "com.example.app"
 
                 dependencies {
                 implementation project(path: ':usedClassLocalLib')

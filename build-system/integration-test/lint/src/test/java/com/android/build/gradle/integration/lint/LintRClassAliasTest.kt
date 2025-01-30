@@ -37,10 +37,10 @@ class LintRClassAliasTest {
                 """
                     android {
                         lintOptions {
-                            abortOnError false
+                            abortOnError = false
                             checkOnly 'UnusedResources'
-                            textOutput file("lint-results.txt")
-                            checkDependencies true
+                            textOutput = file("lint-results.txt")
+                            checkDependencies = true
                         }
                     }
                 """.trimIndent()

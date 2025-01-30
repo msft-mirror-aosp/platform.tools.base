@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.api.dsl.SettingsExtension
-import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslContentHolder
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
 import java.nio.file.Path
@@ -66,7 +66,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
     private val featurePreviews = mutableListOf<String>()
 
     private val plugins = mutableListOf<AppliedPlugin>()
-    private val androidContentHolder = DefaultDslContentHolder()
+    private val androidDslRecorder = DefaultDslRecorder()
 
     // cache or the repositories as we need to keep this around for reconfiguration.
     private var repositoriesCache: Collection<Path>? = null
@@ -108,7 +108,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             throw RuntimeException("Settings must contain ANDROID_SETTINGS to configure the android extension")
         }
 
-        DslProxy.createProxy(SettingsExtension::class.java, androidContentHolder,)
+        DslProxy.createProxy(SettingsExtension::class.java, androidDslRecorder,)
     }
 
     override fun android(action: SettingsExtension.() -> Unit) {
@@ -208,7 +208,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
             if (hasAndroid()) {
                 block("android") {
-                    androidContentHolder.writeContent(this)
+                    androidDslRecorder.writeContent(this)
                 }
                 emptyLine()
             }

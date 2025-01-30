@@ -61,7 +61,7 @@ public class BasicTest {
     public void testRenderscriptDidNotRun() throws Exception {
         // First enable renderscript, then execute renderscript task and check if it was skipped
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "android.buildFeatures.renderScript true");
+                project.getBuildFile(), "android.buildFeatures.renderScript = true");
         GradleBuildResult result = project.execute("compileDebugRenderscript");
         assertThat(result.getTask(":compileDebugRenderscript").getExecutionState().toString())
                 .isEqualTo("SKIPPED");

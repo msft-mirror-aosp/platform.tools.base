@@ -358,6 +358,42 @@ class ForbiddenStudioCallDetectorTest {
       )
   }
 
+  @Test
+  fun testAvoidJsInline() {
+    studioLint()
+      .files(
+        kotlin(
+          """
+          package test.pkg
+          import org.jetbrains.kotlin.js.descriptorUtils.nameIfStandardType
+          import org.jetbrains.kotlin.js.translate.utils.finalElement
+          import org.jetbrains.kotlin.js.inline.util.toIdentitySet
+          import org.jetbrains.kotlin.js.translate.declaration.hasCustomSetter
+          """
+        )
+      )
+      .issues(ForbiddenStudioCallDetector.KOTLIN_JS_PACKAGE)
+      .allowCompilationErrors()
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:3: Warning: Avoid using methods from the kotlin.js package [KotlinJsUsage]
+                  import org.jetbrains.kotlin.js.descriptorUtils.nameIfStandardType
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:4: Warning: Avoid using methods from the kotlin.js package [KotlinJsUsage]
+                  import org.jetbrains.kotlin.js.translate.utils.finalElement
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:5: Warning: Avoid using methods from the kotlin.js package [KotlinJsUsage]
+                  import org.jetbrains.kotlin.js.inline.util.toIdentitySet
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:6: Warning: Avoid using methods from the kotlin.js package [KotlinJsUsage]
+                  import org.jetbrains.kotlin.js.translate.declaration.hasCustomSetter
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 4 warnings
+        """
+      )
+  }
+
   private val addToStdlibStub: TestFile =
     kotlin(
         "org/jetbrains/kotlin/utils/addToStdlib.kt",

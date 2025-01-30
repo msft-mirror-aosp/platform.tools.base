@@ -73,7 +73,7 @@ interface GradleBuild {
      * Queries for an AndroidX privacy sandbox library via its gradle path.
      * The project must exist and be a Privacy Sandbox Library.
      */
-    fun androidXPrivacySandboxLibrary(path:String): AndroidXPrivacySandboxLibraryProject
+    fun androidXPrivacySandboxLibrary(path:String): AndroidLibraryProject
     /**
      * Queries for an AI pack project via its gradle path.
      * The project must exist and be an AI Pack project
@@ -94,6 +94,12 @@ interface GradleBuild {
      * The project must exist and be a Fused Library project
      */
     fun fusedLibrary(path: String): FusedLibraryProject
+
+    /**
+     * Queries for a Kotlin multiplatform project via its gradle path.
+     * The project must exist and be a Kotlin multiplatform project.
+     */
+    fun kotlinMultiplatformLibrary(path: String): KotlinMultiplatformProject
 
     /** Queries for an included build via its name. The build must exist. */
     fun includedBuild(name: String): GradleBuild
@@ -223,14 +229,14 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
         )
     }
 
-    override fun androidXPrivacySandboxLibrary(path: String): AndroidXPrivacySandboxLibraryProject {
+    override fun androidXPrivacySandboxLibrary(path: String): AndroidLibraryProject {
         val project = subProject(path)
-        if (project is AndroidXPrivacySandboxLibraryProject) return project
+        if (project is AndroidLibraryProject) return project
 
         throw RuntimeException(
             """
-                Project with path '$path' is not an Androids Privacy Sandbox Library project.
-                Possible options are ${getProjectListByType<AndroidXPrivacySandboxLibraryImpl>()}
+                Project with path '$path' is not an Androids Privacy Sandbox Library or Android Library project.
+                Possible options are ${getProjectListByType<AndroidLibraryImpl>()}
             """.trimIndent()
         )
     }
@@ -279,6 +285,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not a Fused Library project.
                 Possible options are ${getProjectListByType<FusedLibraryImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun kotlinMultiplatformLibrary(path: String): KotlinMultiplatformProject {
+        val project = subProject(path)
+        if (project is KotlinMultiplatformProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not a Kotlin Multiplatform Project with Android.
+                Possible options are ${getProjectListByType<KotlinMultiplatformProjectImpl>()}
             """.trimIndent()
         )
     }

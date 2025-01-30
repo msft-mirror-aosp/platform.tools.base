@@ -52,7 +52,10 @@ kotlin_library(
     deps = DEPS_WITHOUT_UTILS,
 )
 
-DEPS = DEPS_WITHOUT_UTILS + [":utils"]
+DEPS = DEPS_WITHOUT_UTILS + [
+    ":utils",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
+]
 
 LONG_RUNNING_TESTS = [
     "src/test/java/com/android/build/gradle/integration/lint/AndroidLintAnalysisTaskTest.kt",

@@ -114,9 +114,10 @@ class LintModelIntegrationTest {
             """
                 android {
                     compileOptions {
-                        coreLibraryDesugaringEnabled true
+                        coreLibraryDesugaringEnabled = true
                     }
                     dependencies {
+                        //noinspection CoreLibDesugaringV1
                         coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
                     }
                 }

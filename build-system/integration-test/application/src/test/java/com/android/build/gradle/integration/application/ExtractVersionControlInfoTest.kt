@@ -59,7 +59,7 @@ class ExtractVersionControlInfoTest {
 
     private val includeVcsDsl =
         """
-            android.buildTypes.debug.vcsInfo.include true
+            android.buildTypes.debug.vcsInfo.include = true
         """.trimIndent()
 
     @Before

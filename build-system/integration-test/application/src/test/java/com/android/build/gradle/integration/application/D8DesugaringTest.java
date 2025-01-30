@@ -69,10 +69,10 @@ public class D8DesugaringTest {
                         + "apply plugin: \"com.android.application\"\n"
                         + "\n"
                         + "android {\n"
-                        + "    namespace \""
+                        + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
-                        + "    compileSdkVersion "
+                        + "    compileSdkVersion = "
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\n"
                         + "\n"
@@ -88,8 +88,8 @@ public class D8DesugaringTest {
                         + "    productFlavors {\n"
                         + "      multidex {\n"
                         + "        dimension \"whatever\"\n"
-                        + "        multiDexEnabled true\n"
-                        + "        multiDexKeepProguard file('debug_main_dex_rules.txt')\n"
+                        + "        multiDexEnabled = true\n"
+                        + "        multiDexKeepProguard = file('debug_main_dex_rules.txt')\n"
                         + "      }\n"
                         + "      base {\n"
                         + "        dimension \"whatever\"\n"
