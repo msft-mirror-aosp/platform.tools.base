@@ -28,6 +28,7 @@ public class ArchivePathEntry extends ArchiveEntry {
     private ZipEntryInfo.Alignment zipAlignment = ALIGNMENT_NONE;
     private long loadAlignment = -1;
     private boolean isCompressed = false;
+    private boolean isElf = false;
 
     public ArchivePathEntry(
             @NonNull Archive archive, @NonNull Path path, @NonNull String pathPrefix) {
@@ -57,6 +58,16 @@ public class ArchivePathEntry extends ArchiveEntry {
     @Override
     public long getElfMinimumLoadSectionAlignment() {
         return loadAlignment;
+    }
+
+    @Override
+    public void setIsElf(boolean isElf) {
+        this.isElf = isElf;
+    }
+
+    @Override
+    public boolean getIsElf() {
+        return this.isElf;
     }
 
     @Override

@@ -145,8 +145,11 @@ public class ArchiveTreeStructure {
                                 data.setRawFileSize(info.size);
                                 data.setIsFileCompressed(info.isCompressed);
                                 data.setFileAlignment(info.zipAlignment);
-                                data.setElfMinimumLoadSectionAlignment(
-                                        info.elfLoadSectionAlignment);
+                                data.setIsElf(info.isElf);
+                                if (info.isElf) {
+                                    data.setElfMinimumLoadSectionAlignment(
+                                            info.elfLoadSectionAlignment);
+                                }
                             }
                         });
 

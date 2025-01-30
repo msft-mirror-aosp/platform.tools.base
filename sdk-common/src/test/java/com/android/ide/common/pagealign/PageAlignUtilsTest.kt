@@ -87,10 +87,17 @@ class PageAlignUtilsTest {
     }
 
     private fun checkZipPageAlign(content : ByteArray, options : ZipEntryOptions) : Set<AlignmentProblems> {
-        val result = findElfFile16kAlignmentProblems(ZipBuilder()
-                                                       .addFile("elf.so", content, options)
+        val result = findElfFile16kAlignmentInfo(ZipBuilder()
+                                                       .addFile("lib/arm64-v8a/elf.so", content, options)
                                                        .build())
-        return result["elf.so"] ?: setOf()
+        assertThat(result.hasElfFiles).isTrue()
+        return result.alignmentProblems["lib/arm64-v8a/elf.so"] ?: setOf()
+    }
+
+    @Test
+    fun `APK with no ELF files`() {
+        val apk = findElfFile16kAlignmentInfo(ZipBuilder().build())
+        assertThat(apk.hasElfFiles).isFalse()
     }
 
     @Test
@@ -264,10 +271,13 @@ class PageAlignUtilsTest {
             return this
         }
 
+        fun toByteArray() : ByteArray {
+            zipOutputStream.close() // Close the zipOutputStream to finalize the ZIP file
+            return outputStream.toByteArray()
+        }
 
         fun build(): ZipArchiveInputStream {
-            zipOutputStream.close() // Close the zipOutputStream to finalize the ZIP file
-            return ZipArchiveInputStream(ByteArrayInputStream(outputStream.toByteArray()))
+            return ZipArchiveInputStream(ByteArrayInputStream(toByteArray()))
         }
     }
 }
