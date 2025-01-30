@@ -48,21 +48,6 @@ load("@vendor//:vendor.bzl", "setup_vendor_repositories")
 
 setup_vendor_repositories()
 
-load(
-    "@bazel_toolchains//rules/exec_properties:exec_properties.bzl",
-    "create_rbe_exec_properties_dict",
-    "custom_exec_properties",
-)
-
-custom_exec_properties(
-    name = "exec_properties",
-    constants = {
-        "LARGE_MACHINE": create_rbe_exec_properties_dict(
-            labels = {"machine-size": "large"},
-        ),
-    },
-)
-
 # An empty local repository which must be overridden according to the instructions at
 # go/agp-profiled-benchmarks if running the "_profiled" AGP build benchmarks.
 new_local_repository(
