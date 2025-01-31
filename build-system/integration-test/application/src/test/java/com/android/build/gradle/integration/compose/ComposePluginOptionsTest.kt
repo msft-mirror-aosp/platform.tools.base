@@ -95,11 +95,16 @@ class ComposePluginOptionsTest {
     fun `test AGP does not override user-specified plugin options`() {
         val build = rule.build {
             androidApplication {
+                android {
+                    composeOptions {
+                        useLiveLiterals = true
+                    }
+                }
                 kotlin {
                     compilerOptions {
                         freeCompilerArgs.addAll(
                             "-P",
-                            "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
+                            "plugin:androidx.compose.compiler.plugins.kotlin:liveLiterals=true"
                         )
                     }
                 }
@@ -109,10 +114,7 @@ class ComposePluginOptionsTest {
             build.executor
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 .run(":app:compileDebugKotlin")
-        ScannerSubject.assertThat(result.stdout)
-            .contains("androidx.compose.compiler.plugins.kotlin:sourceInformation=false")
-        ScannerSubject.assertThat(result.stdout)
-            .doesNotContain("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
+        result.assertOutputContains("androidx.compose.compiler.plugins.kotlin:liveLiterals=true")
     }
 
     /** Regression test for b/362780328. */

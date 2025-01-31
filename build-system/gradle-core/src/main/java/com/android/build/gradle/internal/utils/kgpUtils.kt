@@ -324,20 +324,11 @@ private fun KotlinVersion?.isVersionAtLeast(major: Int, minor: Int, patch: Int? 
 /**
  * Add the Compose Compiler Gradle Plugin's sourceInformation flag only if the kotlin version is
  * below 2.1.20-Beta2. Starting at that version, the Compose Compiler Gradle Plugin adds the flag
- * itself.
+ * itself (see https://youtrack.jetbrains.com/issue/KT-74415).
  */
 private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinVersion?) {
-    if (kotlinVersion.isVersionAtLeast(2, 1, 21)) {
+    if (kotlinVersion.isVersionAtLeast(2, 1, 20)) {
         return
-    }
-    // Handle corner cases of 2.1.20 previews. For unknown corner cases, prefer not to add the
-    // sourceInformation flag because there will be an error if it's added by AGP and the Compose
-    // Compiler Gradle plugin.
-    val kotlinVersionString = getKotlinAndroidPluginVersion(project) ?: return
-    if (kotlinVersionString.startsWith("2.1.20")) {
-        if (!kotlinVersionString.contains("Beta1")) {
-            return
-        }
     }
     addPluginOption(
         kotlinVersion,
