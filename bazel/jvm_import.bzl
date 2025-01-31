@@ -31,6 +31,8 @@ def _jvm_import(ctx):
             deps = [dep[JavaInfo] for dep in ctx.attr.deps],
             exports = [export[JavaInfo] for export in ctx.attr.exports],
             source_jar = source_jar,
+            add_exports = ctx.attr.add_exports,
+            add_opens = ctx.attr.add_opens,
         ))
 
     return [
@@ -53,6 +55,8 @@ Args:
   srcjar: The associated source jar to make available.
   deps: The list of dependencies needed by the imported jars.
   exports: The list of dependencies to make available.
+  add_exports: Allow this library to access the given module or package. This corresponds to the javac and JVM --add-exports= flags.
+  add_opens: Allow this library to reflectively access the given module or package. This corresponds to the javac and JVM --add-opens= flags.
     """,
     attrs = {
         "jars": attr.label_list(allow_files = [".jar"], mandatory = True),
@@ -67,6 +71,8 @@ Args:
             cfg = "exec",
             default = Label("//tools/base/bazel:modify_jar_manifest"),
         ),
+        "add_exports": attr.string_list(),
+        "add_opens": attr.string_list(),
     },
     implementation = _jvm_import,
     provides = [JavaInfo],
