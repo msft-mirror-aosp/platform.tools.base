@@ -472,6 +472,7 @@ https://issuetracker.google.com/328749039
   * com.android.build.api.variant.Component.getJavaCompilation: com.android.build.api.variant.JavaCompilation ()
   * com.android.build.api.variant.JavaCompilation
   * com.android.build.api.variant.JavaCompilation.getAnnotationProcessor: com.android.build.api.variant.AnnotationProcessor ()
+  * com.android.build.api.variant.JavaCompilation.getAnnotationProcessorConfiguration: org.gradle.api.artifacts.Configuration ()
 https://issuetracker.google.com/328749058
   * com.android.build.api.variant.HasDeviceTestsBuilder
 https://issuetracker.google.com/328749059

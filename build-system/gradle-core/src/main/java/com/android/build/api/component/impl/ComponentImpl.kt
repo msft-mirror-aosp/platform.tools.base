@@ -121,7 +121,9 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
         JavaCompilationImpl(
             dslInfo.javaCompileOptionsSetInDSL,
             buildFeatures.dataBinding,
-            internalServices)
+            internalServices,
+            variantDependencies
+        )
 
     override val sources by lazy {
         SourcesImpl(

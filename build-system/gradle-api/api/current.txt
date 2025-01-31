@@ -3099,7 +3099,9 @@ package com.android.build.api.variant {
 
   @org.gradle.api.Incubating public interface JavaCompilation {
     method public com.android.build.api.variant.AnnotationProcessor getAnnotationProcessor();
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getAnnotationProcessorConfiguration();
     property public abstract com.android.build.api.variant.AnnotationProcessor annotationProcessor;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.Configuration annotationProcessorConfiguration;
   }
 
   public interface JniLibsApkPackaging extends com.android.build.api.variant.JniLibsPackaging {

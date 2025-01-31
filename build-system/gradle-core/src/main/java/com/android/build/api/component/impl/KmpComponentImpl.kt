@@ -249,7 +249,8 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
             JavaCompilationImpl(
                 MergedJavaCompileOptions(),
                 buildFeatures.dataBinding,
-                internalServices
+                internalServices,
+                variantDependencies
             )
         } else {
             throw IllegalAccessException("The kotlin multiplatform android plugin doesn't" +
