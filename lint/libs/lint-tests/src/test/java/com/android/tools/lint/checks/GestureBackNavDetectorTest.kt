@@ -29,15 +29,14 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="test.pkg">
 
-            <uses-permission-sdk-33 android:name="foo.bar.BAZ" />
-
             <application
                 android:icon="@drawable/ic_launcher"
                 android:label="@string/app_name"
                 android:enableOnBackInvokedCallback="true" >
                 <activity
                     android:name=".KeyEventKeyCodeBackTest"
-                    android:label="@string/app_name" >
+                    android:label="@string/app_name"
+                    android:exported="true" >
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
 
@@ -53,7 +52,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   fun testDocumentationExample() {
     val expected =
       """
-            src/test/pkg/KeyEventKeyCodeBackTest.java:11: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
+            src/test/pkg/KeyEventKeyCodeBackTest.java:11: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                     if (KeyEvent.KEYCODE_BACK == keyCode) {
                         ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -87,7 +86,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         """
-            Show URL for src/test/pkg/KeyEventKeyCodeBackTest.java line 11: https://developer.android.com/about/versions/13/features/predictive-back-gesture
+            Show URL for src/test/pkg/KeyEventKeyCodeBackTest.java line 11: https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture
             """
       )
   }
@@ -95,7 +94,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   fun testKeyCodeBackSwitchJava() {
     val expected =
       """
-            src/test/pkg/KeyEventKeyCodeBackTest.java:12: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
+            src/test/pkg/KeyEventKeyCodeBackTest.java:12: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       case KeyEvent.KEYCODE_BACK:
                            ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -135,7 +134,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   fun testKeyCodeIfStatementKotlin() {
     val expected =
       """
-            src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
+            src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                     if (KeyEvent.KEYCODE_BACK == keyCode) {
                         ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -146,17 +145,17 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.app.Activity;
-                import android.content.Context;
-                import android.view.KeyEvent;
+                import android.app.Activity
+                import android.content.Context
+                import android.view.KeyEvent
 
                 class KeyEventKeyCodeBackTest : Activity() {
 
                     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
                         if (KeyEvent.KEYCODE_BACK == keyCode) {
-                          return true;
+                          return true
                         }
                     }
                 }
@@ -171,7 +170,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   fun testKeyCodeBackSwitchKotlin() {
     val expected =
       """
-            src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
+            src/test/pkg/KeyEventKeyCodeBackTest.kt:10: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       KeyEvent.KEYCODE_BACK -> println("keycode back")
                       ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -182,10 +181,10 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.app.Activity;
-                import android.view.KeyEvent;
+                import android.app.Activity
+                import android.view.KeyEvent
 
                 class KeyEventKeyCodeBackTest : Activity() {
 
@@ -207,7 +206,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   fun testDialogOnKeyListenerSwitchKotlin() {
     val expected =
       """
-            src/test/pkg/KeyEventKeyCodeBackTest.kt:11: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
+            src/test/pkg/KeyEventKeyCodeBackTest.kt:11: Warning: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
                       KeyEvent.KEYCODE_BACK -> println("keycode back")
                       ~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -218,13 +217,13 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.view.KeyEvent;
-                import android.content.DialogInterface;
-                import android.content.DialogInterface.OnKeyListener;
+                import android.view.KeyEvent
+                import android.content.DialogInterface
+                import android.content.DialogInterface.OnKeyListener
 
-                class KeyEventKeyCodeBackTest : onKeyListener() {
+                class KeyEventKeyCodeBackTest : OnKeyListener() {
 
                     override fun onKey(dialog: DialogInterface, keyCode: Int, event: KeyEvent): Boolean {
                         when (keyCode) {
@@ -242,26 +241,20 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
   }
 
   fun testKeyCodeCheckInUtil() {
-    val expected =
-      """
-            src/test/pkg/KeyEventKeyCodeBackTest.kt:16: Warning: If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture [GestureBackNavigation]
-                      KeyEvent.KEYCODE_BACK -> println("keycode back")
-                      ~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
-            """
+    // We do not report references to KEYCODE_BACK in utility methods.
+    // We only report references that are trivially in an Activity or Dialog subclass.
     lint()
       .files(
         manifestBackInvokeEnabled,
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.app.Activity;
-                import android.view.KeyEvent;
+                import android.app.Activity
+                import android.view.KeyEvent
 
                 class KeyEventKeyCodeBackTest : Activity() {
-
                    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
                      Util.handleKeyCode(keyCode)
                    }
@@ -280,7 +273,7 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .run()
-      .expect(expected)
+      .expectClean()
   }
 
   fun testKeyUpCleanKotlin() {
@@ -290,11 +283,11 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.app.Activity;
-                import android.view.KeyEvent;
-                import android.util.Log;
+                import android.app.Activity
+                import android.view.KeyEvent
+                import android.util.Log
 
                 class KeyEventKeyCodeBackTest : Activity() {
 
@@ -318,8 +311,6 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
 
-                    <uses-permission-sdk-33 android:name="foo.bar.BAZ" />
-
                     <application
                         android:icon="@drawable/ic_launcher"
                         android:label="@string/app_name" >
@@ -340,10 +331,10 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
         kotlin(
             "src/test/pkg/KeyEventKeyCodeBackTest.kt",
             """
-                package test.pkg;
+                package test.pkg
 
-                import android.app.Activity;
-                import android.view.KeyEvent;
+                import android.app.Activity
+                import android.view.KeyEvent
 
                 class KeyEventKeyCodeBackTest : Activity() {
 
@@ -361,6 +352,118 @@ class GestureBackNavDetectorTest : AbstractCheckTest() {
                      }
                  }
                 """,
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testApi36() {
+    lint()
+      .files(
+        manifest(
+          """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="test.pkg">
+
+              <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
+
+              <application
+                  android:icon="@drawable/ic_launcher"
+                  android:label="@string/app_name" >
+                  <activity
+                      android:name=".KeyEventKeyCodeBackTest"
+                      android:label="@string/app_name"
+                      android:exported="true" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+
+          </manifest>
+          """
+        ),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
+            package test.pkg
+
+            import android.app.Activity
+            import android.view.KeyEvent
+
+            class KeyEventKeyCodeBackTest : Activity() {
+              override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+                when (keyCode) {
+                  KeyEvent.KEYCODE_BACK -> println("keycode back")
+                  else -> println("else")
+                }
+              }
+            }
+            """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/KeyEventKeyCodeBackTest.kt:9: Error: If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture [GestureBackNavigation]
+              KeyEvent.KEYCODE_BACK -> println("keycode back")
+              ~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+      )
+  }
+
+  fun testApi36OptOut() {
+    lint()
+      .files(
+        manifest(
+          """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="test.pkg">
+
+              <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
+
+              <application
+                  android:icon="@drawable/ic_launcher"
+                  android:label="@string/app_name"
+                  android:enableOnBackInvokedCallback="false" >
+                  <activity
+                      android:name=".KeyEventKeyCodeBackTest"
+                      android:label="@string/app_name"
+                      android:exported="true" >
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+
+          </manifest>
+          """
+        ),
+        kotlin(
+            "src/test/pkg/KeyEventKeyCodeBackTest.kt",
+            """
+            package test.pkg
+
+            import android.app.Activity
+            import android.view.KeyEvent
+
+            class KeyEventKeyCodeBackTest : Activity() {
+              override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+                when (keyCode) {
+                  KeyEvent.KEYCODE_BACK -> println("keycode back")
+                  else -> println("else")
+                }
+              }
+            }
+            """,
           )
           .indented(),
       )
