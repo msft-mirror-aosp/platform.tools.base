@@ -99,9 +99,10 @@ maven_repository(
         "@maven//:androidx.compose.ui.ui-tooling-preview_1.5.0",
         "@maven//:androidx.compose.ui.ui-tooling_1.7.0",  # Compose BOM 2024.09.00
         "@maven//:androidx.compose.ui.ui_1.5.0",
-        "@maven//:androidx.core.core-ktx_1.12.0",
+        "@maven//:androidx.core.core-ktx_1.13.1",
         "@maven//:androidx.lifecycle.lifecycle-common-java8_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-process_2.8.3",
+        "@maven//:androidx.lifecycle.lifecycle-runtime-compose_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-runtime-ktx_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-ktx_2.8.3",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-savedstate_2.8.3",
