@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
@@ -91,7 +92,9 @@ class ConfigurationPerSourceSetTest {
                 }
             }
         }
-        val result = build.executor.run("printFooInputs")
+        // Add .with(BooleanOption.ENABLE_PROFILE_JSON, true) as regression test for b/393189008
+        val result =
+            build.executor.with(BooleanOption.ENABLE_PROFILE_JSON, true).run("printFooInputs")
         ScannerSubject.assertThat(result.stdout)
             .contains(
                 "proPlayDebug: debug-1.0.0.jar, main-1.0.0.jar, play-1.0.0.jar, pro-1.0.0.jar, pro-play-1.0.0.jar, pro-play-debug-1.0.0.jar;"
