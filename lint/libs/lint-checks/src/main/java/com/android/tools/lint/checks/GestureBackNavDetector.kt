@@ -35,16 +35,23 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.utils.subtag
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiTypes
+import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.USwitchClauseExpression
+import org.jetbrains.uast.UastVisibility
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.skipParenthesizedExprUp
 
 /**
- * Looks for usages of KeyEvent.KEYCODE_BACK in an if/switch conditional and warns user as it's a
- * signal for handling a custom back navigation.
+ * Reports:
+ * - `KeyEvent.KEYCODE_BACK` in an if/switch condition
+ * - overrides of `{Activity,Dialog}.onBackPressed`
+ *
+ *   Incidents are filtered (and severity may be increased) depending on a manifest flag and the
+ *   targetSdkVersion.
  */
 class GestureBackNavDetector : Detector(), SourceCodeScanner {
   override fun getApplicableReferenceNames(): List<String> = listOf("KEYCODE_BACK")
@@ -106,6 +113,36 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
           map(),
         )
       }
+    }
+  }
+
+  override fun applicableSuperClasses() = listOf("android.app.Activity", "android.app.Dialog")
+
+  override fun visitClass(context: JavaContext, declaration: UClass) {
+    for (method in declaration.methods) {
+      if (
+        method.name != "onBackPressed" ||
+          method.visibility != UastVisibility.PUBLIC ||
+          method.uastParameters.isNotEmpty() ||
+          method.returnType != PsiTypes.voidType()
+      )
+        continue
+
+      val fix =
+        fix()
+          .url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture")
+          .build()
+
+      context.report(
+        Incident(
+          ISSUE,
+          method,
+          context.getNameLocation(method),
+          "`onBackPressed` is no longer called for back gestures; migrate to AndroidX's backward compatible `OnBackPressedDispatcher`",
+          fix,
+        ),
+        LintMap(),
+      )
     }
   }
 
