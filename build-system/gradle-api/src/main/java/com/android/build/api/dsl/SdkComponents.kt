@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import com.android.build.api.variant.Aapt2
 import com.android.build.api.variant.Aidl
 import org.gradle.api.Incubating
 import org.gradle.api.file.Directory
@@ -64,4 +65,13 @@ interface SdkComponents {
      */
     @get:Incubating
     val aidl: Provider<Aidl>
+
+    /**
+     *  Provides access to AAPT2
+     *
+     *  The returned [Provider] can be used by tasks requiring AAPT2 as input
+     *  with [org.gradle.api.tasks.Nested]
+     */
+    @get:Incubating
+    val aapt2: Provider<Aapt2>
 }
