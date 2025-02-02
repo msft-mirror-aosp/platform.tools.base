@@ -179,7 +179,7 @@ enum class TextFormat {
         }
         // TODO: Handle <pre> such that we don't collapse spaces and reformat there!
         // (We do need to strip out tags and expand entities)
-        val tag = html.substring(begin, end).trim()
+        val tag = html.substring(begin, end).trim().substringBefore(' ')
         if (tag.equals("br", ignoreCase = true)) {
           sb.append('\n')
         } else if (
@@ -204,6 +204,18 @@ enum class TextFormat {
           }
           if (tag.equals("pre", ignoreCase = true)) {
             inPre = !isEndTag
+          }
+        } else if (this == RAW) {
+          if (tag.equals("code", ignoreCase = true)) {
+            sb.append("`")
+          } else if (
+            tag.equals("strong", ignoreCase = true) || tag.equals("b", ignoreCase = true)
+          ) {
+            sb.append("**")
+          } else if (tag.equals("i", ignoreCase = true)) {
+            sb.append("*")
+          } else if (tag.equals("s", ignoreCase = true)) {
+            sb.append("~~")
           }
         }
       } else if (c == '&') {

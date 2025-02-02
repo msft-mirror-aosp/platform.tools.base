@@ -506,6 +506,50 @@ public class TextFormatTest extends TestCase {
                         TEXT));
     }
 
+    public void testConvertFromHtml4() {
+        assertEquals(
+                ""
+                        + " \n"
+                        + "**Kotlin Conversions**\n"
+                        + "* `ViewModel` is now written in Kotlin (I16f26,\n"
+                        + "b/214568825)\n"
+                        + "* The `lifecycle-viewmodel-ktx` kotlin extensions have now\n"
+                        + "been moved to the base lifecycle module. (Id787b,\n"
+                        + "b/274800183)\n"
+                        + "* The `lifecycle-runtime-ktx` kotlin extensions have now\n"
+                        + "been moved to the base lifecycle module. (Ic3686,\n"
+                        + "b/274800183)\n"
+                        + "* The `lifecycle-livedata-core-ktx` kotlin extensions have\n"
+                        + "now been moved to the base lifecycle module. (I54a3d,\n"
+                        + "b/274800183)\n",
+                HTML.convertTo(
+                        "\n"
+                            + "<p><strong>Kotlin Conversions</strong></p>\n"
+                            + "\n"
+                            + "<ul>\n"
+                            + "<li><code translate=\"no\" dir=\"ltr\">ViewModel</code> is now"
+                            + " written in Kotlin (<a"
+                            + " href=\"https://android-review.googlesource.com/#/q/I16f26813d862c76154739888bb631c214fa1c810\">I16f26</a>,"
+                            + " <a href=\"https://issuetracker.google.com/issues/214568825\">b/214568825</a>)</li>\n"
+                            + "<li>The <code translate=\"no\""
+                            + " dir=\"ltr\">lifecycle-viewmodel-ktx</code> kotlin extensions have"
+                            + " now been moved to the base lifecycle module. (<a"
+                            + " href=\"https://android-review.googlesource.com/#/q/Id787b6db6817e69e4ec50748a07ccdbef074e99d\">Id787b</a>,"
+                            + " <a href=\"https://issuetracker.google.com/issues/274800183\">b/274800183</a>)</li>\n"
+                            + "<li>The <code translate=\"no\""
+                            + " dir=\"ltr\">lifecycle-runtime-ktx</code> kotlin extensions have now"
+                            + " been moved to the base lifecycle module. (<a"
+                            + " href=\"https://android-review.googlesource.com/#/q/Ic368640a7e66dd0b748601d61b7aa23d99e5a1d6\">Ic3686</a>,"
+                            + " <a href=\"https://issuetracker.google.com/issues/274800183\">b/274800183</a>)</li>\n"
+                            + "<li>The <code translate=\"no\""
+                            + " dir=\"ltr\">lifecycle-livedata-core-ktx</code> kotlin extensions"
+                            + " have now been moved to the base lifecycle module. (<a"
+                            + " href=\"https://android-review.googlesource.com/#/q/I54a3d4346b4a9c5861f5f3bdb0079dbb27f29668\">I54a3d</a>,"
+                            + " <a href=\"https://issuetracker.google.com/issues/274800183\">b/274800183</a>)</li>\n"
+                            + "</ul>",
+                        RAW));
+    }
+
     public void testNbsp() {
         assertEquals("&nbsp;&nbsp;text", RAW.convertTo("\u00a0\u00A0text", HTML));
     }
