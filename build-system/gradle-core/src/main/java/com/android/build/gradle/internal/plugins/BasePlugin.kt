@@ -20,7 +20,6 @@ import com.android.SdkConstants
 import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.SettingsExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
@@ -37,7 +36,6 @@ import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.ClasspathVerifier.checkClasspathSanity
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependencyConfigurator
-import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.SdkLocator.sdkTestDirectory
 import com.android.build.gradle.internal.TaskManager
@@ -192,7 +190,6 @@ abstract class BasePlugin<
             dslServices,
             variantInputModel,
             buildOutputs,
-            extraModelInfo,
             versionedSdkLoaderService
         )
     }
@@ -320,8 +317,6 @@ abstract class BasePlugin<
         createVariantFactory()
     }
 
-    protected val extraModelInfo: ExtraModelInfo = ExtraModelInfo()
-
     private val hasCreatedTasks = AtomicBoolean(false)
 
     protected abstract fun createExtension(
@@ -329,7 +324,6 @@ abstract class BasePlugin<
         dslContainers: DslContainerProvider<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
         @Suppress("DEPRECATION")
         buildOutputs: NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>,
-        extraModelInfo: ExtraModelInfo,
         versionedSdkLoaderService: VersionedSdkLoaderService
     ): ExtensionData<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidResourcesT, InstallationT, AndroidT>
 
@@ -540,7 +534,6 @@ abstract class BasePlugin<
             registry,
             variantInputModel,
             extensionData,
-            extraModelInfo,
             globalConfig)
 
         // create default Objects, signingConfig first as it's used by the BuildTypes.
@@ -553,7 +546,6 @@ abstract class BasePlugin<
         registry: ToolingModelBuilderRegistry,
         variantInputModel: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
         extensionData: ExtensionData<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidResourcesT, InstallationT, AndroidT>,
-        extraModelInfo: ExtraModelInfo,
         globalConfig: GlobalTaskCreationConfig
     ) {
         // Register a builder for the custom tooling model
