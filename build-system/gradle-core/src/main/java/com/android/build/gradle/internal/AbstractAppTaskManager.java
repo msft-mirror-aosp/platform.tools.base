@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.VariantCreationConfig;
 import com.android.build.gradle.internal.feature.BundleAllClasses;
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService;
@@ -76,6 +77,7 @@ public abstract class AbstractAppTaskManager<
             @NonNull Collection<? extends ComponentInfo<VariantBuilderT, VariantT>> variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
+            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -84,6 +86,7 @@ public abstract class AbstractAppTaskManager<
                 variants,
                 testComponents,
                 testFixturesComponents,
+                testSuites,
                 globalConfig,
                 localConfig,
                 extension);

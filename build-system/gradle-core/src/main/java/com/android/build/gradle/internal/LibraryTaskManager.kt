@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.ConfigurationVariantMapping
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
@@ -82,6 +83,7 @@ class LibraryTaskManager(
     variants: Collection<ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>>,
     testComponents: Collection<TestComponentCreationConfig>,
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
+    testSuites: Collection<TestSuiteCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
     extension: BaseExtension
@@ -90,6 +92,7 @@ class LibraryTaskManager(
     variants,
     testComponents,
     testFixturesComponents,
+    testSuites,
     globalConfig,
     localConfig,
     extension

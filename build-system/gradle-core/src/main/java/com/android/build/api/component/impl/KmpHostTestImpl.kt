@@ -43,7 +43,6 @@ import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
-import com.android.builder.core.ComponentTypeImpl
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -159,4 +158,5 @@ open class KmpHostTestImpl @Inject constructor(
 
     override val hostTestName: String
         get() = HostTestBuilder.UNIT_TEST_TYPE
+
 }

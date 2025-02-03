@@ -51,12 +51,9 @@ interface HostTestBuilder {
     /**
      * Type of the [HostTest], which can be '[UNIT_TEST_TYPE] or [SCREENSHOT_TEST_TYPE] for
      * [HostTest]s created by AGP.
-     *
-     * For new instances, set the type to something meaningful for users.
      */
     @get:Incubating
-    @set:Incubating
-    var type: String
+    val type: String
 
     /**
      * Specifies host test code coverage data collection by configuring the JacocoPlugin.
@@ -66,7 +63,7 @@ interface HostTestBuilder {
      * coverage data from other test types such as connected tests.
      *
      * If the value is initialized from the DSL [com.android.build.api.dsl.BuildType.enableUnitTestCoverage],
-     * it will be used for [HasHostTestsBuilder.UNIT_TEST_TYPE].
+     * it will be used for [HostTestBuilder.UNIT_TEST_TYPE].
      */
     @get:Incubating
     @get:Deprecated(

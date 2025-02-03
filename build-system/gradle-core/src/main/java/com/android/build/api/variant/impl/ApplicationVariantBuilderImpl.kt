@@ -28,6 +28,9 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
+import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.builder.errors.IssueReporter
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
@@ -42,7 +45,7 @@ open class ApplicationVariantBuilderImpl @Inject constructor(
     dslInfo,
     componentIdentity,
     variantBuilderServices
-), ApplicationVariantBuilder {
+), ApplicationVariantBuilder, HasTestSuitesBuilder {
 
     @Suppress("OVERRIDE_DEPRECATION")
     override var debuggable: Boolean = dslInfo.isDebuggable
@@ -173,6 +176,13 @@ open class ApplicationVariantBuilderImpl @Inject constructor(
     override val hostTests: Map<String, HostTestBuilder> =
         HostTestBuilderImpl.create(
             dslInfo.dslDefinedHostTests,
+            variantBuilderServices,
+            dslInfo.experimentalProperties,
+        )
+
+    override val suites: Map<String, TestSuiteBuilder> =
+        TestSuiteBuilderImpl.create(
+            dslInfo.dslDefinedTestSuites,
             variantBuilderServices,
             dslInfo.experimentalProperties,
         )

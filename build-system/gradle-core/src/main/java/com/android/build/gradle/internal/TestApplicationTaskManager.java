@@ -22,11 +22,11 @@ import com.android.build.api.artifact.SingleArtifact;
 import com.android.build.api.variant.TestVariantBuilder;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.component.ApkCreationConfig;
-import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.build.gradle.internal.component.ConsumableCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.TestVariantCreationConfig;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
@@ -69,6 +69,7 @@ public class TestApplicationTaskManager
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
+            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -77,6 +78,7 @@ public class TestApplicationTaskManager
                 variants,
                 testComponents,
                 testFixturesComponents,
+                testSuites,
                 globalConfig,
                 localConfig,
                 extension);

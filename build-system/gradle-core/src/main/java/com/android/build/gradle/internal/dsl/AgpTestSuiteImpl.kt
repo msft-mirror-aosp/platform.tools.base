@@ -17,9 +17,38 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.JUnitEngineSpec
+import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
+import org.gradle.api.model.ObjectFactory
+import org.gradle.testing.base.TestSuiteTarget
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Implementation of the [AgpTestSuite] Dsl extension.
  */
-abstract class AgpTestSuiteImpl: AgpTestSuite {
+abstract class AgpTestSuiteImpl(
+    private val name: String,
+    val objects: ObjectFactory
+): AgpTestSuite {
+
+    private val jUnitEngineSpec = objects.newInstance(JUnitEngineSpecImpl::class.java)
+    private val junitEngineUsed = AtomicBoolean(false)
+
+    fun getJunitEngineIfUsed(): JUnitEngineSpec? = jUnitEngineSpec.takeIf { junitEngineUsed.get() }
+
+    override val useJunitEngine: JUnitEngineSpec
+        get() {
+            junitEngineUsed.set(true)
+            return jUnitEngineSpec
+        }
+
+    override fun getName(): String = name
+
+    override val targetProductFlavors = mutableListOf<Pair<String, String>>()
+    override val targetVariants = mutableListOf<String>()
+
+    @Suppress("UnstableApiUsage")
+    override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<out TestSuiteTarget> {
+        return objects.polymorphicDomainObjectContainer(TestSuiteTarget::class.java)
+    }
 }

@@ -57,8 +57,8 @@ class TestOptionsTest {
         }
 
         override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
-        override val targetProductFlavors = mutableListOf<Pair<String, String>>()
-        override val targetVariants = mutableListOf<String>()
+        override val targetProductFlavors: MutableList<Pair<String, String>> = mutableListOf<Pair<String, String>>()
+        override val targetVariants: MutableList<String> = mutableListOf<String>()
     }
 
     @Before

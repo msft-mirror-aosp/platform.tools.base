@@ -21,6 +21,8 @@ import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.api.JavaCompileOptions
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
+import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.scope.ProjectDslInfo
 import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.ComponentType
 import org.gradle.api.provider.Property
@@ -31,6 +33,9 @@ import org.gradle.api.provider.Provider
  * build type, flavors) that are needed by all components.
  */
 interface ComponentDslInfo {
+
+    val projectDslInfo: ProjectDslInfo
+
     val componentIdentity: ComponentIdentity
 
     val componentType: ComponentType
@@ -64,6 +69,8 @@ interface ComponentDslInfo {
     val dslDefinedHostTests: List<DslDefinedHostTest>
 
     val dslDefinedDeviceTests: List<DslDefinedDeviceTest>
+
+    val dslDefinedTestSuites: List<AgpTestSuiteImpl>
 
     /**
      * Returns the application ID for this variant. This could be coming from the manifest or could
