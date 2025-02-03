@@ -485,4 +485,8 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         // TODO(b/317215060) - implement for KMP
         throw RuntimeException("Not yet implemented")
     }
+
+    override fun finalizeAndLock() {
+        artifacts.finalizeAndLock()
+    }
 }

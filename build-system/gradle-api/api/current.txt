@@ -3133,25 +3133,7 @@ package com.android.build.api.variant {
     method public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasUnitTest {
-    method @org.gradle.api.Incubating public com.android.build.api.artifact.Artifacts getArtifacts();
-    method @org.gradle.api.Incubating public org.gradle.api.file.FileCollection getCompileClasspath();
-    method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getCompileConfiguration();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.Instrumentation getInstrumentation();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.LifecycleTasks getLifecycleTasks();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.AndroidVersion getMinSdk();
-    method @org.gradle.api.Incubating public String getName();
-    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.variant.Component> getNestedComponents();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.Sources getSources();
-    property @org.gradle.api.Incubating public abstract com.android.build.api.artifact.Artifacts artifacts;
-    property @org.gradle.api.Incubating public abstract org.gradle.api.file.FileCollection compileClasspath;
-    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.Configuration compileConfiguration;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Instrumentation instrumentation;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LifecycleTasks lifecycleTasks;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.AndroidVersion minSdk;
-    property @org.gradle.api.Incubating public abstract String name;
-    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.variant.Component> nestedComponents;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Sources sources;
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.LibraryVariant {
   }
 
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
