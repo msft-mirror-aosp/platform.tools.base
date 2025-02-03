@@ -16,6 +16,11 @@
 package com.android.tools.lint
 
 import com.android.SdkConstants.DOT_KTS
+import com.android.tools.idea.gradle.dcl.lang.DeclarativeLanguage
+import com.android.tools.idea.gradle.dcl.lang.DeclarativeParserDefinition
+import com.android.tools.idea.gradle.dcl.lang.DeclarativeUastLanguagePlugin
+import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeASTFactory
+import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeFileType
 import com.android.tools.lint.UastEnvironment.Companion.getKlibPaths
 import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.android.tools.lint.UastEnvironment.Module.Variant.Companion.toTargetPlatform
@@ -26,6 +31,7 @@ import com.intellij.codeInsight.CustomExceptionHandler
 import com.intellij.codeInsight.ExternalAnnotationsManager
 import com.intellij.codeInsight.InferredAnnotationsManager
 import com.intellij.core.CoreApplicationEnvironment
+import com.intellij.lang.LanguageASTFactory
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
@@ -360,6 +366,7 @@ internal fun configureApplicationEnvironment(
 
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
+  appEnv.addExtension(UastLanguagePlugin.EP, DeclarativeUastLanguagePlugin())
   PsiAugmentProvider.EP_NAME.point.registerExtension(RecordAugmentProvider())
 
   configurator(appEnv)
@@ -380,6 +387,13 @@ internal fun configureApplicationEnvironment(
   )
 
   appEnv.registerFileType(KlibMetaFileType, KLIB_METADATA_FILE_EXTENSION)
+  appEnv.registerFileType(DeclarativeFileType.INSTANCE, "dcl")
+  appEnv.addExplicitExtension(
+    LanguageASTFactory.INSTANCE,
+    DeclarativeLanguage.INSTANCE,
+    DeclarativeASTFactory(),
+  )
+  appEnv.registerParserDefinition(DeclarativeParserDefinition())
 
   appConfigured = true
   Disposer.register(appEnv.parentDisposable, Disposable { appConfigured = false })

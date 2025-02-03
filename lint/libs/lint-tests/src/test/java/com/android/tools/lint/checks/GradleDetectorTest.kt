@@ -1627,6 +1627,41 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDeclarativeSettingsCompileSdk() {
+    lint()
+      .files(
+        dcl(
+            "settings.gradle.dcl",
+            """
+            defaults {
+               androidApp {
+                 compileSdk = 28
+               }
+            }
+            """,
+          )
+          .indented()
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+        settings.gradle.dcl:3: Warning: A newer version of compileSdkVersion than 28 is available: 35 [GradleDependency]
+             compileSdk = 28
+             ~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for settings.gradle.dcl line 3: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -3 +3
+        -      compileSdk = 28
+        +      compileSdk = $HIGHEST_KNOWN_STABLE_API
+        """
+      )
+  }
+
   fun testVersionCatalogNotSuggestedInSettingsGradle() {
     lint()
       .files(

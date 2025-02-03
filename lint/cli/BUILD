@@ -95,6 +95,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:agp-version",
+        "//tools/adt/idea/gradle-declarative-lang:intellij.android.gradle.declarative.lang[module]",
     ],
 )
 

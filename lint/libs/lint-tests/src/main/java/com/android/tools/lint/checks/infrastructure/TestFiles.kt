@@ -125,6 +125,12 @@ object TestFiles {
   }
 
   @JvmStatic
+  fun dcl(to: String, @Language("dcl") source: String): TestFile {
+    //noinspection LanguageMismatch
+    return GradleTestFile(to, source)
+  }
+
+  @JvmStatic
   fun xml(to: String, @Language("XML") source: String): TestFile {
     require(to.endsWith(DOT_XML)) { "Expected .xml suffix for XML test file" }
     return XmlTestFile.create(to, source)
