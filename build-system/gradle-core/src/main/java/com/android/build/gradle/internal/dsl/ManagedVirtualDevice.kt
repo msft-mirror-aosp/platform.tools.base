@@ -63,6 +63,10 @@ open class ManagedVirtualDevice @Inject constructor(private val name: String) :
     override var pageAlignment: PageAlignment =
         PageAlignment.DEFAULT_FOR_SDK_VERSION
 
+    @get: Optional
+    @get: Input
+    override var testedAbi: String? = null
+
     @get: Input
     val pageAlignmentSuffix: String
         get() = when (pageAlignment) {

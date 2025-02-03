@@ -119,6 +119,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         doReturn(realEmptyPropertyFor<Int>()).whenever(task).sdkExtensionVersion
         doReturn(realPropertyFor("")).whenever(task).pageAlignmentSuffix
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
+        doReturn(realEmptyPropertyFor<String>()).whenever(task).testedAbi
         doReturn(realPropertyFor("Pixel 2")).whenever(task).hardwareProfile
         doReturn(realPropertyFor("auto-no-window")).whenever(task).emulatorGpuFlag
         doReturn(realPropertyFor("someDeviceName")).whenever(task).managedDeviceName
@@ -179,6 +180,141 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 "auto-no-window"
             )
         verifyNoMoreInteractions(avdService)
+    }
+
+    @Test
+    fun testTaskAction_armTranslationUnavailableOnX86() {
+        val task = basicTaskSetup()
+
+        doReturn(realPropertyFor("arm64-v8a")).whenever(task).testedAbi
+        doReturn(realPropertyFor("x86")).whenever(task).abi
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            task.taskAction()
+        }
+
+        assertThat(error.message).isEqualTo(
+            """
+                ARM translation is not available for x86 system images.
+                An x86 image was selected as the image was available for the
+                given sdkVersion and require64Bit = false for someDeviceName.
+                This configuration may be intentional as someDeviceName may be configured for
+                testing on a different machine.
+                If ARM translation is not intended for this device, set testedAbi = "x86"
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTaskAction_armTranslationUnavailableOnIncompatibleSource() {
+        val task = basicTaskSetup()
+
+        doReturn(realPropertyFor("arm64-v8a")).whenever(task).testedAbi
+        // Not available for google_atd, default, and aosp_atd sources.
+        doReturn(realPropertyFor("google-atd")).whenever(task).systemImageVendor
+        doReturn(realPropertyFor(35)).whenever(task).sdkVersion
+
+        val wrongSourceError = assertThrows(IllegalStateException::class.java) {
+            task.taskAction()
+        }
+
+        assertThat(wrongSourceError.message).isEqualTo(
+            """
+                ARM translation is only available for google apis or playstore images
+                with an api level of 30 or higher.
+                someDeviceName has a systemImageSource = "google-atd"
+                and sdkVersion = 35
+                This may be intentional as someDeviceName may be configured for
+                testing on an ARM system and not an x86_64 system.
+                If ARM is not the intended abi for this device, set testedAbi = "x86_64"
+                If Ndk Translation is intended for this device, set
+                systemImageSource = "google" and set the sdkVersion to 30 or higher.
+            """.trimIndent()
+        )
+
+        doReturn(realPropertyFor("google")).whenever(task).systemImageVendor
+        // Not available for api < 30
+        doReturn(realPropertyFor(29)).whenever(task).sdkVersion
+
+        val wrongSdkVersionError = assertThrows(IllegalStateException::class.java) {
+            task.taskAction()
+        }
+
+        assertThat(wrongSdkVersionError.message).isEqualTo(
+            """
+                ARM translation is only available for google apis or playstore images
+                with an api level of 30 or higher.
+                someDeviceName has a systemImageSource = "google"
+                and sdkVersion = 29
+                This may be intentional as someDeviceName may be configured for
+                testing on an ARM system and not an x86_64 system.
+                If ARM is not the intended abi for this device, set testedAbi = "x86_64"
+                If Ndk Translation is intended for this device, set
+                systemImageSource = "google" and set the sdkVersion to 30 or higher.
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTaskAction_armTranslationWorksForValidTargets() {
+        val task = basicTaskSetup()
+
+        val imageDirectory = mock<Directory>()
+        whenever(mockVersionedSdkLoader.sdkImageDirectoryProvider(any()))
+            .thenReturn(FakeGradleProperty(imageDirectory))
+        whenever(avdService.avdProvider(any(), any(), any(), any()))
+            .thenReturn(FakeGradleProperty(mock<Directory>()))
+
+        // abi == testedAbi -> no issue
+        doReturn(realPropertyFor("arm64-v8a")).whenever(task).testedAbi
+        doReturn(realPropertyFor("arm64-v8a")).whenever(task).abi
+
+        task.taskAction()
+
+        // x86 tested on x86_64 -> no issue
+        doReturn(realPropertyFor("x86")).whenever(task).testedAbi
+        doReturn(realPropertyFor("x86_64")).whenever(task).abi
+
+        task.taskAction()
+
+        // null works but warns when not on arm64_v8a
+        doReturn(realEmptyPropertyFor<String>()).whenever(task).testedAbi
+        doReturn(realPropertyFor("x86_64")).whenever(task).abi
+        doReturn(realPropertyFor("google")).whenever(task).systemImageVendor
+        doReturn(realPropertyFor(35)).whenever(task).sdkVersion
+
+        task.taskAction()
+
+        verify(task.logger).warn(
+            """
+                someDeviceName has an unspecified testedAbi. This presently defaults to
+                "x86_64". However, in 9.0 this will change to "arm64-v8a"
+
+                This device will use NDK translation for native code during testing. To continue
+                running tests using the current configuration and not use NDK translation,
+                set testedAbi = "x86_64"
+            """.trimIndent()
+        )
+
+        // warning changes if the managed device will no longer be usable, when ARM
+        // is selected by default.
+        doReturn(realPropertyFor(29)).whenever(task).sdkVersion
+
+        task.taskAction()
+
+        verify(task.logger).warn(
+            """
+                someDeviceName has an unspecified testedAbi. This presently defaults to
+                "x86_64". However, in 9.0 this will change to "arm64-v8a"
+
+                someDeviceName specifies a system image that that does not support NDK translation,
+                and will no longer be able to run tests in this environment. This
+                device will wtill be able to run on ARM machines.
+                To continue running tests with the current configuration, and not use
+                NDK translation set testedAbi = "x86_64"
+            """.trimIndent()
+        )
+
     }
 
     @Test

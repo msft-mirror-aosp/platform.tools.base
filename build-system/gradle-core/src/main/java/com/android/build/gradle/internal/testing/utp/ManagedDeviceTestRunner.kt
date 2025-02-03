@@ -90,11 +90,13 @@ class ManagedDeviceTestRunner(
         Preconditions.checkArgument(
             emulatorProvider.isPresent(),
             "The emulator is missing. Download the emulator in order to use managed devices.")
+        val abi = computeAbiFromArchitecture(managedDevice)
         val utpManagedDevice = UtpManagedDevice(
             managedDevice.name,
             computeAvdName(managedDevice),
             managedDevice.apiLevel,
             computeAbiFromArchitecture(managedDevice),
+            managedDevice.testedAbi ?: abi,
             avdComponents.avdFolder.get().asFile.absolutePath,
             runId,
             emulatorProvider.get().asFile.resolve(FN_EMULATOR).absolutePath,

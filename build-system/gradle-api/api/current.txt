@@ -1798,6 +1798,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public String? getSdkPreview();
     method @org.gradle.api.Incubating public int getSdkVersion();
     method public String getSystemImageSource();
+    method @org.gradle.api.Incubating public String? getTestedAbi();
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public void setApiLevel(int);
     method @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public void setApiPreview(String?);
     method public void setDevice(String);
@@ -1807,6 +1808,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void setSdkPreview(String?);
     method @org.gradle.api.Incubating public void setSdkVersion(int);
     method public void setSystemImageSource(String);
+    method @org.gradle.api.Incubating public void setTestedAbi(String?);
     property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkVersion", bugId=382716517L) public abstract int apiLevel;
     property @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new property sdkPreview", bugId=382716889L) @org.gradle.api.Incubating public abstract String? apiPreview;
     property public abstract String device;
@@ -1816,6 +1818,7 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract String? sdkPreview;
     property @org.gradle.api.Incubating public abstract int sdkVersion;
     property public abstract String systemImageSource;
+    property @org.gradle.api.Incubating public abstract String? testedAbi;
   }
 
   @org.gradle.api.Incubating public enum ManagedVirtualDevice.PageAlignment {

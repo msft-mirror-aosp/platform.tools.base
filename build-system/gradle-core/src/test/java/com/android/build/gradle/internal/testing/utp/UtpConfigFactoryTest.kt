@@ -222,6 +222,7 @@ class UtpConfigFactoryTest {
                 "avdName",
                 29,
                 "x86",
+                "x86",
                 "path/to/gradle/avd",
                 ":app:deviceNameDebugAndroidTest",
                 "path/to/emulator",

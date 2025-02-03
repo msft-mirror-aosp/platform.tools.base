@@ -81,6 +81,14 @@ private fun computeImageSource(imageSource: String) =
         else -> imageSource
     }
 
+fun canSourcePerformNdkTranslation(imageSource: String, version: Int) =
+    when (computeImageSource(imageSource)) {
+        // ndk translation was introduced in api level 30. Only google_apis and playstore images
+        // support translation.
+        "google_apis", "google_apis_playstore" -> version >= 30
+        else -> false
+    }
+
 fun isTvOrAutoSource(imageSource: String) =
     imageSource.contains("-tv") || imageSource.contains("-auto")
 
