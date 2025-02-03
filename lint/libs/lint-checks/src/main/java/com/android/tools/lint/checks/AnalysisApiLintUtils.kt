@@ -128,7 +128,7 @@ internal fun KaSession.getImplicitReceiverValue(
       // the second call, which can only exist in this example if the extension function also
       // requires a dispatch receiver (an instance of a class in which the extension function is
       // declared).
-      is KaCompoundAccessCall -> call.compoundAccess.operationPartiallyAppliedSymbol
+      is KaCompoundAccessCall -> call.compoundOperation.operationPartiallyAppliedSymbol
       is KaCallableMemberCall<*, *> -> call.partiallyAppliedSymbol
       else -> null
     } ?: return null

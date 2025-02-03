@@ -92,7 +92,7 @@ private constructor(
       val analysisSession = createAnalysisSession(parentDisposable, config)
       return FirUastEnvironment(
         analysisSession.coreApplicationEnvironment,
-        analysisSession.mockProject,
+        analysisSession.project as MockProject,
         config.kotlinCompilerConfig,
         parentDisposable,
         config.isKMP,
@@ -161,7 +161,7 @@ private fun configureFirProjectEnvironment(
   analysisAPISession: StandaloneAnalysisAPISession,
   config: UastEnvironment.Configuration,
 ) {
-  val project = analysisAPISession.mockProject
+  val project = analysisAPISession.project as MockProject
 
   configureProjectEnvironment(project, config)
 
