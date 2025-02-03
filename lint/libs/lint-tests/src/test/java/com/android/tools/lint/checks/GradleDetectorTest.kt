@@ -1662,6 +1662,35 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testVersionCatalogNotSuggestedInDeclarativeFiles() {
+    lint()
+      .files(
+        gradleToml(
+            """
+                [versions]
+                [libraries]
+                """
+          )
+          .indented(),
+        dcl(
+            "build.gradle.dcl",
+            """
+                androidApp {
+                    deviceTest {
+                        dependencies {
+                            implementation("junit:junit:4.3.12")
+                        }
+                    }
+                }
+                """,
+          )
+          .indented(),
+      )
+      .issues(SWITCH_TO_TOML)
+      .run()
+      .expectClean()
+  }
+
   fun testVersionCatalogNotSuggestedInSettingsGradle() {
     lint()
       .files(
