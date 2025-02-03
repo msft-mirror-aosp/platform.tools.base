@@ -17,14 +17,18 @@
 package com.android.tools.render.compose
 
 import com.android.testutils.TestUtils
+import com.android.tools.render.common.PreviewRendering
+import com.android.tools.render.common.writePreviewRenderingToJson
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.readLines
 
 /**
  * This is the rule to conveniently set up an android gradle project to be able to run gradle
@@ -91,6 +95,41 @@ class GradleProjectRule(
     /** Path to the root folder of the gradle project. */
     val projectRoot: Path
         get() = projectFolderPath
+
+    fun createSettingsFile(
+        outputFolder: File,
+        resultsFile: File,
+        metaDataFolder: File,
+        screenshots: List<ComposeScreenshot>
+    ): File {
+        executeGradleTask(":app:assembleDebug")
+        executeGradleTask(":app:bundleDebugClassesToCompileJar")
+        executeGradleTask(
+            ":app:debugExtractClasspath",
+            "--init-script",
+            "initscript.gradle"
+        )
+
+        val apk = projectRoot.resolve("app/build/outputs/apk/debug/app-debug.apk")
+        val classPath = projectRoot.resolve("deps.txt").readLines()
+
+        val previewRendering = PreviewRendering(
+            TestUtils.getSdk().absolutePathString(),
+            TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString(),
+            outputFolder.absolutePath,
+            metaDataFolder.absolutePath,
+            classPath,
+            emptyList(),
+            "com.example.composeapplication",
+            apk.absolutePathString(),
+            screenshots,
+            resultsFile.absolutePath
+        )
+
+        val jsonSettings = tmpFolder.newFile()
+        writePreviewRenderingToJson(jsonSettings.bufferedWriter(), previewRendering)
+        return jsonSettings
+    }
 
     private fun init() {
         val originalProjectPath = TestUtils.resolveWorkspacePath(relativeAndroidGradleProjectPath)

@@ -43,6 +43,7 @@ merge_deps(
         "//tools/base/device_validator:tools.dvlib",
         "//tools/base/environment-services:tools.environment-services",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
+        "//tools/base/layoutlib-extensions:tools.layoutlib-extensions",
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
         "//tools/base/repository:tools.repository",
         "//tools/base/resource-repository:tools.resource-repository",
@@ -123,7 +124,10 @@ maven_repository(
 kotlin_test(
     name = "perfgate-compose-cli-render-tests",
     timeout = "eternal",
-    srcs = glob(["perf/testSrc/**/*.kt"]),
+    srcs = glob([
+        "perf/testSrc/**/*.kt",
+        "testSrc/**/*.kt",
+    ]),
     # keep sorted
     data = [
         ":compose-preview-renderer",
@@ -141,6 +145,35 @@ kotlin_test(
         "noci:studio-win",
     ],
     test_class = "com.android.tools.render.compose.PerfMainTest",
+    deps = [
+        ":tools.compose-preview-renderer",
+        "//tools/base/perf-logger:studio.perf-logger_testlib",
+        "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:junit.junit",
+    ],
+)
+
+# Render tests for Compose CLI render
+kotlin_test(
+    name = "compose-cli-render-tests",
+    srcs = glob(["testSrc/**/*.kt"]),
+    # keep sorted
+    data = [
+        ":compose-preview-renderer",
+        ":compose_project_deps",
+        "//prebuilts/studio/layoutlib:runtime",
+        "//prebuilts/studio/layoutlib/data:framework_res.jar",
+        "//prebuilts/studio/sdk:build-tools/34.0.0",
+        "//prebuilts/studio/sdk:platforms/android-34",
+        "//tools/base/build-system:gradle-distrib-8.2",  # This is actually "tools/external/gradle",
+        "//tools/base/standalone-render/compose-cli/testData",
+    ],
+    jvm_flags = ["-Dtest.suite.jar=compose-cli-render-tests.jar"],
+    tags = [
+        "noci:studio-win",
+    ],
+    test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.compose-preview-renderer",
         "//tools/base/perf-logger:studio.perf-logger_testlib",

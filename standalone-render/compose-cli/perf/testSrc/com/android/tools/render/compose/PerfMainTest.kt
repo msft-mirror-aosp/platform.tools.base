@@ -18,19 +18,13 @@ package com.android.tools.render.compose
 
 import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
-import com.android.tools.render.common.PreviewRendering
 import com.android.tools.render.common.readPreviewRenderingResultJson
-import com.android.tools.render.common.writePreviewRenderingToJson
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.readLines
 import java.nio.file.Paths
 
 class PerfMainTest {
@@ -44,32 +38,6 @@ class PerfMainTest {
     @JvmField
     @Rule
     val chain: RuleChain = RuleChain.outerRule(tmpFolder).around(gradleProject)
-
-    private fun createSettingsFile(outputFolder: File, resultsFile: File, metaDataFolder: File, screenshots: List<ComposeScreenshot>): File {
-        gradleProject.executeGradleTask(":app:assembleDebug")
-        gradleProject.executeGradleTask(":app:bundleDebugClassesToCompileJar")
-        gradleProject.executeGradleTask(":app:debugExtractClasspath", "--init-script", "initscript.gradle")
-
-        val apk = gradleProject.projectRoot.resolve("app/build/outputs/apk/debug/app-debug.apk")
-        val classPath = gradleProject.projectRoot.resolve("deps.txt").readLines()
-
-        val previewRendering = PreviewRendering(
-            TestUtils.getSdk().absolutePathString(),
-            TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib").absolutePathString(),
-            outputFolder.absolutePath,
-            metaDataFolder.absolutePath,
-            classPath,
-            emptyList(),
-            "com.example.composeapplication",
-            apk.absolutePathString(),
-            screenshots,
-            resultsFile.absolutePath
-        )
-
-        val jsonSettings = tmpFolder.newFile()
-        writePreviewRenderingToJson(jsonSettings.bufferedWriter(), previewRendering)
-        return jsonSettings
-    }
 
     @Test
     fun testSingleSmall() {
@@ -188,7 +156,7 @@ class PerfMainTest {
         val outputFolder = tmpFolder.newFolder()
         val metaDatafolder = tmpFolder.newFolder()
         val resultsFile = tmpFolder.newFile("results.json")
-        val jsonSettings = createSettingsFile(outputFolder, resultsFile, metaDatafolder, screenshots)
+        val jsonSettings = gradleProject.createSettingsFile(outputFolder, resultsFile, metaDatafolder, screenshots)
 
         computeAndRecordMetric(timeMetricName, memoryMetricName) {
             val metric = ComposeRenderingMetric()
@@ -216,39 +184,4 @@ class PerfMainTest {
         // Stop the daemon otherwise it could keep the lock on the temporary folder
         gradleProject.executeGradleTask("--stop")
     }
-}
-
-/** We want to filter out the error that we are aware of and that does not affect rendering. */
-private val ALLOWED_ERRORS = listOf(
-    "WARNING: A terminally deprecated method in java.lang.System has been called",
-    "WARNING: System::setSecurityManager has been called by com.android.tools.rendering.security.RenderSecurityManager",
-    "WARNING: Please consider reporting this to the maintainers of com.android.tools.rendering.security.RenderSecurityManager",
-    "WARNING: System::setSecurityManager will be removed in a future release",
-    "Tracing Skia with Perfetto is not supported in this environment (host build?)",
-)
-
-private fun runComposeCliRender(settingsFile: File): String {
-    val javaHome = System.getProperty("java.home")
-    val layoutlibJar = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib/data/layoutlib-mvn.jar")
-    val composeCliRenderFolder = TestUtils.resolveWorkspacePath("tools/base/standalone-render/compose-cli")
-    val command = listOf("$javaHome/bin/java", "-Dlayoutlib.thread.profile.timeoutms=10000", "-Djava.security.manager=allow", "-cp", "compose-preview-renderer.jar:${layoutlibJar.absolutePathString()}", "com.android.tools.render.common.MainKt", settingsFile.absolutePath)
-    val procBuilder = ProcessBuilder(command)
-        .directory(composeCliRenderFolder.toFile())
-        .redirectOutput(ProcessBuilder.Redirect.PIPE)
-        .redirectError(ProcessBuilder.Redirect.PIPE)
-    // We have to specify JAVA_HOME
-    procBuilder.environment()["JAVA_HOME"] = javaHome
-    val proc = procBuilder.start()
-    proc.waitFor(5, TimeUnit.MINUTES)
-    val error = proc
-        .errorStream
-        .bufferedReader()
-        .readLines()
-        .filter { line -> ALLOWED_ERRORS.none { line.startsWith(it) } }
-        .joinToString("\n")
-    if (error.isNotEmpty()) {
-        val commandStr = command.joinToString(" ")
-        throw AssertionError("Error while rendering Compose previews \"$commandStr\":\n$error")
-    }
-    return proc.inputStream.bufferedReader().readText()
 }
