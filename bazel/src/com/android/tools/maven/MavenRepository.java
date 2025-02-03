@@ -17,16 +17,11 @@
 package com.android.tools.maven;
 
 import com.android.tools.json.GradleMetadataJsonReader;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import java.io.File;
-import java.lang.reflect.Constructor;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.DefaultModelBuildingRequest;
 import org.apache.maven.model.building.ModelBuilder;
@@ -57,6 +52,14 @@ import org.eclipse.aether.util.graph.transformer.JavaScopeSelector;
 import org.eclipse.aether.util.graph.transformer.NoopDependencyGraphTransformer;
 import org.eclipse.aether.util.graph.transformer.SimpleOptionalitySelector;
 
+import java.io.File;
+import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Represents a Maven repository customized such that it can:
  *
@@ -82,7 +85,10 @@ public class MavenRepository {
     private static final List<String> DEPS_WITHOUT_GRADLE_MODULE =
             ImmutableList.of(
                     "org.testng:testng:module:7.3.0",
-                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:3.1.2");
+                    // https://github.com/google/Accessibility-Test-Framework-for-Android/issues/80
+                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:3.1.2",
+                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:pom:4.1.1",
+                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:jar:4.1.1");
 
     public MavenRepository(String repoPath, List<RemoteRepository> repositories, boolean verbose) {
         serviceLocator = AetherUtils.newServiceLocator(verbose);
@@ -139,11 +145,15 @@ public class MavenRepository {
     }
 
     private static void checkRequestedDependenciesAreUnique(List<Dependency> deps) {
-        Multimap<Artifact, Dependency> map = Multimaps.index(deps, dependency -> dependency.getArtifact().setVersion(""));
+        Multimap<Artifact, Dependency> map =
+                Multimaps.index(deps, dependency -> dependency.getArtifact().setVersion(""));
         if (map.keySet().size() == deps.size()) {
             return;
         }
-        StringBuilder errorBuilder = new StringBuilder("Multiple coordinates that only differ by version should be in DATA, not artifacts:\n");
+        StringBuilder errorBuilder =
+                new StringBuilder(
+                        "Multiple coordinates that only differ by version should be in DATA, not"
+                                + " artifacts:\n");
         map.asMap().forEach( (key, value) -> {
             if (value.size() > 1) {
                 errorBuilder.append("    ").append(key.toString()).append("\n");
@@ -154,7 +164,10 @@ public class MavenRepository {
                 }
             }
         });
-        errorBuilder.append("\nSee https://android.googlesource.com/platform/tools/base/+/mirror-goog-studio-main/bazel/README.md#fetching-new-maven-dependencies for more information");
+        errorBuilder.append(
+                "\n"
+                    + "See https://android.googlesource.com/platform/tools/base/+/mirror-goog-studio-main/bazel/README.md#fetching-new-maven-dependencies"
+                    + " for more information");
         throw new IllegalArgumentException(errorBuilder.toString());
     }
 
@@ -240,10 +253,10 @@ public class MavenRepository {
         } catch (ArtifactResolutionException e) {
             System.out.println(e);
             System.out.println(
-                    "Module metadata file for"
+                    "Module metadata file for "
                             + artifact.toString()
-                            + " does not exist. "
-                            + "Consider adding it to DEPS_WITHOUT_GRADLE_MODULE in MavenRepository.java file.");
+                            + " does not exist. Consider adding it to DEPS_WITHOUT_GRADLE_MODULE in"
+                            + " MavenRepository.java file.");
             return null;
         }
     }

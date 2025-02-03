@@ -2546,10 +2546,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.google.protobuf.protobuf-gradle-plugin_0.9.3",
-    pom = "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.3/protobuf-gradle-plugin-0.9.3.pom",
+    name = "com.google.protobuf.protobuf-gradle-plugin_0.9.4",
+    pom = "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.4/protobuf-gradle-plugin-0.9.4.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-gradle-plugin/0.9.3",
+    repo_path = "com/google/protobuf/protobuf-gradle-plugin/0.9.4",
     deps = [
         "com.google.gradle.osdetector-gradle-plugin_1.7.3",
     ],
@@ -2560,7 +2560,7 @@ maven_import(
     name = "com.google.protobuf.protobuf-gradle-plugin",
     classifiers = [],
     jars = [
-        "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.3/protobuf-gradle-plugin-0.9.3.jar"
+        "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.4/protobuf-gradle-plugin-0.9.4.jar"
     ],
     deps = [
         "com.google.gradle.osdetector-gradle-plugin",
@@ -2568,9 +2568,9 @@ maven_import(
     original_deps = [
         "com.google.gradle.osdetector-gradle-plugin_1.7.3",
     ],
-    pom = "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.3/protobuf-gradle-plugin-0.9.3.pom",
+    pom = "repository/com/google/protobuf/protobuf-gradle-plugin/0.9.4/protobuf-gradle-plugin-0.9.4.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-gradle-plugin/0.9.3",
+    repo_path = "com/google/protobuf/protobuf-gradle-plugin/0.9.4",
     visibility = ["//visibility:public"],
 )
 

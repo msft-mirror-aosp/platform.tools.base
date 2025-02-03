@@ -17,7 +17,7 @@ maven_repository(
     artifacts = [
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
-        "@maven//:com.google.protobuf.protobuf-gradle-plugin_0.9.3",
+        "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.googlecode.jarjar.jarjar_1.3",
         "@maven//:commons-io.commons-io_2.16.1",
         "@maven//:commons-lang.commons-lang_2.6",
