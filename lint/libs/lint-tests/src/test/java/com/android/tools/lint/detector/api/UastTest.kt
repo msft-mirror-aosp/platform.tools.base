@@ -3103,6 +3103,125 @@ class UastTest : TestCase() {
     }
   }
 
+  fun testResolveToInlineInFacadeInLibrary() {
+    // b/393435169
+    // https://youtrack.jetbrains.com/issue/KTIJ-32941
+    val testFiles =
+      arrayOf(
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/Util.kt",
+              """
+              @file:JvmMultifileClass
+              @file:JvmName("UtilKt")
+
+              package test
+
+              annotation class MyAnnotation
+
+              @MyAnnotation
+              inline fun <T> T.inlineFun(): String = TODO()
+
+              @MyAnnotation
+              inline fun <reified T> T.reifiedFun(): String = TODO()
+            """,
+            )
+            .indented(),
+          0xeee05feb,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hUuRiKQGyhPhC
+                SzJzvEvi4yG0FCOjEhuEqcSgxQAAKePyfUcAAAA=
+                """,
+          """
+                test/MyAnnotation.class:
+                H4sIAAAAAAAA/4VQPU8CQRSct4h3nF8gfoAUWlF6SOy00USTS0ANig3VAhuz
+                sNwl3nKR7ip/lIUhlv4o4zsLMdHEZnb27cxk9r1/vLwCOEaNULIqtn57dhaG
+                kZVWR6EDIhRHMpG+keGDf90fqYF1kCPsL6byW+//tOYJB60/VR1lVZixE0I+
+                kWaqCPV/pDeR0YMZG5xO9+ouaF9w39Y4skaHfltZOZRW8quYJDn+D2VQyAAE
+                GvP8SWe3BrPhEaE6T11PVIQnijX37VlU5mlTNOh8nmaCJqHc+rUMTucwp2u1
+                ORxbgncbTR8H6lIbrl/tTLnmRN3rWPeNWrjiOidiiZ3LWRvm1S+sYI/PU2a8
+                ZLgKBXhYQR6rPeQCrAVYD7CBIlOUAmyi3APF2MJ2DyLGTozdT6g1Gey8AQAA
+                """,
+          """
+                test/UtilKt.class:
+                H4sIAAAAAAAA/31Q204aURRdG1BkpBUvbaX24gWJmuho0qdqmjRNTCYdaVKo
+                Lz6YAxzxwHAmmTlD9K/6aHzwA/pRxn0GWkmxfdmXtdbeWXv/ur+9A/ABVcKs
+                kbFxfxgVfDV5EKHUFQPhBkJ33G/NrmwxmiUUlA6UlseJJlS3/L81h9tjUN1E
+                SncOCbtHjY+T0k9bjcbT+kU/NXNy/Vnr0AijQs3ohh9GHbcrTTMSSseu+EPG
+                bi00tSQI7OzYHefnv+9xipjCtINZFAlzFXOp4srYJQuT7ghOJNWFkm1WFFEa
+                Ts/zX4bTjyRh3u+Fhpe5J9KItjCCpzP9QZZ/SzYUbACBerbIMXmlbLXPVfuA
+                kLc293qGkPsStiU79NlZLek3ZdQQzUBah2FLBKciUrYfgYW66mhhkojr8vdE
+                G9WXpypWTD5+LiasjDhPD55gnXqYRC15rAKJA2SQs2Y5l+3LuHvPnWvdc57a
+                ucGznym9ynE6BQlrHItDAZ5jjvN6qsljY6Sa4VwZ1QWgVLYfRXZi+cL/ly/+
+                c3kGm2l8l6JVRpfY+4szZD289PDKwzLKHl5jxcMbvD0DxXAeALD1p0cBAwAA
+                """,
+          """
+                test/UtilKt__UtilKt.class:
+                H4sIAAAAAAAA/41SXU8TQRQ9sy394msBRVr8hIoFhUXjkxAMAQkbWkykkhge
+                yLQd6rTbWTM72+gbb/4P/4SJJkp49EcZ7y4Vi2Bisjv3zDl35ty5Mz9+fvkG
+                4CkchgkjAuO8NtLbMYeHZzENxmC3eJc7HldN52WtJerEJhiyUnlSia1QMcyV
+                yn/nrMz3UXtGS9VcYVhcrT67nLpWqlavzp8ox0VVPqwr5RtupK+InS37uum0
+                hKlpLlXg8HMxcHZ9sxt6HmUV2r6hCiPG7bzzREcoIxovtPZ1GjmG1KpU0qwx
+                bJYuW7vl3upWt+NIWqgV95xNccRDz2yQkdFh3fi6wnVb6JX5/SEMYTiHQYww
+                jBRl8ajY1x/mMowWzVsZ9LPjlzvBkNNCHknRiDNG4436Gftsl35q7HepFWF4
+                gxtOu1idboLulUVDNhpARbQjMEDiexmhZUKNxww7J8e5HP2WPZKzMonClH1y
+                XLCW2Uwyc3JsWwvWtrV9+jFz+ill2YlCwU7GYioWp9hFOdryCYvdqpFRwDDY
+                96wY0hFYahNKbvgNQUcsUzt2w05N6CqveSJqi1/n3j7XMpr3yOyebCpuQk04
+                /ypURnbEvgwkiX+eBrlN9zRXda9Qc3t+qOtiS3rCXoaFZNQZinkMIEWzEs3W
+                CVsUhxOrXzH4hiXZZ4x+j9PmaUzR2SxksUB4kpBFV25jjFhagnFMUHwYZ6fx
+                qJefobjYw1nAzuMa4cT/2w1dsLt+bjf5TzsLS/H4IGafE3uDtKkDJFzkXRRc
+                TOOmi1u47eIO7h6ABbiHmQMMBNE3G6AYIBVQofcDzP0CGHl5BicEAAA=
+                """,
+        ),
+        kotlin(
+          """
+            import test.*
+
+            fun test() {
+              Any().inlineFun()
+              Any().reifiedFun()
+            }
+          """
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            if (node.isConstructorCall()) {
+              // Like Any()
+              return super.visitCallExpression(node)
+            }
+
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            resolved!!
+
+            val facadeOrPart =
+              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
+              else "test.UtilKt__UtilKt"
+            assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
+
+            assertEquals(txt, 1, resolved.parameterList.parametersCount)
+            val rcv = resolved.parameterList.parameters.single()
+            val rcvType =
+              if (!useFirUast() && resolved.name == "reifiedFun") "java.lang.Object" else "T"
+            assertEquals(txt, rcvType, rcv.type.canonicalText)
+
+            assertEquals(txt, 2, resolved.annotations.size)
+            assertTrue(txt, resolved.hasAnnotation("test.MyAnnotation"))
+
+            return super.visitCallExpression(node)
+          }
+        }
+      )
+    }
+  }
+
   fun testAbstractDelegateToInterface() {
     val testFiles =
       arrayOf(
