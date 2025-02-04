@@ -372,6 +372,15 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * Dump all artifacts locations in a json file in the variant build output folder.
+     */
+    DUMP_ARTIFACTS_LOCATIONS(
+        "android.debug.dumpArtifactsLocations",
+        defaultValue = false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

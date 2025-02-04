@@ -56,7 +56,12 @@ abstract class AbstractMultipleArtifactTest<T: FileSystemLocation>(
         project = ProjectBuilder.builder().withProjectDir(tmpDir.newFolder()).build()
     }
 
-    private fun allocateProperty() =  MultiplePropertyAdapter(propertyAllocator(project.objects))
+    abstract val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<T>
+
+    private fun allocateProperty() =  MultiplePropertyAdapter(
+        propertyAllocator(project.objects),
+        { fileSystemLocationAllocator(project.objects) }
+    )
     private fun allocateValue(name: String) = valueAllocator(project.layout.buildDirectory, name)
     private fun allocateTask(name: String) = taskAllocator(project.tasks, name)
 

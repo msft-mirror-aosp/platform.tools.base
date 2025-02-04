@@ -18,8 +18,10 @@ package com.android.build.api.artifact.impl
 
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.OutputFile
 import org.junit.Test
 
@@ -57,4 +59,7 @@ class MultipleDirectoryArtifactTest : AbstractMultipleArtifactTest<Directory>(
             { tasks, taskName -> tasks.register(taskName, MultipleFileProducerTask::class.java) }
         )
     }
+
+    override val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<Directory>
+        get() = { objects -> objects.directoryProperty() }
 }

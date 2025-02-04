@@ -19,6 +19,7 @@ package com.android.build.api.artifact.impl
 import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.OutputFile
 import org.junit.Test
 
@@ -52,4 +53,6 @@ class MultipleFileArtifactTest: AbstractMultipleArtifactTest<RegularFile>(
         )
     }
 
+    override val fileSystemLocationAllocator: (objects: ObjectFactory) -> FileSystemLocationProperty<RegularFile>
+        get() = { objects -> objects.fileProperty() }
 }

@@ -205,6 +205,10 @@ internal class SingleArtifactContainer<FileTypeT: FileSystemLocation>(
         super.disallowChanges()
         agpProducer.disallowChanges()
     }
+
+    fun locationOnly(): Provider<FileTypeT> {
+        return final.locationOnly()
+    }
 }
 /**
  * Specialization of [ArtifactContainer] for multiple elements of [FileSystemLocation]
@@ -268,4 +272,6 @@ internal class MultipleArtifactContainer<T: FileSystemLocation>(
         super.disallowChanges()
         agpProducers.disallowChanges()
     }
+
+    fun locationOnly() = final.locationOnly()
 }

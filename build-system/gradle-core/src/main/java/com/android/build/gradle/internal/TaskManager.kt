@@ -119,6 +119,7 @@ import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
+import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -2106,6 +2107,22 @@ abstract class TaskManager(
 
         // and compile task
         createCompileAnchorTask(creationConfig)
+
+        // and finally debug related tasks.
+        createDebugTasks(creationConfig)
+    }
+
+    protected open fun createDebugTasks(creationConfig: ComponentCreationConfig) {
+        if (creationConfig.services.projectOptions[BooleanOption.DUMP_ARTIFACTS_LOCATIONS]) {
+            val artifactsLocationsReportTask = taskFactory.register(
+                ArtifactsLocationsReportTask.CreationAction(
+                    creationConfig,
+                )
+            )
+            creationConfig.taskContainer.preBuildTask.configure { preBuild ->
+                preBuild.finalizedBy(artifactsLocationsReportTask)
+            }
+        }
     }
 
     protected open fun createVariantPreBuildTask(creationConfig: ComponentCreationConfig) {
