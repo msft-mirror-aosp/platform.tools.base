@@ -152,6 +152,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
 
     protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
+    protected abstract fun Class<*>.toClassName(): String
 
     protected fun Any?.toFormattedString(isVarArg: Boolean = false): String {
 
@@ -190,6 +191,9 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
             }
             is Path -> {
                 "file(${quoteString(this.toFile().toFormatted())})"
+            }
+            is Class<*> -> {
+                toClassName()
             }
             else -> toString()
         }
@@ -426,6 +430,7 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
 
     override fun toIsBooleanName(name: String): String = "is${name.capitalized()}"
 
+    override fun Class<*>.toClassName() = "${name}::class.java"
 
     override val buildFileName: String
         get() = "build.gradle.kts"
@@ -479,6 +484,8 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
         if (name == "default") return "isDefault"
         return name
     }
+
+    override fun Class<*>.toClassName() = name
 
     override val buildFileName: String
         get() = "build.gradle"

@@ -25,6 +25,7 @@ import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestProductFlavor
+import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.SourceDirectorySet
@@ -206,42 +207,14 @@ class DslProxy private constructor(
             // Returned as chained proxies
             SourceDirectorySet::class.java,
             KotlinJvmCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
-            NamedDomainObjectContainer::class.java -> {
-                // the return type should be a Parameterized Type
-                val returnType = method.genericReturnType
-                // because it's a container it should be a parameterized type
-                returnType as ParameterizedType
-
-                // there should be a single type param for a container.
-                val containerTypeParam = returnType.actualTypeArguments.first()
-
-                // right now our type params in container are type variables. This
-                // may change in the future.
-                val blockTypeClass = when (containerTypeParam) {
-                    is TypeVariable<*> -> {
-                        // search in the class that defined the method for the index of the type param for
-                        // the type used in the function.
-                        val ownerClass = method.declaringClass
-                        val index = findTypeParameterIndex(ownerClass, containerTypeParam.name)
-
-                        // get the same info on the proxied interface to get the final type, and find the
-                        // type from the same index.
-                        val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
-
-                        ownerClass.classLoader.loadClass(resolvedType.typeName)
-                    }
-                    is WildcardType -> {
-                        containerTypeParam.upperBounds[0] as Class<*>
-                    }
-                    else -> {
-                        method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
-                    }
-                }
-
-                val chainedRecorder = dslRecorder.createChainedRecorder(propName)
-
-                NamedDomainObjectContainerProxy(blockTypeClass, chainedRecorder)
-            }
+            NamedDomainObjectContainer::class.java -> NamedDomainObjectContainerProxy(
+                extractResolvedTypeParamFromReturn(method),
+                dslRecorder.createChainedRecorder(propName)
+            )
+            ExtensiblePolymorphicDomainObjectContainer::class.java -> ExtensiblePolymorphicDomainObjectContainerProxy(
+                extractResolvedTypeParamFromReturn(method),
+                dslRecorder.createChainedRecorder(propName)
+            )
             // the rest
             else -> {
                 // AGP API objects. These are generally objects that also have a matching configuration
@@ -258,6 +231,41 @@ class DslProxy private constructor(
         }
 
         return MethodReturn(true, returnValue)
+    }
+
+    private fun extractResolvedTypeParamFromReturn(method: Method): Class<out Any> {
+        // the return type should be a Parameterized Type
+        val returnType = method.genericReturnType
+        // because it's a container it should be a parameterized type
+        returnType as ParameterizedType
+
+        // there should be a single type param for a container.
+        val containerTypeParam = returnType.actualTypeArguments.first()
+
+        // right now our type params in container are type variables. This
+        // may change in the future.
+        return when (containerTypeParam) {
+            is TypeVariable<*> -> {
+                // search in the class that defined the method for the index of the type param for
+                // the type used in the function.
+                val ownerClass = method.declaringClass
+                val index = findTypeParameterIndex(ownerClass, containerTypeParam.name)
+
+                // get the same info on the proxied interface to get the final type, and find the
+                // type from the same index.
+                val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
+
+                ownerClass.classLoader.loadClass(resolvedType.typeName)
+            }
+
+            is WildcardType -> {
+                containerTypeParam.upperBounds[0] as Class<*>
+            }
+
+            else -> {
+                method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
+            }
+        }
     }
 
     fun Method.getChainedProxyForReturn(propName: String): Any = try {
