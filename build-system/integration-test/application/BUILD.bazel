@@ -39,6 +39,7 @@ TEST_DEPS = [
     "@maven//:commons-io.commons-io",
     "@maven//:org.codehaus.groovy.groovy-all",
     "@maven//:org.jetbrains.dokka.dokka-core",
+    "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-test",
     "@maven//:org.mockito.mockito-core",

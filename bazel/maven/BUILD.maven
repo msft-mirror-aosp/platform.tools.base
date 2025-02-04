@@ -10578,6 +10578,48 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.1.0",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.1.0/compose-compiler-gradle-plugin-2.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.1.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin",
+    classifiers = [],
+    jars = [
+        "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.1.0/compose-compiler-gradle-plugin-2.1.0.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.0",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.1.0",
+    ],
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.1.0/compose-compiler-gradle-plugin-2.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.1.0",
+    deps_with_exclusions = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-build-statistics_2.1.0",
     pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.1.0/kotlin-build-statistics-2.1.0.pom",
     repo_root_path = "repository",
@@ -10850,6 +10892,14 @@ maven_import(
             "org.jetbrains.kotlin.kotlin-script-runtime",
             "org.jetbrains.kotlin.kotlin-stdlib-common",
         ],
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
             "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -10975,6 +11025,14 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
      ],
     exclusions_for_parents = {
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
             "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -11048,6 +11106,16 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-klib-commonizer-api",
         "org.jetbrains.kotlin.kotlin-build-statistics",
      ],
+    exclusions_for_parents = {
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
+    },
     visibility = ["//visibility:public"],
 )
 

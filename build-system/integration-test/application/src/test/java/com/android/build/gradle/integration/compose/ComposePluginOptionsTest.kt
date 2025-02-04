@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Gener
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
@@ -135,5 +136,41 @@ class ComposePluginOptionsTest {
                 .run(":app:compileReleaseKotlin")
         ScannerSubject.assertThat(releaseResult.stdout)
             .contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=true")
+    }
+
+    /** Regression test for b/362780328. */
+    @Test
+    fun `test exclude source information via DSL`() {
+        val build = rule.build {
+            androidApplication {
+                pluginCallbacks += CompilerOptionsCallback::class.java
+            }
+        }
+        val debugResult =
+            build.executor
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .run(":app:compileDebugKotlin")
+        ScannerSubject.assertThat(debugResult.stdout)
+            .contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=false")
+
+        val releaseResult =
+            build.executor
+                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .run(":app:compileReleaseKotlin")
+        ScannerSubject.assertThat(releaseResult.stdout)
+            .contains("androidx.compose.compiler.plugins.kotlin.sourceInformation=false")
+    }
+
+    class CompilerOptionsCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val compilerOptions =
+                project.extensions.findByType(ComposeCompilerGradlePluginExtension::class.java)
+                    ?: throw RuntimeException(
+                        "Could not find extension of type ComposeCompilerGradlePluginExtension"
+                    )
+            compilerOptions.apply {
+                includeSourceInformation.set(false)
+            }
+        }
     }
 }

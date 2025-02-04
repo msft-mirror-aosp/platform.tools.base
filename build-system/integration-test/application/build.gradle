@@ -51,6 +51,7 @@ dependencies {
     testImplementation libs.ksp_gradle_plugin  // to acces the KSP extension in custom test project plugins
 
     testImplementation libs.kotlin_gradle_plugin // to get access to KotlinJvmCompilerOptions and other Kotlin DSL types
+    testImplementation libs.compose_compiler_gradle_plugin // to get access to ComposeCompilerGradlePluginExtension
 
     testImplementation libs.mockito_core
 
