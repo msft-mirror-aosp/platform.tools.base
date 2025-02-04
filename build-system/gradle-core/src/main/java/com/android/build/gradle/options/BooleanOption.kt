@@ -383,7 +383,6 @@ enum class BooleanOption(
 
     VERIFY_AAR_CLASSES("android.experimental.verifyLibraryClasses", false, FeatureStage.Experimental),
     DISABLE_COMPILE_SDK_CHECKS("android.experimental.disableCompileSdkChecks", false, FeatureStage.Experimental),
-    ADDITIONAL_ARTIFACTS_IN_MODEL("android.experimental.additionalArtifactsInModel", false, FeatureStage.Experimental),
 
     // Whether to suppress warnings about android:extractNativeLibs set to true in dependencies
     SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS(
@@ -1101,6 +1100,8 @@ enum class BooleanOption(
     @Suppress("unused")
     ENABLE_VCS_INFO("android.enableVcsInfo", false, FeatureStage.Removed(Version.VERSION_8_3, "This feature is now enabled in the DSL per build type with \"vcsInfo.include = true\".")),
 
+    @Suppress("unused")
+    ADDITIONAL_ARTIFACTS_IN_MODEL("android.experimental.additionalArtifactsInModel", false, FeatureStage.Removed(Version.VERSION_8_11, "Android Studio is responsible for managing multi-variant Javadoc/source support.")),
     ; // end of enums
 
     override val status = stage.status

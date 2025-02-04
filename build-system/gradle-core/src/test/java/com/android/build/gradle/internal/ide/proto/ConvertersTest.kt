@@ -107,9 +107,8 @@ class ConvertersTest {
             renderscriptFolder = nextFile(),
             proguardRules = nextFile(),
             lintJar = nextFile(),
-            srcJar = nextFile(),
+            srcJars = listOf(nextFile()),
             docJar = nextFile(),
-            samplesJar = nextFile(),
             externalAnnotations = nextFile(),
             publicResources = nextFile(),
             symbolFile = nextFile(),
@@ -122,7 +121,7 @@ class ConvertersTest {
             callChain = "Library"
         )
 
-        Truth.assertThat(result.gettersCalled).isEqualTo(30)
+        Truth.assertThat(result.gettersCalled).isEqualTo(29)
     }
 
     @Test
@@ -140,9 +139,8 @@ class ConvertersTest {
                 isTestFixtures = true
             ),
             artifact = nextFile(),
-            srcJar = nextFile(),
+            srcJars = listOf(nextFile()),
             docJar = nextFile(),
-            samplesJar = nextFile(),
         )
 
         val result = assertAllGettersMatch(
@@ -152,7 +150,7 @@ class ConvertersTest {
             callChain = "Library"
         )
 
-        Truth.assertThat(result.gettersCalled).isEqualTo(14)
+        Truth.assertThat(result.gettersCalled).isEqualTo(13)
     }
 
     @Test

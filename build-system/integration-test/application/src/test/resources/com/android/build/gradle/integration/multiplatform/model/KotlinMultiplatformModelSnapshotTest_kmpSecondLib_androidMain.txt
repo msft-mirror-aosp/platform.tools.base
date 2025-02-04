@@ -112,7 +112,8 @@
           },
           "lintJar": {
             "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpLibraryPlugin/build/intermediates/lint_publish_jar/global/prepareLintJarForPublish/lint.jar"
-          }
+          },
+          "srcJars": []
         }
       },
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"

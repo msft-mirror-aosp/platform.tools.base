@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-6a5db409e81a7bea4b3b4e451b8b6471506ea1902fd8f4f2d7711d8fe0560ed7
+9a107496f1e5e46e996149fc9f5323e684ea277193c5cdedf1e6f8900682ae72
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -682,6 +682,7 @@ com.android.builder.model.v2.ide.JavaCompileOptions.getSourceCompatibility: java
 com.android.builder.model.v2.ide.JavaCompileOptions.getTargetCompatibility: java.lang.String ()
 com.android.builder.model.v2.ide.JavaCompileOptions.isCoreLibraryDesugaringEnabled: boolean ()
 com.android.builder.model.v2.ide.Library implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.Library$DefaultImpls
 com.android.builder.model.v2.ide.Library.getAndroidLibraryData: com.android.builder.model.v2.ide.AndroidLibraryData ()
 com.android.builder.model.v2.ide.Library.getArtifact: java.io.File ()
 com.android.builder.model.v2.ide.Library.getDocJar: java.io.File ()
@@ -691,6 +692,7 @@ com.android.builder.model.v2.ide.Library.getLintJar: java.io.File ()
 com.android.builder.model.v2.ide.Library.getProjectInfo: com.android.builder.model.v2.ide.ProjectInfo ()
 com.android.builder.model.v2.ide.Library.getSamplesJar: java.io.File ()
 com.android.builder.model.v2.ide.Library.getSrcJar: java.io.File ()
+com.android.builder.model.v2.ide.Library.getSrcJars: java.util.List<java.io.File> ()
 com.android.builder.model.v2.ide.Library.getType: com.android.builder.model.v2.ide.LibraryType ()
 com.android.builder.model.v2.ide.LibraryInfo implements com.android.builder.model.v2.ide.ComponentInfo
 com.android.builder.model.v2.ide.LibraryInfo.getGroup: java.lang.String ()
@@ -851,6 +853,7 @@ com.android.builder.model.v2.models.BasicAndroidProject.getProductFlavorSourceSe
 com.android.builder.model.v2.models.BasicAndroidProject.getProjectType: com.android.builder.model.v2.ide.ProjectType ()
 com.android.builder.model.v2.models.BasicAndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.BasicVariant> ()
 com.android.builder.model.v2.models.ModelBuilderParameter
+com.android.builder.model.v2.models.ModelBuilderParameter.getAdditionalArtifactsInModel: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildAndroidTestRuntimeClasspath: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildHostTestRuntimeClasspath: java.util.Map<java.lang.String, java.lang.Boolean> ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildRuntimeClasspath: boolean ()
@@ -858,6 +861,7 @@ com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildScreenshot
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildTestFixtureRuntimeClasspath: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildUnitTestRuntimeClasspath: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getVariantName: java.lang.String ()
+com.android.builder.model.v2.models.ModelBuilderParameter.setAdditionalArtifactsInModel: void (boolean)
 com.android.builder.model.v2.models.ModelBuilderParameter.setDontBuildAndroidTestRuntimeClasspath: void (boolean)
 com.android.builder.model.v2.models.ModelBuilderParameter.setDontBuildHostTestRuntimeClasspath: void (java.util.Map<java.lang.String, java.lang.Boolean>)
 com.android.builder.model.v2.models.ModelBuilderParameter.setDontBuildRuntimeClasspath: void (boolean)

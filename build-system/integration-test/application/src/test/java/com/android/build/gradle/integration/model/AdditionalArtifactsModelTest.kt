@@ -23,9 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.model.toValueString
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
-import com.google.common.io.Resources
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
@@ -55,11 +53,6 @@ class AdditionalArtifactsModelTest {
     fun setUp() {
         app = project.getSubproject(APP_MODULE)
         library = project.getSubproject(LIBRARY_MODULE)
-
-        TestFileUtils.appendToFile(
-                project.gradlePropertiesFile,
-                "${BooleanOption.ADDITIONAL_ARTIFACTS_IN_MODEL.propertyName} = true"
-        )
 
         TestFileUtils.appendToFile(
                 project.settingsFile,
@@ -147,8 +140,8 @@ class AdditionalArtifactsModelTest {
             } ?: false
         }
         Truth.assertWithMessage("myLib").that(lib).isNotNull()
-        Truth.assertThat(lib?.srcJar?.toValueString(result.normalizer)).isEqualTo(
-                "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-sources.jar{F}"
+        Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer)).isEqualTo(
+                "[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-sources.jar{F}]"
         )
         Truth.assertThat(lib?.docJar?.toValueString(result.normalizer)).isEqualTo(
                 "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-demoDebug-javadoc.jar{F}"
@@ -185,42 +178,12 @@ class AdditionalArtifactsModelTest {
             } ?: false
         }
         Truth.assertWithMessage("myLib").that(lib).isNotNull()
-        Truth.assertThat(lib?.srcJar?.toValueString(result.normalizer)).isEqualTo(
-                "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-sources.jar{F}"
+        Truth.assertThat(lib?.srcJars?.toValueString(result.normalizer)).isEqualTo(
+                "[{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-sources.jar{F}]"
         )
         Truth.assertThat(lib?.docJar?.toValueString(result.normalizer)).isEqualTo(
                 "{PROJECT}/testrepo/com/example/android/myLib/1.0/myLib-1.0-javadoc.jar{F}"
         )
-    }
-
-    @Test
-    fun testModelFetchingForSampleSource() {
-        setUpRepoForSample()
-        addSampleArtifactDependency()
-
-        val result = app.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
-
-        val variantDeps = result.container.getProject(":app").variantDependencies
-                ?: throw RuntimeException("No VariantDependencies model for :app")
-
-        val libWithSample = variantDeps.libraries.values.singleOrNull{
-            it.libraryInfo?.let { info ->
-                info.name == "lib1" && info.attributes["org.gradle.usage"] == "java-runtime"
-            } ?: false
-        }
-        Truth.assertWithMessage("lib1").that(libWithSample).isNotNull()
-        Truth.assertThat(libWithSample?.samplesJar?.toValueString(result.normalizer)).isEqualTo(
-                "{PROJECT}/testrepo/com/example/libraryWithSamples/lib1/1.0.0/lib1-1.0.0-samplessources.jar{F}"
-        )
-        val libWithoutSample = variantDeps.libraries.values.singleOrNull {
-            it.libraryInfo?.let { info ->
-                info.name == "support-core-utils"
-            } ?: false
-        }
-        Truth.assertWithMessage("support-core-utils").that(libWithoutSample).isNotNull()
-        Truth.assertThat(libWithoutSample?.samplesJar).isEqualTo(null)
     }
 
     private fun addPublication(componentName: String) {
@@ -240,60 +203,6 @@ class AdditionalArtifactsModelTest {
                             }
                         }
                     }
-                }
-            """.trimIndent()
-        )
-    }
-
-    private fun setUpRepoForSample() {
-        val sampleJar = Resources.getResource(
-                AdditionalArtifactsModelTest::class.java,
-                "AdditionalArtifactsModelTest/lib1-1.0.0-samplessources.jar"
-        )
-
-        val mainJar = Resources.getResource(
-                AdditionalArtifactsModelTest::class.java,
-                "AdditionalArtifactsModelTest/lib1-1.0.0.jar"
-        )
-
-        val pom = Resources.getResource(
-                AdditionalArtifactsModelTest::class.java,
-                "AdditionalArtifactsModelTest/lib1-1.0.0.pom"
-        )
-
-        val artifactsRoot = app.projectDir.parentFile
-                .resolve("testrepo/com/example/libraryWithSamples/lib1/1.0.0")
-                .also { it.mkdirs() }
-        artifactsRoot.resolve("lib1-1.0.0-samplessources.jar")
-                .writeBytes(Resources.toByteArray(sampleJar))
-        artifactsRoot.resolve("lib1-1.0.0.pom").writeBytes(Resources.toByteArray(pom))
-        artifactsRoot.resolve("lib1-1.0.0.jar").writeBytes(Resources.toByteArray(mainJar))
-    }
-
-    private fun addSampleArtifactDependency() {
-        TestFileUtils.appendToFile(
-                app.buildFile,
-                """
-                dependencies {
-                   components {
-                       withModule("com.example.libraryWithSamples:lib1") { details ->
-                           details.addVariant("samplessources") { vm ->
-                               vm.attributes { container ->
-                                   container.attribute(
-                                           Category.CATEGORY_ATTRIBUTE, objects.named(Category.class, Category.DOCUMENTATION))
-                                   container.attribute(
-                                           DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.class, "samplessources"))
-                               }
-                               vm.withFiles {
-                                   it.addFile('lib1-1.0.0-samplessources.jar')
-                               }
-                           }
-                       }
-                   }
-
-                    implementation 'com.example.libraryWithSamples:lib1:1.0.0'
-
-                    implementation 'com.android.support:support-core-ui:28.0.0'
                 }
             """.trimIndent()
         )

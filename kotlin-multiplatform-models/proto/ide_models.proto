@@ -314,4 +314,9 @@ message Library {
 
     // Data for libraries of type [LibraryType.ANDROID_LIBRARY]. It is null in other cases.
     optional AndroidLibraryData android_library_data = 10;
+
+    // Provides the sources for the [artifact] including regular source and sample source
+    // Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or
+    // [LibraryType.ANDROID_LIBRARY]
+    repeated File src_jars = 11;
 }

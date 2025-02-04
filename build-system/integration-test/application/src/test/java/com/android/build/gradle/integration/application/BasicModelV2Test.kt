@@ -77,4 +77,5 @@ fun ModelBuilderParameter.buildOnlyTestRuntimeClasspaths(
     dontBuildAndroidTestRuntimeClasspath = false
     dontBuildTestFixtureRuntimeClasspath = true
     dontBuildHostTestRuntimeClasspath = mapOf("UnitTest" to dontBuildUnitTestRuntimeClasspath, "ScreenshotTest" to dontBuildScreenshotTestRuntimeClasspath)
+    additionalArtifactsInModel = true
 }
