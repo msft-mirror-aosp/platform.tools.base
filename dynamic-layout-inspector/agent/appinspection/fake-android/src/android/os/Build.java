@@ -18,9 +18,18 @@ package android.os;
 
 @SuppressWarnings({"FieldNamingConvention", "NonConstantFieldWithUpperCaseName"})
 public final class Build {
+
     public static final class VERSION {
+
         public static int SDK_INT = 29;
+
         public static int PREVIEW_SDK_INT = 33;
+
         public static String CODENAME = "F(ake)";
+    }
+
+    public static class VERSION_CODES {
+
+        public static final int R = 30;
     }
 }
