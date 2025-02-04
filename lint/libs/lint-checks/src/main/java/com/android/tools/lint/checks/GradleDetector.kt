@@ -589,6 +589,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             if (
               tomlLibraries != null &&
                 !context.file.name.startsWith("settings.gradle") &&
+                !context.file.name.endsWith(".gradle.dcl") &&
                 !dependencyString.contains("+") &&
                 (!dependencyString.contains("$") || isResolved) &&
                 dependency.group?.isNotBlank() == true
