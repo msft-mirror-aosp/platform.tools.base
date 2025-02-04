@@ -25,14 +25,24 @@ import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
+import com.android.ddmlib.AndroidDebugBridge.IClientChangeListener
+import com.android.ddmlib.AndroidDebugBridge.IDebugBridgeChangeListener
+import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener
 import com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION
 import com.android.ddmlib.AndroidDebugBridgeBase
+import com.android.ddmlib.Client
+import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.IDevice
+import com.android.ddmlib.IDeviceUsageTracker
 import com.android.ddmlib.Log
 import com.android.ddmlib.TimeoutRemainder
+import com.android.ddmlib.clientmanager.ClientManager
 import com.android.ddmlib.idevicemanager.IDeviceManager
+import com.android.ddmlib.idevicemanager.IDeviceManagerFactory
 import com.android.ddmlib.idevicemanager.IDeviceManagerUtils
+import com.google.common.base.Preconditions
 import com.google.common.base.Throwables
+import com.google.common.collect.ImmutableMap
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.ListeningExecutorService
@@ -63,11 +73,121 @@ class AdbLibAndroidDebugBridge(
 
     private val logger = adbLogger(session)
 
+    @Volatile
+    private var sThis: AndroidDebugBridge? = null
+
+    @Volatile
+    private var sInitialized: Boolean = false
+
     private var iDeviceManager: IDeviceManager? = null
 
     private var mVersionCheck: Boolean = false
 
+    /** Port where adb server will be started  */
+    private var sAdbServerPort: Int = 0
+
+    /** Full path to adb.  */
+    private var mAdbOsLocation: String? = null
+
+    private var mStarted: Boolean = false
+
     private val lock = ReentrantLock()
+
+    /**
+     * Initialized the library only if needed; deprecated for non-test usages.
+     */
+    @Deprecated("Used only in tests")
+    @Synchronized
+    override fun initIfNeeded(clientSupport: Boolean) {
+        if (sInitialized) {
+            return
+        }
+        init(clientSupport)
+    }
+
+    @Synchronized
+    override fun init(clientSupport: Boolean) {
+        init(clientSupport, false, ImmutableMap.of())
+    }
+
+    @Synchronized
+    override fun init(
+        clientSupport: Boolean, useLibusb: Boolean, env: Map<String?, String?>
+    ) {
+        init(
+            AdbInitOptions.builder()
+                .withEnv(env)
+                .setClientSupportEnabled(clientSupport)
+                .withEnv("ADB_LIBUSB", if (useLibusb) "1" else "0")
+                .build()
+        )
+    }
+
+    @Synchronized
+    override fun init(options: AdbInitOptions) {
+        Preconditions.checkState(
+            !sInitialized, "AndroidDebugBridge.init() has already been called."
+        )
+        sInitialized = true
+        sIDeviceManagerFactory = options.iDeviceManagerFactory
+        iDeviceUsageTracker = options.iDeviceUsageTracker
+        sClientSupport = options.clientSupport
+        sClientManager = options.clientManager
+        if (sClientManager != null) {
+            // A custom client manager is not compatible with "client support"
+            sClientSupport = false
+        }
+        if (sIDeviceManagerFactory != null) {
+            // A custom "IDevice" manager is not compatible with a "Client" manager
+            sClientManager = null
+            sClientSupport = false
+        }
+        sAdbEnvVars = options.adbEnvVars
+        sUserManagedAdbMode = options.userManagedAdbMode
+        DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
+        DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
+        DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
+
+        // Determine port and instantiate socket address.
+        initAdbPort(options.userManagedAdbPort)
+    }
+
+    override fun enableFakeAdbServerMode(port: Int) {
+        Preconditions.checkState(
+            !sInitialized,
+            "AndroidDebugBridge.init() has already been called or "
+                    + "terminate() has not been called yet."
+        )
+        sUnitTestMode = true
+        sAdbServerPort = port
+    }
+
+    override fun disableFakeAdbServerMode() {
+        Preconditions.checkState(
+            !sInitialized,
+            "AndroidDebugBridge.init() has already been called or "
+                    + "terminate() has not been called yet."
+        )
+        sUnitTestMode = false
+        sAdbServerPort = 0
+    }
+
+    override fun getClientSupport(): Boolean {
+        return sClientSupport
+    }
+
+    override fun getClientManager(): ClientManager? {
+        return sClientManager
+    }
+
+    override fun createBridge(): AndroidDebugBridge? {
+        return createBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+    }
+
+    @Deprecated("This method may hang if ADB is not responding")
+    override fun createBridge(osLocation: String, forceNewBridge: Boolean): AndroidDebugBridge? {
+        return createBridge(osLocation, forceNewBridge, Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+    }
 
     /**
      * Creates a [AndroidDebugBridge] that is not linked to any particular executable.
@@ -252,7 +372,7 @@ class AdbLibAndroidDebugBridge(
     fun updateAdbServerConfiguration() {
         adbServerConfiguration.update {
             AdbServerConfiguration(
-                mAdbOsLocation?.let { Path(mAdbOsLocation) },
+                mAdbOsLocation?.let { Path(it) },
                 sAdbServerPort,
                 sUserManagedAdbMode,
                 sUnitTestMode,
@@ -275,6 +395,191 @@ class AdbLibAndroidDebugBridge(
             } ?: run {
                 false
             }
+        }
+    }
+
+    /** Returns the current debug bridge. Can be `null` if none were created.  */
+    override fun getBridge(): AndroidDebugBridge? {
+        return sThis
+    }
+
+    /**
+     * Disconnects the current debug bridge, and destroy the object. A new object will have to be
+     * created with [.createBridge].
+     *
+     * This also stops the current adb host server.
+     */
+    @Deprecated(
+        """This method may hang if ADB is not responding. Use
+      {@link #disconnectBridge(long, TimeUnit)} instead."""
+    )
+    override fun disconnectBridge() {
+        disconnectBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+    }
+
+    override fun addDebugBridgeChangeListener(
+        listener: IDebugBridgeChangeListener
+    ) {
+        adbChangeEvents.addDebugBridgeChangeListener(listener)
+
+        val localThis = sThis
+
+        if (localThis != null) {
+            // we attempt to catch any exception so that a bad listener doesn't kill our thread
+            try {
+                listener.bridgeChanged(localThis)
+            } catch (t: Throwable) {
+                Log.e(DDMS, t)
+            }
+        }
+    }
+
+    override fun removeDebugBridgeChangeListener(
+        listener: IDebugBridgeChangeListener?
+    ) {
+        adbChangeEvents.removeDebugBridgeChangeListener(listener!!)
+    }
+
+    override fun getDebugBridgeChangeListenerCount(): Int {
+        return adbChangeEvents.debugBridgeChangeListenerCount()
+    }
+
+    override fun addDeviceChangeListener(
+        listener: IDeviceChangeListener
+    ) {
+        adbChangeEvents.addDeviceChangeListener(listener)
+    }
+
+    override fun removeDeviceChangeListener(listener: IDeviceChangeListener?) {
+        adbChangeEvents.removeDeviceChangeListener(listener!!)
+    }
+
+    override fun getDeviceChangeListenerCount(): Int {
+        return adbChangeEvents.deviceChangeListenerCount()
+    }
+
+    override fun addClientChangeListener(listener: IClientChangeListener?) {
+        adbChangeEvents.addClientChangeListener(listener!!)
+    }
+
+    override fun removeClientChangeListener(listener: IClientChangeListener?) {
+        adbChangeEvents.removeClientChangeListener(listener!!)
+    }
+
+    override fun getiDeviceUsageTracker(): IDeviceUsageTracker? {
+        return iDeviceUsageTracker
+    }
+
+    override fun deviceConnected(device: IDevice) {
+        adbChangeEvents.notifyDeviceConnected(device)
+    }
+
+    override fun deviceDisconnected(device: IDevice) {
+        adbChangeEvents.notifyDeviceDisconnected(device)
+    }
+
+    override fun deviceChanged(device: IDevice, changeMask: Int) {
+        // Notify the listeners
+        adbChangeEvents.notifyDeviceChanged(device, changeMask)
+    }
+
+    override fun clientChanged(client: Client, changeMask: Int) {
+        // Notify the listeners
+        adbChangeEvents.notifyClientChanged(client, changeMask)
+    }
+
+    override fun isUserManagedAdbMode(): Boolean {
+        return sUserManagedAdbMode
+    }
+
+    /** Instantiates sSocketAddr with the address of the host's adb process.  */
+    private fun initAdbPort(userManagedAdbPort: Int) {
+        // If we're in unit test mode, we already manually set sAdbServerPort.
+        if (!sUnitTestMode) {
+            sAdbServerPort = if (sUserManagedAdbMode) {
+                userManagedAdbPort
+            } else {
+                getAdbServerPort()
+            }
+        }
+    }
+
+    /**
+     * Returns the port where adb server should be launched. This looks at:
+     *
+     *  1. The system property ANDROID_ADB_SERVER_PORT
+     *  1. The environment variable ANDROID_ADB_SERVER_PORT
+     *  1. Defaults to [.DEFAULT_ADB_PORT] if neither the system property nor the env var
+     * are set.
+     *
+     * @return The port number where the host's adb should be expected or started.
+     */
+    private fun getAdbServerPort(): Int {
+        // check system property
+        val prop = Integer.getInteger(SERVER_PORT_ENV_VAR)
+        if (prop != null) {
+            try {
+                return validateAdbServerPort(prop.toString())
+            } catch (e: java.lang.IllegalArgumentException) {
+                val msg = String.format(
+                    "Invalid value (%1\$s) for ANDROID_ADB_SERVER_PORT system property.",
+                    prop
+                )
+                Log.w(DDMS, msg)
+            }
+        }
+
+        // when system property is not set or is invalid, parse environment property
+        try {
+            val env = System.getenv(SERVER_PORT_ENV_VAR)
+            if (env != null) {
+                return validateAdbServerPort(env)
+            }
+        } catch (ex: SecurityException) {
+            // A security manager has been installed that doesn't allow access to env vars.
+            // So an environment variable might have been set, but we can't tell.
+            // Let's log a warning and continue with ADB's default port.
+            // The issue is that adb would be started (by the forked process having access
+            // to the env vars) on the desired port, but within this process, we can't figure out
+            // what that port is. However, a security manager not granting access to env vars
+            // but allowing to fork is a rare and interesting configuration, so the right
+            // thing seems to be to continue using the default port, as forking is likely to
+            // fail later on in the scenario of the security manager.
+            Log.w(
+                DDMS,
+                "No access to env variables allowed by current security manager. "
+                        + "If you've set ANDROID_ADB_SERVER_PORT: it's being ignored."
+            )
+        } catch (e: java.lang.IllegalArgumentException) {
+            val msg = String.format(
+                "Invalid value (%1\$s) for ANDROID_ADB_SERVER_PORT environment variable"
+                        + " (%2\$s).",
+                prop, e.message
+            )
+            Log.w(DDMS, msg)
+        }
+
+        // use default port if neither are set
+        return DEFAULT_ADB_PORT
+    }
+
+    /**
+     * Returns the integer port value if it is a valid value for adb server port
+     *
+     * @param adbServerPort adb server port to validate
+     * @return `adbServerPort` as a parsed integer
+     * @throws IllegalArgumentException when `adbServerPort` is not bigger than 0 or it is not
+     * a number at all
+     */
+    @Throws(java.lang.IllegalArgumentException::class)
+    private fun validateAdbServerPort(adbServerPort: String): Int {
+        try {
+            // C tools (adb, emulator) accept hex and octal port numbers, so need to accept them too
+            val port = Integer.decode(adbServerPort)
+            require(!(port <= 0 || port >= 65535)) { "Should be > 0 and < 65535" }
+            return port
+        } catch (e: NumberFormatException) {
+            throw java.lang.IllegalArgumentException("Not a valid port number")
         }
     }
 
@@ -588,8 +893,9 @@ class AdbLibAndroidDebugBridge(
                 success = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
             }
             if (success && iDeviceManager == null) {
+                // `sThis` is modified and accessed here from within a `withLock` block
                 checkNotNull(sThis)
-                startMonitoringServices(sThis)
+                startMonitoringServices(sThis!!)
             }
             success
         }
@@ -648,5 +954,34 @@ class AdbLibAndroidDebugBridge(
     companion object {
         // ADB exit value when no Universal C Runtime on Windows
         const val STATUS_DLL_NOT_FOUND: Int = -0x3FFFFECB // Signed version of 0xc0000135
+
+        /** Default timeout used when starting the ADB server  */
+        const val DEFAULT_START_ADB_TIMEOUT_MILLIS: Long = 20000
+
+        const val ADB: String = "adb"
+
+        const val DDMS: String = "ddms"
+
+        const val SERVER_PORT_ENV_VAR: String = "ANDROID_ADB_SERVER_PORT"
+
+        // Where to find the ADB bridge.
+        const val DEFAULT_ADB_PORT: Int = 5037
+
+        // Only set when in unit testing mode. This is a hack until we move to devicelib.
+        // http://b.android.com/221925
+        private var sUnitTestMode: Boolean = false
+
+        /** Don't automatically manage ADB server.  */
+        private var sUserManagedAdbMode: Boolean = false
+
+        private var sClientSupport: Boolean = false
+
+        private var sClientManager: ClientManager? = null
+
+        private var sIDeviceManagerFactory: IDeviceManagerFactory? = null
+
+        private var iDeviceUsageTracker: IDeviceUsageTracker? = null
+
+        private var sAdbEnvVars: Map<String, String> = emptyMap()
     }
 }
