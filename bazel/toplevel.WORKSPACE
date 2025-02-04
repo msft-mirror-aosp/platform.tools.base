@@ -68,17 +68,6 @@ new_local_repository(
     path = "external/jarjar",
 )
 
-http_archive(
-    name = "robolectric",
-    sha256 = "5bcde5db598f6938c9887a140a0a1249f95d3c16274d40869503d0c322a20d5d",
-    strip_prefix = "robolectric-bazel-4.8.2",
-    urls = ["https://github.com/robolectric/robolectric-bazel/archive/4.8.2.tar.gz"],
-)
-
-load("@robolectric//bazel:robolectric.bzl", "robolectric_repositories")
-
-robolectric_repositories()
-
 load("//tools/base/intellij-bazel:platforms.bzl", "setup_intellij_platforms")
 
 setup_intellij_platforms()

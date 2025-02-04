@@ -16,7 +16,6 @@
 
 package com.android.tools.appinspection.backgroundtask
 
-import android.app.ActivityThread.ReceiverData
 import android.app.AlarmManager
 import android.app.AlarmManager.RTC_WAKEUP
 import android.app.PendingIntent
@@ -261,7 +260,7 @@ class AlarmHandlerTest {
 
     alarmHandler.onAlarmSet(RTC_WAKEUP, 2, 3, 4, operation, null, null)
 
-    val data = ReceiverData(intent, 0, "", Bundle(), true, true, null, 0)
+    val data = IntentHolder(intent)
     pendingIntentHandler.onReceiverDataCreated(data)
     pendingIntentHandler.onReceiverDataResult(data)
 
@@ -315,6 +314,9 @@ class AlarmHandlerTest {
     onIntentCapturedExit(pendingIntent)
   }
 }
+
+// Stubs ActivityThread.ReceiverData.
+class IntentHolder(@JvmField val intent: Intent) {}
 
 // Actual values of requestCode, intent & flags are not used by the test
 private fun pendingIntent(): PendingIntent =

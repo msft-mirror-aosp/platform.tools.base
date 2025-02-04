@@ -56,7 +56,7 @@ def robolectric_test(
         deps = [
             ":%s" % lib_name,
             "//tools/base/testutils:tools.testutils",
-            "@robolectric//bazel:android-all",
+            "@rules_robolectric//bazel:android-all",
         ],
         **kwargs
     )

@@ -304,10 +304,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "androidx.test.espresso.espresso-idling-resource_3.4.0",
-    pom = "repository/androidx/test/espresso/espresso-idling-resource/3.4.0/espresso-idling-resource-3.4.0.pom",
+    name = "androidx.test.espresso.espresso-idling-resource_3.6.1",
+    pom = "repository/androidx/test/espresso/espresso-idling-resource/3.6.1/espresso-idling-resource-3.6.1.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/test/espresso/espresso-idling-resource/3.4.0",
+    repo_path = "androidx/test/espresso/espresso-idling-resource/3.6.1",
     visibility = ["//visibility:public"],
 )
 
@@ -317,20 +317,22 @@ maven_import(
     jars = [
     ],
     original_deps = [],
-    pom = "repository/androidx/test/espresso/espresso-idling-resource/3.4.0/espresso-idling-resource-3.4.0.pom",
+    pom = "repository/androidx/test/espresso/espresso-idling-resource/3.6.1/espresso-idling-resource-3.6.1.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/test/espresso/espresso-idling-resource/3.4.0",
+    repo_path = "androidx/test/espresso/espresso-idling-resource/3.6.1",
+    exclusions_for_parents = {
+        "org.robolectric.robolectric": [
+            "*.*",
+        ],
+    },
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.test.monitor_1.4.0",
-    pom = "repository/androidx/test/monitor/1.4.0/monitor-1.4.0.pom",
+    name = "androidx.test.monitor_1.7.2",
+    pom = "repository/androidx/test/monitor/1.7.2/monitor-1.7.2.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/test/monitor/1.4.0",
-    deps = [
-        "androidx.annotation.annotation_1.0.0",
-    ],
+    repo_path = "androidx/test/monitor/1.7.2",
     visibility = ["//visibility:public"],
 )
 
@@ -339,16 +341,14 @@ maven_import(
     classifiers = [],
     jars = [
     ],
-    exports = [
-        "androidx.annotation.annotation",
-    ],
-    original_deps = [
-        "androidx.annotation.annotation_1.0.0",
-    ],
-    pom = "repository/androidx/test/monitor/1.4.0/monitor-1.4.0.pom",
+    original_deps = [],
+    pom = "repository/androidx/test/monitor/1.7.2/monitor-1.7.2.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/test/monitor/1.4.0",
+    repo_path = "androidx/test/monitor/1.7.2",
     exclusions_for_parents = {
+        "org.robolectric.robolectric": [
+            "*.*",
+        ],
         "org.robolectric.shadows-framework": [
             "*.*",
         ],
@@ -1955,6 +1955,37 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_annotation_2.34.0",
+    pom = "repository/com/google/errorprone/error_prone_annotation/2.34.0/error_prone_annotation-2.34.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_annotation/2.34.0",
+    parent = "com.google.errorprone.error_prone_parent_2.34.0",
+    deps = [
+        "com.google.guava.guava_32.1.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.google.errorprone.error_prone_annotation",
+    classifiers = [],
+    parent = "com.google.errorprone.error_prone_parent_2.34.0",
+    jars = [
+        "repository/com/google/errorprone/error_prone_annotation/2.34.0/error_prone_annotation-2.34.0.jar"
+    ],
+    deps = [
+        "com.google.guava.guava",
+    ],
+    original_deps = [
+        "com.google.guava.guava_32.1.1-jre",
+    ],
+    pom = "repository/com/google/errorprone/error_prone_annotation/2.34.0/error_prone_annotation-2.34.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_annotation/2.34.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_annotations_2.30.0",
     pom = "repository/com/google/errorprone/error_prone_annotations/2.30.0/error_prone_annotations-2.30.0.pom",
     repo_root_path = "repository",
@@ -3199,6 +3230,34 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.google.testparameterinjector.test-parameter-injector_1.18",
+    pom = "repository/com/google/testparameterinjector/test-parameter-injector/1.18/test-parameter-injector-1.18.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/testparameterinjector/test-parameter-injector/1.18",
+    parent = "com.google.testparameterinjector.test-parameter-injector-parent_1.18",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.google.testparameterinjector.test-parameter-injector",
+    classifiers = [],
+    parent = "com.google.testparameterinjector.test-parameter-injector-parent_1.18",
+    jars = [
+        "repository/com/google/testparameterinjector/test-parameter-injector/1.18/test-parameter-injector-1.18.jar"
+    ],
+    original_deps = [],
+    pom = "repository/com/google/testparameterinjector/test-parameter-injector/1.18/test-parameter-injector-1.18.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/testparameterinjector/test-parameter-injector/1.18",
+    exclusions_for_parents = {
+        "org.robolectric.robolectric": [
+            "*.*",
+        ],
+    },
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.truth.extensions.truth-java8-extension_0.44",
     pom = "repository/com/google/truth/extensions/truth-java8-extension/0.44/truth-java8-extension-0.44.pom",
     repo_root_path = "repository",
@@ -3349,23 +3408,25 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.ibm.icu.icu4j_70.1",
-    pom = "repository/com/ibm/icu/icu4j/70.1/icu4j-70.1.pom",
+    name = "com.ibm.icu.icu4j_75.1",
+    pom = "repository/com/ibm/icu/icu4j/75.1/icu4j-75.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/ibm/icu/icu4j/70.1",
+    repo_path = "com/ibm/icu/icu4j/75.1",
+    parent = "com.ibm.icu.icu4j-root_75.1",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.ibm.icu.icu4j",
     classifiers = [],
+    parent = "com.ibm.icu.icu4j-root_75.1",
     jars = [
-        "repository/com/ibm/icu/icu4j/70.1/icu4j-70.1.jar"
+        "repository/com/ibm/icu/icu4j/75.1/icu4j-75.1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/ibm/icu/icu4j/70.1/icu4j-70.1.pom",
+    pom = "repository/com/ibm/icu/icu4j/75.1/icu4j-75.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/ibm/icu/icu4j/70.1",
+    repo_path = "com/ibm/icu/icu4j/75.1",
     visibility = ["//visibility:public"],
 )
 
@@ -8338,27 +8399,6 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.bouncycastle.bcprov-jdk15on_1.68",
-    pom = "repository/org/bouncycastle/bcprov-jdk15on/1.68/bcprov-jdk15on-1.68.pom",
-    repo_root_path = "repository",
-    repo_path = "org/bouncycastle/bcprov-jdk15on/1.68",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.bouncycastle.bcprov-jdk15on",
-    classifiers = [],
-    jars = [
-        "repository/org/bouncycastle/bcprov-jdk15on/1.68/bcprov-jdk15on-1.68.jar"
-    ],
-    original_deps = [],
-    pom = "repository/org/bouncycastle/bcprov-jdk15on/1.68/bcprov-jdk15on-1.68.pom",
-    repo_root_path = "repository",
-    repo_path = "org/bouncycastle/bcprov-jdk15on/1.68",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.bouncycastle.bcprov-jdk18on_1.79",
     pom = "repository/org/bouncycastle/bcprov-jdk18on/1.79/bcprov-jdk18on-1.79.pom",
     repo_root_path = "repository",
@@ -12412,13 +12452,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-analysis_9.7",
-    pom = "repository/org/ow2/asm/asm-analysis/9.7/asm-analysis-9.7.pom",
+    name = "org.ow2.asm.asm-analysis_9.7.1",
+    pom = "repository/org/ow2/asm/asm-analysis/9.7.1/asm-analysis-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-analysis/9.7",
+    repo_path = "org/ow2/asm/asm-analysis/9.7.1",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm-tree_9.7",
+        "org.ow2.asm.asm-tree_9.7.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12428,17 +12468,17 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-analysis/9.7/asm-analysis-9.7.jar"
+        "repository/org/ow2/asm/asm-analysis/9.7.1/asm-analysis-9.7.1.jar"
     ],
     exports = [
         "org.ow2.asm.asm-tree",
     ],
     original_deps = [
-        "org.ow2.asm.asm-tree_9.7",
+        "org.ow2.asm.asm-tree_9.7.1",
     ],
-    pom = "repository/org/ow2/asm/asm-analysis/9.7/asm-analysis-9.7.pom",
+    pom = "repository/org/ow2/asm/asm-analysis/9.7.1/asm-analysis-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-analysis/9.7",
+    repo_path = "org/ow2/asm/asm-analysis/9.7.1",
     visibility = ["//visibility:public"],
 )
 
@@ -12465,14 +12505,14 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-commons_9.7",
-    pom = "repository/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.pom",
+    name = "org.ow2.asm.asm-commons_9.7.1",
+    pom = "repository/org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-commons/9.7",
+    repo_path = "org/ow2/asm/asm-commons/9.7.1",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.7",
-        "org.ow2.asm.asm-tree_9.7",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-tree_9.7.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12482,30 +12522,30 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.jar"
+        "repository/org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
         "org.ow2.asm.asm-tree",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.7",
-        "org.ow2.asm.asm-tree_9.7",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-tree_9.7.1",
     ],
-    pom = "repository/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.pom",
+    pom = "repository/org/ow2/asm/asm-commons/9.7.1/asm-commons-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-commons/9.7",
+    repo_path = "org/ow2/asm/asm-commons/9.7.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-tree_9.7",
-    pom = "repository/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.pom",
+    name = "org.ow2.asm.asm-tree_9.7.1",
+    pom = "repository/org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-tree/9.7",
+    repo_path = "org/ow2/asm/asm-tree/9.7.1",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.7",
+        "org.ow2.asm.asm_9.7.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12515,30 +12555,30 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.jar"
+        "repository/org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.7",
+        "org.ow2.asm.asm_9.7.1",
     ],
-    pom = "repository/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.pom",
+    pom = "repository/org/ow2/asm/asm-tree/9.7.1/asm-tree-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-tree/9.7",
+    repo_path = "org/ow2/asm/asm-tree/9.7.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm-util_9.7",
-    pom = "repository/org/ow2/asm/asm-util/9.7/asm-util-9.7.pom",
+    name = "org.ow2.asm.asm-util_9.7.1",
+    pom = "repository/org/ow2/asm/asm-util/9.7.1/asm-util-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-util/9.7",
+    repo_path = "org/ow2/asm/asm-util/9.7.1",
     parent = "org.ow2.ow2_1.5.1",
     deps = [
-        "org.ow2.asm.asm_9.7",
-        "org.ow2.asm.asm-tree_9.7",
-        "org.ow2.asm.asm-analysis_9.7",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-tree_9.7.1",
+        "org.ow2.asm.asm-analysis_9.7.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12548,7 +12588,7 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm-util/9.7/asm-util-9.7.jar"
+        "repository/org/ow2/asm/asm-util/9.7.1/asm-util-9.7.1.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
@@ -12556,21 +12596,21 @@ maven_import(
         "org.ow2.asm.asm-analysis",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.7",
-        "org.ow2.asm.asm-tree_9.7",
-        "org.ow2.asm.asm-analysis_9.7",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-tree_9.7.1",
+        "org.ow2.asm.asm-analysis_9.7.1",
     ],
-    pom = "repository/org/ow2/asm/asm-util/9.7/asm-util-9.7.pom",
+    pom = "repository/org/ow2/asm/asm-util/9.7.1/asm-util-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm-util/9.7",
+    repo_path = "org/ow2/asm/asm-util/9.7.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.ow2.asm.asm_9.7",
-    pom = "repository/org/ow2/asm/asm/9.7/asm-9.7.pom",
+    name = "org.ow2.asm.asm_9.7.1",
+    pom = "repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm/9.7",
+    repo_path = "org/ow2/asm/asm/9.7.1",
     parent = "org.ow2.ow2_1.5.1",
     visibility = ["//visibility:public"],
 )
@@ -12580,41 +12620,20 @@ maven_import(
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
     jars = [
-        "repository/org/ow2/asm/asm/9.7/asm-9.7.jar"
+        "repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar"
     ],
     original_deps = [],
-    pom = "repository/org/ow2/asm/asm/9.7/asm-9.7.pom",
+    pom = "repository/org/ow2/asm/asm/9.7.1/asm-9.7.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/ow2/asm/asm/9.7",
+    repo_path = "org/ow2/asm/asm/9.7.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
-    pom = "repository/org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4/android-all-instrumented-9-robolectric-4913185-2-i4.pom",
+    name = "org.robolectric.annotations_4.14.1",
+    pom = "repository/org/robolectric/annotations/4.14.1/annotations-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.robolectric.android-all-instrumented",
-    classifiers = [],
-    jars = [
-        "repository/org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4/android-all-instrumented-9-robolectric-4913185-2-i4.jar"
-    ],
-    original_deps = [],
-    pom = "repository/org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4/android-all-instrumented-9-robolectric-4913185-2-i4.pom",
-    repo_root_path = "repository",
-    repo_path = "org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.robolectric.annotations_4.8.2",
-    pom = "repository/org/robolectric/annotations/4.8.2/annotations-4.8.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/robolectric/annotations/4.8.2",
+    repo_path = "org/robolectric/annotations/4.14.1",
     visibility = ["//visibility:public"],
 )
 
@@ -12622,26 +12641,26 @@ maven_import(
     name = "org.robolectric.annotations",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/annotations/4.8.2/annotations-4.8.2.jar"
+        "repository/org/robolectric/annotations/4.14.1/annotations-4.14.1.jar"
     ],
     original_deps = [],
-    pom = "repository/org/robolectric/annotations/4.8.2/annotations-4.8.2.pom",
+    pom = "repository/org/robolectric/annotations/4.14.1/annotations-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/annotations/4.8.2",
+    repo_path = "org/robolectric/annotations/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.junit_4.8.2",
-    pom = "repository/org/robolectric/junit/4.8.2/junit-4.8.2.pom",
+    name = "org.robolectric.junit_4.14.1",
+    pom = "repository/org/robolectric/junit/4.14.1/junit-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/junit/4.8.2",
+    repo_path = "org/robolectric/junit/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12650,7 +12669,7 @@ maven_import(
     name = "org.robolectric.junit",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/junit/4.8.2/junit-4.8.2.jar"
+        "repository/org/robolectric/junit/4.14.1/junit-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
@@ -12660,26 +12679,50 @@ maven_import(
         "org.robolectric.utils-reflector",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
     ],
-    pom = "repository/org/robolectric/junit/4.8.2/junit-4.8.2.pom",
+    pom = "repository/org/robolectric/junit/4.14.1/junit-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/junit/4.8.2",
+    repo_path = "org/robolectric/junit/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.nativeruntime_4.8.2",
-    pom = "repository/org/robolectric/nativeruntime/4.8.2/nativeruntime-4.8.2.pom",
+    name = "org.robolectric.nativeruntime-dist-compat_1.0.16",
+    pom = "repository/org/robolectric/nativeruntime-dist-compat/1.0.16/nativeruntime-dist-compat-1.0.16.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/nativeruntime/4.8.2",
+    repo_path = "org/robolectric/nativeruntime-dist-compat/1.0.16",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.robolectric.nativeruntime-dist-compat",
+    classifiers = [],
+    jars = [
+        "repository/org/robolectric/nativeruntime-dist-compat/1.0.16/nativeruntime-dist-compat-1.0.16.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/robolectric/nativeruntime-dist-compat/1.0.16/nativeruntime-dist-compat-1.0.16.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/nativeruntime-dist-compat/1.0.16",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.nativeruntime_4.14.1",
+    pom = "repository/org/robolectric/nativeruntime/4.14.1/nativeruntime-4.14.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/nativeruntime/4.14.1",
     deps = [
-        "org.robolectric.utils_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "com.google.guava.guava_33.3.1-jre",
+        "org.robolectric.nativeruntime-dist-compat_1.0.16",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12688,30 +12731,38 @@ maven_import(
     name = "org.robolectric.nativeruntime",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/nativeruntime/4.8.2/nativeruntime-4.8.2.jar"
+        "repository/org/robolectric/nativeruntime/4.14.1/nativeruntime-4.14.1.jar"
     ],
     exports = [
+        "org.robolectric.shadowapi",
         "org.robolectric.utils",
+        "org.robolectric.utils-reflector",
         "com.google.guava.guava",
     ],
-    original_deps = [
-        "org.robolectric.utils_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+    deps = [
+        "org.robolectric.nativeruntime-dist-compat",
     ],
-    pom = "repository/org/robolectric/nativeruntime/4.8.2/nativeruntime-4.8.2.pom",
+    original_deps = [
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "com.google.guava.guava_33.3.1-jre",
+        "org.robolectric.nativeruntime-dist-compat_1.0.16",
+    ],
+    pom = "repository/org/robolectric/nativeruntime/4.14.1/nativeruntime-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/nativeruntime/4.8.2",
+    repo_path = "org/robolectric/nativeruntime/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.pluginapi_4.8.2",
-    pom = "repository/org/robolectric/pluginapi/4.8.2/pluginapi-4.8.2.pom",
+    name = "org.robolectric.pluginapi_4.14.1",
+    pom = "repository/org/robolectric/pluginapi/4.14.1/pluginapi-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/pluginapi/4.8.2",
+    repo_path = "org/robolectric/pluginapi/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.annotations_4.14.1",
+        "com.google.guava.guava_33.3.1-jre",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12720,31 +12771,32 @@ maven_import(
     name = "org.robolectric.pluginapi",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/pluginapi/4.8.2/pluginapi-4.8.2.jar"
+        "repository/org/robolectric/pluginapi/4.14.1/pluginapi-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
         "com.google.guava.guava",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.annotations_4.14.1",
+        "com.google.guava.guava_33.3.1-jre",
     ],
-    pom = "repository/org/robolectric/pluginapi/4.8.2/pluginapi-4.8.2.pom",
+    pom = "repository/org/robolectric/pluginapi/4.14.1/pluginapi-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/pluginapi/4.8.2",
+    repo_path = "org/robolectric/pluginapi/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.plugins-maven-dependency-resolver_4.8.2",
-    pom = "repository/org/robolectric/plugins-maven-dependency-resolver/4.8.2/plugins-maven-dependency-resolver-4.8.2.pom",
+    name = "org.robolectric.plugins-maven-dependency-resolver_4.14.1",
+    pom = "repository/org/robolectric/plugins-maven-dependency-resolver/4.14.1/plugins-maven-dependency-resolver-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/plugins-maven-dependency-resolver/4.8.2",
+    repo_path = "org/robolectric/plugins-maven-dependency-resolver/4.14.1",
     deps = [
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.guava.guava_33.3.1-jre",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12753,35 +12805,37 @@ maven_import(
     name = "org.robolectric.plugins-maven-dependency-resolver",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/plugins-maven-dependency-resolver/4.8.2/plugins-maven-dependency-resolver-4.8.2.jar"
+        "repository/org/robolectric/plugins-maven-dependency-resolver/4.14.1/plugins-maven-dependency-resolver-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.pluginapi",
         "org.robolectric.utils",
+        "com.google.auto.value.auto-value-annotations",
         "com.google.guava.guava",
     ],
     original_deps = [
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.guava.guava_33.3.1-jre",
     ],
-    pom = "repository/org/robolectric/plugins-maven-dependency-resolver/4.8.2/plugins-maven-dependency-resolver-4.8.2.pom",
+    pom = "repository/org/robolectric/plugins-maven-dependency-resolver/4.14.1/plugins-maven-dependency-resolver-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/plugins-maven-dependency-resolver/4.8.2",
-    srcjar = "repository/org/robolectric/plugins-maven-dependency-resolver/4.8.2/plugins-maven-dependency-resolver-4.8.2-sources.jar",
+    repo_path = "org/robolectric/plugins-maven-dependency-resolver/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.resources_4.8.2",
-    pom = "repository/org/robolectric/resources/4.8.2/resources-4.8.2.pom",
+    name = "org.robolectric.resources_4.14.1",
+    pom = "repository/org/robolectric/resources/4.14.1/resources-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/resources/4.8.2",
+    repo_path = "org/robolectric/resources/4.14.1",
     deps = [
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.guava.guava_33.3.1-jre",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12790,46 +12844,51 @@ maven_import(
     name = "org.robolectric.resources",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/resources/4.8.2/resources-4.8.2.jar"
+        "repository/org/robolectric/resources/4.14.1/resources-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.utils",
         "org.robolectric.annotations",
         "org.robolectric.pluginapi",
+        "com.google.auto.value.auto-value-annotations",
         "com.google.guava.guava",
     ],
     original_deps = [
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.guava.guava_33.3.1-jre",
     ],
-    pom = "repository/org/robolectric/resources/4.8.2/resources-4.8.2.pom",
+    pom = "repository/org/robolectric/resources/4.14.1/resources-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/resources/4.8.2",
+    repo_path = "org/robolectric/resources/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.robolectric_4.8.2",
-    pom = "repository/org/robolectric/robolectric/4.8.2/robolectric-4.8.2.pom",
+    name = "org.robolectric.robolectric_4.14.1",
+    pom = "repository/org/robolectric/robolectric/4.14.1/robolectric-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/robolectric/4.8.2",
+    repo_path = "org/robolectric/robolectric/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.junit_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.resources_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
-        "org.robolectric.plugins-maven-dependency-resolver_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.junit_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.resources_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "org.robolectric.plugins-maven-dependency-resolver_4.14.1",
         "javax.inject.javax.inject_1",
         "javax.annotation.javax.annotation-api_1.3.2",
-        "org.robolectric.shadows-framework_4.8.2",
-        "org.bouncycastle.bcprov-jdk15on_1.68",
-        "androidx.test.monitor_1.4.0",
-        "androidx.test.espresso.espresso-idling-resource_3.4.0",
+        "org.robolectric.shadows-framework_4.14.1",
+        "org.bouncycastle.bcprov-jdk18on_1.78.1",
+        "androidx.test.monitor_1.7.2",
+        "org.conscrypt.conscrypt-openjdk-uber_2.5.2",
+        "org.yaml.snakeyaml_2.3",
+        "androidx.test.espresso.espresso-idling-resource_3.6.1",
+        "com.google.testparameterinjector.test-parameter-injector_1.18",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12838,7 +12897,7 @@ maven_import(
     name = "org.robolectric.robolectric",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/robolectric/4.8.2/robolectric-4.8.2.jar"
+        "repository/org/robolectric/robolectric/4.14.1/robolectric-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
@@ -12852,50 +12911,60 @@ maven_import(
         "javax.inject.javax.inject",
         "javax.annotation.javax.annotation-api",
         "org.robolectric.shadows-framework",
-        "org.bouncycastle.bcprov-jdk15on",
+        "org.bouncycastle.bcprov-jdk18on",
         "androidx.test.monitor",
     ],
     deps = [
+        "org.conscrypt.conscrypt-openjdk-uber",
+        "org.yaml.snakeyaml",
         "androidx.test.espresso.espresso-idling-resource",
+        "com.google.testparameterinjector.test-parameter-injector",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.junit_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.resources_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
-        "org.robolectric.plugins-maven-dependency-resolver_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.junit_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.resources_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "org.robolectric.plugins-maven-dependency-resolver_4.14.1",
         "javax.inject.javax.inject_1",
         "javax.annotation.javax.annotation-api_1.3.2",
-        "org.robolectric.shadows-framework_4.8.2",
-        "org.bouncycastle.bcprov-jdk15on_1.68",
-        "androidx.test.monitor_1.4.0",
-        "androidx.test.espresso.espresso-idling-resource_3.4.0",
+        "org.robolectric.shadows-framework_4.14.1",
+        "org.bouncycastle.bcprov-jdk18on_1.78.1",
+        "androidx.test.monitor_1.7.2",
+        "org.conscrypt.conscrypt-openjdk-uber_2.5.2",
+        "org.yaml.snakeyaml_2.3",
+        "androidx.test.espresso.espresso-idling-resource_3.6.1",
+        "com.google.testparameterinjector.test-parameter-injector_1.18",
     ],
-    pom = "repository/org/robolectric/robolectric/4.8.2/robolectric-4.8.2.pom",
+    pom = "repository/org/robolectric/robolectric/4.14.1/robolectric-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/robolectric/4.8.2",
-    srcjar = "repository/org/robolectric/robolectric/4.8.2/robolectric-4.8.2-sources.jar",
+    repo_path = "org/robolectric/robolectric/4.14.1",
+    deps_with_exclusions = [
+        "com.google.testparameterinjector.test-parameter-injector",
+        "androidx.test.monitor",
+        "androidx.test.espresso.espresso-idling-resource",
+     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.sandbox_4.8.2",
-    pom = "repository/org/robolectric/sandbox/4.8.2/sandbox-4.8.2.pom",
+    name = "org.robolectric.sandbox_4.14.1",
+    pom = "repository/org/robolectric/sandbox/4.14.1/sandbox-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/sandbox/4.8.2",
+    repo_path = "org/robolectric/sandbox/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
         "javax.annotation.javax.annotation-api_1.3.2",
         "javax.inject.javax.inject_1",
-        "org.ow2.asm.asm_9.2",
-        "org.ow2.asm.asm-commons_9.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-commons_9.7.1",
+        "com.google.guava.guava_33.3.1-jre",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12904,7 +12973,7 @@ maven_import(
     name = "org.robolectric.sandbox",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/sandbox/4.8.2/sandbox-4.8.2.jar"
+        "repository/org/robolectric/sandbox/4.14.1/sandbox-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
@@ -12918,30 +12987,30 @@ maven_import(
         "com.google.guava.guava",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
         "javax.annotation.javax.annotation-api_1.3.2",
         "javax.inject.javax.inject_1",
-        "org.ow2.asm.asm_9.2",
-        "org.ow2.asm.asm-commons_9.2",
-        "com.google.guava.guava_27.0.1-jre",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-commons_9.7.1",
+        "com.google.guava.guava_33.3.1-jre",
     ],
-    pom = "repository/org/robolectric/sandbox/4.8.2/sandbox-4.8.2.pom",
+    pom = "repository/org/robolectric/sandbox/4.14.1/sandbox-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/sandbox/4.8.2",
+    repo_path = "org/robolectric/sandbox/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.shadowapi_4.8.2",
-    pom = "repository/org/robolectric/shadowapi/4.8.2/shadowapi-4.8.2.pom",
+    name = "org.robolectric.shadowapi_4.14.1",
+    pom = "repository/org/robolectric/shadowapi/4.14.1/shadowapi-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/shadowapi/4.8.2",
+    repo_path = "org/robolectric/shadowapi/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.utils_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.utils_4.14.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12950,42 +13019,41 @@ maven_import(
     name = "org.robolectric.shadowapi",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/shadowapi/4.8.2/shadowapi-4.8.2.jar"
+        "repository/org/robolectric/shadowapi/4.14.1/shadowapi-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
         "org.robolectric.utils",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.utils_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.utils_4.14.1",
     ],
-    pom = "repository/org/robolectric/shadowapi/4.8.2/shadowapi-4.8.2.pom",
+    pom = "repository/org/robolectric/shadowapi/4.14.1/shadowapi-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/shadowapi/4.8.2",
+    repo_path = "org/robolectric/shadowapi/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.shadows-framework_4.8.2",
-    pom = "repository/org/robolectric/shadows-framework/4.8.2/shadows-framework-4.8.2.pom",
+    name = "org.robolectric.shadows-framework_4.14.1",
+    pom = "repository/org/robolectric/shadows-framework/4.14.1/shadows-framework-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/shadows-framework/4.8.2",
+    repo_path = "org/robolectric/shadows-framework/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.nativeruntime_4.8.2",
-        "org.robolectric.resources_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
-        "androidx.test.monitor_1.4.0",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.nativeruntime_4.14.1",
+        "org.robolectric.resources_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "androidx.test.monitor_1.7.2",
         "com.almworks.sqlite4java.sqlite4java_1.0.392",
-        "com.ibm.icu.icu4j_70.1",
-        "androidx.annotation.annotation_1.1.0",
-        "com.google.auto.value.auto-value-annotations_1.7.4",
-        "com.google.errorprone.error_prone_annotations_2.9.0",
+        "com.ibm.icu.icu4j_75.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.errorprone.error_prone_annotation_2.34.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12994,7 +13062,7 @@ maven_import(
     name = "org.robolectric.shadows-framework",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/shadows-framework/4.8.2/shadows-framework-4.8.2.jar"
+        "repository/org/robolectric/shadows-framework/4.14.1/shadows-framework-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
@@ -13008,31 +13076,29 @@ maven_import(
         "androidx.test.monitor",
         "com.almworks.sqlite4java.sqlite4java",
         "com.ibm.icu.icu4j",
-        "androidx.annotation.annotation",
         "com.google.auto.value.auto-value-annotations",
     ],
     deps = [
-        "com.google.errorprone.error_prone_annotations",
+        "com.google.errorprone.error_prone_annotation",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.nativeruntime_4.8.2",
-        "org.robolectric.resources_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
-        "org.robolectric.sandbox_4.8.2",
-        "org.robolectric.shadowapi_4.8.2",
-        "org.robolectric.utils_4.8.2",
-        "org.robolectric.utils-reflector_4.8.2",
-        "androidx.test.monitor_1.4.0",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.nativeruntime_4.14.1",
+        "org.robolectric.resources_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
+        "org.robolectric.sandbox_4.14.1",
+        "org.robolectric.shadowapi_4.14.1",
+        "org.robolectric.utils_4.14.1",
+        "org.robolectric.utils-reflector_4.14.1",
+        "androidx.test.monitor_1.7.2",
         "com.almworks.sqlite4java.sqlite4java_1.0.392",
-        "com.ibm.icu.icu4j_70.1",
-        "androidx.annotation.annotation_1.1.0",
-        "com.google.auto.value.auto-value-annotations_1.7.4",
-        "com.google.errorprone.error_prone_annotations_2.9.0",
+        "com.ibm.icu.icu4j_75.1",
+        "com.google.auto.value.auto-value-annotations_1.11.0",
+        "com.google.errorprone.error_prone_annotation_2.34.0",
     ],
-    pom = "repository/org/robolectric/shadows-framework/4.8.2/shadows-framework-4.8.2.pom",
+    pom = "repository/org/robolectric/shadows-framework/4.14.1/shadows-framework-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/shadows-framework/4.8.2",
+    repo_path = "org/robolectric/shadows-framework/4.14.1",
     deps_with_exclusions = [
         "androidx.test.monitor",
      ],
@@ -13040,15 +13106,15 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.robolectric.utils-reflector_4.8.2",
-    pom = "repository/org/robolectric/utils-reflector/4.8.2/utils-reflector-4.8.2.pom",
+    name = "org.robolectric.utils-reflector_4.14.1",
+    pom = "repository/org/robolectric/utils-reflector/4.14.1/utils-reflector-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/utils-reflector/4.8.2",
+    repo_path = "org/robolectric/utils-reflector/4.14.1",
     deps = [
-        "org.ow2.asm.asm_9.2",
-        "org.ow2.asm.asm-commons_9.2",
-        "org.ow2.asm.asm-util_9.2",
-        "org.robolectric.utils_4.8.2",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-commons_9.7.1",
+        "org.ow2.asm.asm-util_9.7.1",
+        "org.robolectric.utils_4.14.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13057,7 +13123,7 @@ maven_import(
     name = "org.robolectric.utils-reflector",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/utils-reflector/4.8.2/utils-reflector-4.8.2.jar"
+        "repository/org/robolectric/utils-reflector/4.14.1/utils-reflector-4.14.1.jar"
     ],
     exports = [
         "org.ow2.asm.asm",
@@ -13066,29 +13132,28 @@ maven_import(
         "org.robolectric.utils",
     ],
     original_deps = [
-        "org.ow2.asm.asm_9.2",
-        "org.ow2.asm.asm-commons_9.2",
-        "org.ow2.asm.asm-util_9.2",
-        "org.robolectric.utils_4.8.2",
+        "org.ow2.asm.asm_9.7.1",
+        "org.ow2.asm.asm-commons_9.7.1",
+        "org.ow2.asm.asm-util_9.7.1",
+        "org.robolectric.utils_4.14.1",
     ],
-    pom = "repository/org/robolectric/utils-reflector/4.8.2/utils-reflector-4.8.2.pom",
+    pom = "repository/org/robolectric/utils-reflector/4.14.1/utils-reflector-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/utils-reflector/4.8.2",
+    repo_path = "org/robolectric/utils-reflector/4.14.1",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.robolectric.utils_4.8.2",
-    pom = "repository/org/robolectric/utils/4.8.2/utils-4.8.2.pom",
+    name = "org.robolectric.utils_4.14.1",
+    pom = "repository/org/robolectric/utils/4.14.1/utils-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/utils/4.8.2",
+    repo_path = "org/robolectric/utils/4.14.1",
     deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
         "javax.inject.javax.inject_1",
         "javax.annotation.javax.annotation-api_1.3.2",
-        "com.google.guava.guava_27.0.1-jre",
-        "com.google.errorprone.error_prone_annotations_2.9.0",
+        "com.google.errorprone.error_prone_annotation_2.34.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13097,7 +13162,7 @@ maven_import(
     name = "org.robolectric.utils",
     classifiers = [],
     jars = [
-        "repository/org/robolectric/utils/4.8.2/utils-4.8.2.jar"
+        "repository/org/robolectric/utils/4.14.1/utils-4.14.1.jar"
     ],
     exports = [
         "org.robolectric.annotations",
@@ -13106,20 +13171,18 @@ maven_import(
         "javax.annotation.javax.annotation-api",
     ],
     deps = [
-        "com.google.guava.guava",
-        "com.google.errorprone.error_prone_annotations",
+        "com.google.errorprone.error_prone_annotation",
     ],
     original_deps = [
-        "org.robolectric.annotations_4.8.2",
-        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.annotations_4.14.1",
+        "org.robolectric.pluginapi_4.14.1",
         "javax.inject.javax.inject_1",
         "javax.annotation.javax.annotation-api_1.3.2",
-        "com.google.guava.guava_27.0.1-jre",
-        "com.google.errorprone.error_prone_annotations_2.9.0",
+        "com.google.errorprone.error_prone_annotation_2.34.0",
     ],
-    pom = "repository/org/robolectric/utils/4.8.2/utils-4.8.2.pom",
+    pom = "repository/org/robolectric/utils/4.14.1/utils-4.14.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/robolectric/utils/4.8.2",
+    repo_path = "org/robolectric/utils/4.14.1",
     visibility = ["//visibility:public"],
 )
 
@@ -13359,6 +13422,27 @@ maven_import(
     pom = "repository/org/xerial/sqlite-jdbc/3.43.0.0/sqlite-jdbc-3.43.0.0.pom",
     repo_root_path = "repository",
     repo_path = "org/xerial/sqlite-jdbc/3.43.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.yaml.snakeyaml_2.3",
+    pom = "repository/org/yaml/snakeyaml/2.3/snakeyaml-2.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/yaml/snakeyaml/2.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.yaml.snakeyaml",
+    classifiers = [],
+    jars = [
+        "repository/org/yaml/snakeyaml/2.3/snakeyaml-2.3.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/yaml/snakeyaml/2.3/snakeyaml-2.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/yaml/snakeyaml/2.3",
     visibility = ["//visibility:public"],
 )
 
@@ -32770,6 +32854,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.test.espresso.espresso-idling-resource_3.4.0",
+    pom = "repository/androidx/test/espresso/espresso-idling-resource/3.4.0/espresso-idling-resource-3.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/test/espresso/espresso-idling-resource/3.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.test.espresso.espresso-idling-resource_3.5.0",
     pom = "repository/androidx/test/espresso/espresso-idling-resource/3.5.0/espresso-idling-resource-3.5.0.pom",
     repo_root_path = "repository",
@@ -33047,6 +33139,14 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
         "androidx.concurrent.concurrent-futures_1.1.0",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.test.monitor_1.4.0",
+    pom = "repository/androidx/test/monitor/1.4.0/monitor-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/test/monitor/1.4.0",
     visibility = ["//visibility:public"],
 )
 
@@ -58678,6 +58778,23 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.guava.guava_32.1.1-jre",
+    pom = "repository/com/google/guava/guava/32.1.1-jre/guava-32.1.1-jre.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava/32.1.1-jre",
+    parent = "com.google.guava.guava-parent_32.1.1-jre",
+    deps = [
+        "com.google.guava.failureaccess_1.0.1",
+        "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "org.checkerframework.checker-qual_3.33.0",
+        "com.google.errorprone.error_prone_annotations_2.18.0",
+        "com.google.j2objc.j2objc-annotations_2.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.guava.guava_33.0.0-jre",
     pom = "repository/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.pom",
     repo_root_path = "repository",
@@ -59681,6 +59798,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/googlecode/plist/dd-plist/1.27",
     parent = "org.sonatype.oss.oss-parent_7",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.ibm.icu.icu4j_70.1",
+    pom = "repository/com/ibm/icu/icu4j/70.1/icu4j-70.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/ibm/icu/icu4j/70.1",
     visibility = ["//visibility:public"],
 )
 
@@ -63092,6 +63217,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.bouncycastle.bcprov-jdk15on_1.68",
+    pom = "repository/org/bouncycastle/bcprov-jdk15on/1.68/bcprov-jdk15on-1.68.pom",
+    repo_root_path = "repository",
+    repo_path = "org/bouncycastle/bcprov-jdk15on/1.68",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bouncycastle.bcprov-jdk16_1.46",
     pom = "repository/org/bouncycastle/bcprov-jdk16/1.46/bcprov-jdk16-1.46.pom",
     repo_root_path = "repository",
@@ -63104,6 +63237,14 @@ maven_artifact(
     pom = "repository/org/bouncycastle/bcprov-jdk18on/1.77/bcprov-jdk18on-1.77.pom",
     repo_root_path = "repository",
     repo_path = "org/bouncycastle/bcprov-jdk18on/1.77",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.bouncycastle.bcprov-jdk18on_1.78.1",
+    pom = "repository/org/bouncycastle/bcprov-jdk18on/1.78.1/bcprov-jdk18on-1.78.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/bouncycastle/bcprov-jdk18on/1.78.1",
     visibility = ["//visibility:public"],
 )
 
@@ -75640,6 +75781,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-analysis_9.7",
+    pom = "repository/org/ow2/asm/asm-analysis/9.7/asm-analysis-9.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-analysis/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm-tree_9.7",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-commons_5.1",
     pom = "repository/org/ow2/asm/asm-commons/5.1/asm-commons-5.1.pom",
     repo_root_path = "repository",
@@ -75728,6 +75881,19 @@ maven_artifact(
     deps = [
         "org.ow2.asm.asm_9.6",
         "org.ow2.asm.asm-tree_9.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm-commons_9.7",
+    pom = "repository/org/ow2/asm/asm-commons/9.7/asm-commons-9.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-commons/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.7",
+        "org.ow2.asm.asm-tree_9.7",
     ],
     visibility = ["//visibility:public"],
 )
@@ -75829,6 +75995,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-tree_9.7",
+    pom = "repository/org/ow2/asm/asm-tree/9.7/asm-tree-9.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-tree/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.7",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-util_5.1",
     pom = "repository/org/ow2/asm/asm-util/5.1/asm-util-5.1.pom",
     repo_root_path = "repository",
@@ -75923,6 +76101,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-util_9.7",
+    pom = "repository/org/ow2/asm/asm-util/9.7/asm-util-9.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-util/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    deps = [
+        "org.ow2.asm.asm_9.7",
+        "org.ow2.asm.asm-tree_9.7",
+        "org.ow2.asm.asm-analysis_9.7",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm_5.1",
     pom = "repository/org/ow2/asm/asm/5.1/asm-5.1.pom",
     repo_root_path = "repository",
@@ -76004,6 +76196,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm_9.7",
+    pom = "repository/org/ow2/asm/asm/9.7/asm-9.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm/9.7",
+    parent = "org.ow2.ow2_1.5.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.reactivestreams.reactive-streams_1.0.0",
     pom = "repository/org/reactivestreams/reactive-streams/1.0.0/reactive-streams-1.0.0.pom",
     repo_root_path = "repository",
@@ -76024,6 +76225,197 @@ maven_artifact(
     pom = "repository/org/robolectric/android-all-instrumented/7.0.0_r1-robolectric-r1-i4/android-all-instrumented-7.0.0_r1-robolectric-r1-i4.pom",
     repo_root_path = "repository",
     repo_path = "org/robolectric/android-all-instrumented/7.0.0_r1-robolectric-r1-i4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
+    pom = "repository/org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4/android-all-instrumented-9-robolectric-4913185-2-i4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.annotations_4.8.2",
+    pom = "repository/org/robolectric/annotations/4.8.2/annotations-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/annotations/4.8.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.junit_4.8.2",
+    pom = "repository/org/robolectric/junit/4.8.2/junit-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/junit/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.sandbox_4.8.2",
+        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.shadowapi_4.8.2",
+        "org.robolectric.utils-reflector_4.8.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.nativeruntime_4.8.2",
+    pom = "repository/org/robolectric/nativeruntime/4.8.2/nativeruntime-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/nativeruntime/4.8.2",
+    deps = [
+        "org.robolectric.utils_4.8.2",
+        "com.google.guava.guava_27.0.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.pluginapi_4.8.2",
+    pom = "repository/org/robolectric/pluginapi/4.8.2/pluginapi-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/pluginapi/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "com.google.guava.guava_27.0.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.plugins-maven-dependency-resolver_4.8.2",
+    pom = "repository/org/robolectric/plugins-maven-dependency-resolver/4.8.2/plugins-maven-dependency-resolver-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/plugins-maven-dependency-resolver/4.8.2",
+    deps = [
+        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.utils_4.8.2",
+        "com.google.guava.guava_27.0.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.resources_4.8.2",
+    pom = "repository/org/robolectric/resources/4.8.2/resources-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/resources/4.8.2",
+    deps = [
+        "org.robolectric.utils_4.8.2",
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.pluginapi_4.8.2",
+        "com.google.guava.guava_27.0.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.robolectric_4.8.2",
+    pom = "repository/org/robolectric/robolectric/4.8.2/robolectric-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/robolectric/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.junit_4.8.2",
+        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.resources_4.8.2",
+        "org.robolectric.sandbox_4.8.2",
+        "org.robolectric.utils_4.8.2",
+        "org.robolectric.utils-reflector_4.8.2",
+        "org.robolectric.plugins-maven-dependency-resolver_4.8.2",
+        "javax.inject.javax.inject_1",
+        "javax.annotation.javax.annotation-api_1.3.2",
+        "org.robolectric.shadows-framework_4.8.2",
+        "org.bouncycastle.bcprov-jdk15on_1.68",
+        "androidx.test.monitor_1.4.0",
+        "androidx.test.espresso.espresso-idling-resource_3.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.sandbox_4.8.2",
+    pom = "repository/org/robolectric/sandbox/4.8.2/sandbox-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/sandbox/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.utils_4.8.2",
+        "org.robolectric.shadowapi_4.8.2",
+        "org.robolectric.utils-reflector_4.8.2",
+        "javax.annotation.javax.annotation-api_1.3.2",
+        "javax.inject.javax.inject_1",
+        "org.ow2.asm.asm_9.2",
+        "org.ow2.asm.asm-commons_9.2",
+        "com.google.guava.guava_27.0.1-jre",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.shadowapi_4.8.2",
+    pom = "repository/org/robolectric/shadowapi/4.8.2/shadowapi-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/shadowapi/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.utils_4.8.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.shadows-framework_4.8.2",
+    pom = "repository/org/robolectric/shadows-framework/4.8.2/shadows-framework-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/shadows-framework/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.nativeruntime_4.8.2",
+        "org.robolectric.resources_4.8.2",
+        "org.robolectric.pluginapi_4.8.2",
+        "org.robolectric.sandbox_4.8.2",
+        "org.robolectric.shadowapi_4.8.2",
+        "org.robolectric.utils_4.8.2",
+        "org.robolectric.utils-reflector_4.8.2",
+        "androidx.test.monitor_1.4.0",
+        "com.almworks.sqlite4java.sqlite4java_1.0.392",
+        "com.ibm.icu.icu4j_70.1",
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.auto.value.auto-value-annotations_1.7.4",
+        "com.google.errorprone.error_prone_annotations_2.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.utils-reflector_4.8.2",
+    pom = "repository/org/robolectric/utils-reflector/4.8.2/utils-reflector-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/utils-reflector/4.8.2",
+    deps = [
+        "org.ow2.asm.asm_9.2",
+        "org.ow2.asm.asm-commons_9.2",
+        "org.ow2.asm.asm-util_9.2",
+        "org.robolectric.utils_4.8.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.robolectric.utils_4.8.2",
+    pom = "repository/org/robolectric/utils/4.8.2/utils-4.8.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/robolectric/utils/4.8.2",
+    deps = [
+        "org.robolectric.annotations_4.8.2",
+        "org.robolectric.pluginapi_4.8.2",
+        "javax.inject.javax.inject_1",
+        "javax.annotation.javax.annotation-api_1.3.2",
+        "com.google.guava.guava_27.0.1-jre",
+        "com.google.errorprone.error_prone_annotations_2.9.0",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -77018,6 +77410,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_parent_2.34.0",
+    pom = "repository/com/google/errorprone/error_prone_parent/2.34.0/error_prone_parent-2.34.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_parent/2.34.0",
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_parent_2.4.0",
     pom = "repository/com/google/errorprone/error_prone_parent/2.4.0/error_prone_parent-2.4.0.pom",
     repo_root_path = "repository",
@@ -77312,6 +77711,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.guava.guava-parent_32.1.1-jre",
+    pom = "repository/com/google/guava/guava-parent/32.1.1-jre/guava-parent-32.1.1-jre.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava-parent/32.1.1-jre",
+)
+
+maven_artifact(
     name = "com.google.guava.guava-parent_33.0.0-jre",
     pom = "repository/com/google/guava/guava-parent/33.0.0-jre/guava-parent-33.0.0-jre.pom",
     repo_root_path = "repository",
@@ -77539,6 +77945,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.testparameterinjector.test-parameter-injector-parent_1.18",
+    pom = "repository/com/google/testparameterinjector/test-parameter-injector-parent/1.18/test-parameter-injector-parent-1.18.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/testparameterinjector/test-parameter-injector-parent/1.18",
+)
+
+maven_artifact(
     name = "com.google.truth.extensions.truth-extensions-parent_0.44",
     pom = "repository/com/google/truth/extensions/truth-extensions-parent/0.44/truth-extensions-parent-0.44.pom",
     repo_root_path = "repository",
@@ -77590,6 +78003,13 @@ maven_artifact(
     pom = "repository/com/google/google/5/google-5.pom",
     repo_root_path = "repository",
     repo_path = "com/google/google/5",
+)
+
+maven_artifact(
+    name = "com.ibm.icu.icu4j-root_75.1",
+    pom = "repository/com/ibm/icu/icu4j-root/75.1/icu4j-root-75.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/ibm/icu/icu4j-root/75.1",
 )
 
 maven_artifact(
