@@ -574,11 +574,12 @@ class DslDecoratorUnitTest {
         assertThat(withSubBlock.subBlock.string).isEqualTo("a")
     }
 
-    abstract class WithNonNullableValue
-    @Inject @WithLazyInitialization(methodName = "lazyInit") constructor() {
+    abstract class WithNonNullableValue {
         @set:NonNullableSetter
         abstract var value: String?
 
+        @WithLazyInitialization
+        @Suppress("unused") // the call is injected by DslDecorator
         protected fun lazyInit() {
             value = "default value"
         }
