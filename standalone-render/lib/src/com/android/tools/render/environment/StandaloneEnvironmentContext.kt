@@ -89,4 +89,6 @@ class StandaloneEnvironmentContext(
     override fun createCrashReport(t: Throwable): CrashReport = ThrowableCrashReport(t)
 
     override fun isInTest(): Boolean = false
+
+    override val useRBytecodeParser: Boolean = true
 }
