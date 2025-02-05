@@ -33,8 +33,10 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.fixtures.FakeArtifactCollection
+import com.android.build.gradle.internal.fixtures.FakeComponentIdentifier
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeResolutionResult
+import com.android.build.gradle.internal.fixtures.FakeResolvedArtifactResult
 import com.android.build.gradle.internal.fixtures.addDependencyEdge
 import com.android.build.gradle.internal.fixtures.createModuleComponent
 import com.android.build.gradle.internal.fixtures.createProjectComponent
@@ -59,6 +61,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.net.URI
@@ -196,6 +199,33 @@ class PerModuleReportDependenciesTaskTest {
         assertThat(allDeps.libraryDependenciesCount).isEqualTo(expected.libraryDependenciesCount)
         assertThat(allDeps.moduleDependenciesCount).isEqualTo(expected.moduleDependenciesCount)
         assertThat(allDeps.repositoriesCount).isEqualTo(expected.repositoriesCount)
+    }
+
+    // b/393834321
+    @Test
+    fun generateReportWithLargeFileInvolved() {
+        val largeFile = File(temporaryFolder.newFolder("demo"), "large.file").also {
+            it.bufferedWriter().use { out ->
+                val kilobyte = "0".repeat(1000)
+                repeat(2_200_000) {
+                    out.write(kilobyte)
+                }
+            }
+        }
+        assertThat(largeFile.length()).isGreaterThan(Int.MAX_VALUE.toLong())
+        task.runtimeClasspathArtifacts.set(
+            FakeArtifactCollection(
+                mutableSetOf(
+                    FakeResolvedArtifactResult(
+                        largeFile, FakeComponentIdentifier("Large file")
+                    )
+                )
+            )
+        )
+        val rootComponent = createProjectComponent("root_module")
+        val stubbedGraph = FakeResolutionResult(rootComponent)
+        task.getRootComponent().set(stubbedGraph.root)
+        task.taskAction()
     }
 }
 
