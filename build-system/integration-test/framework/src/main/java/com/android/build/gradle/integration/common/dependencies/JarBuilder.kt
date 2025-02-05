@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.dependencies
 
 import com.android.testutils.MavenRepoGenerator.Library
-import com.android.testutils.TestInputsGenerator
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_SUPER
@@ -72,6 +71,11 @@ interface JarBuilder {
      * adds multiple text files with the provided content
      */
     fun addTextFiles(entries: List<Pair<String, String>>): JarBuilder
+
+    /**
+     * adds a binary file with the provided content
+     */
+    fun addBinaryFile(path: String, content: ByteArray): JarBuilder
 }
 
 /**
@@ -92,6 +96,7 @@ interface JarWithDependenciesBuilder: JarBuilder {
     override fun addClassWithEmptyMethods(classBinaryName: String, vararg namesAndDescriptors: String): JarWithDependenciesBuilder
     override fun addTextFile(path: String, content: String): JarWithDependenciesBuilder
     override fun addTextFiles(entries: List<Pair<String, String>>): JarWithDependenciesBuilder
+    override fun addBinaryFile(path: String, content: ByteArray): JarWithDependenciesBuilder
 }
 
 // ----------
@@ -136,6 +141,11 @@ internal open class JarBuilderImpl: JarBuilder {
         entries.forEach {
             addTextFile(it.first, it.second)
         }
+        return this
+    }
+
+    override fun addBinaryFile(path: String, content: ByteArray): JarBuilder {
+        jarContentBuilder.addBinaryEntry(path, content)
         return this
     }
 }
@@ -196,16 +206,20 @@ internal class JarWithDependenciesBuilderImpl(
         super.addTextFiles(entries)
         return this
     }
+
+    override fun addBinaryFile(path: String, content: ByteArray): JarWithDependenciesBuilder {
+        super.addBinaryFile(path, content)
+        return this
+    }
 }
 
-
-private class JarContentBuilder {
+internal class JarContentBuilder {
     private val byteArray = ByteArrayOutputStream()
     private val zip = ZipOutputStream(byteArray)
     private var closed = false
 
     internal fun addEmptyClass(binaryClassName: String) {
-        if (closed) throw RuntimeException("cannot call addClass after getContent")
+        if (closed) throw RuntimeException("cannot call addEmptyClass after getContent")
         zip.putNextEntry(ZipEntry("$binaryClassName.class"))
         zip.write(createClass(binaryClassName))
         zip.closeEntry()
@@ -215,7 +229,7 @@ private class JarContentBuilder {
         binaryClassName: String,
         vararg namesAndDescriptors: String
     ) {
-        if (closed) throw RuntimeException("cannot call addClass after getContent")
+        if (closed) throw RuntimeException("cannot call addClassWithEmptyMethods after getContent")
         zip.putNextEntry(ZipEntry("$binaryClassName.class"))
         zip.write(createClass(binaryClassName) {
             for (nameAndDescriptor: String in namesAndDescriptors) {
@@ -250,9 +264,16 @@ private class JarContentBuilder {
     }
 
     internal fun addTextEntry(path: String, content: String) {
-        if (closed) throw RuntimeException("cannot call addClass after getContent")
+        if (closed) throw RuntimeException("cannot call addTextEntry after getContent")
         zip.putNextEntry(ZipEntry(path))
         zip.write(content.toByteArray(Charsets.UTF_8))
+        zip.closeEntry()
+    }
+
+    internal fun addBinaryEntry(path: String, content: ByteArray) {
+        if (closed) throw RuntimeException("cannot call addBinaryEntry after getContent")
+        zip.putNextEntry(ZipEntry(path))
+        zip.write(content)
         zip.closeEntry()
     }
 
@@ -287,5 +308,3 @@ private class JarContentBuilder {
         return byteArray.toByteArray()
     }
 }
-
-internal fun emptyJar(): ByteArray = TestInputsGenerator.jarWithEmptyClasses(listOf())

@@ -72,7 +72,7 @@ internal class AndroidLibraryImpl(
     location,
     projectDefinition,
     namespace,
-), AndroidLibraryProject, GeneratesAar by GeneratesAarDelegate(location) {
+), AndroidLibraryProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
     private val apkDelegate = GeneratesApkDelegate(location)
 
     override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{

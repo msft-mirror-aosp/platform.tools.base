@@ -169,8 +169,7 @@ class FusedLibraryMergeResourcesTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
-            containsResourceWithContent(
-                "values/values.xml",
+            androidResourceAsText("values/values.xml").isEqualTo(
                 //language=xml
                 """
                     <?xml version="1.0" encoding="utf-8"?>
@@ -180,9 +179,9 @@ class FusedLibraryMergeResourcesTaskTest {
                         <string name="string_from_remote_lib">Remote String</string>
                         <string name="string_overridden">androidLib2</string>
                     </resources>
-                """.trimIndent())
-            containsResourceWithContent(
-                "layout/layout.xml",
+                """.trimIndent()
+            )
+            androidResourceAsText("layout/layout.xml").isEqualTo(
                 //language=xml
                 """
                     <?xml version="1.0" encoding="utf-8"?>
@@ -203,7 +202,8 @@ class FusedLibraryMergeResourcesTaskTest {
                             android:layout_weight="1"
                             android:text="TextView" />
                     </LinearLayout>
-                """.trimIndent())
+                """.trimIndent()
+            )
         }
     }
 
@@ -213,9 +213,7 @@ class FusedLibraryMergeResourcesTaskTest {
         val app = build.androidApplication()
 
         build.executor.run(":fusedLib1:assemble")
-        val aarFile = build.fusedLibrary(":fusedLib1").withAar(AarSelector.NO_BUILD_TYPE) {
-            file
-        }
+        val aarFile = build.fusedLibrary(":fusedLib1").getAarFile(AarSelector.NO_BUILD_TYPE)
 
         app.reconfigure {
             dependencies {

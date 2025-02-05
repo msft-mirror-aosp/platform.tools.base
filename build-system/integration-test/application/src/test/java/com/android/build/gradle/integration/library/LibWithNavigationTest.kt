@@ -56,7 +56,7 @@ class LibWithNavigationTest {
 
         build.executor.run("clean", "$DEFAULT_LIB_PATH:assembleRelease")
         library.assertAar(AarSelector.RELEASE) {
-            manifestFile().contains("<nav-graph android:value=\"@navigation/nav1\" />")
+            manifest().contains("<nav-graph android:value=\"@navigation/nav1\" />")
         }
     }
 

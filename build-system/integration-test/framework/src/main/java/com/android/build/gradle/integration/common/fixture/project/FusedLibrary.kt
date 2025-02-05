@@ -102,7 +102,7 @@ internal class FusedLibraryImpl(
 ) : BaseAndroidProjectImpl<FusedLibraryDefinition>(
     location,
     projectDefinition,
-), FusedLibraryProject, GeneratesAar by GeneratesAarDelegate(location) {
+), FusedLibraryProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 

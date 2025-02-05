@@ -17,39 +17,39 @@
 package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.Truth.assertAbout
+import com.google.common.truth.IterableSubject
+import com.google.common.truth.Subject
+import org.objectweb.asm.tree.ClassNode
 
-/**
- * Generic Zip archive Truth subject
- */
-class ZipSubject(
+class ClassSubject(
     metadata: FailureMetadata,
-    actual: Zip
-): AbstractZipSubject<ZipSubject, Zip>(metadata, actual) {
+    actual: ClassNode
+): Subject<ClassSubject, ClassNode>(metadata, actual) {
 
     companion object {
         /**
-         * Returns a [com.android.build.gradle.integration.common.output.ZipSubject]
-         */
-        fun assertThat(zip: Zip): ZipSubject {
-            return assertAbout(zips()).that(zip)
-        }
-
-        /**
-         * Creates a [com.android.build.gradle.integration.common.output.ZipSubject] and
-         * configures it with the given action
-         */
-        fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
-            action(assertThat(zip))
-        }
-
-        /**
          * Method for getting the subject factory (for use with assertAbout())
          */
-        internal fun zips(): Factory<ZipSubject, Zip> {
-            return Factory<ZipSubject, Zip> { metadata, actual ->
-                ZipSubject(metadata, actual)
+        internal fun classNodes(): Factory<ClassSubject, ClassNode> {
+            return Factory<ClassSubject, ClassNode> { metadata, actual ->
+                ClassSubject(metadata, actual)
             }
         }
+    }
+
+    fun interfaces(): IterableSubject {
+        return check("interfaces()").that(actual().interfaces)
+    }
+
+    fun innerClasses(): IterableSubject {
+        return check("innerClasses()").that(actual().innerClasses.map { it.name })
+    }
+
+    fun fields(): IterableSubject {
+        return check("fields()").that(actual().fields.map { it.name })
+    }
+
+    fun methods(): IterableSubject {
+        return check("methods()").that(actual().methods.map { it.name })
     }
 }

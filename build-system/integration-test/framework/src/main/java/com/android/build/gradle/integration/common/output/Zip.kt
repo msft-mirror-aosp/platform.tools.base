@@ -33,10 +33,13 @@ import kotlin.io.path.readText
 
 /**
  * Base class for outputs. This handles core Zip features
+ *
+ * @param archivePath the path to the archive. if invalid [status] will no be [Status.EXISTS]
+ * @param name the name of the zip when displaying assertion
  */
 open class Zip(
-    val archivePath: Path,
-    val name: String = archivePath.fileName.toString(),
+    val archivePath: Path?,
+    val name: String = archivePath?.fileName?.toString() ?: "missing zip path",
 ): AutoCloseable {
     enum class Status { EXISTS, DIRECTORY, DOES_NOT_EXIST }
 
@@ -46,7 +49,10 @@ open class Zip(
     val status: Status
 
     init {
-        if (archivePath.isDirectory()) {
+        if (archivePath == null) {
+            status = Status.DOES_NOT_EXIST
+            zip = null
+        } else if (archivePath.isDirectory()) {
             status = Status.DIRECTORY
             zip = null
         } else if (archivePath.fileSystem != FileSystems.getDefault()) {
@@ -70,23 +76,20 @@ open class Zip(
      * Returns a zip entry given a name, returns null if it does not exist
      */
     fun getEntry(path: String): Path? {
-        val path = path.asPath()
+        val path = path.makeAbsolute()
 
         val entry = zip?.getPath(path) ?: return null
         return if (entry.exists()) entry else null
     }
 
-    fun getEntries(pattern: Pattern? = null): List<Path> {
-        val zip = this.zip ?: return listOf()
+    fun getEntries(pattern: Pattern): List<String> {
+        return getEntries { pattern.matcher(it.toString()).matches() }
+    }
 
-        var stream = Files.walk(zip.getPath("/"))
-            .filter { it.isRegularFile() }
-
-        stream = pattern?.let { p ->
-            stream.filter { p.matcher(it.toString()).matches() }
-        } ?: stream
-
-        return stream.collect(Collectors.toList()).toList()
+    fun getEntries(filter: ((String) -> Boolean)? = null): List<String> {
+        return filter?.let { f ->
+            allEntries.filter(f)
+        } ?: allEntries
     }
 
     fun innerZip(path: String): Zip? {
@@ -95,7 +98,8 @@ open class Zip(
         return innerZips.computeIfAbsent(path) {
 
             // TODO inject a TemporaryFolder rule?
-            val temp = Files.createTempFile(archivePath.fileName.toString(), "_inner_zip.zip")
+            // archivePath here must be non-null since zip is fine
+            val temp = Files.createTempFile(archivePath!!.fileName.toString(), "_inner_zip.zip")
             FileUtils.copyFile(zipPath, temp)
             temp.toFile().deleteOnExit()
 
@@ -104,7 +108,7 @@ open class Zip(
     }
 
     fun textFile(path: String): String? {
-        val path = path.asPath()
+        val path = path.makeAbsolute()
 
         val zipPath = getEntry(path) ?: return null
 
@@ -116,7 +120,7 @@ open class Zip(
     }
 
     fun binaryFile(path: String): ByteArray? {
-        val path = path.asPath()
+        val path = path.makeAbsolute()
 
         val zipPath = getEntry(path) ?: return null
 
@@ -136,11 +140,21 @@ open class Zip(
         return "Zip(name='$name', status=$status)"
     }
 
+    private val allEntries: List<String> by lazy(LazyThreadSafetyMode.NONE) {
+        val zip = this.zip ?: return@lazy listOf()
+
+        Files.walk(zip.getPath("/"))
+            .filter { it.isRegularFile() }
+            .map { it.toString().substring(1) }
+            .collect(Collectors.toList())
+            .toList()
+    }
+
     // --------------
 
     /**
      * Ensures the zip archive path is correct by prepending a '/' if needed.
      */
-    protected fun String.asPath() = if (startsWith('/')) this else "/$this"
+    protected fun String.makeAbsolute() = "/$this"
 
 }

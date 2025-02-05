@@ -31,6 +31,7 @@ import java.util.zip.ZipFile
 import com.android.SdkConstants
 
 /** Truth support for aar files.  */
+@Deprecated("Use the new com.android.build.gradle.integration.common.output.AarSubject instead")
 class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
     AbstractAndroidSubject<AarSubject, Aar>(failureMetadata, subject) {
     init {
@@ -50,7 +51,7 @@ class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
         try {
             val entry = actual().getEntry("R.txt")
             Preconditions.checkNotNull(entry)
-            return Truth.assertThat(String(Files.readAllBytes(entry), Charsets.UTF_8))
+            return check("textSymbolFile())").that(String(Files.readAllBytes(entry), Charsets.UTF_8))
         } catch (e: IOException) {
             throw UncheckedIOException(e)
         }
@@ -58,7 +59,7 @@ class AarSubject(failureMetadata: FailureMetadata, subject: Aar) :
 
     fun manifestFile(): StringSubject {
         try {
-            return Truth.assertThat(actual().androidManifestContentsAsString)
+            return check("manifestFile()").that(actual().androidManifestContentsAsString)
         } catch (e: IOException) {
             throw UncheckedIOException(e)
         }

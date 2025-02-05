@@ -137,7 +137,7 @@ internal class AarBuilderImpl(
         }
     )
 
-    private fun toLibraryData(): LibraryData {
+    internal fun toLibraryData(): LibraryData {
         return LibraryData(
             generateAarWithContent(
                 groupId, // not actually used since we also pass a manifest string

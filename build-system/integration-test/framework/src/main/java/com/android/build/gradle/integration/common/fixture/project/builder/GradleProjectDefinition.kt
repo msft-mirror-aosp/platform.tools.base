@@ -36,6 +36,10 @@ import kotlin.io.path.writeText
  * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
 interface GradleProjectDefinition: ExtensionAwareDefinition {
+
+    /**
+     * the Gradle path of the project
+     */
     val path: String
 
     /**

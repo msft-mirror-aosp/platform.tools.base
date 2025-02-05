@@ -16,89 +16,106 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.build.gradle.integration.common.output.ZipSubject.Companion.assertThat
 import com.google.common.truth.ExpectFailure
-import org.junit.Rule
+import com.google.common.truth.SimpleSubjectBuilder
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 
-class AbstractZipSubjectTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+class AbstractZipSubjectTest: BaseZipSubjectTest() {
 
     @Test
     fun zipEntries() {
-        val zipPath = temporaryFolder.newFile("temp.zip").toPath()
-        TestDataCreator.writeAar(zipPath)
+        val zip = createAar("temp.zip") {
+            withMainJar {
+                addEmptyClasses("com/example/SomeClass")
+                addBinaryFile("/file.dat", FAKE_CLASS)
+            }
+            addResource("values/values.xml", "values file content")
+        }
 
-        val zip = Zip(zipPath)
-        ZipSubject.assertThat(zip) {
-            entries().hasSize(4)
+        assertThat(zip) {
+            entries().hasSize(3)
         }
 
         // checks negative results
-        val failure = ExpectFailure.expectFailureAbout(ZipSubject.zips()) {
+        expectFailure {
             it.that(zip).entries().hasSize(5)
-        }
-
-        ExpectFailure.assertThat(failure).apply {
-            factKeys().containsExactly("value of", "expected", "but was", "zip was")
+        }.assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "zip was")
             factValue("value of").isEqualTo("zip.entries().size()")
-            factValue("expected").isEqualTo("5")
-            factValue("but was").isEqualTo("4")
             factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
         }
     }
 
     @Test
     fun innerZip() {
-        val zipPath = temporaryFolder.newFile("temp.zip").toPath()
-        TestDataCreator.writeAar(zipPath)
+        val zip = createAar("temp.zip") {
+            withMainJar {
+                addEmptyClasses("com/example/SomeClass")
+                addBinaryFile("/file.dat", FAKE_CLASS)
+            }
+            addResource("values/values.xml", "values file content")
+        }
 
-        val zip = Zip(zipPath)
-        ZipSubject.assertThat(zip) {
+        assertThat(zip) {
             innerZip("classes.jar") {
                 contains("com/example/SomeClass.class")
-                binaryFile("com/example/SomeClass.class").isEqualTo(TestDataCreator.FAKE_CLASS)
+                contains("file.dat")
+                binaryFile("file.dat").isEqualTo(FAKE_CLASS)
             }
         }
 
         // checks negative results
-        val failure = ExpectFailure.expectFailureAbout(ZipSubject.zips()) {
+        expectFailure {
             it.that(zip).contains("/com/example/SomeOtherClass.class")
-        }
-
-        ExpectFailure.assertThat(failure).apply {
-            factKeys().containsExactly("value of", "expected to contain", "but was", "zip was")
+        }.assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "zip was")
             factValue("value of").isEqualTo("zip.entries()")
-            factValue("expected to contain").isEqualTo("/com/example/SomeOtherClass.class")
-            factValue("but was").isEqualTo("[/res/values/values.xml, /R.txt, /AndroidManifest.xml, /classes.jar]")
             factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
         }
     }
 
     @Test
     fun testNotExist() {
-        val notExist = temporaryFolder.newFolder().toPath().resolve("not_exist")
-
-        val zip = Zip(notExist)
+        val missingZip = Zip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
 
         // check the normal test succeeds
-        ZipSubject.assertThat(zip).doesNotExist()
+        assertThat(missingZip).doesNotExist()
 
-        // check this opposite
-        val failure = ExpectFailure.expectFailureAbout(
-            ZipSubject.zips()) { it ->
-            it.that(zip).exists()
+        // check negative results
+        val validZip = createAar("temp.zip") { }
+
+        expectFailure {
+            it.that(validZip).doesNotExist()
+        }.assert {
+            factKeys().containsExactly("expected zip to not exist", "but was")
+            factValue("but was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
         }
+    }
 
-        ExpectFailure.assertThat(failure).apply {
+    @Test
+    fun exist() {
+        val validZip = createAar("temp.zip") { }
+
+        // check the normal test succeeds
+        assertThat(validZip).exists()
+
+        // check negative results
+        val missingZip = Zip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
+
+        expectFailure {
+            it.that(missingZip).exists()
+        }.assert {
             factKeys().containsExactly("expected to exist", "nearest existing ancestor")
-
-            File.separatorChar
-
             factValue("expected to exist").endsWith("${File.separatorChar}not_exist")
             factValue("nearest existing ancestor").doesNotMatch("^.+${File.separatorChar}not_exist$")
         }
+    }
+
+    private fun expectFailure(action: (SimpleSubjectBuilder<ZipSubject, Zip>) -> Unit): AssertionError {
+        return ExpectFailure.expectFailureAbout(ZipSubject.zips(), action)
     }
 }

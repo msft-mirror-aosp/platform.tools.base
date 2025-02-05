@@ -18,35 +18,79 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.Truth
 import org.junit.Assert
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import java.nio.file.Files
+import kotlin.io.path.readText
 
 @SuppressWarnings("PathAsIterable")
-class ZipTest {
-
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+class ZipTest: BaseZipSubjectTest() {
 
     @Test
-    fun checkEmbeddedZip() {
-        val zipPath = temporaryFolder.newFile("temp.zip").toPath()
-        TestDataCreator.writeAar(zipPath)
+    fun getEntries() {
+        val zip = createJar("temp.zip") {
+            addTextFile("/foo.txt", "foo")
+            addTextFile("/something/bar.txt", "bar")
+        }
 
-        val zip = Zip(zipPath)
-        Truth.assertThat(zip.getEntries()).hasSize(4)
+        Truth.assertThat(zip.getEntries()).containsExactly("foo.txt", "something/bar.txt")
+    }
+
+    @Test
+    fun getEntry() {
+        val zip = createJar("temp.zip") {
+            addTextFile("/foo.txt", "foo")
+            addTextFile("/something/bar.txt", "bar")
+        }
+
+        val path = zip.getEntry("foo.txt")
+
+        Truth.assertThat(path).isNotNull()
+        Truth.assertThat(path!!.readText()).isEqualTo("foo")
+    }
+
+    @Test
+    fun textFile() {
+        val zip = createJar("temp.zip") {
+            addTextFile("/foo.txt", "foo")
+            addTextFile("/something/bar.txt", "bar")
+        }
+
+        val content = zip.textFile("foo.txt")
+
+        Truth.assertThat(content).isEqualTo("foo")
+    }
+
+    @Test
+    fun binaryFile() {
+        val zip = createJar("temp.zip") {
+            addBinaryFile("/foo.data", FAKE_CLASS)
+            addTextFile("/something/bar.txt", "bar")
+        }
+
+        val content = zip.binaryFile("foo.data")
+
+        Truth.assertThat(content).isEqualTo(FAKE_CLASS)
+    }
+
+    @Test
+    fun innerZip() {
+        val zip = createAar("temp.zip") {
+            withMainJar {
+                addEmptyClasses("com/example/SomeClass")
+                addBinaryFile("/file.dat", FAKE_CLASS)
+            }
+        }
 
         val innerZip = zip.innerZip("classes.jar")
         Truth.assertWithMessage("innerZip(classes.jar)").that(innerZip).isNotNull()
 
-        val classFilePath = innerZip!!.getEntry("com/example/SomeClass.class")
-        Truth.assertWithMessage("getEntry(com/example/SomeClass.class)").that(classFilePath).isNotNull()
-        Truth.assertThat(Files.readAllBytes(classFilePath!!)).isEqualTo(TestDataCreator.FAKE_CLASS)
+        Truth.assertWithMessage("innerZip(classes.jar)").that(innerZip!!.getEntries()).containsExactly(
+            "file.dat",
+            "com/example/SomeClass.class"
+        )
 
-        val classFileContent = innerZip.binaryFile("com/example/SomeClass.class")
-        Truth.assertWithMessage("binaryFile(com/example/SomeClass.class)").that(classFileContent).isNotNull()
-        Truth.assertThat(classFileContent!!).isEqualTo(TestDataCreator.FAKE_CLASS)
+        val nestedContent = innerZip.binaryFile("file.dat")
+
+        Truth.assertWithMessage("innerZip(classes.jar).binaryFile(file.dat)").that(nestedContent).isEqualTo(FAKE_CLASS)
     }
 
     @Test
@@ -60,10 +104,14 @@ class ZipTest {
 
     @Test
     fun invalidFileSystem() {
-        val zipPath = temporaryFolder.newFile("temp.zip").toPath()
-        TestDataCreator.writeAar(zipPath)
+        val zip = createAar("temp.zip") {
+            withMainJar {
+                addEmptyClasses("com/example/SomeClass")
+                addBinaryFile("/file.dat", FAKE_CLASS)
+            }
+            addResource("values/values.xml", "values file content")
+        }
 
-        val zip = Zip(zipPath)
         val entry = zip.getEntry("classes.jar")!!
         Assert.assertNotNull(entry)
         try {

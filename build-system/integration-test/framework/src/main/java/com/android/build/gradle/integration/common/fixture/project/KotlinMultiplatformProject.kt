@@ -129,7 +129,7 @@ internal class KotlinMultiplatformProjectImpl(
 ) : GradleProjectImpl<KotlinMultiplatformDefinition>(
     location,
     projectDefinition,
-), KotlinMultiplatformProject, GeneratesAar by GeneratesAarDelegate(location) {
+), KotlinMultiplatformProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): KotlinMultiplatformProject =
         ReversibleKotlinMultiplatformProject(this, projectModification)

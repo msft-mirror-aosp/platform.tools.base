@@ -64,7 +64,7 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      */
     fun doesNotExist() {
         if (actual().exists()) {
-            failWithoutActual(Fact.simpleFact("does not exist"))
+            failWithActual(Fact.simpleFact("expected zip to not exist"))
         }
     }
 
@@ -72,12 +72,24 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      * Checks if the zip file contains a given path.
      *
      * This is a shortcut to `entries().contains(path)`
+     *
+     * @param path the path of the item which must not include a leading /
      */
     fun contains(path: String) {
         exists()
-
-        val path = path.asPath()
         entries().contains(path)
+    }
+
+    /**
+     * Checks if the zip file does not contain a given path.
+     *
+     * This is a shortcut to `entries().doesNotContain(path)`
+     *
+     * @param path the path of the item which must not include a leading /
+     */
+    fun doesNotContain(path: String) {
+        exists()
+        entries().doesNotContain(path)
     }
 
     // --------------
@@ -87,44 +99,48 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      */
     fun entries(): IterableSubject {
         exists()
-        return check("entries()").that(actual().getEntries().map { it.toString() })
+        return check("entries()").that(actual().getEntries())
     }
 
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
+     *
+     * @param path the path of the item which must not include a leading /
      */
     fun textFile(path: String): StringSubject {
-        val path = path.asPath()
         contains(path)
         return check("textFile($path)").that(actual().textFile(path))
     }
 
     /**
      * Returns a [PrimitiveByteArraySubject] with the binary content of the file at the given path.
+     *
+     * @param path the path of the item which must not include a leading /
      */
     fun binaryFile(path: String): PrimitiveByteArraySubject {
-        val path = path.asPath()
         contains(path)
         return check("binaryFile($path)").that(actual().binaryFile(path))
     }
 
     /**
      * Returns a [ZipSubject] with the zip content of the file at the given path.
+     *
+     * @param path the path of the item which must not include a leading /
      */
     fun innerZip(path: String): ZipSubject {
-        val path = path.asPath()
         contains(path)
         return check("innerZip($path)").about(zips()).that(actual().innerZip(path))
     }
 
+    /**
+     * creates a [ZipSubject] with the zip content of the file at the given path,
+     * and configures it with the provided action
+     *
+     * @param path the path of the item which must not include a leading /
+     */
     fun innerZip(path: String, action: ZipSubject.() -> Unit) {
         action(innerZip(path))
     }
 
     // --------------
-
-    /**
-     * Ensures the zip archive path is correct by prepending a '/' if needed.
-     */
-    protected fun String.asPath() = if (startsWith('/')) this else "/$this"
 }
