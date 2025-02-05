@@ -70,6 +70,7 @@ import java.io.EOFException
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
+import java.nio.channels.InterruptedByTimeoutException
 
 /**
  * Reads [JdwpProcessProperties] from a JDWP connection.
@@ -150,6 +151,13 @@ internal class UsingJdwpSessionFlowUpdater(
                         // On API 28+, we get a timeout if there is an active JDWP connection to the
                         // process **or** if the collector did not collect all the data it wanted
                         // (which is common in case there is no WAIT DDMS packet).
+                        logger.debug { "Timeout exceeded while collecting process properties" }
+                        null // Don't record timeout, it is "normal" termination
+                    }
+
+                    is InterruptedByTimeoutException -> {
+                        // This exception indicates that the set timeout for the AsyncIO operation
+                        // has been exceeded
                         logger.debug { "Timeout exceeded while collecting process properties" }
                         null // Don't record timeout, it is "normal" termination
                     }
