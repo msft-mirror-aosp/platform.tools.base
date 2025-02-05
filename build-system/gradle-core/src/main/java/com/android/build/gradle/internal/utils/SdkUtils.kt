@@ -75,7 +75,7 @@ fun parseTargetHash(targetHash : String): CompileData  {
         return CompileData(
             vendorName = addonMatcher.group(1),
             addonName = addonMatcher.group(2),
-            apiLevel = addonMatcher.group(3).toInt()
+            apiLevel = addonMatcher.group(3).toInt(),
         )
     }
 
@@ -119,6 +119,6 @@ internal fun createTargetSdkVersion(targetSdk: Int?, targetSdkPreview: String?) 
         apiVersion.run { AndroidVersionImpl(apiLevel, codename) }
     } else null
 
-private val API_PATTERN: Pattern = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?(-ext(\\d+))?")
-private val FULL_PREVIEW_PATTERN: Pattern = Pattern.compile("^android-([A-Z][0-9A-Za-z_]*)$")
-private val ADDON_PATTERN: Pattern = Pattern.compile("^(.+):(.+):(\\d+)$")
+private val API_PATTERN = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?(-ext(\\d+))?")
+private val FULL_PREVIEW_PATTERN = Pattern.compile("android-([A-Z]\\w*)")
+private val ADDON_PATTERN = Pattern.compile("([^:]+):([^:]+):(\\d+)")
