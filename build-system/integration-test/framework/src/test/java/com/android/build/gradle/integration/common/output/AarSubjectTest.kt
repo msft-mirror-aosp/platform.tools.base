@@ -222,22 +222,22 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }
 
         assertThat(aar) {
-            androidResources().contains("values/values.xml")
+            androidResources().entries().containsExactly("values/values.xml")
         }
 
         // test negative results
         expectFailure {
-            it.that(aar).androidResources().hasSize(5)
+            it.that(aar).androidResources().entries().hasSize(5)
         }.assert {
             // we don't care about testing the 'expected' and 'but was' facts
             factKeys().containsAtLeast("value of", "aar was")
-            factValue("value of").isEqualTo("aar.androidResources().size()")
+            factValue("value of").isEqualTo("aar.androidResources().entries().size()")
             factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
         }
     }
 
     @Test
-    fun androidResourceAsText() {
+    fun androidResource_textFile() {
         val aar = createAar("valid.aar") {
             withManifest("foo")
             addResource("values/values.xml", "foo")
@@ -245,27 +245,27 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }
 
         assertThat(aar) {
-            androidResourceAsText("values/values.xml").isEqualTo("foo")
+            androidResources().textFile("values/values.xml").isEqualTo("foo")
         }
 
         // test negative results.
         expectFailure {
-            it.that(aar).androidResourceAsText("values/values.xml").contains("bar")
+            it.that(aar).androidResources().textFile("values/values.xml").contains("bar")
         }.assert {
             // we don't care about testing the 'expected' and 'but was' facts
             factKeys().containsAtLeast("value of", "aar was")
-            factValue("value of").isEqualTo("aar.androidResourceAsText(values/values.xml)")
+            factValue("value of").isEqualTo("aar.androidResources().textFile(values/values.xml)")
             factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
         }
 
         // check querying missing file has right error.
         expectFailure {
-            it.that(aar).androidResourceAsText("values/missing.xml")
+            it.that(aar).androidResources().textFile("values/missing.xml")
         }.assert {
             // we want to check for a specific expected/but was here as we want to validate
             // which error is thrown
             factKeys().containsAtLeast("value of", "aar was", "expected to contain", "but was")
-            factValue("value of").isEqualTo("aar.androidResources()")
+            factValue("value of").isEqualTo("aar.androidResources().entries()")
             factValue("expected to contain").isEqualTo("values/missing.xml")
             // we want to make sure that the list only contains the /res folder. This
             // should not contains any other files (e.g. manifest, classes.jar, etc...)
@@ -275,7 +275,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
     }
 
     @Test
-    fun androidResourceAsBytes() {
+    fun androidResource_binaryFile() {
         val aar = createAar("valid.aar") {
             withManifest("foo")
             addResource("values/values.xml", "foo")
@@ -283,27 +283,27 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }
 
         assertThat(aar) {
-            androidResourceAsBytes("drawable/foo.png").isEqualTo(FAKE_CLASS)
+            androidResources().binaryFile("drawable/foo.png").isEqualTo(FAKE_CLASS)
         }
 
         // test negative results.
         expectFailure {
-            it.that(aar).androidResourceAsBytes("drawable/foo.png").isEmpty()
+            it.that(aar).androidResources().binaryFile("drawable/foo.png").isEmpty()
         }.assert {
             // we don't care about testing the 'expected' and 'but was' facts
             factKeys().containsAtLeast("value of", "aar was")
-            factValue("value of").isEqualTo("aar.androidResourceAsBytes(drawable/foo.png)")
+            factValue("value of").isEqualTo("aar.androidResources().binaryFile(drawable/foo.png)")
             factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
         }
 
         // check querying missing file has right error.
         expectFailure {
-            it.that(aar).androidResourceAsBytes("drawable/missing.png")
+            it.that(aar).androidResources().binaryFile("drawable/missing.png")
         }.assert {
             // we want to check for a specific expected/but was here as we want to validate
             // which error is thrown
             factKeys().containsAtLeast("value of", "aar was", "expected to contain", "but was")
-            factValue("value of").isEqualTo("aar.androidResources()")
+            factValue("value of").isEqualTo("aar.androidResources().entries()")
             factValue("expected to contain").isEqualTo("drawable/missing.png")
             // we want to make sure that the list only contains the /res folder. This
             // should not contains any other files (e.g. manifest, classes.jar, etc...)
@@ -311,6 +311,30 @@ class AarSubjectTest: BaseZipSubjectTest() {
             factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
         }
     }
+
+    @Test
+    fun assets() {
+        val aar = createAar("valid.aar") {
+            addAsset("foo.txt", "foo")
+            addAsset("bar.txt", "bar")
+            addAsset("bar.data", FAKE_CLASS)
+        }
+
+        assertThat(aar) {
+            assets().entries().containsExactly("foo.txt", "bar.txt", "bar.data")
+        }
+
+        // test negative results
+        expectFailure {
+            it.that(aar).assets().entries().hasSize(5)
+        }.assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "aar was")
+            factValue("value of").isEqualTo("aar.assets().entries().size()")
+            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+        }
+    }
+
 
     @Test
     fun textSymbolFile() {

@@ -70,6 +70,7 @@ interface AarBuilder {
      * The key is the path of the file, under the `res` folder.
      */
     fun addResources(resMap: Map<String, String>): AarBuilder
+
     /**
      * Adds an android resources to the AAR.
      *
@@ -77,6 +78,7 @@ interface AarBuilder {
      * @param content the text content of the resources
      */
     fun addResource(path: String, content: String): AarBuilder
+
     /**
      * Adds an android resources to the AAR.
      *
@@ -84,6 +86,29 @@ interface AarBuilder {
      * @param content the content of the resources
      */
     fun addResource(path: String, content: ByteArray): AarBuilder
+
+    /**
+     * Adds android asset to the AAR.
+     *
+     * The key is the path of the file, under the `res` folder.
+     */
+    fun addAssets(assetMap: Map<String, String>): AarBuilder
+
+    /**
+     * Adds an android asset to the AAR.
+     *
+     * @param path the pat of the file, under the `res` folder.
+     * @param content the text content of the resources
+     */
+    fun addAsset(path: String, content: String): AarBuilder
+
+    /**
+     * Adds an android asset to the AAR.
+     *
+     * @param path the pat of the file, under the `res` folder.
+     * @param content the content of the resources
+     */
+    fun addAsset(path: String, content: ByteArray): AarBuilder
 
     /**
      * Configures the lint jar with the provided lambda
@@ -117,6 +142,7 @@ internal class AarBuilderImpl(
     private var lintJar: ByteArray? = null
     private var manifest: String? = null
     private val resources = mutableMapOf<String, ByteArray>()
+    private val extraFiles = mutableMapOf<String, ByteArray>()
     private var fixtures: LibraryData? = null
     private val dependencies = mutableListOf<String>()
 
@@ -147,7 +173,7 @@ internal class AarBuilderImpl(
                 apiJar,
                 lintJar,
                 manifest ?: """<manifest package="$groupId"></manifest>""",
-                emptyList() // FIXME
+                extraFiles
             ),
             dependencies
         )
@@ -214,6 +240,29 @@ internal class AarBuilderImpl(
 
     override fun addResource(path: String, content: ByteArray): AarBuilder {
         resources[path] = content
+        return this
+    }
+
+    override fun addAssets(assetMap: Map<String, String>): AarBuilder {
+        for ((path, content) in assetMap) {
+            extraFiles["assets/$path"] = content.toByteArray(Charset.defaultCharset())
+        }
+        return this
+    }
+
+    override fun addAsset(
+        path: String,
+        content: String
+    ): AarBuilder {
+        extraFiles["assets/$path"] = content.toByteArray(Charset.defaultCharset())
+        return this
+    }
+
+    override fun addAsset(
+        path: String,
+        content: ByteArray
+    ): AarBuilder {
+        extraFiles["assets/$path"] = content
         return this
     }
 

@@ -169,9 +169,10 @@ class FusedLibraryMergeResourcesTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
-            androidResourceAsText("values/values.xml").isEqualTo(
-                //language=xml
-                """
+            androidResources {
+                textFile("values/values.xml").isEqualTo(
+                    //language=xml
+                    """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
                         <string name="string_from_android_lib_2">androidLib2</string>
@@ -180,10 +181,10 @@ class FusedLibraryMergeResourcesTaskTest {
                         <string name="string_overridden">androidLib2</string>
                     </resources>
                 """.trimIndent()
-            )
-            androidResourceAsText("layout/layout.xml").isEqualTo(
-                //language=xml
-                """
+                )
+                textFile("layout/layout.xml").isEqualTo(
+                    //language=xml
+                    """
                     <?xml version="1.0" encoding="utf-8"?>
                     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                         android:layout_width="match_parent"
@@ -203,7 +204,8 @@ class FusedLibraryMergeResourcesTaskTest {
                             android:text="TextView" />
                     </LinearLayout>
                 """.trimIndent()
-            )
+                )
+            }
         }
     }
 

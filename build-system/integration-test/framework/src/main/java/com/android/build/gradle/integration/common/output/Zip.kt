@@ -221,3 +221,38 @@ class MultiZip(
         zips.flatMap { it.getEntries() }
     }
 }
+
+/**
+ * An implementation of [Zip] that provides a filtered view of another zip file.
+ *
+ * The filtering is only to give access to a specific sub folder inside the original zip, making
+ * all the paths relative to that sub-folder.
+ */
+class FilteredZip(
+    private val zip: Zip,
+    private val allowedPrefix: String
+): Zip(zip.name) {
+
+    override fun exists(): Boolean {
+        return zip.exists()
+    }
+
+    override val status: Status
+        get() = zip.status
+
+    override fun getEntry(path: String): Path? {
+        return zip.getEntry("$allowedPrefix$path")
+    }
+
+    override fun getEntries(filter: ((String) -> Boolean)?): List<String> {
+        return filter?.let { f ->
+            allEntries.filter(f)
+        } ?: allEntries
+    }
+
+    private val allEntries: List<String> by lazy(LazyThreadSafetyMode.NONE) {
+        zip.getEntries().mapNotNull {
+            if (it.startsWith(allowedPrefix)) it.substring(allowedPrefix.length) else null
+        }
+    }
+}

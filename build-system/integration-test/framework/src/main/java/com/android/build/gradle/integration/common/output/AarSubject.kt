@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
-import com.google.common.truth.PrimitiveByteArraySubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import java.util.regex.Pattern
@@ -67,6 +66,10 @@ class AarSubject(
         return check("allJars()").about(JarSubject.jars()).that(MultiZip(allJars, "allJars"))
     }
 
+    /**
+     * Creates a [JarSubject] wrapping the content of the main jar and all the secondary jars,
+     * and configure it with the given action
+     */
     fun allJars(action: JarSubject.() -> Unit) {
         action(allJars())
     }
@@ -145,41 +148,39 @@ class AarSubject(
     }
 
     /**
-     * returns the list of the android resources as an [IterableSubject] of [String].
+     * returns [ZipSubject] for the Android resources
      *
-     * The names of the jars do NOT include the res folder.
+     * The names of the files do NOT include the res folder.
      */
-    fun androidResources(): IterableSubject {
+    fun androidResources(): ZipSubject {
         exists()
-        return check("androidResources()").that(
-            actual().getEntries(PATTERN_ANDROID_RES).map { it.substring(PREFIX_RES_LENGTH) }
-        )
+        return check("androidResources()").about(ZipSubject.zips()).that(FilteredZip(actual(), "res/"))
     }
 
     /**
-     * returns a [StringSubject] for a given Android resource file path.
-     *
-     * @param path the resource path relative to the res folder
+     * Creates a [ZipSubject] representing all the android resources, and configure it
+     * with the given action
      */
-    fun androidResourceAsText(path: String): StringSubject {
-        // custom implementation (instead of just calling textFile()) to restrict checks to /res
-        exists()
-        androidResources().contains(path)
-
-        return check("androidResourceAsText($path)").that(actual().textFile("res/$path"))
+    fun androidResources(action: ZipSubject.() -> Unit) {
+        action(androidResources())
     }
 
     /**
-     * returns a [PrimitiveByteArraySubject] for a given Android resource file path.
+     * returns [ZipSubject] for the Android assets
      *
-     * @param the resource path, which does not need to include the "res" folder.
+     * The names of the files do NOT include the assets folder.
      */
-    fun androidResourceAsBytes(path: String): PrimitiveByteArraySubject {
-        // custom implementation (instead of just calling binaryFile()) to restrict checks to /res
+    fun assets(): ZipSubject {
         exists()
-        androidResources().contains(path)
+        return check("assets()").about(ZipSubject.zips()).that(FilteredZip(actual(), "assets/"))
+    }
 
-        return check("androidResourceAsBytes($path)").that(actual().binaryFile("res/$path"))
+    /**
+     * Creates a [ZipSubject] representing all the android assets, and configure it
+     * with the given action
+     */
+    fun assets(action: ZipSubject.() -> Unit) {
+        action(assets())
     }
 
     /**
