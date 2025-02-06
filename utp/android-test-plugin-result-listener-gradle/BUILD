@@ -23,6 +23,7 @@ maven_library(
         "@maven//:io.grpc.grpc-netty",
         "@maven//:io.grpc.grpc-stub",
         "@maven//:io.grpc.grpc-protobuf",
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         # Don't change dependency order or the test fails. Those plugins bundle kotlinx
@@ -49,6 +50,7 @@ kotlin_test(
         ":android-test-plugin-result-listener-gradle",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "@maven//:io.grpc.grpc-testing",
+        "@maven//:io.grpc.grpc-inprocess",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",

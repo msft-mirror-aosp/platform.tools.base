@@ -47,6 +47,7 @@ _archives = [
         "name": "com_google_protobuf",
         "archive": "//prebuilts/tools/common/external-src-archives/protobuf/3.9.0:protobuf-3.9.0.tar.gz",
         "strip_prefix": "protobuf-3.9.0",
+        "build_file" : "//tools/base/bazel:protobuf-3.9-patched.BUILD"
     },
     # Perfetto Dependencies:
     # These are external dependencies to build Perfetto (from external/perfetto)

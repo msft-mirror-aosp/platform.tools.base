@@ -16,7 +16,6 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.api.BaseVariantOutput
-import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
@@ -70,7 +69,6 @@ class BaseAppModuleExtensionTest {
             mock<BootClasspathConfig>(),
             mock<NamedDomainObjectContainer<BaseVariantOutput>>(),
             variantInputModel.sourceSetManager,
-            mock<ExtraModelInfo>(),
             extension,
             statsBuilder
         )

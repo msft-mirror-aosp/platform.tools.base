@@ -62,17 +62,17 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential [CredentialManagerSignInWithGoogle]
+        src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetGoogleIdOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        0 errors, 1 warning
         """
       )
   }
 
-  @Suppress("KotlinConstantConditions")
   fun testClean() {
     // Same as above, except we have added the missing code.
+    @Suppress("KotlinConstantConditions")
     lint()
       .projects(
         STUB_LIBRARY,
@@ -103,7 +103,164 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                             }
                             is CustomCredential -> {
                                 if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                                    bar()
+                                    val cred = GoogleIdTokenCredential.createFrom(credential.data)
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
+
+                    fun bar() { TODO() }
+                }
+                """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testCleanJava() {
+    // Same as above, but in Java.
+
+    // Note that we call: GoogleIdTokenCredential.Companion.createFrom.
+    // We don't test calling GoogleIdTokenCredential.createFrom because the JVM static method is not
+    // generated in the Kotlin source stub library.
+    @Suppress("ConstantValue")
+    lint()
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            java(
+                """
+                package com.example.app;
+
+                import androidx.credentials.Credential;
+                import androidx.credentials.CustomCredential;
+                import androidx.credentials.GetCredentialResponse;
+                import androidx.credentials.PublicKeyCredential;
+                import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+                import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+
+                public class Foo {
+                    public void foo() {
+                        GetGoogleIdOption googleIdOption = new GetGoogleIdOption.Builder().build();
+                    }
+
+                    public void handleSignIn(GetCredentialResponse result) {
+                        Credential credential = result.getCredential();
+                        if (credential instanceof PublicKeyCredential) {
+                            bar();
+                        } else if (credential instanceof CustomCredential) {
+                            if (GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
+                                GoogleIdTokenCredential googleIdTokenCredential = GoogleIdTokenCredential.Companion.createFrom(credential.getData());
+                            }
+                        }
+                    }
+
+                    public void bar() {}
+                }
+                """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
+  }
+
+  @Suppress("KotlinConstantConditions")
+  fun testCleanWithStaticImport() {
+    // Similar to testClean, except we import things directly.
+    lint()
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
+                package com.example.app
+
+                import androidx.credentials.CustomCredential
+                import androidx.credentials.GetCredentialResponse
+                import androidx.credentials.PublicKeyCredential
+                import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+                import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.createFrom
+
+                class Foo {
+                    fun foo() {
+                        val googleIdOption = GetGoogleIdOption.Builder().build()
+                    }
+
+                    fun handleSignIn(result: GetCredentialResponse) {
+                        when (val credential = result.credential) {
+                            is PublicKeyCredential -> {
+                                bar()
+                            }
+                            is CustomCredential -> {
+                                if (credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                    val cred = createFrom(credential.data)
+                                }
+                            }
+                            else -> {}
+                        }
+                    }
+
+                    fun bar() { TODO() }
+                }
+                """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testCleanAlias() {
+    // Similar to testClean, except we use an import alias.
+    @Suppress("KotlinConstantConditions")
+    lint()
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
+                package com.example.app
+
+                import androidx.credentials.CustomCredential
+                import androidx.credentials.GetCredentialResponse
+                import androidx.credentials.PublicKeyCredential
+                import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+                import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+                import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.createFrom as cf
+
+                class Foo {
+                    fun foo() {
+                        val googleIdOption = GetGoogleIdOption.Builder().build()
+                    }
+
+                    fun handleSignIn(result: GetCredentialResponse) {
+                        when (val credential = result.credential) {
+                            is PublicKeyCredential -> {
+                                bar()
+                            }
+                            is CustomCredential -> {
+                                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                    val cred = cf(credential.data)
                                 }
                             }
                             else -> {}
@@ -163,10 +320,60 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential [CredentialManagerSignInWithGoogle]
+        src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetSignInWithGoogleOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testSignInWithGoogleClassImportAlias() {
+    // Similar to above, but with an import alias.
+    lint()
+      .projects(
+        STUB_LIBRARY,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_LIBRARY)
+          .files(
+            kotlin(
+                """
+                package com.example.app
+
+                import androidx.credentials.GetCredentialResponse
+                import androidx.credentials.PublicKeyCredential
+                import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption as Gsiwgo
+
+                class Foo {
+                    fun foo() {
+                        val googleIdOption = Gsiwgo.Builder().build()
+                    }
+
+                    fun handleSignIn(result: GetCredentialResponse) {
+                        when (val credential = result.credential) {
+                            is PublicKeyCredential -> {
+                                bar()
+                            }
+                            else -> {}
+                        }
+                    }
+
+                    fun bar() { TODO() }
+                }
+                """
+              )
+              .indented()
+          ),
+      )
+      .run()
+      .expect(
+        """
+        src/com/example/app/Foo.kt:9: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
+                val googleIdOption = Gsiwgo.Builder().build()
+                                     ~~~~~~
+        0 errors, 1 warning
         """
       )
   }
@@ -200,7 +407,7 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
                             }
                             is CustomCredential -> {
                                 if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                                    bar()
+                                    val cred = GoogleIdTokenCredential.createFrom(credential.data)
                                 }
                             }
                             else -> {}
@@ -286,11 +493,20 @@ class CredentialManagerSignInWithGoogleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/lib/Bar.kt:7: Warning: Use of :googleid classes without use of GoogleIdTokenCredential [CredentialManagerSignInWithGoogle]
+        ../lib/src/com/example/lib/Bar.kt:7: Warning: Use of :googleid classes without use of GoogleIdTokenCredential.createFrom [CredentialManagerSignInWithGoogle]
                 val googleIdOption = GetGoogleIdOption.Builder().build()
                                      ~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        0 errors, 1 warning
         """
+      )
+  }
+
+  fun testSameMessage() {
+    CredentialManagerSignInWithGoogleDetector()
+      .sameMessage(
+        CredentialManagerSignInWithGoogleDetector.ISSUE,
+        "Use of `:googleid` classes without use of `GoogleIdTokenCredential.createFrom`",
+        "Use of `:googleid` classes without use of `GoogleIdTokenCredential`",
       )
   }
 }
@@ -304,13 +520,25 @@ private val STUB_LIBRARY =
 
           /*HIDE-FROM-DOCUMENTATION*/
 
+          import androidx.credentials.CustomCredential
+          import android.os.Bundle
+
           class GetGoogleIdOption {
             class Builder
           }
           class GetSignInWithGoogleOption {
             class Builder(s: String)
           }
-          class GoogleIdTokenCredential {
+          class GoogleIdTokenCredential : CustomCredential(TYPE_GOOGLE_ID_TOKEN_CREDENTIAL, foo()) {
+            companion object {
+              const val TYPE_GOOGLE_ID_TOKEN_CREDENTIAL: String = "com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL"
+              const val TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL: String = "com.google.android.libraries.identity.googleid.TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL"
+
+              fun createFrom(data: Bundle): GetGoogleIdOption = TODO()
+
+              fun foo(): Bundle = TODO()
+
+            }
             class Builder
           }
           """
@@ -322,20 +550,28 @@ private val STUB_LIBRARY =
 
           /*HIDE-FROM-DOCUMENTATION*/
 
+          import android.os.Bundle
+
           class GetCredentialResponse(val credential: Credential)
 
           abstract class Credential(
-              val type: String
+              val type: String,
+              val data: Bundle,
           )
 
           open class CustomCredential(
-              type: String
-          ) : Credential(type)
+              type: String,
+              data: Bundle,
+          ) : Credential(type, data)
 
           class PublicKeyCredential(
-              val authenticationResponseJson: String
-          ) : Credential(TYPE_PUBLIC_KEY_CREDENTIAL)
-
+              val authenticationResponseJson: String,
+              data: Bundle,
+          ) : Credential(TYPE_PUBLIC_KEY_CREDENTIAL, data) {
+            companion object {
+              const val TYPE_PUBLIC_KEY_CREDENTIAL: String = "androidx.credentials.TYPE_PUBLIC_KEY_CREDENTIAL"
+            }
+          }
           """
         )
         .indented(),

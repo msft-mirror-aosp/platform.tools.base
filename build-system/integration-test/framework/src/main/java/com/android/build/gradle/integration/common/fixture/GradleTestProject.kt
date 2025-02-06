@@ -141,6 +141,13 @@ open class GradleTestProject @JvmOverloads constructor(
         // to start and reuse the daemon.
         const val GRADLE_DEAMON_IDLE_TIME_IN_SECONDS = 10
         @JvmField
+        @Deprecated(
+            "Use GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
+            replaceWith = ReplaceWith(
+                "GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
+                imports = arrayOf("com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition")
+            )
+        )
         val DEFAULT_COMPILE_SDK_VERSION: String
         @JvmField
         val DEFAULT_BUILD_TOOL_VERSION: String

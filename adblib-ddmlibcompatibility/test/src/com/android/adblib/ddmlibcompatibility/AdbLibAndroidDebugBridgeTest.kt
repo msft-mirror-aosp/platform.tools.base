@@ -21,10 +21,12 @@ import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.ProcessRunner.ProcessResult
 import com.android.adblib.testing.FakeAdbSession
+import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.ddmlib.IDevice.DeviceState.ONLINE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -265,9 +267,7 @@ class AdbLibAndroidDebugBridgeTest {
     @Test
     fun getSocketAddress_returnDefaultInetSocketAddress_whenAdbServerControllerThrows() {
         val session = FakeAdbSession()
-        val adbServerChannelProvider = FakeAdbServerChannelProvider()
-        val adbServerController =
-            FakeAdbServerController(channelProvider = adbServerChannelProvider)
+        val adbServerController = FakeAdbServerController()
         val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
         val bridge =
             AdbLibAndroidDebugBridge(
@@ -275,7 +275,7 @@ class AdbLibAndroidDebugBridgeTest {
                 adbServerController,
                 config
             )
-        adbServerChannelProvider.exceptionToThrow = Exception("Test exception")
+        adbServerController.channelProvider.exceptionToThrow = Exception("Test exception")
 
         // Act / Assert
         assertEquals(defaultRemoteAddress, bridge.socketAddress)
@@ -284,9 +284,7 @@ class AdbLibAndroidDebugBridgeTest {
     @Test
     fun getSocketAddress_getsAddressFromAdbServerController() {
         val session = FakeAdbSession()
-        val adbServerChannelProvider = FakeAdbServerChannelProvider()
-        val adbServerController =
-            FakeAdbServerController(channelProvider = adbServerChannelProvider)
+        val adbServerController = FakeAdbServerController()
         val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
         val bridge =
             AdbLibAndroidDebugBridge(
@@ -298,69 +296,54 @@ class AdbLibAndroidDebugBridgeTest {
         // Act / Assert: `socketAddress` set to default when AdbServerController's
         // `lastKnownRemoteAddress` is not set. Assert a call to `createChannel` is happening.
         assertEquals(defaultRemoteAddress, bridge.socketAddress)
-        assertEquals(1, adbServerChannelProvider.createChannelCallCount)
+        assertEquals(1, adbServerController.channelProvider.createChannelCallCount)
 
         // Act / Assert: Try again and assert that a call to `createChannel` happens again.
         assertEquals(defaultRemoteAddress, bridge.socketAddress)
-        assertEquals(2, adbServerChannelProvider.createChannelCallCount)
+        assertEquals(2, adbServerController.channelProvider.createChannelCallCount)
 
         // Act / Assert: Have `AdbServerController`'s `lastKnownRemoteAddress` set to a non-null
         // value and try getting `socketAddress` again.
         val controllerConfiguredLastKnownRemoteAddress = InetSocketAddress(157)
         adbServerController.lastKnownRemoteAddress = controllerConfiguredLastKnownRemoteAddress
         assertEquals(controllerConfiguredLastKnownRemoteAddress, bridge.socketAddress)
-        assertEquals(2, adbServerChannelProvider.createChannelCallCount)
+        assertEquals(2, adbServerController.channelProvider.createChannelCallCount)
+    }
+
+    @Test
+    fun getSocketAddress_returnsDefault_whenControllerIsNotStarted() = runBlocking {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startedByDefault = false)
+        val defaultRemoteAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 0)
+        val bridge =
+            AdbLibAndroidDebugBridge(
+                session,
+                adbServerController,
+                config
+            )
+
+        // Act / Assert: `socketAddress` set to default when AdbServerController's
+        // `lastKnownRemoteAddress` is not set. Assert a call to `createChannel` is not happening
+        // as controller has not been started
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+        assertEquals(0, adbServerController.channelProvider.createChannelCallCount)
+
+        // Act: Start the controller and ensure that the call to `createChannel` is now happening
+        adbServerController.start()
+        assertEquals(defaultRemoteAddress, bridge.socketAddress)
+        assertEquals(1, adbServerController.channelProvider.createChannelCallCount)
     }
 
     // TODO: Add many more tests
 
-    private class FakeAdbServerChannelProvider(): AdbServerChannelProvider {
-        var exceptionToThrow: Throwable? = null
-        var createChannelCallCount = 0
-
-        override suspend fun createChannel(
-            timeout: Long,
-            unit: TimeUnit
-        ): AdbChannel {
-            ++createChannelCallCount
-            exceptionToThrow?.let { throw it }
-
-            return object : AdbChannel {
-                override suspend fun shutdownInput() {
-                    throw UnsupportedOperationException("Not yet implemented")
-                }
-
-                override suspend fun shutdownOutput() {
-                    throw UnsupportedOperationException("Not yet implemented")
-                }
-
-                override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-                    throw UnsupportedOperationException("Not yet implemented")
-                }
-
-                override fun close() {
-                    throw UnsupportedOperationException("Not yet implemented")
-                }
-
-                override suspend fun writeBuffer(
-                    buffer: ByteBuffer,
-                    timeout: Long,
-                    unit: TimeUnit
-                ) {
-                    throw UnsupportedOperationException("Not yet implemented")
-                }
-            }
-        }
-    }
-
-    private class FakeAdbServerController(private val startDelayMs: Long = 0,
-        override val channelProvider: AdbServerChannelProvider = FakeAdbServerChannelProvider()
+    private class FakeAdbServerController(
+        private val startDelayMs: Long = 0, startedByDefault: Boolean = true
     ) : AdbServerController {
 
         var throwOnStart: Throwable? = null
         var throwOnStop: Throwable? = null
 
-        override var isStarted: Boolean = false
+        override var isStarted: Boolean = startedByDefault
             private set
 
         override var lastKnownRemoteAddress: InetSocketAddress? = null
@@ -378,6 +361,55 @@ class AdbLibAndroidDebugBridgeTest {
 
         override fun close() {
             throw UnsupportedOperationException("Not yet implemented")
+        }
+
+        override val channelProvider = FakeAdbServerChannelProvider()
+
+        inner class FakeAdbServerChannelProvider : AdbServerChannelProvider {
+            var exceptionToThrow: Throwable? = null
+            var createChannelCallCount = 0
+
+            override suspend fun createChannel(
+                timeout: Long,
+                unit: TimeUnit
+            ): AdbChannel {
+                ++createChannelCallCount
+                exceptionToThrow?.let { throw it }
+
+                // Matches the implementation of `AdbServerControllerImpl` where we wait for
+                // the controller to start up before attempting to create a channel.
+                yieldUntil { isStarted == true }
+
+                return object : AdbChannel {
+                    override suspend fun shutdownInput() {
+                        throw UnsupportedOperationException("Not yet implemented")
+                    }
+
+                    override suspend fun shutdownOutput() {
+                        throw UnsupportedOperationException("Not yet implemented")
+                    }
+
+                    override suspend fun readBuffer(
+                        buffer: ByteBuffer,
+                        timeout: Long,
+                        unit: TimeUnit
+                    ) {
+                        throw UnsupportedOperationException("Not yet implemented")
+                    }
+
+                    override fun close() {
+                        throw UnsupportedOperationException("Not yet implemented")
+                    }
+
+                    override suspend fun writeBuffer(
+                        buffer: ByteBuffer,
+                        timeout: Long,
+                        unit: TimeUnit
+                    ) {
+                        throw UnsupportedOperationException("Not yet implemented")
+                    }
+                }
+            }
         }
     }
 }

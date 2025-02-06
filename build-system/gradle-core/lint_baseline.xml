@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.5.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="8.5.0-dev">
+<issues format="6" by="lint 8.10.0-alpha03" type="baseline" client="" dependencies="true" name="" variant="all" version="8.10.0-alpha03">
 
     <issue
         id="CheckResult"
@@ -30,7 +30,7 @@
         errorLine2="                                                                                  ~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/BaseVariantData.kt"
-            line="208"
+            line="181"
             column="83"/>
     </issue>
 
@@ -41,7 +41,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="111"
+            line="124"
             column="32"/>
     </issue>
 
@@ -52,7 +52,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="116"
+            line="129"
             column="28"/>
     </issue>
 
@@ -63,7 +63,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="121"
+            line="134"
             column="32"/>
     </issue>
 
@@ -96,7 +96,7 @@
         errorLine2="                                                                      ~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/plugins/ReportingPlugin.java"
-            line="102"
+            line="108"
             column="71"/>
     </issue>
 
@@ -140,7 +140,7 @@
         errorLine2="                                                                                                              ~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/res/LinkApplicationAndroidResourcesTask.kt"
-            line="897"
+            line="1001"
             column="111"/>
     </issue>
 
@@ -173,7 +173,7 @@
         errorLine2="                         ^">
         <location
             file="src/main/java/com/android/build/gradle/internal/services/Aapt2DaemonBuildService.kt"
-            line="242"
+            line="237"
             column="26"/>
     </issue>
 
@@ -213,83 +213,6 @@
     <issue
         id="FileComparisons"
         message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(classesFolder, that.classesFolder)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/BaseArtifactImpl.java"
-            line="174"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(javaResourcesFolder, that.javaResourcesFolder)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/BaseArtifactImpl.java"
-            line="176"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(mMultiDexKeepFile, that.mMultiDexKeepFile)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/BaseConfigImpl.java"
-            line="181"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(mMultiDexKeepProguard, that.mMultiDexKeepProguard)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/BaseConfigImpl.java"
-            line="182"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(buildFolder, that.buildFolder)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/DefaultAndroidProject.java"
-            line="431"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                Objects.equals(infoFile, that.infoFile);"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/InstantRunImpl.java"
-            line="68"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="        return Objects.equals(jarFile, that.jarFile) &amp;&amp;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/JavaLibraryImpl.java"
-            line="79"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
         errorLine1="                Objects.equals(artifactFile, that.artifactFile);"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -305,30 +228,8 @@
         errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/dependency/JetifyTransform.kt"
-            line="178"
+            line="156"
             column="15"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                Objects.equals(storeFile, that.storeFile) &amp;&amp;"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/SigningConfigImpl.java"
-            line="151"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                &amp;&amp; Objects.equals(manifestFile, that.manifestFile)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/ide/SourceProviderImpl.java"
-            line="211"
-            column="20"/>
     </issue>
 
     <issue
@@ -338,7 +239,7 @@
         errorLine2="                                                                                  ~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/tasks/BundleToApkTask.kt"
-            line="121"
+            line="119"
             column="83"/>
     </issue>
 
@@ -382,7 +283,7 @@
         errorLine2="            ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/tasks/DexMergingTask.kt"
-            line="840"
+            line="859"
             column="13"/>
     </issue>
 

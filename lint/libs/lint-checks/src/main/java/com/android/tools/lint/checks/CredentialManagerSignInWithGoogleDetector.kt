@@ -27,17 +27,31 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
 import java.util.EnumSet
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UReferenceExpression
 
 /**
  * Reports all references to `GetGoogleIdOption` and `GetSignInWithGoogleOption`, unless we see a
- * reference to `GoogleIdTokenCredential`.
+ * reference to `GoogleIdTokenCredential[.Companion].createFrom`.
  */
 class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner {
 
+  override fun getApplicableMethodNames() = listOf("createFrom")
+
+  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+    val qualifiedName = method.containingClass?.qualifiedName ?: return
+    if (!qualifiedName.startsWith(GOOGLE_ID_PACKAGE_DOT)) return
+    // We don't check the qualified name exactly, as the method could be within the companion object
+    // or not.
+    if (!qualifiedName.contains("GoogleIdTokenCredential")) return
+    val partialResults = context.getPartialResults(ISSUE).map()
+    partialResults.put(KEY_SAW_CREATE_FROM, true)
+  }
+
   override fun getApplicableReferenceNames() =
-    listOf("GetGoogleIdOption", "GetSignInWithGoogleOption", "GoogleIdTokenCredential")
+    listOf("GetGoogleIdOption", "GetSignInWithGoogleOption")
 
   override fun visitReference(
     context: JavaContext,
@@ -46,32 +60,24 @@ class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner 
   ) {
     val qualifiedName = (referenced as? PsiClass)?.qualifiedName ?: return
     if (!qualifiedName.startsWith(GOOGLE_ID_PACKAGE_DOT)) return
-    val className = qualifiedName.removePrefix(GOOGLE_ID_PACKAGE_DOT)
+    // The class reference might actually be a reference to the companion object, so we try to
+    // remove this part.
+    val className = qualifiedName.removePrefix(GOOGLE_ID_PACKAGE_DOT).removeSuffix(".Companion")
     // Avoid something like: "${GOOGLE_ID_PACKAGE_DOT}aaaaaaaaa.GetGoogleIdOption"
     if (className !in getApplicableReferenceNames()) return
 
     val partialResults = context.getPartialResults(ISSUE).map()
-    when (className) {
-      "GetGoogleIdOption",
-      "GetSignInWithGoogleOption" -> {
-        // Skip if suppressed.
-        if (context.driver.isSuppressed(context, ISSUE, reference)) return
-        // Otherwise, we store the location.
-        partialResults
-          .getOrPutLintMap(KEY_OPTION_REFS)
-          .appendLocation(context.getLocation(reference))
-      }
-      "GoogleIdTokenCredential" -> {
-        partialResults.put(KEY_SAW_TOKEN_REF, true)
-      }
-    }
+    // Skip if suppressed.
+    if (context.driver.isSuppressed(context, ISSUE, reference)) return
+    // Otherwise, we store the location.
+    partialResults.getOrPutLintMap(KEY_OPTION_REFS).appendLocation(context.getLocation(reference))
   }
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
     if (context.project.isLibrary) return
 
-    // If we saw a reference to the token class in any project, then we are done.
-    if (partialResults.maps().any { it.getBoolean(KEY_SAW_TOKEN_REF) == true }) {
+    // If we saw a reference to createFrom in any project, then we are done.
+    if (partialResults.maps().any { it.getBoolean(KEY_SAW_CREATE_FROM) == true }) {
       return
     }
 
@@ -88,9 +94,13 @@ class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner 
       context.report(
         ISSUE,
         location,
-        "Use of `:googleid` classes without use of `GoogleIdTokenCredential`",
+        "Use of `:googleid` classes without use of `GoogleIdTokenCredential.createFrom`",
       )
     }
+  }
+
+  override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
+    return true
   }
 
   override fun afterCheckRootProject(context: Context) {
@@ -100,9 +110,12 @@ class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner 
   }
 
   companion object {
+    // intentional missing backtick
+    private const val MESSAGE_PREFIX =
+      "Use of `:googleid` classes without use of `GoogleIdTokenCredential"
 
     private const val KEY_OPTION_REFS = "OPTION_REFS"
-    private const val KEY_SAW_TOKEN_REF = "SAW_TOKEN_REF"
+    private const val KEY_SAW_CREATE_FROM = "SAW_CREATE_FROM"
     private const val GOOGLE_ID_PACKAGE_DOT = "com.google.android.libraries.identity.googleid."
 
     private val IMPLEMENTATION =
@@ -119,12 +132,10 @@ class CredentialManagerSignInWithGoogleDetector : Detector(), SourceCodeScanner 
         explanation =
           """
           When using `:googleid` classes like `GetGoogleIdOption` and `GetSignInWithGoogleOption`, \
-          you typically must handle the response using \
-          `GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL` or \
-          `GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_SIWG_CREDENTIAL`.
+          you must handle the response using `GoogleIdTokenCredential.createFrom`.
 
           This check reports all uses of these `:googleid` classes if there are no \
-          references to `GoogleIdTokenCredential`.
+          references to `GoogleIdTokenCredential[.Companion].createFrom`.
           """,
         moreInfo =
           "https://developer.android.com/identity/sign-in/credential-manager-siwg#create-sign",

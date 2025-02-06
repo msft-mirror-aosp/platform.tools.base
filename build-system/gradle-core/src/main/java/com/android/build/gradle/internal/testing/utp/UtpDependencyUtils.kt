@@ -166,10 +166,6 @@ abstract class UtpDependencies {
 
     @get:Optional
     @get:Classpath
-    abstract val testPluginHostRetention: ConfigurableFileCollection
-
-    @get:Optional
-    @get:Classpath
     abstract val testPluginResultListenerGradle: ConfigurableFileCollection
 
     @get:Optional

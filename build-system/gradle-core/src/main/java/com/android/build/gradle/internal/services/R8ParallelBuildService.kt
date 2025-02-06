@@ -75,12 +75,13 @@ abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Para
 
         fun defaultR8ThreadPoolSize(): Int {
             // Use the same thread pool size that R8 is using
-            // (see https://r8.googlesource.com/r8/+/c7f65e4/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#41)
+            // (see https://r8.googlesource.com/r8/+/fedff04/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#232)
             val processors = Runtime.getRuntime().availableProcessors()
-            return if (processors <= 2) {
+            return if (processors <= 16) {
                 processors
             } else {
-                ceil(min(processors, 16) / 2.0).toInt()
+                val threadPoolSize = 16 + Math.round((processors - 16) / 2.0).toInt()
+                min(threadPoolSize, 48)
             }
         }
     }

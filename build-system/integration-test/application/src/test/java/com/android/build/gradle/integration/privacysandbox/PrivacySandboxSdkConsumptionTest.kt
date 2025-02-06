@@ -490,4 +490,3 @@ class PrivacySandboxSdkConsumptionTest {
         }
     }
 }
-

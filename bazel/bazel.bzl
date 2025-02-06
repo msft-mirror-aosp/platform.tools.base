@@ -524,6 +524,7 @@ def iml_module(
         jvm_target = "17",
         javacopts = [],
         javacopts_from_jps = [],
+        kotlinc_opts = [],
         enable_tests = True,
         test_data = [],
         test_flaky = False,
@@ -578,6 +579,7 @@ def iml_module(
         jvm_target: Determines the java toolchain selected.
         javacopts: See java_* rules.
         javacopts_from_jps: See java_* rules.
+        kotlinc_opts: additional Kotlin compiler arguments, appended to the defaults.
         enable_tests: If true, creates the test target.
         test_data: Test runtime dependencies.
         test_flaky: See https://bazel.build/reference/be/common-definitions#test.flaky.
@@ -663,6 +665,7 @@ def iml_module(
         jvm_target = jvm_target,
         java_toolchain = java_toolchain,
         javacopts = javacopts + javacopts_from_jps,
+        kotlinc_opts = kotlinc_opts,
         module_visibility = module_visibility,
         iml_files = iml_files,
         exports = exports,

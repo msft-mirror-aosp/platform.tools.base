@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.composeapplication.ui.theme.ComposeApplicationTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Preview
 @Composable
@@ -53,6 +56,20 @@ fun PreviewLarge() {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun PreviewCoroutines() {
+    val scope = CoroutineScope(Dispatchers.Main)
+    scope.launch {  }
+    ComposeApplicationTheme {
+        Row {
+            Button(onClick = {}) {
+                Text(text = "Ok")
             }
         }
     }

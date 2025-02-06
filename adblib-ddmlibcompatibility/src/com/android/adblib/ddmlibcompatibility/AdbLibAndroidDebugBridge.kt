@@ -22,6 +22,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.ddmlib.AdbDevice
+import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AdbVersion
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AndroidDebugBridge.MIN_ADB_VERSION
@@ -62,9 +63,11 @@ class AdbLibAndroidDebugBridge(
 
     private val logger = adbLogger(session)
 
-    var iDeviceManager: IDeviceManager? = null
+    private var iDeviceManager: IDeviceManager? = null
 
-    val lock = ReentrantLock()
+    private var mVersionCheck: Boolean = false
+
+    private val lock = ReentrantLock()
 
     /**
      * Creates a [AndroidDebugBridge] that is not linked to any particular executable.
@@ -354,8 +357,7 @@ class AdbLibAndroidDebugBridge(
         mAdbOsLocation = osLocation
 
         try {
-            mAdbVersion = fetchAdbVersion()
-            mVersionCheck = checkAdbVersion(mAdbVersion)
+            mVersionCheck = checkAdbVersion(fetchAdbVersion())
         } catch (e: IOException) {
             throw IllegalArgumentException(e)
         }
@@ -418,7 +420,9 @@ class AdbLibAndroidDebugBridge(
                 // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
                 // can fail for many reasons (server not started, server not available) so we have
                 // to ignore errors.
-                runCatching { adbServerController.channelProvider.createChannel().use {} }
+                if (adbServerController.isStarted) {
+                    runCatching { adbServerController.channelProvider.createChannel().use {} }
+                }
                 adbServerController.lastKnownRemoteAddress
             }
         } else {
@@ -597,6 +601,10 @@ class AdbLibAndroidDebugBridge(
         return isSuccessful
     }
 
+    override fun getCurrentAdbVersion(): AdbVersion? {
+        unsupportedMethod()
+    }
+
     override fun getVirtualDeviceId(
         service: ListeningExecutorService,
         adb: File,
@@ -606,6 +614,17 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun openConnection(): SocketChannel {
+        unsupportedMethod()
+    }
+
+    override fun optionsChanged(
+        options: AdbInitOptions,
+        osLocation: String,
+        forceNewBridge: Boolean,
+        terminateTimeout: Long,
+        initTimeout: Long,
+        unit: TimeUnit
+    ): Boolean {
         unsupportedMethod()
     }
 

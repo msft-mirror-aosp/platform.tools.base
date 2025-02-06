@@ -12,6 +12,7 @@ maven_proto_library(
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
         "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-netty",
         "@maven//:io.grpc.grpc-protobuf",
         "@maven//:io.grpc.grpc-stub",

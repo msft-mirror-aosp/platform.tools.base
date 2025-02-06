@@ -20,7 +20,6 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationDefinitionImpl
@@ -372,7 +371,7 @@ internal class GradleBuildDefinitionImpl(
         if (createMinimumProject) {
             androidLibrary {
                 namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
-                compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+                compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
             }
         }
         action()

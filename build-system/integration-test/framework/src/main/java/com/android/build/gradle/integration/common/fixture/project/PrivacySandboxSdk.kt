@@ -17,12 +17,12 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -70,7 +70,7 @@ internal class PrivacySandboxSdkDefinitionImpl(
             dslRecorder,
         ).also {
             if (createMinimumProject) {
-                it.compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+                it.compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
             }
         }
 

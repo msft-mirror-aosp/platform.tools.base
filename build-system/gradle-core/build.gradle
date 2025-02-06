@@ -157,7 +157,6 @@ dependencies {
     implementation libs.com.android.tools.utp.androidTestPluginHostEmulatorControlProto
     implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
     implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostRetentionProto
     implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
 
     implementation gradleApi()
@@ -183,6 +182,7 @@ dependencies {
     implementation libs.grpc_netty
     implementation libs.grpc_protobuf
     implementation libs.grpc_stub
+    implementation libs.grpc_inprocess
     implementation libs.tink
     implementation libs.unified_test_platform
 

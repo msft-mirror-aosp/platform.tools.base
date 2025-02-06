@@ -16,10 +16,9 @@
 
 package com.android.build.gradle.integration.model
 
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
@@ -83,7 +82,7 @@ class CompileSdkViaSettingsOverriddenInAppModelTest: ReferenceModelComparator(
     deltaConfig = {
         androidApplication {
             android {
-                compileSdk = GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt()
+                compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }
         }
     },

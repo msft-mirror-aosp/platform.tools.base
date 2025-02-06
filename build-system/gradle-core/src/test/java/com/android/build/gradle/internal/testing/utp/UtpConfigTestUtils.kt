@@ -23,7 +23,6 @@ import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstaller
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.InstallableApk.InstallOption.ForceCompilation
 import com.android.tools.utp.plugins.host.coverage.proto.AndroidTestCoverageConfigProto
 import com.android.tools.utp.plugins.host.emulatorcontrol.proto.EmulatorControlPluginProto
-import com.android.tools.utp.plugins.host.icebox.proto.IceboxPluginProto
 import com.android.tools.utp.plugins.host.logcat.proto.AndroidTestLogcatConfigProto
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfigProto
 import com.google.common.truth.Truth.assertThat
@@ -44,7 +43,6 @@ private val protoPrinter: ProtoPrinter = ProtoPrinter(listOf(
     GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig::class.java,
     GradleManagedAndroidDeviceProviderProto.GradleManagedAndroidDeviceProviderConfig::class.java,
     EmulatorControlPluginProto.EmulatorControlPlugin::class.java,
-    IceboxPluginProto.IceboxPlugin::class.java,
     LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider::class.java,
     PathProto.Path::class.java,
 ))

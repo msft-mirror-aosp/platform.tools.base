@@ -6,6 +6,8 @@ windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_r
 
 local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 
+rbe = use_extension("//tools/base/bazel/rbe:extensions.bzl", "rbe")
+
 macos_sdk_repository(
     name = "macos_sdk",
     build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
@@ -65,3 +67,11 @@ register_toolchains(
     "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_definition",
     "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_definition",
 )
+
+rbe.constant(
+    name = "LARGE_MACHINE",
+    labels = {
+        "machine-size": "large",
+    },
+)
+use_repo(rbe, "exec_properties")

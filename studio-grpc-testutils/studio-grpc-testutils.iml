@@ -15,7 +15,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/io/grpc/grpc-inprocess/1.66.0/grpc-inprocess-1.66.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/io/grpc/grpc-inprocess/1.69.1/grpc-inprocess-1.69.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

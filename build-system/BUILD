@@ -510,7 +510,6 @@ maven_repository(
         "//tools/base/utp/android-test-plugin-host-device-info-proto",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-host-retention-proto",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/utp/utp-common",
         "//tools/base/zipflinger",

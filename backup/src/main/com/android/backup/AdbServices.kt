@@ -70,6 +70,8 @@ interface AdbServices {
 
   suspend fun backupNow(applicationId: String, type: BackupType)
 
+  suspend fun clearAppData(applicationId: String)
+
   suspend fun restore(token: String, applicationId: String, type: BackupType)
 
   suspend fun sendUpdateGmsIntent()

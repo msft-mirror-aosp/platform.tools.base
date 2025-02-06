@@ -403,6 +403,17 @@ class BackupServiceImplTest {
   }
 
   @Test
+  fun backup_createsParentDirectories(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "foo/bar/file.backup")
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    backupService.backup("serial", "com.app", CLOUD, backupFile, null)
+
+    assertThat(backupFile.exists()).isTrue()
+  }
+
+  @Test
   fun restore_cloud(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900", CLOUD)
     val adbServicesFactory = FakeAdbServicesFactory("com.app")
@@ -424,6 +435,7 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "bmgr list transports",
+        "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
         "bmgr restore 9bc1546914997f6c com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
@@ -457,6 +469,7 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "bmgr list transports",
+        "pm clear com.app",
         "settings put secure backup_testing_flows_type 0",
         "bmgr restore 9bc1546914997f6c com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
@@ -489,6 +502,7 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "bmgr list transports",
+        "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
         "bmgr restore 9bc1546914997f6c com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
@@ -521,6 +535,7 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "bmgr list transports",
+        "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
         "bmgr restore 9bc1546914997f6c com.app",
         "bmgr transport com.android.localtransport/.LocalTransport",
@@ -541,18 +556,19 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     assertThat(adbServices.getProgress())
       .containsExactly(
-        "1/11: Verifying Google services",
-        "2/11: Checking if BMGR is enabled",
-        "3/13: Enabling BMGR",
-        "4/13: Enabling test mode",
-        "5/13: Setting backup transport",
-        "6/14: Initializing backup transport",
-        "7/14: Pushing backup file",
-        "8/14: Restoring com.app",
-        "9/14: Restoring backup transport",
-        "10/14: Disabling test mode",
-        "11/14: Disabling BMGR",
-        "12/14: Done",
+        "1/10: Verifying Google services",
+        "2/10: Checking if BMGR is enabled",
+        "3/12: Enabling BMGR",
+        "4/12: Enabling test mode",
+        "5/12: Setting backup transport",
+        "6/13: Initializing backup transport",
+        "7/13: Pushing backup file",
+        "8/13: Clearing app data",
+        "9/13: Restoring com.app",
+        "10/13: Restoring backup transport",
+        "11/13: Disabling test mode",
+        "12/13: Disabling BMGR",
+        "13/13: Done",
       )
       .inOrder()
   }

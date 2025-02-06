@@ -98,7 +98,6 @@ kotlin_library(
         "//tools/base/utp/android-test-plugin-host-coverage-proto",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-host-retention-proto",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/utp/utp-common",
         "//tools/data-binding:tools.baseLibrary",
@@ -117,6 +116,7 @@ kotlin_library(
         "@maven//:com.squareup.javapoet",
         "@maven//:commons-io.commons-io",  # TODO: remove?
         "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-netty",
         "@maven//:io.grpc.grpc-protobuf",
         "@maven//:io.grpc.grpc-stub",
@@ -244,7 +244,6 @@ kotlin_test(
         "//tools/base/utp/android-test-plugin-host-coverage-proto",
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
-        "//tools/base/utp/android-test-plugin-host-retention-proto",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
         "//tools/base/zipflinger",
         "//tools/data-binding:tools.compilerCommon",
@@ -260,6 +259,7 @@ kotlin_test(
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.google.truth.truth",
         "@maven//:commons-io.commons-io",  # TODO: remove?
+        "@maven//:io.grpc.grpc-inprocess",
         "@maven//:io.grpc.grpc-testing",
         "@maven//:junit.junit",
         "@maven//:nl.jqno.equalsverifier.equalsverifier",

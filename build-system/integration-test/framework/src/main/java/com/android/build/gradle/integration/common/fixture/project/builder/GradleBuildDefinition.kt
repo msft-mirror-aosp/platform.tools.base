@@ -32,6 +32,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_TEST_PATH
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.google.common.base.Strings
 
 /**
  * Represents a Gradle Build that can be configured before being written on disk
@@ -39,7 +40,20 @@ import com.android.build.gradle.integration.common.fixture.project.options.Gradl
 interface GradleBuildDefinition {
     companion object {
         const val DEFAULT_BUILD_NAME = "project"
+
+        val DEFAULT_COMPILE_SDK_VERSION: Int =
+            Strings.emptyToNull(System.getenv("CUSTOM_COMPILE_SDK"))?.toInt()
+                ?: com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
     }
+
+    /**
+     * The Default compile SDK version to use.
+     *
+     * This property on the interface gives direct access to it, but it just returns
+     * [GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION]
+     */
+    val DEFAULT_COMPILE_SDK_VERSION
+        get() = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
 
     /**
      * The name of the build. This is the value set in the settings.gradle files as the logical
