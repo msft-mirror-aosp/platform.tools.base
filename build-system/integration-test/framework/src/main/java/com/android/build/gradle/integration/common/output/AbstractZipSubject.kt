@@ -46,13 +46,16 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
                 failWithoutActual(Fact.simpleFact("points to a directory"))
             }
             Zip.Status.DOES_NOT_EXIST -> {
-                var nearestParent: Path? = actual().archivePath
+                val zip = actual() as? SimpleZip
+                    ?: throw RuntimeException("Zip other than SimpleZip should only be with status EXIST")
+
+                var nearestParent: Path? =zip.archivePath
                 while (nearestParent != null && !Files.exists(nearestParent)) {
                     nearestParent = nearestParent.parent
                 }
 
                 failWithoutActual(
-                    Fact.fact("expected to exist", actual().archivePath),
+                    Fact.fact("expected to exist", zip.archivePath),
                     Fact.fact("nearest existing ancestor", nearestParent)
                 )
             }

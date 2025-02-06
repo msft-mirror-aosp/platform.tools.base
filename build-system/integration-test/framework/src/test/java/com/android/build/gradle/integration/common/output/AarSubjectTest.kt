@@ -26,6 +26,77 @@ import org.junit.Test
 class AarSubjectTest: BaseZipSubjectTest() {
 
     @Test
+    fun allJars() {
+        val aar = createAar("valid.aar") {
+            withMainJar {
+                addEmptyClasses("com/example/SomeClass", "com/example/SomeOtherClass")
+                addTextFile("/somefile.txt", "foo")
+                addBinaryFile("/somefile.data", "foo".toByteArray())
+            }
+            addSecondaryJar("foo") {
+                addEmptyClasses("com/foo/SomeClass", "com/foo/SomeOtherClass")
+                addTextFile("/foo/file.txt", "foo")
+            }
+            addSecondaryJar("bar") {
+                addEmptyClasses("com/bar/SomeClass")
+                addClassWithEmptyMethods("com/bar/SomeOtherClass", "foo()V")
+                addBinaryFile("/bar/file.data", "bar".toByteArray())
+            }
+        }
+
+        assertThat(aar) {
+            allJars {
+                classes().containsExactly(
+                    "com/example/SomeClass",
+                    "com/example/SomeOtherClass",
+                    "com/foo/SomeClass",
+                    "com/foo/SomeOtherClass",
+                    "com/bar/SomeClass",
+                    "com/bar/SomeOtherClass"
+                )
+                resources().containsExactly(
+                    "somefile.txt",
+                    "somefile.data",
+                    "foo/file.txt",
+                    "bar/file.data"
+                )
+                classData("com/bar/SomeOtherClass") {
+                    methods().containsExactly("<init>", "foo")
+                }
+                textFile("foo/file.txt").isEqualTo("foo")
+                binaryFile("bar/file.data").isEqualTo("bar".toByteArray())
+            }
+        }
+
+        // test negative results
+        expectFailure {
+            it.that(aar).allJars().classes().hasSize(5)
+        }.assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "aar was")
+            factValue("value of").isEqualTo("aar.allJars().classes().size()")
+            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+        }
+
+        expectFailure {
+            it.that(aar).allJars().classData("com/missing/MissingClass")
+        }.assert {
+            // we don't care about testing the 'expected' and 'but was' facts
+            factKeys().containsAtLeast("value of", "aar was")
+            factValue("value of").isEqualTo("aar.allJars().classes()")
+            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+        }
+
+        // check on empty aars
+        val emptyAar = createJar("empty.aar") { }
+
+        assertThat(emptyAar) {
+            allJars().classes().isEmpty()
+            allJars().resources().isEmpty()
+        }
+    }
+
+    @Test
     fun mainJar() {
         testJar(
             methodName = "mainJar",

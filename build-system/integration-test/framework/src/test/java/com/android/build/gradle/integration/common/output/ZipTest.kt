@@ -97,7 +97,7 @@ class ZipTest: BaseZipSubjectTest() {
     fun testNotExist() {
         val notExist = temporaryFolder.newFolder().toPath().resolve("not_exist")
 
-        val zip = Zip(notExist)
+        val zip = SimpleZip(notExist)
         Truth.assertThat(zip.getEntries()).isEmpty()
         Truth.assertThat(zip.exists()).isFalse()
     }
@@ -115,7 +115,7 @@ class ZipTest: BaseZipSubjectTest() {
         val entry = zip.getEntry("classes.jar")!!
         Assert.assertNotNull(entry)
         try {
-            val innerZip = Zip(entry)
+            val innerZip = SimpleZip(entry)
             Assert.fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             Truth.assertThat(e.toString()).contains("getEntryAsZip")

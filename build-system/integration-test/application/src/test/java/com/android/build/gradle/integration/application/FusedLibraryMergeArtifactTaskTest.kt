@@ -214,9 +214,7 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            mainJar {
-                contains("my_java_resource.txt")
-            }
+            allJars().containsResource("my_java_resource.txt")
         }
 
         val androidLib2 = build.androidLibrary(":androidLib2")

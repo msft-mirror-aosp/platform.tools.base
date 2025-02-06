@@ -104,7 +104,7 @@ class JarSubjectTest: BaseZipSubjectTest() {
             // we don't care about testing the 'expected' and 'but was' facts, we just
             // verify the value name and the name of the 'X was' key.
             factKeys().containsAtLeast("value of", "jar was")
-            factValue("value of").isEqualTo("jar.classFile(com/example/ManualClass.class)")
+            factValue("value of").isEqualTo("jar.classFile(com/example/ManualClass)")
             factValue("jar was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
         }
 
@@ -115,9 +115,9 @@ class JarSubjectTest: BaseZipSubjectTest() {
             // we want to check for a specific expected/but was here as we want to validate
             // which error is thrown
             factKeys().containsAtLeast("value of", "jar was", "expected to contain", "but was")
-            factValue("value of").isEqualTo("jar.entries()")
-            factValue("expected to contain").isEqualTo("com/example/MissingClass.class")
-            factValue("but was").isEqualTo("[com/example/ManualClass.class]")
+            factValue("value of").isEqualTo("jar.classes()")
+            factValue("expected to contain").isEqualTo("com/example/MissingClass")
+            factValue("but was").isEqualTo("[com/example/ManualClass]")
             factValue("jar was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
         }
     }
@@ -150,9 +150,9 @@ class JarSubjectTest: BaseZipSubjectTest() {
             // we want to check for a specific expected/but was here as we want to validate
             // which error is thrown
             factKeys().containsAtLeast("value of", "jar was", "expected to contain", "but was")
-            factValue("value of").isEqualTo("jar.entries()")
-            factValue("expected to contain").isEqualTo("com/example/MissingClass.class")
-            factValue("but was").isEqualTo("[com/example/SomeClass.class]")
+            factValue("value of").isEqualTo("jar.classes()")
+            factValue("expected to contain").isEqualTo("com/example/MissingClass")
+            factValue("but was").isEqualTo("[com/example/SomeClass]")
             factValue("jar was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
         }
     }

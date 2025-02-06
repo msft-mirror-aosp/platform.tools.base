@@ -48,6 +48,30 @@ class AarSubject(
     }
 
     /**
+     * Returns a [JarSubject] wrapping the content of the main jar and all the secondary jars.
+     */
+    fun allJars(): JarSubject {
+        exists()
+
+        val mainJar = actual().innerZip("classes.jar")
+        val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
+
+        val allJars = if (mainJar != null) {
+            buildList {
+                // we want to keep this one first
+                add(mainJar)
+                addAll(secondaryJars)
+            }
+        } else secondaryJars
+
+        return check("allJars()").about(JarSubject.jars()).that(MultiZip(allJars, "allJars"))
+    }
+
+    fun allJars(action: JarSubject.() -> Unit) {
+        action(allJars())
+    }
+
+    /**
      * returns a [JarSubject] for the main jar of the AAR (classes.jar)
      */
     fun mainJar(): JarSubject = jar("classes.jar", methodName = "mainJar()")
@@ -97,7 +121,7 @@ class AarSubject(
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null
-        val jar = actual().innerZip("libs/$name") ?: Zip(null)
+        val jar = actual().innerZip("libs/$name") ?: SimpleZip(null)
 
         return check("secondaryJar($name)").about(JarSubject.jars()).that(jar)
     }
@@ -208,7 +232,7 @@ class AarSubject(
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null
-        val jar = actual().innerZip(path) ?: Zip(null)
+        val jar = actual().innerZip(path) ?: SimpleZip(null)
 
         return check(methodName).about(JarSubject.jars()).that(jar)
     }

@@ -80,7 +80,7 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
 
     @Test
     fun testNotExist() {
-        val missingZip = Zip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
+        val missingZip = SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
 
         // check the normal test succeeds
         assertThat(missingZip).doesNotExist()
@@ -104,7 +104,7 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
         assertThat(validZip).exists()
 
         // check negative results
-        val missingZip = Zip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
+        val missingZip = SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
 
         expectFailure {
             it.that(missingZip).exists()

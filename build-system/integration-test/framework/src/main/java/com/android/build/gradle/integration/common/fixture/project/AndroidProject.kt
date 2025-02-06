@@ -21,11 +21,10 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.output.Zip
+import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.tools.build.bundletool.model.AppBundle
 import java.nio.file.Path
@@ -213,9 +212,9 @@ class GeneratesAarDelegate(
         val path = computeOutputPath(aarSelector)
         if (!path.isRegularFile()) error("AAR file does not exist: $path")
 
-        val zip = Zip(path, "$gradlePath(${aarSelector.getFileName(location.name)})")
-
-        AarSubject.assertThat(zip, action)
+        SimpleZip(path, "$gradlePath(${aarSelector.getFileName(location.name)})").use {
+            AarSubject.assertThat(it, action)
+        }
     }
 }
 

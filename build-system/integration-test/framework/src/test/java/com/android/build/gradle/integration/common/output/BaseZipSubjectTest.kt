@@ -42,7 +42,7 @@ abstract class BaseZipSubjectTest {
         val path = temporaryFolder.newFile(name).toPath()
         path.writeBytes(builder.toLibraryData().content)
 
-        return Zip(path)
+        return SimpleZip(path)
     }
 
     protected fun createJar(name: String, action: JarBuilder.() -> Unit): Zip {
@@ -52,7 +52,7 @@ abstract class BaseZipSubjectTest {
         val path = temporaryFolder.newFile(name).toPath()
         path.writeBytes(builder.getContent())
 
-        return Zip(path)
+        return SimpleZip(path)
     }
 }
 

@@ -127,23 +127,22 @@ open class JarSubject(
      * given binary name.
      */
     fun classContent(binaryName: String): PrimitiveByteArraySubject {
-        val path = binaryName.toPath()
-        contains(path)
-        return check("classFile($path)").that(actual().binaryFile(path))
+        classes().contains(binaryName)
+
+        return check("classFile($binaryName)").that(actual().binaryFile(binaryName.toPath()))
     }
 
     /**
      * Returns a [ClassSubject] for the class with the given binary name
      */
     fun classData(binaryName: String): ClassSubject {
-        val path = binaryName.toPath()
-        contains(path)
+        classes().contains(binaryName)
 
         val classNode = ClassNode(Opcodes.ASM9)
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null
-        actual().binaryFile(path)?.let {
+        actual().binaryFile(binaryName.toPath())?.let {
             ClassReader(it).accept(classNode, 0)
         }
 
@@ -164,4 +163,4 @@ open class JarSubject(
     internal fun String.toPath(): String = "$this.class"
 }
 
-private val PATTERN_CLASS_FILE = Pattern.compile("^.+\\.class$")
+val PATTERN_CLASS_FILE = Pattern.compile("^.+\\.class$")
