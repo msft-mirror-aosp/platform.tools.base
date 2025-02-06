@@ -420,7 +420,9 @@ class AdbLibAndroidDebugBridge(
                 // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
                 // can fail for many reasons (server not started, server not available) so we have
                 // to ignore errors.
-                runCatching { adbServerController.channelProvider.createChannel().use {} }
+                if (adbServerController.isStarted) {
+                    runCatching { adbServerController.channelProvider.createChannel().use {} }
+                }
                 adbServerController.lastKnownRemoteAddress
             }
         } else {
