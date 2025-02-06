@@ -48,11 +48,13 @@ import com.android.sdklib.repository.sources.RemoteSiteType;
 import com.android.sdklib.repository.targets.AndroidTargetManager;
 import com.android.sdklib.repository.targets.SystemImage;
 import com.android.sdklib.repository.targets.SystemImageManager;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -136,15 +138,13 @@ public final class AndroidSdkHandler {
     private static final String DEFAULT_SITE_LIST_FILENAME_PATTERN = "addons_list-%d.xml";
 
     /**
-     * Lock for synchronizing changes to the our {@link RepoManager}.
-     */
-    private static final Object MANAGER_LOCK = new Object();
-
-    /**
      * Pattern for the URL pointing to the repository xml (as defined by sdk-repository-01.xsd in
      * repository).
      */
     private static final String REPO_URL_PATTERN = "%srepository2-%d.xml";
+
+    /** Lock for synchronizing changes to our {@link RepoManager}. */
+    private final Object lock = new Object();
 
     /**
      * The {@link RepoManager} initialized with our {@link SchemaModule}s, {@link
@@ -260,8 +260,9 @@ public final class AndroidSdkHandler {
      */
     @NonNull
     public RepoManager getSdkManager(@NonNull ProgressIndicator progress) {
-        RepoManager result = mRepoManager;
-        synchronized (MANAGER_LOCK) {
+        RepoManager result;
+        synchronized (lock) {
+            result = mRepoManager;
             if (result == null) {
                 mSystemImageManager = null;
                 mAndroidTargetManager = null;
@@ -281,7 +282,7 @@ public final class AndroidSdkHandler {
                 mRepoManager = result;
             }
         }
-        return mRepoManager;
+        return result;
     }
 
     /**
@@ -437,12 +438,18 @@ public final class AndroidSdkHandler {
                 mapper);
     }
 
+    private void invalidate() {
+        synchronized (lock) {
+            mRepoManager = null;
+        }
+    }
+
     /**
      * Resets the {@link RepoManager}s of all cached {@link AndroidSdkHandler}s.
      */
     private static void invalidateAll() {
         for (AndroidSdkHandler handler : sInstances.values()) {
-            handler.mRepoManager = null;
+            handler.invalidate();
         }
     }
 
@@ -509,11 +516,11 @@ public final class AndroidSdkHandler {
     public LocalSourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         if (mUserSourceProvider == null && mAndroidFolder != null) {
             mUserSourceProvider = RepoConfig.createUserSourceProvider(mAndroidFolder);
-            synchronized (MANAGER_LOCK) {
+            synchronized (lock) {
                 if (mRepoManager != null) {
                     // If the repo already exists cause it to be reloaded, so the userSourceProvider
                     // can be added to the config.
-                    mRepoManager = null;
+                    invalidate();
                     getSdkManager(progress);
                 }
             }
@@ -532,8 +539,12 @@ public final class AndroidSdkHandler {
         invalidateAll();
     }
 
+    /**
+     * Gets or creates the single static RepoConfig instance. Synchronized to ensure that only one
+     * is created.
+     */
     @NonNull
-    private static RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
+    private static synchronized RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
         if (sRepoConfig == null) {
             sRepoConfig = new RepoConfig(progress);
         }
@@ -547,7 +558,6 @@ public final class AndroidSdkHandler {
      * Instances of this class may be shared between {@link AndroidSdkHandler} instances.
      */
     private static class RepoConfig {
-
         /**
          * Provider for a list of {@link RepositorySource}s fetched from the google.
          */
