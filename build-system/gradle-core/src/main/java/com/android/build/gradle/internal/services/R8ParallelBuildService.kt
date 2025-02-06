@@ -22,8 +22,9 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.math.min
-import kotlin.math.ceil
+import com.android.build.gradle.internal.LoggerWrapper
 
 /** Build service to manage R8 parallelism and shared thread pool. */
 abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Parameters>, AutoCloseable {
@@ -50,7 +51,7 @@ abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Para
 
     override fun close() {
         if (r8ThreadPoolCreated) {
-            r8ThreadPool.shutdown()
+            r8ThreadPool.doClose()
         }
     }
 
@@ -84,5 +85,24 @@ abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Para
                 min(threadPoolSize, 48)
             }
         }
+    }
+}
+
+/**
+ * [ExecutorService.close] is only available on JDK 19+, so we implement a simpler version of it
+ * here.
+ */
+fun ExecutorService.doClose() {
+    // Submitted tasks should have completed execution by the time this method is called, so after
+    // `shutdown()` we expect `awaitTermination()` to return `true` immediately.
+    // In the unexpected case that it returns `false`, we'll ask users to file a bug.
+    shutdown()
+    while (!awaitTermination(60, TimeUnit.SECONDS)) {
+        LoggerWrapper.getLogger(R8ParallelBuildService::class.java)
+            .warning(
+                "Unable to shut down ExecutorService after 60 seconds: ${toString()}.\n" +
+                        "Waiting for another 60 seconds.\n" +
+                        "If this issue persists, try ./gradlew --stop and file a bug."
+            )
     }
 }

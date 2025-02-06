@@ -26,6 +26,7 @@ import com.android.testutils.TestInputsGenerator;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,7 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 /** Helper methods for testing dex archives. */
@@ -219,7 +219,11 @@ public final class DexArchiveTestUtil {
 
         DexArchiveMerger merger =
                 DexArchiveMerger.createD8DexMerger(
-                        new NoOpMessageReceiver(), dexingType, 1, true, ForkJoinPool.commonPool());
+                        new NoOpMessageReceiver(),
+                        dexingType,
+                        1,
+                        true,
+                        MoreExecutors.newDirectExecutorService());
         Files.createDirectory(outputDir);
         merger.mergeDexArchives(
                 DexArchives.getAllEntriesFromArchives(inputs),

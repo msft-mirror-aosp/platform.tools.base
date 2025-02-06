@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.DUPLICATE_CL
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.services.R8ParallelBuildService
+import com.android.build.gradle.internal.services.doClose
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.utils.LibraryArtifactType
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
@@ -991,7 +992,7 @@ abstract class R8Task @Inject constructor(
                 // In non-isolation mode, we use a shared thread pool, and we will close it in the
                 // build service.
                 if (isolationMode) {
-                    r8ThreadPool.shutdown()
+                    r8ThreadPool.doClose()
                 }
             }
         }
