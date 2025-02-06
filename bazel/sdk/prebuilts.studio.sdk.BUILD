@@ -56,6 +56,7 @@ filegroup(
         "//tools/adt/idea/project-system-gradle-upgrade:__pkg__",
         "//tools/adt/idea/sync-perf-tests:__pkg__",
         "//tools/gradle-recipes:__pkg__",
+        "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
     ],
 )
 
@@ -66,6 +67,7 @@ filegroup(
     ),
     visibility = [
         "//tools/adt/idea/old-agp-tests:__pkg__",
+        "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
         "//tools/adt/idea/project-system-gradle-upgrade:__pkg__",
     ],
 )
@@ -80,6 +82,7 @@ filegroup(
         "//tools/adt/idea/old-agp-tests:__pkg__",
         "//tools/adt/idea/project-system-gradle-upgrade:__pkg__",
         "//tools/adt/idea/sync-perf-tests:__pkg__",
+        "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
         "//tools/base/build-system/previous-versions:__pkg__",
     ],
 )
@@ -91,6 +94,7 @@ filegroup(
     ),
     visibility = [
         "//prebuilts/studio/buildbenchmarks:__pkg__",
+        "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
         "//tools/adt/idea/old-agp-tests:__pkg__",
         "//tools/adt/idea/sync-perf-tests:__pkg__",
         "//tools/vendor/google/android-ndk:__pkg__",
@@ -267,6 +271,7 @@ platform_filegroup(
 platform_filegroup(
     name = "platforms/android-28",
     visibility = [
+        "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
         "//prebuilts/studio/buildbenchmarks:__pkg__",
         "//tools/adt/idea/old-agp-tests:__pkg__",
         "//tools/vendor/google/lldb-integration-tests:__pkg__",
