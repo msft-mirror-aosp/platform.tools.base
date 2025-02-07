@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -35,6 +36,7 @@ import java.nio.file.Path
 /**
  * Specialized interface for [GenericProjectDefinition]
  */
+@GradleDefinitionDsl
 interface AssetPackBundleDefinition: GradleProjectDefinition {
     val bundle: AssetPackBundleExtension
     fun bundle(action: AssetPackBundleExtension.() -> Unit)

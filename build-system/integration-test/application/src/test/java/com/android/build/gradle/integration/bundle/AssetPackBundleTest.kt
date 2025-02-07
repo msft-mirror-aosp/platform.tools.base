@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.project.AabSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.bundle.Config
 import com.android.ide.common.signing.KeystoreHelper

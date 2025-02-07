@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project.options
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 
 /**
  * class to configure gradle options inside a test method. see [GradleRule.configure]
@@ -26,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
  * This allows reconfiguring the project before writing it on disk. Because it's inside a test, either [build] method
  * must be called at the end to write the test and return a [GradleBuild]
  */
+@GradleDefinitionDsl
 class LocalRuleOptionBuilder internal constructor(
     private val gradleRule: GradleRule,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder

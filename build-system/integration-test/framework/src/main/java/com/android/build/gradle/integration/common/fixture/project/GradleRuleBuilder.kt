@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -34,6 +35,7 @@ import org.junit.runners.model.Statement
  *
  * Don't use directly, use [GradleRule.configure].
  */
+@GradleDefinitionDsl
 interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
 
     /**

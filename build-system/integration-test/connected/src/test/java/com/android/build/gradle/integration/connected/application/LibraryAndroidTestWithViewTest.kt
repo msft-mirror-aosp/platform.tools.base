@@ -6,6 +6,7 @@ import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_CONSTRAIN
 import com.android.build.gradle.integration.common.fixture.app.LayoutFileBuilder
 import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuilder
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption

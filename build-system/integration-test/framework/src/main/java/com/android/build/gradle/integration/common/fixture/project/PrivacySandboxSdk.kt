@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Build
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -36,6 +37,7 @@ import java.nio.file.Path
 /**
  * Specialized interface for [GradleProjectDefinition]
  */
+@GradleDefinitionDsl
 interface PrivacySandboxSdkDefinition: GradleProjectDefinition {
     val android: PrivacySandboxSdkExtension
     fun android(action: PrivacySandboxSdkExtension.() -> Unit)

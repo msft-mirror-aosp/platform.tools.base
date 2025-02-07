@@ -26,6 +26,7 @@ import java.nio.file.Path
 /**
  * Represents an Android Gradle Project that can be configured before being written on disk
  */
+@GradleDefinitionDsl
 interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
     companion object {
         const val DEFAULT_APP_PATH = ":app"

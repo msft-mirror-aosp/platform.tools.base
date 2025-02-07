@@ -20,10 +20,12 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.testutils.MavenRepoGenerator
 import java.nio.file.Path
 
+@GradleDefinitionDsl
 interface DependencyBuilder {
     fun requireCapability(capability: String)
 }
 
+@GradleDefinitionDsl
 interface DependenciesBuilder {
 
     /**

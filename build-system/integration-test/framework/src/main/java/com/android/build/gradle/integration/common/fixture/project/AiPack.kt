@@ -20,6 +20,7 @@ import com.android.build.api.dsl.AiPackExtension
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -33,6 +34,7 @@ import java.nio.file.Path
 /**
  * Specialized interface for [GenericProjectDefinition]
  */
+@GradleDefinitionDsl
 interface AiPackDefinition: GradleProjectDefinition {
     val aiPack: AiPackExtension
     fun aiPack(action: AiPackExtension.() -> Unit)

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.dependencies
 
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.testutils.MavenRepoGenerator.Library
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
@@ -32,6 +33,7 @@ import java.util.zip.ZipOutputStream
 /**
  * A object to create a jar
  */
+@GradleDefinitionDsl
 interface JarBuilder {
     /**
      * adds empty classes to the Jar
@@ -81,6 +83,7 @@ interface JarBuilder {
 /**
  * A jar with dependencies
  */
+@GradleDefinitionDsl
 interface JarWithDependenciesBuilder: JarBuilder {
     /**
      * Sets the dependencies of the Jar

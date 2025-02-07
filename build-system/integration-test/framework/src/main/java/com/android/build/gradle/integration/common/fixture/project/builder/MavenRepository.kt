@@ -24,6 +24,7 @@ import com.android.testutils.MavenRepoGenerator.Library
 /**
  * Allows configuring a custom repository with test libraries.
  */
+@GradleDefinitionDsl
 interface MavenRepository {
     /**
      * Adds a manually created library

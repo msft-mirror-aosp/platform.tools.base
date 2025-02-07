@@ -33,17 +33,17 @@ class HelloWorldCompositeModelTest: ModelComparator() {
             dependencies {
                 implementation("com.composite-build:lib:1.2")
             }
-            includedBuild("other-build") {
-                includedBuild("nested-build") {
-                    androidLibrary(":anotherLib") {
-                        group = "com.nested-build"
-                        version = "1.3"
-                    }
+        }
+        includedBuild("other-build") {
+            includedBuild("nested-build") {
+                androidLibrary(":anotherLib") {
+                    group = "com.nested-build"
+                    version = "1.3"
                 }
-                androidLibrary(":lib") {
-                    group = "com.composite-build"
-                    version = "1.2"
-                }
+            }
+            androidLibrary(":lib") {
+                group = "com.composite-build"
+                version = "1.2"
             }
         }
     }
