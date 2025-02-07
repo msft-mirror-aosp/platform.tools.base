@@ -22,16 +22,27 @@ import com.android.tools.lint.detector.api.ClassContext.Companion.getInternalNam
 import com.intellij.openapi.util.Disposer
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.util.Locale.getDefault
 import java.util.jar.JarInputStream
+import java.util.regex.Pattern
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles.JVM_CONFIG_FILES
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.psi.KtAnnotated
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtClassBody
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtImportList
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtPackageDirective
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtVisitorVoid
+import org.jetbrains.kotlin.psi.ValueArgument
 
 /**
  * Code to extract analysis API compatibility typealiases, intended to be used in the jar bytecode
@@ -39,6 +50,8 @@ import org.jetbrains.kotlin.psi.KtVisitorVoid
  */
 fun main() {
   val typeMap = mutableMapOf<String, String>()
+  val apiMap = mutableMapOf<String, String>()
+  // TODO: hard to find the right snapshot of sources. Maybe using git diff on source/api?
   val currentSources =
     File(
       TestUtils.getWorkspaceRoot().toFile(),
@@ -63,21 +76,44 @@ fun main() {
           fileName.startsWith("org/jetbrains/kotlin/analysis/api/")
       ) {
         val text = String(jis.readAllBytes(), Charsets.UTF_8)
-        extract(env, fileName, text, typeMap)
+        extract(env, fileName, text, typeMap, apiMap)
       }
       entry = jis.nextJarEntry
     }
   }
 
-  val entries = typeMap.entries.sortedBy { it.key }
-  for ((key, value) in entries) {
-    println(
-      "      \"${getInternalName(key).replace("$", "\\$")}\" ->\n" +
-        "       \"${getInternalName(value).replace("$", "\\$")}\""
-    )
+  println("=".repeat(6) + " type mapping " + "=".repeat(6))
+  println()
+  printMap(typeMap) { typeName -> "\"" + getInternalName(typeName).replace("$", "\\$") + "\"" }
+  println()
+  println("=".repeat(6) + " API mapping " + "=".repeat(6))
+  println()
+  printMap(apiMap) { api ->
+    if ("." in api) {
+      val sig = api.substringAfter(" ")
+      val names = api.substringBefore(" ")
+      val clsName = names.substringBeforeLast(".")
+      val mtdName = names.substringAfterLast(".")
+      "// " +
+        getInternalName(clsName).replace("$", "\\$") +
+        "\n      \"" +
+        mtdName +
+        " " +
+        getInternalName(sig) +
+        "\""
+    } else {
+      "\"$api\""
+    }
   }
 
   parentDisposable.dispose()
+}
+
+private fun printMap(m: Map<String, String>, formatter: (String) -> String) {
+  val entries = m.entries.sortedBy { it.key }
+  for ((key, value) in entries) {
+    println("      ${formatter(key)} ->\n" + "       ${formatter(value)}")
+  }
 }
 
 private fun extract(
@@ -85,6 +121,7 @@ private fun extract(
   fileName: String,
   text: String,
   typeMap: MutableMap<String, String>,
+  apiMap: MutableMap<String, String>,
 ) {
   val factory = KtPsiFactory(env.project)
   val ktFile = factory.createFile(fileName, text)
@@ -131,6 +168,117 @@ private fun extract(
           }
 
         typeMap["$pkg.$name"] = fqn
+      }
+
+      var cls = ""
+
+      override fun visitClass(klass: KtClass) {
+        klass.name?.let { cls = it }
+        klass.acceptChildren(this)
+      }
+
+      override fun visitClassOrObject(classOrObject: KtClassOrObject) {
+        classOrObject.name?.let { cls = it }
+        classOrObject.acceptChildren(this)
+      }
+
+      override fun visitClassBody(classBody: KtClassBody) {
+        classBody.acceptChildren(this)
+      }
+
+      private val REPLACED_PATTERN = Pattern.compile("""ReplaceWith\("(.+)"\)""", Pattern.DOTALL)
+
+      override fun visitNamedFunction(function: KtNamedFunction) {
+        val deprecated = getDeprecatedAnnotation(function) ?: return
+        val attr = getReplaceWith(deprecated) ?: return
+        val name = function.name ?: return
+        val attrValue = attr.getArgumentExpression()?.text ?: return
+        val matcher = REPLACED_PATTERN.matcher(attrValue)
+        if (matcher.find()) {
+          val replaced = matcher.group(1)
+          mapApi(name + " " + computeSignature(function), replaced)
+        }
+      }
+
+      override fun visitProperty(property: KtProperty) {
+        val deprecated = getDeprecatedAnnotation(property) ?: return
+        val attr = getReplaceWith(deprecated) ?: return
+        val name = property.name ?: return
+        val attrValue = attr.getArgumentExpression()?.text ?: return
+        val matcher = REPLACED_PATTERN.matcher(attrValue)
+        if (matcher.find()) {
+          val replaced = matcher.group(1)
+          mapApi(toPropertyGetterName(name) + " " + computeSignature(property), replaced)
+        }
+      }
+
+      private fun mapApi(name: String, replaced: String) {
+        if (" in " in replaced || " as " in replaced || " as? " in replaced) {
+          // E.g., ReplaceWith("classId in annotations")
+          // E.g., ReplaceWith("this.getSymbol() as? S")
+          // TODO: chain (of property access, followed by contains call or type cast)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ("[" in replaced && "]" in replaced) {
+          // E.g. ReplaceWith("annotations[classId]")
+          // TODO: chain (of property access and array access)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ("." in replaced) {
+          // E.g. ReplaceWith("types.commonSupertype"))
+          // TODO: chain (of property accesses)
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ("(" in replaced && ")" in replaced) {
+          // E.g., ReplaceWith("resolveToCall()") -> resolveToCall
+          apiMap["$pkg.$cls.$name"] = replaced.substringBefore("(")
+        } else {
+          // E.g., ReplaceWith("expressionType") -> getExpressionType
+          apiMap["$pkg.$cls.$name"] = toPropertyGetterName(replaced)
+        }
+      }
+
+      private fun toPropertyGetterName(name: String): String {
+        return if (name.startsWith("is") || name.startsWith("get")) {
+          name
+        } else {
+          "get" +
+            name.replaceFirstChar {
+              if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString()
+            }
+        }
+      }
+
+      private fun getDeprecatedAnnotation(annotated: KtAnnotated): KtAnnotationEntry? {
+        // Finding @Deprecated(...)
+        return annotated.annotationEntries.find { entry ->
+          entry.typeReference?.text?.contains("Deprecated") == true
+        }
+      }
+
+      private fun getReplaceWith(annotationEntry: KtAnnotationEntry): ValueArgument? {
+        // Finding @Deprecated(..., replaceWith = ReplaceWith("..."), ...)
+        return annotationEntry.valueArguments.find { arg ->
+          arg.getArgumentName()?.asName?.identifier == "replaceWith" ||
+            arg.getArgumentExpression()?.text?.startsWith("ReplaceWith(") == true
+        }
+      }
+
+      private fun computeSignature(callable: KtCallableDeclaration): String {
+        // TODO: JVM primitives, (nested) array, type parameter?
+        return buildString {
+          append("(")
+          val rcvTxt = callable.receiverTypeReference?.getTypeText()
+          val fqn =
+            if (rcvTxt != null) {
+              // Extension receiver (static call)
+              imports[rcvTxt] ?: rcvTxt
+            } else {
+              // Dispatch receiver (virtual/interface call)
+              "$pkg.$cls"
+            }
+          append("L${fqn};")
+          // TODO: value parameters
+          append(")")
+          // TODO: return type
+        }
       }
     }
   )
