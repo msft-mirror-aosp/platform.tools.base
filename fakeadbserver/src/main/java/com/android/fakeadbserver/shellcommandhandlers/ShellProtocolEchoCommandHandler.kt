@@ -20,6 +20,7 @@ import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.ShellV2Protocol
 import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 import java.nio.ByteBuffer
 
 /**

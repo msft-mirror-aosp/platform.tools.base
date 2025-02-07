@@ -36,7 +36,9 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.ProfileableProcessState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -49,6 +51,7 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.takeWhile
@@ -279,8 +282,7 @@ class AdbDeviceServicesTest {
                 deviceSelector,
                 "write-no-stop",
                 collector,
-                null,
-                Duration.ofMillis(10)
+                commandTimeout = Duration.ofMillis(10)
             ).first()
         }
 
@@ -334,7 +336,7 @@ class AdbDeviceServicesTest {
                     "cat",
                     collector,
                     stdinChannel = it,
-                    timeout,
+                    commandTimeout = timeout,
                     shutdownOutput = false
                 )
             exceptionRule.expect(TimeoutException::class.java)
@@ -496,7 +498,8 @@ class AdbDeviceServicesTest {
         }
 
         // Act
-        val flow = deviceServices.shell(deviceSelector, "cat", LineShellCollector(), testInputChannel)
+        val flow = deviceServices.shell(deviceSelector, "cat", LineShellCollector(),
+                                        stdinChannel = testInputChannel)
 
         // Assert
         Assert.assertEquals(
@@ -698,6 +701,429 @@ class AdbDeviceServicesTest {
 
             // Cleanup
             job.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun testShellTerminalSession(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("getprop\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("echo hello\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        // Act
+        val commandOutput = deviceServices.shellTerminalSession(deviceSelector)
+            .withCollector(TextShellV2Collector())
+            .withStdin(stdinPipe)
+            .execute()
+            .first()
+
+        sendData.await()
+
+        // Assert
+        Assert.assertEquals(
+            """
+            $ ping
+            pong
+            $ cat unknown_file
+            $ getprop
+            # This is some build info
+            # This is more build info
+
+            [ro.build.version.release]: [model]
+            [ro.build.version.sdk]: [30]
+            [ro.product.cpu.abi]: [x86_64]
+            [ro.product.manufacturer]: [test1]
+            [ro.product.model]: [test2]
+            [ro.serialno]: [1234]
+            $ echo hello
+            hello
+
+         """.trimIndent(), commandOutput.stdout)
+        Assert.assertEquals("No such file or directory\n", commandOutput.stderr)
+        Assert.assertEquals(0, commandOutput.exitCode)
+    }
+
+    @Test
+    fun testShellTerminalSession_shellExitCodeIsFromLastCommand_lastCommandFails(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        // Act
+        val commandOutput = deviceServices.shellTerminalSession(deviceSelector)
+            .withCollector(TextShellV2Collector())
+            .withStdin(stdinPipe)
+            .execute()
+            .first()
+
+        sendData.await()
+
+        // Assert
+        Assert.assertEquals(
+            """
+            $ ping
+            pong
+            $ cat unknown_file
+
+         """.trimIndent(), commandOutput.stdout)
+        Assert.assertEquals("No such file or directory\n", commandOutput.stderr)
+        Assert.assertEquals(1, commandOutput.exitCode)
+    }
+
+    @Test
+    fun testShellTerminalSession_shellExitCodeIsFromLastCommand_lastCommandSucceeds(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        // Act
+        val commandOutput = deviceServices.shellTerminalSession(deviceSelector)
+            .withCollector(TextShellV2Collector())
+            .withStdin(stdinPipe)
+            .execute()
+            .first()
+
+        sendData.await()
+
+        // Assert
+        Assert.assertEquals(
+            """
+            $ cat unknown_file
+            $ ping
+            pong
+
+         """.trimIndent(), commandOutput.stdout)
+        Assert.assertEquals("No such file or directory\n", commandOutput.stderr)
+        Assert.assertEquals(0, commandOutput.exitCode)
+    }
+
+    @Test
+    fun testShellTerminalSession_multipleCommandsWriteToStderr(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        // Act
+        val commandOutput = deviceServices.shellTerminalSession(deviceSelector)
+            .withCollector(TextShellV2Collector())
+            .withStdin(stdinPipe)
+            .execute()
+            .first()
+
+        sendData.await()
+
+        // Assert
+        Assert.assertEquals(
+            """
+            $ cat unknown_file
+            $ ping
+            pong
+            $ cat unknown_file
+
+         """.trimIndent(), commandOutput.stdout)
+        Assert.assertEquals("No such file or directory\nNo such file or directory\n", commandOutput.stderr)
+        Assert.assertEquals(1, commandOutput.exitCode)
+    }
+
+    @Test
+    fun testShellTerminalSession_propagatesWindowSize(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val initialWindowSizeSent = CompletableDeferred<Unit>()
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            initialWindowSizeSent.await()
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("getprop\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("echo hello\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        val windowSizeFlow = flow<ShellWindowSize> {
+            emit(
+                ShellWindowSize(
+                    rowCount = 5,
+                    columnCount = 255,
+                    xPixelCount = 2000,
+                    yPixelCount = 200
+                )
+            )
+            initialWindowSizeSent.complete(Unit)
+        }
+
+        // Act
+        val commandOutput = deviceServices.shellTerminalSession(deviceSelector)
+            .withCollector(TextShellV2Collector())
+            .withStdin(stdinPipe)
+            .withWindowSizeFlow(windowSizeFlow)
+            .execute()
+            .first()
+
+        sendData.await()
+
+        // Assert
+        Assert.assertEquals(
+            """
+            5x255,2000x200
+            $ ping
+            pong
+            $ cat unknown_file
+            $ getprop
+            # This is some build info
+            # This is more build info
+
+            [ro.build.version.release]: [model]
+            [ro.build.version.sdk]: [30]
+            [ro.product.cpu.abi]: [x86_64]
+            [ro.product.manufacturer]: [test1]
+            [ro.product.model]: [test2]
+            [ro.serialno]: [1234]
+            $ echo hello
+            hello
+
+         """.trimIndent(), commandOutput.stdout)
+        Assert.assertEquals("No such file or directory\n", commandOutput.stderr)
+        Assert.assertEquals(0, commandOutput.exitCode)
+    }
+
+    @Test
+    fun testShellTerminalSessionThrowsIfLegacyShellProtocolNotAllowedOnOldDevice(): Unit = runBlockingWithTimeout {
+        // Prepare
+        // Below API 24, "shell_v2" isn't supported
+        val fakeDevice = addFakeDevice(fakeAdb, 23)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        // Act
+        exceptionRule.expect(IllegalArgumentException::class.java)
+        exceptionRule.expectMessage("No compatible shell protocol is supported or allowed")
+        deviceServices.shellTerminalSession(deviceSelector)
+            .allowLegacyShell(false)
+            .withTextCollector()
+            .execute()
+            .collect()
+
+        // Assert
+        Assert.fail("Should not be reached")
+    }
+
+    @Test
+    fun testShellTerminalSessionNeverFallbacksToExecProtocolOnOldDevice(): Unit = runBlockingWithTimeout {
+        // Prepare
+        // Below API 24, "shell_v2" isn't supported
+        val fakeDevice = addFakeDevice(fakeAdb, 23)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        // Act
+        exceptionRule.expect(IllegalArgumentException::class.java)
+        exceptionRule.expectMessage("No compatible shell protocol is supported or allowed")
+        deviceServices.shellTerminalSession(deviceSelector)
+            .allowLegacyShell(false)
+            .allowLegacyExec(true)
+            .withTextCollector()
+            .execute()
+            .collect()
+
+        // Assert
+        Assert.fail("Should not be reached")
+    }
+
+    @Test
+    fun testShellTerminal(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("echo hello\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        sendData.await()
+
+        // Act and Assert
+        deviceServices.shellTerminal(deviceSelector, TextShellCollector(), ShellOptions(), stdinChannel = stdinPipe).collect {
+            Assert.assertEquals(
+                """
+            $ cat unknown_file
+            No such file or directory
+            $ ping
+            pong
+            $ cat unknown_file
+            No such file or directory
+            $ echo hello
+            hello
+
+         """.trimIndent(), it)
+        }
+    }
+
+    @Test
+    fun testShellV2Terminal(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val stdinPipe = deviceServices.session.channelFactory.createPipedChannel()
+        val sendData = async {
+            val stdin = stdinPipe.pipeSource
+            val buffer = ResizableBuffer()
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("ping\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("cat unknown_file\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            buffer.clear()
+            buffer.appendString("echo hello\r", charset = AdbProtocolUtils.ADB_CHARSET)
+            stdin.writeExactly(buffer.forChannelWrite())
+
+            stdinPipe.pipeSource.close()
+        }
+
+        sendData.await()
+
+        // Act and Assert
+        deviceServices.shellV2Terminal(deviceSelector, TextShellV2Collector(), ShellOptions(), stdinChannel = stdinPipe).collect {
+            Assert.assertEquals(
+                """
+            $ cat unknown_file
+            $ ping
+            pong
+            $ cat unknown_file
+            $ echo hello
+            hello
+
+         """.trimIndent(), it.stdout)
+
+            Assert.assertEquals(
+                """
+            No such file or directory
+            No such file or directory
+
+         """.trimIndent(), it.stderr)
+
+            Assert.assertEquals(0, it.exitCode)
         }
     }
 
@@ -1529,7 +1955,9 @@ class AdbDeviceServicesTest {
 
         // Act
         exceptionRule.expect(IllegalArgumentException::class.java)
+        exceptionRule.expectMessage("No compatible shell protocol is supported or allowed")
         deviceServices.shellCommand(deviceSelector, "getprop")
+            .withTextCollector()
             .allowLegacyShell(false)
             .execute()
             .collect()

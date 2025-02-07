@@ -25,6 +25,8 @@ import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
+import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Uninterruptibles
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +66,9 @@ class FakeAdbRule : ExternalResource() {
           socket: Socket,
           device: DeviceState,
           command: String,
-          args: String
+          args: String,
+          statusWriter: StatusWriter,
+          shellCommandOutputProvider: (() -> ShellCommandOutput)?
       ): Boolean {
         startingDevices[device.deviceId]?.countDown()
         return false

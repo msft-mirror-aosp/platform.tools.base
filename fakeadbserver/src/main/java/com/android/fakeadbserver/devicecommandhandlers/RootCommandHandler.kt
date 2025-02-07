@@ -20,7 +20,6 @@ import com.android.fakeadbserver.FakeAdbServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runInterruptible
 import java.net.Socket
 
 class RootCommandHandler : DeviceCommandHandler("root") {

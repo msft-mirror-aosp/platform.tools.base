@@ -21,7 +21,7 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.ShellCommandOutputWithDefaultExitCode
-import com.google.common.base.Charsets
+import com.android.fakeadbserver.services.StatusWriter
 import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
 
@@ -36,12 +36,14 @@ abstract class ShellHandler protected constructor(
 ) : DeviceCommandHandler(shellProtocolType.command) {
 
     override fun accept(
-      server: FakeAdbServer,
-      socketScope: CoroutineScope,
-      socket: Socket,
-      device: DeviceState,
-      command: String,
-      args: String
+        server: FakeAdbServer,
+        socketScope: CoroutineScope,
+        socket: Socket,
+        device: DeviceState,
+        command: String,
+        args: String,
+        statusWriter: StatusWriter,
+        shellCommandOutputProvider: (() -> ShellCommandOutput)?
     ): Boolean {
         if (this.command != command) {
             return false
@@ -50,9 +52,13 @@ abstract class ShellHandler protected constructor(
         val shellCommand = split[0]
         val shellCommandArgs = if (split.size > 1) split[1] else null
         if (shouldExecute(shellCommand, shellCommandArgs)) {
-            val statusWriter = StatusWriter(socket)
             val shellCommandOutput =
-                ShellCommandOutputWithDefaultExitCode(shellProtocolType.createServiceOutput(socket, device))
+                ShellCommandOutputWithDefaultExitCode(
+                    shellCommandOutputProvider?.invoke() ?: shellProtocolType.createServiceOutput(
+                        socket,
+                        device
+                    )
+                )
             execute(
                 server,
                 statusWriter,
@@ -97,26 +103,4 @@ abstract class ShellHandler protected constructor(
     )
 }
 
-class StatusWriter(val socket: Socket) {
 
-    private var writeOkCalled = false
-    private var writeFailCalled = false
-
-    fun writeOk() {
-        assert(!writeOkCalled)
-        writeOkCalled = true
-        socket.getOutputStream().write("OKAY".toByteArray(Charsets.UTF_8))
-    }
-
-    fun writeFail() {
-        assert(!writeFailCalled)
-        writeFailCalled = true
-        socket.getOutputStream().write("FAIL".toByteArray(Charsets.UTF_8))
-    }
-
-    fun verifyStatusWritten() {
-        assert(writeOkCalled != writeFailCalled) {
-            "OKAY or FAIL message, but not both should be written to output stream"
-        }
-    }
-}

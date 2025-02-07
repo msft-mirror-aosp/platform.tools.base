@@ -21,6 +21,7 @@ import com.android.fakeadbserver.devicecommandhandlers.AbbCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.AbbExecCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.FakeSyncCommandHandler
+import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellHandler
 import com.android.fakeadbserver.devicecommandhandlers.JdwpCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.ReverseForwardCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.RootCommandHandler
@@ -54,6 +55,7 @@ import com.android.fakeadbserver.shellcommandhandlers.CmdCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.DumpsysCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.EchoCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.GetPropCommandHandler
+import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellV2Handler
 import com.android.fakeadbserver.shellcommandhandlers.LogcatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PackageManagerCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PingCommandHandler
@@ -560,6 +562,8 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             addDeviceHandler(FakeSyncCommandHandler())
             addDeviceHandler(ReverseForwardCommandHandler())
             addDeviceHandler(PingCommandHandler(ShellProtocolType.EXEC))
+            addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL_V2))
+            addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL))
             addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL))
             addDeviceHandler(LogcatCommandHandler(ShellProtocolType.SHELL))
             addDeviceHandler(GetPropCommandHandler(ShellProtocolType.EXEC))
@@ -590,6 +594,8 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             addDeviceHandler(ServiceCommandHandler(ShellProtocolType.SHELL_V2))
             addDeviceHandler(RootCommandHandler())
             addDeviceHandler(UnRootCommandHandler())
+            addDeviceHandler(InteractiveShellHandler())
+            addDeviceHandler(InteractiveShellV2Handler())
             return this
         }
 

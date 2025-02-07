@@ -28,7 +28,9 @@ import com.android.adblib.ProcessIdList
 import com.android.adblib.ReverseSocketList
 import com.android.adblib.RootResult
 import com.android.adblib.ShellCollector
+import com.android.adblib.ShellOptions
 import com.android.adblib.ShellV2Collector
+import com.android.adblib.ShellWindowSize
 import com.android.adblib.SocketSpec
 import com.android.adblib.adbLogger
 import com.android.adblib.forwardTo
@@ -52,6 +54,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flowOn
 import java.nio.ByteBuffer
 import java.time.Duration
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 private const val ABB_ARG_SEPARATOR = "\u0000"
@@ -77,6 +80,7 @@ internal class AdbDeviceServicesImpl(
         device: DeviceSelector,
         command: String,
         shellCollector: ShellCollector<T>,
+        shellOptions: ShellOptions?,
         stdinChannel: AdbInputChannel?,
         commandTimeout: Duration,
         bufferSize: Int,
@@ -86,7 +90,8 @@ internal class AdbDeviceServicesImpl(
         return runServiceWithOutput(
             device,
             ExecService.SHELL,
-            { command },
+            execServiceOptions = shellOptions?.toList() ?: emptyList(),
+            commandProvider = { command },
             shellCollector,
             stdinChannel,
             commandTimeout,
@@ -108,7 +113,8 @@ internal class AdbDeviceServicesImpl(
         return runServiceWithOutput(
             device,
             ExecService.EXEC,
-            { command },
+            execServiceOptions = emptyList(),
+            commandProvider = { command },
             shellCollector,
             stdinChannel,
             commandTimeout,
@@ -123,7 +129,11 @@ internal class AdbDeviceServicesImpl(
         // itself can take an arbitrary amount of time.
         val timeout = TimeoutTracker(host.timeProvider, timeout, unit)
         val workBuffer = serviceRunner.newResizableBuffer()
-        val service = getExecServiceString(ExecService.EXEC, command)
+        val service = getExecServiceString(
+            ExecService.EXEC,
+            serviceArguments = emptyList(),
+            command = command
+        )
         val channel = serviceRunner.switchToTransport(device, workBuffer, service, timeout)
         channel.closeOnException {
             host.logger.info { "\"$service\" - sending local service request to ADB daemon, timeout: $timeout" }
@@ -143,16 +153,20 @@ internal class AdbDeviceServicesImpl(
         device: DeviceSelector,
         command: String,
         shellCollector: ShellV2Collector<T>,
+        shellOptions: ShellOptions?,
         stdinChannel: AdbInputChannel?,
+        windowSizeFlow: Flow<ShellWindowSize>?,
         commandTimeout: Duration,
         bufferSize: Int
     ): Flow<T> {
         return runServiceWithShellV2Collector(
             device,
             ExecService.SHELL_V2,
-            { command },
+            execServiceOptions = shellOptions?.toList() ?: emptyList(),
+            commandProvider = { command },
             shellCollector,
             stdinChannel,
+            windowSizeFlow,
             commandTimeout,
             bufferSize
         )
@@ -161,18 +175,20 @@ internal class AdbDeviceServicesImpl(
     private fun <T> runServiceWithShellV2Collector(
         device: DeviceSelector,
         execService: ExecService,
+        execServiceOptions: List<String>,
         commandProvider: () -> String,
         shellCollector: ShellV2Collector<T>,
         stdinChannel: AdbInputChannel?,
+        windowSizeFlow: Flow<ShellWindowSize>?,
         commandTimeout: Duration,
-        bufferSize: Int,
+        bufferSize: Int
     ): Flow<T> {
         // By using a `channelFlow` here (as opposed to a simple `flow`), which always
         // has a buffer of at least one element, we ensure a `shellCollector` emitting
         // elements to the `channelFlow` does not prevent this coroutine from
         // running and collecting the output of the shell command.
         return channelFlow {
-            val service = getExecServiceString(execService, commandProvider())
+            val service = getExecServiceString(execService, execServiceOptions, commandProvider())
             logger.debug { "Device '${device}' - Start execution of service '$service' (bufferSize=$bufferSize bytes)" }
 
             // Note: We only track the time to launch the command, since the command execution
@@ -180,11 +196,21 @@ internal class AdbDeviceServicesImpl(
             val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
             serviceRunner.runDaemonService(device, service, tracker) { channel, workBuffer ->
                 host.timeProvider.withErrorTimeout(commandTimeout) {
+                    // We can have two concurrent write to the device channel (stdin and
+                    // window size change), so we lock access to the channel.
+                    val deviceChannelWithLock = AdbOutputChannelWithMutex(channel)
+
                     // Forward `stdin` from channel to adb (in a new coroutine so that we
                     // can also collect `stdout` concurrently)
                     stdinChannel?.let {
                         launchCancellable {
-                            forwardStdInputV2Format(channel, stdinChannel, bufferSize)
+                            forwardStdInputV2Format(deviceChannelWithLock, stdinChannel, bufferSize)
+                        }
+                    }
+
+                    windowSizeFlow?.let {
+                        launchCancellable {
+                            forwardWindowSizeFlow(deviceChannelWithLock, windowSizeFlow)
                         }
                     }
 
@@ -321,7 +347,8 @@ internal class AdbDeviceServicesImpl(
         return runServiceWithOutput(
             device,
             ExecService.ABB_EXEC,
-            { joinAbbArgs(args) },
+            execServiceOptions = emptyList(),
+            commandProvider = { joinAbbArgs(args) },
             shellCollector,
             stdinChannel,
             commandTimeout,
@@ -342,11 +369,13 @@ internal class AdbDeviceServicesImpl(
         return runServiceWithShellV2Collector(
             device,
             ExecService.ABB,
-            { joinAbbArgs(args) },
+            execServiceOptions = emptyList(),
+            commandProvider = { joinAbbArgs(args) },
             shellCollector,
             stdinChannel,
+            windowSizeFlow = null,
             commandTimeout,
-            bufferSize
+            bufferSize,
         )
     }
 
@@ -497,7 +526,7 @@ internal class AdbDeviceServicesImpl(
     }
 
     private suspend fun forwardStdInputV2Format(
-        deviceChannel: AdbChannel,
+        deviceChannel: AdbOutputChannelWithMutex,
         stdInput: AdbInputChannel,
         bufferSize: Int
     ) {
@@ -522,9 +551,44 @@ internal class AdbDeviceServicesImpl(
         }
     }
 
+    private suspend fun forwardWindowSizeFlow(
+        deviceChannel: AdbOutputChannelWithMutex,
+        windowSizeFlow: Flow<ShellWindowSize>
+    ) {
+        // Packet header + room for 60 ASCII characters (enough for formatting
+        // values of WindowSize fields)
+        val bufferSize = ShellV2Packet.PACKET_HEADER_SIZE + 60
+        val workBuffer = serviceRunner.newResizableBuffer(bufferSize)
+        val shellProtocol = ShellV2ProtocolWriter(deviceChannel, workBuffer)
+
+        windowSizeFlow.collect { windowSize ->
+            // Send the new window size as human-readable ASCII for debugging convenience.
+            // See https://cs.android.com/android/platform/superproject/main/+/4ed60ff3550cdd7f60b71721bb108b594f560a67:packages/modules/adb/client/commandline.cpp;l=472
+            //    size_t l = snprintf(shell->data(), shell->data_capacity(), "%dx%d,%dx%d",
+            //                        ws.ws_row, ws.ws_col, ws.ws_xpixel, ws.ws_ypixel);
+            val windowSizeString = String.format(Locale.ROOT, "%dx%d,%dx%d",
+                                                 windowSize.rowCount, windowSize.columnCount,
+                                                 windowSize.xPixelCount, windowSize.yPixelCount)
+            val windowSizePayload = AdbProtocolUtils.ADB_CHARSET.encode(windowSizeString)
+
+            // Store ASCII representation of WindowSize in buffer
+            val packetSize = ShellV2Packet.PACKET_HEADER_SIZE + windowSizePayload.remaining()
+            val buffer = shellProtocol.prepareWriteBuffer(packetSize)
+            assert(buffer.remaining() >= windowSizePayload.remaining()) {
+                "Buffer should have room for ascii representation of WindowSize " +
+                        "(${buffer.remaining()} < ${windowSizePayload.remaining()})"
+            }
+            buffer.put(windowSizePayload)
+
+            // Send WindowSize packet to terminal
+            shellProtocol.writePreparedBuffer(ShellV2PacketKind.WINDOW_SIZE_CHANGE)
+        }
+    }
+
     private fun <T> runServiceWithOutput(
         device: DeviceSelector,
         execService: ExecService,
+        execServiceOptions: List<String>,
         commandProvider: () -> String,
         shellCollector: ShellCollector<T>,
         stdinChannel: AdbInputChannel?,
@@ -538,7 +602,7 @@ internal class AdbDeviceServicesImpl(
         // elements to the `channelFlow` does not prevent this coroutine from
         // running and collecting the output of the shell command.
         return channelFlow {
-            val service = getExecServiceString(execService, commandProvider())
+            val service = getExecServiceString(execService, execServiceOptions, commandProvider())
             logger.debug { "Device \"${device}\" - Start execution of service \"$service\" (bufferSize=$bufferSize bytes)" }
 
             // Note: We only track the time to launch the command, since the command execution
@@ -572,18 +636,29 @@ internal class AdbDeviceServicesImpl(
         }.flowOn(host.ioDispatcher)
     }
 
-    private fun getExecServiceString(service: ExecService, command: String): String {
+    private fun getExecServiceString(
+        service: ExecService,
+        serviceArguments: List<String>,
+        command: String
+    ): String {
         // Shell service string can look like: shell[,arg1,arg2,...]:[command].
         // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/client/commandline.cpp;l=594;drc=fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f
-
+        val args = if (serviceArguments.isEmpty()) {
+            ""
+        } else {
+            check(serviceArguments.none { it.contains(',') }) {
+                "Invalid ',' separator in one or more shell service argument(s)"
+            }
+            serviceArguments.joinToString(separator = ",", prefix = ",")
+        }
         // We don't escape here, just like ssh(1). http://b/20564385.
         // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/client/commandline.cpp;l=776
         return when (service) {
-            ExecService.SHELL -> "shell:$command"
-            ExecService.SHELL_V2 -> "shell,v2:$command"
-            ExecService.EXEC -> "exec:$command"
-            ExecService.ABB_EXEC -> "abb_exec:$command"
-            ExecService.ABB -> "abb:$command"
+            ExecService.SHELL -> "shell$args:$command"
+            ExecService.SHELL_V2 -> "shell,v2$args:$command"
+            ExecService.EXEC -> "exec$args:$command"
+            ExecService.ABB_EXEC -> "abb_exec$args:$command"
+            ExecService.ABB -> "abb$args:$command"
         }
     }
 

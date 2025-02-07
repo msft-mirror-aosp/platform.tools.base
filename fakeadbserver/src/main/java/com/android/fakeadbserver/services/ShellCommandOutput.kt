@@ -52,8 +52,10 @@ interface ShellCommandOutput {
  * method for writing an exit code if none has been written yet.
  */
 class ShellCommandOutputWithDefaultExitCode(val delegate: ShellCommandOutput):
-        ShellCommandOutput by delegate {
+    ShellCommandOutput by delegate {
+
     private var exitCodeWritten = false
+
     override fun writeExitCode(exitCode: Int) {
         delegate.writeExitCode(exitCode)
         exitCodeWritten = true
@@ -66,6 +68,20 @@ class ShellCommandOutputWithDefaultExitCode(val delegate: ShellCommandOutput):
         if (!exitCodeWritten) {
             writeExitCode(0)
         }
+    }
+}
+
+/**
+ * Wrapper around [ShellCommandOutput] that tracks the value of the last exit code.
+ * The tracked exit code value is only stored in memory and not delegated to the underlying logic
+ */
+class ShellCommandOutputWithCachedExitCode(private val delegate: ShellCommandOutput):
+    ShellCommandOutput by delegate {
+
+    internal var exitCode = 0
+
+    override fun writeExitCode(exitCode: Int) {
+        this.exitCode = exitCode
     }
 }
 

@@ -19,12 +19,13 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 
 class PingCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
     shellProtocolType, "ping"
 ) {
     companion object {
-        const val PING_COMMAND_FAKE_OUTPUT = "pong"
+        const val PING_COMMAND_FAKE_OUTPUT = "pong\n"
     }
 
     override fun execute(

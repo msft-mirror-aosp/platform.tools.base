@@ -21,6 +21,7 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.PackageManager
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.ShellV2Output
+import com.android.fakeadbserver.services.StatusWriter
 import java.io.IOException
 import java.util.regex.Pattern
 
