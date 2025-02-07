@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
@@ -236,55 +237,45 @@ class KeepDebugSymbolsTest {
             .run(":lib:assembleDebug", ":lib:assembleRelease", ":lib:assembleDebugAndroidTest")
 
         libSubproject.getAar("debug") {
-            assertThatAar(it).contains("jni/x86/libStrip.so")
-            assertThatAar(it).contains("jni/x86/libDslDoNotStrip.so")
-            assertThatAar(it).contains("jni/x86/libDebugDoNotStrip.so")
-            assertThatAar(it).contains("jni/x86/libReleaseDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDslDoNotStrip1.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDslDoNotStrip2.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDebugDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appReleaseDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/androidTestStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/androidTestDoNotStrip.so")
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libStrip.so")
-            ).isStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libDslDoNotStrip.so")
-            ).isNotStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libDebugDoNotStrip.so")
-            ).isNotStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libReleaseDoNotStrip.so")
-            ).isStripped()
+            AarSubject.assertThat(it.file) {
+                contains("jni/x86/libStrip.so")
+                contains("jni/x86/libDslDoNotStrip.so")
+                contains("jni/x86/libDebugDoNotStrip.so")
+                contains("jni/x86/libReleaseDoNotStrip.so")
+                doesNotContain("jni/x86/appStrip.so")
+                doesNotContain("jni/x86/appDslDoNotStrip1.so")
+                doesNotContain("jni/x86/appDslDoNotStrip2.so")
+                doesNotContain("jni/x86/appDebugDoNotStrip.so")
+                doesNotContain("jni/x86/appReleaseDoNotStrip.so")
+                doesNotContain("jni/x86/androidTestStrip.so")
+                doesNotContain("jni/x86/androidTestDoNotStrip.so")
+
+                nativeLibrary("jni/x86/libStrip.so").isStripped()
+                nativeLibrary("jni/x86/libDslDoNotStrip.so").isNotStripped()
+                nativeLibrary("jni/x86/libDebugDoNotStrip.so").isNotStripped()
+                nativeLibrary("jni/x86/libReleaseDoNotStrip.so").isStripped()
+            }
         }
 
         libSubproject.getAar("release") {
-            assertThatAar(it).contains("jni/x86/libStrip.so")
-            assertThatAar(it).contains("jni/x86/libDslDoNotStrip.so")
-            assertThatAar(it).contains("jni/x86/libDebugDoNotStrip.so")
-            assertThatAar(it).contains("jni/x86/libReleaseDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDslDoNotStrip1.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDslDoNotStrip2.so")
-            assertThatAar(it).doesNotContain("jni/x86/appDebugDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/appReleaseDoNotStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/androidTestStrip.so")
-            assertThatAar(it).doesNotContain("jni/x86/androidTestDoNotStrip.so")
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libStrip.so")
-            ).isStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libDslDoNotStrip.so")
-            ).isNotStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libDebugDoNotStrip.so")
-            ).isStripped()
-            assertThatNativeLib(
-                ZipHelper.extractFile(it, "jni/x86/libReleaseDoNotStrip.so")
-            ).isNotStripped()
+            AarSubject.assertThat(it.file) {
+                contains("jni/x86/libStrip.so")
+                contains("jni/x86/libDslDoNotStrip.so")
+                contains("jni/x86/libDebugDoNotStrip.so")
+                contains("jni/x86/libReleaseDoNotStrip.so")
+                doesNotContain("jni/x86/appStrip.so")
+                doesNotContain("jni/x86/appDslDoNotStrip1.so")
+                doesNotContain("jni/x86/appDslDoNotStrip2.so")
+                doesNotContain("jni/x86/appDebugDoNotStrip.so")
+                doesNotContain("jni/x86/appReleaseDoNotStrip.so")
+                doesNotContain("jni/x86/androidTestStrip.so")
+                doesNotContain("jni/x86/androidTestDoNotStrip.so")
+
+                nativeLibrary("jni/x86/libStrip.so").isStripped()
+                nativeLibrary("jni/x86/libDslDoNotStrip.so").isNotStripped()
+                nativeLibrary("jni/x86/libDebugDoNotStrip.so").isStripped()
+                nativeLibrary("jni/x86/libReleaseDoNotStrip.so").isNotStripped()
+            }
         }
 
         val libAndroidTestDebugApk =

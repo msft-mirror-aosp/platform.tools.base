@@ -16,18 +16,19 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.build.gradle.internal.tasks.AarMetadataReader
+import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.regex.Pattern
 import kotlin.io.path.inputStream
 
-private const val PREFIX_LIBS_LENGTH = "libs/".length
-private const val PREFIX_RES_LENGTH = "res/".length
 private val PATTERN_LIBS_JAR = Pattern.compile("^libs/.+$")
-private val PATTERN_ANDROID_RES = Pattern.compile("^res/.+$")
 
 @SubjectDsl
 class AarSubject(
@@ -36,6 +37,17 @@ class AarSubject(
 ): AbstractZipSubject<AarSubject, Zip>(metadata, actual) {
 
     companion object {
+        /**
+         * Runs the provided action on an [com.android.build.gradle.integration.common.output.AarSubject] that
+         * is created for the zip at the provided path.
+         */
+        @JvmStatic
+        fun assertThat(zip: Path, action: AarSubject.() -> Unit) {
+            SimpleZip(zip).use {
+                action(assertAbout(aars()).that(it))
+            }
+        }
+
         internal fun assertThat(zip: Zip, action: AarSubject.() -> Unit) {
             action(assertAbout(aars()).that(zip))
         }
@@ -167,7 +179,7 @@ class AarSubject(
     }
 
     /**
-     *
+     * returns a [AarMetadataSubject] for the metadata of this AAR
      */
     fun aarMetadata(): AarMetadataSubject {
         contains("META-INF/com/android/build/gradle/aar-metadata.properties")
@@ -184,10 +196,29 @@ class AarSubject(
     }
 
     /**
-     *
+     * Creates a [AarMetadataSubject] for the metadata of this AAR, and runs the given action on it.
      */
     fun aarMetadata(action: AarMetadataSubject.() -> Unit) {
         action(aarMetadata())
+    }
+
+    fun nativeLibrary(path: String): NativeLibrarySubject {
+        contains(path)
+        val location = actual().getEntry(path)
+
+        // we need to create a temporary file because the subject needs to run command lines against it.
+        // TODO inject a TemporaryFolder rule?
+
+        // location can be null when testing the fixture
+        val nativeFile = location?.let {
+            Files.createTempFile("nativeLibrary_", "_${location.fileName}").also {
+                FileUtils.copyFile(location, it)
+            }.toFile()
+        } ?: Files.createTempFile("empty", ".so").toFile()
+
+        nativeFile.deleteOnExit()
+
+        return check("nativeLibrary($path)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
     }
 
     private fun jar(path: String, methodName: String = "jar($path)"): JarSubject {
