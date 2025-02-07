@@ -50,7 +50,6 @@ import com.android.build.gradle.internal.component.features.BuildConfigCreationC
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
 import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
-import com.android.build.gradle.internal.component.legacy.ModelV1LegacySupport
 import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySupport
 import com.android.build.gradle.internal.core.MergedJavaCompileOptions
 import com.android.build.gradle.internal.core.ProductFlavor
@@ -241,7 +240,6 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
     override val resValuesCreationConfig: ResValuesCreationConfig? = null
     override val buildConfigCreationConfig: BuildConfigCreationConfig? = null
     override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig? = null
-    override val modelV1LegacySupport: ModelV1LegacySupport? = null
     override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? = null
 
     override val javaCompilation: JavaCompilation

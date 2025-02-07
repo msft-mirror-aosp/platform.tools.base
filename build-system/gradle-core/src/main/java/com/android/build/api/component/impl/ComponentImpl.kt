@@ -308,8 +308,6 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
         )
     }
 
-    override val modelV1LegacySupport = ModelV1LegacySupportImpl(dslInfo, variantSources)
-
     override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? by lazy {
         OldVariantApiLegacySupportImpl(
             this,
