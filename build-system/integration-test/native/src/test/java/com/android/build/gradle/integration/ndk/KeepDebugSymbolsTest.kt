@@ -20,8 +20,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
 import com.android.build.gradle.integration.common.utils.ZipHelper
@@ -236,8 +234,8 @@ class KeepDebugSymbolsTest {
             .with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
             .run(":lib:assembleDebug", ":lib:assembleRelease", ":lib:assembleDebugAndroidTest")
 
-        libSubproject.getAar("debug") {
-            AarSubject.assertThat(it.file) {
+        libSubproject.testAar("debug") {
+            it.apply {
                 contains("jni/x86/libStrip.so")
                 contains("jni/x86/libDslDoNotStrip.so")
                 contains("jni/x86/libDebugDoNotStrip.so")
@@ -257,8 +255,8 @@ class KeepDebugSymbolsTest {
             }
         }
 
-        libSubproject.getAar("release") {
-            AarSubject.assertThat(it.file) {
+        libSubproject.testAar("release") {
+            it.apply {
                 contains("jni/x86/libStrip.so")
                 contains("jni/x86/libDslDoNotStrip.so")
                 contains("jni/x86/libDebugDoNotStrip.so")

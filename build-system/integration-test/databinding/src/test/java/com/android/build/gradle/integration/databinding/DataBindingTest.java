@@ -26,19 +26,22 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Joiner;
 import com.google.common.truth.Truth8;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 @RunWith(FilterableParameterized.class)
 public class DataBindingTest {
@@ -92,19 +95,26 @@ public class DataBindingTest {
     public void checkApkContainsDataBindingClasses() throws Exception {
         project.executor().run("assembleDebug");
 
-        String bindingClass = "Landroid/databinding/testapp/databinding/ActivityMainBinding;";
+        // FIXME remove when migrating to new ApkSubject
+        String bindingClassInAar = "android/databinding/testapp/databinding/ActivityMainBinding";
+        String bindingClassinApk = "L" + bindingClassInAar + ";";
         // only in v2
-        String implClass = "Landroid/databinding/testapp/databinding/ActivityMainBindingImpl;";
+        String implClassInAar = "android/databinding/testapp/databinding/ActivityMainBindingImpl";
+        String implClassInApk = "L" + implClassInAar + ";";
         final Apk apk;
         if (myLibrary) {
             project.testAar(
                     "debug",
                     it -> {
-                        it.containsClass(bindingClass);
-                        it.containsClass(implClass);
+                        it.allJars(
+                                jar -> {
+                                    jar.containsClass(bindingClassInAar);
+                                    jar.containsClass(implClassInAar);
 
-                        it.doesNotContainClass(myDbPkg + "adapters/Converters;");
-                        it.doesNotContainClass(myDbPkg + "DataBindingComponent;");
+                                    jar.doesNotContainClass(myDbPkg + "adapters/Converters;");
+                                    jar.doesNotContainClass(myDbPkg + "DataBindingComponent;");
+                                    return null;
+                                });
                     });
 
             // also builds the test app
@@ -114,14 +124,14 @@ public class DataBindingTest {
             assertThat(testApk.getFile()).isFile();
             Optional<Dex> dexOptional = testApk.getMainDexFile();
             Truth8.assertThat(dexOptional).isPresent();
-            assertThat(dexOptional.get()).containsClass(bindingClass);
-            assertThat(dexOptional.get()).containsClass(implClass);
+            assertThat(dexOptional.get()).containsClass(bindingClassinApk);
+            assertThat(dexOptional.get()).containsClass(implClassInApk);
             apk = testApk;
         } else {
             apk = project.getApk("debug");
         }
-        assertThat(apk).containsClass(bindingClass);
-        assertThat(apk).containsClass(implClass);
+        assertThat(apk).containsClass(bindingClassinApk);
+        assertThat(apk).containsClass(implClassInApk);
         assertThat(apk).containsClass(myDbPkg + "DataBindingComponent;");
         if (myWithoutAdapters) {
             assertThat(apk).doesNotContainClass(myDbPkg + "adapters/Converters;");

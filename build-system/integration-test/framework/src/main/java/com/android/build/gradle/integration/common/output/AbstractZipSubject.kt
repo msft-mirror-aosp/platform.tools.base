@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.integration.common.output.ZipSubject.Companion.zips
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
-import com.google.common.truth.PrimitiveByteArraySubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 
@@ -76,13 +75,13 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     }
 
     /**
-     * Returns a [PrimitiveByteArraySubject] with the binary content of the file at the given path.
+     * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
      * @param path the path of the item which must not include a leading /
      */
-    fun binaryFile(path: String): PrimitiveByteArraySubject {
+    fun binaryFile(path: String): BinarySubject {
         contains(path)
-        return check("binaryFile($path)").that(actual().binaryFile(path))
+        return check("binaryFile($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
     }
 
     /**

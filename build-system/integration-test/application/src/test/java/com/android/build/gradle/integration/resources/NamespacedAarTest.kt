@@ -162,15 +162,13 @@ class NamespacedAarTest {
         }
 
         subproject.assertThatAar("release") {
-            containsFileWithContent(
-                "R.txt",
+            textSymbolFile().isEqualTo(
                 """
                     int string foo 0x0
                     int string my_version_name 0x0
                 """.trimIndent()
             )
-            containsFileWithContent(
-            "res/values/values.xml",
+            androidResources().textFile("values/values.xml").isEqualTo(
                 """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
@@ -179,7 +177,7 @@ class NamespacedAarTest {
                         <string name="my_version_name">1.0</string>
 
                     </resources>
-                    """.trimIndent()
+                """.trimIndent()
             )
         }
     }

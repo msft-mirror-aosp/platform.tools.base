@@ -18,11 +18,13 @@ package com.android.build.gradle.integration.application;
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import java.io.IOException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Assemble tests for privateResources.
@@ -65,14 +67,14 @@ public class PrivateResourceTest {
                 .testAar(
                         "release",
                         it -> {
-                            it.containsFileWithContent("public.txt", expected);
+                            it.textFile("public.txt").isEqualTo(expected);
                         });
 
         project.getSubproject("mylibrary")
                 .testAar(
                         "debug",
                         it -> {
-                            it.containsFileWithContent("public.txt", expected);
+                            it.textFile("public.txt").isEqualTo(expected);
                         });
 
         // No public resources: file should exist but be empty
@@ -80,14 +82,14 @@ public class PrivateResourceTest {
                 .testAar(
                         "debug",
                         it -> {
-                            it.containsFileWithContent("public.txt", "");
+                            it.textFile("public.txt").isEmpty();
                         });
 
         project.getSubproject("mylibrary2")
                 .testAar(
                         "release",
                         it -> {
-                            it.containsFileWithContent("public.txt", "");
+                            it.textFile("public.txt").isEmpty();
                         });
     }
 }

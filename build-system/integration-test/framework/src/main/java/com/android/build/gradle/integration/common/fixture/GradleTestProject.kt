@@ -25,7 +25,8 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.Projec
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
-import com.android.build.gradle.integration.common.truth.AarSubject
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getApkLocations
@@ -55,7 +56,6 @@ import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.Lists
-import com.google.common.truth.Truth
 import org.gradle.launcher.daemon.client.NoUsableDaemonFoundException
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -1211,16 +1211,13 @@ allprojects { proj ->
             Lists.newArrayListWithExpectedSize(1 + dimensions.size)
         dimensionList.add(name)
         dimensionList.addAll(dimensions)
-        Aar(
-            getOutputFile(
-                "aar",
-                Joiner.on("-").join(dimensionList) + SdkConstants
-                    .DOT_AAR
-            )
-        ).use { aar ->
-            val subject =
-                Truth.assertAbout(AarSubject.aars()).that(aar)
-            action(subject)
+        val path = getOutputFile(
+            "aar",
+            Joiner.on("-").join(dimensionList) + SdkConstants
+                .DOT_AAR
+        )
+        AarSubject.assertThat(path.toPath()) {
+            action(this)
         }
     }
 
@@ -1305,7 +1302,7 @@ allprojects { proj ->
     /**
      * Allows testing the aar.
      *
-     * Testing happens in the callback that receives an [AarSubject]
+     * Testing happens in the callback that receives an [Aar]
      *
      * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
      * "unsigned", "aligned")
@@ -1320,7 +1317,7 @@ allprojects { proj ->
     /**
      * Allows testing the aar.
      *
-     * Testing happens in the callback that receives an [AarSubject]
+     * Testing happens in the callback that receives an [Aar]
      *
      * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
      * "unsigned", "aligned")
@@ -1335,7 +1332,7 @@ allprojects { proj ->
     /**
      * Allows testing the aar.
      *
-     * Testing happens in the callback that receives an [AarSubject]
+     * Testing happens in the callback that receives an [Aar]
      *
      * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
      * "unsigned", "aligned")

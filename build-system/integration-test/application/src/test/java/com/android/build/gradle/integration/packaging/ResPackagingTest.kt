@@ -18,7 +18,10 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.truth.AarSubject
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.AbstractZipSubject
+import com.android.build.gradle.integration.common.output.Zip
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -29,7 +32,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.Timeout
 import java.io.File
-import java.io.IOException
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -676,9 +678,9 @@ class ResPackagingTest {
         private fun checkAar(
             project: GradleTestProject, filename: String, content: String?
         ) {
-            project.testAar(
-                "debug"
-            ) { it: AarSubject -> check(it, filename, content) }
+            project.testAar("debug") { it: AarSubject ->
+                check(it, filename, content)
+            }
         }
 
         private fun check(
@@ -690,6 +692,18 @@ class ResPackagingTest {
                 subject.containsFileWithContent("res/raw/$filename", content)
             } else {
                 subject.doesNotContainResource("raw/$filename")
+            }
+        }
+
+        private fun check(
+            subject: AbstractZipSubject<AarSubject, Zip>,
+            filename: String,
+            content: String?
+        ) {
+            if (content != null) {
+                subject.textFile("res/raw/$filename").isEqualTo(content)
+            } else {
+                subject.doesNotContain("raw/$filename")
             }
         }
     }

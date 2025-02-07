@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.dependencies
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.v2.ide.SyncIssue
@@ -81,10 +80,12 @@ class OptionalAarTest : ModelComparator() {
 
     @Test
     fun checkLibDoesNotContainProvidedLibsLayout() {
-        project.getSubproject("library").testAar("debug") { aar: AarSubject ->
-            aar.doesNotContainResource("layout/lib2layout.xml")
-            aar.textSymbolFile().doesNotContain("int layout lib2layout")
-            aar.textSymbolFile().contains("int layout liblayout")
+        project.getSubproject("library").testAar("debug") {
+            it.androidResources().doesNotContain("layout/lib2layout.xml")
+            it.textSymbolFile().apply {
+                doesNotContain("int layout lib2layout")
+                contains("int layout liblayout")
+            }
         }
     }
 }

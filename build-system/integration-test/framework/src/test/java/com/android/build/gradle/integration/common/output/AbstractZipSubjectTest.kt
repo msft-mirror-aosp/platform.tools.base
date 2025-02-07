@@ -26,92 +26,94 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
 
     @Test
     fun zipEntries() {
-        val zip = createAar("temp.zip") {
+        createAar("temp.zip") {
             withMainJar {
                 addEmptyClasses("com/example/SomeClass")
                 addBinaryFile("/file.dat", FAKE_CLASS)
             }
             addResource("values/values.xml", "values file content")
-        }
+        }.use { zip ->
 
-        assertThat(zip) {
-            entries().hasSize(3)
-        }
+            assertThat(zip) {
+                entries().hasSize(3)
+            }
 
-        // checks negative results
-        expectFailure {
-            it.that(zip).entries().hasSize(5)
-        }.assert {
-            // we don't care about testing the 'expected' and 'but was' facts
-            factKeys().containsAtLeast("value of", "zip was")
-            factValue("value of").isEqualTo("zip.entries().size()")
-            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            // checks negative results
+            expectFailure {
+                it.that(zip).entries().hasSize(5)
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "zip was")
+                factValue("value of").isEqualTo("zip.entries().size()")
+                factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            }
         }
     }
 
     @Test
     fun innerZip() {
-        val zip = createAar("temp.zip") {
+        createAar("temp.zip") {
             withMainJar {
                 addEmptyClasses("com/example/SomeClass")
                 addBinaryFile("/file.dat", FAKE_CLASS)
             }
             addResource("values/values.xml", "values file content")
-        }
+        }.use { zip ->
 
-        assertThat(zip) {
-            innerZip("classes.jar") {
-                contains("com/example/SomeClass.class")
-                contains("file.dat")
-                binaryFile("file.dat").isEqualTo(FAKE_CLASS)
+            assertThat(zip) {
+                innerZip("classes.jar") {
+                    contains("com/example/SomeClass.class")
+                    contains("file.dat")
+                    binaryFile("file.dat").isEqualTo(FAKE_CLASS)
+                }
             }
-        }
 
-        // checks negative results
-        expectFailure {
-            it.that(zip).contains("/com/example/SomeOtherClass.class")
-        }.assert {
-            // we don't care about testing the 'expected' and 'but was' facts
-            factKeys().containsAtLeast("value of", "zip was")
-            factValue("value of").isEqualTo("zip.entries()")
-            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            // checks negative results
+            expectFailure {
+                it.that(zip).contains("/com/example/SomeOtherClass.class")
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "zip was")
+                factValue("value of").isEqualTo("zip.entries()")
+                factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            }
         }
     }
 
     @Test
     fun testNotExist() {
-        val missingZip = SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
-
-        // check the normal test succeeds
-        assertThat(missingZip).doesNotExist()
+        SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist")).use { missingZip ->
+            // check the normal test succeeds
+            assertThat(missingZip).doesNotExist()
+        }
 
         // check negative results
-        val validZip = createAar("temp.zip") { }
-
-        expectFailure {
-            it.that(validZip).doesNotExist()
-        }.assert {
-            factKeys().containsExactly("expected zip to not exist", "but was")
-            factValue("but was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+        createAar("temp.zip") { }.use { validZip ->
+            expectFailure {
+                it.that(validZip).doesNotExist()
+            }.assert {
+                factKeys().containsExactly("expected zip to not exist", "but was")
+                factValue("but was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            }
         }
     }
 
     @Test
     fun exist() {
-        val validZip = createAar("temp.zip") { }
-
-        // check the normal test succeeds
-        assertThat(validZip).exists()
+        createAar("temp.zip") { }.use { validZip ->
+            // check the normal test succeeds
+            assertThat(validZip).exists()
+        }
 
         // check negative results
-        val missingZip = SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist"))
-
-        expectFailure {
-            it.that(missingZip).exists()
-        }.assert {
-            factKeys().containsExactly("expected to exist", "nearest existing ancestor")
-            factValue("expected to exist").endsWith("${File.separatorChar}not_exist")
-            factValue("nearest existing ancestor").doesNotMatch("^.+${File.separatorChar}not_exist$")
+        SimpleZip(temporaryFolder.newFolder().toPath().resolve("not_exist")).use { missingZip ->
+            expectFailure {
+                it.that(missingZip).exists()
+            }.assert {
+                factKeys().containsExactly("expected to exist", "nearest existing ancestor")
+                factValue("expected to exist").endsWith("${File.separatorChar}not_exist")
+                factValue("nearest existing ancestor").doesNotMatch("^.+${File.separatorChar}not_exist$")
+            }
         }
     }
 

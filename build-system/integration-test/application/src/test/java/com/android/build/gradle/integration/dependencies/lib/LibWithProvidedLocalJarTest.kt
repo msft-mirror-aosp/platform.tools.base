@@ -61,8 +61,7 @@ class LibWithProvidedLocalJarTest : ModelComparator() {
     @Test
     fun `check provided local jar is not packaged`() {
         project.execute("clean", "assembleDebug")
-        project.testAar(
-            GradleTestProject.ApkType.DEBUG.buildType
-        ) { aar -> aar.doesNotContain("libs/util-1.0.jar") }
+        project.testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
+            aar.doesNotContain("libs/util-1.0.jar") }
     }
 }

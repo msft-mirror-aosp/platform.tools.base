@@ -71,12 +71,13 @@ class LibraryAllClassesAccessTest(val scope: ScopedArtifacts.Scope) {
         Truth.assertThat(result.didWorkTasks).contains(":debugModify${scope.name}Classes")
         // check resulting APK that new classes is present in the dex.
 
-        project.getAar("debug") {
-            // check that both interfaces and original code is present in the APK.
-            TruthHelper.assertThatAar(it)
-                .containsClass("Lcom/example/helloworld/HelloWorld;");
-            TruthHelper.assertThatAar(it)
-                .containsClass("Lcom/android/api/tests/${scope.name}Interface;");
+        project.testAar("debug") {
+            // check that both interfaces and original code is present in the AAR.
+            it.allJars {
+                containsClass("com/example/helloworld/HelloWorld")
+                containsClass("com/android/api/tests/${scope.name}Interface")
+            }
+
         }
     }
 

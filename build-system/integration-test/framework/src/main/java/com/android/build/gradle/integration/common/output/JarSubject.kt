@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
-import com.google.common.truth.PrimitiveByteArraySubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import org.objectweb.asm.ClassReader
@@ -39,14 +38,14 @@ open class JarSubject(
 
     companion object {
         /**
-         * Returns a [com.android.build.gradle.integration.common.output.ZipSubject]
+         * Returns a [JarSubject]
          */
         fun assertThat(zip: Zip): JarSubject {
             return assertAbout(jars()).that(zip)
         }
 
         /**
-         * Creates a [com.android.build.gradle.integration.common.output.ZipSubject] and
+         * Creates a [JarSubject] and
          * configures it with the given action
          */
         fun assertThat(zip: Zip, action: JarSubject.() -> Unit) {
@@ -140,23 +139,23 @@ open class JarSubject(
     }
 
     /**
-     * Returns a [PrimitiveByteArraySubject] with the binary content of the file at the given path.
+     * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
      * @param path the path of the item which must not include a leading /
      */
-    fun resourceAsBytes(path: String): PrimitiveByteArraySubject {
+    fun resourceAsBytes(path: String): BinarySubject {
         containsResource(path)
-        return check("resourceAsBytes($path)").that(actual().binaryFile(path))
+        return check("resourceAsBytes($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
     }
 
     /**
-     * Returns a [PrimitiveByteArraySubject] with the binary content of class with the
+     * Returns a [BinarySubject] with the binary content of class with the
      * given binary name.
      */
-    fun classContent(binaryName: String): PrimitiveByteArraySubject {
+    fun classContent(binaryName: String): BinarySubject {
         classes().contains(binaryName)
 
-        return check("classFile($binaryName)").that(actual().binaryFile(binaryName.toPath()))
+        return check("classFile($binaryName)").about(BinarySubject.bytes()).that(actual().binaryFile(binaryName.toPath()))
     }
 
     /**

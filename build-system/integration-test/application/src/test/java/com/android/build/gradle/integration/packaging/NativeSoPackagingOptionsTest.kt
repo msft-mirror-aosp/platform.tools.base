@@ -194,11 +194,13 @@ class NativeSoPackagingOptionsTest {
         androidTestApk.containsJavaResourceWithContent("lib/x86/testKeep.so", "foo")
 
         libSubProject.assertThatAar("debug") {
-            this.doesNotContain("jni/x86/dslExclude1.so")
-            this.doesNotContain("jni/x86/dslExclude2.so")
-            this.doesNotContain("jni/x86/dslExclude3.so")
-            this.doesNotContain("jni/x86/libExclude.so")
-            this.contains("jni/x86/libKeep.so")
+            entries().apply {
+                doesNotContain("jni/x86/dslExclude1.so")
+                doesNotContain("jni/x86/dslExclude2.so")
+                doesNotContain("jni/x86/dslExclude3.so")
+                doesNotContain("jni/x86/libExclude.so")
+                contains("jni/x86/libKeep.so")
+            }
         }
 
         assertThat(libSubProject.getApk(ANDROIDTEST_DEBUG).file).exists()

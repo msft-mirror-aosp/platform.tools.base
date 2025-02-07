@@ -98,24 +98,6 @@ public class TruthHelper {
     }
 
     @NonNull
-    public static AarSubject assertThatAar(@NonNull File aar) {
-        try {
-            return assertThat(new Aar(aar.toPath()));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static AarSubject assertThat(@NonNull Aar aar) {
-        return assertAbout(AarSubject.aars()).that(aar);
-    }
-
-
-    public static AarSubject assertThatAar(@NonNull Aar aar) {
-        return assertAbout(AarSubject.aars()).that(aar);
-    }
-
-    @NonNull
     public static GradleTaskSubject assertThat(@NonNull TaskStateList.TaskInfo taskInfo) {
         return GradleTaskSubject.assertThat(taskInfo);
     }

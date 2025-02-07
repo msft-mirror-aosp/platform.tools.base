@@ -20,7 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification;
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
+import com.android.build.gradle.integration.common.output.AarSubject;
+import com.android.build.gradle.integration.common.output.AbstractZipSubject;
+import com.android.build.gradle.integration.common.output.Zip;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -704,11 +706,11 @@ public class AssetPackagingTest {
     }
 
     private static void check(
-            @NonNull AbstractAndroidSubject subject,
+            @NonNull AbstractZipSubject<AarSubject, Zip> subject,
             @NonNull String filename,
             @Nullable String content) {
         if (content != null) {
-            subject.containsFileWithContent("assets/" + filename, content);
+            subject.textFile("assets/" + filename).isEqualTo(content);
         } else {
             subject.doesNotContain("assets/" + filename);
         }

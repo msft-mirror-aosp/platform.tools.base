@@ -86,7 +86,7 @@ class AutoServiceTest(private val pluginName: String) {
         } else {
 
             project.assertThatAar("debug") {
-                containsJavaResource("META-INF/services/com.example.helloworld.MyService")
+                allJars().containsResource("META-INF/services/com.example.helloworld.MyService")
             }
         }
     }

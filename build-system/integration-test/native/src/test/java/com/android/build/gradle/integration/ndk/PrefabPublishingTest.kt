@@ -213,9 +213,9 @@ class PrefabPublishingTest(
     fun `AAR contains the prefab packages`() {
         executor().run("clean", "assemble$variant")
         project.getSubproject(gradleModuleName).assertThatAar(variant) {
-            containsFile("prefab/prefab.json")
-            containsFile("prefab/modules/$gradleModuleName/module.json")
-            containsFile("prefab/modules/${gradleModuleName}_static/module.json")
+            contains("prefab/prefab.json")
+            contains("prefab/modules/$gradleModuleName/module.json")
+            contains("prefab/modules/${gradleModuleName}_static/module.json")
             // Regression test for b/232117952
             doesNotContain("/modules/$gradleModuleName/")
             doesNotContain("/modules/$gradleModuleName/include/$gradleModuleName/")
@@ -396,8 +396,8 @@ class PrefabPublishingTest(
         executor().run("assemble$variant")
 
         project.getSubproject(gradleModuleName).assertThatAar(variant) {
-            containsFile("prefab/prefab.json")
-            containsFile("prefab/modules/$gradleModuleName/module.json")
+            contains("prefab/prefab.json")
+            contains("prefab/modules/$gradleModuleName/module.json")
         }
 
         val packageDir = project.getSubproject(gradleModuleName)

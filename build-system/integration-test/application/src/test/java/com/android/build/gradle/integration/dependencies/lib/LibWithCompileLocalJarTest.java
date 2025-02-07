@@ -22,6 +22,7 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.ap
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -72,7 +73,8 @@ public class LibWithCompileLocalJarTest {
         project.testAar(
                 "debug",
                 it -> {
-                    it.containsSecondaryClass("Lcom/example/android/multiproject/person/People;");
+                    it.allSecondaryJars()
+                            .containsClass("com/example/android/multiproject/person/People");
                 });
     }
 

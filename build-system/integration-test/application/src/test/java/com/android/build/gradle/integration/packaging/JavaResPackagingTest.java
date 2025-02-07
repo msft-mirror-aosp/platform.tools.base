@@ -25,18 +25,22 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.AarSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.util.Scanner;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Scanner;
 
 /** test for packaging of java resources. */
 public class JavaResPackagingTest {
@@ -291,7 +295,6 @@ public class JavaResPackagingTest {
         execute("app:clean", "app:assembleDebug");
         checkApk(appProject, "library.txt", "library:abcd");
 
-
         doTest(
                 appProject,
                 project -> {
@@ -301,7 +304,8 @@ public class JavaResPackagingTest {
                     try (Scanner stdout = result.getStdout()) {
                         ScannerSubject.assertThat(stdout)
                                 .contains(
-                                        "More than one file was found with OS independent path 'com/foo/library.txt'.");
+                                        "More than one file was found with OS independent path"
+                                                + " 'com/foo/library.txt'.");
                     }
                     checkApk(appProject, "library.txt", "new content");
                 });
@@ -548,7 +552,8 @@ public class JavaResPackagingTest {
                     try (Scanner stdout = result.getStdout()) {
                         ScannerSubject.assertThat(stdout)
                                 .contains(
-                                        "More than one file was found with OS independent path 'com/foo/library.txt'.");
+                                        "More than one file was found with OS independent path"
+                                                + " 'com/foo/library.txt'.");
                     }
 
                     checkTestApk(libProject, "library.txt", "new content");
@@ -572,7 +577,8 @@ public class JavaResPackagingTest {
                     try (Scanner stdout = result.getStdout()) {
                         ScannerSubject.assertThat(stdout)
                                 .contains(
-                                        "More than one file was found with OS independent path 'com/foo/library2.txt'.");
+                                        "More than one file was found with OS independent path"
+                                                + " 'com/foo/library2.txt'.");
                     }
 
                     checkTestApk(libProject, "library2.txt", "new content");
@@ -758,6 +764,31 @@ public class JavaResPackagingTest {
                     parentDirRelativePath + "/" + filename, content);
         } else {
             subject.doesNotContainJavaResource(parentDirRelativePath + "/" + filename);
+        }
+    }
+
+    /**
+     * check an AbstractAndroidSubject has (or not) the given res file name.
+     *
+     * <p>If the content is non-null the file is expected to be there with the same content. If the
+     * content is null the file is not expected to be there.
+     *
+     * @param subject the AbstractAndroidSubject
+     * @param parentDirRelativePath the relative path of the file's parent directory
+     * @param filename the filename
+     * @param content the content
+     */
+    private static void check(
+            @NonNull AarSubject subject,
+            @NonNull String parentDirRelativePath,
+            @NonNull String filename,
+            @Nullable String content) {
+        if (content != null) {
+            subject.allJars()
+                    .resourceAsText(parentDirRelativePath + "/" + filename)
+                    .isEqualTo(content);
+        } else {
+            subject.allJars().doesNotContainResource(parentDirRelativePath + "/" + filename);
         }
     }
 }

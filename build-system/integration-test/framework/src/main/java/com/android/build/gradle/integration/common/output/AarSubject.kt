@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import java.nio.file.Files
@@ -111,6 +110,26 @@ class AarSubject(
      */
     fun apiJar(action: JarSubject.() -> Unit) {
         action(apiJar())
+    }
+
+    /**
+     * Returns all the classes from any secondary jars as a single [JarSubject].
+     *
+     */
+    fun allSecondaryJars(): JarSubject {
+        exists()
+        val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
+
+        return check("allSecondaryJars()").about(JarSubject.jars())
+            .that(MultiZip(secondaryJars, "allSecondaryClasses"))
+    }
+
+    /**
+     * Creates a [JarSubject] representing all the classes from the secondary jars, and configure it
+     * with the given action
+     */
+    fun allSecondaryJars(action: JarSubject.() -> Unit) {
+        action(allSecondaryJars())
     }
 
     /**

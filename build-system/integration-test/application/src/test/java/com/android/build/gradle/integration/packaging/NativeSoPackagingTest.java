@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
@@ -782,6 +783,19 @@ public class NativeSoPackagingTest {
             @Nullable String content) {
         if (content != null) {
             subject.containsFileWithContent(folderName + "/" + abi + "/" + filename, content);
+        } else {
+            subject.doesNotContain(folderName + "/" + abi + "/" + filename);
+        }
+    }
+
+    private static void check(
+            @NonNull AbstractZipSubject subject,
+            @NonNull String folderName,
+            @NonNull String abi,
+            @NonNull String filename,
+            @Nullable String content) {
+        if (content != null) {
+            subject.textFile(folderName + "/" + abi + "/" + filename).isEqualTo(content);
         } else {
             subject.doesNotContain(folderName + "/" + abi + "/" + filename);
         }

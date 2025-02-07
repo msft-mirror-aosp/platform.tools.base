@@ -77,7 +77,9 @@ abstract class Zip(
         val zipPath = getEntry(path) ?: return null
 
         try {
-            return zipPath.readText()
+            // read the lines separately and recombine them with the right carriage return
+            // in order to work properly on windows.
+            return Files.readAllLines(zipPath).stream().collect(Collectors.joining("\n")).trim()
         } catch (e: IOException) {
             throw UncheckedIOException(e)
         }

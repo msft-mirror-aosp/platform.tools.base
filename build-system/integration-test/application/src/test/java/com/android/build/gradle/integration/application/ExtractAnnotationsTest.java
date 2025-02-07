@@ -23,6 +23,7 @@ import static com.android.testutils.truth.ZipFileSubject.assertThat;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.JarSubject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -42,7 +43,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Objects;
 import java.util.Scanner;
 
 /**
@@ -80,7 +80,7 @@ public class ExtractAnnotationsTest {
             ScannerSubject.assertThat(stderr).doesNotContain("Unknown flag");
         }
 
-        project.getAar(
+        project.testAar(
                 "debug",
                 debugAar -> {
                     //noinspection SpellCheckingInspection
@@ -180,52 +180,36 @@ public class ExtractAnnotationsTest {
                                  + " />\n"
                                  + "    </annotation>\n"
                                  + "  </item>\n"
-                                 + "</root>\n");
+                                 + "</root>");
 
                     // check the resulting .aar file to ensure annotations.zip inclusion.
-                    assertThat(debugAar).contains("annotations.zip");
+                    debugAar.contains("annotations.zip");
 
                     // Check typedefs removals:
 
                     // public typedef: should be present
-                    assertThat(debugAar)
-                            .containsClass(
-                                    "Lcom/android/tests/extractannotations/ExtractTest$Visibility;");
+                    JarSubject allJars = debugAar.allJars();
+                    allJars.containsClass(
+                            "com/android/tests/extractannotations/ExtractTest$Visibility");
 
                     // private/protected typedefs: should have been removed
-                    assertThat(debugAar)
-                            .doesNotContainClass(
-                                    "Lcom/android/tests/extractannotations/ExtractTest$Mask;");
-                    assertThat(debugAar)
-                            .doesNotContainClass(
-                                    "Lcom/android/tests/extractannotations/ExtractTest$NonMaskType;");
+                    allJars.doesNotContainClass(
+                            "com/android/tests/extractannotations/ExtractTest$Mask");
+                    allJars.doesNotContainClass(
+                            "com/android/tests/extractannotations/ExtractTest$NonMaskType");
 
-                    assertThat(debugAar)
-                            .containsClass(
-                                    "Lcom/android/tests/extractannotations/ExtractTest$StringMode;");
+                    allJars.containsClass(
+                            "com/android/tests/extractannotations/ExtractTest$StringMode");
 
-                    try {
-                        assertThat(
-                                Objects.requireNonNull(debugAar.getEntryAsFile("annotations.zip")),
-                                it -> {
-                                    it.containsFileWithContent(
-                                            "com/android/tests/extractannotations/annotations.xml",
-                                            expectedContent);
-                                });
-                        // Make sure the NonMask symbol (from a private typedef) is completely gone
-                        // from
-                        // the
-                        // outer class
-                        assertThat(
-                                Objects.requireNonNull(debugAar.getEntryAsFile("classes.jar")),
-                                it -> {
-                                    it.containsFileWithoutContent(
-                                            "com/android/tests/extractannotations/ExtractTest.class",
-                                            "NonMaskType");
-                                });
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    debugAar.innerZip("annotations.zip")
+                            .textFile("com/android/tests/extractannotations/annotations.xml")
+                            .isEqualTo(expectedContent);
+
+                    // Make sure the NonMask symbol (from a private typedef) is completely gone
+                    // from the outer class
+                    debugAar.mainJar()
+                            .classContent("com/android/tests/extractannotations/ExtractTest")
+                            .doesNotContain("NonMaskType".getBytes());
                 });
 
         Truth.assertThat(getExecutor().run("assembleDebug").getDidWorkTasks()).isEmpty();
