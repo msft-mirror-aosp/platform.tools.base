@@ -20,6 +20,9 @@ import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
+import com.google.common.truth.Truth.assertAbout
+import java.io.File
+import java.nio.file.Path
 
 class AarMetadataSubject internal constructor(
     metadata: FailureMetadata,
@@ -27,6 +30,10 @@ class AarMetadataSubject internal constructor(
 ): Subject<AarMetadataSubject, AarMetadataReader>(metadata, actual) {
 
     companion object {
+        fun assertThat(path: Path, action: AarMetadataSubject.() -> Unit) {
+            action(assertAbout(aarmetadatas()).that(AarMetadataReader.load(path.toFile())))
+        }
+
         /**
          * Method for getting the subject factory (for use with assertAbout())
          */

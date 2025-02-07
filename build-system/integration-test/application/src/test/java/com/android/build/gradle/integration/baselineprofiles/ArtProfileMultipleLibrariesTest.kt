@@ -288,16 +288,8 @@ class ArtProfileMultipleLibrariesTest(
             Truth.assertThat(libFile.readText()).isEqualTo(expectedBaselineProfContent)
 
             // check packaging.
-            project.getSubproject(":lib$i").getAar("release") {
-                checkAndroidArtifact(
-                    tempFolder,
-                    it,
-                    aarEntryName
-                ) { fileContent ->
-                    Truth.assertThat(fileContent).isEqualTo(
-                        expectedBaselineProfContent.toByteArray()
-                    )
-                }
+            project.getSubproject(":lib$i").assertThatAar("release") {
+                textFile(aarEntryName).isEqualTo(expectedBaselineProfContent)
             }
         }
 

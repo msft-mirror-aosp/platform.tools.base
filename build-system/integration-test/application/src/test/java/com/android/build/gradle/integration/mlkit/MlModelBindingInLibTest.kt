@@ -64,9 +64,8 @@ class MlModelBindingInLibTest {
         )
 
         project.executor().run(":assembleDebug")
-        project.getAar("debug", Consumer { aar ->
-            val classesJar = aar.getEntryAsZip("classes.jar")
-            ZipFileSubject.assertThat(classesJar.file) { it.contains("/com/example/lib/ml/Model.class") }
-        })
+        project.assertThatAar("debug") {
+            mainJar().containsClass("com/example/lib/ml/Model")
+        }
     }
 }

@@ -145,20 +145,21 @@ class NamespacedAarTest {
         assertThat(publishedLibData?.resStaticLibrary).exists()
 
         val subproject = project.getSubproject("publishedLib")
-        subproject.withAar("release") {
-            assertThat(entries.map { it.toString() })
-                .containsExactly(
-                    "/META-INF/com/android/build/gradle/aar-metadata.properties",
-                    "/res/values/values.xml",
-                    "/classes.jar",
-                    "/res.apk",
-                    "/AndroidManifest.xml",
-                    "/R.txt"
-                )
+        subproject.assertThatAar("release") {
+            entries().containsExactly(
+                "META-INF/com/android/build/gradle/aar-metadata.properties",
+                "res/values/values.xml",
+                "classes.jar",
+                "res.apk",
+                "AndroidManifest.xml",
+                "R.txt"
+            )
+
             // Check that the AndroidManifest.xml in the AAR does not contain namespaces.
-            val manifest = androidManifestContentsAsString
-            assertThat(manifest).contains("@string/my_version_name")
-            assertThat(manifest).doesNotContain("@com.example.publishedLib:string/my_version_name")
+            manifest().apply {
+                contains("@string/my_version_name")
+                doesNotContain("@com.example.publishedLib:string/my_version_name")
+            }
         }
 
         subproject.assertThatAar("release") {

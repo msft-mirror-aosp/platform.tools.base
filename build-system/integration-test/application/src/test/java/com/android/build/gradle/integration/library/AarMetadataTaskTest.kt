@@ -15,281 +15,226 @@
  */
 package com.android.build.gradle.integration.library
 
-import com.android.SdkConstants
-import com.android.SdkConstants.AAR_FORMAT_VERSION_PROPERTY
-import com.android.SdkConstants.AAR_METADATA_VERSION_PROPERTY
-import com.android.SdkConstants.CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY
-import com.android.SdkConstants.DESUGAR_JDK_LIB_PROPERTY
-import com.android.SdkConstants.FORCE_COMPILE_SDK_PREVIEW_PROPERTY
-import com.android.SdkConstants.MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY
-import com.android.SdkConstants.MIN_COMPILE_SDK_EXTENSION_PROPERTY
-import com.android.SdkConstants.MIN_COMPILE_SDK_PROPERTY
-import com.android.apksig.internal.util.ByteBufferUtils.toByteArray
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicBuilds.Companion.HELLO_WORLD_LIBRARY
+import com.android.build.gradle.integration.common.output.AarMetadataSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AarMetadataTask
-import com.android.testutils.truth.PathSubject
-import com.android.utils.FileUtils
-import com.android.zipflinger.ZipArchive
-import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 /** Tests for [AarMetadataTask]. */
 class AarMetadataTaskTest {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create()
+    @get:Rule
+    val rule = GradleRule.from(action = HELLO_WORLD_LIBRARY)
 
     @Test
     fun testBasic() {
-        val expectedAarMetadataBytes =
-            """
-                |$AAR_FORMAT_VERSION_PROPERTY=1.0
-                |$AAR_METADATA_VERSION_PROPERTY=1.0
-                |$MIN_COMPILE_SDK_PROPERTY=1
-                |$MIN_COMPILE_SDK_EXTENSION_PROPERTY=0
-                |$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=1.0.0
-                |$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=false
-                |"""
-                .trimMargin()
-                .toByteArray()
-        project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").withAar("debug") {
-            val aarMetadataEntryPath = getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            assertThat(aarMetadataEntryPath).isNotNull()
-            ZipArchive(file).use { aar ->
-                val aarMetadataBytes =
-                    toByteArray(aar.getContent(aarMetadataEntryPath.toString()))
-                assertThat(aarMetadataBytes).isEqualTo(expectedAarMetadataBytes)
+        rule.build.executor.run(":lib:assembleDebug")
+        rule.build.androidLibrary().assertAar(AarSelector.DEBUG) {
+            aarMetadata {
+                formatVersion().isEqualTo("1.0")
+                metadataVersion().isEqualTo("1.0")
+                minCompileSdk().isEqualTo("1")
+                minAgpVersion().isEqualTo("1.0.0")
+                minCompileSdkExtension().isEqualTo("0")
+                coreLibraryDesugaringEnabled().isEqualTo("false")
+                desugarJdkLibId().isNull()
             }
         }
     }
 
     @Test
     fun testDsl() {
-         val expectedAarMetadataBytes =
-             """
-                |$AAR_FORMAT_VERSION_PROPERTY=1.0
-                |$AAR_METADATA_VERSION_PROPERTY=1.0
-                |$MIN_COMPILE_SDK_PROPERTY=27
-                |$MIN_COMPILE_SDK_EXTENSION_PROPERTY=2
-                |$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=3.0.0
-                |$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=true
-                |$DESUGAR_JDK_LIB_PROPERTY=com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION
-                |"""
-                 .trimMargin()
-                 .toByteArray()
-        project.getSubproject("lib").buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary {
                 android {
                     defaultConfig {
                         multiDexEnabled = true
                         aarMetadata {
-                            minCompileSdk 27
-                            minAgpVersion '3.0.0'
-                            minCompileSdkExtension 2
+                            minCompileSdk = 27
+                            minAgpVersion = "3.0.0"
+                            minCompileSdkExtension = 2
                         }
                     }
                     compileOptions {
-                        coreLibraryDesugaringEnabled = true
+                        isCoreLibraryDesugaringEnabled = true
                     }
 
                     dependencies {
-                        coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'
+                        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
                     }
                 }
-                """.trimIndent()
-        )
-        project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").withAar("debug") {
-            val aarMetadataEntryPath = getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            assertThat(aarMetadataEntryPath).isNotNull()
-            ZipArchive(file).use { aar ->
-                val aarMetadataBytes =
-                    toByteArray(aar.getContent(aarMetadataEntryPath.toString()))
-                assertThat(aarMetadataBytes).isEqualTo(expectedAarMetadataBytes)
+            }
+        }
+
+        build.executor.run(":lib:assembleDebug")
+        build.androidLibrary().assertAar(AarSelector.DEBUG) {
+            aarMetadata {
+                minCompileSdk().isEqualTo("27")
+                minAgpVersion().isEqualTo("3.0.0")
+                minCompileSdkExtension().isEqualTo("2")
+                coreLibraryDesugaringEnabled().isEqualTo("true")
+                desugarJdkLibId().isEqualTo("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
             }
         }
     }
 
     @Test
     fun testDsl_productFlavor() {
-        val expectedAarMetadataBytes =
-            """
-                |$AAR_FORMAT_VERSION_PROPERTY=1.0
-                |$AAR_METADATA_VERSION_PROPERTY=1.0
-                |$MIN_COMPILE_SDK_PROPERTY=28
-                |$MIN_COMPILE_SDK_EXTENSION_PROPERTY=3
-                |$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=3.1.0
-                |$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=false
-                |"""
-                .trimMargin()
-                .toByteArray()
         // We add minCompileSdkVersion to defaultConfig and a product flavor to ensure that the
         // product flavor value trumps the defaultConfig value.
-        project.getSubproject("lib").buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary {
                 android {
                     defaultConfig {
                         aarMetadata {
-                            minCompileSdk 27
-                            minAgpVersion '3.0.0'
-                            minCompileSdkExtension 2
+                            minCompileSdk = 27
+                            minAgpVersion = "3.0.0"
+                            minCompileSdkExtension = 2
                         }
                     }
-                    flavorDimensions 'foo'
+                    flavorDimensions += "foo"
                     productFlavors {
-                        premium {
-                            aarMetadata {
+                        create("premium") {
+                            it.aarMetadata {
                                 minCompileSdk = 28
-                                minAgpVersion '3.1.0'
-                                minCompileSdkExtension 3
+                                minAgpVersion = "3.1.0"
+                                minCompileSdkExtension = 3
                             }
                         }
                     }
                 }
-                """.trimIndent()
-        )
-        project.executor().run(":lib:assemblePremiumDebug")
-        project.getSubproject("lib").withAar(listOf("premium", "debug")) {
-            val aarMetadataEntryPath = getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            assertThat(aarMetadataEntryPath).isNotNull()
-            ZipArchive(file).use { aar ->
-                val aarMetadataBytes =
-                    toByteArray(aar.getContent(aarMetadataEntryPath.toString()))
-                assertThat(aarMetadataBytes).isEqualTo(expectedAarMetadataBytes)
+            }
+        }
+
+        build.executor.run(":lib:assemblePremiumDebug")
+        build.androidLibrary().assertAar(AarSelector.DEBUG.withFlavor("premium")) {
+            aarMetadata {
+                minCompileSdk().isEqualTo("28")
+                minAgpVersion().isEqualTo("3.1.0")
+                minCompileSdkExtension().isEqualTo("3")
+                coreLibraryDesugaringEnabled().isEqualTo("false")
+                desugarJdkLibId().isNull()
             }
         }
     }
 
     @Test
     fun testDsl_buildType() {
-        val expectedAarMetadataBytes =
-            """
-                |$AAR_FORMAT_VERSION_PROPERTY=1.0
-                |$AAR_METADATA_VERSION_PROPERTY=1.0
-                |$MIN_COMPILE_SDK_PROPERTY=29
-                |$MIN_COMPILE_SDK_EXTENSION_PROPERTY=4
-                |$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=3.2.0
-                |$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=false
-                |"""
-                .trimMargin()
-                .toByteArray()
         // We add minCompileSdkVersion to defaultConfig, a product flavor, and the debug build
         // type to ensure that the build type value trumps the other values.
-        project.getSubproject("lib").buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary {
                 android {
                     defaultConfig {
                         aarMetadata {
-                            minCompileSdk 27
-                            minAgpVersion '3.0.0'
-                            minCompileSdkExtension 2
+                            minCompileSdk = 27
+                            minAgpVersion = "3.0.0"
+                            minCompileSdkExtension = 2
                         }
                     }
-                    flavorDimensions 'foo'
+                    flavorDimensions += "foo"
                     productFlavors {
-                        premium {
-                            aarMetadata {
+                        create("premium") {
+                            it.aarMetadata {
                                 minCompileSdk = 28
-                                minAgpVersion '3.1.0'
-                                minCompileSdkExtension 3
+                                minAgpVersion = "3.1.0"
+                                minCompileSdkExtension = 3
                             }
                         }
                     }
                     buildTypes {
-                        debug {
-                            aarMetadata {
-                                minCompileSdk 29
-                                minAgpVersion '3.2.0'
-                                minCompileSdkExtension 4
+                        named("debug") {
+                            it.aarMetadata {
+                                minCompileSdk = 29
+                                minAgpVersion = "3.2.0"
+                                minCompileSdkExtension = 4
                             }
                         }
                     }
                 }
-                """.trimIndent()
-        )
-        project.executor().run(":lib:assemblePremiumDebug")
-        project.getSubproject("lib").withAar(listOf("premium", "debug")) {
-            val aarMetadataEntryPath = getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            assertThat(aarMetadataEntryPath).isNotNull()
-            ZipArchive(file).use { aar ->
-                val aarMetadataBytes =
-                    toByteArray(aar.getContent(aarMetadataEntryPath.toString()))
-                assertThat(aarMetadataBytes).isEqualTo(expectedAarMetadataBytes)
+            }
+        }
+
+        build.executor.run(":lib:assemblePremiumDebug")
+        build.androidLibrary().assertAar(AarSelector.DEBUG.withFlavor("premium")) {
+            aarMetadata {
+                minCompileSdk().isEqualTo("29")
+                minAgpVersion().isEqualTo("3.2.0")
+                minCompileSdkExtension().isEqualTo("4")
+                coreLibraryDesugaringEnabled().isEqualTo("false")
+                desugarJdkLibId().isNull()
             }
         }
     }
 
     @Test
     fun testVariantApi() {
-        val expectedAarMetadataBytes =
-            """
-                |$AAR_FORMAT_VERSION_PROPERTY=1.0
-                |$AAR_METADATA_VERSION_PROPERTY=1.0
-                |$MIN_COMPILE_SDK_PROPERTY=27
-                |$MIN_COMPILE_SDK_EXTENSION_PROPERTY=2
-                |$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=3.0.0
-                |$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=false
-                |"""
-                .trimMargin()
-                .toByteArray()
-        project.getSubproject("lib").buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary {
                 android {
                     defaultConfig {
                         aarMetadata {
-                            minCompileSdk 26
-                            minAgpVersion '2.0.0'
-                            minCompileSdkExtension 1
+                            minCompileSdk = 26
+                            minAgpVersion = "2.0.0"
+                            minCompileSdkExtension = 1
                         }
                     }
                 }
-                androidComponents {
-                    onVariants(selector().all(), {
-                        aarMetadata.minCompileSdk.set(27)
-                        aarMetadata.minAgpVersion.set("3.0.0")
-                        aarMetadata.minCompileSdkExtension.set(2)
-                    })
-                }
-                """.trimIndent()
-        )
-        project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").withAar("debug") {
-            val aarMetadataEntryPath = getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
-            assertThat(aarMetadataEntryPath).isNotNull()
-            ZipArchive(file).use { aar ->
-                val aarMetadataBytes =
-                    toByteArray(aar.getContent(aarMetadataEntryPath.toString()))
-                assertThat(aarMetadataBytes).isEqualTo(expectedAarMetadataBytes)
+                pluginCallbacks += LibCallback::class.java
+            }
+        }
+        build.executor.run(":lib:assembleDebug")
+        build.androidLibrary().assertAar(AarSelector.DEBUG) {
+            aarMetadata {
+                minCompileSdk().isEqualTo("27")
+                minAgpVersion().isEqualTo("3.0.0")
+                minCompileSdkExtension().isEqualTo("2")
+                coreLibraryDesugaringEnabled().isEqualTo("false")
+                desugarJdkLibId().isNull()
+            }
+        }
+    }
+
+    class LibCallback: LibraryComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: LibraryAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                onVariants(selector().all(), {
+                    it.aarMetadata.minCompileSdk.set(27)
+                    it.aarMetadata.minAgpVersion.set("3.0.0")
+                    it.aarMetadata.minCompileSdkExtension.set(2)
+                })
             }
         }
     }
 
     @Test
     fun testCompileSdkPreview() {
-        project.getSubproject("lib").buildFile.appendText(
-            """
+        val build = rule.build {
+            androidLibrary {
                 android {
-                    compileSdkPreview 'Tiramisu'
+                    compileSdkPreview = "Tiramisu"
                 }
-            """.trimIndent()
-        )
-        project.executor().run(":lib:writeDebugAarMetadata")
-        val aarMetadataFile =
-            FileUtils.join(
-                project.getSubproject("lib").buildDir,
-                SdkConstants.FD_INTERMEDIATES,
-                InternalArtifactType.AAR_METADATA.getFolderName(),
-                "debug",
-                "writeDebugAarMetadata",
-                AarMetadataTask.AAR_METADATA_FILE_NAME
-            )
-        PathSubject.assertThat(aarMetadataFile).contains(
-                "${FORCE_COMPILE_SDK_PREVIEW_PROPERTY}=Tiramisu"
-        )
+            }
+        }
+
+        build.executor.run(":lib:writeDebugAarMetadata")
+
+        val aarMetadataFile = build.androidLibrary()
+            .resolve(InternalArtifactType.AAR_METADATA)
+            .resolve("debug/writeDebugAarMetadata/${AarMetadataTask.AAR_METADATA_FILE_NAME}")
+
+        AarMetadataSubject.assertThat(aarMetadataFile) {
+            forceCompileSdkPreview().isEqualTo("Tiramisu")
+        }
     }
 }

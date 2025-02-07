@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.output
 
 import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.build.gradle.internal.tasks.AarMetadataReader
+import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.StringSubject
@@ -201,9 +202,9 @@ class AarSubject(
      * returns a [AarMetadataSubject] for the metadata of this AAR
      */
     fun aarMetadata(): AarMetadataSubject {
-        contains("META-INF/com/android/build/gradle/aar-metadata.properties")
+        contains(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
 
-        val path= actual().getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
+        val path= actual().getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null

@@ -170,10 +170,8 @@ class ArtProfileSingleLibraryTest {
         Truth.assertThat(libFile.readText()).isEqualTo(expectedLibraryContent)
 
         // check packaging.
-        project.getSubproject(":lib").getAar("release") {
-            checkAndroidArtifact(tempFolder, it, aarEntryName) { fileContent ->
-                Truth.assertThat(fileContent).isEqualTo(expectedLibraryContent.toByteArray())
-            }
+        project.getSubproject(":lib").assertThatAar("release") {
+            textFile(aarEntryName).isEqualTo(expectedLibraryContent)
         }
 
         val mergedFile = FileUtils.join(

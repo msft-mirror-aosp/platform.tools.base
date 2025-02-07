@@ -1203,7 +1203,7 @@ allprojects { proj ->
         return getApk(ApkType.ANDROIDTEST_DEBUG, *dimensions)
     }
 
-    private fun testAar(
+    fun testAar(
         dimensions: List<String>,
         action: AarSubject.() -> Unit
     ) {
@@ -1312,36 +1312,6 @@ allprojects { proj ->
         action: Consumer<Aar>
     ) {
         getAar(listOf(dimension1)) { action.accept(this) }
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [Aar]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun withAar(
-        dimension1: String,
-        action: Aar.() -> Unit
-    ) {
-        getAar(listOf(dimension1), action)
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [Aar]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun withAar(
-        dimensions: List<String>,
-        action: Aar.() -> Unit
-    ) {
-        getAar(dimensions, action)
     }
 
     /**

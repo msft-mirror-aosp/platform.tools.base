@@ -90,10 +90,9 @@ class AppMetadataTaskTest {
     @Test
     fun testNoAppMetadataInAar() {
         project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").getAar(
-            "debug",
-            Consumer { assertThat(it.getJavaResource(APP_METADATA_ENTRY_PATH)).isNull() }
-        )
+        project.getSubproject("lib").assertThatAar("debug") {
+            doesNotContain(APP_METADATA_ENTRY_PATH)
+        }
     }
 
     @Test
