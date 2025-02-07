@@ -16,7 +16,7 @@ ARTIFACTS = [
     "androidx.compose.ui:ui-test-manifest-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
     "androidx.compose.ui:ui-text-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
     "androidx.lint:lint-gradle:1.0.0-alpha01",
-    "com.android.tools.build:bundletool:1.18.0",
+    "com.android.tools.build:bundletool:1.18.1",
     "com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10",
     "com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10",
     "com.android.tools.build:transform-api:2.0.0-deprecated-use-gradle-api",

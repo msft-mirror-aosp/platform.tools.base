@@ -61,10 +61,6 @@ class AssetPackBundleTest {
                     enableSplit = true
                     defaultSet = "latam"
                 }
-
-                aiModelVersion {
-                    enableSplit = true
-                }
             }
         }
         assetPack(":assetPackOne") {
@@ -138,12 +134,6 @@ class AssetPackBundleTest {
                 .suffixStrippingBuilder
                 .setEnabled(true)
                 .setDefaultSuffix("latam")
-            splitsConfigBuilder
-                .addSplitDimensionBuilder()
-                .setValue(Config.SplitDimension.Value.AI_MODEL_VERSION)
-                .suffixStrippingBuilder
-                .setEnabled(true)
-                .setDefaultSuffix("")
             assertThat(bundleConfig.optimizations.splitsConfig)
                 .isEqualTo(splitsConfigBuilder.build())
 
