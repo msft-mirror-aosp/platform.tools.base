@@ -29,6 +29,7 @@ private const val PREFIX_RES_LENGTH = "res/".length
 private val PATTERN_LIBS_JAR = Pattern.compile("^libs/.+$")
 private val PATTERN_ANDROID_RES = Pattern.compile("^res/.+$")
 
+@SubjectDsl
 class AarSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -98,45 +99,6 @@ class AarSubject(
      */
     fun apiJar(action: JarSubject.() -> Unit) {
         action(apiJar())
-    }
-
-    /**
-     * returns the list of the secondary jars as an [IterableSubject] of [String].
-     *
-     * The names of the jars do NOT include the libs folder.
-     */
-    fun secondaryJars(): IterableSubject {
-        exists()
-        return check("secondaryJars()").that(
-            actual().getEntries(PATTERN_LIBS_JAR).map { it.substring(PREFIX_LIBS_LENGTH) }
-        )
-    }
-
-    /**
-     * returns a [JarSubject] for the secondary jar matching the given path.
-     *
-     * @param name the name of the jar, inside the libs folder.
-     */
-    fun secondaryJar(name: String): JarSubject {
-        // custom implementation (instead of just calling jar()) to restrict checks to /libs
-        exists()
-        secondaryJars().contains(name)
-
-        // this can be null when we're testing the fixture. In normal operation, the call
-        // to contains above guarantees that it's not null
-        val jar = actual().innerZip("libs/$name") ?: SimpleZip(null)
-
-        return check("secondaryJar($name)").about(JarSubject.jars()).that(jar)
-    }
-
-    /**
-     * creates a [JarSubject] for the secondary jar matching the given path, and configures it
-     * via the given action.
-
-     * @param name the name of the jar, inside the libs folder.
-     */
-    fun secondaryJar(name: String, action: JarSubject.() -> Unit) {
-        action(secondaryJar(name))
     }
 
     /**

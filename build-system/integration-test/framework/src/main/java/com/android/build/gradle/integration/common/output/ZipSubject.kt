@@ -22,6 +22,7 @@ import com.google.common.truth.Truth.assertAbout
 /**
  * Generic Zip archive Truth subject
  */
+@SubjectDsl
 class ZipSubject(
     metadata: FailureMetadata,
     actual: Zip
