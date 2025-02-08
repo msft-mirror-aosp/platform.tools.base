@@ -75,6 +75,8 @@ class KotlincFE10Detector : Detector(), SourceCodeScanner {
         "org.jetbrains.kotlin.resolve.ImportPath" -> true
         // :compiler:backend.common.jvm
         "org.jetbrains.kotlin.resolve.jvm.checkers.DalvikIdentifierUtils" -> true
+        // used directly from the analysis API (such as KaRenderer) and doesn't seem K1 specific
+        "org.jetbrains.kotlin.types.Variance" -> true
         else -> {
           when {
             // :core:compiler.common

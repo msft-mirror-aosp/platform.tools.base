@@ -17,6 +17,7 @@
 package com.android.tools.lint.helpers
 
 import com.android.SdkConstants.DOT_KT
+import com.android.SdkConstants.DOT_KTS
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.UastParser
@@ -111,7 +112,10 @@ open class DefaultUastParser(
     val virtualFile = StandardFileSystems.local().findFileByPath(absPath) ?: return null
     val psiFile = PsiManager.getInstance(ideaProject).findFile(virtualFile) ?: return null
 
-    if (psiFile.language == Language.ANY && file.path.endsWith(DOT_KT)) {
+    if (
+      psiFile.language == Language.ANY &&
+        (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_KTS))
+    ) {
       // Expected to get Kotlin language back here!
       context.client.log(
         Severity.ERROR,

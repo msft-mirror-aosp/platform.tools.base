@@ -1415,6 +1415,14 @@ class LintDriver(
       for (context in gradleKtsContexts) {
         client.runReadAction {
           // Gradle Kotlin Script? Use Java parsing mechanism.
+          //
+          // TODO: Inject Gradle Project as the implicit receiver. Figure out how.
+          //    Possibly related:
+          //
+          // platforms/core-configuration/kotlin-dsl/src/main/kotlin/org/gradle/kotlin/dsl/support/KotlinCompiler.kt
+          //    in the Gradle repo. Also need to pass it in the Gradle build
+          //    classpath rather than the project class path. The below really only
+          //    works for simpler AST checks not relying on real API resolve.
           val uFile = context.uastParser.parse(context)
           if (uFile != null) {
             context.setJavaFile(uFile.sourcePsi) // needed for getLocation
@@ -3439,10 +3447,16 @@ class LintDriver(
   }
 
   fun isSuppressedGradle(context: GradleContext, issue: Issue, scope: Any): Boolean {
-    return if (scope is UElement && context.gradleVisitor.javaContext != null) {
-      // If the build file is Kotlin Script, we use the [JavaContext] to check
-      // for suppression annotations, as well as suppression comments.
-      isSuppressed(context.gradleVisitor.javaContext, issue, scope)
+    return if (context.gradleVisitor.javaContext != null) {
+      if (scope is UElement) {
+        // If the build file is Kotlin Script, we use the [JavaContext] to check
+        // for suppression annotations, as well as suppression comments.
+        isSuppressed(context.gradleVisitor.javaContext, issue, scope)
+      } else if (scope is PsiElement) {
+        isSuppressed(context.gradleVisitor.javaContext, issue, scope)
+      } else {
+        context.isSuppressedWithComment(scope, issue)
+      }
     } else {
       context.isSuppressedWithComment(scope, issue)
     }

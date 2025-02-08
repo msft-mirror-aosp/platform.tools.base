@@ -529,6 +529,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           WrongCaseDetector.WRONG_CASE,
           WrongCommentTypeDetector.ISSUE,
           WrongConstructorDetector.ISSUE,
+          WrongGradleMethod.ISSUE,
           WrongIdDetector.INVALID,
           WrongIdDetector.NOT_SIBLING,
           WrongIdDetector.UNKNOWN_ID,

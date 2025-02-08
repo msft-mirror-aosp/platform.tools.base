@@ -1573,7 +1573,24 @@ constructor(
     updateDefaultConfig { it.copy(useSupportLibrary = f(it.useSupportLibrary)) }
   }
 
+  fun String.getContainerName(): String {
+    if (
+      this.contains('"') &&
+        this.endsWith("\")") &&
+        (this.startsWith("getByName(\"") ||
+          this.startsWith("create(\"") ||
+          this.startsWith("named(\"") ||
+          this.startsWith("maybeCreate(\"") ||
+          this.startsWith("register(\""))
+    ) {
+      // KTS
+      return this.substringAfter("\"").substringBeforeLast("\"")
+    }
+    return this
+  }
+
   private fun updateBuildType(name: String, create: Boolean, f: (TestBuildType) -> TestBuildType) {
+    val name = name.getContainerName()
     val index = buildTypes.indexOfFirst { it.name == name }
     if (index >= 0) {
       val list = buildTypes.toMutableList()
@@ -1647,6 +1664,7 @@ constructor(
     create: Boolean,
     f: (TestProductFlavor) -> TestProductFlavor,
   ) {
+    val name = name.getContainerName()
     val index = productFlavors.indexOfFirst { it.name == name }
     if (index >= 0) {
       val list = productFlavors.toMutableList()
@@ -1691,6 +1709,8 @@ constructor(
       if (sdkVersion != null) return sdkVersion
     } else if (s[0].isDigit()) {
       return AndroidVersion(s.toInt(), null)
+    } else {
+      return AndroidVersion(s.toIntOrNull() ?: 0, null)
     }
     return AndroidVersion(0, "")
   }
