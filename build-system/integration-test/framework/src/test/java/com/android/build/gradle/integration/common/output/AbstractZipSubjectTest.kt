@@ -25,7 +25,7 @@ import java.io.File
 class AbstractZipSubjectTest: BaseZipSubjectTest() {
 
     @Test
-    fun zipEntries() {
+    fun entries() {
         createAar("temp.zip") {
             withMainJar {
                 addEmptyClasses("com/example/SomeClass")
@@ -76,6 +76,42 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
                 factKeys().containsAtLeast("value of", "zip was")
                 factValue("value of").isEqualTo("zip.entries()")
                 factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            }
+        }
+    }
+
+    @Test
+    fun innerZipExistence() {
+        createJar("temp.zip") {}.use { zip ->
+            assertThat(zip) {
+                innerZip("classes.jar").doesNotExist()
+            }
+
+            // checks negative results
+            expectFailure {
+                it.that(zip).innerZip("classes.jar").exists()
+            }.assert {
+                factKeys().containsExactly("value of", "zip was", "expected to exist")
+                factValue("value of").isEqualTo("zip.innerZip(classes.jar)")
+                factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+            }
+        }
+
+        createAar("temp2.zip") {
+            withMainJar {  }
+        }.use { zip ->
+            assertThat(zip) {
+                innerZip("classes.jar").exists()
+            }
+
+            // checks negative results
+            expectFailure {
+                it.that(zip).innerZip("classes.jar").doesNotExist()
+            }.assert {
+                factKeys().containsExactly("value of", "zip was", "expected zip to not exist", "but was")
+                factValue("value of").isEqualTo("zip.innerZip(classes.jar)")
+                factValue("but was").isEqualTo("Zip(name='temp2.zip:classes.jar', status=EXISTS)")
+                factValue("zip was").isEqualTo("Zip(name='temp2.zip', status=EXISTS)")
             }
         }
     }

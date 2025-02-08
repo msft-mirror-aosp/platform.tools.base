@@ -23,13 +23,13 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
 import com.android.builder.model.v2.ide.ProjectType;
 import com.android.testutils.apk.Apk;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
+
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.IOException;
 
 /** Assemble tests for kotlin. */
 @Category(SmokeTests.class)
@@ -75,16 +75,10 @@ public class KotlinAppTest {
         project.executor().run("clean", "library:assembleDebug");
 
         project.getSubproject("library")
-                .getAar(
+                .testAar(
                         "debug",
-                        aar -> {
-                            try {
-                                Path javaResource =
-                                        aar.getJavaResource("META-INF/library_debug.kotlin_module");
-                                assertThat(javaResource != null).isTrue();
-                            } catch (IOException e) {
-                                throw new UncheckedIOException(e);
-                            }
-                        });
+                        aar ->
+                                aar.allJars()
+                                        .containsResource("META-INF/library_debug.kotlin_module"));
     }
 }

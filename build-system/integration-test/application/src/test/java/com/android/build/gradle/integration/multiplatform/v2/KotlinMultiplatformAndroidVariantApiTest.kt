@@ -17,9 +17,9 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -103,8 +103,10 @@ class KotlinMultiplatformAndroidVariantApiTest {
 
         project.executor().run(":kmpFirstLib:assembleAndroidMain")
 
-        val aarFile = project.getSubproject("kmpFirstLib").getOutputFile("aar", "kmpFirstLib.aar")
-        Aar(aarFile).use { aar -> assertThat(aar.getEntry("assets/asset.txt")).isNotNull() }
+        val aarFile = project.getSubproject("kmpFirstLib").getOutputFile("aar", "kmpFirstLib.aar").toPath()
+        AarSubject.assertThat(aarFile) {
+            assets().contains("asset.txt")
+        }
 
         project.executor().run(":kmpFirstLib:assembleDeviceTest")
         val testApk = project.getSubproject("kmpFirstLib").getOutputFile(

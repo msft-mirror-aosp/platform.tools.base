@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.testutils.apk.Apk;
-import com.android.testutils.truth.ZipFileSubject;
 import com.android.utils.FileUtils;
 
 import org.junit.BeforeClass;
@@ -40,7 +39,6 @@ import org.objectweb.asm.Opcodes;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Path;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -49,7 +47,8 @@ import java.util.jar.JarOutputStream;
  */
 public class NativeSoPackagingFromJarTest {
     private static final String LIB_X86_LIBHELLO_SO = "lib/x86/libhello.so";
-    private static final String COM_FOO_FOO_CLASS = "com/foo/Foo.class";
+    private static final String COM_FOO_FOO = "com/foo/Foo";
+    private static final String COM_FOO_FOO_CLASS = COM_FOO_FOO + ".class";
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
@@ -119,22 +118,13 @@ public class NativeSoPackagingFromJarTest {
         // also check that the bar.jar is also present as a local jar with a the class
         // but not the so file.
         // first extract bar.jar from the apk.
-        libProject.getAar(
+        libProject.testAar(
                 "debug",
                 aar -> {
-                    // this zip will be closed with the AAR
-                    Path entry =
-                            java.util.Objects.requireNonNull(aar.getEntryAsFile("libs/bar.jar"));
-                    try {
-                        ZipFileSubject.assertThat(
-                                entry,
-                                it -> {
-                                    it.contains(COM_FOO_FOO_CLASS);
-                                    it.doesNotContain(LIB_X86_LIBHELLO_SO);
-                                });
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    aar.contains("libs/bar.jar");
+
+                    aar.allSecondaryJars().containsClass(COM_FOO_FOO);
+                    aar.allSecondaryJars().doesNotContainResource(LIB_X86_LIBHELLO_SO);
                 });
     }
 

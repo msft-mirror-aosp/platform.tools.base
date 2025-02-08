@@ -42,7 +42,6 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.OsType
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
@@ -1283,35 +1282,29 @@ allprojects { proj ->
         testAar(listOf(dimension1, dimension2), action)
     }
 
-    private fun getAar(
-        dimensions: List<String>,
-        action: Aar.() -> Unit
-    ) {
+    private fun getAarLocation(dimensions: List<String>, ): Path {
         val dimensionList: MutableList<String?> =
             Lists.newArrayListWithExpectedSize(1 + dimensions.size)
         dimensionList.add(name)
         dimensionList.addAll(dimensions)
-        Aar(
-            getOutputFile(
+
+        return getOutputFile(
                 "aar",
                 Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR
-            )
-        ).use { aar -> action(aar) }
+            ).toPath()
     }
 
     /**
-     * Allows testing the aar.
+     * Returns a path to the AAR, so that the file can be copied in other location.
      *
-     * Testing happens in the callback that receives an [Aar]
+     * This should not be used to validate the content of the file. Instead, use [assertThatAar]
+     * or [testAar]
      *
      * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
      * "unsigned", "aligned")
      */
-    fun getAar(
-        dimension1: String,
-        action: Consumer<Aar>
-    ) {
-        getAar(listOf(dimension1)) { action.accept(this) }
+    fun getAarLocationForCopy( dimension1: String,): Path {
+        return getAarLocation(listOf(dimension1))
     }
 
     /**

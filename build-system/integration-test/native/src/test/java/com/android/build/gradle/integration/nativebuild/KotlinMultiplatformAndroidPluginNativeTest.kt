@@ -19,8 +19,8 @@ package com.android.build.gradle.integration.nativebuild
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -141,28 +141,28 @@ class KotlinMultiplatformAndroidPluginNativeTest {
         executor()
             .run(":kmpFirstLib:assemble")
 
-        Aar(
-            project.getSubproject("kmpFirstLib").getOutputFile(
-                "aar",
-                "kmpFirstLib.aar"
-            )
-        ).use { aar ->
-            aar.getEntryAsZip("classes.jar").use { classesJar ->
-                Truth.assertThat(classesJar.entries.map { it.pathString }).containsExactlyElementsIn(
-                    listOf(
-                        "/kmp_resource.txt",
-                        "/com/example/kmpfirstlib/KmpCommonFirstLibClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidActivity.class",
-                        "/com/example/nativelib/Jni.class",
-                        "/com/example/nativelib/Incrementer.class",
-                        "/META-INF/kmpFirstLib.kotlin_module"
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
+
+        AarSubject.assertThat(aarPath) {
+            mainJar {
+                classes().containsExactly(
+                    "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+                    "com/example/kmpfirstlib/KmpAndroidActivity",
+                    "com/example/nativelib/Jni",
+                    "com/example/nativelib/Incrementer",
+
                     )
+                resources().containsExactly(
+                    "kmp_resource.txt",
+                    "META-INF/kmpFirstLib.kotlin_module"
                 )
             }
 
-            Truth.assertThat(aar.getEntry("jni/x86/libnative_lib.so")).isNotNull()
+            contains("jni/x86/libnative_lib.so")
         }
     }
 

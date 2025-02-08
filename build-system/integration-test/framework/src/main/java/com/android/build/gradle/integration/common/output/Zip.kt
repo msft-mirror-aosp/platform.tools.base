@@ -108,7 +108,7 @@ abstract class Zip(
  * @param archivePath the path to the archive. if invalid [status] will no be [Status.EXISTS]
  * @param name the name of the zip when displaying assertion
  */
-open class SimpleZip(
+class SimpleZip(
     val archivePath: Path?,
     name: String = archivePath?.fileName?.toString() ?: "missing zip path"
 ): Zip(name) {

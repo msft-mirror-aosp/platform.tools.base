@@ -28,7 +28,6 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.OptionalBooleanOption;
-import com.android.testutils.apk.Zip;
 
 import com.google.common.truth.Truth;
 
@@ -38,11 +37,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Scanner;
 
 /**
@@ -216,27 +210,13 @@ public class ExtractAnnotationsTest {
 
         // Make sure that annotations.zip contains no timestamps (for making it binary identical on
         // every build)
-        project.getAar(
+        project.testAar(
                 "debug",
-                debugAar -> {
-                    try {
-                        Zip annotationZip = debugAar.getEntryAsZip("annotations.zip");
-
-                        Path annotationXml =
-                                annotationZip.getEntry(
-                                        "com/android/tests/extractannotations/annotations.xml");
-                        assertThat(annotationXml).isNotNull();
-                        //noinspection ConstantConditions
-                        assertThat(
-                                        Files.readAttributes(
-                                                        annotationXml, BasicFileAttributes.class)
-                                                .lastModifiedTime()
-                                                .toMillis())
-                                .isEqualTo(0L);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+                debugAar ->
+                        debugAar.innerZip("annotations.zip")
+                                .fileAttributes(
+                                        "com/android/tests/extractannotations/annotations.xml")
+                                .hasLastModifiedTimeInMillis(0L));
     }
 
     /** Regression test for Issue 234865137 */
@@ -267,12 +247,7 @@ public class ExtractAnnotationsTest {
         assertThat(extractTestFile.delete()).isTrue();
 
         getExecutor().run("clean", "assembleDebug");
-        project.getAar(
-                "debug",
-                debugAar -> {
-                    Zip annotationZip = debugAar.getEntryAsZip("annotations.zip");
-                    assertThat(annotationZip).isNotNull();
-                });
+        project.testAar("debug", debugAar -> debugAar.innerZip("annotations.zip").exists());
     }
 
     private GradleTaskExecutor getExecutor() {

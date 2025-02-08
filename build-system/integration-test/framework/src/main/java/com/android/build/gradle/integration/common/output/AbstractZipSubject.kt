@@ -21,6 +21,8 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 
 /**
  * Base Truth subject for all Zip archive types, providing basic validation for the content.
@@ -90,8 +92,11 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      * @param path the path of the item which must not include a leading /
      */
     fun innerZip(path: String): ZipSubject {
-        contains(path)
-        return check("innerZip($path)").about(zips()).that(actual().innerZip(path))
+        // it's possible the zip does not exist, but we want to still return something because we
+        // want to be able to check for missing zip (though technically this can also be done
+        // with doesNot exist)
+        val zip = actual().innerZip(path) ?: SimpleZip(null)
+        return check("innerZip($path)").about(zips()).that(zip)
     }
 
     /**
@@ -102,5 +107,12 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      */
     fun innerZip(path: String, action: ZipSubject.() -> Unit) {
         action(innerZip(path))
+    }
+
+    fun fileAttributes(path: String): FileAttributesSubject {
+        contains(path)
+        val entryPath = actual().getEntry(path)!!
+        val attributes = Files.readAttributes(entryPath, BasicFileAttributes::class.java)
+        return check("fileAttributes($path)").about(FileAttributesSubject.attributes()).that(attributes)
     }
 }

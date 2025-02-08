@@ -187,7 +187,7 @@ internal class FusedLibraryManifestMergerTaskTest {
 
         // build the fused AAR then get its location
         build.executor.run(":fusedLib1:assemble")
-        val aarFile = build.fusedLibrary(":fusedLib1").getAarFile(AarSelector.NO_BUILD_TYPE)
+        val aarFile = build.fusedLibrary(":fusedLib1").getAarLocationForCopy(AarSelector.NO_BUILD_TYPE)
 
         // inject it as a local dependency of the app module
         build.androidApplication().reconfigure {

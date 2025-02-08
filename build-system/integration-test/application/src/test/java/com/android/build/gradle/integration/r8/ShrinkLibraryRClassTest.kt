@@ -30,6 +30,7 @@ import org.junit.rules.TemporaryFolder
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipFile
 
 /** Regression test for https://buganizer.corp.google.com/issues/170922353 */
 class ShrinkLibraryRClassTest {
@@ -113,12 +114,14 @@ class ShrinkLibraryRClassTest {
 
     private fun extractAarJar(): Path {
         val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
-        project.getAar("release") { aar ->
-            AarSubject.assertThat(aar.file) {
-               allJars().containsClass("com/example/lib/UseR")
-            }
-            Files.copy(aar.getEntry("classes.jar")!!, jar)
+        project.assertThatAar("release") {
+            allJars().containsClass("com/example/lib/UseR")
         }
+        val aarPath = project.getAarLocationForCopy("release")
+        ZipFile(aarPath.toFile()).use {
+            Files.copy(it.getInputStream(it.getEntry("classes.jar")), jar)
+        }
+
         return jar
     }
 }

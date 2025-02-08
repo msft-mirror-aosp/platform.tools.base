@@ -22,8 +22,6 @@ import static com.google.common.truth.Truth.assert_;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.Logcat;
-import com.android.builder.model.Variant;
-import com.android.testutils.apk.Aar;
 import com.android.testutils.apk.Apk;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Optional;

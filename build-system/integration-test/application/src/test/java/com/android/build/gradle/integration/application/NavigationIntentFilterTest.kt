@@ -142,11 +142,13 @@ class NavigationIntentFilterTest {
         )
         // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
         project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib")
-            .getAar("debug") { aar ->
-                assertThat(aar.entries.map { it.name }).contains(FN_NAVIGATION_JSON)
-                FileUtils.copyFile(aar.file.toFile(), File(libAarDir, "lib.aar"))
-            }
+
+        project.getSubproject("lib").assertThatAar("debug") {
+            contains(FN_NAVIGATION_JSON)
+        }
+        val aarPath = project.getSubproject("lib").getAarLocationForCopy("debug")
+        FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
+
         // Update the app's build.gradle and the settings.gradle.
         TestFileUtils.searchAndReplace(
             project.getSubproject("app").buildFile,

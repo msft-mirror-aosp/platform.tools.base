@@ -32,8 +32,6 @@ import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
-import com.android.testutils.apk.Aar
-import org.gradle.internal.declarativedsl.parsing.main
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule

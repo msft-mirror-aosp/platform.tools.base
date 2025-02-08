@@ -215,7 +215,7 @@ class FusedLibraryMergeResourcesTaskTest {
         val app = build.androidApplication()
 
         build.executor.run(":fusedLib1:assemble")
-        val aarFile = build.fusedLibrary(":fusedLib1").getAarFile(AarSelector.NO_BUILD_TYPE)
+        val aarFile = build.fusedLibrary(":fusedLib1").getAarLocationForCopy(AarSelector.NO_BUILD_TYPE)
 
         app.reconfigure {
             dependencies {

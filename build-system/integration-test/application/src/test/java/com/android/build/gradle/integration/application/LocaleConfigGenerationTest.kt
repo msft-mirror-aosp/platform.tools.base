@@ -618,10 +618,8 @@ class LocaleConfigGenerationTest {
             lib2Locales = listOf(PT)
         ).executor().run(":lib1:assembleDebug")
 
-        project.getSubproject("lib1")
-            .getAar("debug") { aar ->
-                FileUtils.copyFile(aar.file.toFile(), File(libAarDir, "lib1.aar"))
-            }
+        val aarPath = project.getSubproject("lib1").getAarLocationForCopy("debug")
+        FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib1.aar"))
 
         TestFileUtils.searchAndReplace(
             project.getSubproject("app").buildFile,

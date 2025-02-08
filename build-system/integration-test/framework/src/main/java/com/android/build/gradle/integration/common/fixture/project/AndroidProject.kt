@@ -88,11 +88,11 @@ interface GeneratesAar {
     fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
 
     /**
-     * Returns a path to the AAR. This should not be used to validate the content of the file.
+     * Returns a path to the AAR, so that the file can be copied in other location.
      *
-     * Instead use [assertAar].
+     * This should not be used to validate the content of the file. Instead, use [assertAar].
      */
-    fun getAarFile(aarSelector: AarSelector): Path
+    fun getAarLocationForCopy(aarSelector: AarSelector): Path
 }
 
 /**
@@ -206,7 +206,7 @@ class GeneratesAarDelegate(
     location: Path
 ): BaseGenerateDelegate(location), GeneratesAar {
 
-    override fun getAarFile(aarSelector: AarSelector): Path = computeOutputPath(aarSelector)
+    override fun getAarLocationForCopy(aarSelector: AarSelector): Path = computeOutputPath(aarSelector)
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
         val path = computeOutputPath(aarSelector)
@@ -223,7 +223,7 @@ class GeneratesAarDelegate(
  */
 class GeneratesAarFromParentDelegate(private val parent: GeneratesAar): GeneratesAar {
 
-    override fun getAarFile(aarSelector: AarSelector): Path = parent.getAarFile(aarSelector)
+    override fun getAarLocationForCopy(aarSelector: AarSelector): Path = parent.getAarLocationForCopy(aarSelector)
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
         parent.assertAar(aarSelector, action)

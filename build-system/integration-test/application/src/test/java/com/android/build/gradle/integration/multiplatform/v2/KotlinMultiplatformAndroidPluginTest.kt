@@ -18,11 +18,12 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -33,7 +34,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.util.zip.ZipFile
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
 
@@ -220,55 +220,44 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
                 "kmpFirstLib.aar"
             )
         }
-        Aar(aarFile).use { aar ->
 
-            assertThat(aar.getEntry("R.txt")).isNotNull()
-
-            aar.getEntryAsZip("classes.jar").use { classesJar ->
-                assertThat(classesJar.entries.map { it.pathString }).containsExactlyElementsIn(
-                    listOf(
-                        "/kmp_resource.txt",
-                        "/com/example/kmpfirstlib/KmpCommonFirstLibClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidActivity.class",
-                        "/META-INF/kmpFirstLib.kotlin_module"
+        AarSubject.assertThat(aarFile.toPath()) {
+            contains("R.txt")
+            mainJar {
+                classes().containsExactly(
+                    "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+                    "com/example/kmpfirstlib/KmpAndroidActivity",
+                )
+                resources().apply {
+                    containsExactly(
+                        "kmp_resource.txt",
+                        "META-INF/kmpFirstLib.kotlin_module"
                     )
-                )
-
-                assertThat(classesJar.getEntry("kmp_resource.txt").readText()).isEqualTo(
-                    "kmp resource\n"
-                )
+                    resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
+                }
             }
-
-            assertThat(aar.androidManifestContentsAsString).contains("uses-sdk android:minSdkVersion=\"22\"")
-            assertThat(aar.androidManifestContentsAsString).contains("package=\"com.example.kmpfirstlib\"")
-
-            assertThat(
-                aar.getEntry("META-INF/com/android/build/gradle/aar-metadata.properties").readText()
-            ).contains("minAndroidGradlePluginVersion=7.2.0")
-         }
+            manifest().apply {
+                contains("uses-sdk android:minSdkVersion=\"22\"")
+                contains("package=\"com.example.kmpfirstlib\"")
+            }
+            aarMetadata().minAgpVersion().isEqualTo("7.2.0")
+        }
 
         if (publishLibs) {
-            ZipFile(
-                FileUtils.join(
-                    project.projectDir,
-                    "testRepo",
-                    "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0-sources.jar"
+            val zipPath = FileUtils.join(
+                project.projectDir,
+                "testRepo",
+                "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0-sources.jar"
+            ).toPath()
+            ZipSubject.assertThat(zipPath) {
+                entries().containsAtLeast(
+                    "commonMain/com/example/kmpfirstlib/KmpCommonFirstLibClass.kt",
+                    "androidMain/com/example/kmpfirstlib/KmpAndroidActivity.kt",
+                    "androidMain/com/example/kmpfirstlib/KmpAndroidFirstLibClass.kt",
+                    "androidMain/com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass.java",
                 )
-            ).use { zipFile ->
-                assertThat(
-                    zipFile.getEntry("commonMain/com/example/kmpfirstlib/KmpCommonFirstLibClass.kt")
-                ).isNotNull()
-                assertThat(
-                    zipFile.getEntry("androidMain/com/example/kmpfirstlib/KmpAndroidActivity.kt")
-                ).isNotNull()
-                assertThat(
-                    zipFile.getEntry("androidMain/com/example/kmpfirstlib/KmpAndroidFirstLibClass.kt")
-                ).isNotNull()
-                assertThat(
-                    zipFile.getEntry("androidMain/com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass.java")
-                ).isNotNull()
             }
         }
     }
