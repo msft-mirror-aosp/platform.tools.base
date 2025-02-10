@@ -40,10 +40,11 @@ class TraceReferenceToolTest {
 
         val toolConfig = ToolConfig(
             minSdkVersion = 21,
-            isDebuggable = true,
+            debuggable = true,
             disableTreeShaking = true,
-            disableDesugaring = true,
             disableMinification = true,
+            disableDesugaring = true,
+            fullMode = true,
             r8OutputType = R8OutputType.DEX
         )
         val mainDexConfig = MainDexListConfig(listOf(), listOf())
@@ -69,7 +70,6 @@ class TraceReferenceToolTest {
             mainDexListConfig = mainDexConfig,
             resourceShrinkingConfig = null,
             messageReceiver = NoOpMessageReceiver(),
-            true,
             featureClassJars = listOf(),
             featureJavaResourceJars = listOf(),
             featureDexDir = null,

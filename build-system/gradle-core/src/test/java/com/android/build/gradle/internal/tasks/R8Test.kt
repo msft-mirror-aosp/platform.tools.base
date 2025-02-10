@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.transforms.testdata.Toy
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.R8OutputType
+import com.android.builder.dexing.ToolConfig
 import com.android.testutils.TestClassesGenerator
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
@@ -671,22 +672,13 @@ class R8Test(private val r8OutputType: R8OutputType) {
             bootClasspath = listOf(
                 TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
             ),
-            minSdkVersion = minSdkVersion,
-            isDebuggable = true,
-            enableDesugaring =
-                java8Support == Java8LangSupport.R8
-                    && !componentType.isAar,
-            disableTreeShaking = disableTreeShaking,
-            disableMinification = disableMinification,
             mainDexListFiles = listOf(),
             mainDexRulesFiles = mainDexRulesFiles,
             inputProguardMapping = null,
             proguardConfigurationFiles = proguardRulesFiles,
             proguardConfigurations = proguardConfigurations,
-            isAar = componentType.isAar,
             errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
             legacyMultiDexEnabled = false,
-            useFullR8 = useFullR8,
             referencedInputs = referencedInputs,
             classes = classes,
             resourcesJar = resourcesJar.toFile(),
@@ -707,6 +699,15 @@ class R8Test(private val r8OutputType: R8OutputType) {
             outputArtProfile = null,
             inputProfileForDexStartupOptimization = null,
             r8Metadata = null,
+            toolConfig = ToolConfig(
+                minSdkVersion = minSdkVersion,
+                debuggable = true,
+                disableTreeShaking = disableTreeShaking,
+                disableMinification = disableMinification,
+                disableDesugaring = java8Support != Java8LangSupport.R8 || componentType.isAar,
+                fullMode = useFullR8,
+                r8OutputType = if (componentType.isAar) R8OutputType.CLASSES else R8OutputType.DEX
+            ),
             resourceShrinkingConfig = null,
             partialShrinkingConfig = null,
             r8ThreadPool = MoreExecutors.newDirectExecutorService()

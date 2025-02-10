@@ -118,7 +118,6 @@ fun runR8(
     mainDexListConfig: MainDexListConfig,
     resourceShrinkingConfig: ResourceShrinkingConfig?,
     messageReceiver: MessageReceiver,
-    useFullR8: Boolean = false,
     featureClassJars: Collection<Path>,
     featureJavaResourceJars: Collection<Path>,
     featureDexDir: Path?,
@@ -159,10 +158,6 @@ fun runR8(
         )
     }
 
-    if (!useFullR8) {
-        r8CommandBuilder.setProguardCompatibility(true);
-    }
-
     if (r8Metadata != null) {
         r8CommandBuilder.setBuildMetadataConsumer { metadata ->
             r8Metadata.writeText(metadata.toJson())
@@ -187,7 +182,7 @@ fun runR8(
         if (libConfiguration != null) {
             r8CommandBuilder.addSpecialLibraryConfiguration(libConfiguration)
         }
-        if (toolConfig.isDebuggable) {
+        if (toolConfig.debuggable) {
             r8CommandBuilder.addAssertionsConfiguration(
                 AssertionsConfiguration.Builder::compileTimeEnableAllAssertions
             )
@@ -231,7 +226,7 @@ fun runR8(
     )
 
     val compilationMode =
-        if (toolConfig.isDebuggable) CompilationMode.DEBUG else CompilationMode.RELEASE
+        if (toolConfig.debuggable) CompilationMode.DEBUG else CompilationMode.RELEASE
 
     val dataResourceConsumer = JavaResourcesConsumer(javaResourcesJar)
     val programConsumer =
@@ -261,9 +256,10 @@ fun runR8(
 
     @Suppress("UsePropertyAccessSyntax")
     r8CommandBuilder
-        .setDisableMinification(toolConfig.disableMinification)
         .setDisableTreeShaking(toolConfig.disableTreeShaking)
+        .setDisableMinification(toolConfig.disableMinification)
         .setDisableDesugaring(toolConfig.disableDesugaring)
+        .setProguardCompatibility(!toolConfig.fullMode)
         .setMode(compilationMode)
         .setProgramConsumer(programConsumer)
 
@@ -569,15 +565,22 @@ data class ProguardOutputFiles(
     val missingKeepRules: Path
 )
 
-/** Configuration parameters for the R8 tool. */
+/** Basic parameters required for running R8. */
 data class ToolConfig(
     val minSdkVersion: Int,
-    val isDebuggable: Boolean,
+    val debuggable: Boolean,
     val disableTreeShaking: Boolean,
-    val disableDesugaring: Boolean,
     val disableMinification: Boolean,
+    val disableDesugaring: Boolean,
+    val fullMode: Boolean,
     val r8OutputType: R8OutputType,
-)
+) : java.io.Serializable { // Serializable so it can be used in Gradle workers
+
+    companion object {
+        @Suppress("ConstPropertyName")
+        private const val serialVersionUID = 0L
+    }
+}
 
 /** Parameters required for running resource shrinking. */
 data class ResourceShrinkingConfig(
