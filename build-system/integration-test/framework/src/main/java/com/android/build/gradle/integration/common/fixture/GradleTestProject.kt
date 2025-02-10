@@ -1212,10 +1212,9 @@ allprojects { proj ->
         dimensionList.addAll(dimensions)
         val path = getOutputFile(
             "aar",
-            Joiner.on("-").join(dimensionList) + SdkConstants
-                .DOT_AAR
+            Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR
         )
-        AarSubject.assertThat(path.toPath()) {
+        AarSubject.assertThat(path) {
             action(this)
         }
     }

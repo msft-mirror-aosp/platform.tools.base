@@ -23,6 +23,7 @@ import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.function.Consumer
 import java.util.regex.Pattern
 
 /**
@@ -107,6 +108,8 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
         // it's possible the zip does not exist, but we want to still return something because we
         // want to be able to check for missing zip (though technically this can also be done
         // with doesNot exist)
+        // It's ok to not close this empty zip as it's not using a real file.
+        // Inner zips are automatically closed when the enclosing zip is closed.
         val zip = actual().innerZip(path) ?: SimpleZip(null)
         return check("innerZip($path)").about(zips()).that(zip)
     }
@@ -119,6 +122,18 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      */
     fun innerZip(path: String, action: ZipSubject.() -> Unit) {
         action(innerZip(path))
+    }
+
+    /**
+     * creates a [ZipSubject] with the zip content of the file at the given path,
+     * and configures it with the provided action
+     *
+     * @param path the path of the item which must not include a leading /
+     */
+    fun innerZip(path: String, action: Consumer<ZipSubject>) {
+        innerZip(path) {
+            action.accept(this)
+        }
     }
 
     fun fileAttributes(path: String): FileAttributesSubject {

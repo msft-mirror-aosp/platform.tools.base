@@ -138,12 +138,10 @@ class KotlinMultiplatformAndroidPluginNativeTest {
 
     @Test
     fun testKmpLibraryAarContents() {
-        executor()
-            .run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         val aarPath = project.getSubproject("kmpFirstLib")
             .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
 
         AarSubject.assertThat(aarPath) {
             mainJar {

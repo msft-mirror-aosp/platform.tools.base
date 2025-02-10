@@ -23,8 +23,10 @@ import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
+import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.function.Consumer
 import java.util.regex.Pattern
 import kotlin.io.path.inputStream
 
@@ -38,14 +40,41 @@ class AarSubject(
 
     companion object {
         /**
-         * Runs the provided action on an [com.android.build.gradle.integration.common.output.AarSubject] that
+         * Runs the provided action on an [AarSubject] that
+         * is created for the zip at the provided path.
+         */
+        fun assertThat(path: Path, action: AarSubject.() -> Unit) {
+            SimpleZip(path).use {
+                action(assertAbout(aars()).that(it))
+            }
+        }
+
+        /**
+         * Runs the provided action on an [AarSubject] that
+         * is created for the zip at the provided path.
+         */
+        fun assertThat(file: File, action: AarSubject.() -> Unit) {
+            assertThat(file.toPath(), action)
+        }
+
+        /**
+         * Runs the provided action on an [AarSubject] that
          * is created for the zip at the provided path.
          */
         @JvmStatic
-        fun assertThat(zip: Path, action: AarSubject.() -> Unit) {
-            SimpleZip(zip).use {
-                action(assertAbout(aars()).that(it))
+        fun assertThat(path: Path, action: Consumer<AarSubject>) {
+            SimpleZip(path).use {
+                action.accept(assertAbout(aars()).that(it))
             }
+        }
+
+        /**
+         * Runs the provided action on an [AarSubject] that
+         * is created for the zip at the provided path.
+         */
+        @JvmStatic
+        fun assertThat(file: File, action: Consumer<AarSubject>) {
+            assertThat(file.toPath(), action)
         }
 
         internal fun assertThat(zip: Zip, action: AarSubject.() -> Unit) {
@@ -65,6 +94,7 @@ class AarSubject(
     fun allJars(): JarSubject {
         exists()
 
+        // Inner zips are automatically closed when the enclosing zip is closed.
         val mainJar = actual().innerZip("classes.jar")
         val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
 
@@ -76,7 +106,7 @@ class AarSubject(
             }
         } else secondaryJars
 
-        return check("allJars()").about(JarSubject.jars()).that(MultiZip(allJars, "allJars"))
+        return check("allJars()").about(JarSubject.jars()).that(MultiZipView(allJars, "allJars"))
     }
 
     /**
@@ -85,6 +115,16 @@ class AarSubject(
      */
     fun allJars(action: JarSubject.() -> Unit) {
         action(allJars())
+    }
+
+    /**
+     * Creates a [JarSubject] wrapping the content of the main jar and all the secondary jars,
+     * and configure it with the given action
+     */
+    fun allJars(action: Consumer<JarSubject>) {
+        allJars {
+            action.accept(this)
+        }
     }
 
     /**
@@ -101,6 +141,16 @@ class AarSubject(
     }
 
     /**
+     * creates a [JarSubject] for the main jar of the AAR (classes.jar), and configures it
+     * via the given action.
+     */
+    fun mainJar(action: Consumer<JarSubject>) {
+        mainJar {
+            action.accept(this)
+        }
+    }
+
+    /**
      * returns a [JarSubject] for the api jar of the AAR (api.jar).
      */
     fun apiJar(): JarSubject = jar("api.jar", methodName = "apiJar()")
@@ -114,15 +164,27 @@ class AarSubject(
     }
 
     /**
+     * creates a [JarSubject] for the api jar of the AAR (api.jar), and configures it
+     * via the given action.
+     */
+    fun apiJar(action: Consumer<JarSubject>) {
+        apiJar {
+            action.accept(this)
+        }
+    }
+
+    /**
      * Returns all the classes from any secondary jars as a single [JarSubject].
      *
      */
     fun allSecondaryJars(): JarSubject {
         exists()
+
+        // Inner zips are automatically closed when the enclosing zip is closed.
         val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
 
         return check("allSecondaryJars()").about(JarSubject.jars())
-            .that(MultiZip(secondaryJars, "allSecondaryClasses"))
+            .that(MultiZipView(secondaryJars, "allSecondaryClasses"))
     }
 
     /**
@@ -131,6 +193,16 @@ class AarSubject(
      */
     fun allSecondaryJars(action: JarSubject.() -> Unit) {
         action(allSecondaryJars())
+    }
+
+    /**
+     * Creates a [JarSubject] representing all the classes from the secondary jars, and configure it
+     * with the given action
+     */
+    fun allSecondaryJars(action: Consumer<JarSubject>) {
+        allSecondaryJars {
+            action.accept(this)
+        }
     }
 
     /**
@@ -148,7 +220,7 @@ class AarSubject(
      */
     fun androidResources(): ZipSubject {
         exists()
-        return check("androidResources()").about(ZipSubject.zips()).that(FilteredZip(actual(), "res/"))
+        return check("androidResources()").about(ZipSubject.zips()).that(ZipFolderView(actual(), "res"))
     }
 
     /**
@@ -160,13 +232,23 @@ class AarSubject(
     }
 
     /**
+     * Creates a [ZipSubject] representing all the android resources, and configure it
+     * with the given action
+     */
+    fun androidResources(action: Consumer<ZipSubject>) {
+        androidResources {
+            action.accept(this)
+        }
+    }
+
+    /**
      * returns [ZipSubject] for the Android assets
      *
      * The names of the files do NOT include the assets folder.
      */
     fun assets(): ZipSubject {
         exists()
-        return check("assets()").about(ZipSubject.zips()).that(FilteredZip(actual(), "assets/"))
+        return check("assets()").about(ZipSubject.zips()).that(ZipFolderView(actual(), "assets"))
     }
 
     /**
@@ -175,6 +257,16 @@ class AarSubject(
      */
     fun assets(action: ZipSubject.() -> Unit) {
         action(assets())
+    }
+
+    /**
+     * Creates a [ZipSubject] representing all the android assets, and configure it
+     * with the given action
+     */
+    fun assets(action: Consumer<ZipSubject>) {
+        assets {
+            action.accept(this)
+        }
     }
 
     /**
@@ -196,6 +288,16 @@ class AarSubject(
      */
     fun lintJar(action: JarSubject.() -> Unit) {
         action(lintJar())
+    }
+
+    /**
+     * creates a [JarSubject] for the lint jar of the AAR (lint.jar), and configures it
+     * via the given action.
+     */
+    fun lintJar(action: Consumer<JarSubject>) {
+        lintJar {
+            action.accept(this)
+        }
     }
 
     /**
@@ -246,6 +348,8 @@ class AarSubject(
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null
+        // It's ok to not close this empty zip as it's not using a real file.
+        // Inner zips are automatically closed when the enclosing zip is closed.
         val jar = actual().innerZip(path) ?: SimpleZip(null)
 
         return check(methodName).about(JarSubject.jars()).that(jar)

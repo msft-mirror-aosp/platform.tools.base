@@ -99,7 +99,6 @@ public class JarJarLibTest {
                     // check we do not have the R class of the library in there.
                     aar.allJars().doesNotContainClass("com/android/tests/basic/R");
                     aar.allJars().doesNotContainClass("com/android/tests/basic/R$drawable");
-                    return null;
                 });
 
         // check the content of the Main class.

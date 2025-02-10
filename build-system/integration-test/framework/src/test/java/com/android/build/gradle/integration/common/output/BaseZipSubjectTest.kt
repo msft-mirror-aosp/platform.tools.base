@@ -35,7 +35,7 @@ abstract class BaseZipSubjectTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    protected fun createAar(name: String, action: AarBuilder.() -> Unit): Zip {
+    protected fun createAar(name: String, action: AarBuilder.() -> Unit): SimpleZip {
         val builder = AarBuilderImpl("groupId", "artifactId", "1.0")
         action(builder)
 
@@ -45,7 +45,7 @@ abstract class BaseZipSubjectTest {
         return SimpleZip(path)
     }
 
-    protected fun createJar(name: String, action: JarBuilder.() -> Unit): Zip {
+    protected fun createJar(name: String, action: JarBuilder.() -> Unit): SimpleZip {
         val builder = JarBuilderImpl()
         action(builder)
 

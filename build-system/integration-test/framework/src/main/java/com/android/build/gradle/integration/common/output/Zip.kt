@@ -39,11 +39,8 @@ import kotlin.io.path.readText
  */
 abstract class Zip(
     val name: String
-): AutoCloseable {
-
+) {
     enum class Status { EXISTS, DIRECTORY, DOES_NOT_EXIST }
-
-    private val innerZips = mutableMapOf<String, Zip>()
 
     abstract fun exists(): Boolean
     abstract val status: Status
@@ -65,20 +62,7 @@ abstract class Zip(
      */
     abstract fun getEntries(filter: ((String) -> Boolean)? = null): List<String>
 
-    fun innerZip(path: String): Zip? {
-        val zipPath = getEntry(path) ?: return null
-
-        return innerZips.computeIfAbsent(path) {
-
-            // TODO inject a TemporaryFolder rule?
-            val namePrefix = path.replace('.', '_').replace('/', '_')
-            val temp = Files.createTempFile("innerzip_${namePrefix}_", ".zip")
-            FileUtils.copyFile(zipPath, temp)
-            temp.toFile().deleteOnExit()
-
-            SimpleZip(temp, "$name:$it")
-        }
-    }
+    abstract fun innerZip(path: String): Zip?
 
     fun textFile(path: String): String? {
         val zipPath = getEntry(path) ?: return null
@@ -101,10 +85,6 @@ abstract class Zip(
             throw UncheckedIOException(e)
         }
     }
-
-    override fun close() {
-        innerZips.values.forEach { it.close() }
-    }
 }
 
 /**
@@ -118,28 +98,36 @@ abstract class Zip(
 class SimpleZip(
     val archivePath: Path?,
     name: String = archivePath?.fileName?.toString() ?: "missing zip path"
-): Zip(name) {
+): Zip(name), AutoCloseable {
 
     private val zip: FileSystem?
     private val internalStatus: Status
 
+    private val innerZips = mutableMapOf<String, SimpleZip>()
+
     init {
-        if (archivePath == null) {
-            internalStatus = Status.DOES_NOT_EXIST
-            zip = null
-        } else if (archivePath.isDirectory()) {
-            internalStatus = Status.DIRECTORY
-            zip = null
-        } else if (archivePath.fileSystem != FileSystems.getDefault()) {
-            throw IllegalArgumentException(
-                "Cannot create zip from non default fs, use getEntryAsZip() instead"
-            )
-        } else if (archivePath.isRegularFile()) {
-            internalStatus = Status.EXISTS
-            zip = FileSystems.newFileSystem(archivePath, null as ClassLoader?)
-        } else {
-            internalStatus = Status.DOES_NOT_EXIST
-            zip = null
+        when {
+            archivePath == null -> {
+                internalStatus = Status.DOES_NOT_EXIST
+                zip = null
+            }
+            archivePath.isDirectory() -> {
+                internalStatus = Status.DIRECTORY
+                zip = null
+            }
+            archivePath.fileSystem != FileSystems.getDefault() -> {
+                throw IllegalArgumentException(
+                    "Cannot create zip from non default fs, use getEntryAsZip() instead"
+                )
+            }
+            archivePath.isRegularFile() -> {
+                internalStatus = Status.EXISTS
+                zip = FileSystems.newFileSystem(archivePath, null as ClassLoader?)
+            }
+            else -> {
+                internalStatus = Status.DOES_NOT_EXIST
+                zip = null
+            }
         }
     }
 
@@ -147,7 +135,7 @@ class SimpleZip(
         return internalStatus == Status.EXISTS
     }
 
-    override val status: Zip.Status
+    override val status: Status
         get() = internalStatus
 
     override fun getEntry(path: String): Path? {
@@ -163,9 +151,23 @@ class SimpleZip(
         } ?: allEntries
     }
 
+    override fun innerZip(path: String): Zip? {
+        val zipPath = getEntry(path) ?: return null
+
+        return innerZips.computeIfAbsent(path) {
+            // TODO inject a TemporaryFolder rule?
+            val namePrefix = path.replace('.', '_').replace('/', '_')
+            val temp = Files.createTempFile("innerzip_${namePrefix}_", ".zip")
+            FileUtils.copyFile(zipPath, temp)
+            temp.toFile().deleteOnExit()
+
+            SimpleZip(temp, "$name:$it")
+        }
+    }
+
     override fun close() {
-        super.close()
         zip?.close()
+        innerZips.values.forEach { it.close() }
     }
 
     override fun toString(): String {
@@ -179,10 +181,8 @@ class SimpleZip(
             .filter { it.isRegularFile() }
             .map { it.toString().substring(1) }
             .collect(Collectors.toList())
-            .toList()
     }
 }
-
 
 /**
  * An implementation of [Zip] that is backed by multiple [Zip] instances.
@@ -191,8 +191,13 @@ class SimpleZip(
  *
  * This does not care about duplicate objects across archives. When searching for a file in
  * the archives, the first match is returned.
+ *
+ * This is meant to work with [ZipSubject] and [AarSubject] (and possibly others in the future),
+ * and meant to only wrap the result of [Zip.innerZip]. Because of this, there is no need to
+ * close this object as the zip it wraps will be closed automatically when the enclosing zip is
+ * itself closed
  */
-class MultiZip(
+internal class MultiZipView(
     private val zips: List<Zip>,
     name: String
 ): Zip(name) {
@@ -205,42 +210,42 @@ class MultiZip(
     override val status: Status
         get() = Status.EXISTS
 
-    override fun getEntry(path: String): Path? {
-        for (zip in zips) {
-            if (zip.getEntries().contains(path)) {
-                return zip.getEntry(path)
-            }
-        }
-
-        return null
+    override fun getEntry(path: String): Path? = findInZips(path) {
+        getEntry(it)
     }
 
-    override fun getEntries(filter: ((String) -> Boolean)?): List<String> {
-        return filter?.let { f ->
-            allEntries.filter(f)
-        } ?: allEntries
-    }
+    override fun getEntries(filter: ((String) -> Boolean)?): List<String> = filter?.let { f ->
+        allEntries.filter(f)
+    } ?: allEntries
 
-    override fun close() {
-        super.close()
-        zips.forEach(AutoCloseable::close)
+    override fun innerZip(path: String): Zip? = findInZips(path) {
+        innerZip(it)
     }
 
     private val allEntries: List<String> by lazy(LazyThreadSafetyMode.NONE) {
         zips.flatMap { it.getEntries() }
     }
+
+    private fun <T> findInZips(path: String, action: Zip.(String) -> T?): T? = zips.firstNotNullOfOrNull {
+        if (it.getEntries().contains(path)) it.action(path) else null
+    }
 }
 
 /**
- * An implementation of [Zip] that provides a filtered view of another zip file.
+ * An implementation of [Zip] that provides a view of folder inside a zip
  *
  * The filtering is only to give access to a specific sub folder inside the original zip, making
  * all the paths relative to that sub-folder.
+ *
+ * This is meant to work with [ZipSubject] and [AarSubject] (and possibly others in the future),
+ * and meant to only wrap a [SimpleZip] or the result of [Zip.innerZip]. Because of this, there
+ * is no need to close this object as the zip is the one that should be closed.
  */
-class FilteredZip(
+internal class ZipFolderView(
     private val zip: Zip,
-    private val allowedPrefix: String
-): Zip(zip.name) {
+    folderName: String
+): Zip("${zip.name}/$folderName") {
+    private val prefix = "$folderName/"
 
     override fun exists(): Boolean {
         return zip.exists()
@@ -250,7 +255,7 @@ class FilteredZip(
         get() = zip.status
 
     override fun getEntry(path: String): Path? {
-        return zip.getEntry("$allowedPrefix$path")
+        return zip.getEntry("$prefix$path")
     }
 
     override fun getEntries(filter: ((String) -> Boolean)?): List<String> {
@@ -259,9 +264,13 @@ class FilteredZip(
         } ?: allEntries
     }
 
+    override fun innerZip(path: String): Zip? {
+        return zip.innerZip("$prefix$path")
+    }
+
     private val allEntries: List<String> by lazy(LazyThreadSafetyMode.NONE) {
         zip.getEntries().mapNotNull {
-            if (it.startsWith(allowedPrefix)) it.substring(allowedPrefix.length) else null
+            if (it.startsWith(prefix)) it.substring(prefix.length) else null
         }
     }
 }

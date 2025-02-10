@@ -66,6 +66,12 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
                     contains("file.dat")
                     binaryFile("file.dat").isEqualTo(FAKE_CLASS)
                 }
+
+                // test that you can call the same inner zip multiple times
+                // (must actually read some content from the zip and not rely on cache.)
+                innerZip("classes.jar") {
+                    binaryFile("file.dat").isEqualTo(FAKE_CLASS)
+                }
             }
 
             // checks negative results
