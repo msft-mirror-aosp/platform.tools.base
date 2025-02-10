@@ -28,7 +28,7 @@ androidComponents {
         extension.minSdk = 22
         extension.compileSdk = libs.versions.latestCompileSdk.get().toInt()
     }
-    onVariant { variant ->
+    onVariants { variant ->
         if (variant.name == null || variant.name.isEmpty()) {
             throw IllegalArgumentException("must have variant name")
         }

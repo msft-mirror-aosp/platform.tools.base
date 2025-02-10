@@ -39,7 +39,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 androidComponents {
-                    onVariant { variant ->
+                    onVariants { variant ->
                         variant.nestedComponents.forEach { component ->
                             println(variant.name + ":" + component.name)
                         }
@@ -79,7 +79,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
                 }
 
                 androidComponents {
-                    onVariant { variant ->
+                    onVariants { variant ->
                         val createAssetsTaskProvider = project.tasks.register<CreateAssets>("${'$'}{variant.name}AddAssets") {
                             outputFolder.set(
                                 File(project.layout.buildDirectory.asFile.get(), "assets/gen")
@@ -162,7 +162,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
                 }
                 val taskProvider = tasks.register("fetchApks", FetchApkTask::class.java)
                 androidComponents {
-                    onVariant { variant ->
+                    onVariants { variant ->
                         variant.androidTest?.let {
                             it.outputProviders.provideApkOutputToTask(
                                 taskProvider,
@@ -209,7 +209,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
                 }
 
                 androidComponents {
-                    onVariant { variant ->
+                    onVariants { variant ->
                         variant.androidTest?.sources?.assets?.addStaticSourceDirectory("src/assets")
                     }
                 }

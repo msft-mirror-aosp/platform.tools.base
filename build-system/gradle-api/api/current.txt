@@ -2563,7 +2563,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.dsl.SdkComponents sdkComponents;
   }
 
-  public interface AndroidComponentsExtension<DslExtensionT extends com.android.build.api.dsl.CommonExtension<?, ?, ?, ?, ?, ?>, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
+  public interface AndroidComponentsExtension<DslExtensionT, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
     method @org.gradle.api.Incubating public void addSourceSetConfigurations(String suffix);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantBuilderT,kotlin.Unit> callback);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantBuilderT> callback);
@@ -3174,7 +3174,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.SetProperty<java.lang.String> testOnly;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension> com.android.build.api.variant.AndroidComponents {
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension,com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder,com.android.build.api.variant.KotlinMultiplatformAndroidVariant> {
     method public void onVariant(kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant,kotlin.Unit> callback);
     method public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }

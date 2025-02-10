@@ -99,7 +99,7 @@ class KotlinMultiplatformAndroidPluginNativeTest {
                 }
 
                 androidComponents {
-                    onVariant {
+                    onVariants {
                         val taskProvider = project.tasks.register("repackageAar", PackagingTask::class.java)
 
                         it.artifacts.use(
