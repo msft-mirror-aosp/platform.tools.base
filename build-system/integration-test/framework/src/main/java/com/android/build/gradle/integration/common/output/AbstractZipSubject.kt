@@ -23,6 +23,7 @@ import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.regex.Pattern
 
 /**
  * Base Truth subject for all Zip archive types, providing basic validation for the content.
@@ -59,11 +60,22 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     // --------------
 
     /**
-     * Returns a [IterableSubject] of all the Zip entries (as [String])
+     * Returns a [IterableSubject] of all the Zip entries (as [String]).
+     *
+     * An optional filter allows selecting a subset of the entries to test against.
      */
-    fun entries(): IterableSubject {
+    fun entries(filter: ((String) -> Boolean)? = null): IterableSubject {
         exists()
-        return check("entries()").that(actual().getEntries())
+        return check("entries()").that(actual().getEntries(filter))
+    }
+
+    /**
+     * Returns a [IterableSubject] of all the Zip entries (as [String]) matching the giaven
+     * pattern
+     */
+    fun entries(pattern: Pattern): IterableSubject {
+        exists()
+        return check("entries()").that(actual().getEntries(pattern))
     }
 
     /**

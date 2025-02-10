@@ -17,8 +17,9 @@
 package com.android.build.gradle.integration.nativebuild;
 
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION;
-import static com.android.testutils.truth.ZipFileSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -28,19 +29,23 @@ import com.android.build.api.variant.FilterConfiguration;
 import com.android.build.api.variant.VariantOutputConfiguration;
 import com.android.build.api.variant.impl.BuiltArtifactsImpl;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.ZipSubject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
 import com.android.build.gradle.integration.common.utils.VariantOutputUtils;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
-import com.android.testutils.truth.ZipFileSubject;
+
 import com.google.common.collect.Sets;
-import java.io.File;
-import java.util.Collection;
-import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /** Test drive for the CombinedAbiDensityPureSplits samples test. */
 public class CombinedAbiDensitySplits {
@@ -96,18 +101,16 @@ public class CombinedAbiDensitySplits {
                     builtArtifact.getOutputType());
 
             assertThat(builtArtifact.getVersionCode()).isEqualTo(123);
-            ZipFileSubject.assertThat(
-                    new File(builtArtifact.getOutputFile()),
-                    it -> {
-                        it.entries("/lib/.*").hasSize(1);
-                    });
+            ZipSubject.assertThat(
+                    Paths.get(builtArtifact.getOutputFile()),
+                    it -> it.entries(Pattern.compile("lib/.*")).hasSize(1));
 
             if (densityFilter != null) {
                 expectedDensities.remove(densityFilter);
 
                 // ensure the .so file presence (and only one)
-                assertThat(
-                        new File(builtArtifact.getOutputFile()),
+                ZipSubject.assertThat(
+                        Paths.get(builtArtifact.getOutputFile()),
                         it -> {
                             it.contains(
                                     "lib/"

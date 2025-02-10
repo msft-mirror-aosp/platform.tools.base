@@ -21,6 +21,9 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
+import com.android.build.gradle.integration.common.output.AarMetadataSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
+import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.signing.KeystoreHelper
 import com.android.testutils.apk.Dex
@@ -214,28 +217,20 @@ class PrivacySandboxSdkTest {
         assertThat(asbManifestBlameReport.isRegularFile()).isTrue()
         assertThat(asbFile.isRegularFile()).isTrue()
 
-        Zip(asbFile).use {
-            assertThat(
-                    Objects.requireNonNull(it.getEntryAsFile(
-                            "BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties"
-                    )).readText()
-            ).let { metadataContent ->
-                metadataContent.contains("appMetadataVersion=")
-                metadataContent.contains("androidGradlePluginVersion=")
+        ZipSubject.assertThat(asbFile) {
+            textFile("BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties").apply {
+                contains("appMetadataVersion=")
+                contains("androidGradlePluginVersion=")
             }
 
-            assertThat(it.getEntry("SdkBundleConfig.pb")).isNotNull()
-
-            ZipFileSubject.assertThat(
-                    Objects.requireNonNull(it.getEntryAsFile("modules.resm"))
-            ) { modules ->
-
-                modules.contains("base/dex/classes.dex")
-                modules.contains("base/assets/asset_from_sdkImplA.txt")
-                modules.contains("base/manifest/AndroidManifest.xml")
-                modules.contains("base/resources.pb")
-                modules.contains("base/root/my_java_resource.txt")
-                modules.contains("SdkModulesConfig.pb")
+            contains("SdkBundleConfig.pb")
+            innerZip("modules.resm") {
+                contains("base/dex/classes.dex")
+                contains("base/assets/asset_from_sdkImplA.txt")
+                contains("base/manifest/AndroidManifest.xml")
+                contains("base/resources.pb")
+                contains("base/root/my_java_resource.txt")
+                contains("SdkModulesConfig.pb")
             }
         }
     }

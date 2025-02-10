@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -544,9 +545,10 @@ class LocaleConfigGenerationTest {
             lib2Locales = listOf(DEFAULT)
         ).execute("assembleDebug")
 
-        ZipFileSubject.assertThat(
-            project.getSubproject("app").file("build/outputs/apk/debug/app-debug.apk")) {
-            it.contains("res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
+        ZipSubject.assertThat(
+            project.getSubproject("app").file("build/outputs/apk/debug/app-debug.apk").toPath()
+        ) {
+            contains("res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
         }
     }
 
@@ -560,9 +562,10 @@ class LocaleConfigGenerationTest {
             lib2Locales = listOf(DEFAULT)
         ).execute("bundleDebug")
 
-        ZipFileSubject.assertThat(
-            project.getSubproject("app").file("build/outputs/bundle/debug/app-debug.aab")) {
-            it.contains("base/res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
+        ZipSubject.assertThat(
+            project.getSubproject("app").file("build/outputs/bundle/debug/app-debug.aab").toPath()
+        ) {
+            contains("base/res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
         }
     }
 

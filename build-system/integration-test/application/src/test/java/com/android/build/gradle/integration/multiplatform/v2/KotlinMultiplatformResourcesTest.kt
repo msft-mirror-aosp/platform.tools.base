@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.JarSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.truth.PathSubject
@@ -128,12 +130,12 @@ class KotlinMultiplatformResourcesTest {
                 InternalArtifactType.COMPILE_LIBRARY_CLASSES_JAR.getFolderName()
                         + "/androidMain/bundleAndroidMainClassesToCompileJar/classes.jar"
             )
-        ZipFileSubject.assertThat(
-            classesJar
-        ) { it: ZipFileSubject ->
-            it.contains("/com/example/kmpfirstlib/UseR.class")
-            it.contains("/com/example/kmpfirstlib/R.class")
-            it.contains("/com/example/kmpfirstlib/R\$string.class")
+        JarSubject.assertThat(classesJar) {
+            classes().containsAtLeast(
+                "com/example/kmpfirstlib/UseR",
+                "com/example/kmpfirstlib/R",
+                "com/example/kmpfirstlib/R\$string"
+            )
         }
     }
 

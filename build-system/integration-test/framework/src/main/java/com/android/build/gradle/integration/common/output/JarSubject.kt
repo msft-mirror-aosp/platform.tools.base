@@ -23,6 +23,8 @@ import com.google.common.truth.Truth.assertAbout
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import java.io.File
+import java.nio.file.Path
 import java.util.regex.Pattern
 
 /**
@@ -45,11 +47,26 @@ open class JarSubject(
         }
 
         /**
-         * Creates a [JarSubject] and
-         * configures it with the given action
+         * Creates a [JarSubject] and configures it with the given action
          */
         fun assertThat(zip: Zip, action: JarSubject.() -> Unit) {
             action(assertThat(zip))
+        }
+
+        /**
+         * Creates a [JarSubject] and configures it with the given action
+         */
+        fun assertThat(path: Path, action: JarSubject.() -> Unit) {
+            SimpleZip(path).use {
+                action(assertThat(it))
+            }
+        }
+
+        /**
+         * Creates a [JarSubject] and configures it with the given action
+         */
+        fun assertThat(file: File, action: JarSubject.() -> Unit) {
+            assertThat(file.toPath(), action)
         }
 
         /**

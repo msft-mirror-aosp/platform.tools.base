@@ -17,11 +17,9 @@
 package com.android.build.gradle.integration.fixture
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.testutils.truth.ZipFileSubject
-import com.google.common.truth.Truth
+import com.android.build.gradle.integration.common.output.ZipSubject
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.isRegularFile
 
 class LocalJarTest {
 
@@ -43,13 +41,10 @@ class LocalJarTest {
         val build = rule.build
         val app = build.androidApplication()
 
-        val jar = app.resolve("libs/libfoo.jar")
-        Truth.assertThat(jar.isRegularFile()).isTrue()
-
-        ZipFileSubject.assertThat(jar) {
-            it.contains("com/android/build/gradle/integration/fixture/Foo.class")
-            it.contains("com/example/Bar.class")
-            it.containsFileWithContent("com/example/foo.txt", "content")
+        ZipSubject.assertThat(app.resolve("libs/libfoo.jar")) {
+            contains("com/android/build/gradle/integration/fixture/Foo.class")
+            contains("com/example/Bar.class")
+            textFile("com/example/foo.txt").isEqualTo("content")
         }
     }
 }

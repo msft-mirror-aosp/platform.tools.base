@@ -53,9 +53,16 @@ abstract class Zip(
      */
     abstract fun getEntry(path: String): Path?
 
+    /**
+     * Returns the list of entries, filtered by the given pattern.
+     */
     fun getEntries(pattern: Pattern): List<String> {
         return getEntries { pattern.matcher(it.toString()).matches() }
     }
+
+    /**
+     * Returns the list of entries, filtered by the given filter.
+     */
     abstract fun getEntries(filter: ((String) -> Boolean)? = null): List<String>
 
     fun innerZip(path: String): Zip? {
