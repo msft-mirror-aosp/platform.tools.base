@@ -30,13 +30,16 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
+
+import org.jetbrains.uast.UClass;
+import org.jetbrains.uast.UastUtils;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import org.jetbrains.uast.UClass;
-import org.jetbrains.uast.UastUtils;
 
 /**
  * Checks that subclasses of certain APIs are overriding all methods that were abstract in one or
@@ -48,14 +51,17 @@ public class OverrideConcreteDetector extends Detector implements SourceCodeScan
             Issue.create(
                             "OverrideAbstract",
                             "Not overriding abstract methods on older platforms",
-                            "To improve the usability of some APIs, some methods that used to be `abstract` have "
-                                    + "been made concrete by adding default implementations. This means that when compiling "
-                                    + "with new versions of the SDK, your code does not have to override these methods.\n"
-                                    + "\n"
-                                    + "However, if your code is also targeting older versions of the platform where these "
-                                    + "methods were still `abstract`, the code will crash. You must override all methods "
-                                    + "that used to be abstract in any versions targeted by your application's "
-                                    + "`minSdkVersion`.",
+                            "To improve the usability of some APIs, some methods that used to be"
+                                + " `abstract` have been made concrete by adding default"
+                                + " implementations. This means that when compiling with new"
+                                + " versions of the SDK, your code does not have to override these"
+                                + " methods.\n"
+                                + "\n"
+                                + "However, if your code is also targeting older versions of the"
+                                + " platform where these methods were still `abstract`, the code"
+                                + " will crash. You must override all methods that used to be"
+                                + " abstract in any versions targeted by your application's "
+                                + "`minSdkVersion`.",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -139,7 +145,8 @@ public class OverrideConcreteDetector extends Detector implements SourceCodeScan
                 String message =
                         String.format(
                                 Locale.US,
-                                "Must override `%1$s.%2$s(%3$s)`: Method was abstract until %4$d, and your `minSdkVersion` is %5$d",
+                                "Must override `%1$s.%2$s(%3$s)`: Method was abstract until %4$d,"
+                                    + " and your `minSdkVersion` is %5$d",
                                 NOTIFICATION_LISTENER_SERVICE_FQN,
                                 methodName,
                                 STATUS_BAR_NOTIFICATION_FQN,

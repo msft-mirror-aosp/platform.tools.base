@@ -40,7 +40,6 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
-import com.intellij.psi.PsiTypeParameterListOwner
 import junit.framework.TestCase
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
@@ -1010,7 +1009,8 @@ class UastTest : TestCase() {
       )
 
       fun isUParameterNamedThis(element: UElement) =
-        element is UParameter && element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
+        element is UParameter &&
+          element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
       fun isUClassNamedHello(element: UElement) =
         element is UClass && element.nameFromSource == "Hello"
 
@@ -2150,8 +2150,7 @@ class UastTest : TestCase() {
           object : AbstractUastVisitor() {
             override fun visitClass(node: UClass): Boolean {
               // Intentionally calling unimplemented KotlinUClass.isRecord
-              @Suppress("UElementAsPsi")
-              assertFalse(node.sourcePsi?.text, node.isRecord)
+              @Suppress("UElementAsPsi") assertFalse(node.sourcePsi?.text, node.isRecord)
               assertTrue((node.sourcePsi as? PsiClass)?.isRecord == true)
               count++
               return super.visitClass(node)

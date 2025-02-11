@@ -111,10 +111,10 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           val signature = annotation.qualifiedName
           if (
             CALL_SUPER_ANNOTATION.isEquals(signature) ||
-            signature == AOSP_CALL_SUPER_ANNOTATION ||
-            signature != null &&
-            (signature.endsWith(".OverrideMustInvoke") ||
-                signature.endsWith(".OverridingMethodsMustInvokeSuper"))
+              signature == AOSP_CALL_SUPER_ANNOTATION ||
+              signature != null &&
+                (signature.endsWith(".OverrideMustInvoke") ||
+                  signature.endsWith(".OverridingMethodsMustInvokeSuper"))
           ) {
             return directSuper
           }

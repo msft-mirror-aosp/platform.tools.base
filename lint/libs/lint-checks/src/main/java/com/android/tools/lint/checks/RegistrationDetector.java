@@ -46,14 +46,17 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.utils.XmlUtils;
+
 import com.google.common.collect.Maps;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+
 import org.jetbrains.uast.UAnnotated;
 import org.jetbrains.uast.UClass;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Checks for missing manifest registrations for activities, services etc and also makes sure that
@@ -65,11 +68,13 @@ public class RegistrationDetector extends LayoutDetector implements SourceCodeSc
             Issue.create(
                             "Registered",
                             "Class is not registered in the manifest",
-                            "Activities, services and content providers should be registered in the "
-                                    + "`AndroidManifest.xml` file using `<activity>`, `<service>` and `<provider>` tags.\n"
-                                    + "\n"
-                                    + "If your activity is simply a parent class intended to be subclassed by other "
-                                    + "\"real\" activities, make it an abstract class.",
+                            "Activities, services and content providers should be registered in the"
+                                + " `AndroidManifest.xml` file using `<activity>`, `<service>` and"
+                                + " `<provider>` tags.\n"
+                                + "\n"
+                                + "If your activity is simply a parent class intended to be"
+                                + " subclassed by other \"real\" activities, make it an abstract"
+                                + " class.",
                             Category.CORRECTNESS,
                             6,
                             Severity.WARNING,

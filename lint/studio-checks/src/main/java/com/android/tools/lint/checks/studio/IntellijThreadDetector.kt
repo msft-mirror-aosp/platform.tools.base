@@ -224,12 +224,14 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
   /** Attempts to infer the current thread context at the site of the given method call. */
   private fun getThreadContext(context: JavaContext, methodCall: UElement): List<String>? {
     val method =
-      methodCall.getParentOfType(
-        UMethod::class.java,
-        true,
-        UAnonymousClass::class.java,
-        ULambdaExpression::class.java,
-      )?.javaPsi
+      methodCall
+        .getParentOfType(
+          UMethod::class.java,
+          true,
+          UAnonymousClass::class.java,
+          ULambdaExpression::class.java,
+        )
+        ?.javaPsi
 
     if (method != null) {
       val containingClass = methodCall.getContainingUClass()

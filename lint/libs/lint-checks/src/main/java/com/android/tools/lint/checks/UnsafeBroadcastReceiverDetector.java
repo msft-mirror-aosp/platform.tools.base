@@ -48,15 +48,12 @@ import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.tools.lint.detector.api.XmlScanner;
 import com.android.utils.XmlUtils;
+
 import com.google.common.collect.Sets;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.USimpleNameReferenceExpression;
@@ -65,6 +62,12 @@ import org.jetbrains.uast.util.UastExpressionUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 public class UnsafeBroadcastReceiverDetector extends Detector
         implements SourceCodeScanner, XmlScanner {
@@ -113,9 +116,10 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             Issue.create(
                             "UnsafeProtectedBroadcastReceiver",
                             "Unsafe Protected `BroadcastReceiver`",
-                            "`BroadcastReceiver`s that declare an intent-filter for a protected-broadcast action "
-                                    + "string must check that the received intent's action string matches the expected "
-                                    + "value, otherwise it is possible for malicious actors to spoof intents.",
+                            "`BroadcastReceiver`s that declare an intent-filter for a"
+                                + " protected-broadcast action string must check that the received"
+                                + " intent's action string matches the expected value, otherwise it"
+                                + " is possible for malicious actors to spoof intents.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -129,9 +133,10 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             Issue.create(
                             "UnprotectedSMSBroadcastReceiver",
                             "Unprotected SMS `BroadcastReceiver`",
-                            "BroadcastReceivers that declare an intent-filter for `SMS_DELIVER` or "
-                                    + "`SMS_RECEIVED` must ensure that the caller has the `BROADCAST_SMS` permission, "
-                                    + "otherwise it is possible for malicious actors to spoof intents.",
+                            "BroadcastReceivers that declare an intent-filter for `SMS_DELIVER` or"
+                                + " `SMS_RECEIVED` must ensure that the caller has the"
+                                + " `BROADCAST_SMS` permission, otherwise it is possible for"
+                                + " malicious actors to spoof intents.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -278,14 +283,14 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             String report;
             if (!visitor.getUsesIntent()) {
                 report =
-                        "This broadcast receiver declares an intent-filter for a protected "
-                                + "broadcast action string, which can only be sent by the system, "
-                                + "not third-party applications. However, the receiver's `onReceive` "
-                                + "method does not appear to call `getAction` to ensure that the "
-                                + "received Intent's action string matches the expected value, "
-                                + "potentially making it possible for another actor to send a "
-                                + "spoofed intent with no action string or a different action "
-                                + "string and cause undesired behavior.";
+                        "This broadcast receiver declares an intent-filter for a protected"
+                            + " broadcast action string, which can only be sent by the system, not"
+                            + " third-party applications. However, the receiver's `onReceive`"
+                            + " method does not appear to call `getAction` to ensure that the"
+                            + " received Intent's action string matches the expected value,"
+                            + " potentially making it possible for another actor to send a spoofed"
+                            + " intent with no action string or a different action string and cause"
+                            + " undesired behavior.";
             } else {
                 // An alternative implementation option is to not report a finding at all in
                 // this case, if we are worried about false positives causing confusion or

@@ -323,7 +323,8 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
    * class.
    */
   private fun extractFromTypeDef() {
-    val serviceName = context.uastFile!!.classes[0].innerClasses.single { it.nameFromSource == "ServiceName" }
+    val serviceName =
+      context.uastFile!!.classes[0].innerClasses.single { it.nameFromSource == "ServiceName" }
     val typeDefAnnotation =
       serviceName.uAnnotations.single { it.qualifiedName?.endsWith("StringDef") == true }
     val typeDef = typeDefAnnotation.sourcePsi?.text ?: error("Missing annotation")

@@ -395,9 +395,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
     override fun visitField(node: UField) {
       if (isApi(context, node)) {
         if (checkForKeywords) {
-          node.nameFromSource?.let { name ->
-            ensureNonKeyword(name, node, "field")
-          }
+          node.nameFromSource?.let { name -> ensureNonKeyword(name, node, "field") }
         }
         if (checkNullness) {
           ensureNullnessKnown(node, node.typeFromPsi)
@@ -637,7 +635,10 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         // The nullability of generic type parameters is often only known by the caller.
         return
       }
-      if (node is UField && (node.javaPsi as? PsiField)?.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true) {
+      if (
+        node is UField &&
+          (node.javaPsi as? PsiField)?.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true
+      ) {
         return
       }
 
@@ -647,7 +648,9 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       val allAnnotations =
         context.evaluator.getAllAnnotations(node as UAnnotated, false).map {
           Pair(it.qualifiedName) { context.getLocation(it) }
-        } + (type?.annotations?.map { Pair(it.qualifiedName) { context.getLocation(it) } } ?: emptyList())
+        } +
+          (type?.annotations?.map { Pair(it.qualifiedName) { context.getLocation(it) } }
+            ?: emptyList())
       for ((name, location) in allAnnotations) {
         name ?: continue
 

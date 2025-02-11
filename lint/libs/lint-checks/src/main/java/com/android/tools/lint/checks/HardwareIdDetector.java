@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.tools.lint.detector.api.Lint.getMethodName;
+
 import static org.jetbrains.uast.UastUtils.skipParenthesizedExprDown;
 
 import com.android.annotations.NonNull;
@@ -31,15 +32,14 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiVariable;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UCatchClause;
 import org.jetbrains.uast.UClass;
@@ -49,6 +49,10 @@ import org.jetbrains.uast.UMethod;
 import org.jetbrains.uast.UReferenceExpression;
 import org.jetbrains.uast.UastUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /** Detect calls to get device Identifiers. */
 public class HardwareIdDetector extends Detector implements SourceCodeScanner {
@@ -61,10 +65,10 @@ public class HardwareIdDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "HardwareIds",
                             "Hardware Id Usage",
-                            "Using these device identifiers is not recommended "
-                                    + "other than for high value fraud prevention and advanced telephony use-cases. "
-                                    + "For advertising use-cases, use `AdvertisingIdClient$Info#getId` and for "
-                                    + "analytics, use `InstanceId#getId`.",
+                            "Using these device identifiers is not recommended other than for high"
+                                + " value fraud prevention and advanced telephony use-cases. For"
+                                + " advertising use-cases, use `AdvertisingIdClient$Info#getId` and"
+                                + " for analytics, use `InstanceId#getId`.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -259,7 +263,11 @@ public class HardwareIdDetector extends Detector implements SourceCodeScanner {
         // the search to the current class.
         UClass surroundingClass = UastUtils.getContainingUClass(surroundingMethod);
         if (surroundingClass != null) {
-            int paramIndex = surroundingMethod.getJavaPsi().getParameterList().getParameterIndex(argExpression);
+            int paramIndex =
+                    surroundingMethod
+                            .getJavaPsi()
+                            .getParameterList()
+                            .getParameterIndex(argExpression);
             if (paramIndex < 0) {
                 return;
             }

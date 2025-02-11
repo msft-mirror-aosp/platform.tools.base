@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
@@ -27,6 +28,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiVariable;
+
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression;
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UElement;
@@ -129,10 +131,10 @@ public class TypeEvaluator {
             UVariable uVariable = (UVariable) resolved;
             PsiVariable variable = (PsiVariable) uVariable.getJavaPsi();
             if (variable != null) {
-              UElement lastAssignment = UastLintUtils.findLastAssignment(variable, node);
-              if (lastAssignment != null) {
+                UElement lastAssignment = UastLintUtils.findLastAssignment(variable, node);
+                if (lastAssignment != null) {
                 return evaluate(lastAssignment);
-              }
+                }
             }
             return uVariable.getType();
         } else if (resolved instanceof UCallExpression) {

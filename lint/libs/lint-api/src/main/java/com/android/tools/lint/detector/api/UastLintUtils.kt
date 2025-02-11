@@ -725,8 +725,7 @@ val UVariable.typeFromPsi: PsiType?
       is UField -> {
         // [KotlinUField] overrides `getType()` to handle delegation
         // TODO(UElementAsPsi): smartcast
-        @Suppress("UElementAsPsi")
-        this.type
+        @Suppress("UElementAsPsi") this.type
       }
       else -> {
         // E.g., UParameter

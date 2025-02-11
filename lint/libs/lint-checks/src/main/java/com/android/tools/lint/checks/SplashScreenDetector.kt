@@ -41,8 +41,9 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitClass(node: UClass) {
         if (
-          SPLASH_SCREEN_KEYWORDS.any { node.nameFromSource?.contains(it, ignoreCase = true) == true } &&
-            isActivityOrFragment(context, node)
+          SPLASH_SCREEN_KEYWORDS.any {
+            node.nameFromSource?.contains(it, ignoreCase = true) == true
+          } && isActivityOrFragment(context, node)
         ) {
           if (node.sourcePsi == null) {
             // A compilation unit class for top level functions

@@ -136,7 +136,8 @@ class LeakDetector : Detector(), SourceCodeScanner {
       }
     var name: String?
     if (isAnonymous) {
-      name = "anonymous " + (declaration.javaPsi as PsiAnonymousClass).baseClassReference.qualifiedName
+      name =
+        "anonymous " + (declaration.javaPsi as PsiAnonymousClass).baseClassReference.qualifiedName
     } else {
       name = declaration.qualifiedName
       if (name == null) {

@@ -20,6 +20,7 @@ import static com.android.SdkConstants.RESOURCE_CLZ_ID;
 import static com.android.tools.lint.checks.ViewTypeDetector.FIND_VIEW_BY_ID;
 import static com.android.tools.lint.checks.ViewTypeDetector.REQUIRE_VIEW_BY_ID;
 import static com.android.tools.lint.detector.api.Lint.isKotlin;
+
 import static org.jetbrains.uast.UastUtils.skipParenthesizedExprUp;
 
 import com.android.annotations.NonNull;
@@ -34,11 +35,10 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.google.common.collect.Maps;
 import com.intellij.psi.PsiMethod;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+
 import org.jetbrains.uast.UArrayAccessExpression;
 import org.jetbrains.uast.UBinaryExpression;
 import org.jetbrains.uast.UBlockExpression;
@@ -64,6 +64,10 @@ import org.jetbrains.uast.UastUtils;
 import org.jetbrains.uast.util.UastExpressionUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 /** Detector looking for cut &amp; paste issues */
 public class CutPasteDetector extends Detector implements SourceCodeScanner {
     /** The main issue discovered by this detector */
@@ -71,12 +75,13 @@ public class CutPasteDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "CutPasteId",
                             "Likely cut & paste mistakes",
-                            "This lint check looks for cases where you have cut & pasted calls to "
-                                    + "`findViewById` but have forgotten to update the R.id field. It's possible "
-                                    + "that your code is simply (redundantly) looking up the field repeatedly, "
-                                    + "but lint cannot distinguish that from a case where you for example want to "
-                                    + "initialize fields `prev` and `next` and you cut & pasted `findViewById(R.id.prev)` "
-                                    + "and forgot to update the second initialization to `R.id.next`.",
+                            "This lint check looks for cases where you have cut & pasted calls to"
+                                + " `findViewById` but have forgotten to update the R.id field."
+                                + " It's possible that your code is simply (redundantly) looking up"
+                                + " the field repeatedly, but lint cannot distinguish that from a"
+                                + " case where you for example want to initialize fields `prev` and"
+                                + " `next` and you cut & pasted `findViewById(R.id.prev)` and"
+                                + " forgot to update the second initialization to `R.id.next`.",
                             Category.CORRECTNESS,
                             6,
                             Severity.WARNING,
@@ -174,8 +179,8 @@ public class CutPasteDetector extends Detector implements SourceCodeScanner {
                                 call,
                                 location,
                                 String.format(
-                                        "The id `%1$s` has already been looked up in this method; possible "
-                                                + "cut & paste error?",
+                                        "The id `%1$s` has already been looked up in this method;"
+                                            + " possible cut & paste error?",
                                         first.asSourceString()));
                     } else {
                         ids.put(id, call);

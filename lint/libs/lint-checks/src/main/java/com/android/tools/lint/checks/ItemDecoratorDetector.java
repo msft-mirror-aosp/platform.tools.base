@@ -27,10 +27,13 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiClass;
+
+import org.jetbrains.uast.UClass;
+
 import java.util.Collections;
 import java.util.List;
-import org.jetbrains.uast.UClass;
 
 /** Looks for copy/paste versions of the divider item decorator. */
 public class ItemDecoratorDetector extends Detector implements SourceCodeScanner {
@@ -40,13 +43,15 @@ public class ItemDecoratorDetector extends Detector implements SourceCodeScanner
             Issue.create(
                             "DuplicateDivider",
                             "Unnecessary Divider Copy",
-                            "Older versions of the RecyclerView library did not include a divider decorator, "
-                                    + "but one was provided as a sample in the support demos. This divider "
-                                    + "class has been widely copy/pasted into various projects.\n"
-                                    + "\n"
-                                    + "In recent versions of the support library, the divider decorator is now "
-                                    + "included, so you can replace custom copies with the \"built-in\" "
-                                    + "version, `android.support.v7.widget.DividerItemDecoration`.",
+                            "Older versions of the RecyclerView library did not include a divider"
+                                + " decorator, but one was provided as a sample in the support"
+                                + " demos. This divider class has been widely copy/pasted into"
+                                + " various projects.\n"
+                                + "\n"
+                                + "In recent versions of the support library, the divider decorator"
+                                + " is now included, so you can replace custom copies with the"
+                                + " \"built-in\" version,"
+                                + " `android.support.v7.widget.DividerItemDecoration`.",
                             Category.PERFORMANCE,
                             4,
                             Severity.WARNING,

@@ -32,15 +32,14 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.tools.lint.detector.api.TypeEvaluator;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UElement;
@@ -52,6 +51,10 @@ import org.jetbrains.uast.UastFacade;
 import org.jetbrains.uast.UastUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Checks that views that override View#onTouchEvent also implement View#performClick and call
  * performClick when click detection occurs.
@@ -62,12 +65,12 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
             Issue.create(
                             "ClickableViewAccessibility",
                             "Accessibility in Custom Views",
-                            "If a `View` that overrides `onTouchEvent` or uses an `OnTouchListener` does not also "
-                                    + "implement `performClick` and call it when clicks are detected, the `View` "
-                                    + "may not handle accessibility actions properly. Logic handling the click "
-                                    + "actions should ideally be placed in `View#performClick` as some "
-                                    + "accessibility services invoke `performClick` when a click action "
-                                    + "should occur.",
+                            "If a `View` that overrides `onTouchEvent` or uses an `OnTouchListener`"
+                                + " does not also implement `performClick` and call it when clicks"
+                                + " are detected, the `View` may not handle accessibility actions"
+                                + " properly. Logic handling the click actions should ideally be"
+                                + " placed in `View#performClick` as some accessibility services"
+                                + " invoke `performClick` when a click action should occur.",
                             Category.A11Y,
                             6,
                             Severity.WARNING,
@@ -231,7 +234,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
     private static void checkOnTouchListener(
             @NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
-      PsiClass psiClass = declaration.getJavaPsi();
+        PsiClass psiClass = declaration.getJavaPsi();
 
         // Just an OnTouchListener? onTouch must call performClick
         PsiMethod[] onTouchMethods = psiClass.findMethodsByName(ON_TOUCH, false);

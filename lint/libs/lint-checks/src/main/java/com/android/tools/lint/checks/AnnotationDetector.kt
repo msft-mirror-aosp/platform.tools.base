@@ -741,7 +741,8 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
             return
           }
         } else if (parent is UMethod) {
-          if (parent.isConstructor) context.evaluator.getClassType(parent.getContainingUClass()?.javaPsi)
+          if (parent.isConstructor)
+            context.evaluator.getClassType(parent.getContainingUClass()?.javaPsi)
           else parent.returnType
         } else if (parent is UVariable) {
           // Field or local variable or parameter

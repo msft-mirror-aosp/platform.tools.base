@@ -27,10 +27,13 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiMethod;
+
+import org.jetbrains.uast.UClass;
+
 import java.util.Collections;
 import java.util.List;
-import org.jetbrains.uast.UClass;
 
 /**
  * Check that looks for override of getContentDescription() in any class that descends from View.
@@ -41,9 +44,10 @@ public class GetContentDescriptionOverrideDetector extends Detector implements S
             Issue.create(
                             "GetContentDescriptionOverride",
                             "Overriding `getContentDescription()` on a View",
-                            "Overriding `getContentDescription()` may prevent some accessibility services from "
-                                    + "properly navigating content exposed by your view. Instead, call "
-                                    + "`setContentDescription()` when the content description needs to be changed.",
+                            "Overriding `getContentDescription()` may prevent some accessibility"
+                                + " services from properly navigating content exposed by your view."
+                                + " Instead, call `setContentDescription()` when the content"
+                                + " description needs to be changed.",
                             Category.A11Y,
                             9,
                             Severity.ERROR,
@@ -64,7 +68,8 @@ public class GetContentDescriptionOverrideDetector extends Detector implements S
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : declaration.getJavaPsi().findMethodsByName("getContentDescription", false)) {
+        for (PsiMethod method :
+                declaration.getJavaPsi().findMethodsByName("getContentDescription", false)) {
             if (evaluator.getParameterCount(method) == 0) {
                 context.report(
                         ISSUE,

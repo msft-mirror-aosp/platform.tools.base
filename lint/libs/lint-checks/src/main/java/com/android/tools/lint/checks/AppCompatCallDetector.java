@@ -30,21 +30,25 @@ import com.android.tools.lint.detector.api.LintFix;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiMethod;
-import java.util.Arrays;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UastUtils;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class AppCompatCallDetector extends Detector implements SourceCodeScanner {
     public static final Issue ISSUE =
             Issue.create(
                             "AppCompatMethod",
                             "Using Wrong AppCompat Method",
-                            "When using the appcompat library, there are some methods you should be calling "
-                                    + "instead of the normal ones; for example, `getSupportActionBar()` instead of "
-                                    + "`getActionBar()`. This lint check looks for calls to the wrong method.",
+                            "When using the appcompat library, there are some methods you should be"
+                                + " calling instead of the normal ones; for example,"
+                                + " `getSupportActionBar()` instead of `getActionBar()`. This lint"
+                                + " check looks for calls to the wrong method.",
                             Category.CORRECTNESS,
                             6,
                             Severity.WARNING,
@@ -123,9 +127,13 @@ public class AppCompatCallDetector extends Detector implements SourceCodeScanner
             UClass cls = UastUtils.getParentOfType(node, UClass.class, true);
             return cls != null
                     && (evaluator.extendsClass(
-                                    cls.getJavaPsi(), "androidx.appcompat.app.AppCompatActivity", false)
+                                    cls.getJavaPsi(),
+                                    "androidx.appcompat.app.AppCompatActivity",
+                                    false)
                             || evaluator.extendsClass(
-                                    cls.getJavaPsi(), "android.support.v7.app.AppCompatActivity", false));
+                                    cls.getJavaPsi(),
+                                    "android.support.v7.app.AppCompatActivity",
+                                    false));
         }
         return false;
     }

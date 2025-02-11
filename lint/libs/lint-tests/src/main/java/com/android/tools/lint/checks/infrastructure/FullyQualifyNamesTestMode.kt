@@ -352,9 +352,7 @@ class FullyQualifyNamesTestMode :
     }
 
     override fun visitLocalVariable(node: ULocalVariable): Boolean {
-      node.nameFromSource?.let {
-        scopes.lastOrNull()?.add(it)
-      }
+      node.nameFromSource?.let { scopes.lastOrNull()?.add(it) }
       return super.visitLocalVariable(node)
     }
 

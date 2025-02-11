@@ -2042,7 +2042,11 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       // then check the package prefix to see whether we know it's an API method whose
       // members should all have been inlined.
       if (call.isMethodCall()) {
-        if (receiver != null && receiver !is UThisExpression && receiver.sourcePsi !is PsiSuperExpression) {
+        if (
+          receiver != null &&
+            receiver !is UThisExpression &&
+            receiver.sourcePsi !is PsiSuperExpression
+        ) {
           val receiverType = receiver.getExpressionType()
           if (receiverType is PsiClassType) {
             val containingType = context.evaluator.getClassType(containingClass)

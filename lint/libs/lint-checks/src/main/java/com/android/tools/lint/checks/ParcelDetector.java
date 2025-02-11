@@ -99,7 +99,8 @@ public class ParcelDetector extends Detector implements SourceCodeScanner {
 
         // Parceling spans is handled in TextUtils#CHAR_SEQUENCE_CREATOR
         if (context.getEvaluator()
-                .implementsInterface(declaration.getJavaPsi(), "android.text.ParcelableSpan", false)) {
+                .implementsInterface(
+                        declaration.getJavaPsi(), "android.text.ParcelableSpan", false)) {
             return;
         }
 

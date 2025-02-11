@@ -32,10 +32,10 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.google.common.collect.Lists;
 import com.intellij.psi.PsiMethod;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UElement;
 import org.jetbrains.uast.UExpression;
@@ -45,6 +45,9 @@ import org.jetbrains.uast.USwitchExpression;
 import org.jetbrains.uast.UastUtils;
 import org.jetbrains.uast.util.UastExpressionUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
+
+import java.util.Collections;
+import java.util.List;
 
 /** Looks for ListView scrolling performance: should use view holder pattern */
 public class ViewHolderDetector extends Detector implements SourceCodeScanner {
@@ -57,10 +60,10 @@ public class ViewHolderDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "ViewHolder",
                             "View Holder Candidates",
-                            "When implementing a view Adapter, you should avoid unconditionally inflating a "
-                                    + "new layout; if an available item is passed in for reuse, you should try to "
-                                    + "use that one instead. This helps make for example `ListView` scrolling much "
-                                    + "smoother.",
+                            "When implementing a view Adapter, you should avoid unconditionally"
+                                + " inflating a new layout; if an available item is passed in for"
+                                + " reuse, you should try to use that one instead. This helps make"
+                                + " for example `ListView` scrolling much smoother.",
                             Category.PERFORMANCE,
                             5,
                             Severity.WARNING,
