@@ -33,7 +33,6 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotation
 import com.android.tools.lint.detector.api.getMethodName
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiParameter
@@ -45,6 +44,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
@@ -334,7 +334,7 @@ class RequiresFeatureDetector : AbstractAnnotationDetector(), SourceCodeScanner 
               }
             }
           }
-        } else if (current is UMethod || current is PsiFile) {
+        } else if (current is UMethod || current is UFile) {
           return false
         }
         prev = current

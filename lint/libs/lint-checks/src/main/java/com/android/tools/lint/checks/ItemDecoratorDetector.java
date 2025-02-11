@@ -27,6 +27,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+import com.intellij.psi.PsiClass;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.uast.UClass;
@@ -69,9 +70,10 @@ public class ItemDecoratorDetector extends Detector implements SourceCodeScanner
         if (name == null || !name.equals("DividerItemDecoration")) {
             return;
         }
+        PsiClass psiClass = declaration.getJavaPsi();
 
-        if (declaration.findFieldByName("HORIZONTAL_LIST", false) == null
-                || declaration.findFieldByName("VERTICAL_LIST", false) == null) {
+        if (psiClass.findFieldByName("HORIZONTAL_LIST", false) == null
+                || psiClass.findFieldByName("VERTICAL_LIST", false) == null) {
             return;
         }
 

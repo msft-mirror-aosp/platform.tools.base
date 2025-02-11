@@ -36,6 +36,7 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.PsiVariable;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.uast.UElement;
@@ -187,7 +188,11 @@ public class ExifInterfaceDetector extends Detector implements SourceCodeScanner
             // PSI workaround: node.getTypeReference just returns null. Operate on PSI
             // type element instead for now since UVariable has a PSI getTypeElement
             // accessor.
-            PsiTypeElement typeElement = node.getTypeElement();
+            PsiVariable variable = (PsiVariable) node.getJavaPsi();
+            PsiTypeElement typeElement = null;
+            if (variable != null) {
+              typeElement = variable.getTypeElement();
+            }
             if (typeElement != null) {
                 PsiJavaCodeReferenceElement referenceElement =
                         typeElement.getInnermostComponentReferenceElement();

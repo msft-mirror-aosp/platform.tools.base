@@ -64,7 +64,7 @@ public class GetContentDescriptionOverrideDetector extends Detector implements S
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : declaration.findMethodsByName("getContentDescription", false)) {
+        for (PsiMethod method : declaration.getJavaPsi().findMethodsByName("getContentDescription", false)) {
             if (evaluator.getParameterCount(method) == 0) {
                 context.report(
                         ISSUE,

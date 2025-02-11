@@ -242,7 +242,7 @@ public class RegistrationDetector extends LayoutDetector implements SourceCodeSc
     private static String getTag(@NonNull JavaEvaluator evaluator, @NonNull UClass cls) {
         String tag = null;
         for (String s : sClasses) {
-            if (evaluator.extendsClass(cls, s, false)) {
+            if (evaluator.extendsClass(cls.getJavaPsi(), s, false)) {
                 tag = classToTag(s);
                 break;
             }

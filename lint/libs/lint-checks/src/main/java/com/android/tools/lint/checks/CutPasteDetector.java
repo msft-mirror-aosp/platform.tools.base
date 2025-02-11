@@ -83,7 +83,7 @@ public class CutPasteDetector extends Detector implements SourceCodeScanner {
                             new Implementation(CutPasteDetector.class, Scope.JAVA_FILE_SCOPE))
                     .setAndroidSpecific(true);
 
-    private PsiMethod lastMethod;
+    private UMethod lastMethod;
     private Map<String, UCallExpression> ids;
     private Map<String, String> lhs;
     private Map<String, String> callOperands;

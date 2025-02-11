@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.isPolyadicFromStringTemplate
+import com.android.tools.lint.detector.api.nameFromSource
 import java.util.EnumSet
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UDeclaration
@@ -146,7 +147,7 @@ class TerminologyDetector : Detector(), SourceCodeScanner, OtherFileScanner {
       }
 
       override fun visitClass(node: UClass) {
-        checkDeclaration(node, node.name)
+        checkDeclaration(node, node.nameFromSource)
       }
 
       private fun checkDeclaration(node: UDeclaration, name: String?) {

@@ -32,13 +32,13 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
-import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiParameterList;
 import com.intellij.psi.PsiTypes;
 import java.util.Collections;
 import java.util.List;
+import org.jetbrains.uast.UAnonymousClass;
 import org.jetbrains.uast.UClass;
 
 /** Looks for custom views that do not define the view constructors needed by UI builders */
@@ -110,7 +110,7 @@ public class ViewConstructorDetector extends Detector implements SourceCodeScann
         JavaEvaluator evaluator = context.getEvaluator();
         if (evaluator.isAbstract(declaration)
                 || evaluator.isPrivate(declaration)
-                || declaration instanceof PsiAnonymousClass) {
+                || declaration instanceof UAnonymousClass) {
             // Ignore abstract, private and anonymous classes
             return;
         }
@@ -123,7 +123,7 @@ public class ViewConstructorDetector extends Detector implements SourceCodeScann
         }
 
         boolean found = false;
-        for (PsiMethod constructor : declaration.getConstructors()) {
+        for (PsiMethod constructor : declaration.getJavaPsi().getConstructors()) {
             if (isXmlConstructor(evaluator, constructor)) {
                 found = true;
                 break;

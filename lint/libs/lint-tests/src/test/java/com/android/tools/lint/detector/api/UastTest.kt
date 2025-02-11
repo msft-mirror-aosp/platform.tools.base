@@ -40,6 +40,7 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
+import com.intellij.psi.PsiTypeParameterListOwner
 import junit.framework.TestCase
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
@@ -1009,8 +1010,9 @@ class UastTest : TestCase() {
       )
 
       fun isUParameterNamedThis(element: UElement) =
-        element is UParameter && element.name == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
-      fun isUClassNamedHello(element: UElement) = element is UClass && element.name == "Hello"
+        element is UParameter && element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
+      fun isUClassNamedHello(element: UElement) =
+        element is UClass && element.nameFromSource == "Hello"
 
       // Each `this` expression from the code above (numbered 0, 1, 2, etc.) should resolve to
       // either the UClass named `Hello` or the UParameter named `<this>` from the parent lambda
@@ -1586,29 +1588,29 @@ class UastTest : TestCase() {
 
       val evaluator = DefaultJavaEvaluator(null, null)
       val sb = StringBuilder()
-      for (cls in file.classes.sortedBy { it.name }) {
+      for (cls in file.classes.sortedBy { it.nameFromSource }) {
         for (declaration in cls.uastDeclarations) {
           if (declaration is UClass) {
             sb.append("nested class ")
-            sb.append(declaration.name).append(":")
-            if (evaluator.isCompanion(declaration)) {
+            sb.append(declaration.nameFromSource).append(":")
+            if (evaluator.isCompanion(declaration.javaPsi)) {
               sb.append(" companion")
             }
             sb.append("\n")
           }
         }
         sb.append("class ")
-        sb.append(cls.name).append(":")
+        sb.append(cls.nameFromSource).append(":")
         if (evaluator.isData(cls)) {
           sb.append(" data")
         }
         if (evaluator.isSealed(cls)) {
           sb.append(" sealed")
         }
-        if (evaluator.isCompanion(cls)) {
+        if (evaluator.isCompanion(cls.javaPsi)) {
           sb.append(" companion")
         }
-        for (typeParameter in cls.typeParameters) {
+        for (typeParameter in cls.javaPsi.typeParameters) {
           sb.append(" ")
           if (isOutVariance(typeParameter)) {
             sb.append("out ")
@@ -1631,7 +1633,7 @@ class UastTest : TestCase() {
           sb.append("    method ").append(methodName)
           sb.append("(")
           var first = true
-          for (parameter in method.uastParameters) {
+          for (parameter in method.javaPsi.parameterList.parameters) {
             if (first) {
               first = false
             } else {
@@ -1653,7 +1655,7 @@ class UastTest : TestCase() {
           if (evaluator.isNoInline(method)) {
             sb.append(" noinline")
           }
-          if (evaluator.isTailRec(method)) {
+          if (evaluator.isTailRec(method.javaPsi)) {
             sb.append(" tailrec")
           }
           if (evaluator.isSuspend(method)) {
@@ -1681,7 +1683,7 @@ class UastTest : TestCase() {
             sb.append(" external")
           }
           first = true
-          for (typeParam in method.typeParameters) {
+          for (typeParam in method.javaPsi.typeParameters) {
             if (first) {
               first = false
             } else {
@@ -1703,12 +1705,12 @@ class UastTest : TestCase() {
 
           sb.append("\n")
         }
-        for (method in cls.fields.sortedBy { it.name }) {
-          sb.append("    field ").append(method.name).append(":")
-          if (evaluator.isLateInit(method)) {
+        for (field in cls.fields.sortedBy { it.nameFromSource }) {
+          sb.append("    field ").append(field.nameFromSource).append(":")
+          if (evaluator.isLateInit(field)) {
             sb.append(" lateinit")
           }
-          if (evaluator.isConst(method)) {
+          if (evaluator.isConst(field)) {
             sb.append(" const")
           }
           sb.append("\n")
@@ -2129,6 +2131,8 @@ class UastTest : TestCase() {
   }
 
   fun testRecord() {
+    // b/380707645
+    // https://youtrack.jetbrains.com/issue/IDEA-363783
     val source =
       java(
         """
@@ -2145,6 +2149,8 @@ class UastTest : TestCase() {
         file.accept(
           object : AbstractUastVisitor() {
             override fun visitClass(node: UClass): Boolean {
+              // Intentionally calling unimplemented KotlinUClass.isRecord
+              @Suppress("UElementAsPsi")
               assertFalse(node.sourcePsi?.text, node.isRecord)
               assertTrue((node.sourcePsi as? PsiClass)?.isRecord == true)
               count++
@@ -2236,7 +2242,7 @@ class UastTest : TestCase() {
           object : AbstractUastVisitor() {
             override fun visitLocalVariable(node: ULocalVariable): Boolean {
               val initializerType = node.uastInitializer?.getExpressionType()
-              val interfaceType = node.type
+              val interfaceType = node.typeFromPsi
               @Suppress("UNUSED_VARIABLE")
               val equals = initializerType == interfaceType // Stack overflow!
 
@@ -2498,7 +2504,7 @@ class UastTest : TestCase() {
           override fun visitMethod(node: UMethod): Boolean {
             if (node.isConstructor) return super.visitMethod(node)
 
-            val javaPsiModifierList = node.modifierList
+            val javaPsiModifierList = node.javaPsi.modifierList
             assertTrue(javaPsiModifierList.textOffset > 0)
             assertFalse(javaPsiModifierList.textRange.isEmpty)
             assertEquals(javaPsiModifierList.textOffset, javaPsiModifierList.textRange.startOffset)
@@ -2545,7 +2551,7 @@ class UastTest : TestCase() {
           override fun visitMethod(node: UMethod): Boolean {
             if (node.sourcePsi !is KtPropertyAccessor) return super.visitMethod(node)
 
-            val javaPsiModifierList = node.modifierList
+            val javaPsiModifierList = node.javaPsi.modifierList
             assertTrue(javaPsiModifierList.textOffset > 0)
             assertFalse(javaPsiModifierList.textRange.isEmpty)
             assertEquals(javaPsiModifierList.textOffset, javaPsiModifierList.textRange.startOffset)
@@ -2640,7 +2646,7 @@ class UastTest : TestCase() {
             assertTrue(
               node.sourcePsi is KtConstructor<*> ||
                 (node.sourcePsi is KtClassOrObject &&
-                  node.parameterList.isEmpty &&
+                  node.uastParameters.isEmpty() &&
                   node.name in expectedTypes)
             )
             return super.visitMethod(node)
@@ -4085,7 +4091,7 @@ class UastTest : TestCase() {
         object : AbstractUastVisitor() {
           override fun visitClass(node: UClass): Boolean {
             count++
-            val superTypes = node.superTypes
+            val superTypes = node.javaPsi.superTypes
             assertEquals(1, superTypes.size)
             assertEquals("java.lang.Object", superTypes.single().canonicalText)
             return super.visitClass(node)
@@ -5589,7 +5595,7 @@ class UastTest : TestCase() {
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitMethod(node: UMethod): Boolean {
-            val psiAnnotation = node.annotations.single()
+            val psiAnnotation = node.javaPsi.annotations.single()
             val attributeValue = psiAnnotation.findAttributeValue("password")
             assertNotNull(attributeValue)
             val initializer =

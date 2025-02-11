@@ -183,7 +183,7 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
 
         @Override
         public void visitMethod(@NonNull UMethod node) {
-            mFlagAllocations = isBlockedAllocationMethod(node);
+            mFlagAllocations = isBlockedAllocationMethod(node.getJavaPsi());
         }
 
         @Override
@@ -282,7 +282,7 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
                 UMethod method = UastUtils.getParentOfType(node, UMethod.class);
 
                 if (method != null
-                        && isBlockedAllocationMethod(method)
+                        && isBlockedAllocationMethod(method.getJavaPsi())
                         && !isCallingInlineClass(node)
                         && !isLazilyInitialized(node)) {
                     reportAllocation(node);

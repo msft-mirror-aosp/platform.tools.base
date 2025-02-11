@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.targetSdkAtLeast
 import org.jetbrains.uast.UClass
 
@@ -40,7 +41,7 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitClass(node: UClass) {
         if (
-          SPLASH_SCREEN_KEYWORDS.any { node.name?.contains(it, ignoreCase = true) == true } &&
+          SPLASH_SCREEN_KEYWORDS.any { node.nameFromSource?.contains(it, ignoreCase = true) == true } &&
             isActivityOrFragment(context, node)
         ) {
           if (node.sourcePsi == null) {
@@ -59,7 +60,7 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
     }
 
   private fun isActivityOrFragment(context: JavaContext, cls: UClass) =
-    PROHIBITED_SUPERCLASSES.any { context.evaluator.extendsClass(cls, it) }
+    PROHIBITED_SUPERCLASSES.any { context.evaluator.extendsClass(cls.javaPsi, it) }
 
   companion object {
     private val SPLASH_SCREEN_KEYWORDS =

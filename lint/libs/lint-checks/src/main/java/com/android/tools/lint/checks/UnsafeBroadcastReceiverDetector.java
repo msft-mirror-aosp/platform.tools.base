@@ -254,7 +254,7 @@ public class UnsafeBroadcastReceiverDetector extends Detector
             return;
         }
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : declaration.findMethodsByName("onReceive", false)) {
+        for (PsiMethod method : declaration.getJavaPsi().findMethodsByName("onReceive", false)) {
             if (evaluator.parametersMatch(method, CLASS_CONTEXT, CLASS_INTENT)) {
                 checkOnReceive(context, method);
             }

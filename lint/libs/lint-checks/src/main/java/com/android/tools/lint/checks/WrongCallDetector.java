@@ -82,7 +82,7 @@ public class WrongCallDetector extends Detector implements SourceCodeScanner {
             return;
         }
 
-        PsiMethod method = UastUtils.getParentOfType(node, UMethod.class, true);
+        UMethod method = UastUtils.getParentOfType(node, UMethod.class, true);
         if (method != null) {
             String callName = getMethodName(node);
             if (callName != null && !callName.equals(method.getName())) {

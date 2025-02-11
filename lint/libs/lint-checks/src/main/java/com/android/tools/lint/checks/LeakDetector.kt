@@ -34,8 +34,11 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.getDefaultUseSiteAnnotations
 import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.nameFromSource
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiAssignmentExpression
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
@@ -83,7 +86,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
 
     // Only consider static inner classes
     val evaluator = context.evaluator
-    val isStatic = evaluator.isStatic(declaration) || containingClass == null
+    val isStatic = evaluator.isStatic(declaration.javaPsi) || containingClass == null
     if (isStatic || isAnonymous) { // containingClass == null: implicitly static
       // But look for fields that store contexts
       for (field in declaration.fields) {
@@ -97,7 +100,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
 
     var superClass: String? = null
     for (cls in SUPER_CLASSES) {
-      if (evaluator.inheritsFrom(declaration, cls, false)) {
+      if (evaluator.inheritsFrom(declaration.javaPsi, cls, false)) {
         superClass = cls
         break
       }
@@ -133,11 +136,11 @@ class LeakDetector : Detector(), SourceCodeScanner {
       }
     var name: String?
     if (isAnonymous) {
-      name = "anonymous " + (declaration as UAnonymousClass).baseClassReference.qualifiedName
+      name = "anonymous " + (declaration.javaPsi as PsiAnonymousClass).baseClassReference.qualifiedName
     } else {
       name = declaration.qualifiedName
       if (name == null) {
-        name = declaration.name
+        name = declaration.nameFromSource
       }
     }
 
@@ -161,7 +164,8 @@ class LeakDetector : Detector(), SourceCodeScanner {
   private class FieldChecker(private val context: JavaContext) : UElementHandler() {
 
     override fun visitField(node: UField) {
-      val modifierList = node.modifierList
+      val psiField = node.javaPsi as? PsiField
+      val modifierList = psiField?.modifierList
       if (
         modifierList == null ||
           !modifierList.hasModifierProperty(PsiModifier.STATIC) ||
@@ -170,7 +174,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
         return
       }
 
-      val type = node.type as? PsiClassType ?: return
+      val type = node.typeFromPsi as? PsiClassType ?: return
       val fqn = type.canonicalText
       if (fqn.startsWith("java.")) {
         return
@@ -179,12 +183,12 @@ class LeakDetector : Detector(), SourceCodeScanner {
       if (fqn.startsWith("android.")) {
         if (
           isLeakCandidate(cls, context.evaluator) &&
-            !isAppContext(cls, node) &&
+            !isAppContext(cls, psiField) &&
             !isInitializedToAppContext(context, node, cls)
         ) {
           val message =
             "Do not place Android context classes in static fields; " + "this is a memory leak"
-          report(node, modifierList, message)
+          report(psiField, modifierList, message)
         }
       } else {
         // User application object -- look to see if that one itself has
@@ -215,7 +219,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
                   "fields (static reference to `${cls.name}` which has field " +
                   "`${referenced.name}` pointing to `${innerCls.name}`); this " +
                   "is a memory leak"
-              report(node, modifierList, message)
+              report(psiField, modifierList, message)
               break
             }
           }
@@ -242,7 +246,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
   }
 
   private fun checkInstanceField(context: JavaContext, containingClass: UClass, field: UField) {
-    val type = field.type as? PsiClassType ?: return
+    val type = field.typeFromPsi as? PsiClassType ?: return
     val fqn = type.canonicalText
     if (fqn.startsWith("java.")) {
       return
@@ -251,7 +255,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
 
     if (
       isLeakCandidate(typeClass, context.evaluator) &&
-        !isAppContext(typeClass, field) &&
+        !isAppContext(typeClass, field.javaPsi as PsiField) &&
         !isAssignedInConstructor(context, containingClass, field) &&
         !isInitializedToAppContext(context, field, typeClass)
     ) {
@@ -278,7 +282,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
       return false
     }
     val targetField = field.javaPsi ?: return false
-    for (constructor in containingClass.constructors) {
+    for (constructor in containingClass.javaPsi.constructors) {
       val body = constructor.body ?: continue
       for (statement in body.statements) {
         val expression =

@@ -273,10 +273,10 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           }
         } else if (containingMethod != null) {
           // Anonymous inner class?
-          //  assertThrows(Throwable.class, new ThrowingRunable() { ... me(); });
+          //  assertThrows(Throwable.class, new ThrowingRunnable() { ... me(); });
           val containingClass = containingMethod.uastParent
           if (containingClass is UAnonymousClass) {
-            for (type in containingClass.superTypes) {
+            for (type in containingClass.javaPsi.superTypes) {
               if (isThrowingRunnable(type.canonicalText)) {
                 return true
               }

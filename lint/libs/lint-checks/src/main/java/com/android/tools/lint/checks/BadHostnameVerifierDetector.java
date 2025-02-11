@@ -72,7 +72,7 @@ public class BadHostnameVerifierDetector extends Detector implements SourceCodeS
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : declaration.findMethodsByName("verify", false)) {
+        for (PsiMethod method : declaration.getJavaPsi().findMethodsByName("verify", false)) {
             if (evaluator.methodMatches(
                     method, null, false, TYPE_STRING, "javax.net.ssl.SSLSession")) {
                 ComplexVisitor visitor = new ComplexVisitor(context);

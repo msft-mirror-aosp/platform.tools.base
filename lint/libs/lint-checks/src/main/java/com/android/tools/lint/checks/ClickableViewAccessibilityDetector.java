@@ -158,7 +158,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
             return;
         }
 
-        if (!evaluator.implementsInterface(declaration, CLASS_VIEW, true)) {
+        if (!evaluator.implementsInterface(declaration.getJavaPsi(), CLASS_VIEW, true)) {
             checkOnTouchListener(context, declaration);
         } else {
             checkCustomView(context, declaration);
@@ -174,9 +174,10 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
 
     private static void checkCustomView(@NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
+        PsiClass psiClass = declaration.getJavaPsi();
 
         PsiMethod onTouchEvent = null;
-        PsiMethod[] onTouchEvents = declaration.findMethodsByName(ON_TOUCH_EVENT, false);
+        PsiMethod[] onTouchEvents = psiClass.findMethodsByName(ON_TOUCH_EVENT, false);
         for (PsiMethod method : onTouchEvents) {
             if (evaluator.parametersMatch(method, MOTION_EVENT_CLS)) {
                 onTouchEvent = method;
@@ -184,7 +185,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
             }
         }
 
-        PsiMethod performClick = findPerformClickMethod(declaration);
+        PsiMethod performClick = findPerformClickMethod(psiClass);
 
         // Check if we override onTouchEvent.
         if (onTouchEvent != null) {
@@ -194,7 +195,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
                 String message =
                         String.format(
                                 "Custom view %1$s overrides `onTouchEvent` but not `performClick`",
-                                describeClass(declaration));
+                                describeClass(psiClass));
                 context.report(ISSUE, onTouchEvent, context.getNameLocation(onTouchEvent), message);
             } else {
                 // If we override performClick, ensure that it is called inside onTouchEvent.
@@ -204,8 +205,8 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
                     String message =
                             String.format(
                                     "%1$s should call %2$s when a click is detected",
-                                    describeMethod(ON_TOUCH_EVENT, declaration),
-                                    describeMethod(PERFORM_CLICK, declaration));
+                                    describeMethod(ON_TOUCH_EVENT, psiClass),
+                                    describeMethod(PERFORM_CLICK, psiClass));
                     context.report(
                             ISSUE, onTouchEvent, context.getNameLocation(onTouchEvent), message);
                 }
@@ -221,7 +222,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
                 String message =
                         String.format(
                                 "%1$s should call `super#performClick`",
-                                describeMethod(PERFORM_CLICK, declaration));
+                                describeMethod(PERFORM_CLICK, declaration.getJavaPsi()));
                 context.report(ISSUE, performClick, context.getNameLocation(performClick), message);
             }
         }
@@ -230,9 +231,10 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
     private static void checkOnTouchListener(
             @NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
+      PsiClass psiClass = declaration.getJavaPsi();
 
         // Just an OnTouchListener? onTouch must call performClick
-        PsiMethod[] onTouchMethods = declaration.findMethodsByName(ON_TOUCH, false);
+        PsiMethod[] onTouchMethods = psiClass.findMethodsByName(ON_TOUCH, false);
         for (PsiMethod method : onTouchMethods) {
             if (evaluator.parametersMatch(method, CLASS_VIEW, MOTION_EVENT_CLS)) {
                 UastFacade uastContext = UastFacade.INSTANCE;
@@ -241,7 +243,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Sour
                     String message =
                             String.format(
                                     "%1$s should call `View#performClick` when a click is detected",
-                                    describeMethod(ON_TOUCH, declaration));
+                                    describeMethod(ON_TOUCH, psiClass));
                     context.report(ISSUE, method, context.getNameLocation(method), message);
                 }
 

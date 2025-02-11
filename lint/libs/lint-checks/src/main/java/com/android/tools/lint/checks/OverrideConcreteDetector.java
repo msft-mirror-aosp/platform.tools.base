@@ -108,7 +108,7 @@ public class OverrideConcreteDetector extends Detector implements SourceCodeScan
         String[] methodNames = {ON_NOTIFICATION_POSTED, ON_NOTIFICATION_REMOVED};
         for (String methodName : methodNames) {
             boolean found = false;
-            for (PsiMethod method : declaration.findMethodsByName(methodName, true)) {
+            for (PsiMethod method : declaration.getJavaPsi().findMethodsByName(methodName, true)) {
                 // Make sure it's not the base method, but that it's been defined
                 // in a subclass, concretely
                 PsiClass containingClass = method.getContainingClass();

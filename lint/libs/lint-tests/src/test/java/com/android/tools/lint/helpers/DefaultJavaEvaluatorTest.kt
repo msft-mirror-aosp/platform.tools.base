@@ -33,9 +33,11 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
+import com.intellij.psi.PsiVariable
 import kotlin.test.assertNotNull
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
@@ -226,12 +228,12 @@ class DefaultJavaEvaluatorTest {
           override fun visitMethod(node: UMethod): Boolean {
             methodCount++
             if (node.isConstructor) {
-              assertFalse(context.evaluator.isStatic(node))
+              assertFalse(context.evaluator.isStatic(node.javaPsi))
             } else {
               val name = node.name
               assertTrue(name, name.startsWith("instance") || name.startsWith("static"))
               val expectStatic = name.startsWith("static")
-              val isStatic = context.evaluator.isStatic(node)
+              val isStatic = context.evaluator.isStatic(node.javaPsi)
               assertEquals("Incorrect isStatic value for method $name", expectStatic, isStatic)
             }
             return super.visitMethod(node)
@@ -262,11 +264,11 @@ class DefaultJavaEvaluatorTest {
 
     class AnnotationOrderVisitor(private val context: JavaContext) : UElementHandler() {
       override fun visitVariable(node: UVariable) {
-        processAnnotations(node)
+        processAnnotations(node.javaPsi as PsiVariable)
       }
 
       override fun visitMethod(node: UMethod) {
-        processAnnotations(node)
+        processAnnotations(node.javaPsi)
       }
 
       override fun visitCallExpression(node: UCallExpression) {
@@ -295,7 +297,8 @@ class DefaultJavaEvaluatorTest {
       }
 
       @Suppress("DEPRECATION")
-      private fun processAnnotations(modifierListOwner: PsiModifierListOwner) {
+      private fun processAnnotations(modifierListOwner: PsiModifierListOwner?) {
+        if (modifierListOwner == null) return
         context.evaluator.findAnnotationInHierarchy(modifierListOwner, "org.foo.bar")
         context.evaluator.findAnnotation(modifierListOwner, "org.foo.bar")
         context.evaluator.getAnnotation(modifierListOwner, "org.foo.bar")
@@ -354,7 +357,7 @@ class DefaultJavaEvaluatorTest {
       return object : UElementHandler() {
         override fun visitClass(node: UClass) {
           for (field in node.fields) {
-            if (field.name.contains("test", ignoreCase = true)) {
+            if (field.nameFromSource?.contains("test", ignoreCase = true) == true) {
               context.report(ISSUE, node, context.getLocation(field), "Fake issue")
             }
           }

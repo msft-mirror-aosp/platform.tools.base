@@ -244,7 +244,7 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
       return
     }
 
-    if (!context.evaluator.inheritsFrom(uClass, CLASS_ACTIVITY, false)) {
+    if (!context.evaluator.inheritsFrom(uClass.javaPsi, CLASS_ACTIVITY, false)) {
       return
     }
     val arguments = node.valueArguments

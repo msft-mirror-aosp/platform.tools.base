@@ -68,7 +68,7 @@ class MediaBrowserServiceCompatVersionDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitClass(context: JavaContext, declaration: UClass) {
-    if (!context.evaluator.extendsClass(declaration, MEDIA_BROWSER_SERVICE_COMPAT, true)) {
+    if (!context.evaluator.extendsClass(declaration.javaPsi, MEDIA_BROWSER_SERVICE_COMPAT, true)) {
       return
     }
 

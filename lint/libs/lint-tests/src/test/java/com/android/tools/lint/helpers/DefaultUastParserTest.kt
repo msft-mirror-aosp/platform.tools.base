@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.use
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.getErrorLines
+import com.intellij.psi.PsiNamedElement
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.jetbrains.kotlin.name.SpecialNames
@@ -65,7 +66,9 @@ class DefaultUastParserTest {
             }
 
             override fun visitParameter(node: UParameter): Boolean {
-              if (node.name == SpecialNames.IMPLICIT_SET_PARAMETER.asString()) {
+              // NB: we're testing synthetic setter parameter, i.e., no sourcePsi
+              val name = (node.javaPsi as? PsiNamedElement)?.name
+              if (name == SpecialNames.IMPLICIT_SET_PARAMETER.asString()) {
                 setterParameterNameLocation = context.getNameLocation(node)
                 setterParameterLocation = context.getLocation(node as UElement)
               }

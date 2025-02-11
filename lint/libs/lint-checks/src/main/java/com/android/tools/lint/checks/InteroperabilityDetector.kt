@@ -30,12 +30,15 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.nameFromSource
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.utils.usLocaleCapitalize
 import com.android.utils.usLocaleDecapitalize
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiDocCommentOwner
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiKeyword
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
@@ -282,7 +285,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         }
 
         // Already annotated?
-        if (context.hasNullnessAnnotation(node, uastType)) {
+        if (context.hasNullnessAnnotation(node.javaPsi, uastType)) {
           return
         }
 
@@ -383,7 +386,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
             ensureNullnessKnown(node, type)
           }
           for (parameter in node.uastParameters) {
-            ensureNullnessKnown(parameter, parameter.type)
+            ensureNullnessKnown(parameter, parameter.typeFromPsi)
           }
         }
       }
@@ -392,10 +395,12 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
     override fun visitField(node: UField) {
       if (isApi(context, node)) {
         if (checkForKeywords) {
-          ensureNonKeyword(node.name, node, "field")
+          node.nameFromSource?.let { name ->
+            ensureNonKeyword(name, node, "field")
+          }
         }
         if (checkNullness) {
-          ensureNullnessKnown(node, node.type)
+          ensureNullnessKnown(node, node.typeFromPsi)
         }
       }
     }
@@ -418,18 +423,18 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       val badGetterName = "has$propertySuffix"
       var getter: PsiMethod? = null
       var badGetter: UMethod? = null
-      cls.methods.forEach {
-        if (it.parameters.isEmpty()) {
-          val name = it.name
+      for (uMethod in cls.methods) {
+        if (uMethod.uastParameters.isEmpty()) {
+          val name = uMethod.name
           if (name == getterName1 || name == getterName2) {
-            getter = it
+            getter = uMethod.javaPsi
           } else if (
             (name == badGetterName || name == propertyName || name.endsWith(propertySuffix)) &&
-              context.evaluator.isPublic(it) &&
-              !it.isConstructor &&
-              it.returnType == setter.uastParameters.firstOrNull()?.type
+              context.evaluator.isPublic(uMethod) &&
+              !uMethod.isConstructor &&
+              uMethod.returnType == setter.uastParameters.firstOrNull()?.typeFromPsi
           ) {
-            badGetter = it
+            badGetter = uMethod
           }
         }
       }
@@ -502,16 +507,16 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           return
         }
 
-        val setterParameterType = setter.uastParameters.first().type
+        val setterParameterType = setter.uastParameters.first().typeFromPsi
         if (
           setterParameterType != getter.returnType &&
             !hasSetter(cls, getter.returnType, setter.name) &&
             !isTypeVariableReference(setterParameterType)
         ) {
           val message =
-            "The getter return type (`${getter.returnType?.presentableText}`) and setter parameter type (`${setterParameterType.presentableText}`) getter and setter methods for property `$propertyName` should have exactly the same type to allow " +
+            "The getter return type (`${getter.returnType?.presentableText}`) and setter parameter type (`${setterParameterType?.presentableText}`) getter and setter methods for property `$propertyName` should have exactly the same type to allow " +
               "be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes"
-          val location = getPropertyLocation(getter, setter)
+          val location = getPropertyLocation(getter, setter.javaPsi)
           context.report(
             KOTLIN_PROPERTY,
             location.source as? PsiElement ?: setter,
@@ -550,18 +555,18 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       } else if (
         badGetter != null &&
           // Don't complain about overrides; we can't rename those
-          !badGetter!!.findSuperMethods().any() &&
+          !badGetter.javaPsi.findSuperMethods().any() &&
           // Don't complain if the matched bad getter method already has its own
           // match
           run {
             val matchingName =
-              "set${badGetter!!.name.removePrefix("is").removePrefix("get")
+              "set${badGetter.name.removePrefix("is").removePrefix("get")
                             .removePrefix("has")}"
 
             methodName == matchingName || cls.methods.none { it.name == matchingName }
           }
       ) {
-        val name1 = badGetter!!.name
+        val name1 = badGetter.name
         if (name1.startsWith("is") && methodName.startsWith("setIs") && name1[2].isUpperCase()) {
           val newProperty = name1[2].toLowerCase() + name1.substring(3)
           val message =
@@ -574,7 +579,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
           return
         }
 
-        val location = context.getNameLocation(badGetter!!)
+        val location = context.getNameLocation(badGetter)
         val message =
           "This method should be called `get$propertySuffix` such that `$propertyName` can " +
             "be accessed as a property from Kotlin; see https://android.github.io/kotlin-guides/interop.html#property-prefixes"
@@ -582,7 +587,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun isTypeVariableReference(type: PsiType): Boolean {
+    private fun isTypeVariableReference(type: PsiType?): Boolean {
       if (type is PsiClassType) {
         val cls = type.resolve() ?: return false
         return cls is PsiTypeParameter
@@ -593,7 +598,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
 
     /** Returns true if the given class has a (possibly inherited) setter of the given type. */
     private fun hasSetter(cls: UClass, type: PsiType?, setterName: String): Boolean {
-      for (method in cls.findMethodsByName(setterName, true)) {
+      for (method in cls.javaPsi.findMethodsByName(setterName, true)) {
         val parameterList = method.parameterList
         val parameters = parameterList.parameters
         if (parameters.size == 1 && parameters[0].type == type) {
@@ -624,7 +629,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         )
     }
 
-    private fun ensureNullnessKnown(node: UDeclaration, type: PsiType) {
+    private fun ensureNullnessKnown(node: UDeclaration, type: PsiType?) {
       if (type is PsiPrimitiveType) {
         return
       }
@@ -632,7 +637,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
         // The nullability of generic type parameters is often only known by the caller.
         return
       }
-      if (node is UField && node.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true) {
+      if (node is UField && (node.javaPsi as? PsiField)?.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true) {
         return
       }
 
@@ -642,7 +647,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       val allAnnotations =
         context.evaluator.getAllAnnotations(node as UAnnotated, false).map {
           Pair(it.qualifiedName) { context.getLocation(it) }
-        } + type.annotations.map { Pair(it.qualifiedName) { context.getLocation(it) } }
+        } + (type?.annotations?.map { Pair(it.qualifiedName) { context.getLocation(it) } } ?: emptyList())
       for ((name, location) in allAnnotations) {
         name ?: continue
 
@@ -712,15 +717,17 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       val replaceLocation =
         if (node is UParameter) {
           location
-        } else if (node is UMethod && node.modifierList != null) {
+        } else if (node is UMethod) {
           // Place the insertion point at the modifiers such that we don't
           // insert the annotation for example after the "public" keyword.
           // We also don't want to place it on the method range itself since
           // that would place it before the method comments.
-          context.getLocation(node.modifierList)
-        } else if (node is UField && node.modifierList != null) {
+          context.getLocation(node.javaPsi.modifierList)
+        } else if (node is UField) {
           // Ditto for fields
-          context.getLocation(node.modifierList!!)
+          (node.javaPsi as? PsiField)?.modifierList?.let { modifierList ->
+            context.getLocation(modifierList)
+          } ?: return
         } else {
           return
         }
@@ -872,12 +879,12 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       if (parameters.size > 1) {
         // Make sure that SAM-compatible parameters are last
         val lastIndex = parameters.size - 1
-        if (!isFunctionalInterface(parameters[lastIndex].type)) {
+        if (!isFunctionalInterface(parameters[lastIndex].typeFromPsi)) {
           for (i in lastIndex - 1 downTo 0) {
             val parameter = parameters[i]
-            if (isFunctionalInterface(parameter.type)) {
+            if (isFunctionalInterface(parameter.typeFromPsi)) {
               // Don't flag Executor; see b/135275901
-              if (parameter.type.canonicalText == "java.util.concurrent.Executor") {
+              if (parameter.typeFromPsi?.canonicalText == "java.util.concurrent.Executor") {
                 continue
               }
               if (isInherited(method)) {
@@ -885,7 +892,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
               }
 
               val message =
-                "Functional interface parameters (such as parameter ${i + 1}, \"${parameter.name}\", in ${
+                "Functional interface parameters (such as parameter ${i + 1}, \"${parameter.nameFromSource}\", in ${
                                 method.javaPsi.containingClass?.qualifiedName}.${method.name
                                 }) should be last to improve Kotlin interoperability; see " +
                   "https://kotlinlang.org/docs/reference/java-interop.html#sam-conversions"
@@ -898,7 +905,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun isFunctionalInterface(type: PsiType): Boolean {
+    private fun isFunctionalInterface(type: PsiType?): Boolean {
       if (type !is PsiClassType) {
         return false
       }

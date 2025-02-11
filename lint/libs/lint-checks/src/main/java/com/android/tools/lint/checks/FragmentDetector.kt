@@ -114,7 +114,7 @@ class FragmentDetector : Detector(), SourceCodeScanner {
 
     var hasDefaultConstructor = false
     var hasConstructor = false
-    for (constructor in declaration.constructors) {
+    for (constructor in declaration.javaPsi.constructors) {
       hasConstructor = true
       if (constructor.parameterList.parametersCount == 0) {
         if (evaluator.isPublic(constructor)) {

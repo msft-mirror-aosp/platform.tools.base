@@ -2747,12 +2747,13 @@ public class Extractor {
 
         @Override
         public boolean visitMethod(UMethod method) {
-            PsiClass containingClass = method.getContainingClass();
+            PsiMethod psiMethod = method.getJavaPsi();
+            PsiClass containingClass = psiMethod.getContainingClass();
 
             // Not calling super: don't recurse inside methods
             if (hasRelevantAnnotations(method)) {
                 String fqn = getFqn(containingClass);
-                MethodItem item = MethodItem.create(containingClass, fqn, method);
+                MethodItem item = MethodItem.create(containingClass, fqn, psiMethod);
                 if (item != null) {
                     addItem(fqn, item);
 
@@ -2780,10 +2781,11 @@ public class Extractor {
             List<UParameter> parameters = method.getUastParameters();
             int index = 0;
             for (UParameter parameter : parameters) {
-                if (hasRelevantAnnotations(parameter)) {
+                PsiParameter psiParameter = (PsiParameter) parameter.getJavaPsi();
+                if (psiParameter != null && hasRelevantAnnotations(parameter)) {
                     String fqn = getFqn(containingClass);
                     Item item =
-                            ParameterItem.create(containingClass, fqn, method, parameter, index);
+                            ParameterItem.create(containingClass, fqn, psiMethod, psiParameter, index);
                     if (item != null) {
                         addItem(fqn, item);
                         addAnnotations(parameter, item);
@@ -2799,11 +2801,12 @@ public class Extractor {
         public boolean visitField(UField field) {
             // Not calling super: don't recurse inside field (e.g. field initializer)
             // super.visitField(field);
-            if (hasRelevantAnnotations(field)) {
-                PsiClass containingClass = field.getContainingClass();
+            PsiField psiField = (PsiField) field.getJavaPsi();
+            if (psiField != null && hasRelevantAnnotations(field)) {
+                PsiClass containingClass = psiField.getContainingClass();
                 if (containingClass != null) {
                     String fqn = getFqn(containingClass);
-                    Item item = FieldItem.create(containingClass, fqn, field);
+                    Item item = FieldItem.create(containingClass, fqn, psiField);
                     if (item != null) {
                         addItem(fqn, item);
                         addAnnotations(field, item);
@@ -2844,6 +2847,8 @@ public class Extractor {
                 return true;
             }
 
+            PsiClass psiClass = aClass.getJavaPsi();
+
             if (aClass.isAnnotationType()) {
                 // Let's see if it's a typedef
                 //noinspection RedundantCast
@@ -2856,7 +2861,7 @@ public class Extractor {
                                             + ": This typedef annotation should specify @hide in a "
                                             + "doc comment");
                         }
-                        if (requireSourceRetention && !hasSourceRetention(aClass)) {
+                        if (requireSourceRetention && !hasSourceRetention(psiClass)) {
                             String message =
                                     aClass.getQualifiedName()
                                             + ": The typedef annotation should have "
@@ -2868,7 +2873,7 @@ public class Extractor {
                             }
                         }
                         if (isHiddenTypeDef(aClass)) {
-                            String cls = Lint.getInternalName(aClass);
+                            String cls = Lint.getInternalName(psiClass);
                             privateTypedefs.add(cls);
                         }
 
@@ -2885,9 +2890,9 @@ public class Extractor {
             }
 
             if (hasRelevantAnnotations(aClass)) {
-                String fqn = getFqn(aClass);
+                String fqn = getFqn(psiClass);
                 if (fqn != null) {
-                    Item item = ClassItem.create(aClass, fqn);
+                    Item item = ClassItem.create(psiClass, fqn);
                     addItem(fqn, item);
                     addAnnotations(aClass, item);
                 }

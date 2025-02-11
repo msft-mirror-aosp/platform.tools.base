@@ -131,7 +131,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitMethod(node: UMethod) {
         val evaluator = context.evaluator
-        val superMethod = getRequiredSuperMethod(evaluator, node) ?: return
+        val superMethod = getRequiredSuperMethod(evaluator, node.javaPsi) ?: return
         val visitor = SuperCallVisitor(superMethod, node.getContainingUClass()?.sourcePsi)
         node.accept(visitor)
         val count = visitor.callsSuperCount

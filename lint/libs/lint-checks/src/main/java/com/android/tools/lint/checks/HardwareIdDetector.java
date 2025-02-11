@@ -259,7 +259,7 @@ public class HardwareIdDetector extends Detector implements SourceCodeScanner {
         // the search to the current class.
         UClass surroundingClass = UastUtils.getContainingUClass(surroundingMethod);
         if (surroundingClass != null) {
-            int paramIndex = surroundingMethod.getParameterList().getParameterIndex(argExpression);
+            int paramIndex = surroundingMethod.getJavaPsi().getParameterList().getParameterIndex(argExpression);
             if (paramIndex < 0) {
                 return;
             }

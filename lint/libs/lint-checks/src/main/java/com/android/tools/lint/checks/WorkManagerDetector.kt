@@ -25,6 +25,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.getMethodName
+import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
@@ -157,7 +158,7 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
       val name =
         (skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent)
             as? ULocalVariable)
-          ?.name
+          ?.nameFromSource
       val nameString = if (name != null) "`$name` " else ""
       context.report(
         ISSUE,

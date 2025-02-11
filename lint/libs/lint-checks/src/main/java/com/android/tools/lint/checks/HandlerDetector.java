@@ -27,6 +27,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
@@ -97,12 +98,13 @@ public class HandlerDetector extends Detector implements SourceCodeScanner {
                 UastUtils.getParentOfType(
                         declaration, UObjectLiteralExpression.class, true, UMethod.class);
 
+        PsiClass psiClass = declaration.getJavaPsi();
         // Only flag handlers using the default looper
         if (invocation != null) {
             if (isAnonymous && hasLooperArgument(invocation)) {
                 return;
             }
-        } else if (hasLooperConstructorParameter(declaration)) {
+        } else if (hasLooperConstructorParameter(psiClass)) {
             // This is an inner class which takes a Looper parameter:
             // possibly used correctly from elsewhere
             return;
@@ -118,7 +120,7 @@ public class HandlerDetector extends Detector implements SourceCodeScanner {
         if (isAnonymous) {
             name =
                     "anonymous "
-                            + ((UAnonymousClass) declaration)
+                            + ((PsiAnonymousClass) psiClass)
                                     .getBaseClassReference()
                                     .getQualifiedName();
         } else {

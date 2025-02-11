@@ -32,6 +32,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
 import java.util.Collections;
 import java.util.List;
@@ -110,7 +111,8 @@ public class CustomViewDetector extends Detector implements SourceCodeScanner {
 
         String className = cls.getName();
         String styleableName = reference.getName();
-        if (context.getEvaluator().extendsClass(cls, CLASS_VIEW, false)) {
+        PsiClass psiClass = cls.getJavaPsi();
+        if (context.getEvaluator().extendsClass(psiClass, CLASS_VIEW, false)) {
             if (!styleableName.equals(className)) {
                 String message =
                         String.format(
@@ -121,7 +123,7 @@ public class CustomViewDetector extends Detector implements SourceCodeScanner {
                 context.report(ISSUE, node, context.getLocation(expression), message);
             }
         } else if (context.getEvaluator()
-                .extendsClass(cls, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
+                .extendsClass(psiClass, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
             UClass outer = UastUtils.getParentOfType(cls, UClass.class, true);
             if (outer == null) {
                 return;

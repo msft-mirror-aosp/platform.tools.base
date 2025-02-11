@@ -55,6 +55,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.minSdkAtLeast
+import com.android.tools.lint.detector.api.nameFromSource
 import com.android.tools.lint.detector.api.targetSdkAtLeast
 import com.intellij.psi.PsiMethod
 import java.util.EnumSet
@@ -298,7 +299,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
         ISSUE,
         declaration,
         location,
-        "`${declaration.name}` extends the deprecated `ChooserTargetService`: Use the Share API instead",
+        "`${declaration.nameFromSource}` extends the deprecated `ChooserTargetService`: Use the Share API instead",
         fix().url(SHARE_API_URL).build(),
       )
     } else if (context.evaluator.inheritsFromWatchFaceService(declaration)) {
@@ -306,7 +307,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
         ISSUE,
         declaration,
         location,
-        "`${declaration.name}` extends the deprecated `WatchFaceService`: Use Watch Face Format instead",
+        "`${declaration.nameFromSource}` extends the deprecated `WatchFaceService`: Use Watch Face Format instead",
         fix().url(WATCH_FACE_FORMAT_URL).build(),
       )
     }

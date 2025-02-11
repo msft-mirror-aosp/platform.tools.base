@@ -746,7 +746,7 @@ class PermissionDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       // SecurityException or something wider.
       val declaration = parent.getParentOfType(UMethod::class.java, false)
       if (declaration != null) {
-        val thrownTypes = declaration.throwsList.referencedTypes
+        val thrownTypes = declaration.javaPsi.throwsList.referencedTypes
         if (
           containsException(
             listOf<PsiClassType>(*thrownTypes),

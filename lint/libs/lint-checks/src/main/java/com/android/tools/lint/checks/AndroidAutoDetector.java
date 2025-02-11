@@ -388,7 +388,7 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         // Only check classes that are not declared abstract.
-        if (!context.getEvaluator().isAbstract(declaration)) {
+        if (!context.getEvaluator().isAbstract(declaration.getJavaPsi())) {
             MediaSessionCallbackVisitor visitor = new MediaSessionCallbackVisitor(context);
             declaration.accept(visitor);
             if (!visitor.isPlayFromSearchMethodFound()
@@ -428,7 +428,7 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
         @Override
         public boolean visitMethod(UMethod method) {
             if (METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH.equals(method.getName())
-                    && mContext.getEvaluator().parametersMatch(method, TYPE_STRING, BUNDLE_ARG)) {
+                    && mContext.getEvaluator().parametersMatch(method.getJavaPsi(), TYPE_STRING, BUNDLE_ARG)) {
                 mOnPlayFromSearchFound = true;
             }
             return super.visitMethod(method);

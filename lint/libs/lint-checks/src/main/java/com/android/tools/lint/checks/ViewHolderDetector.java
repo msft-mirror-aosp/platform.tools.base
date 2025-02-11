@@ -96,7 +96,7 @@ public class ViewHolderDetector extends Detector implements SourceCodeScanner {
 
         @Override
         public void visitMethod(@NonNull UMethod method) {
-            if (isViewAdapterMethod(context, method)) {
+            if (isViewAdapterMethod(context, method.getJavaPsi())) {
                 InflationVisitor visitor = new InflationVisitor(context);
                 method.accept(visitor);
                 visitor.finish();

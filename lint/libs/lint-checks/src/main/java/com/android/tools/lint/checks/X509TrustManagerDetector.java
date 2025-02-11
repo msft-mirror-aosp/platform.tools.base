@@ -118,7 +118,7 @@ public class X509TrustManagerDetector extends Detector implements SourceCodeScan
     private static void checkMethod(
             @NonNull JavaContext context, @NonNull UClass cls, @NonNull String methodName) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : cls.findMethodsByName(methodName, true)) {
+        for (PsiMethod method : cls.getJavaPsi().findMethodsByName(methodName, true)) {
             if (evaluator.isAbstract(method)) {
                 continue;
             }

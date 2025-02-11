@@ -19,6 +19,7 @@ package com.android.tools.lint.checks.infrastructure
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.acceptSourceFile
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiCompiledFile
 import com.intellij.psi.PsiDisjunctionType
@@ -351,7 +352,9 @@ class FullyQualifyNamesTestMode :
     }
 
     override fun visitLocalVariable(node: ULocalVariable): Boolean {
-      scopes.lastOrNull()?.add(node.name)
+      node.nameFromSource?.let {
+        scopes.lastOrNull()?.add(it)
+      }
       return super.visitLocalVariable(node)
     }
 

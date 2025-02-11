@@ -32,10 +32,10 @@ import com.android.tools.lint.detector.api.targetSdkAtLeast
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiModifier
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UastVisibility
 
 /**
  * Looks for addJavascriptInterface calls on interfaces have been properly annotated with
@@ -84,8 +84,7 @@ class JavaScriptInterfaceDetector : Detector(), SourceCodeScanner {
   override fun createUastHandler(context: JavaContext): UElementHandler? {
     return object : UElementHandler() {
       override fun visitDeclaration(node: UDeclaration) {
-        val modifierList = node.modifierList ?: return
-        if (modifierList.hasModifierProperty(PsiModifier.PUBLIC)) {
+        if (node.visibility == UastVisibility.PUBLIC) {
           return
         }
         for (annotation in node.uAnnotations) {

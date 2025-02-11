@@ -123,9 +123,9 @@ public class AppCompatCallDetector extends Detector implements SourceCodeScanner
             UClass cls = UastUtils.getParentOfType(node, UClass.class, true);
             return cls != null
                     && (evaluator.extendsClass(
-                                    cls, "androidx.appcompat.app.AppCompatActivity", false)
+                                    cls.getJavaPsi(), "androidx.appcompat.app.AppCompatActivity", false)
                             || evaluator.extendsClass(
-                                    cls, "android.support.v7.app.AppCompatActivity", false));
+                                    cls.getJavaPsi(), "android.support.v7.app.AppCompatActivity", false));
         }
         return false;
     }

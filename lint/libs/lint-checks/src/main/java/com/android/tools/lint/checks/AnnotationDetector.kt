@@ -71,6 +71,7 @@ import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_API_
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_EXTENSION_ANNOTATION
 import com.android.tools.lint.detector.api.getAutoBoxedType
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.intellij.psi.PsiArrayType
@@ -732,7 +733,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           if (elements.isNotEmpty()) {
             val element = elements[0]
             if (element is ULocalVariable) {
-              element.type
+              element.typeFromPsi
             } else {
               return
             }
@@ -740,7 +741,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
             return
           }
         } else if (parent is UMethod) {
-          if (parent.isConstructor) context.evaluator.getClassType(parent.getContainingUClass())
+          if (parent.isConstructor) context.evaluator.getClassType(parent.getContainingUClass()?.javaPsi)
           else parent.returnType
         } else if (parent is UVariable) {
           // Field or local variable or parameter

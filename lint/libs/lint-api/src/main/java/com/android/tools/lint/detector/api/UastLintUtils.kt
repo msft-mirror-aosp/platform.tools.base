@@ -34,6 +34,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
+import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
@@ -89,6 +90,7 @@ import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UExpressionList
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.ULabeledExpression
@@ -224,7 +226,7 @@ class UastLintUtils {
         lastAssignment = UastFacade.getInitializerBody(currVariable)
       }
 
-      return if (lastAssignment is UExpression) lastAssignment else null
+      return lastAssignment as? UExpression
     }
 
     /**
@@ -711,6 +713,26 @@ fun PsiParameter.isReceiver(): Boolean {
   val name = name
   return name.startsWith("\$this") || name.startsWith("\$self")
 }
+
+// TODO(jsjeon): every upstream [UElement] as valid PsiNamedElement should override getName()
+val UElement.nameFromSource: String?
+  get() = (sourcePsi as? PsiNamedElement)?.name
+
+// TODO(jsjeon): every upstream [UVariable] should override getType()
+val UVariable.typeFromPsi: PsiType?
+  get() =
+    when (this) {
+      is UField -> {
+        // [KotlinUField] overrides `getType()` to handle delegation
+        // TODO(UElementAsPsi): smartcast
+        @Suppress("UElementAsPsi")
+        this.type
+      }
+      else -> {
+        // E.g., UParameter
+        (javaPsi as? PsiVariable)?.type
+      }
+    }
 
 /** For a qualified or parenthesized expression, returns the selector, or otherwise returns self. */
 fun UElement.findSelector(): UElement {

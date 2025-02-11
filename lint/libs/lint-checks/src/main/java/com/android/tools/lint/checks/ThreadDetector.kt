@@ -267,18 +267,18 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   /** Attempts to infer the current thread context at the site of the given method call. */
   private fun getThreadContext(context: JavaContext, methodCall: UElement): List<String>? {
     val method =
-      methodCall.getParentOfType<UElement>(
+      methodCall.getParentOfType(
         UMethod::class.java,
         true,
         UAnonymousClass::class.java,
         ULambdaExpression::class.java,
-      ) as? PsiMethod
+      )?.javaPsi
 
     if (method != null) {
       val containingClass = methodCall.getContainingUClass()
       if (containingClass is UAnonymousClass) {
         val anonClassCall =
-          methodCall.getParentOfType<UObjectLiteralExpression>(
+          methodCall.getParentOfType(
             UObjectLiteralExpression::class.java,
             true,
             UCallExpression::class.java,
@@ -296,7 +296,7 @@ class ThreadDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     // Similarly to the anonymous class call, this might be a lambda call, check for annotated
     // formal parameters that will give us the thread context
     val lambdaCall =
-      methodCall.getParentOfType<ULambdaExpression>(
+      methodCall.getParentOfType(
         ULambdaExpression::class.java,
         true,
         UAnonymousClass::class.java,
