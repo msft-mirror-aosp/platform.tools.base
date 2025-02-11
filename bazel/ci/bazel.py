@@ -118,14 +118,17 @@ class BuildEnv:
       timeout: int = None,
   ) -> subprocess.CompletedProcess:
     """Runs a Bazel command with the given args."""
-    cmd = [self.bazel_path]
-    cmd.extend(self._startup_options)
-    cmd.extend(args)
+    cmd = [self.bazel_path, *self._startup_options, *args]
+    # Inherit env vars, but drop problematic ones added by the parent Bazel invocation.
+    # E.g., PYTHONSAFEPATH causes problems for Python scripts in repository rules (b/395760815).
+    env = os.environ.copy()
+    env.pop("PYTHONSAFEPATH", None)
     logging.info("Running command: %s", cmd)
     return subprocess.run(
         cmd,
         capture_output=capture_output,
         check=check,
         cwd=self.workspace_dir,
+        env=env,
         timeout=timeout,
     )
