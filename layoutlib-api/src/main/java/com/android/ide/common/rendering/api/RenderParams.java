@@ -20,6 +20,7 @@ import com.android.ide.common.rendering.api.SessionParams.Key;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Base class for rendering parameters. This include the generic parameters but not what needs
@@ -52,6 +53,7 @@ public abstract class RenderParams {
     private String mActivityName;
     private boolean mForceNoDecor;
     private boolean mSupportsRtl;
+    private Callable<Boolean> mLayoutValidationEnabledChecker = () -> false;
 
     /**
      * A flexible map to pass additional flags to LayoutLib. LayoutLib will ignore flags that it
@@ -116,6 +118,7 @@ public abstract class RenderParams {
         }
         mEnableQuickStep = params.mEnableQuickStep;
         mFontScale = params.mFontScale;
+        mLayoutValidationEnabledChecker = params.mLayoutValidationEnabledChecker;
     }
 
     public void setTransparentBackground() {
@@ -128,6 +131,14 @@ public abstract class RenderParams {
 
     public void setImageFactory(IImageFactory imageFactory) {
         mImageFactory = imageFactory;
+    }
+
+    /**
+     * Sets the {@link Callable} to invoke when checking whether layout validation is enabled or
+     * not.
+     */
+    public void setLayoutValidationChecker(Callable<Boolean> checker) {
+        mLayoutValidationEnabledChecker = checker;
     }
 
     /** Sets the application icon resource, or null if there is no icon. */
@@ -247,6 +258,14 @@ public abstract class RenderParams {
 
     public IImageFactory getImageFactory() {
         return mImageFactory;
+    }
+
+    public boolean isLayoutValidationEnabled() {
+        try {
+            return mLayoutValidationEnabledChecker.call();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** Returns the application icon resource, or null if there is no icon. */
