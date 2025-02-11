@@ -137,11 +137,6 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
 
     @get:OutputDirectory
     abstract val incrementalFolder: DirectoryProperty
-    private var manifestType: Artifact<Directory>? = null
-
-    @get:Input
-    val manifestTypeName: String
-        get() = manifestType!!.name()
 
     @get:Incremental
     @get:Classpath
@@ -392,7 +387,6 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                 parameter.versionControlInfoFile
                         .set(SerializableInputChanges(listOf(), listOf()))
             }
-            parameter.getManifestType().set(manifestType)
             parameter.getSigningConfigData().set(signingConfigData!!.convertToParams())
             parameter.signingConfigVersionsFile
                     .set(signingConfigVersions.singleFile)
@@ -604,9 +598,8 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
 
     // ----- CreationAction -----
     abstract class CreationAction<TaskT : PackageAndroidArtifact>(
-            creationConfig: ApkCreationConfig,
-            protected val manifests: Provider<Directory>,
-            private val manifestType: Artifact<Directory>) : VariantTaskCreationAction<TaskT, ApkCreationConfig>(creationConfig) {
+            creationConfig: ApkCreationConfig
+    ) : VariantTaskCreationAction<TaskT, ApkCreationConfig>(creationConfig) {
         override fun configure(packageAndroidArtifact: TaskT) {
             super.configure(packageAndroidArtifact)
             packageAndroidArtifact.minSdkVersion
@@ -644,7 +637,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             packageAndroidArtifact.dexUseLegacyPackaging
                     .set(creationConfig.packaging.dex.useLegacyPackaging)
             packageAndroidArtifact.dexUseLegacyPackaging.disallowChanges()
-            packageAndroidArtifact.manifests.set(manifests)
+            packageAndroidArtifact.manifests.set(creationConfig.artifacts.get(PACKAGED_MANIFESTS))
             packageAndroidArtifact.dexFolders.from(getDexFolders(creationConfig))
             val projectPath = packageAndroidArtifact.project.path
             val featureDexFolder = getFeatureDexFolder(creationConfig, projectPath)
@@ -726,7 +719,6 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             packageAndroidArtifact.projectBaseName
                     .set(creationConfig.services.projectInfo.getProjectBaseName())
             packageAndroidArtifact.projectBaseName.disallowChanges()
-            packageAndroidArtifact.manifestType = manifestType
             if (creationConfig is KmpComponentCreationConfig) {
                 packageAndroidArtifact.buildTargetAbi = null
             } else {

@@ -169,7 +169,6 @@ import com.android.build.gradle.tasks.MergeSourceSetFolders.MergeShaderSourceFol
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.ProcessApplicationManifest
 import com.android.build.gradle.tasks.ProcessManifestForBundleTask
-import com.android.build.gradle.tasks.ProcessManifestForInstantAppTask
 import com.android.build.gradle.tasks.ProcessManifestForMetadataFeatureTask
 import com.android.build.gradle.tasks.ProcessMultiApkApplicationManifest
 import com.android.build.gradle.tasks.ProcessPackagedManifestTask
@@ -435,7 +434,6 @@ abstract class TaskManager(
         taskFactory.register(ProcessManifestForBundleTask.CreationAction(creationConfig))
         taskFactory.register(
                 ProcessManifestForMetadataFeatureTask.CreationAction(creationConfig))
-        taskFactory.register(ProcessManifestForInstantAppTask.CreationAction(creationConfig))
         taskFactory.register(ProcessPackagedManifestTask.CreationAction(creationConfig))
         taskFactory.register(GenerateManifestJarTask.CreationAction(creationConfig))
         taskFactory.register(ProcessApplicationManifest.CreationAction(creationConfig))
@@ -1787,9 +1785,6 @@ abstract class TaskManager(
          * forcing a cold swap is triggered, the main FULL_APK must be rebuilt (even if the
          * resources were changed in a previous build).
          */
-        val manifestType: InternalArtifactType<Directory> =
-            creationConfig.global.manifestArtifactType
-        val manifests = creationConfig.artifacts.get(manifestType)
 
         // Common code for both packaging tasks.
         val configureResourcesAndAssetsDependencies = Action { task: Task ->
@@ -1801,9 +1796,7 @@ abstract class TaskManager(
         taskFactory.register(
                 PackageApplication.CreationAction(
                         creationConfig,
-                        creationConfig.paths.apkLocation,
-                        manifests,
-                        manifestType),
+                        creationConfig.paths.apkLocation),
                 null,
                 object : TaskConfigAction<PackageApplication> {
                     override fun configure(task: PackageApplication) {

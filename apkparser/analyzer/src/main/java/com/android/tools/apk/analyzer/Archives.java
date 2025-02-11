@@ -22,7 +22,6 @@ import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.internal.ApkArchive;
 import com.android.tools.apk.analyzer.internal.AppBundleArchive;
 import com.android.tools.apk.analyzer.internal.ArchiveManagerImpl;
-import com.android.tools.apk.analyzer.internal.InstantAppBundleArchive;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 import java.io.IOException;
@@ -56,25 +55,6 @@ public class Archives {
         if (input.getData().getArchive() instanceof ApkArchive) {
             Archive archive = input.getData().getArchive();
             return getTopLevelManifestEntry(input, archive);
-        }
-
-        // AIA bundle files contain multiple APK files. Look for the first one that contains
-        // a manifest at the top level
-        if (input.getData().getArchive() instanceof InstantAppBundleArchive) {
-            return input.getChildren()
-                    .stream()
-                    .map(
-                            node -> {
-                                if (node.getData() instanceof InnerArchiveEntry) {
-                                    ArchiveEntry innerEntry =
-                                            ((InnerArchiveEntry) node.getData()).asArchiveEntry();
-                                    return getTopLevelManifestEntry(node, innerEntry.getArchive());
-                                }
-                                return null;
-                            })
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .orElse(null);
         }
 
         // App bundle contain one node for the base module and one for each dynamic feature

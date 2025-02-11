@@ -227,9 +227,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
     abstract val projectBaseName: Property<String>
 
     @get:Input
-    abstract val taskInputType: Property<InternalArtifactType<Directory>>
-
-    @get:Input
     abstract val namespaced: Property<Boolean>
 
     @get:Input
@@ -605,10 +602,11 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
             }
             task.namespace.setDisallowChanges(creationConfig.namespace)
 
-            creationConfig.global.manifestArtifactType.let {
-                task.taskInputType.setDisallowChanges(it)
-                creationConfig.artifacts.setTaskInputToFinalProduct(it, task.manifestFiles)
-            }
+            creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.PACKAGED_MANIFESTS,
+                task.manifestFiles
+            )
+
             creationConfig.artifacts.setTaskInputToFinalProduct(
                 InternalArtifactType.AAPT_FRIENDLY_MERGED_MANIFESTS, task.aaptFriendlyManifestFiles
             )

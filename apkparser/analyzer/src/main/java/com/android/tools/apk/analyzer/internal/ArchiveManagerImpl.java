@@ -18,7 +18,6 @@ package com.android.tools.apk.analyzer.internal;
 
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.EXT_APP_BUNDLE;
-import static com.android.SdkConstants.EXT_ZIP;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -28,7 +27,9 @@ import com.android.tools.apk.analyzer.ArchiveManager;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.TraceUtils;
+
 import com.google.common.collect.ImmutableList;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -141,10 +142,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
     @NonNull
     private Archive openArchiveWorker(@NonNull Path path) throws IOException {
         logger.info(String.format("Opening archive \"%s\"", path));
-        if (hasFileExtension(path, EXT_ZIP)) {
-            // We assume this is an AIA bundle, which we give special handling
-            return InstantAppBundleArchive.fromZippedBundle(path);
-        } else if (hasFileExtension(path, EXT_APP_BUNDLE)) {
+        if (hasFileExtension(path, EXT_APP_BUNDLE)) {
             // Android App Bundle (.aab) archive
             return AppBundleArchive.fromBundleFile(path);
         } else if (hasFileExtension(path, EXT_ANDROID_PACKAGE)) {
