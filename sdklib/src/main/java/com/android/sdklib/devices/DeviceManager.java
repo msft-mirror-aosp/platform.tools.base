@@ -370,7 +370,7 @@ public class DeviceManager {
             // API directory is probably newer and more accurate.
             LoggerProgressIndicatorWrapper progress = new LoggerProgressIndicatorWrapper(mLog);
 
-            RepoManager mgr = mSdkHandler.getSdkManager(progress);
+            RepoManager mgr = mSdkHandler.getRepoManager(progress);
             mgr.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
             mgr.getPackages().getLocalPackages().values().stream()
                     .filter(pkg -> pkg.getTypeDetails() instanceof DetailsTypes.SysImgDetailsType)

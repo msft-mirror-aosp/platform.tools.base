@@ -917,7 +917,7 @@ public class DeviceManagerTest {
         // Re-create the local DeviceManager using the new directory,
         // fetch the device, and verify that it is the right one.
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        sdkManager.getSdkHandler().getSdkManager(progress).markLocalCacheInvalid();
+        sdkManager.getSdkHandler().getRepoManager(progress).markLocalCacheInvalid();
         localDeviceManager = createDeviceManager();
 
         localDevice = localDeviceManager.getDevice("wearos_small_round", "Google");

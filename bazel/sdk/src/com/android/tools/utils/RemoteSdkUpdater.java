@@ -225,7 +225,7 @@ public final class RemoteSdkUpdater {
 
         RepoManager repoManager =
                 AndroidSdkHandler.getInstance(AndroidLocationsSingleton.INSTANCE, null)
-                        .getSdkManager(progress);
+                        .getRepoManager(progress);
         repoManager.loadSynchronously(0, progress, new LegacyDownloader(settings), settings);
 
         RepositoryPackages packages = repoManager.getPackages();

@@ -93,7 +93,7 @@ public class AddonListSourceProviderTest extends TestCase {
         AndroidSdkHandler handler =
                 new AndroidSdkHandler(androidFolder.getRoot().resolve("sdk"), androidFolder);
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        handler.getSdkManager(progress);
+        handler.getRepoManagerAndLoadSynchronously(progress);
         RepositorySourceProvider provider = handler.getUserSourceProvider(progress);
         List<RepositorySource> result = provider.getSources(null, progress, false);
         progress.assertNoErrorsOrWarnings();

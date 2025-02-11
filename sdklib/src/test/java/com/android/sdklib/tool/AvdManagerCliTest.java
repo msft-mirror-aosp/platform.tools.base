@@ -365,7 +365,7 @@ public class AvdManagerCliTest {
 
     @Test
     public void listTargets() {
-        RepoManager repoManager = mSdkHandler.getSdkManager(new FakeProgressIndicator());
+        RepoManager repoManager = mSdkHandler.getRepoManagerAndLoadSynchronously(new FakeProgressIndicator());
 
         String p1Path = "platforms;android-25";
         FakePackage.FakeLocalPackage p1 =

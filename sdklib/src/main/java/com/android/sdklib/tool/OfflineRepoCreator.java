@@ -71,7 +71,7 @@ public class OfflineRepoCreator {
         AndroidSdkHandler handler =
                 AndroidSdkHandler.getInstance(AndroidLocationsSingleton.INSTANCE, tempDir);
         ProgressIndicator progress = new ConsoleProgressIndicator();
-        RepoManager mgr = handler.getSdkManager(progress);
+        RepoManager mgr = handler.getRepoManager(progress);
         SettingsController settings = new SettingsController() {
             @Override
             public boolean getForceHttp() {
