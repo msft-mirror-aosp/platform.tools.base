@@ -18,8 +18,6 @@ package com.android.tools.lint
 import com.google.common.io.Files as GoogleFiles
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFileSystemItem
-import com.intellij.psi.PsiManager
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitResult
@@ -183,18 +181,11 @@ internal class PathCollection(
 
   fun isNotEmpty(): Boolean = !isEmpty()
 
-  /** Retain the paths that can be retrieved as [F] satisfying [keepFile] */
-  inline fun <reified F : PsiFileSystemItem> filter(
+  /** Retain the paths that satisfy [keepVirtual] */
+  fun filter(
     kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
-    crossinline keepFile: (F) -> Boolean,
+    keepVirtual: (VirtualFile) -> Boolean,
   ): PathCollection {
-    val keepVirtual: (VirtualFile) -> Boolean =
-      with(PsiManager.getInstance(kotlinCoreProjectEnvironment.project)) {
-        { vFile ->
-          val file = if (vFile.isDirectory) findDirectory(vFile) else findFile(vFile)
-          file is F && keepFile(file)
-        }
-      }
     val keepPhysical: (Path) -> Boolean =
       with(kotlinCoreProjectEnvironment.environment.localFileSystem) {
         { path ->

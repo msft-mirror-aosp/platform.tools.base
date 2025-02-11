@@ -42,11 +42,11 @@ import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.pom.PomModel
 import com.intellij.pom.core.impl.PomModelImpl
 import com.intellij.pom.java.LanguageFeatureProvider
 import com.intellij.pom.tree.TreeAspect
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNameHelper
 import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.PsiNameHelperImpl
@@ -78,7 +78,6 @@ import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.has
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.diagnostics.DiagnosticSuppressor
 import org.jetbrains.uast.UastContext
 import org.jetbrains.uast.UastLanguagePlugin
@@ -253,7 +252,7 @@ internal fun configureAnalysisApiProjectStructure(
       }
     }
 
-    val scripts = sourceFilePaths.filter<KtFile>(kotlinCoreProjectEnvironment, KtFile::isKts)
+    val scripts = sourceFilePaths.filter(kotlinCoreProjectEnvironment, VirtualFile::isKts)
     // TODO: https://youtrack.jetbrains.com/issue/KT-62161
     //   This must be [KtScriptModule], but until the above YT resolved
     //   add this fake [KtSourceModule] to suppress errors from module lookup.
@@ -306,11 +305,7 @@ internal fun configureAnalysisApiProjectStructure(
             }
 
             addSourcePaths(
-              sourceFilePaths.filter<PsiFile>(kotlinCoreProjectEnvironment) { file ->
-                // If it's [KtFile], filter out (build) script files
-                // since they were already created as a separate module
-                file !is KtFile || !file.isKts()
-              }
+              sourceFilePaths.filter(kotlinCoreProjectEnvironment) { file -> !file.isKts() }
             )
           }
         }
@@ -431,7 +426,7 @@ private class IdeaLoggerForLint(category: String) : DefaultLogger(category) {
   }
 }
 
-private fun KtFile.isKts(): Boolean {
+private fun VirtualFile.isKts(): Boolean {
   // [KtFile#isScript] may go deeper into building stub (which triggers parsing file)
   // while file extension would be good enough.
   // See http://b/384754095 and/or https://youtrack.jetbrains.com/issue/KT-43885
