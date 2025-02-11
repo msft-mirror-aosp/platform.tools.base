@@ -67,6 +67,9 @@ import com.android.tools.layoutinspector.BITMAP_HEADER_SIZE
 import com.android.tools.layoutinspector.BitmapType
 import com.android.tools.layoutinspector.toBytes
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -151,6 +154,70 @@ abstract class ViewLayoutInspectorTestBase {
             assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.START_FETCH_RESPONSE)
             assertThat(response.startFetchResponse.error).isEmpty()
         }
+
+        val stopFetchCommand = Command.newBuilder().apply {
+            stopFetchCommand = StopFetchCommand.getDefaultInstance()
+        }.build()
+        viewInspector.onReceiveCommand(
+            stopFetchCommand.toByteArray(),
+            inspectorRule.commandCallback
+        )
+        responseQueue.take().let { bytes ->
+            val response = Response.parseFrom(bytes)
+            assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.STOP_FETCH_RESPONSE)
+        }
+    }
+
+    @Test
+    fun startOnDeviceRendering() = createViewInspector { viewInspector ->
+        val responseQueue = ArrayBlockingQueue<ByteArray>(1)
+        inspectorRule.commandCallback.replyListeners.add { bytes ->
+            responseQueue.add(bytes)
+        }
+
+        val packageName = "view.inspector.test"
+        val root = ViewGroup(Context(packageName, createResources(packageName))).apply {
+            width = 100
+            height = 200
+            setAttachInfo(View.AttachInfo())
+        }
+        WindowManagerGlobal.getInstance().rootViews.addAll(listOf(root))
+
+        val enableOnDeviceRendering = Command.newBuilder().apply {
+            enableOnDeviceRenderingCommand = LayoutInspectorViewProtocol.EnableOnDeviceRenderingCommand.newBuilder().apply {
+                enable = true
+            }.build()
+        }.build()
+        viewInspector.onReceiveCommand(
+            enableOnDeviceRendering.toByteArray(),
+            inspectorRule.commandCallback
+        )
+        responseQueue.take()
+
+        val startFetchCommand = Command.newBuilder().apply {
+            startFetchCommandBuilder.apply {
+                continuous = true
+            }
+        }.build()
+        viewInspector.onReceiveCommand(
+            startFetchCommand.toByteArray(),
+            inspectorRule.commandCallback
+        )
+        responseQueue.take().let { bytes ->
+            val response = Response.parseFrom(bytes)
+            assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.START_FETCH_RESPONSE)
+            assertThat(response.startFetchResponse.error).isEmpty()
+        }
+
+        // Wait for startCommand to finish initializing.
+        ThreadUtils.runOnMainThread { }.get()
+
+        // Wait for all coroutines to finish.
+        val jobs = viewInspector.scope.coroutineContext[Job]?.children?.toList()!!
+        runBlocking { jobs.joinAll() }
+
+        // Only test that the roots are added. The model is unit tested separately.
+        assertThat(viewInspector.onDeviceRenderingViewModel.roots).isNotEmpty()
 
         val stopFetchCommand = Command.newBuilder().apply {
             stopFetchCommand = StopFetchCommand.getDefaultInstance()

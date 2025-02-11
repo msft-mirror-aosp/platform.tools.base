@@ -29,7 +29,6 @@ import java.util.Stack
 import kotlin.math.roundToInt
 
 fun ViewGroup.getChildren(): List<View> {
-    ThreadUtils.assertOnMainThread()
     return (0 until childCount).map { i -> getChildAt(i) }
 }
 

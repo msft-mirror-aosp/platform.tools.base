@@ -17,6 +17,7 @@
 package android.view;
 
 import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,10 @@ public final class ViewGroup extends View {
 
         public int width = 0;
         public int height = 0;
+
+        public LayoutParams(int width, int height) {}
+
+        LayoutParams() {}
     }
 
     private final List<View> mChildren = new ArrayList<>();
@@ -46,5 +51,13 @@ public final class ViewGroup extends View {
 
     public void addView(View view) {
         mChildren.add(view);
+    }
+
+    public void addView(View child, LayoutParams params) {
+        mChildren.add(child);
+    }
+
+    public void removeView(View view) {
+        mChildren.remove(view);
     }
 }

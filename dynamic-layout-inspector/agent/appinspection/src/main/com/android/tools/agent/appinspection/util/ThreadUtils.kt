@@ -22,7 +22,7 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executor
 
 object ThreadUtils {
     @VisibleForTesting
@@ -94,5 +94,14 @@ object ThreadUtils {
         else {
             CompletableDeferred(block())
         }
+    }
+}
+
+/** An executor that runs tasks on the app's main thread */
+class MainThreadExecutor : Executor {
+    private val handler = Handler(Looper.getMainLooper())
+
+    override fun execute(command: Runnable) {
+        handler.post(command)
     }
 }

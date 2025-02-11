@@ -4,10 +4,6 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 package(default_visibility = ["//visibility:public"])
 
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
-load("//tools/base/app-inspection:app_inspection.bzl", "app_inspection_jar")
-load("//tools/adt/idea/studio:studio.bzl", "studio_data")
-
 kotlin_library(
     name = "nojarjar-shared",
     srcs = glob([
@@ -101,7 +97,7 @@ kotlin_test(
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-test-jvm",
     ],
 )
 
