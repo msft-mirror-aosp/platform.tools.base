@@ -22,12 +22,13 @@ import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.instrumentation.manageddevice.ManagedDeviceRegistry
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import org.gradle.api.Action
 
 open class KotlinMultiplatformAndroidComponentsExtensionImpl(
     override val sdkComponents: SdkComponents,
     override val managedDeviceRegistry: ManagedDeviceRegistry,
-    private val variantApiOperations: MultiplatformVariantApiOperationsRegistrar,
+    private val variantApiOperations: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
 ): KotlinMultiplatformAndroidComponentsExtension {
     override val pluginVersion: AndroidPluginVersion
         get() = CurrentAndroidGradlePluginVersion.CURRENT_AGP_VERSION
@@ -43,12 +44,11 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl(
     }
 
     override fun onVariant(callback: (KotlinMultiplatformAndroidVariant) -> Unit) {
-        variantApiOperations.variantOperations.addOperation {
-            callback.invoke(it)
-        }
+        variantApiOperations.variantOperations
+            .addPublicOperation({ callback.invoke(it) }, "onVariant")
     }
 
     override fun onVariant(callback: Action<KotlinMultiplatformAndroidVariant>) {
-        variantApiOperations.variantOperations.addOperation(callback)
+        variantApiOperations.variantOperations.addPublicOperation(callback, "onVariant")
     }
 }

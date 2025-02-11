@@ -3175,6 +3175,9 @@ package com.android.build.api.variant {
   @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.LibraryVariant {
   }
 
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariantBuilder extends com.android.build.api.variant.LibraryVariantBuilder {
+  }
+
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
   }
 
