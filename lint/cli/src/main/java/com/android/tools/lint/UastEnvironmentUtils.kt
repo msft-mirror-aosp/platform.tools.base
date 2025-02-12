@@ -252,7 +252,11 @@ internal fun configureAnalysisApiProjectStructure(
       }
     }
 
-    val scripts = sourceFilePaths.filter(kotlinCoreProjectEnvironment, VirtualFile::isKts)
+    val (scripts, nonScripts) =
+      sourceFilePaths.partition(
+        kotlinCoreProjectEnvironment.environment.localFileSystem,
+        VirtualFile::isKts,
+      )
     // TODO: https://youtrack.jetbrains.com/issue/KT-62161
     //   This must be [KtScriptModule], but until the above YT resolved
     //   add this fake [KtSourceModule] to suppress errors from module lookup.
@@ -304,9 +308,7 @@ internal fun configureAnalysisApiProjectStructure(
                 )
             }
 
-            addSourcePaths(
-              sourceFilePaths.filter(kotlinCoreProjectEnvironment) { file -> !file.isKts() }
-            )
+            addSourcePaths(nonScripts)
           }
         }
         m.classpathRoots.isNotEmpty() -> {
