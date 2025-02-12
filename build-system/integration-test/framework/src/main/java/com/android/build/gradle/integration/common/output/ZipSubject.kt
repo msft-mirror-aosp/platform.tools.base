@@ -89,4 +89,51 @@ class ZipSubject(
             }
         }
     }
+
+    /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(filePaths: Iterable<String>) {
+        exists()
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(actual().getEntries())
+            .containsExactly(filePaths)
+    }
+
+    /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(filePath: String) {
+        containsExactly(listOf(filePath))
+    }
+
+    /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(vararg filePaths: String) {
+        containsExactly(filePaths.toList())
+    }
+
+    /**
+     * Validates whether the archive is empty.
+     */
+    fun isEmpty() {
+        entries().isEmpty()
+    }
 }

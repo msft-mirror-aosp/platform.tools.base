@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -118,13 +119,13 @@ public class NativeSoPackagingFromJarTest {
         // also check that the bar.jar is also present as a local jar with a the class
         // but not the so file.
         // first extract bar.jar from the apk.
-        libProject.testAar(
-                "debug",
+        libProject.assertAar(
+                AarSelector.DEBUG,
                 aar -> {
                     aar.contains("libs/bar.jar");
 
-                    aar.allSecondaryJars().containsClass(COM_FOO_FOO);
-                    aar.allSecondaryJars().doesNotContainResource(LIB_X86_LIBHELLO_SO);
+                    aar.secondaryJars().classes().containsExactly(COM_FOO_FOO);
+                    aar.secondaryJars().resources().isEmpty();
                 });
     }
 
@@ -160,7 +161,11 @@ public class NativeSoPackagingFromJarTest {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        project.testAar("debug", it -> check(it, "jni", filename, content));
+        project.assertAar(
+                AarSelector.DEBUG,
+                it -> {
+                    check(it, "jni", filename, content);
+                });
     }
 
     private static void check(

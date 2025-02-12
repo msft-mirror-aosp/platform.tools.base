@@ -75,7 +75,7 @@ class AppWithKmpDependency : ModelComparator() {
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Landroidx/lifecycle/ReportFragment;")
+            classes().classes().contains("androidx/lifecycle/ReportFragment")
         }
     }
 
@@ -88,7 +88,7 @@ class AppWithKmpDependency : ModelComparator() {
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            doesNotContainClass("Landroidx/lifecycle/ReportFragment;")
+            classes().classes().doesNotContain("androidx/lifecycle/ReportFragment")
         }
     }
 }

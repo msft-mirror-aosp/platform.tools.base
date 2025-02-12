@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies.lib
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
@@ -75,8 +76,9 @@ class LibWithProvidedAarAsJarTest : ModelComparator() {
     @Test
     fun `check project jar is not packaged`() {
         project.executor().run("clean", ":library:assembleDebug")
-        project.getSubproject("library").testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
-            aar.allJars().doesNotContainClass("com/example/android/multiproject/library2/PersionView2")
+        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+            // make sure library2/PersonView2 is not in the AAR
+            classes().containsExactly("com/example/android/multiproject/library/PersonView")
         }
     }
 }

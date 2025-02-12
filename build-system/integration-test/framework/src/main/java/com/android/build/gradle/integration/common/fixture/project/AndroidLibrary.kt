@@ -22,7 +22,7 @@ import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.testutils.apk.Apk
 import java.nio.file.Path
 
@@ -73,14 +73,7 @@ internal class AndroidLibraryImpl(
     projectDefinition,
     namespace,
 ), AndroidLibraryProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
-    private val apkDelegate = GeneratesApkDelegate(location)
-
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R{
-        if ((apkSelector as ApkSelectorImp).testSuite == null) {
-            error("Querying a non test APK from a library project.")
-        }
-        return apkDelegate.withApk(apkSelector, action)
-    }
+    private val apkDelegate = GeneratesApkDelegate(projectDefinition.path, location)
 
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
         if ((apkSelector as ApkSelectorImp).testSuite == null) {
@@ -89,11 +82,11 @@ internal class AndroidLibraryImpl(
         apkDelegate.assertApk(apkSelector, action)
     }
 
-    override fun hasApk(apkSelector: ApkSelector): Boolean {
+    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
         if ((apkSelector as ApkSelectorImp).testSuite == null) {
             error("Querying a non test APK from a library project.")
         }
-        return apkDelegate.hasApk(apkSelector)
+        return apkDelegate.getApkLocationForCopy(apkSelector)
     }
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidLibraryProject =

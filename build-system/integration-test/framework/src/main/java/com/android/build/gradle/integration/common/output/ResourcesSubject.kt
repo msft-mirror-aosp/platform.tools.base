@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
@@ -26,12 +25,37 @@ import java.util.regex.Pattern
 /**
  * An object that can validate the content of resources.
  */
+@SubjectDsl
 interface ResourcesSubject {
 
     /**
-     * Returns a [IterableSubject] of all the resources in the jar
+     * Checks that the list of classes contains exactly the list provided
      */
-    fun resources(): IterableSubject
+    fun containsExactly(resourceNames: Iterable<String>)
+
+    /**
+     * Checks that the list of classes contains a single entry matching the one provided
+     */
+    fun containsExactly(resourceName: String) {
+        containsExactly(listOf(resourceName))
+    }
+
+    /**
+     * Checks that the list of classes contains exactly the list provided
+     */
+    fun containsExactly(vararg resourceNames: String) {
+        containsExactly(resourceNames.toList())
+    }
+
+    /**
+     * Checks that the list of classes is empty
+     */
+    fun isEmpty()
+
+    /**
+     * Checks that the list of classes has the given size
+     */
+    fun hasSize(size: Int)
 
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
@@ -46,9 +70,10 @@ interface ResourcesSubject {
      * @param path the path of the item which must not include a leading /
      */
     fun resourceAsBytes(path: String): BinarySubject
+
+    fun folderView(path: String): ResourcesSubject
 }
 
-@SubjectDsl
 internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
     metadata: FailureMetadata,
     actual: T
@@ -56,17 +81,28 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     protected abstract val allResources: List<String>
 
-    override fun resources(): IterableSubject {
-        return check("resources()").that(allResources)
+    override fun containsExactly(resourceNames: Iterable<String>) {
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(allResources)
+            .containsExactly(resourceNames)
+    }
+
+    override fun isEmpty() {
+        check("entries()").that(allResources).isEmpty()
+    }
+
+    override fun hasSize(size: Int) {
+        check("size()").that(allResources.size).isEqualTo(size)
     }
 
     override fun resourceAsText(path: String): StringSubject {
-        resources().contains(path)
+        check("entries()").that(allResources).contains(path)
         return check("resourceAsText($path)").that(actual().textFile(path))
     }
 
     override fun resourceAsBytes(path: String): BinarySubject {
-        resources().contains(path)
+        check("entries()").that(allResources).contains(path)
         return check("resourceAsBytes($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
     }
 }
@@ -76,7 +112,6 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
  *
  * The main goal here is to filter out the non java resource files
  */
-@SubjectDsl
 internal class ApkWithJavaResourcesSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -84,7 +119,7 @@ internal class ApkWithJavaResourcesSubject(
 
     companion object {
         /**
-         * Returns a [JarSubject]
+         * Returns a [ResourcesSubject]
          */
         internal fun assertThat(zip: Zip): ApkWithJavaResourcesSubject {
             return assertAbout(javaResources()).that(zip)
@@ -98,6 +133,11 @@ internal class ApkWithJavaResourcesSubject(
                 ApkWithJavaResourcesSubject(metadata, actual)
             }
         }
+    }
+
+    override fun folderView(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folderView($path)").about(javaResources()).that(view)
     }
 
     /**
@@ -121,7 +161,6 @@ internal class ApkWithJavaResourcesSubject(
  *
  * The main goal here is to filter out the class files
  */
-@SubjectDsl
 internal class JarWithJavaResourcesSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -129,7 +168,7 @@ internal class JarWithJavaResourcesSubject(
 
     companion object {
         /**
-         * Returns a [JarSubject]
+         * Returns a [ResourcesSubject]
          */
         internal fun assertThat(zip: Zip): JarWithJavaResourcesSubject {
             return assertAbout(jars()).that(zip)
@@ -145,6 +184,11 @@ internal class JarWithJavaResourcesSubject(
         }
     }
 
+    override fun folderView(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folderView($path)").about(jars()).that(view)
+    }
+
     /**
      * Cached copy of all the resources names.
      */
@@ -156,6 +200,40 @@ internal class JarWithJavaResourcesSubject(
                 else -> true
             }
         }
+    }
+}
+
+/**
+ * Implementation of [ResourcesSubject] over an archive with no filtering of any sort
+ */
+@SubjectDsl
+internal class FullJarResourcesSubject(
+    metadata: FailureMetadata,
+    actual: Zip
+): BaseJavaResourcesSubject<FullJarResourcesSubject, Zip>(metadata, actual) {
+
+    companion object {
+        /**
+         * Method for getting the subject factory (for use with assertAbout())
+         */
+        internal fun jars(): Factory<FullJarResourcesSubject, Zip> {
+            return Factory<FullJarResourcesSubject, Zip> { metadata, actual ->
+                FullJarResourcesSubject(metadata, actual)
+            }
+        }
+    }
+
+    override fun folderView(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folderView($path)").about(jars()).that(view)
+    }
+
+
+    /**
+     * Cached copy of all the resources names.
+     */
+    override val allResources: List<String> by lazy(LazyThreadSafetyMode.NONE) {
+        actual().getEntries()
     }
 }
 

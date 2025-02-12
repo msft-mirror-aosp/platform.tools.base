@@ -151,16 +151,20 @@ class KotlinMultiplatformAndroidPluginNativeTest {
                     "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
                     "com/example/kmpfirstlib/KmpAndroidActivity",
                     "com/example/nativelib/Jni",
-                    "com/example/nativelib/Incrementer",
-
-                    )
+                    "com/example/nativelib/Incrementer"
+                )
                 resources().containsExactly(
                     "kmp_resource.txt",
                     "META-INF/kmpFirstLib.kotlin_module"
                 )
             }
 
-            contains("jni/x86/libnative_lib.so")
+            jniLibs().containsExactly(
+                "x86/libnative_lib.so",
+                "x86_64/libnative_lib.so",
+                "armeabi-v7a/libnative_lib.so",
+                "arm64-v8a/libnative_lib.so"
+            )
         }
     }
 

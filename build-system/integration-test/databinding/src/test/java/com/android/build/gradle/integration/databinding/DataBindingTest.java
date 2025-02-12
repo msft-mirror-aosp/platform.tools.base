@@ -21,6 +21,7 @@ import static com.android.testutils.truth.DexSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
@@ -103,17 +104,15 @@ public class DataBindingTest {
         String implClassInApk = "L" + implClassInAar + ";";
         final Apk apk;
         if (myLibrary) {
-            project.testAar(
-                    "debug",
+            project.assertAar(
+                    AarSelector.DEBUG,
                     it -> {
-                        it.allJars(
-                                jar -> {
-                                    jar.containsClass(bindingClassInAar);
-                                    jar.containsClass(implClassInAar);
-
-                                    jar.doesNotContainClass(myDbPkg + "adapters/Converters;");
-                                    jar.doesNotContainClass(myDbPkg + "DataBindingComponent;");
-                                });
+                        it.classes()
+                                .containsExactly(
+                                        bindingClassInAar,
+                                        implClassInAar,
+                                        "android/databinding/testapp/MainActivity",
+                                        "android/databinding/testapp/DataBinderMapperImpl$");
                     });
 
             // also builds the test app

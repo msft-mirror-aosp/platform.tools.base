@@ -22,6 +22,7 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject
@@ -195,10 +196,10 @@ class NavigationPlaceholderTest {
         )
         // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
         project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").assertThatAar("debug") {
-            contains(FN_NAVIGATION_JSON)
+        project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
+            textFile(FN_NAVIGATION_JSON).isNotEmpty()
         }
-        val aarPath = project.getSubproject("lib").getAarLocationForCopy("debug")
+        val aarPath = project.getSubproject("lib").getAarLocationForCopy(AarSelector.DEBUG)
         FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
 
         // Update the app's build.gradle and the settings.gradle.

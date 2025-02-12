@@ -29,6 +29,7 @@ import com.android.build.api.variant.FilterConfiguration;
 import com.android.build.api.variant.VariantOutputConfiguration;
 import com.android.build.api.variant.impl.BuiltArtifactsImpl;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.ApkSubject;
 import com.android.build.gradle.integration.common.output.ZipSubject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
@@ -45,7 +46,6 @@ import org.junit.Test;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /** Test drive for the CombinedAbiDensityPureSplits samples test. */
 public class CombinedAbiDensitySplits {
@@ -101,9 +101,8 @@ public class CombinedAbiDensitySplits {
                     builtArtifact.getOutputType());
 
             assertThat(builtArtifact.getVersionCode()).isEqualTo(123);
-            ZipSubject.assertThat(
-                    Paths.get(builtArtifact.getOutputFile()),
-                    it -> it.entries(Pattern.compile("lib/.*")).hasSize(1));
+            ApkSubject.assertThat(
+                    Paths.get(builtArtifact.getOutputFile()), it -> it.jniLibs().hasSize(1));
 
             if (densityFilter != null) {
                 expectedDensities.remove(densityFilter);

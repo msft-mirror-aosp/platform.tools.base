@@ -150,18 +150,12 @@ class DynamicFeatureAndroidTestBuildTest {
                 "R.jar"
             ).toPath()
         JarSubject.assertThat(androidTestFeatureRJar) {
-            classes().apply {
-                contains("com/example/feature/test/R\$raw")
-                contains("com/example/testFeatureLib/R\$raw")
-                doesNotContain("com/example/shared_lib/R\$raw")
-                doesNotContain("com/example/appLib/R\$raw")
-                doesNotContain("com/example/feature_lib/R\$raw")
-                doesNotContain("com/example/baseModule/R\$raw")
-                doesNotContain("com/example/feature/R\$raw")
-                doesNotContain("com/example/middleFeature/R\$raw")
-                doesNotContain("com/example/middleFeatureLib/R\$raw")
-                doesNotContain("com/example/sharedMiddleFeatureLib/R\$raw")
-            }
+            classes().containsExactly(
+                "com/example/feature/test/R",
+                "com/example/feature/test/R\$raw",
+                "com/example/testFeatureLib/R",
+                "com/example/testFeatureLib/R\$raw",
+            )
         }
     }
 }

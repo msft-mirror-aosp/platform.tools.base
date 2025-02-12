@@ -93,7 +93,7 @@ class KotlinMultiplatformResourcesTest {
         AarSubject.assertThat(aarPath) {
             textSymbolFile().contains("int string kmp_lib_string 0x0")
 
-            androidResources().textFile("values/values.xml").isEqualTo(
+            androidResources().resourceAsText("values/values.xml").isEqualTo(
                 """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
@@ -131,8 +131,12 @@ class KotlinMultiplatformResourcesTest {
                         + "/androidMain/bundleAndroidMainClassesToCompileJar/classes.jar"
             )
         JarSubject.assertThat(classesJar) {
-            classes().containsAtLeast(
+            classes().containsExactly(
                 "com/example/kmpfirstlib/UseR",
+                "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+                "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                "com/example/kmpfirstlib/KmpAndroidActivity",
                 "com/example/kmpfirstlib/R",
                 "com/example/kmpfirstlib/R\$string"
             )

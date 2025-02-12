@@ -385,7 +385,7 @@ class FusedLibraryClassesVerificationTest {
         build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
 
         fusedLibrary.assertAar(AarSelector.NO_BUILD_TYPE) {
-            contains("libs/testClass.jar")
+            hasSecondaryJars("testClass.jar")
         }
 
         fusedLibrary.files.add("src/main/java/com/example/myapp/AppClass.kt",
@@ -402,7 +402,15 @@ class FusedLibraryClassesVerificationTest {
         build.executor.run(":app:assembleDebug")
 
         appProject.assertApk(ApkSelector.DEBUG) {
-            hasClass("Lcom/android/build/gradle/integration/library/TestClass;") }
+            classes().containsExactly(
+                "com/android/build/gradle/integration/library/TestClass",
+                "com/example/myapp/R",
+                "com/example/fusedLib1/R",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
+        }
     }
 
     @Test
@@ -544,10 +552,8 @@ class FusedLibraryClassesVerificationTest {
         val fusedLib1Project = fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME")
 
         fusedLib1Project.assertAar(AarSelector.NO_BUILD_TYPE) {
-            mainJar().classes().apply {
-                classesFromDirectDependencies.forEach {
-                    contains(it)
-                }
+            mainJar().classes {
+                containsExactly(classesFromDirectDependencies)
             }
         }
     }

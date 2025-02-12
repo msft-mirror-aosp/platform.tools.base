@@ -30,6 +30,9 @@ import com.android.utils.combineAsCamelCase
  */
 sealed interface AabSelector: OutputSelector {
 
+    /** Returns a new instance with a new project name */
+    override fun withName(name: String): AabSelector
+
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): AabSelector
 
@@ -93,6 +96,7 @@ sealed interface AabSelector: OutputSelector {
 }
 
 internal data class AabSelectorImp(
+    override val name: String? = null,
     private val buildType: String?,
     private val testSuite: String?,
     private val flavors: List<String>,
@@ -102,20 +106,23 @@ internal data class AabSelectorImp(
     override val fromIntermediates: Boolean = false,
 ): AabSelector {
 
+    override fun withName(name: String) =
+        AabSelectorImp(name, buildType, testSuite, flavors, isSigned, filter, suffix, fromIntermediates)
+
     override fun withFlavor(name: String): AabSelector =
-        AabSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
+        AabSelectorImp(this.name, buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
 
     override fun withFilter(newFilter: String): AabSelector =
-        AabSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
+        AabSelectorImp(this.name, buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
 
     override fun withSuffix(newSuffix: String): AabSelector =
-        AabSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
+        AabSelectorImp(this.name, buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
     override fun forTestSuite(name: String): AabSelector =
-        AabSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
+        AabSelectorImp(this.name, buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
 
     override fun fromIntermediates(): AabSelector = AabSelectorImp(
-        buildType, testSuite, flavors, isSigned, filter, suffix,
+        this.name, buildType, testSuite, flavors, isSigned, filter, suffix,
         fromIntermediates = true
     )
 

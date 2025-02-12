@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies.lib
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
@@ -61,7 +62,8 @@ class LibWithProvidedLocalJarTest : ModelComparator() {
     @Test
     fun `check provided local jar is not packaged`() {
         project.execute("clean", "assembleDebug")
-        project.testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
-            aar.doesNotContain("libs/util-1.0.jar") }
+        project.assertAar(AarSelector.DEBUG) {
+            hasNoSecondaryJars()
+        }
     }
 }

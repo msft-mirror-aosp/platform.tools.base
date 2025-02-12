@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
@@ -772,7 +773,11 @@ public class NativeSoPackagingTest {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        project.testAar("debug", it -> check(it, "jni", "x86", filename, content));
+        project.assertAar(
+                AarSelector.DEBUG,
+                it -> {
+                    check(it, "jni", "x86", filename, content);
+                });
     }
 
     private static void check(

@@ -20,6 +20,7 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject
@@ -288,7 +289,7 @@ class ArtProfileMultipleLibrariesTest(
             Truth.assertThat(libFile.readText()).isEqualTo(expectedBaselineProfContent)
 
             // check packaging.
-            project.getSubproject(":lib$i").assertThatAar("release") {
+            project.getSubproject(":lib$i").assertAar(AarSelector.RELEASE) {
                 textFile(aarEntryName).isEqualTo(expectedBaselineProfContent)
             }
         }

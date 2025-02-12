@@ -16,15 +16,13 @@
 
 package com.android.build.gradle.integration.common.output
 
-import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.build.gradle.internal.tasks.AarMetadataTask
-import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
+import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import java.io.File
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.function.Consumer
 import java.util.regex.Pattern
@@ -32,11 +30,14 @@ import kotlin.io.path.inputStream
 
 private val PATTERN_LIBS_JAR = Pattern.compile("^libs/.+$")
 
+/**
+ * A truth subject to validate the content of an AAR.
+ */
 @SubjectDsl
 class AarSubject(
     metadata: FailureMetadata,
     actual: Zip
-): AbstractZipSubject<AarSubject, Zip>(metadata, actual) {
+) : AbstractAndroidArchiveSubject<AarSubject, Zip>(metadata, actual) {
 
     companion object {
         /**
@@ -88,43 +89,41 @@ class AarSubject(
         }
     }
 
-    /**
-     * Returns a [JarSubject] wrapping the content of the main jar and all the secondary jars.
-     */
-    fun allJars(): JarSubject {
+    override fun classes(): ClassesSubject {
         exists()
-
-        // Inner zips are automatically closed when the enclosing zip is closed.
-        val mainJar = actual().innerZip("classes.jar")
-        val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
-
-        val allJars = if (mainJar != null) {
-            buildList {
-                // we want to keep this one first
-                add(mainJar)
-                addAll(secondaryJars)
-            }
-        } else secondaryJars
-
-        return check("allJars()").about(JarSubject.jars()).that(MultiZipView(allJars, "allJars"))
+        return codeJarSubject
     }
 
     /**
-     * Creates a [JarSubject] wrapping the content of the main jar and all the secondary jars,
-     * and configure it with the given action
+     * Cached instance of [ClassesSubject] around all the code jars in the AAR.
+     *
+     * Computing entry list over several jars is costly so it's better cached.
      */
-    fun allJars(action: JarSubject.() -> Unit) {
-        action(allJars())
+    private val codeJarSubject: ClassesSubject by lazy {
+        check("classes()")
+            .about(JarWithClassesSubject.jars())
+            .that(MultiZipView(computeAllJars(), "codeJars"))
     }
 
     /**
-     * Creates a [JarSubject] wrapping the content of the main jar and all the secondary jars,
-     * and configure it with the given action
+     * Returns a [ResourcesSubject] for all java resources in the AAR.
+     *
+     * This pulls the resources from classes.jar and the jars in the lib/ folder.
      */
-    fun allJars(action: Consumer<JarSubject>) {
-        allJars {
-            action.accept(this)
-        }
+    override fun javaResources(): ResourcesSubject {
+        exists()
+        return javaResourcesSubject
+    }
+
+    /**
+     * Cached instance of [ResourcesSubject] around all the code jars in the AAR.
+     *
+     * Computing entry list over several jars is costly so it's better cached.
+     */
+    private val javaResourcesSubject: ResourcesSubject by lazy {
+        check("javaResources()")
+            .about(JarWithJavaResourcesSubject.jars())
+            .that(MultiZipView(computeAllJars(), "javaResources"))
     }
 
     /**
@@ -151,56 +150,86 @@ class AarSubject(
     }
 
     /**
-     * returns a [JarSubject] for the api jar of the AAR (api.jar).
+     * returns a [ClassesSubject] for the api jar of the AAR (api.jar).
+     *
+     * While this is a Jar, there's no resources in there (it's not used at runtime, and
+     * during compilation the Java resources are not used), so [ClassesSubject] is better.
      */
-    fun apiJar(): JarSubject = jar("api.jar", methodName = "apiJar()")
+    fun apiJar(): ClassesSubject {
+        val path = "api.jar"
+        contains(path)
+
+        // this can be null when we're testing the fixture. In normal operation, the call
+        // to contains above guarantees that it's not null
+        // It's ok to not close this empty zip as it's not using a real file.
+        // Inner zips are automatically closed when the enclosing zip is closed.
+        val jar = actual().innerZip(path) ?: SimpleZip(null)
+
+        return check("apiJar()").about(JarWithClassesSubject.jars()).that(jar)
+    }
 
     /**
-     * creates a [JarSubject] for the api jar of the AAR (api.jar), and configures it
+     * creates a [ClassesSubject] for the api jar of the AAR (api.jar), and configures it
      * via the given action.
      */
-    fun apiJar(action: JarSubject.() -> Unit) {
+    fun apiJar(action: ClassesSubject.() -> Unit) {
         action(apiJar())
     }
 
     /**
-     * creates a [JarSubject] for the api jar of the AAR (api.jar), and configures it
+     * creates a [ClassesSubject] for the api jar of the AAR (api.jar), and configures it
      * via the given action.
      */
-    fun apiJar(action: Consumer<JarSubject>) {
+    fun apiJar(action: Consumer<ClassesSubject>) {
         apiJar {
             action.accept(this)
         }
+    }
+
+    fun hasNoSecondaryJars() {
+        exists()
+        val view = ZipFolderView(actual(), "libs")
+        check("secondaryJars").that(view.getEntries()).isEmpty()
+    }
+
+    fun hasSecondaryJars(vararg jars: String) {
+        exists()
+        val view = ZipFolderView(actual(), "libs")
+
+        check("secondaryJars()").that(view.getEntries()).containsExactly(*jars)
     }
 
     /**
      * Returns all the classes from any secondary jars as a single [JarSubject].
      *
      */
-    fun allSecondaryJars(): JarSubject {
+    fun secondaryJars(): JarSubject {
         exists()
 
         // Inner zips are automatically closed when the enclosing zip is closed.
         val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
 
-        return check("allSecondaryJars()").about(JarSubject.jars())
-            .that(MultiZipView(secondaryJars, "allSecondaryClasses"))
+        val zipView = MultiZipView(secondaryJars, "secondaryJars")
+        return JarSubject(
+            code = check("secondaryJars()").about(JarWithClassesSubject.jars()).that(zipView),
+            resources = check("secondaryJars()").about(JarWithJavaResourcesSubject.jars()).that(zipView)
+        )
     }
 
     /**
      * Creates a [JarSubject] representing all the classes from the secondary jars, and configure it
      * with the given action
      */
-    fun allSecondaryJars(action: JarSubject.() -> Unit) {
-        action(allSecondaryJars())
+    fun secondaryJars(action: JarSubject.() -> Unit) {
+        action(secondaryJars())
     }
 
     /**
      * Creates a [JarSubject] representing all the classes from the secondary jars, and configure it
      * with the given action
      */
-    fun allSecondaryJars(action: Consumer<JarSubject>) {
-        allSecondaryJars {
+    fun secondaryJars(action: Consumer<JarSubject>) {
+        secondaryJars {
             action.accept(this)
         }
     }
@@ -208,65 +237,9 @@ class AarSubject(
     /**
      * returns a [StringSubject] for the Android Manifest of the AAR.
      */
-    fun manifest(): StringSubject {
+    override fun manifest(): StringSubject {
         contains("AndroidManifest.xml")
         return check("manifest()").that(actual().textFile("AndroidManifest.xml"))
-    }
-
-    /**
-     * returns [ZipSubject] for the Android resources
-     *
-     * The names of the files do NOT include the res folder.
-     */
-    fun androidResources(): ZipSubject {
-        exists()
-        return check("androidResources()").about(ZipSubject.zips()).that(ZipFolderView(actual(), "res"))
-    }
-
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun androidResources(action: ZipSubject.() -> Unit) {
-        action(androidResources())
-    }
-
-    /**
-     * Creates a [ZipSubject] representing all the android resources, and configure it
-     * with the given action
-     */
-    fun androidResources(action: Consumer<ZipSubject>) {
-        androidResources {
-            action.accept(this)
-        }
-    }
-
-    /**
-     * returns [ZipSubject] for the Android assets
-     *
-     * The names of the files do NOT include the assets folder.
-     */
-    fun assets(): ZipSubject {
-        exists()
-        return check("assets()").about(ZipSubject.zips()).that(ZipFolderView(actual(), "assets"))
-    }
-
-    /**
-     * Creates a [ZipSubject] representing all the android assets, and configure it
-     * with the given action
-     */
-    fun assets(action: ZipSubject.() -> Unit) {
-        action(assets())
-    }
-
-    /**
-     * Creates a [ZipSubject] representing all the android assets, and configure it
-     * with the given action
-     */
-    fun assets(action: Consumer<ZipSubject>) {
-        assets {
-            action.accept(this)
-        }
     }
 
     /**
@@ -300,6 +273,11 @@ class AarSubject(
         }
     }
 
+    override fun jniLibs(): JniSubject {
+        exists()
+        return check("jniLibs()").about(JniSubjectImpl.libs()).that(ZipFolderView(actual(), "jni"))
+    }
+
     /**
      * returns a [AarMetadataSubject] for the metadata of this AAR
      */
@@ -324,25 +302,6 @@ class AarSubject(
         action(aarMetadata())
     }
 
-    fun nativeLibrary(path: String): NativeLibrarySubject {
-        contains(path)
-        val location = actual().getEntry(path)
-
-        // we need to create a temporary file because the subject needs to run command lines against it.
-        // TODO inject a TemporaryFolder rule?
-
-        // location can be null when testing the fixture
-        val nativeFile = location?.let {
-            Files.createTempFile("nativeLibrary_", "_${location.fileName}").also {
-                FileUtils.copyFile(location, it)
-            }.toFile()
-        } ?: Files.createTempFile("empty", ".so").toFile()
-
-        nativeFile.deleteOnExit()
-
-        return check("nativeLibrary($path)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
-    }
-
     private fun jar(path: String, methodName: String = "jar($path)"): JarSubject {
         contains(path)
 
@@ -352,6 +311,27 @@ class AarSubject(
         // Inner zips are automatically closed when the enclosing zip is closed.
         val jar = actual().innerZip(path) ?: SimpleZip(null)
 
-        return check(methodName).about(JarSubject.jars()).that(jar)
+        return JarSubject(
+            code = check(methodName).about(JarWithClassesSubject.jars()).that(jar),
+            resources = check(methodName).about(JarWithJavaResourcesSubject.jars()).that(jar)
+        )
+    }
+
+    /**
+     * Returns the list of "code" jar in the AAR. This is mainly classes.jar + the jars
+     * under lib/
+     */
+    private fun computeAllJars(): List<Zip> {
+        // Inner zips are automatically closed when the enclosing zip is closed.
+        val mainJar = actual().innerZip("classes.jar")
+        val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
+
+        return if (mainJar != null) {
+            buildList {
+                // we want to keep this one first
+                add(mainJar)
+                addAll(secondaryJars)
+            }
+        } else secondaryJars
     }
 }

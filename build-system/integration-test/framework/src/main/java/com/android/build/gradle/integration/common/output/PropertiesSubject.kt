@@ -17,39 +17,33 @@
 package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
+import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
-import org.objectweb.asm.tree.ClassNode
+import com.google.common.truth.Truth.assertAbout
+import java.util.Properties
 
-class ClassSubject(
+/**
+ * A truth subject for testing the content of [Properties]
+ */
+class PropertiesSubject internal constructor(
     metadata: FailureMetadata,
-    actual: ClassDefinition
-): Subject<ClassSubject, ClassDefinition>(metadata, actual) {
+    actual: Properties
+): Subject<PropertiesSubject, Properties>(metadata, actual) {
 
     companion object {
+        fun assertThat(properties: Properties, action: PropertiesSubject.() -> Unit) {
+            action(assertAbout(properties()).that(properties))
+        }
+
         /**
          * Method for getting the subject factory (for use with assertAbout())
          */
-        internal fun classNodes(): Factory<ClassSubject, ClassDefinition> {
-            return Factory<ClassSubject, ClassDefinition> { metadata, actual ->
-                ClassSubject(metadata, actual)
+        internal fun properties(): Factory<PropertiesSubject, Properties> {
+            return Factory<PropertiesSubject, Properties> { metadata, actual ->
+                PropertiesSubject(metadata, actual)
             }
         }
     }
 
-    fun interfaces(): IterableSubject {
-        return check("interfaces()").that(actual().interfaces)
-    }
-
-    fun innerClasses(): IterableSubject {
-        return check("innerClasses()").that(actual().innerClasses)
-    }
-
-    fun fields(): IterableSubject {
-        return check("fields()").that(actual().fields)
-    }
-
-    fun methods(): IterableSubject {
-        return check("methods()").that(actual().methods)
-    }
+    fun property(name: String): StringSubject = check("property($name").that(actual().getProperty(name))
 }

@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.library;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
-import com.android.build.gradle.integration.common.output.AbstractZipSubject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
 import org.junit.Rule;
@@ -53,7 +53,15 @@ public class VariantApiLibraryPropertiesTest {
                     + "}\n");
 
         project.executor().run("assembleDebug");
-        project.testAar("debug", AbstractZipSubject::doesNotExist);
-        project.testAar("1.0", "debug", AbstractZipSubject::exists);
+        project.assertAar(
+                AarSelector.DEBUG,
+                aar -> {
+                    aar.doesNotExist();
+                });
+        project.assertAar(
+                AarSelector.DEBUG.withName("project-1.0"),
+                aar -> {
+                    aar.exists();
+                });
     }
 }

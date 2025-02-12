@@ -19,13 +19,15 @@ package com.android.build.gradle.integration.nativebuild;
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import java.io.IOException;
-
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /** Integration test for extracting RS enabled annotations. */
 public class RsEnabledAnnotationTest {
@@ -51,11 +53,12 @@ public class RsEnabledAnnotationTest {
     @Test
     public void checkExtractAnnotation() throws Exception {
         // check the resulting .aar file to ensure annotations.zip inclusion.
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 it -> {
                     it.contains("annotations.zip");
-                    it.doesNotContain("libs/renderscript-v8.zip");
+                    // make sure libs/renderscript-v8.zip does not exist
+                    it.hasNoSecondaryJars();
                 });
     }
 }

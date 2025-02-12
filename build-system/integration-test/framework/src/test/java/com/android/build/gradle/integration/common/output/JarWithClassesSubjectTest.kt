@@ -41,11 +41,11 @@ class JarWithClassesSubjectTest: BaseZipSubjectTest() {
 
             // test negative results
             expectFailure {
-                it.that(jar).classes().hasSize(5)
+                it.that(jar).hasSize(5)
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "jarWithClasses was")
-                factValue("value of").isEqualTo("jarWithClasses.classes().size()")
+                factValue("value of").isEqualTo("jarWithClasses.size()")
                 factValue("jarWithClasses was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
             }
         }

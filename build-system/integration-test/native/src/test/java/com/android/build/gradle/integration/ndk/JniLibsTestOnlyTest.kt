@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.utils.FileUtils
 import org.junit.Before
@@ -148,11 +149,10 @@ class JniLibsTestOnlyTest {
 
         project.executor().run(":lib:assembleDebug", ":lib:assembleDebugAndroidTest")
 
-        libSubproject.testAar("debug") {
-            it.entries().apply {
-                contains("jni/x86/libMain.so")
-                doesNotContain("jni/x86/libDslTestOnly.so")
-                doesNotContain("jni/x86/libVariantTestOnly.so")
+        libSubproject.assertAar(AarSelector.DEBUG) {
+            jniLibs {
+                // make sure we don't find libDslTestOnly.so or libVariantTestOnly.so
+                containsExactly("x86/libMain.so")
             }
         }
 

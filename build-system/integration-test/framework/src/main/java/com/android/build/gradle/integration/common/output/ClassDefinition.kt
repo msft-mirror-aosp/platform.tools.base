@@ -20,34 +20,28 @@ import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
 import org.objectweb.asm.tree.ClassNode
 
 /**
- * Information about a class to test with [ClassSubject]
+ * Information about a class to test with [ClassDefinitionSubject]
+ *
+ * This is not meant to be generated manually, but instead the subject is directly created
+ * by [ClassesSubject.classDefinition]
  */
-interface ClassDefinition {
-
+sealed interface ClassDefinition {
     val interfaces: List<String>
-
     val innerClasses: List<String>
-
     val fields: List<String>
-
     val methods: List<String>
-
 }
 
 /**
  * Implementation of [ClassDefinition] over ASM's [ClassNode]
  */
-class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDefinition {
-
+internal class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDefinition {
     override val interfaces: List<String>
         get() = classNode.interfaces
-
     override val innerClasses: List<String>
         get() = classNode.innerClasses.map { it.name }
-
     override val fields: List<String>
         get() = classNode.fields.map { it.name }
-
     override val methods: List<String>
         get() = classNode.methods.map { it.name }
 }

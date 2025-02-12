@@ -16,7 +16,8 @@ import java.util.zip.ZipEntry
 
 /** Tests for DSL AAPT options.  */
 class AaptTest {
-    @get:Rule  var temporaryFolder = TemporaryFolder()
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     @get:Rule
     val rule = GradleRule.from {
@@ -108,16 +109,23 @@ class AaptTest {
                         noCompress("")
                     }
                 }
+                files.add(
+                    "src/main/res/layout/main.xml",
+                    //language=xml
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
+                        </LinearLayout>
+                    """.trimIndent())
             }
         }
 
         build.executor.run("clean", "assembleDebug")
 
         // Check that APK entries are uncompressed
-        build.androidApplication().withApk(ApkSelector.DEBUG) {
-            // TODO (Issue 70118728) res/layout/main.xml should be uncompressed too.
-            val entry = ZipArchive.listEntries(file)["classes.dex"]
-            Truth.assertThat(entry?.compressionFlag).isEqualTo(ZipEntry.STORED)
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            zipEntry("classes.dex").hasCompressionMethod(ZipEntry.STORED)
+            zipEntry("res/layout/main.xml").hasCompressionMethod(ZipEntry.STORED)
         }
     }
 
@@ -132,8 +140,9 @@ class AaptTest {
         build.executor.run("clean", "assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFile("assets/kept")
-            doesNotContain("assets/ignored")
+            assets {
+                containsExactly("kept")
+            }
         }
     }
 
@@ -161,8 +170,9 @@ class AaptTest {
         build.executor.run("clean", "assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            contains("assets/kept")
-            doesNotContain("assets/ignored")
+            assets {
+                containsExactly("kept")
+            }
         }
     }
 

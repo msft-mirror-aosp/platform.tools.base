@@ -25,7 +25,8 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.output.ApkSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.core.Abi
@@ -40,7 +41,6 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
-import kotlin.test.fail
 
 /** Test APK is packaged correctly when injected ABI exists or changes */
 class InjectedAbiTest {
@@ -83,10 +83,7 @@ class InjectedAbiTest {
         project.assertDoesNotExist(armV8Selection.fromIntermediates())
 
         project.assertApk(x86Selection.fromIntermediates()) {
-            contains("lib/" + Abi.X86.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.X86_64.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
+            jniLibs().containsExactly("${Abi.X86.tag}/libapp.so")
         }
 
         // Run the second build with another target ABI, check that another APK for that ABI is
@@ -103,9 +100,9 @@ class InjectedAbiTest {
         project.assertDoesNotExist(x86_64Selection.fromIntermediates())
         project.assertDoesNotExist(armV8Selection.fromIntermediates())
 
-        val armeabiV7aLastModifiedTime = project.withApk(armV7aSelection.fromIntermediates()) {
-            java.nio.file.Files.getLastModifiedTime(file)
-        }
+        val armeabiV7aLastModifiedTime = java.nio.file.Files.getLastModifiedTime(
+            project.getApkLocationForCopy(armV7aSelection.fromIntermediates())
+        )
 
         // Run the third build without any target ABI, check that the APKs for all ABIs are
         // generated (or regenerated)
@@ -118,13 +115,12 @@ class InjectedAbiTest {
         project.assertCorrectApk(x86_64Selection)
         project.assertCorrectApk(armV8Selection)
 
-        project.withApk(armV7aSelection) {
-            PathSubject.assertThat(file).isNewerThan(armeabiV7aLastModifiedTime)
-        }
+        PathSubject.assertThat(project.getApkLocationForCopy(armV7aSelection))
+            .isNewerThan(armeabiV7aLastModifiedTime)
 
-        val x86LastModifiedTime = project.withApk(x86Selection) {
-            java.nio.file.Files.getLastModifiedTime(file)
-        }
+        val x86LastModifiedTime = java.nio.file.Files.getLastModifiedTime(
+            project.getApkLocationForCopy(x86Selection)
+        )
 
         // Run the fourth build with a target ABI, check that the APK for that ABI is re-generated
         result = build.executor
@@ -138,9 +134,8 @@ class InjectedAbiTest {
         project.assertDoesNotExist(x86_64Selection.fromIntermediates())
         project.assertDoesNotExist(armV8Selection.fromIntermediates())
 
-        project.withApk(x86Selection.fromIntermediates()) {
-            PathSubject.assertThat(file).isNewerThan(x86LastModifiedTime)
-        }
+        PathSubject.assertThat(project.getApkLocationForCopy(x86Selection.fromIntermediates()))
+            .isNewerThan(x86LastModifiedTime)
     }
 
     @Test
@@ -160,15 +155,12 @@ class InjectedAbiTest {
         project.assertDoesNotExist(armV7aSelection.fromIntermediates())
 
         project.assertApk(DEBUG.fromIntermediates()) {
-            contains("lib/" + Abi.X86.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.X86_64.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
+            jniLibs().containsExactly("${Abi.X86.tag}/libapp.so")
        }
 
-        val apkLastModifiedTime = project.withApk(DEBUG.fromIntermediates()) {
-            java.nio.file.Files.getLastModifiedTime(file)
-        }
+        val apkLastModifiedTime = java.nio.file.Files.getLastModifiedTime(
+            project.getApkLocationForCopy(DEBUG.fromIntermediates())
+        )
 
         // Run the second build with another target ABI, again check that no split APKs are
         // generated (and the main APK is re-generated)
@@ -181,9 +173,8 @@ class InjectedAbiTest {
         project.assertDoesNotExist(x86Selection.fromIntermediates())
         project.assertDoesNotExist(armV7aSelection.fromIntermediates())
 
-        project.withApk(DEBUG.fromIntermediates()) {
-            PathSubject.assertThat(file).isNewerThan(apkLastModifiedTime)
-       }
+        PathSubject.assertThat(project.getApkLocationForCopy(DEBUG.fromIntermediates()))
+            .isNewerThan(apkLastModifiedTime)
     }
 
     class BuildAllAbisCallback: ApplicationComponentCallback {
@@ -216,18 +207,17 @@ class InjectedAbiTest {
             .run("assemble")
 
         project.assertApk(RELEASE.fromIntermediates()) {
-            contains("lib/" + Abi.X86.tag + "/libapp.so")
-            contains("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
-            contains("lib/" + Abi.X86_64.tag + "/libapp.so")
-            contains("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
+            jniLibs().containsExactly(
+                "${Abi.X86.tag}/libapp.so",
+                "${Abi.ARM64_V8A.tag}/libapp.so",
+                "${Abi.X86_64.tag}/libapp.so",
+                "${Abi.ARMEABI_V7A.tag}/libapp.so"
+            )
        }
 
         // Validate the debug variant did not build all ABIs
         project.assertApk(DEBUG.fromIntermediates()) {
-            contains("lib/" + Abi.X86.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.X86_64.tag + "/libapp.so")
-            doesNotContain("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
+            jniLibs().containsExactly("${Abi.X86.tag}/libapp.so")
        }
     }
 
@@ -244,8 +234,7 @@ class InjectedAbiTest {
         // we expect x86_64 .so files in the APK (and no x86 .so files) since there are x86_64 .so
         // files available, and we also don't expect a warning about missing .so files in this case.
         project.assertCorrectApk(DEBUG.fromIntermediates()) {
-            contains("lib/x86_64/libapp.so")
-            doesNotContain("lib/x86/libapp.so")
+            jniLibs().containsExactly("${Abi.X86_64.tag}/libapp.so")
         }
         result1.stdout.use { scanner ->
             ScannerSubject.assertThat(scanner).doesNotContain("There are no .so files available")
@@ -265,8 +254,7 @@ class InjectedAbiTest {
         // we expect no .so files in the APK since there are no x86_64 .so files available, and we
         // also expect a warning about the missing .so files.
         project.assertCorrectApk(DEBUG.fromIntermediates()) {
-            doesNotContain("lib/x86_64/libapp.so")
-            doesNotContain("lib/x86/libapp.so")
+            jniLibs().isEmpty()
         }
         result2.stdout.use { scanner ->
             ScannerSubject.assertThat(scanner).contains(
@@ -297,9 +285,7 @@ class InjectedAbiTest {
         // we expect only arm64-v8a .so files in the APK, and we also expect a warning about the
         // missing x86 and x86_64 .so files.
         project.assertCorrectApk(DEBUG.fromIntermediates()) {
-            contains("lib/arm64-v8a/libapp.so")
-            doesNotContain("lib/x86_64/libapp.so")
-            doesNotContain("lib/x86/libapp.so")
+            jniLibs().containsExactly("arm64-v8a/")
         }
         result3.stdout.use { scanner ->
             ScannerSubject.assertThat(scanner).contains(
@@ -323,8 +309,7 @@ class InjectedAbiTest {
         // we expect the x86_64 APK to be created with the x86_64 .so files, and we also don't
         // expect a warning about missing .so files in this case.
         project.assertCorrectApk(x86_64Selection.fromIntermediates()) {
-            contains("lib/x86_64/libapp.so")
-            doesNotContain("lib/x86/libapp.so")
+            jniLibs().containsExactly("${Abi.X86_64.tag}/libapp.so")
         }
         project.assertDoesNotExist(DEBUG.fromIntermediates())
         project.assertDoesNotExist(x86Selection.fromIntermediates())
@@ -347,8 +332,7 @@ class InjectedAbiTest {
         // since there were no "source" x86_64 .so files. We expect a warning about the missing .so
         // files.
         val apk2 = project.assertCorrectApk(x86_64Selection.fromIntermediates()) {
-            doesNotContain("lib/x86_64/libapp.so")
-            doesNotContain("lib/x86/libapp.so")
+            jniLibs().isEmpty()
         }
         project.assertDoesNotExist(DEBUG.fromIntermediates())
         project.assertDoesNotExist(x86Selection.fromIntermediates())
@@ -372,8 +356,12 @@ class InjectedAbiTest {
             .run("clean", "assembleDebug")
 
         project.assertApk(DEBUG.fromIntermediates()) {
-            contains("lib/" + Abi.X86.tag + "/libapp.so")
-            contains("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
+            jniLibs().containsExactly(
+                "x86_64/libapp.so",
+                "x86/libapp.so",
+                "arm64-v8a/libapp.so",
+                "armeabi-v7a/libapp.so"
+            )
         }
     }
 
@@ -381,20 +369,23 @@ class InjectedAbiTest {
         apkSelector: ApkSelector,
         action: (ApkSubject.() -> Unit)? = null
     ) {
+        ZipSubject.assertThat(getApkLocationForCopy(apkSelector)) {
+            entries().containsAtLeast(
+                "META-INF/MANIFEST.MF",
+                "res/layout/main.xml",
+                "AndroidManifest.xml",
+                "classes.dex",
+                "resources.arsc"
+            )
+        }
         assertApk(apkSelector) {
-            exists()
-            contains("META-INF/MANIFEST.MF")
-            contains("res/layout/main.xml")
-            contains("AndroidManifest.xml")
-            contains("classes.dex")
-            contains("resources.arsc")
             action?.invoke(this)
         }
     }
 
     private fun AndroidApplicationProject.assertDoesNotExist(apkSelector: ApkSelector) {
-        if (this.hasApk(apkSelector)) {
-            fail("APK ($apkSelector) exists")
+        assertApk(apkSelector) {
+            doesNotExist()
         }
     }
 

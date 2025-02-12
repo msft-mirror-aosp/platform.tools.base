@@ -91,13 +91,17 @@ class AndroidTestClasspathTest {
         build.executor.run(":app:assembleDebug", ":app:assembleDebugAndroidTest")
 
         app.assertApk(ApkSelector.DEBUG) {
-            containsClass("Ltest/Data;")
+            classes().containsExactly(
+                "com/test/app/R",
+                "com/test/lib/R",
+                "test/Data")
         }
 
         app.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            containsClass("Ltest/DataTest;")
-            doesNotContainClass("Ltest/Data;")
-            doesNotContainClass("Lcom/test/MyClass;")
+            classes().containsExactly(
+                "com/test/app/test/R",
+                "test/DataTest"
+            )
         }
     }
 }

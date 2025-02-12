@@ -18,11 +18,9 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.output.AbstractZipSubject
-import com.android.build.gradle.integration.common.output.Zip
-import com.android.build.gradle.integration.common.output.ZipSubject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
@@ -120,28 +118,31 @@ class ResPackagingTest {
         execute("clean", "assembleDebug", "assembleAndroidTest")
 
         // chek the files are there. Start from the bottom of the dependency graph
-        checkAar(libProject2!!, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject2!!, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject2!!, "filelib2test.txt", "library2Test:abcd")
+        libProject2.checkAarResources("filelib2.txt".withContent("library2:abcd"))
+        libProject2.checkTestApkResources(
+            "filelib2.txt".withContent("library2:abcd"),
+            "filelib2test.txt".withContent("library2Test:abcd")
+        )
 
-        checkAar(libProject, "filelib.txt", "library:abcd")
         // aar does not contain dependency's assets
-        checkAar(libProject, "filelib2.txt", null)
+        libProject.checkAarResources("filelib.txt".withContent("library:abcd"))
+
         // test apk contains both test-ony assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "filelib.txt", "library:abcd")
-        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject, "filelibtest.txt", "libraryTest:abcd")
         // but not the assets of the dependency's own test
-        checkTestApk(libProject, "filelib2test.txt", null)
+        libProject.checkTestApkResources(
+            "filelib.txt".withContent("library:abcd"),
+            "filelib2.txt".withContent("library2:abcd"),
+            "filelibtest.txt".withContent("libraryTest:abcd")
+        )
 
         // app contain own assets + all dependencies' assets.
-        checkApk(appProject, "file.txt", "app:abcd")
-        checkApk(appProject, "filelib.txt", "library:abcd")
-        checkApk(appProject, "filelib2.txt", "library2:abcd")
-        checkTestApk(appProject, "filetest.txt", "appTest:abcd")
+        appProject.checkApkResources(
+            "file.txt".withContent("app:abcd"),
+            "filelib.txt".withContent("library:abcd"),
+            "filelib2.txt".withContent("library2:abcd")
+        )
         // app test does not contain dependencies' own test assets.
-        checkTestApk(appProject, "filelibtest.txt", null)
-        checkTestApk(appProject, "filelib2test.txt", null)
+        appProject.checkTestApkResources("filetest.txt".withContent("appTest:abcd"))
     }
 
     // ---- APP DEFAULT ---
@@ -152,7 +153,12 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
             execute("app:assembleDebug")
-            checkApk(appProject, "newfile.txt", "newfile content")
+            appProject.checkApkResources(
+                "newfile.txt".withContent("newfile content"),
+                "filelib2.txt",
+                "filelib.txt",
+                "file.txt"
+            )
         }
     }
 
@@ -163,7 +169,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/file.txt")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", null)
+            appProject.checkApkResources("filelib2.txt", "filelib.txt")
         }
     }
 
@@ -174,7 +180,11 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
+            appProject.checkApkResources(
+                "file.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt"
+            )
         }
     }
 
@@ -185,12 +195,20 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
+            appProject.checkApkResources(
+                "file.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
+        appProject.checkApkResources(
+            "file.txt".withContent("app:abcd"),
+            "filelib2.txt",
+            "filelib.txt"
+        )
     }
 
     @Test
@@ -200,12 +218,20 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/filelib.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", "new content")
+            appProject.checkApkResources(
+                "filelib.txt".withContent("new content"),
+                "filelib2.txt",
+                "file.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "filelib.txt", "library:abcd")
+        appProject.checkApkResources(
+            "filelib.txt".withContent("library:abcd"),
+            "filelib2.txt",
+            "file.txt"
+        )
     }
 
     @Test
@@ -215,12 +241,20 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
+            appProject.checkApkResources(
+                "file.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
+        appProject.checkApkResources(
+            "file.txt".withContent("app:abcd"),
+            "filelib2.txt",
+            "filelib.txt"
+        )
     }
 
     @Test
@@ -230,7 +264,11 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/filelib.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", "new content")
+            appProject.checkApkResources(
+                "filelib.txt".withContent("new content"),
+                "filelib2.txt",
+                "file.txt"
+            )
         }
     }
 
@@ -241,7 +279,12 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/new_lib_file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "new_lib_file.txt", "new content")
+            appProject.checkApkResources(
+                "new_lib_file.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt",
+                "file.txt"
+            )
         }
     }
 
@@ -252,7 +295,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/filelib.txt")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", null)
+            appProject.checkApkResources("filelib2.txt", "file.txt")
         }
     }
 
@@ -413,7 +456,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/newfile.txt", "new file content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "newfile.txt", "new file content")
+            appProject.checkTestApkResources("newfile.txt".withContent("new file content"), "filetest.txt")
         }
     }
 
@@ -424,7 +467,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.removeFile("src/androidTest/res/raw/filetest.txt")
             execute("app:assembleAT")
-            checkTestApk(appProject, "filetest.txt", null)
+            appProject.checkTestApkResources()
         }
     }
 
@@ -435,7 +478,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/androidTest/res/raw/filetest.txt", "new content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "filetest.txt", "new content")
+            appProject.checkTestApkResources("filetest.txt".withContent("new content"))
         }
     }
 
@@ -464,10 +507,22 @@ class ResPackagingTest {
 
         execute("app:assembleDebug")
 
-        check(assertThat(appProject.getApk("red", "debug")), "red.txt", "Red Text")
-        check(assertThat(appProject.getApk("red", "debug")), "blue.txt", null)
-        check(assertThat(appProject.getApk("blue", "debug")), "blue.txt", "Blue Text")
-        check(assertThat(appProject.getApk("blue", "debug")), "red.txt", null)
+        appProject.assertApk(ApkSelector.DEBUG.withFlavor("red")) {
+            checkRawResources(
+                "red.txt".withContent("Red Text"),
+                "filelib2.txt",
+                "filelib.txt",
+                "file.txt"
+            )
+        }
+        appProject.assertApk(ApkSelector.DEBUG.withFlavor("blue")) {
+            checkRawResources(
+                "blue.txt".withContent("Blue Text"),
+                "filelib2.txt",
+                "filelib.txt",
+                "file.txt"
+            )
+        }
     }
 
     // ---- LIB DEFAULT ---
@@ -478,7 +533,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
             execute("library:assembleDebug")
-            checkAar(libProject, "newfile.txt", "newfile content")
+            libProject.checkAarResources("newfile.txt".withContent("newfile content"), "filelib.txt")
         }
     }
 
@@ -489,7 +544,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/filelib.txt")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", null)
+            libProject.checkAarResources()
         }
     }
 
@@ -500,7 +555,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/filelib.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", "new content")
+            libProject.checkAarResources("filelib.txt".withContent("new content"))
         }
     }
 
@@ -511,12 +566,12 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/filelib.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", "new content")
+            libProject.checkAarResources("filelib.txt".withContent("new content"))
         }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleDebug")
-        checkAar(libProject, "filelib.txt", "library:abcd")
+        libProject.checkAarResources("filelib.txt".withContent("library:abcd"))
     }
 
     // ---- LIB TEST ---
@@ -527,7 +582,12 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/newfile.txt", "new file content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "newfile.txt", "new file content")
+            libProject.checkTestApkResources(
+                "newfile.txt".withContent("new file content"),
+                "filelibtest.txt",
+                "filelib2.txt",
+                "filelib.txt"
+            )
         }
     }
 
@@ -538,7 +598,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/androidTest/res/raw/filelibtest.txt")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelibtest.txt", null)
+            libProject.checkTestApkResources("filelib2.txt", "filelib.txt")
         }
     }
 
@@ -549,7 +609,11 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/androidTest/res/raw/filelibtest.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelibtest.txt", "new content")
+            libProject.checkTestApkResources(
+                "filelibtest.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt"
+            )
         }
     }
 
@@ -560,12 +624,20 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/filelib.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelib.txt", "new content")
+            libProject.checkTestApkResources(
+                "filelib.txt".withContent("new content"),
+                "filelibtest.txt",
+                "filelib2.txt"
+            )
         }
 
         // files been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "filelib.txt", "library:abcd")
+        libProject.checkTestApkResources(
+            "filelib.txt".withContent("library:abcd"),
+            "filelibtest.txt",
+            "filelib2.txt"
+        )
     }
 
     @Test
@@ -575,12 +647,16 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/filelib2.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelib2.txt", "new content")
+            libProject.checkTestApkResources(
+                "filelib2.txt".withContent("new content"),
+                "filelibtest.txt",
+                "filelib.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
+        libProject.checkTestApkResources("filelib2.txt".withContent("library2:abcd"), "filelibtest.txt", "filelib.txt")
     }
 
     // ---- TEST DEFAULT ---
@@ -591,7 +667,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
             execute("test:assembleDebug")
-            checkApk(testProject, "newfile.txt", "newfile content")
+            testProject.checkApkResources("newfile.txt".withContent("newfile content"), "file.txt")
         }
     }
 
@@ -602,7 +678,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/file.txt")
             execute("test:assembleDebug")
-            checkApk(testProject, "file.txt", null)
+            testProject.checkApkResources()
         }
     }
 
@@ -613,7 +689,7 @@ class ResPackagingTest {
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/file.txt", "new content")
             execute("test:assembleDebug")
-            checkApk(testProject, "file.txt", "new content")
+            testProject.checkApkResources("file.txt".withContent("new content"))
         }
     }
 
@@ -641,10 +717,12 @@ class ResPackagingTest {
          * @param filename the filename
          * @param content the content
          */
-        private fun checkApk(
-            project: GradleTestProject, filename: String, content: String?
+        private fun GradleTestProject.checkApkResources(
+            vararg itemList: Any
         ) {
-            check(assertThat(project.getApk("debug")), filename, content)
+            assertApk(ApkSelector.DEBUG) {
+                checkRawResources(*itemList)
+            }
         }
 
         /**
@@ -658,10 +736,12 @@ class ResPackagingTest {
          * @param filename the filename
          * @param content the content
          */
-        private fun checkTestApk(
-            project: GradleTestProject, filename: String, content: String?
+        private fun GradleTestProject.checkTestApkResources(
+            vararg itemList: Any
         ) {
-            check(assertThat(project.testApk), filename, content)
+            assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+                checkRawResources(*itemList)
+            }
         }
 
         /**
@@ -675,35 +755,35 @@ class ResPackagingTest {
          * @param filename the filename
          * @param content the content
          */
-        private fun checkAar(
-            project: GradleTestProject, filename: String, content: String?
-        ) {
-            project.testAar("debug") { it: AarSubject ->
-                check(it, filename, content)
+        private fun GradleTestProject.checkAarResources(vararg itemList: Any) {
+            assertAar(AarSelector.DEBUG) {
+                checkRawResources(*itemList)
             }
         }
 
-        private fun check(
-            subject: AbstractAndroidSubject<*, *>,
-            filename: String,
-            content: String?
-        ) {
-            if (content != null) {
-                subject.containsFileWithContent("res/raw/$filename", content)
-            } else {
-                subject.doesNotContainResource("raw/$filename")
-            }
-        }
+        private data class StringWithContent(
+            val name: String,
+            val content: String
+        )
 
-        private fun check(
-            subject: AbstractZipSubject<AarSubject, Zip>,
-            filename: String,
-            content: String?
-        ) {
-            if (content != null) {
-                subject.textFile("res/raw/$filename").isEqualTo(content)
-            } else {
-                subject.doesNotContain("raw/$filename")
+        private fun String.withContent(content: String) = StringWithContent(this, content)
+
+        private fun AbstractAndroidArchiveSubject<*,*>.checkRawResources(vararg itemList: Any) {
+            androidResources {
+                val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+                val itemNames = itemList.map {
+                    when (it) {
+                        is StringWithContent -> it.name
+                        is String -> it
+                        else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+                    }
+                }
+
+                // check the list
+                folderView("raw").containsExactly(itemNames)
+                for (item in itemsWithContent) {
+                    resourceAsText("raw/${item.name}").isEqualTo(item.content)
+                }
             }
         }
     }

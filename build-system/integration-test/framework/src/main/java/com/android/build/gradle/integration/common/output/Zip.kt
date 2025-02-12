@@ -25,6 +25,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
@@ -49,6 +51,8 @@ abstract class Zip(
      * Returns a zip entry given a name, returns null if it does not exist
      */
     abstract fun getEntry(path: String): Path?
+
+    abstract fun getZipEntry(path: String): ZipEntry?
 
     /**
      * Returns the list of entries, filtered by the given pattern.
@@ -145,6 +149,15 @@ class SimpleZip(
         return if (entry.exists()) entry else null
     }
 
+    override fun getZipEntry(path: String): ZipEntry? {
+        archivePath ?: return null
+        // we need to open this file as a Zip instead.
+
+        return ZipFile(archivePath.toFile()).use<ZipFile, ZipEntry> {
+            it.getEntry(path)
+        }
+    }
+
     override fun getEntries(filter: ((String) -> Boolean)?): List<String> {
         return filter?.let { f ->
             allEntries.filter(f)
@@ -214,6 +227,13 @@ internal class MultiZipView(
         getEntry(it)
     }
 
+    override fun getZipEntry(path: String): ZipEntry? {
+        return findInZips(path) {
+            val simpleZip = this as SimpleZip
+            simpleZip.getZipEntry(path)
+        }
+    }
+
     override fun getEntries(filter: ((String) -> Boolean)?): List<String> = filter?.let { f ->
         allEntries.filter(f)
     } ?: allEntries
@@ -256,6 +276,10 @@ internal class ZipFolderView(
 
     override fun getEntry(path: String): Path? {
         return zip.getEntry("$prefix$path")
+    }
+
+    override fun getZipEntry(path: String): ZipEntry? {
+        return zip.getZipEntry("$prefix$path")
     }
 
     override fun getEntries(filter: ((String) -> Boolean)?): List<String> {

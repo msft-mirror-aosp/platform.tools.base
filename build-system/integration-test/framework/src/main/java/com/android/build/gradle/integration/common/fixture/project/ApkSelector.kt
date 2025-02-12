@@ -30,6 +30,9 @@ import com.android.utils.combineAsCamelCase
  */
 sealed interface ApkSelector: OutputSelector {
 
+    /** Returns a new instance with a new project name */
+    override fun withName(name: String): ApkSelector
+
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): ApkSelector
 
@@ -87,6 +90,7 @@ sealed interface ApkSelector: OutputSelector {
 }
 
 internal data class ApkSelectorImp(
+    override val name: String? = null,
     private val buildType: String,
     internal val testSuite: String?,
     private val flavors: List<String>,
@@ -96,20 +100,23 @@ internal data class ApkSelectorImp(
     override val fromIntermediates: Boolean = false,
 ): ApkSelector {
 
+    override fun withName(name: String): ApkSelector =
+        ApkSelectorImp(name, buildType, testSuite, flavors, isSigned, filter, suffix, fromIntermediates)
+
     override fun withFlavor(name: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
+        ApkSelectorImp(this.name, buildType, testSuite, flavors + name, isSigned, filter, suffix, fromIntermediates)
 
     override fun withFilter(newFilter: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
+        ApkSelectorImp(this.name, buildType, testSuite, flavors, isSigned, newFilter, suffix, fromIntermediates)
 
     override fun withSuffix(newSuffix: String): ApkSelector =
-        ApkSelectorImp(buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
+        ApkSelectorImp(this.name, buildType, testSuite, flavors, isSigned, filter, newSuffix, fromIntermediates)
 
     override fun forTestSuite(name: String): ApkSelector =
-        ApkSelectorImp(buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
+        ApkSelectorImp(this.name, buildType, name, flavors, isSigned, filter, suffix, fromIntermediates)
 
     override fun fromIntermediates(): ApkSelector = ApkSelectorImp(
-        buildType, testSuite, flavors, isSigned, filter, suffix,
+        this.name, buildType, testSuite, flavors, isSigned, filter, suffix,
         fromIntermediates = true
     )
 

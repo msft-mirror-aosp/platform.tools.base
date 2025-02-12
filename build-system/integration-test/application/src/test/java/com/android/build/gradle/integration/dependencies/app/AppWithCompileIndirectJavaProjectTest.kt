@@ -88,8 +88,14 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
         build.executor.run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/example/android/multiproject/person/People;")
-            containsClass("Lcom/example/android/multiproject/library/PersonView;")
+            classes().containsExactly(
+                "com/example/android/multiproject/person/People",
+                "com/example/android/multiproject/library/PersonView",
+                "pkg/name/app/R",
+                "pkg/name/lib/R",
+                "com/google/common/",
+                "com/google/thirdparty/"
+            )
         }
     }
 }

@@ -89,7 +89,7 @@ class KotlinMultiplatformAssetsTest {
             .toPath()
 
         AarSubject.assertThat(aarPath) {
-            assets().textFile("something.json").isEqualTo(
+            assets().resourceAsText("something.json").isEqualTo(
                 """
                    {
                      "id": 123,

@@ -67,7 +67,7 @@ internal class AndroidTestImpl(
     location,
     projectDefinition,
     namespace,
-), AndroidTestProject, GeneratesApk by GeneratesApkDelegate(location) {
+), AndroidTestProject, GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
 
     override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidTestProject =
         ReversibleAndroidTestProject(this, projectModification)

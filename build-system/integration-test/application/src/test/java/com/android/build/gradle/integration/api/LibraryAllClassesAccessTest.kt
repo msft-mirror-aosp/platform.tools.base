@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.api
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
-import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -71,13 +71,14 @@ class LibraryAllClassesAccessTest(val scope: ScopedArtifacts.Scope) {
         Truth.assertThat(result.didWorkTasks).contains(":debugModify${scope.name}Classes")
         // check resulting APK that new classes is present in the dex.
 
-        project.testAar("debug") {
+        project.assertAar(AarSelector.DEBUG) {
             // check that both interfaces and original code is present in the AAR.
-            it.allJars {
-                containsClass("com/example/helloworld/HelloWorld")
-                containsClass("com/android/api/tests/${scope.name}Interface")
+            classes {
+                containsExactly(
+                    "com/example/helloworld/HelloWorld",
+                    "com/android/api/tests/${scope.name}Interface"
+                )
             }
-
         }
     }
 

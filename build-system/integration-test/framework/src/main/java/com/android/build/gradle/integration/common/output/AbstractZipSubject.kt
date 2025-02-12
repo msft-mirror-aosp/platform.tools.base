@@ -20,16 +20,15 @@ import com.android.build.gradle.integration.common.output.ZipSubject.Companion.z
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
-import com.google.common.truth.Subject
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.function.Consumer
-import java.util.regex.Pattern
 
 /**
  * Base Truth subject for all Zip archive types, providing basic validation for the content.
  */
-open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
+@SubjectDsl
+open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal constructor(
     metadata: FailureMetadata,
     actual: T
 ): BaseZipSubject<S, T>(metadata, actual) {
@@ -62,21 +61,10 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
 
     /**
      * Returns a [IterableSubject] of all the Zip entries (as [String]).
-     *
-     * An optional filter allows selecting a subset of the entries to test against.
      */
-    fun entries(filter: ((String) -> Boolean)? = null): IterableSubject {
+    fun entries(): IterableSubject {
         exists()
-        return check("entries()").that(actual().getEntries(filter))
-    }
-
-    /**
-     * Returns a [IterableSubject] of all the Zip entries (as [String]) matching the giaven
-     * pattern
-     */
-    fun entries(pattern: Pattern): IterableSubject {
-        exists()
-        return check("entries()").that(actual().getEntries(pattern))
+        return check("entries()").that(actual().getEntries())
     }
 
     /**
@@ -125,6 +113,36 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     }
 
     /**
+     * Returns a [ZipSubject] representing the given folder inside the current zip file.
+     *
+     * @param folderPath the path of the folder which must not include a leading /
+     */
+    fun folder(folderPath: String): ZipSubject {
+        val view = ZipFolderView(actual(), folderPath)
+        return check("folderView($folderPath)").about(zips()).that(view)
+    }
+
+    /**
+     * creates a [ZipSubject]  representing the given folder inside the current zip file,
+     * and configures it with the provided action
+     *
+     * @param folderPath the path of the folder which must not include a leading /
+     */
+    fun folder(folderPath: String, action: ZipSubject.() -> Unit) {
+        action(folder(folderPath))
+    }
+
+    /**
+     * creates a [ZipSubject]  representing the given folder inside the current zip file,
+     * and configures it with the provided action
+     *
+     * @param folderPath the path of the folder which must not include a leading /
+     */
+    fun folder(folderPath: String, action: Consumer<ZipSubject>) {
+        action.accept(folder(folderPath))
+    }
+
+    /**
      * creates a [ZipSubject] with the zip content of the file at the given path,
      * and configures it with the provided action
      *
@@ -141,5 +159,11 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
         val entryPath = actual().getEntry(path)!!
         val attributes = Files.readAttributes(entryPath, BasicFileAttributes::class.java)
         return check("fileAttributes($path)").about(FileAttributesSubject.attributes()).that(attributes)
+    }
+
+    fun zipEntry(path: String): ZipEntrySubject {
+        contains(path)
+        val entry = actual().getZipEntry(path)!!
+        return check("zipEntry($path)").about(ZipEntrySubject.zipEntries()).that(entry)
     }
 }

@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
 import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 
 import org.junit.AfterClass;
@@ -70,11 +71,14 @@ public class LibWithCompileLocalJarTest {
     @Test
     public void checkCompileLocalJarIsPackaged() throws Exception {
         // search in secondary jars only.
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 it -> {
-                    it.allSecondaryJars()
-                            .containsClass("com/example/android/multiproject/person/People");
+                    it.secondaryJars()
+                            .classes()
+                            .containsExactly(
+                                    "com/example/android/multiproject/person/People",
+                                    "com/example/android/multiproject/person/Person");
                 });
     }
 

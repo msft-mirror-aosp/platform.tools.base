@@ -20,6 +20,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.AssumeUtil
@@ -71,10 +73,15 @@ class NdkRiscvBuildTest {
         AssumeUtil.assumeIsLinux()
         setupBuildFile()
         project.execute("clean", "assembleDebug")
-        TruthHelper.assertThat(project.getApkByFileName(GradleTestProject.ApkType.DEBUG, "project-riscv64-debug.apk"))
-            .contains("lib/riscv64/libhello-jni.so")
-        TruthHelper.assertThat(project.getApkByFileName(GradleTestProject.ApkType.DEBUG, "project-universal-debug.apk"))
-            .contains("lib/riscv64/libhello-jni.so")
+        project.assertApk(ApkSelector.DEBUG.withFilter("riscv64")) {
+            jniLibs().containsExactly("riscv64/libhello-jni.so")
+        }
+        project.assertApk(ApkSelector.DEBUG.withFilter("universal")) {
+            jniLibs().containsExactly(
+                "x86/libhello-jni.so",
+                "riscv64/libhello-jni.so"
+            )
+        }
     }
 
     @Test
@@ -82,8 +89,11 @@ class NdkRiscvBuildTest {
         AssumeUtil.assumeIsLinux()
         setupBuildFile(isLibrary = true)
         project.execute("clean", "assembleDebug")
-        project.assertThatAar("debug") {
-            contains("jni/riscv64/libhello-jni.so")
+        project.assertAar(AarSelector.DEBUG) {
+            jniLibs().containsExactly(
+                "x86/libhello-jni.so",
+                "riscv64/libhello-jni.so"
+            )
         }
      }
 

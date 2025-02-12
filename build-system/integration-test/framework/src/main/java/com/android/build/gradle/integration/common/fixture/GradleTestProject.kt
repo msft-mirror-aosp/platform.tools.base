@@ -23,10 +23,16 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2.Comp
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
+import com.android.build.gradle.integration.common.fixture.project.GeneratesAarDelegate
+import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
+import com.android.build.gradle.integration.common.fixture.project.GeneratesApkDelegate
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.output.SimpleZip
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getApkLocations
@@ -94,6 +100,7 @@ import java.util.stream.Collectors
 open class GradleTestProject @JvmOverloads constructor(
     /** Return the name of the test project.  */
     val name: String = DEFAULT_TEST_PROJECT_NAME,
+    val gradlePath: String,
     val rootProjectName: String? = null,
     private val testProject: TestProject? = null,
     private val targetGradleVersion: String?,
@@ -132,7 +139,7 @@ open class GradleTestProject @JvmOverloads constructor(
     private val openConnections: MutableList<ProjectConnection>? = mutableListOf(),
     /** root project if one exist. This is null for the actual root */
     private val _rootProject: GradleTestProject? = null
-) : GradleTestInfo, TemporaryProjectModification.FileProvider, TestRule {
+) : GradleTestInfo, TemporaryProjectModification.FileProvider, TestRule, GeneratesApk, GeneratesAar {
     companion object {
         const val ENV_CUSTOM_REPO = "CUSTOM_REPO"
 
@@ -440,7 +447,7 @@ open class GradleTestProject @JvmOverloads constructor(
     /**
      * Create a GradleTestProject representing a subProject of another GradleTestProject.
      *
-     * @param subProject name of the subProject, or the subProject's gradle project path
+     * @param subProject The subProject's gradle project path
      * @param rootProject root GradleTestProject.
      */
     constructor(
@@ -449,6 +456,7 @@ open class GradleTestProject @JvmOverloads constructor(
     ) :
         this(
             name = subProject.substring(subProject.lastIndexOf(':') + 1),
+            gradlePath = subProject,
             rootProjectName = null,
             testProject = null,
             targetGradleVersion = rootProject.targetGradleVersion,
@@ -736,8 +744,15 @@ allprojects { proj ->
      *
      * @param name name of the subProject, or the subProject's gradle project path
      */
-    fun getSubproject(name: String): GradleTestProject {
-        return GradleTestProject(name, rootProject)
+    fun getSubproject(gradlePath: String): GradleTestProject {
+        // if the path isn't a full path, compute it relative to this current project.
+        val path = if (gradlePath.startsWith(":")) {
+            gradlePath
+        }
+        else {
+            "${this.gradlePath}:$gradlePath"
+        }
+        return GradleTestProject(path, rootProject)
     }
 
     /** Return the path to the default Java main source dir.  */
@@ -840,6 +855,50 @@ allprojects { proj ->
                 rootProject.projectDir.toPath().resolve(_profileDirectory)
             }
         }
+
+    private val apkDelegate: GeneratesApk by lazy(LazyThreadSafetyMode.NONE) {
+        GeneratesApkDelegate(gradlePath, projectDir.toPath())
+    }
+
+    override fun assertApk(
+        apkSelector: ApkSelector,
+        action: ApkSubject.() -> Unit
+    ) {
+        apkDelegate.assertApk(apkSelector, action)
+    }
+
+    fun assertApk(
+        apkSelector: ApkSelector,
+        action: Consumer<ApkSubject>
+    ) {
+        apkDelegate.assertApk(apkSelector) {
+            action.accept(this)
+        }
+    }
+
+    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path = apkDelegate.getApkLocationForCopy(apkSelector)
+
+    private val aarDelegate: GeneratesAar by lazy(LazyThreadSafetyMode.NONE) {
+        GeneratesAarDelegate(gradlePath, projectDir.toPath())
+    }
+
+    override fun assertAar(
+        aarSelector: AarSelector,
+        action: AarSubject.() -> Unit
+    ) {
+        aarDelegate.assertAar(aarSelector, action)
+    }
+
+    fun assertAar(
+        aarSelector: AarSelector,
+        action: Consumer<AarSubject>
+    ) {
+        aarDelegate.assertAar(aarSelector) {
+            action.accept(this)
+        }
+    }
+
+    override fun getAarLocationForCopy(aarSelector: AarSelector): Path = aarDelegate.getAarLocationForCopy(aarSelector)
 
     /**
      * Return the output apk File from the application plugin for the given dimension.
@@ -1200,110 +1259,6 @@ allprojects { proj ->
 
     fun getTestApk(vararg dimensions: String): Apk {
         return getApk(ApkType.ANDROIDTEST_DEBUG, *dimensions)
-    }
-
-    fun testAar(
-        dimensions: List<String>,
-        action: AarSubject.() -> Unit
-    ) {
-        val dimensionList: MutableList<String?> =
-            Lists.newArrayListWithExpectedSize(1 + dimensions.size)
-        dimensionList.add(name)
-        dimensionList.addAll(dimensions)
-        val path = getOutputFile(
-            "aar",
-            Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR
-        )
-        AarSubject.assertThat(path) {
-            action(this)
-        }
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun testAar(
-        dimension1: String,
-        action: Consumer<AarSubject>
-    ) {
-        testAar(listOf(dimension1)) { action.accept(this) }
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun testAar(
-        dimension1: String,
-        dimension2: String,
-        action: Consumer<AarSubject>
-    ) {
-        testAar(listOf(dimension1, dimension2)) { action.accept(this) }
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun assertThatAar(
-        dimension1: String,
-        action: AarSubject.() -> Unit
-    ) {
-        testAar(listOf(dimension1), action)
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun assertThatAar(
-        dimension1: String,
-        dimension2: String,
-        action: AarSubject.() -> Unit
-    ) {
-        testAar(listOf(dimension1, dimension2), action)
-    }
-
-    private fun getAarLocation(dimensions: List<String>, ): Path {
-        val dimensionList: MutableList<String?> =
-            Lists.newArrayListWithExpectedSize(1 + dimensions.size)
-        dimensionList.add(name)
-        dimensionList.addAll(dimensions)
-
-        return getOutputFile(
-                "aar",
-                Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR
-            ).toPath()
-    }
-
-    /**
-     * Returns a path to the AAR, so that the file can be copied in other location.
-     *
-     * This should not be used to validate the content of the file. Instead, use [assertThatAar]
-     * or [testAar]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun getAarLocationForCopy( dimension1: String,): Path {
-        return getAarLocation(listOf(dimension1))
     }
 
     /**

@@ -223,14 +223,16 @@ class PrivacySandboxSdkTest {
                 contains("androidGradlePluginVersion=")
             }
 
-            contains("SdkBundleConfig.pb")
+            entries().contains("SdkBundleConfig.pb")
             innerZip("modules.resm") {
-                contains("base/dex/classes.dex")
-                contains("base/assets/asset_from_sdkImplA.txt")
-                contains("base/manifest/AndroidManifest.xml")
-                contains("base/resources.pb")
-                contains("base/root/my_java_resource.txt")
-                contains("SdkModulesConfig.pb")
+                entries().containsAtLeast(
+                    "base/dex/classes.dex",
+                    "base/assets/asset_from_sdkImplA.txt",
+                    "base/manifest/AndroidManifest.xml",
+                    "base/resources.pb",
+                    "base/root/my_java_resource.txt",
+                    "SdkModulesConfig.pb"
+                )
             }
         }
     }

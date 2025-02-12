@@ -229,18 +229,17 @@ class PrivacySandboxSdkConsumptionTest {
             }
             """.trimIndent())
 
-        build.androidApplication(":example-app").withApk(ApkSelector.DEBUG) {
-            // This asset must only be packaged in non-sandbox capable devices, otherwise it may
-            // cause runtime exceptions on supported privacy sandbox platforms.
-            assertThat(entries.map { it.toString() })
-                .doesNotContain(RUNTIME_ENABLED_SDK_TABLE_ASSET_FOR_COMPAT)
+        build.androidApplication(":example-app").assertApk(ApkSelector.DEBUG) {
+            // This asset (RUNTIME_ENABLED_SDK_TABLE) must only be packaged in non-sandbox capable
+            // devices, otherwise it may cause runtime exceptions on supported privacy
+            // sandbox platforms.
+            assets().isEmpty()
 
-            val manifestContent = ApkSubject.getManifestContent(file).joinToString("\n")
-            assertThat(manifestContent).contains(INTERNET_PERMISSION)
-            assertThat(manifestContent)
-                .doesNotContain(FOREGROUND_SERVICE)
-            assertThat(manifestContent)
-                .doesNotContain(USES_SDK_LIBRARY_MANIFEST_ELEMENT)
+            manifest().apply {
+                contains(INTERNET_PERMISSION)
+                doesNotContain(FOREGROUND_SERVICE)
+                doesNotContain(USES_SDK_LIBRARY_MANIFEST_ELEMENT)
+            }
         }
 
         val usesSdkLibrarySplitPath =
@@ -465,12 +464,13 @@ class PrivacySandboxSdkConsumptionTest {
         private const val MY_PRIVACY_SANDBOX_SDK_MANIFEST_PACKAGE =
             "=\"com.example.privacysandboxsdk\""
         private const val INTERNET_PERMISSION =
-            "A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"android.permission.INTERNET\" (Raw: \"android.permission.INTERNET\")"
+            "A: http://schemas.android.com/apk/res/android:name=\"android.permission.INTERNET\" (Raw: \"android.permission.INTERNET\")"
         private const val FOREGROUND_SERVICE = "FOREGROUND_SERVICE"
         private const val INJECTED_PRIVACY_SANDBOX_COMPAT_SUFFIX =
             "-injected-privacy-sandbox-compat.apk"
+        private const val RUNTIME_ENABLED_SDK_TABLE = "RuntimeEnabledSdkTable.xml"
         private const val RUNTIME_ENABLED_SDK_TABLE_ASSET_FOR_COMPAT =
-            "/assets/RuntimeEnabledSdkTable.xml"
+            "/assets/$RUNTIME_ENABLED_SDK_TABLE"
         private const val COMPILE_SDK_VERSION = DEFAULT_COMPILE_SDK_VERSION
         private val COMPILE_SDK_VERSION_CODENAME: String =
             COMPILE_SDK_VERSION.toPlatformBuildVersionName()

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
 import org.junit.AfterClass;
@@ -52,10 +53,10 @@ public class LibMinifyTest {
 
     @Test
     public void checkRClassIsNotPackaged() throws Exception {
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 it -> {
-                    it.allJars().doesNotContainClass("com/android/tests/basic.R");
+                    it.classes().containsExactly("com/android/tests/basic/StringProvider");
                 });
     }
 }

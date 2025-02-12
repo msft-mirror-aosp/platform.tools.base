@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -173,12 +172,19 @@ class R8TaskTest {
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
-            doesNotContainClass("Lexample/MyInterface$-CC;")
+            classes().containsExactly(
+                "example/MyInterface",
+                "pkg/name/app/HelloWorld"
+            )
         }
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
-            hasClass("Lexample/MyInterface$-CC;")
+            classes().containsExactly(
+                "example/MyInterface",
+                "pkg/name/app/HelloWorld",
+                "example/MyInterface\$-CC"
+            )
         }
     }
 

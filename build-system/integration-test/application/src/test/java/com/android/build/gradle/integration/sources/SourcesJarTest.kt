@@ -78,7 +78,7 @@ class SourcesJarTest {
                 "intermediates/source_jar/release/release-sources.jar"
             )
             ZipSubject.assertThat(sourceJar.toPath()) {
-                contains("SomeSource.kt")
+                entries().contains("SomeSource.kt")
             }
         }
     }
@@ -127,7 +127,7 @@ class SourcesJarTest {
                 "intermediates/source_jar/release/release-sources.jar"
             )
             ZipSubject.assertThat(sourceJar.toPath()) {
-                contains("SomeSource.kt")
+                entries().contains("SomeSource.kt")
             }
         }
     }
@@ -176,7 +176,7 @@ class SourcesJarTest {
                 "intermediates/source_jar/release/release-sources.jar"
             )
             ZipSubject.assertThat(sourceJar.toPath()) {
-                contains("SomeSource.java")
+                entries().contains("SomeSource.java")
             }
         }
     }

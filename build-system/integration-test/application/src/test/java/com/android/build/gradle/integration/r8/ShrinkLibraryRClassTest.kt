@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.symbols.Symbol
@@ -114,10 +115,10 @@ class ShrinkLibraryRClassTest {
 
     private fun extractAarJar(): Path {
         val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
-        project.assertThatAar("release") {
-            allJars().containsClass("com/example/lib/UseR")
+        project.assertAar(AarSelector.RELEASE) {
+            classes().containsExactly("com/example/lib/UseR")
         }
-        val aarPath = project.getAarLocationForCopy("release")
+        val aarPath = project.getAarLocationForCopy(AarSelector.RELEASE)
         ZipFile(aarPath.toFile()).use {
             Files.copy(it.getInputStream(it.getEntry("classes.jar")), jar)
         }

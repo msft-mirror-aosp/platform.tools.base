@@ -28,6 +28,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.testutils.TestUtils;
 import com.android.testutils.apk.Apk;
 import com.android.utils.StdLogger;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -35,6 +36,9 @@ import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
+
+import org.junit.Assert;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -44,7 +48,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.Assert;
 
 /** Truth support for apk files. */
 @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")

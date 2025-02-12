@@ -65,7 +65,7 @@ class AppPluginTest {
         build.executor.run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFileWithContent("assets/FileToTransform.txt", "transformed content")
+            assets().resourceAsText("FileToTransform.txt").isEqualTo("transformed content")
         }
     }
 

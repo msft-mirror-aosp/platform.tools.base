@@ -88,17 +88,10 @@ public class JarJarLibTest {
         AarSubject.assertThat(
                 aarPath,
                 aar -> {
-                    aar.allJars().containsClass("com/android/tests/basic/Main");
-
-                    // libraries do not include their dependencies unless they are local (which is
-                    // not
-                    // the case here), so neither versions of Gson should be present here).
-                    aar.allJars().doesNotContainClass("com/google/repacked/gson/Gson");
-                    aar.allJars().doesNotContainClass("com/google/gson/Gson");
-
-                    // check we do not have the R class of the library in there.
-                    aar.allJars().doesNotContainClass("com/android/tests/basic/R");
-                    aar.allJars().doesNotContainClass("com/android/tests/basic/R$drawable");
+                    // libraries do not include their dependencies unless they are
+                    // local (which is not the case here), so neither versions of Gson should
+                    // be present here).
+                    aar.classes().containsExactly("com/android/tests/basic/Main");
                 });
 
         // check the content of the Main class.

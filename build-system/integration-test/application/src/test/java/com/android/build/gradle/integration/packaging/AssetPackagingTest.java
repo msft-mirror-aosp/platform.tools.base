@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.output.AarSubject;
 import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.output.Zip;
@@ -698,8 +699,8 @@ public class AssetPackagingTest {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 it -> {
                     check(it, filename, content);
                 });

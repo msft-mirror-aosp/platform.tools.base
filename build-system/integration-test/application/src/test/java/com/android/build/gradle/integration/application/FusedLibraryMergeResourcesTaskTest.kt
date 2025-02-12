@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
@@ -170,7 +169,7 @@ class FusedLibraryMergeResourcesTaskTest {
 
         build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
             androidResources {
-                textFile("values/values.xml").isEqualTo(
+                resourceAsText("values/values.xml").isEqualTo(
                     //language=xml
                     """
                     <?xml version="1.0" encoding="utf-8"?>
@@ -182,7 +181,7 @@ class FusedLibraryMergeResourcesTaskTest {
                     </resources>
                 """.trimIndent()
                 )
-                textFile("layout/layout.xml").isEqualTo(
+                resourceAsText("layout/layout.xml").isEqualTo(
                     //language=xml
                     """
                     <?xml version="1.0" encoding="utf-8"?>
@@ -225,7 +224,7 @@ class FusedLibraryMergeResourcesTaskTest {
 
         build.executor.run(":app:assembleDebug")
         app.assertApk(ApkSelector.DEBUG) {
-            contains("/res/layout/layout.xml")
+            androidResources().containsExactly("layout/layout.xml")
         }
 
         val incrementalMergedResDir = app
@@ -269,18 +268,14 @@ class FusedLibraryMergeResourcesTaskTest {
                 """.trimIndent())
         }
 
-        build.androidApplication().withApk(ApkSelector.DEBUG) {
-            ApkSubject.assertThat(this).hasClass("Lcom/example/fusedLib1/R\$string;")
-
-            val classes = mainDexFile.get().classes
-            val rClassStrings =
-                classes.get("Lcom/example/fusedLib1/R\$string;")?.fields
-
-            assertThat(rClassStrings?.map { it.name }).containsExactly(
-                "string_from_android_lib_2",
-                "string_from_android_lib_3",
-                "string_overridden"
-            )
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            classes().apply {
+                classDefinition("com/example/fusedLib1/R\$string").fields().containsExactly(
+                    "string_from_android_lib_2",
+                    "string_from_android_lib_3",
+                    "string_overridden"
+                )
+            }
         }
     }
 }

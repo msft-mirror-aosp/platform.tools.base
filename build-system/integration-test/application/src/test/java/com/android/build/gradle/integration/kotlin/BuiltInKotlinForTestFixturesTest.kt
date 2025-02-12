@@ -94,7 +94,7 @@ class BuiltInKotlinForTestFixturesTest {
             .run(":lib:assembleDebugTestFixtures")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
-            mainJar().containsClass("com/foo/library/LibTestFixtureFoo")
+            mainJar().classes().containsExactly("com/foo/library/LibTestFixtureFoo")
         }
     }
 

@@ -24,6 +24,7 @@ import static com.android.testutils.truth.ZipFileSubject.assertThat;
 import com.android.build.gradle.integration.common.category.SmokeTests;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.truth.ScannerSubjectUtils;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
@@ -172,18 +173,22 @@ public class BytecodeGenerationHooksTest {
         project.execute("clean", "lib:assembleDebug");
 
         project.getSubproject("library")
-                .testAar(
-                        "debug",
-                        aar ->
-                                aar.mainJar(
-                                        mainJar -> {
-                                            mainJar.containsClass("com/example/bytecode/Lib");
-                                            mainJar.containsClass(
-                                                    "com/example/bytecode/PostJavacLib");
-                                            mainJar.containsResource("META-INF/lib.kotlin_module");
-                                            mainJar.containsResource(
-                                                    "META-INF/post-lib.kotlin_module");
-                                        }));
+                .assertAar(
+                        AarSelector.DEBUG,
+                        aar -> {
+                            aar.mainJar(
+                                    mainJar -> {
+                                        mainJar.classes()
+                                                .containsExactly(
+                                                        "com/example/lib/LibActivity",
+                                                        "com/example/bytecode/Lib",
+                                                        "com/example/bytecode/PostJavacLib");
+                                        mainJar.resources()
+                                                .containsExactly(
+                                                        "META-INF/lib.kotlin_module",
+                                                        "META-INF/post-lib.kotlin_module");
+                                    });
+                        });
     }
 
     @Test

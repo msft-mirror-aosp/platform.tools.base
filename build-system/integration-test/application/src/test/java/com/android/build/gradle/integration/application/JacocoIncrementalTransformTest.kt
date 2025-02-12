@@ -126,19 +126,23 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/agpTest/libWithClasses/A;")
-            containsClass("Lcom/agpTest/libWithClasses/B;")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                contains("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/B")
+                contains("com/agpTest/libWithClasses/C")
+            }
         }
         build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt").append(
             "\nfun bar() {}"
         )
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/agpTest/libWithClasses/A;")
-            containsClass("Lcom/agpTest/libWithClasses/B;")
-            containsClass("Lcom/agpTest/libWithClasses/BKt;")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                contains("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/B")
+                contains("com/agpTest/libWithClasses/BKt")
+                contains("com/agpTest/libWithClasses/C")
+            }
         }
     }
 
@@ -149,16 +153,20 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/agpTest/libWithClasses/A;")
-            containsClass("Lcom/agpTest/libWithClasses/B;")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                contains("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/B")
+                contains("com/agpTest/libWithClasses/C")
+            }
         }
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            doesNotContainClass("Lcom/agpTest/libWithClasses/A;")
-            containsClass("Lcom/agpTest/libWithClasses/B;")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                doesNotContain("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/B")
+                contains("com/agpTest/libWithClasses/C")
+            }
         }
     }
 
@@ -167,9 +175,11 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/agpTest/libWithClasses/A;")
-            containsClass("Lcom/agpTest/libWithClasses/B;")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                contains("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/B")
+                contains("com/agpTest/libWithClasses/C")
+            }
         }
         // Remove file that impacts file ordering.
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
@@ -177,9 +187,11 @@ class JacocoIncrementalTransformTest {
             .searchAndReplace("class B {}", """class B { fun bar () {} }""")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            doesNotContainClass("Lcom/agpTest/libWithClasses/A;")
-            hasSecondaryClass("Lcom/agpTest/libWithClasses/B;").that().hasMethod("bar")
-            containsClass("Lcom/agpTest/libWithClasses/C;")
+            classes().classes().apply {
+                doesNotContain("com/agpTest/libWithClasses/A")
+                contains("com/agpTest/libWithClasses/C")
+            }
+            secondaryDexes().classDefinition("com/agpTest/libWithClasses/B").methods().contains("bar")
         }
     }
 }

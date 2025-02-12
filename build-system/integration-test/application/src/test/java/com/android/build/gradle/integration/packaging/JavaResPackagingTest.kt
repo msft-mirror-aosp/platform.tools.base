@@ -18,10 +18,12 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
+import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
+import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
@@ -31,7 +33,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import java.io.IOException
 
 /** test for packaging of java resources.  */
 class JavaResPackagingTest {
@@ -47,7 +48,6 @@ class JavaResPackagingTest {
     private lateinit var jarProject: GradleTestProject
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         appProject = project.getSubproject("app")
         libProject = project.getSubproject("library")
@@ -118,88 +118,97 @@ class JavaResPackagingTest {
         Files.asCharSink(File(resFolder, "jar.txt"), Charsets.UTF_8).write("jar:abcd")
     }
 
-    @Throws(IOException::class, InterruptedException::class)
     private fun execute(vararg tasks: String): GradleBuildResult {
         return project.executor().run(*tasks)
     }
 
     @Test
-    @Throws(Exception::class)
     fun testNonIncrementalPackaging() {
         project.executor().run("clean", "assembleDebug", "assembleAndroidTest")
 
         // check the files are there. Start from the bottom of the dependency graph
-        checkAar(libProject2, "library2.txt", "library2:abcd")
-        checkTestApk(libProject2, "library2.txt", "library2:abcd")
-        checkTestApk(libProject2, "library2test.txt", "library2Test:abcd")
+        libProject2.checkAar("library2.txt".withContent("library2:abcd"))
+        libProject2.checkTestApk(
+            "library2.txt".withContent("library2:abcd"),
+            "library2test.txt".withContent("library2Test:abcd")
+        )
 
-        checkAar(libProject, "library.txt", "library:abcd")
-        checkAar(libProject, "localjar.txt", "localjar:abcd")
         // aar does not contain dependency's assets
-        checkAar(libProject, "library2.txt", null)
+        libProject.checkAar(
+            "library.txt".withContent("library:abcd"),
+            "localjar.txt".withContent("localjar:abcd")
+        )
+
         // test apk contains both test-only assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "library.txt", "library:abcd")
-        checkTestApk(libProject, "library2.txt", "library2:abcd")
-        checkTestApk(libProject, "localjar.txt", "localjar:abcd")
-        checkTestApk(libProject, "librarytest.txt", "libraryTest:abcd")
         // but not the assets of the dependency's own test
-        checkTestApk(libProject, "library2test.txt", null)
+        libProject.checkTestApk(
+            "library.txt".withContent("library:abcd"),
+            "library2.txt".withContent("library2:abcd"),
+            "localjar.txt".withContent("localjar:abcd"),
+            "librarytest.txt".withContent("libraryTest:abcd")
+        )
 
         // app contain own assets + all dependencies' assets.
-        checkApk(appProject, "app.txt", "app:abcd")
-        checkApk(appProject, "library.txt", "library:abcd")
-        checkApk(appProject, "library2.txt", "library2:abcd")
-        checkApk(appProject, "jar.txt", "jar:abcd")
-        checkApk(appProject, "localjar.txt", "localjar:abcd")
+        appProject.checkApk(
+            "app.txt".withContent("app:abcd"),
+            "library.txt".withContent("library:abcd"),
+            "library2.txt".withContent("library2:abcd"),
+            "jar.txt".withContent("jar:abcd"),
+            "localjar.txt".withContent("localjar:abcd")
+        )
+
         // app test contains test-ony assets (not app, dependency, or dependency test assets).
-        checkTestApk(appProject, "apptest.txt", "appTest:abcd")
-        checkTestApk(appProject, "app.txt", null)
-        checkTestApk(appProject, "library.txt", null)
-        checkTestApk(appProject, "library2.txt", null)
-        checkTestApk(appProject, "localjar.txt", null)
-        checkTestApk(appProject, "librarytest.txt", null)
-        checkTestApk(appProject, "library2test.txt", null)
+        appProject.checkTestApk("apptest.txt".withContent("appTest:abcd"))
 
         // All APKs should exclude .kotlin_module files, but the AAR should include it.
-        checkApk(appProject, "META-INF", "foo.kotlin_module", null)
-        checkTestApk(appProject, "META-INF", "foo.kotlin_module", null)
-        checkTestApk(libProject, "META-INF", "foo.kotlin_module", null)
-        checkAar(libProject, "META-INF", "foo.kotlin_module", "library:abcd")
+        appProject.assertApk(ApkSelector.DEBUG) {
+            javaResources().folderView("META-INF").containsExactly(
+                "MANIFEST.MF", "CERT.RSA", "CERT.SF", "com/android/build/gradle/app-metadata.properties"
+            )
+        }
+        appProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            javaResources().folderView("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
+        }
+        libProject.checkAarMetaInf("foo.kotlin_module".withContent("library:abcd"))
+        libProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            javaResources().folderView("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
+        }
     }
 
     // ---- APP DEFAULT ---
     @Test
-    @Throws(Exception::class)
     fun testAppProjectWithNewResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project: TemporaryProjectModification ->
             project.addFile("src/main/resources/com/foo/newapp.txt", "newfile content")
             execute("app:assembleDebug")
-            checkApk(appProject, "newapp.txt", "newfile content")
+            appProject.checkApk(
+                "newapp.txt".withContent("newfile content"),
+                "app.txt", "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
     fun testAppProjectWithRemovedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.removeFile("src/main/resources/com/foo/app.txt")
             execute("app:assembleDebug")
-            checkApk(appProject, "app.txt", null)
+            appProject.checkApk("jar.txt", "library.txt", "library2.txt", "localjar.txt")
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithRenamedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
@@ -208,15 +217,17 @@ class JavaResPackagingTest {
             project.addFile("src/main/resources/com/foo/moved_app.txt", "app:abcd")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "app.txt", null)
-            checkApk(appProject, "moved_app.txt", "app:abcd")
+            appProject.checkApk(
+                "moved_app.txt".withContent("app:abcd"),
+                "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithMovedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
@@ -225,50 +236,62 @@ class JavaResPackagingTest {
             project.addFile("src/main/resources/com/bar/app.txt", "app:abcd")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "app.txt", null)
-            checkApk(appProject, "com/bar", "app.txt", "app:abcd")
+            appProject.checkApkWithPath("com/foo", "jar.txt", "library.txt", "library2.txt", "localjar.txt")
+            appProject.checkApkWithPath("com/bar", "app.txt".withContent("app:abcd"))
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithModifiedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.replaceFile("src/main/resources/com/foo/app.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "app.txt", "new content")
+            appProject.checkApk(
+                "app.txt".withContent("new content"),
+                "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithNewDebugResFileOverridingMain() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.addFile("src/debug/resources/com/foo/app.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "app.txt", "new content")
+            appProject.checkApk(
+                "app.txt".withContent("new content"),
+                "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "app.txt", "app:abcd")
+        appProject.checkApk(
+            "app.txt".withContent("app:abcd"),
+            "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+        )
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithNewResFileOverridingDependency() {
         val resourcePath = "src/main/resources/com/foo/library.txt"
 
-        execute("app:clean", "app:assembleDebug")
-        checkApk(appProject, "library.txt", "library:abcd")
+        execute("app:assembleDebug")
+        appProject.checkApk(
+            "library.txt".withContent("library:abcd"),
+            "app.txt", "jar.txt", "library2.txt", "localjar.txt"
+        )
 
         TemporaryProjectModification.doTest(
             appProject
@@ -283,7 +306,10 @@ class JavaResPackagingTest {
                                 + " 'com/foo/library.txt'."
                     )
             }
-            checkApk(appProject, "library.txt", "new content")
+            appProject.checkApk(
+                "library.txt".withContent("new content"),
+                "app.txt", "jar.txt", "library2.txt", "localjar.txt"
+            )
         }
 
         // Trying to figure out why the test is flaky?
@@ -291,25 +317,34 @@ class JavaResPackagingTest {
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "library.txt", "library:abcd")
+        appProject.checkApk(
+            "library.txt".withContent("library:abcd"),
+            "app.txt", "jar.txt", "library2.txt", "localjar.txt"
+        )
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithNewResFileInDebugSourceSet() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.addFile("src/debug/resources/com/foo/app.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "app.txt", "new content")
+            appProject.checkApk(
+                "app.txt".withContent("new content"),
+                "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "app.txt", "app:abcd")
+        appProject.checkApk(
+            "app.txt".withContent("app:abcd"),
+            "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+        )
     }
 
     /**
@@ -317,9 +352,9 @@ class JavaResPackagingTest {
      * must be supported in order to use @Classpath annotations on the MergeJavaResourceTask inputs.
      */
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithReorderedDeps() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             appProject
@@ -334,23 +369,29 @@ class JavaResPackagingTest {
             project.replaceInFile("build.gradle", ":tempJar", ":library")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "library.txt", "library:abcd")
-            checkApk(appProject, "library2.txt", "library2:abcd")
-            checkApk(appProject, "jar.txt", "jar:abcd")
+            appProject.checkApk(
+                "library.txt".withContent("library:abcd"),
+                "library2.txt".withContent("library2:abcd"),
+                "jar.txt".withContent("jar:abcd"),
+                "app.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithModifiedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.replaceFile("src/main/resources/com/foo/library.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "library.txt", "new content")
+            appProject.checkApk(
+                "library.txt".withContent("new content"),
+                "app.txt", "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
@@ -361,23 +402,26 @@ class JavaResPackagingTest {
      * https://issuetracker.google.com/128858509
      */
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithAddedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.addFile("src/main/resources/com/foo/newlibrary.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "newlibrary.txt", "new content")
+            appProject.checkApk(
+                "newlibrary.txt".withContent("new content"),
+                "app.txt", "jar.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectWithRemovedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
@@ -386,73 +430,78 @@ class JavaResPackagingTest {
             project.replaceInFile("build.gradle", "api files(.*)", "")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "library.txt", null)
-            checkApk(appProject, "localjar.txt", null)
+            appProject.checkApk("app.txt", "jar.txt", "library2.txt")
         }
     }
 
     // ---- APP TEST ---
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectTestWithNewResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(
             appProject
          ) { project ->
             project.addFile("src/androidTest/resources/com/foo/newapp.txt", "new file content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "newapp.txt", "new file content")
+            appProject.checkTestApk(
+                "newapp.txt".withContent("new file content"),
+                "apptest.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectTestWithRemovedResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.removeFile("src/androidTest/resources/com/foo/apptest.txt")
             execute("app:assembleAT")
-            checkTestApk(appProject, "apptest.txt", null)
+            appProject.checkTestApk()
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testAppProjectTestWithModifiedResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(
             appProject
         ) { project ->
             project.replaceFile("src/androidTest/resources/com/foo/apptest.txt", "new content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "apptest.txt", "new content")
+            appProject.checkTestApk("apptest.txt".withContent("new content"))
         }
     }
 
     // ---- LIB DEFAULT ---
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectWithNewResFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.addFile("src/main/resources/com/foo/newlibrary.txt", "newfile content")
             execute("library:assembleDebug")
-            checkAar(libProject, "newlibrary.txt", "newfile content")
+            libProject.checkAar(
+                "newlibrary.txt".withContent("newfile content"),
+                "library.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectWithRemovedFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
@@ -461,62 +510,73 @@ class JavaResPackagingTest {
             project.replaceInFile("build.gradle", "api files(.*)", "")
             execute("library:assembleDebug")
 
-            checkAar(libProject, "library.txt", null)
-            checkAar(libProject, "localjar.txt", null)
+            libProject.checkAar()
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectWithModifiedResFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.replaceFile("src/main/resources/com/foo/library.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "library.txt", "new content")
+            libProject.checkAar(
+                "library.txt".withContent("new content"),
+                "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectWithNewResFileInDebugSourceSet() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.addFile("src/debug/resources/com/foo/library.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "library.txt", "new content")
+            libProject.checkAar(
+                "library.txt".withContent("new content"),
+                "localjar.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleDebug")
-        checkAar(libProject, "library.txt", "library:abcd")
+        libProject.checkAar(
+            "library.txt".withContent("library:abcd"),
+            "localjar.txt"
+        )
     }
 
     // ---- LIB TEST ---
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectTestWithNewResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.addFile("src/androidTest/resources/com/foo/newlibrary.txt", "new file content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "newlibrary.txt", "new file content")
+            libProject.checkTestApk(
+                "newlibrary.txt".withContent("new file content"),
+                "librarytest.txt", "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectTestWithRemovedResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(
             libProject
@@ -525,29 +585,31 @@ class JavaResPackagingTest {
             project.replaceInFile("build.gradle", "api files(.*)", "")
             execute("library:assembleAT")
 
-            checkTestApk(libProject, "librarytest.txt", null)
-            checkTestApk(libProject, "localjar.txt", null)
+            libProject.checkTestApk("library.txt", "library2.txt")
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectTestWithModifiedResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(
             libProject
         ) { project ->
             project.replaceFile("src/androidTest/resources/com/foo/librarytest.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "librarytest.txt", "new content")
+            libProject.checkTestApk(
+                "librarytest.txt".withContent("new content"),
+                "library.txt", "library2.txt", "localjar.txt"
+            )
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectTestWithNewResFileOverridingTestedLib() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(
             libProject
@@ -559,18 +621,24 @@ class JavaResPackagingTest {
                     "More than one file was found with OS independent path 'com/foo/library.txt'."
                 )
             }
-            checkTestApk(libProject, "library.txt", "new content")
+            libProject.checkTestApk(
+                "library.txt".withContent("new content"),
+                "librarytest.txt", "library2.txt", "localjar.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "library.txt", "library:abcd")
+        libProject.checkTestApk(
+            "library.txt".withContent("library:abcd"),
+            "librarytest.txt", "library2.txt", "localjar.txt"
+        )
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testLibProjectTestWithNewResFileOverridingDependency() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(
             libProject
@@ -584,17 +652,23 @@ class JavaResPackagingTest {
                     "More than one file was found with OS independent path 'com/foo/library2.txt'."
                 )
             }
-            checkTestApk(libProject, "library2.txt", "new content")
+            libProject.checkTestApk(
+                "library2.txt".withContent("new content"),
+                "librarytest.txt", "library.txt", "localjar.txt"
+            )
         }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "library2.txt", "library2:abcd")
+        libProject.checkTestApk(
+            "library2.txt".withContent("library2:abcd"),
+            "librarytest.txt", "library.txt", "localjar.txt"
+        )
     }
 
     // ---- TEST DEFAULT ---
     @Test
-    @Throws(Exception::class)
+
     fun testTestProjectWithNewResFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
@@ -603,12 +677,14 @@ class JavaResPackagingTest {
         ) { project ->
             project.addFile("src/main/resources/com/foo/newtest.txt", "newfile content")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "newtest.txt", "newfile content")
+            testProject.checkApk(
+                "newtest.txt".withContent("newfile content"),
+                "test.txt")
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testTestProjectWithRemovedResFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
@@ -617,12 +693,12 @@ class JavaResPackagingTest {
         ) { project ->
             project.removeFile("src/main/resources/com/foo/test.txt")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "test.txt", null)
+            testProject.checkApk()
         }
     }
 
     @Test
-    @Throws(Exception::class)
+
     fun testTestProjectWithModifiedResFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
@@ -631,210 +707,166 @@ class JavaResPackagingTest {
         ) { project ->
             project.replaceFile("src/main/resources/com/foo/test.txt", "new content")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "test.txt", "new content")
+            testProject.checkApk("test.txt".withContent("new content"))
         }
     }
 
-    /**
-     * check a test apk has (or not) the given res file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    @Throws(Exception::class)
-    private fun checkTestApk(
-        project: GradleTestProject, filename: String, content: String?
+    private fun createOriginalResFile(
+        projectFolder: File,
+        dimension: String,
+        filename: String,
+        content: String
     ) {
-        checkTestApk(project, "com/foo", filename, content)
+        createOriginalResFile(projectFolder, dimension, "com/foo", filename, content)
     }
 
-    /**
-     * check a test apk has (or not) the given res file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param parentDirRelativePath the relative path of the file's parent directory
-     * @param filename the filename
-     * @param content the content
-     */
-    @Throws(Exception::class)
-    private fun checkTestApk(
-        project: GradleTestProject,
+    private fun createOriginalResFile(
+        projectFolder: File,
+        dimension: String,
         parentDirRelativePath: String,
         filename: String,
-        content: String?
+        content: String
     ) {
-        check(TruthHelper.assertThat(project.testApk), parentDirRelativePath, filename, content)
+        val resourcesFolder = FileUtils.join(projectFolder, "src", dimension, "resources")
+        val parentFolder = File(resourcesFolder, parentDirRelativePath)
+        FileUtils.mkdirs(parentFolder)
+        Files.asCharSink(File(parentFolder, filename), Charsets.UTF_8).write(content)
     }
 
-    companion object {
-        @Throws(Exception::class)
-        private fun createOriginalResFile(
-            projectFolder: File,
-            dimension: String,
-            filename: String,
-            content: String
-        ) {
-            createOriginalResFile(projectFolder, dimension, "com/foo", filename, content)
-        }
+    // --------------------------------
 
-        @Throws(Exception::class)
-        private fun createOriginalResFile(
-            projectFolder: File,
-            dimension: String,
-            parentDirRelativePath: String,
-            filename: String,
-            content: String
-        ) {
-            val resourcesFolder = FileUtils.join(projectFolder, "src", dimension, "resources")
-            val parentFolder = File(resourcesFolder, parentDirRelativePath)
-            FileUtils.mkdirs(parentFolder)
-            Files.asCharSink(File(parentFolder, filename), Charsets.UTF_8).write(content)
-        }
 
-        // --------------------------------
-        /**
-         * check an apk has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param project the project
-         * @param filename the filename
-         * @param content the content
-         */
-        @Throws(Exception::class)
-        private fun checkApk(
-            project: GradleTestProject, filename: String, content: String?
-        ) {
-            checkApk(project, "com/foo", filename, content)
-        }
+    /**
+     * check an apk has (or not) the given res file name.
+     *
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
+     *
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesApk.checkApk(
+        vararg itemList: Any
+    ) {
+        checkApkWithPath("com/foo", *itemList)
+    }
 
-        /**
-         * check an apk has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param project the project
-         * @param parentDirRelativePath the relative path of the file's parent directory
-         * @param filename the filename
-         * @param content the content
-         */
-        @Throws(Exception::class)
-        private fun checkApk(
-            project: GradleTestProject,
-            parentDirRelativePath: String,
-            filename: String,
-            content: String?
-        ) {
-            check(TruthHelper.assertThat(project.getApk("debug")), parentDirRelativePath, filename, content)
+    /**
+     * check an apk has (or not) the given res file name.
+     *
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
+     *
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesApk.checkApkWithPath(
+        folderPath: String,
+        vararg itemList: Any
+    ) {
+        assertApk(ApkSelector.DEBUG) {
+            checkJavaRes(folderPath, *itemList)
         }
+    }
 
-        /**
-         * check an aar has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param project the project
-         * @param filename the filename
-         * @param content the content
-         */
-        @Throws(Exception::class)
-        private fun checkAar(
-            project: GradleTestProject, filename: String, content: String?
-        ) {
-            checkAar(project, "com/foo", filename, content)
+    /**
+     * check an apk has (or not) the given res file name.
+     *
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
+     *
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesApk.checkTestApk(
+        vararg  itemList: Any
+    ) {
+        assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            checkJavaRes("com/foo", *itemList)
         }
+    }
 
-        /**
-         * check an aar has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param project the project
-         * @param parentDirRelativePath the relative path of the file's parent directory
-         * @param filename the filename
-         * @param content the content
-         */
-        @Throws(Exception::class)
-        private fun checkAar(
-            project: GradleTestProject,
-            parentDirRelativePath: String,
-            filename: String,
-            content: String?
-        ) {
-            project.testAar("debug") { it: AarSubject ->
-                check(it, parentDirRelativePath, filename, content)
-            }
+    /**
+     * check an aar has (or not) the given res file name.
+     *
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
+     * content is null the file is not expected to be there.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesAar.checkAar(
+        vararg itemList: Any
+    ) {
+        assertAar(AarSelector.DEBUG) {
+            checkJavaRes("com/foo", *itemList)
         }
+    }
 
-        /**
-         * check an AbstractAndroidSubject has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param subject the AbstractAndroidSubject
-         * @param parentDirRelativePath the relative path of the file's parent directory
-         * @param filename the filename
-         * @param content the content
-         */
-        private fun check(
-            subject: AbstractAndroidSubject<*, *>,
-            parentDirRelativePath: String,
-            filename: String,
-            content: String?
-        ) {
-            if (content != null) {
-                subject.containsJavaResourceWithContent(
-                    "$parentDirRelativePath/$filename", content
-                )
+    /**
+     * check an aar has (or not) the given res file name.
+     *
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
+     * content is null the file is not expected to be there.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesAar.checkAarMetaInf(
+        vararg itemList: Any
+    ) {
+        assertAar(AarSelector.DEBUG) {
+            checkJavaRes("META-INF", *itemList)
+        }
+    }
+
+    /**
+     * Checks the android archive has the specific list of assets. The list must be exhaustive.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun AbstractAndroidArchiveSubject<*, *>.checkJavaRes(
+        folder: String,
+        vararg itemList: Any
+    ) {
+        javaResources().folderView(folder).apply {
+            if (itemList.isEmpty()) {
+                isEmpty()
             } else {
-                subject.doesNotContainJavaResource("$parentDirRelativePath/$filename")
-            }
-        }
+                val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+                val itemNames = itemList.map {
+                    when (it) {
+                        is StringWithContent -> it.name
+                        is String -> it
+                        else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+                    }
+                }
 
-        /**
-         * check an AbstractAndroidSubject has (or not) the given res file name.
-         *
-         *
-         * If the content is non-null the file is expected to be there with the same content. If the
-         * content is null the file is not expected to be there.
-         *
-         * @param subject the AbstractAndroidSubject
-         * @param parentDirRelativePath the relative path of the file's parent directory
-         * @param filename the filename
-         * @param content the content
-         */
-        private fun check(
-            subject: AarSubject,
-            parentDirRelativePath: String,
-            filename: String,
-            content: String?
-        ) {
-            if (content != null) {
-                subject.allJars()
-                    .resourceAsText("$parentDirRelativePath/$filename")
-                    .isEqualTo(content)
-            } else {
-                subject.allJars().doesNotContainResource("$parentDirRelativePath/$filename")
+                // check the list
+                containsExactly(itemNames)
+                for (item in itemsWithContent) {
+                    resourceAsText(item.name).isEqualTo(item.content)
+                }
             }
         }
     }
 }
+
+internal data class StringWithContent(
+    val name: String,
+    val content: String
+)
+
+internal fun String.withContent(content: String) = StringWithContent(this, content)

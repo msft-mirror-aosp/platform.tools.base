@@ -162,6 +162,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
 
         return new GradleTestProject(
                 (name != null ? name : DEFAULT_TEST_PROJECT_NAME),
+                ":",
                 rootProjectName,
                 testProject,
                 targetGradleVersion,

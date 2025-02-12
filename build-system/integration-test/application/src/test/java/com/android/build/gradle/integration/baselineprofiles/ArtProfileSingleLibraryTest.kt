@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.baselineprofiles
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.apk.Zip
@@ -170,7 +171,7 @@ class ArtProfileSingleLibraryTest {
         Truth.assertThat(libFile.readText()).isEqualTo(expectedLibraryContent)
 
         // check packaging.
-        project.getSubproject(":lib").assertThatAar("release") {
+        project.getSubproject(":lib").assertAar(AarSelector.RELEASE) {
             textFile(aarEntryName).isEqualTo(expectedLibraryContent)
         }
 

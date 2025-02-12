@@ -23,7 +23,7 @@ import static com.android.testutils.truth.ZipFileSubject.assertThat;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.output.JarSubject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
@@ -74,8 +74,8 @@ public class ExtractAnnotationsTest {
             ScannerSubject.assertThat(stderr).doesNotContain("Unknown flag");
         }
 
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 debugAar -> {
                     //noinspection SpellCheckingInspection
                     String expectedContent =
@@ -182,18 +182,16 @@ public class ExtractAnnotationsTest {
                     // Check typedefs removals:
 
                     // public typedef: should be present
-                    JarSubject allJars = debugAar.allJars();
-                    allJars.containsClass(
-                            "com/android/tests/extractannotations/ExtractTest$Visibility");
-
-                    // private/protected typedefs: should have been removed
-                    allJars.doesNotContainClass(
-                            "com/android/tests/extractannotations/ExtractTest$Mask");
-                    allJars.doesNotContainClass(
-                            "com/android/tests/extractannotations/ExtractTest$NonMaskType");
-
-                    allJars.containsClass(
-                            "com/android/tests/extractannotations/ExtractTest$StringMode");
+                    // private/protected typedefs (ExtractTest$Mask, ExtractTest$NonMaskType):
+                    // should have been removed
+                    debugAar.classes()
+                            .containsExactly(
+                                    "com/android/tests/extractannotations/TopLevelTypeDef",
+                                    "com/android/tests/extractannotations/Constants",
+                                    "com/android/tests/extractannotations/ExtractTest",
+                                    "com/android/tests/extractannotations/ExtractTest$HiddenClass",
+                                    "com/android/tests/extractannotations/ExtractTest$StringMode",
+                                    "com/android/tests/extractannotations/ExtractTest$Visibility");
 
                     debugAar.innerZip("annotations.zip")
                             .textFile("com/android/tests/extractannotations/annotations.xml")
@@ -202,7 +200,8 @@ public class ExtractAnnotationsTest {
                     // Make sure the NonMask symbol (from a private typedef) is completely gone
                     // from the outer class
                     debugAar.mainJar()
-                            .classContent("com/android/tests/extractannotations/ExtractTest")
+                            .classes()
+                            .classAsBytes("com/android/tests/extractannotations/ExtractTest")
                             .doesNotContain("NonMaskType".getBytes());
                 });
 
@@ -210,13 +209,13 @@ public class ExtractAnnotationsTest {
 
         // Make sure that annotations.zip contains no timestamps (for making it binary identical on
         // every build)
-        project.testAar(
-                "debug",
-                debugAar ->
-                        debugAar.innerZip("annotations.zip")
-                                .fileAttributes(
-                                        "com/android/tests/extractannotations/annotations.xml")
-                                .hasLastModifiedTimeInMillis(0L));
+        project.assertAar(
+                AarSelector.DEBUG,
+                debugAar -> {
+                    debugAar.innerZip("annotations.zip")
+                            .fileAttributes("com/android/tests/extractannotations/annotations.xml")
+                            .hasLastModifiedTimeInMillis(0L);
+                });
     }
 
     /** Regression test for Issue 234865137 */
@@ -247,7 +246,11 @@ public class ExtractAnnotationsTest {
         assertThat(extractTestFile.delete()).isTrue();
 
         getExecutor().run("clean", "assembleDebug");
-        project.testAar("debug", debugAar -> debugAar.innerZip("annotations.zip").exists());
+        project.assertAar(
+                AarSelector.DEBUG,
+                debugAar -> {
+                    debugAar.innerZip("annotations.zip").exists();
+                });
     }
 
     private GradleTaskExecutor getExecutor() {
