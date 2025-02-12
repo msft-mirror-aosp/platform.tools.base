@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.services.R8ParallelBuildService
 import com.android.build.gradle.internal.services.doClose
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_ALL
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_EXTERNAL_LIBS
@@ -860,10 +861,8 @@ abstract class DexMergingWorkAction : ProfileAwareWorkAction<DexMergingWorkActio
         }
 
         val d8ExecutorService = if (parameters.useThreadPool.get()) {
-            // Currently, we use ForkJoinPool() because that's what we used in the past. If we want
-            // to use a different thread pool (e.g., R8ParallelBuildService.newR8ThreadPool), we
-            // will need to check the performance impact.
-            ForkJoinPool()
+            // Create a new thread pool with the same type and size as the one used for R8 tasks
+            R8ParallelBuildService.newR8ThreadPool(R8ParallelBuildService.defaultR8ThreadPoolSize())
         } else {
             MoreExecutors.newDirectExecutorService()
         }
