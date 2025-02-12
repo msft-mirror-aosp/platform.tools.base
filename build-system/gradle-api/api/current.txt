@@ -929,6 +929,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.CompileOptions getCompileOptions();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getCompileSdk();
     method public Integer? getCompileSdkExtension();
+    method public Integer? getCompileSdkMinor();
     method public String? getCompileSdkPreview();
     method public com.android.build.api.dsl.ComposeOptions getComposeOptions();
     method public com.android.build.api.dsl.DataBinding getDataBinding();
@@ -966,6 +967,7 @@ package com.android.build.api.dsl {
     method public void setBuildToolsVersion(String);
     method public void setCompileSdk(Integer?);
     method public void setCompileSdkExtension(Integer?);
+    method public void setCompileSdkMinor(Integer?);
     method public void setCompileSdkPreview(String?);
     method public void setNamespace(String?);
     method public void setNdkPath(String?);
@@ -988,6 +990,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? compileSdk;
     property public abstract Integer? compileSdkExtension;
+    property public abstract Integer? compileSdkMinor;
     property public abstract String? compileSdkPreview;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;

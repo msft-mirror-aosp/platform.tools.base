@@ -128,7 +128,9 @@ class KotlinDslTest {
             """
                 Unsupported value: MadeUp. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
             """.trimIndent()

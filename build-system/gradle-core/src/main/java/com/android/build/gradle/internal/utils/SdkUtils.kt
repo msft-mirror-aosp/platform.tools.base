@@ -28,9 +28,26 @@ data class CompileData(
     val codeName: String? = null,
     val sdkExtension: Int? = null,
     val vendorName: String? = null,
-    val addonName: String? = null
+    val addonName: String? = null,
+    val minorApiLevel: Int? = null
 ) {
     fun isAddon() = vendorName != null && addonName != null
+
+    // Converts to string representation of the Android version
+    // Codename and add-on format is not supported in this method
+    fun toHash(): String? {
+        if (apiLevel == null) {
+            return null
+        }
+        var compileSdkString = "android-$apiLevel"
+        if (minorApiLevel != null) {
+            compileSdkString += ".$minorApiLevel"
+        }
+        if (sdkExtension != null) {
+            compileSdkString += "-ext$sdkExtension"
+        }
+        return compileSdkString
+    }
 }
 
 fun parseTargetHash(targetHash : String): CompileData  {
@@ -38,7 +55,8 @@ fun parseTargetHash(targetHash : String): CompileData  {
     if (apiMatcher.matches()) {
         return CompileData(
             apiLevel = apiMatcher.group(1).toInt(),
-            sdkExtension = apiMatcher.group(3)?.toIntOrNull()
+            minorApiLevel = apiMatcher.group(2)?.toIntOrNull(),
+            sdkExtension = apiMatcher.group(4)?.toIntOrNull()
         )
     }
 
@@ -60,7 +78,9 @@ fun parseTargetHash(targetHash : String): CompileData  {
         """
                     Unsupported value: $targetHash. Format must be one of:
                     - android-31
+                    - android-36.2
                     - android-31-ext2
+                    - android-36.2-ext2
                     - android-T
                     - vendorName:addonName:31
                     """.trimIndent()
@@ -94,6 +114,6 @@ internal fun createTargetSdkVersion(targetSdk: Int?, targetSdkPreview: String?) 
         apiVersion.run { AndroidVersionImpl(apiLevel, codename) }
     } else null
 
-private val API_PATTERN: Pattern = Pattern.compile("^android-([0-9]+)(-ext(\\d+))?$")
+private val API_PATTERN: Pattern = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?(-ext(\\d+))?")
 private val FULL_PREVIEW_PATTERN: Pattern = Pattern.compile("^android-([A-Z][0-9A-Za-z_]*)$")
 private val ADDON_PATTERN: Pattern = Pattern.compile("^(.+):(.+):(\\d+)$")

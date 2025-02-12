@@ -110,12 +110,28 @@ internal class SdkUtilsKtTest {
     }
 
     @Test
+    fun `api level + minor api level`() {
+        Truth.assertThat(parseTargetHash("android-36.2")).isEqualTo(
+            CompileData(apiLevel = 36, minorApiLevel = 2)
+        )
+    }
+
+    @Test
+    fun `api level + minor api level + extension target`() {
+        Truth.assertThat(parseTargetHash("android-36.2-ext12")).isEqualTo(
+            CompileData(apiLevel = 36, sdkExtension = 12, minorApiLevel = 2)
+        )
+    }
+
+    @Test
     fun `preview with extension`() {
         exceptionRule.expectMessage(
             """
                 Unsupported value: android-S-ext12. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
@@ -139,7 +155,9 @@ internal class SdkUtilsKtTest {
             """
                 Unsupported value: android-. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
@@ -152,7 +170,9 @@ internal class SdkUtilsKtTest {
             """
                 Unsupported value: android-23-ext. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
@@ -165,7 +185,9 @@ internal class SdkUtilsKtTest {
             """
                 Unsupported value: :name:31. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
@@ -178,7 +200,9 @@ internal class SdkUtilsKtTest {
             """
                 Unsupported value: vendor::31. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
@@ -191,10 +215,28 @@ internal class SdkUtilsKtTest {
             """
                 Unsupported value: vendor:name:R. Format must be one of:
                 - android-31
+                - android-36.2
                 - android-31-ext2
+                - android-36.2-ext2
                 - android-T
                 - vendorName:addonName:31
                 """.trimIndent())
         parseTargetHash("vendor:name:R")
+    }
+
+    @Test
+    fun `compile data to hash`() {
+        Truth.assertThat(CompileData(apiLevel = 36).toHash())
+            .isEqualTo("android-36")
+        Truth.assertThat(CompileData(apiLevel = 36, sdkExtension = 12).toHash())
+            .isEqualTo("android-36-ext12")
+        Truth.assertThat(CompileData(apiLevel = 36, minorApiLevel = 3).toHash())
+            .isEqualTo("android-36.3")
+        Truth.assertThat(CompileData(apiLevel = 36, sdkExtension = 12, minorApiLevel = 3).toHash())
+            .isEqualTo("android-36.3-ext12")
+        Truth.assertThat(CompileData(minorApiLevel = 3, sdkExtension = 12).toHash()).isNull()
+        Truth.assertThat(CompileData(addonName = "addonName").toHash()).isNull()
+        Truth.assertThat(CompileData(codeName = "codeName").toHash()).isNull()
+        Truth.assertThat(CompileData(vendorName = "vendorName").toHash()).isNull()
     }
 }
