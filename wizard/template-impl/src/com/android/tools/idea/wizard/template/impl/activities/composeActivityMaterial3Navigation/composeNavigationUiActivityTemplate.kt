@@ -98,8 +98,10 @@ val composeNavigationUiActivityMaterial3Template
       LanguageWidget()
     )
 
-    // TODO: Replace with Compose Navigation UI thumbnail
-    thumb { File("bottom-navigation-activity").resolve("template_bottom_navigation_activity.png") }
+    thumb {
+        File("compose-navigation-ui-activity-material3")
+            .resolve("template_compose_navigation_ui_activity_material3.png")
+    }
 
     recipe = { data: TemplateData ->
         composeNavigationUiActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value,
