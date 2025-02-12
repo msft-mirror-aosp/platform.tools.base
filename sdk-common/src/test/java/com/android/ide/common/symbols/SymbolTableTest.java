@@ -17,7 +17,9 @@
 package com.android.ide.common.symbols;
 
 import static com.android.ide.common.symbols.SymbolTestUtils.createSymbol;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -26,11 +28,14 @@ import static org.junit.Assert.fail;
 
 import com.android.resources.ResourceType;
 import com.android.resources.ResourceVisibility;
+
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import org.junit.Test;
 
 public class SymbolTableTest {
 
@@ -103,6 +108,7 @@ public class SymbolTableTest {
                 SymbolTable.builder()
                         .tablePackage("muu")
                         .add(createSymbol("attr", "b", "int", "d1"))
+                        .add(createSymbol("id", "b2", "int", 0))
                         .add(createSymbol("string", "b2", "int", "d2"))
                         .build();
 
@@ -120,8 +126,33 @@ public class SymbolTableTest {
                 SymbolTable.builder()
                         .tablePackage("bar")
                         .add(createSymbol("attr", "b", "int", "d"))
+                        .add(createSymbol("id", "b2", "int", 0))
                         .add(createSymbol("string", "b2", "int", "d2"))
                         .add(createSymbol("color", "b5", "int", "d5"))
+                        .build();
+
+        assertEquals(expected, r);
+    }
+
+    // Regression test for b/387371071
+    @Test
+    public void mergeTablesWithDuplicateResNameDifferentType() {
+        SymbolTable m0 =
+                SymbolTable.builder()
+                        .tablePackage("bar")
+                        .add(createSymbol("id", "b2", "int", 0))
+                        .add(createSymbol("string", "b2", "int", "d2"))
+                        .build();
+
+        SymbolTable m1 = SymbolTable.builder().tablePackage("foo").build();
+
+        SymbolTable r = SymbolTable.merge(Arrays.asList(m0, m1));
+
+        SymbolTable expected =
+                SymbolTable.builder()
+                        .tablePackage("bar")
+                        .add(createSymbol("id", "b2", "int", 0))
+                        .add(createSymbol("string", "b2", "int", "d2"))
                         .build();
 
         assertEquals(expected, r);
