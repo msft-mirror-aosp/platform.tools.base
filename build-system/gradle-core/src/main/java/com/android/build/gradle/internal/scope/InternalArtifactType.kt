@@ -671,6 +671,17 @@ InternalArtifactType<T : FileSystemLocation>(
         fileName = BaselineProfiles.StartupProfileFileName
     )
 
+    object PACKAGES_FOR_R8: InternalArtifactType<RegularFile>(
+        FILE,
+        fileName = SdkConstants.FN_PACKAGE_LIST
+    )
+
+    // Merged file for the lists of packages collected for gradual R8 shrinking
+    object MERGED_PACKAGES_FOR_R8: InternalArtifactType<RegularFile>(
+        FILE,
+        fileName = SdkConstants.FN_PACKAGE_LIST
+    )
+
     override fun getFileSystemLocationName(): String {
         return fileName ?: super.getFileSystemLocationName()
     }

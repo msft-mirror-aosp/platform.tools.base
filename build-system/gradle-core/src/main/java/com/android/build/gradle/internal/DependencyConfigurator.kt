@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.dependency.AndroidXDependencySubstituti
 import com.android.build.gradle.internal.dependency.AsmClassesTransform.Companion.registerAsmTransformForComponent
 import com.android.build.gradle.internal.dependency.ClassesDirToClassesTransform
 import com.android.build.gradle.internal.dependency.CollectClassesTransform
+import com.android.build.gradle.internal.dependency.CollectPackagesForR8Transform
 import com.android.build.gradle.internal.dependency.CollectResourceSymbolsTransform
 import com.android.build.gradle.internal.dependency.DexingRegistration
 import com.android.build.gradle.internal.dependency.EnumerateClassesTransform
@@ -444,6 +445,19 @@ class DependencyConfigurator(
             AndroidArtifacts.ArtifactType.CLASSES_JAR,
             AndroidArtifacts.ArtifactType.JAR_CLASS_LIST
         )
+
+        if (projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
+            registerTransform(
+                CollectPackagesForR8Transform::class.java,
+                AndroidArtifacts.ArtifactType.EXPLODED_AAR,
+                AndroidArtifacts.ArtifactType.PACKAGES_FOR_R8
+            )
+            registerTransform(
+                CollectPackagesForR8Transform::class.java,
+                aarOrJarTypeToConsume.jar,
+                AndroidArtifacts.ArtifactType.PACKAGES_FOR_R8
+            )
+        }
 
         return this
     }

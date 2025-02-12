@@ -121,6 +121,7 @@ import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
+import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -1951,8 +1952,11 @@ abstract class TaskManager(
             project,
             creationConfig.services.projectOptions
         ).execute()
+        if (creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
+            taskFactory.register(MergePackageListsForR8Task.CreationAction(creationConfig))
+        }
         return taskFactory.register(
-                R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
+            R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
     }
 
     protected fun registerParseLibraryResourcesTask(creationConfig: ComponentCreationConfig) {

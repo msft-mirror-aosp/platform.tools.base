@@ -64,6 +64,7 @@ class PublishingSpecsTest {
             AndroidArtifacts.ArtifactType.LINT_PARTIAL_RESULTS,
             AndroidArtifacts.ArtifactType.LINT_VITAL_LINT_MODEL,
             AndroidArtifacts.ArtifactType.LINT_VITAL_PARTIAL_RESULTS,
+            AndroidArtifacts.ArtifactType.PACKAGES_FOR_R8,
             AndroidArtifacts.ArtifactType.PREFAB_PACKAGE_CONFIGURATION,
             AndroidArtifacts.ArtifactType.PREFAB_PACKAGE,
             AndroidArtifacts.ArtifactType.RENDERSCRIPT,
