@@ -189,7 +189,9 @@ open class JarSubject(
             ClassReader(it).accept(classNode, 0)
         }
 
-        return check("classData($binaryName)").about(ClassSubject.classNodes()).that(classNode)
+        return check("classData($binaryName)")
+            .about(ClassSubject.classNodes())
+            .that(ClassDefinitionFromAsm(classNode))
     }
 
     /**

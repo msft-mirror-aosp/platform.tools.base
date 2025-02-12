@@ -23,15 +23,15 @@ import org.objectweb.asm.tree.ClassNode
 
 class ClassSubject(
     metadata: FailureMetadata,
-    actual: ClassNode
-): Subject<ClassSubject, ClassNode>(metadata, actual) {
+    actual: ClassDefinition
+): Subject<ClassSubject, ClassDefinition>(metadata, actual) {
 
     companion object {
         /**
          * Method for getting the subject factory (for use with assertAbout())
          */
-        internal fun classNodes(): Factory<ClassSubject, ClassNode> {
-            return Factory<ClassSubject, ClassNode> { metadata, actual ->
+        internal fun classNodes(): Factory<ClassSubject, ClassDefinition> {
+            return Factory<ClassSubject, ClassDefinition> { metadata, actual ->
                 ClassSubject(metadata, actual)
             }
         }
@@ -42,14 +42,14 @@ class ClassSubject(
     }
 
     fun innerClasses(): IterableSubject {
-        return check("innerClasses()").that(actual().innerClasses.map { it.name })
+        return check("innerClasses()").that(actual().innerClasses)
     }
 
     fun fields(): IterableSubject {
-        return check("fields()").that(actual().fields.map { it.name })
+        return check("fields()").that(actual().fields)
     }
 
     fun methods(): IterableSubject {
-        return check("methods()").that(actual().methods.map { it.name })
+        return check("methods()").that(actual().methods)
     }
 }
