@@ -37,6 +37,7 @@ class TestCaptureScreenshot {
     private val screenshot = BufferedImage(1, 1, BufferedImage.TYPE_BYTE_GRAY)
     private val screenshotBytes = screenshot.toBytes()
     private val emptyByteBuffer = ByteBuffer.allocate(0)
+    private val displayId = 123L
 
     @Test
     fun testScreenCapAsBufferedImageSuccess() {
@@ -50,6 +51,23 @@ class TestCaptureScreenshot {
 
         runBlocking {
             val resultScreenshot = deviceServices.screenCapAsBufferedImage(device)
+            assertArrayEquals(screenshotBytes, resultScreenshot.toBytes())
+        }
+    }
+
+    @Test
+    fun testScreenCapAsBufferedImage_correctPhysicalDisplayIdInCommand() {
+        deviceServices.configureShellV2Command(
+            device,
+            "screencap -p -d $displayId",
+            ByteBuffer.wrap(screenshotBytes),
+            emptyByteBuffer,
+            0
+        )
+
+        runBlocking {
+            val resultScreenshot =
+                deviceServices.screenCapAsBufferedImage(device, physicalDisplayId = displayId)
             assertArrayEquals(screenshotBytes, resultScreenshot.toBytes())
         }
     }
