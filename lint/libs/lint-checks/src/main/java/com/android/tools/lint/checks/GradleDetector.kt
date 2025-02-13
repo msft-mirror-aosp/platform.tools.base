@@ -4096,6 +4096,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             LintModelModuleType.TEST -> false
             LintModelModuleType.INSTANT_APP -> false
             LintModelModuleType.PRIVACY_SANDBOX_SDK -> false
+            LintModelModuleType.FUSED_LIBRARY -> false
           }
       }
     }
