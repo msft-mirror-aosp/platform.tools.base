@@ -102,7 +102,7 @@ class ByteOrderMarkDetector : ResourceXmlDetector(), SourceCodeScanner, GradleSc
           if (psi != null) {
             var closest = psi.findElementAt(i)
             if (closest == null && file.classes.isNotEmpty()) {
-              closest = file.classes[0]
+              closest = file.classes[0].javaPsi
             }
             if (closest != null) {
               context.report(BOM, closest, location, message)

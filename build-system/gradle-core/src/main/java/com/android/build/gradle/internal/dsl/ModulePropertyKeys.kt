@@ -188,7 +188,13 @@ sealed interface ModulePropertyKey<OutputT> {
          * If false - [FusedLibraryDependencyValidationTask] allows all dependencies included in the fused library
          * if true - [FusedLibraryDependencyValidationTask] fails build if a dependency doesn't meet validation checks
          */
-        FUSED_LIBRARY_VALIDATE_DEPENDENCIES("android.experimental.fusedlibrary.validateDependencies", true)
+        FUSED_LIBRARY_VALIDATE_DEPENDENCIES("android.experimental.fusedlibrary.validateDependencies", true),
+
+        /**
+         * If false - when present, the injected ABI will be used
+         * if true - the injected ABI will be ignored and all ABIs will be built
+         */
+        BUILD_ALL_ABIS_IGNORING_IDE_OPTIMIZATIONS("android.experimental.buildAllAbisIgnoringIdeOptimizations", false)
         ;
 
         override fun getValue(properties: Map<String, Any>): Boolean {

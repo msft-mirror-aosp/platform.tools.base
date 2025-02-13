@@ -420,6 +420,29 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
+INTERNAL_TESTS = [
+    "src/test/java/com/android/build/gradle/integration/internal/ArtifactsLocationsReportTest.kt",
+]
+
+gradle_integration_test(
+    name = "internal-tests",
+    srcs = glob(
+        include = INTERNAL_TESTS,
+    ),
+    data = TEST_DATA,
+    maven_repo_zips = [
+        "//tools/base/build-system:android_gradle_plugin",
+    ],
+    maven_repos = [
+        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
+        "//tools/base/build-system/integration-test/application:prebuilts",
+        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_for_compose_prebuilts",
+        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
+    ],
+    shard_count = 1,
+    deps = TEST_DEPS,
+)
+
 gradle_integration_test(
     name = "packaging-tests",
     timeout = "long",

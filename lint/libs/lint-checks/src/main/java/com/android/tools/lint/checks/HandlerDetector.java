@@ -27,13 +27,14 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
+import com.intellij.psi.PsiAnonymousClass;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UAnonymousClass;
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
@@ -41,6 +42,9 @@ import org.jetbrains.uast.UExpression;
 import org.jetbrains.uast.UMethod;
 import org.jetbrains.uast.UObjectLiteralExpression;
 import org.jetbrains.uast.UastUtils;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks that Handler implementations are top level classes or static. See the corresponding check
@@ -53,14 +57,17 @@ public class HandlerDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "HandlerLeak",
                             "Handler reference leaks",
-                            "Since this Handler is declared as an inner class, it may prevent the outer "
-                                    + "class from being garbage collected. If the Handler is using a `Looper` or "
-                                    + "`MessageQueue` for a thread other than the main thread, then there is no issue. "
-                                    + "If the `Handler` is using the `Looper` or `MessageQueue` of the main thread, you "
-                                    + "need to fix your `Handler` declaration, as follows: Declare the `Handler` as a "
-                                    + "static class; In the outer class, instantiate a `WeakReference` to the outer "
-                                    + "class and pass this object to your `Handler` when you instantiate the `Handler`; "
-                                    + "Make all references to members of the outer class using the `WeakReference` object.",
+                            "Since this Handler is declared as an inner class, it may prevent the"
+                                + " outer class from being garbage collected. If the Handler is"
+                                + " using a `Looper` or `MessageQueue` for a thread other than the"
+                                + " main thread, then there is no issue. If the `Handler` is using"
+                                + " the `Looper` or `MessageQueue` of the main thread, you need to"
+                                + " fix your `Handler` declaration, as follows: Declare the"
+                                + " `Handler` as a static class; In the outer class, instantiate a"
+                                + " `WeakReference` to the outer class and pass this object to your"
+                                + " `Handler` when you instantiate the `Handler`; Make all"
+                                + " references to members of the outer class using the"
+                                + " `WeakReference` object.",
                             Category.PERFORMANCE,
                             4,
                             Severity.WARNING,
@@ -97,12 +104,13 @@ public class HandlerDetector extends Detector implements SourceCodeScanner {
                 UastUtils.getParentOfType(
                         declaration, UObjectLiteralExpression.class, true, UMethod.class);
 
+        PsiClass psiClass = declaration.getJavaPsi();
         // Only flag handlers using the default looper
         if (invocation != null) {
             if (isAnonymous && hasLooperArgument(invocation)) {
                 return;
             }
-        } else if (hasLooperConstructorParameter(declaration)) {
+        } else if (hasLooperConstructorParameter(psiClass)) {
             // This is an inner class which takes a Looper parameter:
             // possibly used correctly from elsewhere
             return;
@@ -118,7 +126,7 @@ public class HandlerDetector extends Detector implements SourceCodeScanner {
         if (isAnonymous) {
             name =
                     "anonymous "
-                            + ((UAnonymousClass) declaration)
+                            + ((PsiAnonymousClass) psiClass)
                                     .getBaseClassReference()
                                     .getQualifiedName();
         } else {

@@ -29,48 +29,38 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.rClass
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl
-import com.sun.tools.attach.VirtualMachine
-import java.io.IOException
 import java.lang.management.ManagementFactory
-import java.util.Scanner
+import javax.management.ObjectName
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import sun.tools.attach.HotSpotVirtualMachine
 
 class MemoryLeakTest {
 
   private fun countLiveInstancesOf(clz: String): Int {
-    val pid = ManagementFactory.getRuntimeMXBean().name.substringBefore('@')
-    val vm =
-      try {
-        VirtualMachine.attach(pid) as HotSpotVirtualMachine
-      } catch (e: IOException) {
-        error("$e: Make sure you've added -Djdk.attach.allowAttachSelf=true to your runconfig")
-      }
-    val heap = vm.heapHisto("-live")
+    // Collect a heap histogram using DiagnosticCommandMBean
+    // (which exposes the same functionality as jcmd).
+    val jmxBean = ManagementFactory.getPlatformMBeanServer()
+    val diagnostics = ObjectName("com.sun.management:type=DiagnosticCommand")
+    val cmdArgs = arrayOf(emptyArray<String>())
+    val cmdSignature = arrayOf("[Ljava.lang.String;")
+    val histogram = jmxBean.invoke(diagnostics, "gcClassHistogram", cmdArgs, cmdSignature)
+    check(histogram is String)
 
-    var res = 0
-    heap.bufferedReader().forEachLine { line ->
-      Scanner(line).use { s ->
-        try {
-          // Format: idx #instances #bytes className
-          s.next()
-          val count = s.nextInt()
-          s.next()
-          val currClass = s.next()
-
-          if (currClass == clz) {
-            res = count
-            return@forEachLine
-          }
-        } catch (e: NoSuchElementException) {
-          // Skip this line.
+    // Parse the histogram and find the target class.
+    val whitespace = Regex("\\s+")
+    for (line in histogram.lineSequence()) {
+      // Format: idx: #instances #bytes className (moduleName)
+      val columns = line.split(whitespace).filterNot(String::isEmpty)
+      if (columns.size >= 4) {
+        val (_, count, _, currClass) = columns
+        if (currClass == clz) {
+          return count.toInt()
         }
       }
     }
 
-    return res
+    return 0
   }
 
   private fun lint(): TestLintTask {

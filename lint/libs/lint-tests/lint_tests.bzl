@@ -21,7 +21,6 @@ def lint_test(name, useK2):
         ],
         jvm_flags = [
             "-Dtest.suite.jar=" + name + ".jar",
-            "-Djdk.attach.allowAttachSelf=true",
             # TODO: Inject the cache directory into tests.
             "-Duser.home=/tmp",
         ] + (["-Dlint.use.fir.uast=true"] if useK2 else []),
@@ -30,6 +29,9 @@ def lint_test(name, useK2):
         shard_count = 6,
         tags = [
             "slow",
+        ],
+        add_opens = [
+            "java.base/java.nio.charset",
         ],
         test_class = "com.android.testutils.JarTestSuite",
         deps = [

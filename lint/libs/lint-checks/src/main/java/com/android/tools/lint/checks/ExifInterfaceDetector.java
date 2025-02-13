@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
@@ -36,14 +37,17 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiTypeElement;
-import java.util.ArrayList;
-import java.util.List;
+import com.intellij.psi.PsiVariable;
+
 import org.jetbrains.uast.UElement;
 import org.jetbrains.uast.UImportStatement;
 import org.jetbrains.uast.UQualifiedReferenceExpression;
 import org.jetbrains.uast.UReferenceExpression;
 import org.jetbrains.uast.USimpleNameReferenceExpression;
 import org.jetbrains.uast.UVariable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /** Checks for errors related to the Exif Interface */
 public class ExifInterfaceDetector extends Detector implements SourceCodeScanner {
@@ -59,9 +63,10 @@ public class ExifInterfaceDetector extends Detector implements SourceCodeScanner
             Issue.create(
                             "ExifInterface",
                             "Using `android.media.ExifInterface`",
-                            "The `android.media.ExifInterface` implementation has some known security "
-                                    + "bugs in older versions of Android. There is a new implementation available "
-                                    + "of this library in the support library, which is preferable.",
+                            "The `android.media.ExifInterface` implementation has some known"
+                                + " security bugs in older versions of Android. There is a new"
+                                + " implementation available of this library in the support"
+                                + " library, which is preferable.",
                             Category.CORRECTNESS,
                             6,
                             Severity.WARNING,
@@ -187,7 +192,11 @@ public class ExifInterfaceDetector extends Detector implements SourceCodeScanner
             // PSI workaround: node.getTypeReference just returns null. Operate on PSI
             // type element instead for now since UVariable has a PSI getTypeElement
             // accessor.
-            PsiTypeElement typeElement = node.getTypeElement();
+            PsiVariable variable = (PsiVariable) node.getJavaPsi();
+            PsiTypeElement typeElement = null;
+            if (variable != null) {
+                typeElement = variable.getTypeElement();
+            }
             if (typeElement != null) {
                 PsiJavaCodeReferenceElement referenceElement =
                         typeElement.getInnermostComponentReferenceElement();

@@ -45,6 +45,30 @@ class SystemImageHashUtilsTest {
     }
 
     @Test
+    fun testGetPageAlignmentSuffix() {
+        assertEquals(
+            null,
+            getPageAlignmentSuffix("google_apis")
+        )
+
+        assertEquals(
+            null,
+            getPageAlignmentSuffix("default")
+        )
+
+        assertEquals(
+            "_ps16k",
+            getPageAlignmentSuffix("google_apis_ps16k")
+        )
+
+        // if we end up supporting other page sizes in the future
+        assertEquals(
+            "_ps32k",
+            getPageAlignmentSuffix("default_ps32k")
+        )
+    }
+
+    @Test
     fun testParseApiFromHash() {
         assertEquals(29, parseApiFromHash("system-images;android-29;default;x86"))
         assertEquals(24, parseApiFromHash("system-images;android-24;default;arm64-v8a"))

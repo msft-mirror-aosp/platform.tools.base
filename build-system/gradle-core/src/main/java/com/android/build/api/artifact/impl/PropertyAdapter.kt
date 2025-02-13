@@ -17,6 +17,7 @@
 package com.android.build.api.artifact.impl
 
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -57,7 +58,7 @@ interface PropertyAdapter<FileTypeT, T> {
 /**
  * Implementation of [PropertyAdapter] for a single [FileSystemLocation] element.
  */
-class SinglePropertyAdapter<FileTypeT: FileSystemLocation>(val property: Property<FileTypeT>)
+class SinglePropertyAdapter<FileTypeT: FileSystemLocation>(val property: FileSystemLocationProperty<FileTypeT>)
     : PropertyAdapter<FileTypeT, FileTypeT> {
 
     override fun disallowChanges() {
@@ -75,13 +76,22 @@ class SinglePropertyAdapter<FileTypeT: FileSystemLocation>(val property: Propert
     override fun from(source: PropertyAdapter<FileTypeT, FileTypeT>) {
         set(source.get())
     }
+
+    fun locationOnly(): Provider<FileTypeT> {
+        return property.locationOnly
+    }
 }
 
 /**
  * Implementation of [PropertyAdapter] for multiple [FileSystemLocation] elements
  */
-class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(val property: ListProperty<FileTypeT>):
+class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(
+    val property: ListProperty<FileTypeT>,
+    val propertyAllocator: () -> FileSystemLocationProperty<FileTypeT>,
+):
     PropertyAdapter<FileTypeT, List<FileTypeT>> {
+
+    private val locationsOnly = mutableListOf<Provider<FileTypeT>>()
 
     override fun disallowChanges() {
         property.disallowChanges()
@@ -91,7 +101,10 @@ class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(val property: ListP
 
     override fun set(with: Provider<FileTypeT>) {
         property.empty()
-        property.add(with)
+        add(with)
+        locationsOnly.add(propertyAllocator().also {
+            it.set(with)
+        }.locationOnly)
     }
 
     /**
@@ -99,6 +112,7 @@ class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(val property: ListP
      */
     fun empty(): MultiplePropertyAdapter<FileTypeT> {
         property.empty()
+        locationsOnly.clear()
         return this
     }
 
@@ -107,6 +121,9 @@ class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(val property: ListP
      */
     fun add(item: Provider<FileTypeT>) {
         property.add(item)
+        locationsOnly.add(propertyAllocator().also {
+            it.set(item)
+        }.locationOnly)
     }
 
     /**
@@ -120,5 +137,10 @@ class MultiplePropertyAdapter<FileTypeT: FileSystemLocation>(val property: ListP
     override fun from(source: PropertyAdapter<FileTypeT, List<FileTypeT>>) {
         property.empty()
         property.set(source.get())
+        source as MultiplePropertyAdapter<FileTypeT>
+        locationsOnly.clear()
+        locationsOnly.addAll(source.locationsOnly)
     }
+
+    fun locationOnly(): List<Provider<FileTypeT>> = locationsOnly
 }

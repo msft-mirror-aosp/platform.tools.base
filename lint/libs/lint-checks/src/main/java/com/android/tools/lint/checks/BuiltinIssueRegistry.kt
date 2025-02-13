@@ -483,6 +483,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           TypographyDetector.OTHER,
           TypographyDetector.QUOTES,
           UastImplementationDetector.ISSUE,
+          UElementAsPsiDetector.ISSUE,
           UnsafeBroadcastReceiverDetector.ACTION_STRING,
           UnsafeBroadcastReceiverDetector.BROADCAST_SMS,
           UnsafeImplicitIntentDetector.ISSUE,

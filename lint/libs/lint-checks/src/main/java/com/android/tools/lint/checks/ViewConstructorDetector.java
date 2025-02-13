@@ -32,14 +32,17 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
-import com.intellij.psi.PsiAnonymousClass;
+
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiParameterList;
 import com.intellij.psi.PsiTypes;
+
+import org.jetbrains.uast.UAnonymousClass;
+import org.jetbrains.uast.UClass;
+
 import java.util.Collections;
 import java.util.List;
-import org.jetbrains.uast.UClass;
 
 /** Looks for custom views that do not define the view constructors needed by UI builders */
 public class ViewConstructorDetector extends Detector implements SourceCodeScanner {
@@ -48,16 +51,17 @@ public class ViewConstructorDetector extends Detector implements SourceCodeScann
             Issue.create(
                             "ViewConstructor",
                             "Missing View constructors for XML inflation",
-                            "Some layout tools (such as the Android layout editor) need to "
-                                    + "find a constructor with one of the following signatures:\n"
-                                    + "* `View(Context context)`\n"
-                                    + "* `View(Context context, AttributeSet attrs)`\n"
-                                    + "* `View(Context context, AttributeSet attrs, int defStyle)`\n"
-                                    + "\n"
-                                    + "If your custom view needs to perform initialization which does not apply when "
-                                    + "used in a layout editor, you can surround the given code with a check to "
-                                    + "see if `View#isInEditMode()` is false, since that method will return `false` "
-                                    + "at runtime but true within a user interface editor.",
+                            "Some layout tools (such as the Android layout editor) need to find a"
+                                + " constructor with one of the following signatures:\n"
+                                + "* `View(Context context)`\n"
+                                + "* `View(Context context, AttributeSet attrs)`\n"
+                                + "* `View(Context context, AttributeSet attrs, int defStyle)`\n"
+                                + "\n"
+                                + "If your custom view needs to perform initialization which does"
+                                + " not apply when used in a layout editor, you can surround the"
+                                + " given code with a check to see if `View#isInEditMode()` is"
+                                + " false, since that method will return `false` at runtime but"
+                                + " true within a user interface editor.",
                             Category.USABILITY,
                             3,
                             Severity.WARNING,
@@ -110,7 +114,7 @@ public class ViewConstructorDetector extends Detector implements SourceCodeScann
         JavaEvaluator evaluator = context.getEvaluator();
         if (evaluator.isAbstract(declaration)
                 || evaluator.isPrivate(declaration)
-                || declaration instanceof PsiAnonymousClass) {
+                || declaration instanceof UAnonymousClass) {
             // Ignore abstract, private and anonymous classes
             return;
         }
@@ -123,7 +127,7 @@ public class ViewConstructorDetector extends Detector implements SourceCodeScann
         }
 
         boolean found = false;
-        for (PsiMethod constructor : declaration.getConstructors()) {
+        for (PsiMethod constructor : declaration.getJavaPsi().getConstructors()) {
             if (isXmlConstructor(evaluator, constructor)) {
                 found = true;
                 break;

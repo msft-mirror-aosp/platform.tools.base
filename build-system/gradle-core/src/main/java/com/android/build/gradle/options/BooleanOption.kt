@@ -63,9 +63,6 @@ enum class BooleanOption(
     // tell bundletool to only extract instant APKs.
     IDE_EXTRACT_INSTANT(PROPERTY_EXTRACT_INSTANT_APK, false, ApiStage.Stable),
 
-    // Flag used to indicate a "deploy as instant" run configuration.
-    IDE_DEPLOY_AS_INSTANT_APP(PROPERTY_DEPLOY_AS_INSTANT_APP, false, ApiStage.Stable),
-
     ENABLE_STUDIO_VERSION_CHECK("android.injected.studio.version.check", true, ApiStage.Stable),
     ENABLE_STABLE_IDS(PROPERTY_BUILD_WITH_STABLE_IDS, false, ApiStage.Stable),
 
@@ -372,6 +369,15 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    /**
+     * Dump all artifacts locations in a json file in the variant build output folder.
+     */
+    DUMP_ARTIFACTS_LOCATIONS(
+        "android.debug.dumpArtifactsLocations",
+        defaultValue = false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
@@ -463,6 +469,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(BUILD_CONFIG_GLOBAL_PROPERTY))
     ,
+
+    // Flag used to indicate a "deploy as instant" run configuration.
+    @Suppress("unused")
+    IDE_DEPLOY_AS_INSTANT_APP(PROPERTY_DEPLOY_AS_INSTANT_APP, false, ApiStage.Deprecated(VERSION_9_0)),
 
     /* -----------------
      * ENFORCED FEATURES
@@ -908,7 +918,8 @@ enum class BooleanOption(
     ENABLE_TEST_SHARDING("android.androidTest.shardBetweenDevices", false, FeatureStage.Removed(Version.VERSION_8_2, "Cross device sharding is no longer supported.")),
 
     @Suppress("unused")
-    ENABLE_VCS_INFO("android.enableVcsInfo", false, FeatureStage.Removed(Version.VERSION_8_3, "This feature is now enabled in the DSL per build type with \"vcsInfo.include = true\"."))
+    ENABLE_VCS_INFO("android.enableVcsInfo", false, FeatureStage.Removed(Version.VERSION_8_3, "This feature is now enabled in the DSL per build type with \"vcsInfo.include = true\".")),
+
     ; // end of enums
 
     override val status = stage.status

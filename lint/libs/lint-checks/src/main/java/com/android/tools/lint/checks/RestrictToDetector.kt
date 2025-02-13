@@ -234,7 +234,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       assert(visibility == VISIBILITY_PROTECTED)
 
       val methodClass = member.containingClass
-      val thisClass = node.getParentOfType<UClass>(UClass::class.java, true)
+      val thisClass = node.getParentOfType(UClass::class.java, true)?.javaPsi
       if (thisClass == null || methodClass == null) {
         return
       }
@@ -324,7 +324,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         node is UTypeReferenceExpression -> PsiTypesUtil.getPsiClass(node.type)
         member != null -> member.containingClass
         node is UCallExpression -> node.classReference?.resolve() as? PsiClass?
-        node is PsiClass -> node
+        node is UClass -> node.javaPsi
         else -> null
       }
 
@@ -454,7 +454,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           if (outer == null) {
             break
           }
-          if (evaluator.inheritsFrom(outer, qualifiedName, false)) {
+          if (evaluator.inheritsFrom(outer.javaPsi, qualifiedName, false)) {
             isSubClass = true
             break
           }

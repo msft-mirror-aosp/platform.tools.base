@@ -29,7 +29,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.HashMap
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 
@@ -157,9 +156,22 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
         artifactId: String,
         version: Version
     ): List<Dependency> {
+        return findDependencies(groupId, artifactId, version, "compile")
+    }
+
+    /**
+     * Like [findCompileDependencies], but you can specify a specific POM scope
+     * to match, such as "runtime"
+     */
+    fun findDependencies(
+        groupId: String,
+        artifactId: String,
+        version: Version,
+        requiredScope: String
+    ): List<Dependency> {
         val packageInfo = getPackageMap()[groupId] ?: return emptyList()
         val artifactInfo = packageInfo.findArtifact(artifactId)
-        return artifactInfo?.findCompileDependencies(version, packageInfo) ?: emptyList()
+        return artifactInfo?.findDependencies(version, packageInfo, requiredScope) ?: emptyList()
     }
 
     private fun findArtifact(groupId: String, artifactId: String): ArtifactInfo? {
@@ -198,22 +210,24 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                 .filter { allowPreview || !it.isPreview }
                 .maxOrNull()
 
-        fun findCompileDependencies(
+        fun findDependencies(
             version: Version,
-            packageInfo: PackageInfo
+            packageInfo: PackageInfo,
+            requiredScope: String = "compile"
         ): List<Dependency> {
-            return dependencyInfo[version] ?: loadCompileDependencies(version, packageInfo)
+            return dependencyInfo[version] ?: loadDependencies(version, packageInfo, requiredScope)
         }
 
-        private fun loadCompileDependencies(
+        private fun loadDependencies(
             version: Version,
-            packageInfo: PackageInfo
+            packageInfo: PackageInfo,
+            requiredScope: String,
         ): List<Dependency> {
             if (findVersion({ it == version }, true) == null) {
                 // Do not attempt to load a pom file that is known not to exist
                 return emptyList()
             }
-            val dependencies = packageInfo.loadCompileDependencies(id, version)
+            val dependencies = packageInfo.loadDependencies(id, version, requiredScope)
             dependencyInfo[version] = dependencies
             return dependencies
         }
@@ -258,10 +272,10 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
 
         open fun findArtifact(id: String): ArtifactInfo? = artifacts[id]
 
-        fun loadCompileDependencies(id: String, version: Version): List<Dependency> {
+        fun loadDependencies(id: String, version: Version, requiredScope: String): List<Dependency> {
             val file = "${pkg.replace('.', '/')}/$id/$version/$id-$version.pom"
             val stream = findData(file)
-            return stream?.use { readCompileDependenciesFromPomFile(stream, file) } ?: emptyList()
+            return stream?.use { readDependenciesFromPomFile(stream, file, requiredScope) } ?: emptyList()
         }
 
         private fun initializeIndex(): Map<String, ArtifactInfo> {
@@ -293,9 +307,10 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                 error(e, null)
             }
 
-        private fun readCompileDependenciesFromPomFile(
+        private fun readDependenciesFromPomFile(
             stream: InputStream,
-            file: String
+            file: String,
+            requiredScope: String
         ): List<Dependency> {
 
             return try {
@@ -305,7 +320,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                 while (parser.next() != XmlPullParser.END_DOCUMENT) {
                     val eventType = parser.eventType
                     if (eventType == XmlPullParser.START_TAG && parser.name == "dependency") {
-                        val dependency = readCompileDependency(parser)
+                        val dependency = readDependency(parser, requiredScope)
                         if (dependency != null) {
                             dependencies.add(dependency)
                         }
@@ -322,7 +337,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
             }
         }
 
-        private fun readCompileDependency(parser: KXmlParser): Dependency? {
+        private fun readDependency(parser: KXmlParser, requiredScope: String): Dependency? {
             var groupId = ""
             var artifactId = ""
             var version = ""
@@ -341,7 +356,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                             check(groupId, "groupId")
                             check(artifactId, "artifactId")
                             check(version, "version")
-                            return if (scope == "compile")
+                            return if (scope == requiredScope)
                                 Dependency(groupId, artifactId, RichVersion.parse(version))
                             else
                                 null

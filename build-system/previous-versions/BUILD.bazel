@@ -178,6 +178,7 @@ AGP_7_4_1_ARTIFACTS = [
     "@maven//:com.android.tools.build.aapt2_7.4.1-8841542",
     "@maven//:com.android.tools.build.gradle_7.4.1",
     "@maven//:com.android.tools.lint.lint-gradle_30.4.1",
+    "@maven//:com.google.protobuf.protobuf-bom_3.17.2",
 ]
 
 maven_repository(
@@ -193,6 +194,7 @@ AGP_7_3_0_ARTIFACTS = [
     "@maven//:com.android.tools.build.aapt2_7.3.0-8691043",
     "@maven//:com.android.tools.build.gradle_7.3.0",
     "@maven//:com.android.tools.lint.lint-gradle_30.3.0",
+    "@maven//:com.google.protobuf.protobuf-bom_3.17.2",
 ]
 
 maven_repository(
@@ -210,6 +212,8 @@ AGP_7_2_0_ARTIFACTS = [
     "@maven//:com.android.tools.build.aapt2_7.2.0-7984345",
     "@maven//:com.android.tools.build.gradle_7.2.0",
     "@maven//:com.android.tools.lint.lint-gradle_30.2.0",
+    "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.4.1",  # via module metadata
+    "@maven//:org.jetbrains.markdown_0.2.1",  # via module metadata
 ]
 
 maven_repository(
@@ -225,6 +229,8 @@ AGP_7_1_0_ARTIFACTS = [
     "@maven//:com.android.tools.build.aapt2_7.1.0-7984345",
     "@maven//:com.android.tools.build.gradle_7.1.0",
     "@maven//:com.android.tools.lint.lint-gradle_30.1.0",
+    "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.4.1",  # via module metadata
+    "@maven//:org.jetbrains.markdown_0.2.1",  # via module metadata
 ]
 
 maven_repository(

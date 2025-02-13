@@ -38,7 +38,6 @@ import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.skipParenthesizedExprUp
-import org.jetbrains.uast.textRange
 
 /**
  * Test mode which introduces import aliases for all imported types to make sure detectors handle
@@ -179,8 +178,8 @@ class ImportAliasTestMode :
         override fun afterVisitFile(node: UFile) {
           if (aliasNames.isNotEmpty()) {
             val start =
-              node.imports.lastOrNull()?.textRange?.endOffset
-                ?: node.classes.firstOrNull()?.textRange?.startOffset
+              node.imports.lastOrNull()?.sourcePsi?.textRange?.endOffset
+                ?: node.classes.firstOrNull()?.sourcePsi?.textRange?.startOffset
                 ?: run {
                   val index = source.indexOf(node.packageName)
                   val end = index + node.packageName.length

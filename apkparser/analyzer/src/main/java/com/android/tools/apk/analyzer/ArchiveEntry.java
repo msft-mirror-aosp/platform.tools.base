@@ -71,6 +71,12 @@ public abstract class ArchiveEntry {
         return -1L;
     }
 
+    public void setIsElf(boolean isElf) {}
+
+    public boolean getIsElf() {
+        return false;
+    }
+
     public void setIsFileCompressed(boolean isCompressed) {}
 
     public boolean isFileCompressed() {

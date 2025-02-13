@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.declarative
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -28,14 +29,20 @@ class GradleDeclarativeTest {
         .fromTestProject("gradleDeclarative")
         .create()
 
+    @Before
+    fun setAgpVersion() {
+        TestFileUtils.searchAndReplace(project.settingsFile, "dcl_plugin_version", com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION)
+    }
+
     @Test
     fun testLibraryAssembles() {
-        TestFileUtils.searchAndReplace(project.settingsFile, "dcl_plugin_version", com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION)
         project.executor().run(":lib:assemble")
         val debugAar = project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar")
         val releaseAar = project.getSubproject("lib").getOutputFile("aar", "lib-release.aar")
+        val benchmarkAar = project.getSubproject("lib").getOutputFile("aar", "lib-benchmark.aar")
 
         assertThat(debugAar.exists()).isTrue()
         assertThat(releaseAar.exists()).isTrue()
+        assertThat(benchmarkAar.exists()).isTrue()
     }
 }

@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
@@ -438,7 +439,7 @@ fun privacySandboxSdkAppLargeSampleProjectWithFeatures(
             }
             addSdkSubprojects()
             buildFeature(":feature", ":client-app") {
-                configurePrivacySandboxTestProject()
+                this@from.configurePrivacySandboxTestProject()
             }
             action()
         }
@@ -884,7 +885,7 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
                 "src/androidTest/java/com/example/client",
                 getAndroidTestSource("package com.example.client")
             )
-            action()
+            this@androidApplication.action()
         }
     }
 }

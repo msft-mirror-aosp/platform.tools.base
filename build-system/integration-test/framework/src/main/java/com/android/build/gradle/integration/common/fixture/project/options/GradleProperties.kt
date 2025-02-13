@@ -16,12 +16,14 @@
 
 package com.android.build.gradle.integration.common.fixture.project.options
 
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 
 /**
  * Object to add Gradle Properties to a test project (via [GradleRule]
  */
+@GradleDefinitionDsl
 interface GradlePropertiesBuilder {
 
     /**

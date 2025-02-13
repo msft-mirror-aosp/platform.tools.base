@@ -19,6 +19,8 @@ import com.android.testutils.TestUtils.resolveWorkspacePath
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.parseFirst
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.nameFromSource
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
@@ -261,7 +263,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
         it is UMethod &&
           it.name == "getSystemService" &&
           it.uastParameters.size == 1 &&
-          it.uastParameters[0].type.canonicalText == "java.lang.String"
+          it.uastParameters.single().typeFromPsi?.canonicalText == "java.lang.String"
       }
     val doc = (getContextMethod.sourcePsi as PsiMethod).docComment
     val s = doc?.text ?: error("Couldn't find method doc")
@@ -321,7 +323,8 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
    * class.
    */
   private fun extractFromTypeDef() {
-    val serviceName = context.uastFile!!.classes[0].innerClasses.single { it.name == "ServiceName" }
+    val serviceName =
+      context.uastFile!!.classes[0].innerClasses.single { it.nameFromSource == "ServiceName" }
     val typeDefAnnotation =
       serviceName.uAnnotations.single { it.qualifiedName?.endsWith("StringDef") == true }
     val typeDef = typeDefAnnotation.sourcePsi?.text ?: error("Missing annotation")
@@ -362,7 +365,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
       ) {
         continue
       }
-      val name = field.name
+      val name = field.nameFromSource
 
       val inline = doc.descriptionElements.filterIsInstance<PsiInlineDocTag>()
 
@@ -424,7 +427,7 @@ class ServiceCastDataGenerator(private val viewDetectorFile: File, contextSource
         }
       }
 
-      if (serviceClass != null) {
+      if (serviceClass != null && name != null) {
         docFields[name] = serviceClass
       }
     }

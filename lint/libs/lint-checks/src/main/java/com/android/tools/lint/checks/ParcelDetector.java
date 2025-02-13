@@ -99,11 +99,12 @@ public class ParcelDetector extends Detector implements SourceCodeScanner {
 
         // Parceling spans is handled in TextUtils#CHAR_SEQUENCE_CREATOR
         if (context.getEvaluator()
-                .implementsInterface(declaration, "android.text.ParcelableSpan", false)) {
+                .implementsInterface(
+                        declaration.getJavaPsi(), "android.text.ParcelableSpan", false)) {
             return;
         }
 
-        boolean isKotlin = Lint.isKotlin(declaration);
+        boolean isKotlin = Lint.isKotlin(declaration.getLang());
         if (isKotlin) {
             if (hasParcelizeAnnotation(declaration)) {
                 // Already using @Parcelize: nothing to suggest (and don't warn about missing
@@ -133,7 +134,7 @@ public class ParcelDetector extends Detector implements SourceCodeScanner {
                     "This class implements `Parcelable` but does not "
                             + "provide a `CREATOR` field";
             context.report(ISSUE, declaration, location, message, null);
-        } else if (Lint.isKotlin(field) && !hasCreatorInnerClass(declaration)) {
+        } else if (Lint.isKotlin(field.getLanguage()) && !hasCreatorInnerClass(declaration)) {
             // Make sure fields in Kotlin are marked @JvmField
             if (!hasJvmFieldAnnotation(field)) {
                 Location location = context.getNameLocation(field);

@@ -36,9 +36,11 @@ import java.io.File
 import kotlin.math.min
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.toUElement
 import org.junit.Assert.assertEquals
@@ -190,7 +192,7 @@ class LintJarApiMigrationTest {
       +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
       @@ -68 +63
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       @@ -70 +65
       -  IFNULL L16
       +  IFNULL L15
@@ -344,7 +346,7 @@ class LintJarApiMigrationTest {
       """
       ...
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
       ...
       """,
       skipFirst = 22,
@@ -630,16 +632,18 @@ class LintJarApiMigrationTest {
       file,
       "isNothingType",
       """
-      @@ -15 +15
-      -  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
-      +  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
-      @@ -22 +22
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider;
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider;
-      @@ -37 +37
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KtAnalysisSession;
+      ...
+      +  IFNULL L15
+      @@ -85 +80
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.isNothing (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
+      -  GOTO L17
+      - L16
+      - FRAME FULL [org/jetbrains/kotlin/psi/KtCallExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Object]
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.isNothingType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
+      +  GOTO L16
       ...
       """,
+      skipFirst = 45,
       maxLines = 8,
       showDiff = true,
       checkSource =
@@ -741,7 +745,7 @@ class LintJarApiMigrationTest {
         ...
         @@ -69 +64
         -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
         @@ -74 +69
         -   IFNULL L17
         +   IFNULL L16
@@ -749,17 +753,18 @@ class LintJarApiMigrationTest {
         -   CHECKCAST org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn
         @@ -79 +73
         -   ICONST_1
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getAllSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Ljava/util/List; (itf)
+        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.allSupertypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Lkotlin/sequences/Sequence; (itf)
+        +   INVOKESTATIC kotlin/sequences/SequencesKt.toList (Lkotlin/sequences/Sequence;)Ljava/util/List;
         +   GOTO L17
         +  L16
         +  FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/types/KaType] []
-        @@ -81 +78
+        @@ -81 +79
         -   INVOKESTATIC org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn.getAllSuperTypes＄default (Lorg/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn;Lorg/jetbrains/kotlin/analysis/api/types/KtType;ZILjava/lang/Object;)Ljava/util/List; (itf)
         -   GOTO L18
         ...
       """,
       skipFirst = 21,
-      maxLines = 17,
+      maxLines = 18,
       showDiff = true,
       checkSource =
         kotlin(
@@ -773,7 +778,7 @@ class LintJarApiMigrationTest {
       checks = { ktFile, migratedClass ->
         fun getFirstSuperTypeName(ktExpression: KtExpression): Any? {
           val method = migratedClass.declaredMethods[0]
-          return (method.invoke(null, ktExpression))
+          return method.invoke(null, ktExpression)
         }
         val call1 = (ktFile.declarations[2] as KtNamedFunction).bodyExpression as KtCallExpression
         val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
@@ -786,6 +791,230 @@ class LintJarApiMigrationTest {
           "[kotlin/collections/Collection<kotlin/String>, kotlin/collections/Iterable<kotlin/String>, kotlin/Any]",
           getFirstSuperTypeName(call2).toString(),
         )
+      },
+    )
+  }
+
+  @Test
+  fun testApiNameConflict() {
+    // KtExpression.getKtType() -> getExpressionType()
+    //   v.s.
+    // KtTypeReference.getKtType() -> getType()
+    val file =
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
+            package test.pkg
+
+            import org.jetbrains.kotlin.analysis.api.analyze
+            import org.jetbrains.kotlin.psi.KtElement
+            import org.jetbrains.kotlin.psi.KtExpression
+            import org.jetbrains.kotlin.psi.KtTypeReference
+
+            fun twoTypes(element: KtElement): String? {
+                return analyze(element) {
+                    when (element) {
+                        is KtExpression -> element.getKtType()?.toString()
+                        is KtTypeReference -> element.getKtType()?.toString()
+                        else -> null
+                    }
+                }
+            }
+          """
+          )
+          .indented(),
+        0xe843a1a9,
+        """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
+                GAAvgr4WLAAAAA==
+                """,
+        """
+                test/pkg/TestKt.class:
+                H4sIAAAAAAAA/+1W21MTVxj/ndw22URFVCTghUrUEAIhAVGCWqmipgSlhmIR
+                WrsJB1iS7Ka7S7w8+R+0Tp8cpzOdzlheOmPbBy/tVGk704f+UbXfySbcBdQ+
+                diZnz5dzvu/3Xc93zt///PICQA8shl0WN61YKT8TGyViyJLAGOrmlLISKyja
+                TOxqdo7naNXJ4LVu6aN3StxkOBVO68ZMbI5bWUNRNTOW162CqsVKphobsgYL
+                vMg1q78tvYyTsQxVm+lnCK2RVDRNtxRL1Ym+Ml8oKNkCJ7bWzdh0S3ASl8Rt
+                VV74GA5VjZgrF2OqZnFDUwqxlCYUm2rOlOBn2Jeb5bl8FWBEMZQiJ0aG4+H0
+                Wp/711vfNhbADuyUEcAuhv4NQ6CQ1jumShaX1JjJTZNMjg0pGZsaMfSyOsUN
+                CbsZfOf1YknRaJnh0sYB3R5aaAmoP4A92OtDPfYxHNk6RxL2M8gz3CIo4TRD
+                ONyWzul2BAsFdS6ml7gmtJdsjliVkzQF0eRHI5qpipYRwp2dnW1eHGRoXhnr
+                wdslwzZ6TCnM8wAO23FsYRj8TzyXcITBT3akNNNStBxn4OHtedL2LrGnOIRw
+                VEYrjjHUk/6BqliVjyGzzcOytRFLyklpGG0ypTnC0JDl07rBB0XJU5XW9DOM
+                vkbxazC3ZSWdgCg6hOZOBs9pVVOtswzOsNjoQlyGCwmGo5tBLVWChB6G9jcw
+                UUIvnRqK8ZAlGhHD+OahXdK0rehaoreRMgFNAT6FPj9OIikan243AIa94Q2a
+                WgCncUZ4TpEIb2KPAL7Gp7nBqTwlnGOY3NT+Vfxv58IHwoXzZLcyTdWR5kp5
+                RYUEMGin8iLD4ZAaUkIdFbS7vMO+DEK1jh+KM7AUw8GQNauaS8s35xM9BaWY
+                nVIE1cXQ8UYFx9BjazXvaLlZQ9fUu3yqY/0ZrxoViofUMv2oYRX0XL72p359
+                52YIEPB0TZDavrL6UNZk/cKdm7V/Z96pD6y/2jY8QQydb5ZHCaOrbmS76CSM
+                MexZXh2l+N0Sd6eETxh2p6uow9xSphRLIbWOYtlJtz4TH5/4gHKaF4SDNm+r
+                gqIUOqYo16HFewF58Z7sqNtZmRodTXV1i/eaXI2siyU8dY4mR5dT8NJZJxhJ
+                PCI683R7RNIbXcIZfd7I8Qs8Oz8zeNviWjX77rK4Chg7kRkeGJGrGPJQBUCO
+                ZFpq1EW5vSXeUttf82ChvURLNdFie+vgDtjMFdHulnWJ3B7Ia+tAjqTleGs8
+                Gu9NxuXEqdZENJGMn5S7e1u7o/HuZLxv2bNKQLZyj+D6WuMEEU3YRB/ByJFB
+                mcF1Xp+i4t6RsZRcflgpjYr802WcVjV+Zb6Y5UZ1pT6t55TCmGKo4n91sfna
+                vGapRZ7Syqqp0tLA8hOLKmDt7tJjaRWbbKf2oioQ926UZ4ZgFWpsnRrE4aC2
+                addiEG544ESeCvIGrQZodTFSLz9DnfP0z2iIPMcB6vj1h57hvSc4Pgzn2Wjk
+                CdqTrmjQRUQMv8I1/hTdSXfQnfQEPX/A2SsFXUmvs9cXScpB+XeceICDQW9k
+                ESeeo9+B8b/ge4L3F9B+nS3gmOAYqHEMPMeFFRw+weFiSEpBz59BaQH+pF9Q
+                /pdJt63/0gJ2JT1VOuh5GXQDP5IfZ/A1HpIvD/FNZY7iER7T/Bg/VWYnCvT9
+                Hr5XmIVfQiOTUE/jpAQX/QRFoxH0+dg1KT7nJFx/BRnSOmbBNP4K0gY4JLMC
+                ieT9cK9gqkr610heXy0JFGncQANlygcvdqOZro9D9OY8in3kWQM6sB+9xDlA
+                O5fJxiGCLFIuv6SH81f0/z6t36f9RyT1Az0CH9P8G8m9IJyXhKkR/iTNl5Gq
+                DB/dUWl8SDhewhwhOkXu9RLmMK5QxRzCt7hKa06y4AHtD1EQDuA7fIRrVFte
+                PK3sMlFLhJWhWafhEU2L5hINidogMYIEvxDNEDMwqB7/b0pv05RgUgipmKhG
+                3JiYgDOFyRQ+TeEz3EzhcygpZJGbADMxBT4Blwm3iWkTPpOSI1Kzk4RnaagV
+                prl/AZ8r8z6sDgAA
+                """,
+      )
+
+    checkBytecodeMigration(
+      file,
+      "twoTypes",
+      """
+        @@ -82 +82
+        -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+        @@ -101 +101
+        -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      """,
+      maxLines = 17,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
+          fun method1(): String = "hello"
+          fun method2(): List<String> = emptyList()
+          fun call1() = method1()
+          fun call2() = method2()
+          """
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getTwoTypes(element: KtElement): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, element)
+        }
+        val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
+        val call2 = (ktFile.declarations[3] as KtNamedFunction).bodyExpression as KtCallExpression
+
+        assertEquals("kotlin/String", getTwoTypes(method1))
+        assertEquals("kotlin/collections/List<kotlin/String>", getTwoTypes(call2))
+      },
+    )
+  }
+
+  @Test
+  fun testClassIdIfNonLocal() {
+    // From AutoboxingStateCreationDetector#getSuggestedReplacementName
+    val file =
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
+            package test.pkg
+
+            import org.jetbrains.kotlin.analysis.api.analyze
+            import org.jetbrains.kotlin.psi.KtTypeReference
+
+            fun getSuggestedReplacementName(ref: KtTypeReference): String? {
+                analyze(ref) {
+                    val stateType = ref.getKtType() ?: return null
+                    return when {
+                        stateType.isMarkedNullable -> null
+                        else -> {
+                            // NB: use expanded class symbol for type alias
+                            stateType.expandedClassSymbol?.classIdIfNonLocal?.asFqNameString()
+                        }
+                    }
+                }
+            }
+          """
+          )
+          .indented(),
+        0xabf45445,
+        """
+        META-INF/main.kotlin_module:
+        H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
+        GAAvgr4WLAAAAA==
+        """,
+        """
+        test/pkg/TestKt.class:
+        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
+        """,
+      )
+
+    checkBytecodeMigration(
+      file,
+      "getSuggestedReplacementName",
+      """
+      @@ -80 +80
+      -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -120 +120
+      -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -123 +123
+      -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
+      +   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
+      """,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
+          fun method1(): String = "hello"
+          fun method2(): List<String> = emptyList()
+          """
+        ),
+      checks = { ktFile, migratedClass ->
+        fun getTypeName(element: KtElement): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, element)
+        }
+        val method1 = (ktFile.declarations[0] as KtNamedFunction).typeReference as KtTypeReference
+        val method2 = (ktFile.declarations[1] as KtNamedFunction).typeReference as KtTypeReference
+
+        assertEquals("kotlin.String", getTypeName(method1))
+        assertEquals("kotlin.collections.List", getTypeName(method2))
       },
     )
   }
@@ -1183,7 +1412,7 @@ class LintJarApiMigrationTest {
       +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
       @@ -95 +90
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
       @@ -97 +92
       -  IFNULL L24
       -  INVOKESTATIC org/jetbrains/kotlin/analysis/api/calls/KtCallKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;)Lorg/jetbrains/kotlin/analysis/api/calls/KtFunctionCall;
@@ -1242,12 +1471,12 @@ class LintJarApiMigrationTest {
       + FRAME APPEND [org/jetbrains/kotlin/analysis/api/types/KaType]
       @@ -180 +167
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       @@ -182 +169
       -  IFNULL L36
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
       +  IFNULL L35
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
+      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
       @@ -185 +172
       -  IFNULL L36
       +  IFNULL L35
@@ -1340,7 +1569,7 @@ class LintJarApiMigrationTest {
         (file
             .getBytecodeFiles()
             .map { it as BinaryTestFile }
-            .single() { it.targetRelativePath.endsWith(DOT_CLASS) })
+            .single { it.targetRelativePath.endsWith(DOT_CLASS) })
           .binaryContents
       } else {
         error("Unsupported test file type")
@@ -1353,10 +1582,10 @@ class LintJarApiMigrationTest {
           exception: Throwable?,
           format: String?,
           vararg args: Any,
-        ) = error("Didn't expect output")
+        ) = error("Didn't expect output: $format")
 
         override fun log(exception: Throwable?, format: String?, vararg args: Any) =
-          error("Didn't expect output")
+          error("Didn't expect output: $format")
       }
     val newBytes = LintJarApiMigration(client).migrateClass(bytes)
     val after = prettyPrint(newBytes, methodName).trimIndent()

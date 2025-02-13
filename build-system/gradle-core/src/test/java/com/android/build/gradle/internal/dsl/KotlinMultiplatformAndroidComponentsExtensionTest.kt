@@ -21,36 +21,38 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.extension.impl.KotlinMultiplatformAndroidComponentsExtensionImpl
-import com.android.build.api.extension.impl.MultiplatformVariantApiOperationsRegistrar
+import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
 import com.android.build.api.instrumentation.manageddevice.ManagedDeviceRegistry
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 class KotlinMultiplatformAndroidComponentsExtensionTest {
+
     private lateinit var sdkComponents: SdkComponents
     private lateinit var managedDeviceRegistry: ManagedDeviceRegistry
     private lateinit var applicationExtension: ApplicationExtension
+    private lateinit var variantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>
+    private lateinit var extension: KotlinMultiplatformAndroidLibraryExtension
 
     @Before
     fun setUp() {
         sdkComponents = mock<SdkComponents>()
         managedDeviceRegistry = mock<ManagedDeviceRegistry>()
         applicationExtension = mock<ApplicationExtension>()
+        extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
+        variantApiOperationsRegistrar = VariantApiOperationsRegistrar(extension)
     }
 
     @Test
     fun testPluginVersion() {
-        val extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
-        val variantApiOperationsRegistrar = MultiplatformVariantApiOperationsRegistrar(extension)
-
         val androidComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
             sdkComponents,
             managedDeviceRegistry,
-            variantApiOperationsRegistrar
+            variantApiOperationsRegistrar,
         )
         Truth.assertThat(androidComponents.pluginVersion).isNotNull()
         Truth.assertThat(androidComponents.pluginVersion >= AndroidPluginVersion(4, 2)).isTrue()
@@ -58,33 +60,27 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
 
     @Test
     fun testSdkComponents() {
-        val extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
-        val variantApiOperationsRegistrar = MultiplatformVariantApiOperationsRegistrar(extension)
         val sdkComponentsFromComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
             sdkComponents,
             managedDeviceRegistry,
-            variantApiOperationsRegistrar
+            variantApiOperationsRegistrar,
         ).sdkComponents
         Truth.assertThat(sdkComponentsFromComponents).isSameInstanceAs(sdkComponents)
     }
 
     @Test
     fun testCustomDeviceRegistry() {
-        val extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
-        val variantApiOperationsRegistrar = MultiplatformVariantApiOperationsRegistrar(extension)
         val deviceRegistryFromComponents = KotlinMultiplatformAndroidComponentsExtensionImpl(
             sdkComponents,
             managedDeviceRegistry,
-            variantApiOperationsRegistrar
+            variantApiOperationsRegistrar,
         ).managedDeviceRegistry
         Truth.assertThat(deviceRegistryFromComponents).isSameInstanceAs(managedDeviceRegistry)
     }
 
     @Test
     fun testCallingOnVariant() {
-        val extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
         val variant = mock<KotlinMultiplatformAndroidVariant>()
-        val variantApiOperationsRegistrar = MultiplatformVariantApiOperationsRegistrar(extension)
         val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
             mock<SdkComponents>(),
             mock<ManagedDeviceRegistry>(),
@@ -103,8 +99,6 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
 
     @Test
     fun testDslFinalizationBlock() {
-        val extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
-        val variantApiOperationsRegistrar = MultiplatformVariantApiOperationsRegistrar(extension)
         val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
             mock<SdkComponents>(),
             mock<ManagedDeviceRegistry>(),

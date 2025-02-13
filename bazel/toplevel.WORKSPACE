@@ -1,4 +1,3 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//tools/base/bazel:repositories.bzl", "setup_external_repositories", "vendor_repository")
 
 setup_external_repositories()
@@ -68,32 +67,9 @@ new_local_repository(
     path = "external/jarjar",
 )
 
-http_archive(
-    name = "robolectric",
-    sha256 = "5bcde5db598f6938c9887a140a0a1249f95d3c16274d40869503d0c322a20d5d",
-    strip_prefix = "robolectric-bazel-4.8.2",
-    urls = ["https://github.com/robolectric/robolectric-bazel/archive/4.8.2.tar.gz"],
-)
-
-load("@robolectric//bazel:robolectric.bzl", "robolectric_repositories")
-
-robolectric_repositories()
-
 load("//tools/base/intellij-bazel:platforms.bzl", "setup_intellij_platforms")
 
 setup_intellij_platforms()
-
-http_archive(
-    name = "rules_pkg",
-    sha256 = "d250924a2ecc5176808fc4c25d5cf5e9e79e6346d79d5ab1c493e289e722d1d0",
-    urls = [
-        "https://github.com/bazelbuild/rules_pkg/releases/download/0.10.1/rules_pkg-0.10.1.tar.gz",
-    ],
-)
-
-load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
-
-rules_pkg_dependencies()
 
 vendor_repository(
     name = "aswb_test_deps",

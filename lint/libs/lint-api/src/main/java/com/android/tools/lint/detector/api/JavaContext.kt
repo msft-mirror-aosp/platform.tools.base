@@ -401,7 +401,7 @@ open class JavaContext(
     @JvmStatic
     fun getMethodName(call: UElement): String? =
       when (call) {
-        is UEnumConstant -> call.name
+        is UEnumConstant -> call.nameFromSource
         is UCallExpression -> call.methodName ?: call.classReference?.resolvedName
         else -> null
       }

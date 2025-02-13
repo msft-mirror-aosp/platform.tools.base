@@ -32,13 +32,17 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UExpression;
 import org.jetbrains.uast.UastUtils;
+
+import java.util.Collections;
+import java.util.List;
 
 /** Makes sure that custom views use a declare styleable that matches the name of the custom view */
 public class CustomViewDetector extends Detector implements SourceCodeScanner {
@@ -51,12 +55,13 @@ public class CustomViewDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "CustomViewStyleable",
                             "Mismatched Styleable/Custom View Name",
-                            "The convention for custom views is to use a `declare-styleable` whose name "
-                                    + "matches the custom view class name. The IDE relies on this convention such that "
-                                    + "for example code completion can be offered for attributes in a custom view "
-                                    + "in layout XML resource files.\n"
-                                    + "\n"
-                                    + "(Similarly, layout parameter classes should use the suffix `_Layout`.)",
+                            "The convention for custom views is to use a `declare-styleable` whose"
+                                + " name matches the custom view class name. The IDE relies on this"
+                                + " convention such that for example code completion can be offered"
+                                + " for attributes in a custom view in layout XML resource files.\n"
+                                + "\n"
+                                + "(Similarly, layout parameter classes should use the suffix"
+                                + " `_Layout`.)",
                             Category.CORRECTNESS,
                             6,
                             Severity.WARNING,
@@ -110,18 +115,19 @@ public class CustomViewDetector extends Detector implements SourceCodeScanner {
 
         String className = cls.getName();
         String styleableName = reference.getName();
-        if (context.getEvaluator().extendsClass(cls, CLASS_VIEW, false)) {
+        PsiClass psiClass = cls.getJavaPsi();
+        if (context.getEvaluator().extendsClass(psiClass, CLASS_VIEW, false)) {
             if (!styleableName.equals(className)) {
                 String message =
                         String.format(
-                                "By convention, the custom view (`%1$s`) and the declare-styleable (`%2$s`) "
-                                        + "should have the same name (various editor features rely on "
-                                        + "this convention)",
+                                "By convention, the custom view (`%1$s`) and the declare-styleable"
+                                    + " (`%2$s`) should have the same name (various editor features"
+                                    + " rely on this convention)",
                                 className, styleableName);
                 context.report(ISSUE, node, context.getLocation(expression), message);
             }
         } else if (context.getEvaluator()
-                .extendsClass(cls, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
+                .extendsClass(psiClass, CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
             UClass outer = UastUtils.getParentOfType(cls, UClass.class, true);
             if (outer == null) {
                 return;
@@ -131,10 +137,10 @@ public class CustomViewDetector extends Detector implements SourceCodeScanner {
             if (!styleableName.equals(expectedName)) {
                 String message =
                         String.format(
-                                "By convention, the declare-styleable (`%1$s`) for a layout parameter "
-                                        + "class (`%2$s`) is expected to be the surrounding "
-                                        + "class (`%3$s`) plus \"`_Layout`\", e.g. `%4$s`. "
-                                        + "(Various editor features rely on this convention.)",
+                                "By convention, the declare-styleable (`%1$s`) for a layout"
+                                    + " parameter class (`%2$s`) is expected to be the surrounding"
+                                    + " class (`%3$s`) plus \"`_Layout`\", e.g. `%4$s`. (Various"
+                                    + " editor features rely on this convention.)",
                                 styleableName, className, layoutClassName, expectedName);
                 context.report(ISSUE, node, context.getLocation(expression), message);
             }

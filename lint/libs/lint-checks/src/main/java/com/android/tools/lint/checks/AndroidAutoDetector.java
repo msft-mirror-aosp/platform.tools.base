@@ -43,15 +43,17 @@ import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.tools.lint.detector.api.XmlScanner;
 import com.android.utils.XmlUtils;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
+
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UMethod;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * Detector for Android Auto issues.
@@ -90,19 +92,21 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
             Issue.create(
                             "MissingMediaBrowserServiceIntentFilter",
                             "Missing MediaBrowserService intent-filter",
-                            "An Automotive Media App requires an exported service that extends "
-                                    + "`android.service.media.MediaBrowserService` with an "
-                                    + "`intent-filter` for the action `android.media.browse.MediaBrowserService` "
-                                    + "to be able to browse and play media.\n"
-                                    + "\n"
-                                    + "To do this, add\n"
-                                    + "```xml\n"
-                                    + "`<intent-filter>`\n"
-                                    + "    `<action android:name=\"android.media.browse.MediaBrowserService\" />`\n"
-                                    + "`</intent-filter>`\n"
-                                    + "```\n"
-                                    + "to the service that extends "
-                                    + "`android.service.media.MediaBrowserService`",
+                            "An Automotive Media App requires an exported service that extends"
+                                + " `android.service.media.MediaBrowserService` with an"
+                                + " `intent-filter` for the action"
+                                + " `android.media.browse.MediaBrowserService` to be able to browse"
+                                + " and play media.\n"
+                                + "\n"
+                                + "To do this, add\n"
+                                + "```xml\n"
+                                + "`<intent-filter>`\n"
+                                + "    `<action"
+                                + " android:name=\"android.media.browse.MediaBrowserService\" />`\n"
+                                + "`</intent-filter>`\n"
+                                + "```\n"
+                                + "to the service that extends "
+                                + "`android.service.media.MediaBrowserService`",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -115,16 +119,19 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
             Issue.create(
                             "MissingIntentFilterForMediaSearch",
                             "Missing MEDIA_PLAY_FROM_SEARCH intent-filter",
-                            "To support voice searches on Android Auto, you should also register an "
-                                    + "`intent-filter` for the action `android.media.action.MEDIA_PLAY_FROM_SEARCH`.\n"
-                                    + "\n"
-                                    + "To do this, add\n"
-                                    + "```xml\n"
-                                    + "`<intent-filter>`\n"
-                                    + "    `<action android:name=\"android.media.action.MEDIA_PLAY_FROM_SEARCH\" />`\n"
-                                    + "`</intent-filter>`\n"
-                                    + "```\n"
-                                    + "to your `<activity>` or `<service>`.",
+                            "To support voice searches on Android Auto, you should also register an"
+                                + " `intent-filter` for the action"
+                                + " `android.media.action.MEDIA_PLAY_FROM_SEARCH`.\n"
+                                + "\n"
+                                + "To do this, add\n"
+                                + "```xml\n"
+                                + "`<intent-filter>`\n"
+                                + "    `<action"
+                                + " android:name=\"android.media.action.MEDIA_PLAY_FROM_SEARCH\""
+                                + " />`\n"
+                                + "`</intent-filter>`\n"
+                                + "```\n"
+                                + "to your `<activity>` or `<service>`.",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -388,7 +395,7 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         // Only check classes that are not declared abstract.
-        if (!context.getEvaluator().isAbstract(declaration)) {
+        if (!context.getEvaluator().isAbstract(declaration.getJavaPsi())) {
             MediaSessionCallbackVisitor visitor = new MediaSessionCallbackVisitor(context);
             declaration.accept(visitor);
             if (!visitor.isPlayFromSearchMethodFound()
@@ -428,7 +435,8 @@ public class AndroidAutoDetector extends Detector implements XmlScanner, SourceC
         @Override
         public boolean visitMethod(UMethod method) {
             if (METHOD_MEDIA_SESSION_PLAY_FROM_SEARCH.equals(method.getName())
-                    && mContext.getEvaluator().parametersMatch(method, TYPE_STRING, BUNDLE_ARG)) {
+                    && mContext.getEvaluator()
+                            .parametersMatch(method.getJavaPsi(), TYPE_STRING, BUNDLE_ARG)) {
                 mOnPlayFromSearchFound = true;
             }
             return super.visitMethod(method);

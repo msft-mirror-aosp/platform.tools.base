@@ -18,14 +18,9 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import org.junit.Rule
 import org.junit.Test
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
-import org.objectweb.asm.tree.ClassNode
 import java.io.File
-import kotlin.io.path.readBytes
 
 /*
 * Tests to verify that AARs produced from library modules in build/output/aar are in a state
@@ -74,20 +69,18 @@ class AarPublishTest {
 
         build.executor.run("library:assembleDebug")
 
-        val classesBytes = librarySubproject.withAar(AarSelector.DEBUG) {
-            getEntryAsZip("classes.jar").use { classes ->
-                classes.getEntryAsFile("com/example/library/BuildConfig.class").readBytes()
+        librarySubproject.assertAar(AarSelector.DEBUG) {
+            mainJar {
+                classData("com/example/library/BuildConfig") {
+                    methods().containsExactly("<init>", "<clinit>")
+                    fields().containsExactly(
+                        "DEBUG",
+                        "LIBRARY_PACKAGE_NAME",
+                        "BUILD_TYPE"
+                    )
+                }
             }
         }
-
-        val classNode = ClassNode(Opcodes.ASM9)
-        ClassReader(classesBytes).accept(classNode, 0)
-        assertThat(classNode.methods.map { it.name }).containsExactly("<init>", "<clinit>")
-        assertThat(classNode.fields.map { it.name }).containsExactly(
-            "DEBUG",
-            "LIBRARY_PACKAGE_NAME",
-            "BUILD_TYPE"
-        )
     }
 
     @Test
@@ -133,16 +126,14 @@ class AarPublishTest {
 
         build.executor.run("library:assembleRelease")
 
-        build.androidLibrary(":library").withAar(AarSelector.RELEASE) {
-            getEntryAsZip("classes.jar").use { classesJar ->
-                val classNode = ClassNode(Opcodes.ASM9)
-                ClassReader(classesJar.getEntry("com/example/Foo.class").readBytes()).accept(
-                    classNode,
-                    0
-                )
-                assertThat(classNode.methods.map { it.name }).containsExactly("<init>")
-                assertThat(classNode.fields).isEmpty()
-                assertThat(classesJar.getEntry("com/example/Bar.class")).isNull()
+        build.androidLibrary(":library").assertAar(AarSelector.RELEASE) {
+            mainJar {
+                classData("com/example/Foo") {
+                    methods().containsExactly("<init>")
+                    fields().isEmpty()
+                }
+
+                doesNotContainClass("com/example/Bar")
             }
         }
     }
@@ -152,13 +143,15 @@ class AarPublishTest {
         val build = rule.build
         build.executor.run(":library:assembleDebug")
         build.androidLibrary(":library").assertAar(AarSelector.DEBUG) {
-            containsFile("/AndroidManifest.xml")
-            containsFile("/R.txt")
-            containsFile("/classes.jar")
-            containsFile("/res/values/values.xml")
-            containsFile("META-INF/com/android/build/gradle/aar-metadata.properties")
-            // Regression test for b/232117952
-            doesNotContain("/values/")
+            entries().apply {
+                contains("AndroidManifest.xml")
+                contains("R.txt")
+                contains("classes.jar")
+                contains("res/values/values.xml")
+                contains("META-INF/com/android/build/gradle/aar-metadata.properties")
+                // Regression test for b/232117952
+                doesNotContain("values/")
+            }
         }
     }
 }

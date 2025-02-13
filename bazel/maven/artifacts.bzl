@@ -198,8 +198,7 @@ ARTIFACTS = [
     "org.ow2.asm:asm-commons:9.7",
     "org.ow2.asm:asm-tree:9.7",
     "org.ow2.asm:asm-util:9.7",
-    "org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i4",
-    "org.robolectric:robolectric:4.8.2",
+    "org.robolectric:robolectric:4.14.1",
     "org.slf4j:slf4j-simple:1.7.2",
     "org.tensorflow:tensorflow-lite-metadata:0.2.0",
     "org.tomlj:tomlj:1.1.0",
@@ -285,9 +284,11 @@ DATA = [
     "androidx.compose.material:material-icons-core:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-icons-extended:1.3.0",
     "androidx.compose.material:material-ripple:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material3.adaptive:adaptive:1.0.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3:material3:1.0.0",
     "androidx.compose.material3:material3:1.1.1",
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material3:material3-adaptive-navigation-suite:1.3.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
@@ -547,6 +548,7 @@ DATA = [
     "androidx.xr.compose:compose:1.0.0-alpha01",
     "androidx.xr.runtime:runtime:1.0.0-alpha01",
     "androidx.xr.scenecore:scenecore:1.0.0-alpha01",
+    "biz.aQute.bnd:biz.aQute.bndlib:6.4.0",
     "com.adobe.marketing.mobile:core:1.5.1",  # Used by SdkIndexIssuesSyncListenerTest
     "com.android.application:com.android.application.gradle.plugin:pom:7.2.0",
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
@@ -844,6 +846,7 @@ DATA = [
     "com.google.auto.value:auto-value:1.4-rc1",
     "com.google.auto.value:auto-value:1.6.2",
     "com.google.auto.value:auto-value-annotations:1.7.4",
+    "com.google.caliper:caliper:1.0-beta-3",
     "com.google.code.gson:gson:2.2.4",
     "com.google.code.gson:gson:2.6.2",
     "com.google.crypto.tink:tink:1.3.0-rc2",

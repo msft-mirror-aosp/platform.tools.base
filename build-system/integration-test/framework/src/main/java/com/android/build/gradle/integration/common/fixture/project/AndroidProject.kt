@@ -18,15 +18,13 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.AabSubject
-import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.tools.build.bundletool.model.AppBundle
 import java.nio.file.Path
@@ -85,27 +83,16 @@ interface GeneratesApk {
  */
 interface GeneratesAar {
     /**
-     * Runs the action with a provided instance of [Aar].
-     *
-     * It is possible to return a value from the action, but it should not be [Aar] as this
-     * may not be safe. [Aar] is a [AutoCloseable] and should be treated as such.
-     */
-    fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R
-    /**
      * Runs the action with a provided [AarSubject]
      */
     fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
+
     /**
-     * Returns whether or not the AAR exists.
+     * Returns a path to the AAR. This should not be used to validate the content of the file.
      *
-     * To assert validity, prefer using
-     * ```
-     * project.assertAar(ApkSelector.DEBUG) {
-     *   exists()
-     * }
-     * ```
+     * Instead use [assertAar].
      */
-    fun hasAar(aarSelector: AarSelector): Boolean
+    fun getAarFile(aarSelector: AarSelector): Path
 }
 
 /**
@@ -214,28 +201,20 @@ class GeneratesApkFromParentDelegate(private val parent: GeneratesApk): Generate
 /**
  * Delegate implementation for [GeneratesAar]
  */
-class GeneratesAarDelegate(location: Path): BaseGenerateDelegate(location), GeneratesAar {
+class GeneratesAarDelegate(
+    val gradlePath: String,
+    location: Path
+): BaseGenerateDelegate(location), GeneratesAar {
 
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R {
-        val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
-
-        return Aar(path.toFile()).use {
-            action(it)
-        }
-    }
+    override fun getAarFile(aarSelector: AarSelector): Path = computeOutputPath(aarSelector)
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
         val path = computeOutputPath(aarSelector)
         if (!path.isRegularFile()) error("AAR file does not exist: $path")
 
-        AarSubject.assertThat(Aar(path.toFile())).use {
-            action(it)
+        SimpleZip(path, "$gradlePath(${aarSelector.getFileName(location.name)})").use {
+            AarSubject.assertThat(it, action)
         }
-    }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean {
-        return computeOutputPath(aarSelector).isRegularFile()
     }
 }
 
@@ -244,14 +223,11 @@ class GeneratesAarDelegate(location: Path): BaseGenerateDelegate(location), Gene
  */
 class GeneratesAarFromParentDelegate(private val parent: GeneratesAar): GeneratesAar {
 
-    override fun <R> withAar(aarSelector: AarSelector, action: Aar.() -> R): R =
-        parent.withAar(aarSelector, action)
+    override fun getAarFile(aarSelector: AarSelector): Path = parent.getAarFile(aarSelector)
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
         parent.assertAar(aarSelector, action)
     }
-
-    override fun hasAar(aarSelector: AarSelector): Boolean = parent.hasAar(aarSelector)
 }
 
 /**

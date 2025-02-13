@@ -111,10 +111,10 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
           val signature = annotation.qualifiedName
           if (
             CALL_SUPER_ANNOTATION.isEquals(signature) ||
-            signature == AOSP_CALL_SUPER_ANNOTATION ||
-            signature != null &&
-            (signature.endsWith(".OverrideMustInvoke") ||
-                signature.endsWith(".OverridingMethodsMustInvokeSuper"))
+              signature == AOSP_CALL_SUPER_ANNOTATION ||
+              signature != null &&
+                (signature.endsWith(".OverrideMustInvoke") ||
+                  signature.endsWith(".OverridingMethodsMustInvokeSuper"))
           ) {
             return directSuper
           }
@@ -131,7 +131,7 @@ class CallSuperDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitMethod(node: UMethod) {
         val evaluator = context.evaluator
-        val superMethod = getRequiredSuperMethod(evaluator, node) ?: return
+        val superMethod = getRequiredSuperMethod(evaluator, node.javaPsi) ?: return
         val visitor = SuperCallVisitor(superMethod, node.getContainingUClass()?.sourcePsi)
         node.accept(visitor)
         val count = visitor.callsSuperCount

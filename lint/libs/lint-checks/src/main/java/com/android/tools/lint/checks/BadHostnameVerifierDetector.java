@@ -30,9 +30,9 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiMethod;
-import java.util.Collections;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UExpression;
@@ -40,6 +40,9 @@ import org.jetbrains.uast.UReturnExpression;
 import org.jetbrains.uast.UThrowExpression;
 import org.jetbrains.uast.UastLiteralUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
+
+import java.util.Collections;
+import java.util.List;
 
 public class BadHostnameVerifierDetector extends Detector implements SourceCodeScanner {
 
@@ -51,10 +54,11 @@ public class BadHostnameVerifierDetector extends Detector implements SourceCodeS
             Issue.create(
                             "BadHostnameVerifier",
                             "Insecure HostnameVerifier",
-                            "This check looks for implementations of `HostnameVerifier` "
-                                    + "whose `verify` method always returns true (thus trusting any hostname) "
-                                    + "which could result in insecure network traffic caused by trusting arbitrary "
-                                    + "hostnames in TLS/SSL certificates presented by peers.",
+                            "This check looks for implementations of `HostnameVerifier` whose"
+                                + " `verify` method always returns true (thus trusting any"
+                                + " hostname) which could result in insecure network traffic caused"
+                                + " by trusting arbitrary hostnames in TLS/SSL certificates"
+                                + " presented by peers.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -72,7 +76,7 @@ public class BadHostnameVerifierDetector extends Detector implements SourceCodeS
     @Override
     public void visitClass(@NonNull JavaContext context, @NonNull UClass declaration) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : declaration.findMethodsByName("verify", false)) {
+        for (PsiMethod method : declaration.getJavaPsi().findMethodsByName("verify", false)) {
             if (evaluator.methodMatches(
                     method, null, false, TYPE_STRING, "javax.net.ssl.SSLSession")) {
                 ComplexVisitor visitor = new ComplexVisitor(context);

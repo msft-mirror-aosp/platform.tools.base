@@ -65,8 +65,7 @@ class SharedLibraryTest {
         packaging = "aar",
         artifact = generateAarWithContent(
             packageName = "com.android.tokens_test_lib",
-            extraFiles =
-            listOf(
+            extraFiles = mapOf(
                 PATH_SHARED_LIBRARY_RESOURCES_APK to sharedTokenRule.build.androidApplication().withApk(ApkSelector.DEBUG) { file.readBytes() }
             )
         )

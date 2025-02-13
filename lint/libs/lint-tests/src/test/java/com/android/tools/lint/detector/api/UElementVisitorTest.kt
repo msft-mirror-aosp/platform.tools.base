@@ -158,7 +158,7 @@ class UElementVisitorTest : AbstractCheckTest() {
         TEST_ISSUE,
         declaration,
         context.getNameLocation(declaration),
-        "Visited `${declaration.name}`",
+        "Visited `${declaration.nameFromSource}`",
       )
     }
 
@@ -181,7 +181,7 @@ class UElementVisitorTest : AbstractCheckTest() {
             TEST_ISSUE,
             node,
             context.getNameLocation(node),
-            "Visited pattern expression with type `${node.patternExpression?.variable?.name}`",
+            "Visited pattern expression with type `${node.patternExpression?.variable?.nameFromSource}`",
           )
         }
 
@@ -190,7 +190,7 @@ class UElementVisitorTest : AbstractCheckTest() {
             TEST_ISSUE,
             node,
             context.getNameLocation(node),
-            "Visited pattern expression `${node.variable?.name}`",
+            "Visited pattern expression `${node.variable?.nameFromSource}`",
           )
         }
       }

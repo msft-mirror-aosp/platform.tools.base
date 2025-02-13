@@ -76,7 +76,7 @@ class AppCompatCustomViewDetector : Detector(), SourceCodeScanner {
       }
     }
     if (superTypeNode == null) { // Fallback for Java, normally not necessary
-      val extendsList = declaration.extendsList
+      val extendsList = declaration.javaPsi.extendsList
       if (extendsList != null) {
         val elements = extendsList.referenceElements
         if (elements.isNotEmpty()) {

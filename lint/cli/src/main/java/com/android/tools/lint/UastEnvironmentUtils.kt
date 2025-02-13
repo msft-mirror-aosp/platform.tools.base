@@ -50,6 +50,7 @@ import java.util.concurrent.locks.ReentrantLock
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
+import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.PluginStructureProvider
 import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
@@ -117,6 +118,7 @@ fun LanguageVersionSettings.withKMPEnabled(): LanguageVersionSettings {
   )
 }
 
+@OptIn(KaImplementationDetail::class)
 internal fun configureProjectEnvironment(
   project: MockProject,
   config: UastEnvironment.Configuration,
@@ -146,6 +148,12 @@ internal fun configureProjectEnvironment(
   // TODO(b/283351708): Migrate to using UastFacade/UastLanguagePlugin instead,
   //  even including lint checks shipped in a binary form?!
   @Suppress("DEPRECATION") project.registerService(UastContext::class.java, UastContext(project))
+
+  // KotlinResolutionScopeEnlarger
+  PluginStructureProvider.registerProjectExtensionPoints(
+    project,
+    "/META-INF/analysis-api/analysis-api-platform-interface.xml",
+  )
 }
 
 @OptIn(KaImplementationDetail::class)

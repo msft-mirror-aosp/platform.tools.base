@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDef
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
+@GradleDefinitionDsl
 interface GradleSettingsDefinition: ExtensionAwareDefinition {
 
     /**

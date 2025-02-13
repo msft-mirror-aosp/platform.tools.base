@@ -23,19 +23,19 @@ androidLibrary {
 //        targetCompatibility = VERSION_17
     }
 
-//    buildTypes {
-//        buildType("debug") {
-//            //isMinifyEnabled = false
-//        }
-//
-//        buildType("release") {
-//            //isMinifyEnabled = true
-//        }
-//
-//        buildType("benchmark") {
-//            //isMinifyEnabled = false
-//        }
-//    }
+    buildTypes {
+        buildType("debug") {
+            isMinifyEnabled = false
+        }
+
+        buildType("release") {
+            isMinifyEnabled = true
+        }
+
+        buildType("benchmark") {
+            isMinifyEnabled = false
+        }
+    }
 
 //    sourceSets {
 //        configure("main") {

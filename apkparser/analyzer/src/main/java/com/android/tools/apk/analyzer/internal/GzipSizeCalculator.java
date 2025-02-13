@@ -140,15 +140,17 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
                     alignment = ALIGNMENT_NONE;
                 }
                 long loadAlignment = -1;
+                boolean isElf = false;
                 try (InputStream stream = zip.getInputStream(entry.getName())) {
                     if (hasElfMagicNumber(stream)) {
+                        isElf = true;
                         loadAlignment = readElfMinimumLoadSectionAlignment(stream);
                     }
                 }
 
                 sizes.put(
                         "/" + entry.getName(),
-                        new ZipEntryInfo(size, alignment, loadAlignment, isCompressed));
+                        new ZipEntryInfo(size, alignment, isCompressed, isElf, loadAlignment));
             }
         } catch (IOException ignored) {
         }

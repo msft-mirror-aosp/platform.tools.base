@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.component.legacy
+package com.android.build.api.dsl
 
-import com.android.build.gradle.internal.core.MergedFlavor
-import com.android.build.gradle.internal.core.VariantSources
-import org.gradle.api.provider.Provider
+import org.gradle.api.Incubating
 
-interface ModelV1LegacySupport {
-    val mergedFlavor: MergedFlavor
-    val dslApplicationId: Provider<String>
-    val variantSources: VariantSources
+/**
+ * Spec for running a JUnit engine against a test suite.
+ */
+@Incubating
+interface JUnitEngineSpec {
+
+    // TODO : Add APIs to identify the test engine, provide dependencies, etc...
+
+    /**
+     * Identifies the inputs required by the junit engine running the test suite.
+     */
+    @get:Incubating
+    val inputs: MutableList<AgpTestSuiteInputParameters>
 }

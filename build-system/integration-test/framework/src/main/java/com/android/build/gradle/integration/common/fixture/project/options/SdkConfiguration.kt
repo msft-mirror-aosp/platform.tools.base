@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.project.TestEnvironment
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
@@ -27,6 +28,7 @@ import kotlin.io.path.isDirectory
 /**
  * Android SDK configuration for [GradleBuild] via [GradleRuleBuilder]
  */
+@GradleDefinitionDsl
 interface SdkConfigurationBuilder {
     fun sdkDir(value: Path): SdkConfigurationBuilder
     fun removeSdk(): SdkConfigurationBuilder

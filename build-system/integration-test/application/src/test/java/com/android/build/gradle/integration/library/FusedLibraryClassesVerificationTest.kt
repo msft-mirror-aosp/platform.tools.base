@@ -544,8 +544,10 @@ class FusedLibraryClassesVerificationTest {
         val fusedLib1Project = fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME")
 
         fusedLib1Project.assertAar(AarSelector.NO_BUILD_TYPE) {
-            classesFromDirectDependencies.forEach {
-                containsClass("L$it;")
+            mainJar().classes().apply {
+                classesFromDirectDependencies.forEach {
+                    contains(it)
+                }
             }
         }
     }

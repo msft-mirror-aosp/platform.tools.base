@@ -53,11 +53,6 @@ public class InstantAppBundleArchive extends AbstractArchive {
         }
     }
 
-    @NonNull
-    public static InstantAppBundleArchive fromZippedBundle(@NonNull Path path) throws IOException {
-        return new InstantAppBundleArchive(path);
-    }
-
     @Override
     @NonNull
     public Path getContentRoot() {

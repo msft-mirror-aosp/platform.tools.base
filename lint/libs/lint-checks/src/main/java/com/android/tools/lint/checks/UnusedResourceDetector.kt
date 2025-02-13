@@ -61,6 +61,7 @@ import com.android.tools.lint.detector.api.XmlScanner
 import com.android.tools.lint.detector.api.getBaseName
 import com.android.tools.lint.detector.api.guessGradleLocation
 import com.android.tools.lint.detector.api.isFileBasedResourceType
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.tools.lint.model.LintModelResourceField
 import com.android.tools.lint.model.LintModelVariant
 import com.android.utils.SdkUtils
@@ -507,7 +508,7 @@ class UnusedResourceDetector :
           }
 
           override fun visitField(node: UField) {
-            val classType = node.type as? PsiClassType
+            val classType = node.typeFromPsi as? PsiClassType
             visitClass(classType?.resolve())
             // When using property delegation, the field type will not be the binding class.
             // It will be a delegate type with a type argument, so check that type argument too.

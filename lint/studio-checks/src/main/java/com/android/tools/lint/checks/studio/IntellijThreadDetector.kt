@@ -34,7 +34,6 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
-import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import java.util.ArrayList
@@ -218,10 +217,6 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
     return "$calleeRequirement, yet the currently inferred thread is $inferredThread"
   }
 
-  private fun PsiAnnotation.isThreadingAnnotation(): Boolean {
-    return THREADING_ANNOTATIONS.contains(qualifiedName)
-  }
-
   private fun UAnnotation.isThreadingAnnotation(): Boolean {
     return THREADING_ANNOTATIONS.contains(qualifiedName)
   }
@@ -229,18 +224,20 @@ class IntellijThreadDetector : Detector(), SourceCodeScanner {
   /** Attempts to infer the current thread context at the site of the given method call. */
   private fun getThreadContext(context: JavaContext, methodCall: UElement): List<String>? {
     val method =
-      methodCall.getParentOfType<UElement>(
-        UMethod::class.java,
-        true,
-        UAnonymousClass::class.java,
-        ULambdaExpression::class.java,
-      ) as? PsiMethod
+      methodCall
+        .getParentOfType(
+          UMethod::class.java,
+          true,
+          UAnonymousClass::class.java,
+          ULambdaExpression::class.java,
+        )
+        ?.javaPsi
 
     if (method != null) {
       val containingClass = methodCall.getContainingUClass()
       if (containingClass is UAnonymousClass) {
         val anonClassCall =
-          methodCall.getParentOfType<UObjectLiteralExpression>(
+          methodCall.getParentOfType(
             UObjectLiteralExpression::class.java,
             true,
             UCallExpression::class.java,

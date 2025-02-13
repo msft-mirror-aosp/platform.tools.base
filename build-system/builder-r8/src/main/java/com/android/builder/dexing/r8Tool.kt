@@ -129,7 +129,7 @@ fun runR8(
     inputProfileForDexStartupOptimization: Path? = null,
     r8Metadata: Path? = null,
     partialShrinkingConfig: PartialShrinkingConfig? = null,
-    r8ExecutorService: ExecutorService? = null
+    r8ExecutorService: ExecutorService? = null // null only if called by tests
 ) {
     val logger: Logger = Logger.getLogger("R8")
     if (logger.isLoggable(Level.FINE)) {

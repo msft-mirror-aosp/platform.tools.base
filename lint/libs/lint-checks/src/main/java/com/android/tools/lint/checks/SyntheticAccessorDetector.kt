@@ -28,6 +28,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
@@ -99,7 +100,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
           if (!context.evaluator.isPrivate(target)) {
             return
           }
-          if (target.isEquivalentTo(containingClass)) {
+          if (target.isEquivalentTo(containingClass.javaPsi)) {
             return
           }
 
@@ -123,7 +124,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
           }
 
           val from = node.getContainingUClass()
-          if (from != null && from.name == "Companion") {
+          if (from != null && from.nameFromSource == "Companion") {
             // TODO: Companion objects can be named with a different name;
             // we need be able to look this up in UAST
             // Another way to do it is

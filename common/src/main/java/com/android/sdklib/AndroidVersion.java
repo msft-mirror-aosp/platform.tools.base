@@ -16,6 +16,7 @@
 
 package com.android.sdklib;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
@@ -243,6 +244,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             @Nullable String codename,
             @Nullable Integer extensionLevel,
             boolean isBaseExtension) {
+        if (!isBaseExtension) {
+            checkNotNull(extensionLevel, "extensionLevel required when isBaseExtension is false");
+        }
         mApiLevel = apiLevel;
         mApiMinorLevel = apiMinorLevel;
         mCodename = sanitizeCodename(codename);
@@ -389,7 +393,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      */
     @NonNull
     private String getApiLevelString() {
-        return mApiLevel >= MIN_MINOR_VERSION_API
+        return mApiLevel >= MIN_MINOR_VERSION_API || mApiMinorLevel > 0
                ? mApiLevel + "." + mApiMinorLevel
                : Integer.toString(mApiLevel);
     }

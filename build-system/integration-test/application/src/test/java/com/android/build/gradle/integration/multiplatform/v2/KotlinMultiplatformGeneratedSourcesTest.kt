@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallback
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -69,7 +70,7 @@ class KotlinMultiplatformGeneratedSourcesTest {
         build.executor.run(":library:assembleAndroidMain")
 
         build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
-            containsJavaResourceWithContent("res.txt", "foo")
+            allJars().textFile("res.txt").isEqualTo("foo")
         }
     }
 }

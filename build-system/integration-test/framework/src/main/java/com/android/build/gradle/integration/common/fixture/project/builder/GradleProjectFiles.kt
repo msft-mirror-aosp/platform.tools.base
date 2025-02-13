@@ -33,6 +33,7 @@ import kotlin.io.path.writeText
 /**
  * Allows manipulating files of a [GenericProjectDefinition]
  */
+@GradleDefinitionDsl
 interface GradleProjectFiles {
 
     /**
@@ -67,6 +68,7 @@ interface GradleProjectFiles {
     fun remove(relativePath: String)
 }
 
+@GradleDefinitionDsl
 interface FileUpdateBuilder {
     val exists: Boolean
 
@@ -125,6 +127,7 @@ interface FileUpdateBuilder {
  *
  * The main goal is to give access to the namespace to create files in the right location.
  */
+@GradleDefinitionDsl
 interface AndroidProjectFiles: GradleProjectFiles {
     val namespace: String
     val namespaceAsPath: String

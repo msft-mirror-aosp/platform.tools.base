@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
@@ -26,6 +27,8 @@ import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiVariable;
+
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression;
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UElement;
@@ -125,12 +128,15 @@ public class TypeEvaluator {
         if (resolved instanceof UMethod) {
             return ((UMethod) resolved).getJavaPsi().getReturnType();
         } else if (resolved instanceof UVariable) {
-            UVariable variable = (UVariable) resolved;
-            UElement lastAssignment = UastLintUtils.findLastAssignment(variable, node);
-            if (lastAssignment != null) {
+            UVariable uVariable = (UVariable) resolved;
+            PsiVariable variable = (PsiVariable) uVariable.getJavaPsi();
+            if (variable != null) {
+                UElement lastAssignment = UastLintUtils.findLastAssignment(variable, node);
+                if (lastAssignment != null) {
                 return evaluate(lastAssignment);
+                }
             }
-            return variable.getType();
+            return uVariable.getType();
         } else if (resolved instanceof UCallExpression) {
             if (UastExpressionUtils.isMethodCall(resolved)) {
                 PsiMethod resolvedMethod = ((UCallExpression) resolved).resolve();

@@ -21,6 +21,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -38,7 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 @Ignore
 abstract class AbstractSingleArtifactTest<T: FileSystemLocation>(
-    private val propertyAllocator: (ObjectFactory) -> Property<T>,
+    private val propertyAllocator: (ObjectFactory) -> FileSystemLocationProperty<T>,
     private val valueAllocator: (DirectoryProperty, String) -> Provider<T>,
     private val taskAllocator: (tasks: TaskContainer, name: String) -> TaskProvider<out ProducerTask<T>>) {
 

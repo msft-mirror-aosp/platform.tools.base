@@ -16,21 +16,26 @@
 
 package com.android.build.gradle.integration.packaging
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.DEBUG
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector.Companion.RELEASE
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.core.Abi
+import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import kotlin.io.path.listDirectoryEntries
@@ -178,6 +183,51 @@ class InjectedAbiTest {
 
         project.withApk(DEBUG.fromIntermediates()) {
             PathSubject.assertThat(file).isNewerThan(apkLastModifiedTime)
+       }
+    }
+
+    class BuildAllAbisCallback: ApplicationComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.apply {
+                onVariants(selector().withBuildType("release")) {
+                    it.experimentalProperties.put(
+                        BooleanWithDefault.BUILD_ALL_ABIS_IGNORING_IDE_OPTIMIZATIONS.key,
+                        true
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testBuildAllAbisFlag() {
+        val build = rule.build {
+            androidApplication {
+                pluginCallbacks += BuildAllAbisCallback::class.java
+            }
+        }
+        val project = build.androidApplication()
+
+        build.executor
+            .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .run("assemble")
+
+        project.assertApk(RELEASE.fromIntermediates()) {
+            contains("lib/" + Abi.X86.tag + "/libapp.so")
+            contains("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
+            contains("lib/" + Abi.X86_64.tag + "/libapp.so")
+            contains("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
+       }
+
+        // Validate the debug variant did not build all ABIs
+        project.assertApk(DEBUG.fromIntermediates()) {
+            contains("lib/" + Abi.X86.tag + "/libapp.so")
+            doesNotContain("lib/" + Abi.ARM64_V8A.tag + "/libapp.so")
+            doesNotContain("lib/" + Abi.X86_64.tag + "/libapp.so")
+            doesNotContain("lib/" + Abi.ARMEABI_V7A.tag + "/libapp.so")
        }
     }
 

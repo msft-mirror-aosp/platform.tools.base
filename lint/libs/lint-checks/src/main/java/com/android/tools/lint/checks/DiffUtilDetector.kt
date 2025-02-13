@@ -64,7 +64,7 @@ class DiffUtilDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val evaluator = context.evaluator
     for (method in declaration.methods) {
-      if (method.name == "areContentsTheSame" && evaluator.getParameterCount(method) == 2) {
+      if (method.name == "areContentsTheSame" && evaluator.getParameterCount(method.javaPsi) == 2) {
         checkMethod(context, method)
       }
     }

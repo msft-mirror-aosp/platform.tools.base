@@ -33,12 +33,18 @@ public class ZipEntryInfo {
     public Alignment zipAlignment;
     public long elfLoadSectionAlignment;
     public boolean isCompressed;
+    public boolean isElf;
 
     public ZipEntryInfo(
-            long size, Alignment zipAlignment, long elfLoadSectionAlignment, boolean isCompressed) {
+            long size,
+            Alignment zipAlignment,
+            boolean isCompressed,
+            boolean isElf,
+            long elfLoadSectionAlignment) {
         this.size = size;
         this.zipAlignment = zipAlignment;
-        this.elfLoadSectionAlignment = elfLoadSectionAlignment;
         this.isCompressed = isCompressed;
+        this.isElf = isElf;
+        this.elfLoadSectionAlignment = elfLoadSectionAlignment;
     }
 }

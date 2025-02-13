@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder.kotlin
 
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -32,6 +33,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  *
  * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension]
  */
+@GradleDefinitionDsl
 interface KotlinExtension {
 
     val compilerOptions: KotlinJvmCompilerOptions /* compiled code */

@@ -17,6 +17,7 @@ package com.android.ide.common.rendering.api;
 
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.SessionParams.Key;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public abstract class RenderParams {
     public static final long DEFAULT_TIMEOUT = 250; //ms
 
     private final Object mProjectKey;
-    private final HardwareConfig mHardwareConfig;
+    private HardwareConfig mHardwareConfig;
     private final RenderResources mRenderResources;
     private final LayoutlibCallback mLayoutlibCallback;
     private final int mMinSdkVersion;
@@ -202,6 +203,10 @@ public abstract class RenderParams {
 
     public HardwareConfig getHardwareConfig() {
         return mHardwareConfig;
+    }
+
+    public void setHardwareConfig(HardwareConfig hardware) {
+        mHardwareConfig = hardware;
     }
 
     public int getMinSdkVersion() {

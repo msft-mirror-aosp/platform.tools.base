@@ -35,7 +35,12 @@ import kotlin.io.path.writeText
  * Base interface for all project definition, including but not limited to
  * [GenericProjectDefinition] and [AndroidProjectDefinition].
  */
+@GradleDefinitionDsl
 interface GradleProjectDefinition: ExtensionAwareDefinition {
+
+    /**
+     * the Gradle path of the project
+     */
     val path: String
 
     /**
@@ -116,6 +121,7 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
  *
  * See [GradleProjectDefinition.buildscript]
  */
+@GradleDefinitionDsl
 interface BuildscriptBuilder {
 
     /**

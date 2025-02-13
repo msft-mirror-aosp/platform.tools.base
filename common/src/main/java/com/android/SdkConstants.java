@@ -3064,5 +3064,5 @@ public final class SdkConstants {
     public static final String SDK_DL_FONTS_FOLDER = "fonts";
 
     /** Current version for ASM dependencies. */
-    public static final String CURRENT_ASM_VERSION = "9.7";
+    public static final String CURRENT_ASM_VERSION = "9.7.1";
 }

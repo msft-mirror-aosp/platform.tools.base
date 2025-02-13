@@ -37,6 +37,7 @@ import com.google.common.base.Strings
 /**
  * Represents a Gradle Build that can be configured before being written on disk
  */
+@GradleDefinitionDsl
 interface GradleBuildDefinition {
     companion object {
         const val DEFAULT_BUILD_NAME = "project"
@@ -45,15 +46,6 @@ interface GradleBuildDefinition {
             Strings.emptyToNull(System.getenv("CUSTOM_COMPILE_SDK"))?.toInt()
                 ?: com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
     }
-
-    /**
-     * The Default compile SDK version to use.
-     *
-     * This property on the interface gives direct access to it, but it just returns
-     * [GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION]
-     */
-    val DEFAULT_COMPILE_SDK_VERSION
-        get() = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
 
     /**
      * The name of the build. This is the value set in the settings.gradle files as the logical

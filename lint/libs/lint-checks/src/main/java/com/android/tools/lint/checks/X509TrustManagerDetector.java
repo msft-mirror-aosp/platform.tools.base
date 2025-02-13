@@ -31,10 +31,9 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiMethod;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+
 import org.jetbrains.uast.UBlockExpression;
 import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UElement;
@@ -49,6 +48,10 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+
 public class X509TrustManagerDetector extends Detector implements SourceCodeScanner, ClassScanner {
 
     @SuppressWarnings("unchecked")
@@ -62,10 +65,11 @@ public class X509TrustManagerDetector extends Detector implements SourceCodeScan
             Issue.create(
                             "TrustAllX509TrustManager",
                             "Insecure TLS/SSL trust manager",
-                            "This check looks for X509TrustManager implementations whose `checkServerTrusted` or "
-                                    + "`checkClientTrusted` methods do nothing (thus trusting any certificate chain) "
-                                    + "which could result in insecure network traffic caused by trusting arbitrary "
-                                    + "TLS/SSL certificates presented by peers.",
+                            "This check looks for X509TrustManager implementations whose"
+                                + " `checkServerTrusted` or `checkClientTrusted` methods do nothing"
+                                + " (thus trusting any certificate chain) which could result in"
+                                + " insecure network traffic caused by trusting arbitrary TLS/SSL"
+                                + " certificates presented by peers.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -103,10 +107,10 @@ public class X509TrustManagerDetector extends Detector implements SourceCodeScan
                         IMPLEMENTS_CUSTOM,
                         cls,
                         location,
-                        "Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. "
-                                + "It is likely to disable certificate validation altogether, and is "
-                                + "non-trivial to implement correctly without calling Android's default "
-                                + "implementation."));
+                        "Implementing a custom `X509TrustManager` is error-prone and likely to be"
+                            + " insecure. It is likely to disable certificate validation"
+                            + " altogether, and is non-trivial to implement correctly without"
+                            + " calling Android's default implementation."));
 
         if (cls.isInterface()) {
             return;
@@ -118,7 +122,7 @@ public class X509TrustManagerDetector extends Detector implements SourceCodeScan
     private static void checkMethod(
             @NonNull JavaContext context, @NonNull UClass cls, @NonNull String methodName) {
         JavaEvaluator evaluator = context.getEvaluator();
-        for (PsiMethod method : cls.findMethodsByName(methodName, true)) {
+        for (PsiMethod method : cls.getJavaPsi().findMethodsByName(methodName, true)) {
             if (evaluator.isAbstract(method)) {
                 continue;
             }

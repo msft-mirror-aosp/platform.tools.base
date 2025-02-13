@@ -16,15 +16,12 @@
 
 package com.android.tools.apk.analyzer;
 
-import static com.android.testutils.truth.PathSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.testutils.TestResources;
 import com.android.tools.apk.analyzer.internal.AppBundleArchive;
-import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.jimfs.Configuration;
@@ -94,32 +91,6 @@ public class ArchivesTest {
             ArchiveEntry entry = Archives.getFirstManifestArchiveEntry(node);
             assertNotNull(entry);
             assertEquals(archiveContext.getArchive(), entry.getArchive());
-        }
-    }
-
-    @Test
-    public void getFirstManifestArchiveFromAIABundle() throws IOException {
-        Path archivePath = getArchivePath("bundle.zip");
-        Path contentRoot;
-
-        try (ArchiveContext archiveContext = Archives.open(archivePath)) {
-            contentRoot = archiveContext.getArchive().getContentRoot();
-            ArchiveNode node = ArchiveTreeStructure.create(archiveContext);
-            ArchiveEntry entry = Archives.getFirstManifestArchiveEntry(node);
-            assertNotNull(entry);
-            assertNotEquals(archiveContext, entry.getArchive());
-            assertEquals(
-                    ((InnerArchiveEntry) node.getChildren().get(0).getData())
-                            .asArchiveEntry()
-                            .getArchive(),
-                    entry.getArchive());
-        }
-
-        assertThat(contentRoot).doesNotExist();
-        try (FileSystem zipFilesystem = FileUtils.createZipFilesystem(archivePath)) {
-            // If we're allowed to create the filesystem for the same file, it means we have not
-            // leaked it.
-            zipFilesystem.getPath("/");
         }
     }
 

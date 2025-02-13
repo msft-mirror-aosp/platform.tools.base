@@ -66,7 +66,7 @@ class PrivacySandboxSdkVariantScopeImpl(
     }
 
     override val compileSdkVersion: String by lazy {
-        "android-${getCompileSdkApiVersion(extension).getApiStringWithOptionalExtension()}"
+        "android-${getCompileSdkApiVersion(extension).apiStringWithExtension}"
     }
 
     override val minSdkVersion: AndroidVersion by lazy {
@@ -109,13 +109,12 @@ class PrivacySandboxSdkVariantScopeImpl(
     }
 
     private fun maybeGetCompileSdk(extension: PrivacySandboxSdkExtension): AndroidVersion? {
-        return extension.compileSdk?.let {
-            AndroidVersion(
-                it,
-                null,
-                extension.compileSdkExtension,
-                false
-            )
+        return extension.compileSdk?.let { apiLevel ->
+            val androidVersion = AndroidVersion(apiLevel)
+            when (val extensionLevel = extension.compileSdkExtension) {
+                null -> androidVersion
+                else -> androidVersion.withExtensionLevel(extensionLevel)
+            }
         }
     }
 
@@ -124,6 +123,3 @@ class PrivacySandboxSdkVariantScopeImpl(
             ?.let { SdkVersionInfo.getVersion(it, null) }
     }
 }
-
-private fun AndroidVersion.getApiStringWithOptionalExtension(): String =
-    if (extensionLevel == null) apiStringWithoutExtension else apiStringWithExtension

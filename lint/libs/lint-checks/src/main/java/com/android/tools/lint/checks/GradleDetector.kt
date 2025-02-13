@@ -38,6 +38,7 @@ import com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_KEY
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_URL
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.VulnerabilityDescription
+import com.android.tools.lint.checks.GradleDetector.Companion.COMPATIBILITY
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.LintTomlDocument
 import com.android.tools.lint.client.api.LintTomlMapValue
@@ -450,7 +451,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             .text(version.toString())
             .with(HIGHEST_KNOWN_STABLE_API.toString())
             .build()
-        report(context, statementCookie, DEPENDENCY, message, fix)
+        val clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "compileSdkVersion") }
+        report(
+          context,
+          statementCookie,
+          DEPENDENCY,
+          message,
+          fix,
+          clientProperties = clientProperties,
+        )
       }
     } else if (parent == "plugins") {
       val plugin =
@@ -1310,10 +1320,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           if (!isResolved && !hasSdkIndexIssues)
             getUpdateDependencyFix(richVersionIdentifier, versionString)
           else null
-        report(context, cookie, issue, message, fix)
+
+        val clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "$groupId:$artifactId") }
+
+        report(context, cookie, issue, message, fix, clientProperties = clientProperties)
       }
     }
   }
+
+  private fun getClientProperties(): LintMap? =
+    if (recordClientProperties) {
+      LintMap()
+    } else {
+      null
+    }
 
   private fun generateAndReportSdkIndexIssues(
     sdkIndex: GooglePlaySdkIndex,
@@ -2367,6 +2388,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     partial: Boolean = false,
     overrideSeverity: Severity? = null,
     constraint: Constraint? = null,
+    clientProperties: LintMap? = null,
   ): Boolean {
     // Some methods in GradleDetector are run without the PSI read lock in order
     // to accommodate network requests, so we grab the read lock here.
@@ -2378,6 +2400,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val location = context.getLocation(cookie)
           val incident = Incident(issue, cookie, location, message, fix)
           overrideSeverity?.let { incident.overrideSeverity(it) }
+          incident.clientProperties = clientProperties
           if (constraint != null) {
             context.report(incident, constraint)
           } else if (partial) {
@@ -2395,6 +2418,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           }
           val incident = Incident(issue, location, message, fix)
           overrideSeverity?.let { incident.overrideSeverity(it) }
+          incident.clientProperties = clientProperties
           if (constraint != null) {
             context.report(incident, constraint)
           } else if (partial) {
@@ -2756,6 +2780,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       lastTargetSdkVersion = Integer.MAX_VALUE
       lastTargetSdkVersionFile = null
     }
+
+    /**
+     * Whether to attach extra client properties to some of these incidents; this is intended to be
+     * used when lint is running in the IDE in special contexts and to communicate extra information
+     * to IDE-side quickfixes and refactorings without resorting to parsing error messages.
+     */
+    var recordClientProperties = false
 
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null

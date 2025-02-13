@@ -46,7 +46,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     val drawMethods =
       declaration.methods.filter {
-        it.name == ON_DRAW || it.name == DRAW && evaluator.parametersMatch(it, CLASS_CANVAS)
+        it.name == ON_DRAW || it.name == DRAW && evaluator.parametersMatch(it.javaPsi, CLASS_CANVAS)
       }
     for (method in drawMethods) {
       method.accept(
@@ -93,7 +93,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
     name: String,
     containingClass: UClass,
   ) {
-    val drawable = context.evaluator.extendsClass(containingClass, CLASS_DRAWABLE, false)
+    val drawable = context.evaluator.extendsClass(containingClass.javaPsi, CLASS_DRAWABLE, false)
     val calling = node is UCallExpression
     val verb = if (calling) "Calling" else "Referencing"
     val kotlin = isKotlin(node.lang)

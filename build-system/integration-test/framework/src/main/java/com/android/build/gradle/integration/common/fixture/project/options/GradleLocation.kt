@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.GRADLE_TEST_VERSION
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import java.io.File
@@ -25,6 +26,7 @@ import java.io.File
  * Support for targeting specific Gradle version/installation in [GradleRule]
  */
 
+@GradleDefinitionDsl
 interface GradleLocationBuilder {
     fun customInstallation(value: File): GradleLocationBuilder
     fun version(value: String): GradleLocationBuilder

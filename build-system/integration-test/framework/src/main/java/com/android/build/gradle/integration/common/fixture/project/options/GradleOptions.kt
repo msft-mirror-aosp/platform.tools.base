@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.google.common.collect.ImmutableList
 
 /**
@@ -68,6 +69,7 @@ data class MemoryRequirement(
 /**
  * Interface for builder pattern to configure [GradleOptions]
  */
+@GradleDefinitionDsl
 interface GradleOptionBuilder<T> {
 
     /**

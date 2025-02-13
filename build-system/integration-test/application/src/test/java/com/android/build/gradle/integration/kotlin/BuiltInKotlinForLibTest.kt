@@ -56,8 +56,10 @@ class BuiltInKotlinForLibTest {
         build.executor.run(":lib:assembleDebug")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG) {
-            containsMainClass("Lcom/foo/library/LibFoo;")
-            containsMainClass("Lcom/foo/library/KotlinLibFoo;")
+            mainJar().classes().apply {
+                contains("com/foo/library/LibFoo")
+                contains("com/foo/library/KotlinLibFoo")
+            }
         }
     }
 
@@ -126,7 +128,7 @@ class BuiltInKotlinForLibTest {
         build.executor.run(":lib:assembleDebugTestFixtures")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
-            containsMainClass("Lcom/foo/library/LibFooTestFixture;")
+            mainJar().containsClass("com/foo/library/LibFooTestFixture")
         }
 
         // Kotlin support for testFixtures should work with or without the gradle property when
@@ -137,7 +139,7 @@ class BuiltInKotlinForLibTest {
 
         build.executor.run(":lib:assembleDebugTestFixtures")
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
-            containsMainClass("Lcom/foo/library/LibFooTestFixture;")
+            mainJar().containsClass("com/foo/library/LibFooTestFixture")
         }
     }
 }

@@ -361,7 +361,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
 
     override fun visitClass(node: UClass): Boolean {
       val result = super.visitClass(node)
-      for (uastScanner in getRelevantDetectors(node)) {
+      for (uastScanner in getRelevantDetectors(node.javaPsi)) {
         uastScanner.visitClass(context, node)
       }
       return result

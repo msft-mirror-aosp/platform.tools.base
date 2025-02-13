@@ -125,6 +125,9 @@ coverage_java_test(
     name = "tools.tests",
     # buildifier: disable=bad-recursive-glob
     srcs = glob(["src/test/java/**/*.java"]),
+    add_opens = [
+        "java.base/java.nio.charset",
+    ],
     jvm_flags = ["-Dtest.suite.jar=tools.tests.jar"],
     resources = glob(["src/test/resources/**"]),
     test_class = "com.android.testutils.JarTestSuite",

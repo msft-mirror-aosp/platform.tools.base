@@ -127,6 +127,7 @@ import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.minSdkAtLeast
 import com.android.tools.lint.detector.api.minSdkLessThan
 import com.android.tools.lint.detector.api.resolveOperator
+import com.android.tools.lint.detector.api.typeFromPsi
 import com.android.utils.XmlUtils
 import com.android.utils.usLocaleCapitalize
 import com.intellij.psi.CommonClassNames.JAVA_LANG_AUTO_CLOSEABLE
@@ -1321,13 +1322,13 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       if (element is UMethod) {
         val node = element
         for (parameter in node.uastParameters) {
-          checkInjectionType(parameter, parameter.type)
+          checkInjectionType(parameter, parameter.typeFromPsi)
         }
         if (element.sourcePsi is KtProperty) {
           checkInjectionType(element, element.returnType)
         }
       } else if (element is UField) {
-        checkInjectionType(element, element.type)
+        checkInjectionType(element, element.typeFromPsi)
       }
     }
 
@@ -1678,7 +1679,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           // (unless using desugar which supports this for all API levels)
           !context.project.isDesugaring(Desugaring.INTERFACE_METHODS)
       ) {
-        val methodModifierList = node.modifierList
+        val methodModifierList = node.javaPsi.modifierList
         if (
           methodModifierList.hasExplicitModifier(PsiModifier.DEFAULT) ||
             methodModifierList.hasExplicitModifier(PsiModifier.STATIC)
@@ -2041,7 +2042,11 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       // then check the package prefix to see whether we know it's an API method whose
       // members should all have been inlined.
       if (call.isMethodCall()) {
-        if (receiver != null && receiver !is UThisExpression && receiver !is PsiSuperExpression) {
+        if (
+          receiver != null &&
+            receiver !is UThisExpression &&
+            receiver.sourcePsi !is PsiSuperExpression
+        ) {
           val receiverType = receiver.getExpressionType()
           if (receiverType is PsiClassType) {
             val containingType = context.evaluator.getClassType(containingClass)
@@ -2618,7 +2623,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
     override fun visitLocalVariable(node: ULocalVariable) {
       val initializer = node.uastInitializer ?: return
       val initializerType = initializer.getExpressionType() as? PsiClassType ?: return
-      val interfaceType = node.type
+      val interfaceType = node.typeFromPsi
 
       if (interfaceType !is PsiClassType) {
         return
@@ -4099,11 +4104,9 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         val value =
           annotation.findDeclaredAttributeValue(ATTR_VALUE)
             ?: annotation.findDeclaredAttributeValue("api")
-        if (value is PsiReferenceExpression) {
-          val name = value.referenceName
-          if (name?.length == 1) {
-            api = max(api, SdkVersionInfo.getApiByBuildCode(name, true))
-          }
+        val name = (value?.javaPsi as? PsiReferenceExpression)?.referenceName
+        if (name?.length == 1) {
+          api = max(api, SdkVersionInfo.getApiByBuildCode(name, true))
         }
       }
       return if (api == -1) {

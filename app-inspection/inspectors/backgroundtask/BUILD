@@ -66,7 +66,6 @@ robolectric_test(
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
-        "@maven//:org.robolectric.android-all-instrumented",
         "@maven//:org.robolectric.robolectric",
     ],
 )

@@ -19,10 +19,8 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -121,20 +119,19 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         val fusedLib1 = build.fusedLibrary(":fusedLib1")
-        fusedLib1.withAar(AarSelector.NO_BUILD_TYPE) {
-            val metadataContents =
-                getEntryAsFile("META-INF/com/android/build/gradle/aar-metadata.properties")
-            val aarMetadataReader = AarMetadataReader(metadataContents.toFile())
-            // Value constant from AGP
-            assertThat(aarMetadataReader.aarFormatVersion).isEqualTo("1.0")
-            // Value constant from AGP
-            assertThat(aarMetadataReader.aarMetadataVersion).isEqualTo("1.0")
-            // Value from androidLib3
-            assertThat(aarMetadataReader.minAgpVersion).isEqualTo("4.0.1")
-            // Value from androidLib3
-            assertThat(aarMetadataReader.minCompileSdk).isEqualTo("18")
-            // Value from androidLib1
-            assertThat(aarMetadataReader.minCompileSdkExtension).isEqualTo("2")
+        fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
+            aarMetadata {
+                // Value constant from AGP
+                formatVersion().isEqualTo("1.0")
+                // Value constant from AGP
+                metadataVersion().isEqualTo("1.0")
+                // Value from androidLib3
+                minAgpVersion().isEqualTo("4.0.1")
+                // Value from androidLib3
+                minCompileSdk().isEqualTo("18")
+                // Value from androidLib1
+                minCompileSdkExtension().isEqualTo("2")
+            }
         }
 
         fusedLib1.reconfigure {
@@ -145,22 +142,20 @@ internal class FusedLibraryMergeArtifactTaskTest {
         }
         build.executor.run(":fusedLib1:assemble")
 
-        fusedLib1.withAar(AarSelector.NO_BUILD_TYPE) {
-            val metadataContents =
-                getEntryAsFile("META-INF/com/android/build/gradle/aar-metadata.properties")
-            val aarMetadataReader = AarMetadataReader(metadataContents.toFile())
-            // Value constant from AGP
-            assertThat(aarMetadataReader.aarFormatVersion).isEqualTo("1.0")
-            // Value constant from AGP
-            assertThat(aarMetadataReader.aarMetadataVersion).isEqualTo("1.0")
-            // Value from aarMetadata DSL
-            assertThat(aarMetadataReader.minAgpVersion).isEqualTo("8.4-alpha02")
-            // Value from aarMetadata DSL
-            assertThat(aarMetadataReader.minCompileSdk).isEqualTo("9")
-            // Default value
-            assertThat(aarMetadataReader.minCompileSdkExtension).isEqualTo("0")
+        fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
+            aarMetadata {
+                // Value constant from AGP
+                formatVersion().isEqualTo("1.0")
+                // Value constant from AGP
+                metadataVersion().isEqualTo("1.0")
+                // Value from aarMetadata DSL
+                minAgpVersion().isEqualTo("8.4-alpha02")
+                // Value from aarMetadata DSL
+                minCompileSdk().isEqualTo("9")
+                // Default value
+                minCompileSdkExtension().isEqualTo("0")
+            }
         }
-
     }
 
     @Test
@@ -177,8 +172,8 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            containsFileWithContent("assets/android_lib_one_asset.txt", "androidLib3")
-            contains(listOf(
+            textFile("assets/android_lib_one_asset.txt").isEqualTo("androidLib3")
+            entries().containsAtLeastElementsIn(listOf(
                 "assets/android_lib_one_asset.txt",
                 "assets/android_lib_two_asset.txt",
                 "assets/subdir/android_lib_one_asset_in_subdir.txt"
@@ -193,7 +188,7 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            contains(listOf(
+            entries().containsAtLeastElementsIn(listOf(
                 "jni/armeabi-v7a/librsjni_androidx.so",
                 "jni/armeabi-v7a/libRSSupport.so",
                 "jni/armeabi-v7a/librsjni.so",
@@ -219,7 +214,7 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            containsJavaResource("my_java_resource.txt")
+            allJars().containsResource("my_java_resource.txt")
         }
 
         val androidLib2 = build.androidLibrary(":androidLib2")

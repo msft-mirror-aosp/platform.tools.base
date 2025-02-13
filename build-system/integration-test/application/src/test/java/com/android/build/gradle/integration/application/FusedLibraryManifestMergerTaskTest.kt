@@ -16,12 +16,10 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.BaseAndroidProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_MANIFEST
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
@@ -30,8 +28,6 @@ import com.android.builder.errors.IssueReporter
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.readText
 
 /* Tests for [FusedLibraryManifestMergerTask] */
 internal class FusedLibraryManifestMergerTaskTest {
@@ -191,9 +187,7 @@ internal class FusedLibraryManifestMergerTaskTest {
 
         // build the fused AAR then get its location
         build.executor.run(":fusedLib1:assemble")
-        val aarFile = build.fusedLibrary(":fusedLib1").withAar(AarSelector.NO_BUILD_TYPE) {
-            file
-        }
+        val aarFile = build.fusedLibrary(":fusedLib1").getAarFile(AarSelector.NO_BUILD_TYPE)
 
         // inject it as a local dependency of the app module
         build.androidApplication().reconfigure {
@@ -236,10 +230,11 @@ internal class FusedLibraryManifestMergerTaskTest {
         val build = rule.build
         build.executor.run(":fusedLib1:assemble")
 
-        build.fusedLibrary(":fusedLib1").withAar(AarSelector.NO_BUILD_TYPE) {
-            val manifest = getEntryAsFile(SdkConstants.ANDROID_MANIFEST_XML).readText()
-            assertThat(manifest).contains("""android:host="injected-value-for-hostName"""")
-            assertThat(manifest).contains("""android:host="${'$'}{notReplaced}"""")
+        build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
+            manifest().apply {
+                contains("""android:host="injected-value-for-hostName"""")
+                contains("""android:host="${'$'}{notReplaced}"""")
+            }
         }
     }
 

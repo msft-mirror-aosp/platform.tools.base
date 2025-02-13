@@ -110,7 +110,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
     }
 
     val evaluator = context.evaluator
-    if (!evaluator.extendsClass(declaration, PREFERENCE_ACTIVITY, false)) {
+    if (!evaluator.extendsClass(declaration.javaPsi, PREFERENCE_ACTIVITY, false)) {
       return
     }
     val className = declaration.qualifiedName ?: return
@@ -122,7 +122,7 @@ class PreferenceActivityDetector : Detector(), XmlScanner, SourceCodeScanner {
       // Ignore the issue if we target an API greater than 19 and the class in
       // question specifically overrides isValidFragment() and thus knowingly allows
       // valid fragments.
-      val overrides = overridesIsValidFragment(evaluator, declaration)
+      val overrides = overridesIsValidFragment(evaluator, declaration.javaPsi)
       val message =
         "`PreferenceActivity` subclass $className should not be exported in the manifest"
       // When linting incrementally just in the Java class, place the error on

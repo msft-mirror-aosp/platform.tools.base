@@ -88,12 +88,8 @@ abstract class PackageApplication : PackageAndroidArtifact() {
     class CreationAction(
         creationConfig: ApkCreationConfig,
         private val outputDirectory: File,
-        manifests: Provider<Directory>,
-        manifestType: Artifact<Directory>
     ) : PackageAndroidArtifact.CreationAction<PackageApplication>(
         creationConfig,
-        manifests,
-        manifestType
     ) {
 
         private var transformationRequest: ArtifactTransformationRequest<PackageApplication>? = null

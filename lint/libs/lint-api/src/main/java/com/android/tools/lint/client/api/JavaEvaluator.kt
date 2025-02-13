@@ -874,7 +874,7 @@ class JavaEvaluator {
   // Just here to disambiguate getPackage(PsiElement) and getPackage(UElement) since
   // a UMethod is both a PsiElement and a UElement
   open fun getPackage(node: UMethod): PsiPackage? {
-    return getPackage(node as PsiElement)
+    return getPackage(node.javaPsi)
   }
 
   /** Returns the Lint project containing the given element. */
@@ -907,7 +907,7 @@ class JavaEvaluator {
   /** Disambiguate between UElement and PsiElement since a UMethod is both. */
   @Suppress("unused")
   open fun getLibrary(element: UMethod): LintModelMavenName? {
-    return getLibrary(element as PsiElement)
+    return getLibrary(element.javaPsi)
   }
 
   fun getLibrary(file: File): LintModelMavenName? {
@@ -1223,16 +1223,16 @@ class JavaEvaluator {
    * implementing a method from an interface.
    */
   fun isOverride(method: UMethod, includeInterfaces: Boolean = true): Boolean {
-    if (isStatic(method)) {
+    if (isStatic(method.javaPsi)) {
       return false
     }
 
-    if (isPublic(method) || isProtected(method)) {
+    if (isPublic(method) || isProtected(method.javaPsi)) {
       val cls = method.getContainingUClass() ?: return false
-      val superCls = cls.superClass ?: return false
+      val superCls = cls.javaPsi.superClass ?: return false
 
       if (includeInterfaces) {
-        val superMethods = method.findSuperMethods()
+        val superMethods = method.javaPsi.findSuperMethods()
         return superMethods.isNotEmpty()
       }
 

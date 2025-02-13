@@ -1781,14 +1781,14 @@ class VersionChecks(
 
       fun getMethodKey(evaluator: JavaEvaluator, method: UMethod): String {
         val desc =
-          evaluator.getMethodDescription(method, includeName = false, includeReturn = false)
-        val cls = method.getContainingUClass()?.let { evaluator.getQualifiedName(it) }
+          evaluator.getMethodDescription(method.javaPsi, includeName = false, includeReturn = false)
+        val cls = method.getContainingUClass()?.let { evaluator.getQualifiedName(it.javaPsi) }
         return "$cls#${method.name}$desc"
       }
 
       fun getFieldKey(evaluator: JavaEvaluator, field: UField): String {
-        val cls = field.getContainingUClass()?.let { evaluator.getQualifiedName(it) }
-        return "$cls#${field.name}"
+        val cls = field.getContainingUClass()?.let { evaluator.getQualifiedName(it.javaPsi) }
+        return "$cls#${field.nameFromSource}"
       }
 
       private fun getMethodKey(evaluator: JavaEvaluator, method: PsiMethod): String {

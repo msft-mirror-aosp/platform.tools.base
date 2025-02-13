@@ -292,7 +292,7 @@ internal open class StubClassFile(
             if (outerClass == null) {
               cw.visitSource(context.file.name, "")
             } else {
-              cw.visitOuterClass(outerClass.internalName(), null, null)
+              cw.visitOuterClass(outerClass.javaPsi.internalName(), null, null)
             }
 
             for (inner in cls.innerClasses) {

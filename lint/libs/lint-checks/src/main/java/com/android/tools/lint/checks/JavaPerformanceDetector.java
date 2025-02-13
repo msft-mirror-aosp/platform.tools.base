@@ -42,6 +42,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.intellij.psi.PsiClass;
@@ -50,10 +51,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiTypesUtil;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+
 import org.jetbrains.uast.UBinaryExpression;
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UCallableReferenceExpression;
@@ -75,6 +73,11 @@ import org.jetbrains.uast.UastUtils;
 import org.jetbrains.uast.util.UastExpressionUtils;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+
 /**
  * Looks for performance issues in Java files, such as memory allocations during drawing operations
  * and using HashMap instead of SparseArray.
@@ -89,15 +92,17 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
             Issue.create(
                             "DrawAllocation",
                             "Memory allocations within drawing code",
-                            "You should avoid allocating objects during a drawing or layout operation. These "
-                                    + "are called frequently, so a smooth UI can be interrupted by garbage collection "
-                                    + "pauses caused by the object allocations.\n"
-                                    + "\n"
-                                    + "The way this is generally handled is to allocate the needed objects up front "
-                                    + "and to reuse them for each drawing operation.\n"
-                                    + "\n"
-                                    + "Some methods allocate memory on your behalf (such as `Bitmap.create`), and these "
-                                    + "should be handled in the same way.",
+                            "You should avoid allocating objects during a drawing or layout"
+                                + " operation. These are called frequently, so a smooth UI can be"
+                                + " interrupted by garbage collection pauses caused by the object"
+                                + " allocations.\n"
+                                + "\n"
+                                + "The way this is generally handled is to allocate the needed"
+                                + " objects up front and to reuse them for each drawing"
+                                + " operation.\n"
+                                + "\n"
+                                + "Some methods allocate memory on your behalf (such as"
+                                + " `Bitmap.create`), and these should be handled in the same way.",
                             Category.PERFORMANCE,
                             9,
                             Severity.WARNING,
@@ -109,17 +114,19 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
             Issue.create(
                             "UseSparseArrays",
                             "HashMap can be replaced with SparseArray",
-                            "For maps where the keys are of type integer, it's typically more efficient to "
-                                    + "use the Android `SparseArray` API. This check identifies scenarios where you might "
-                                    + "want to consider using `SparseArray` instead of `HashMap` for better performance.\n"
-                                    + "\n"
-                                    + "This is **particularly** useful when the value types are primitives like ints, "
-                                    + "where you can use `SparseIntArray` and avoid auto-boxing the values from `int` to "
-                                    + "`Integer`.\n"
-                                    + "\n"
-                                    + "If you need to construct a `HashMap` because you need to call an API outside of "
-                                    + "your control which requires a `Map`, you can suppress this warning using for "
-                                    + "example the `@SuppressLint` annotation.",
+                            "For maps where the keys are of type integer, it's typically more"
+                                + " efficient to use the Android `SparseArray` API. This check"
+                                + " identifies scenarios where you might want to consider using"
+                                + " `SparseArray` instead of `HashMap` for better performance.\n"
+                                + "\n"
+                                + "This is **particularly** useful when the value types are"
+                                + " primitives like ints, where you can use `SparseIntArray` and"
+                                + " avoid auto-boxing the values from `int` to `Integer`.\n"
+                                + "\n"
+                                + "If you need to construct a `HashMap` because you need to call an"
+                                + " API outside of your control which requires a `Map`, you can"
+                                + " suppress this warning using for example the `@SuppressLint`"
+                                + " annotation.",
                             Category.PERFORMANCE,
                             4,
                             Severity.WARNING,
@@ -131,10 +138,10 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
             Issue.create(
                     "UseValueOf",
                     "Should use `valueOf` instead of `new`",
-                    "You should not call the constructor for wrapper classes directly, such as"
-                            + "`new Integer(42)`. Instead, call the `valueOf` factory method, such as "
-                            + "`Integer.valueOf(42)`. This will typically use less memory because common integers "
-                            + "such as 0 and 1 will share a single instance.",
+                    "You should not call the constructor for wrapper classes directly, such as`new"
+                        + " Integer(42)`. Instead, call the `valueOf` factory method, such as"
+                        + " `Integer.valueOf(42)`. This will typically use less memory because"
+                        + " common integers such as 0 and 1 will share a single instance.",
                     Category.PERFORMANCE,
                     4,
                     Severity.WARNING,
@@ -183,7 +190,7 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
 
         @Override
         public void visitMethod(@NonNull UMethod node) {
-            mFlagAllocations = isBlockedAllocationMethod(node);
+            mFlagAllocations = isBlockedAllocationMethod(node.getJavaPsi());
         }
 
         @Override
@@ -282,7 +289,7 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
                 UMethod method = UastUtils.getParentOfType(node, UMethod.class);
 
                 if (method != null
-                        && isBlockedAllocationMethod(method)
+                        && isBlockedAllocationMethod(method.getJavaPsi())
                         && !isCallingInlineClass(node)
                         && !isLazilyInitialized(node)) {
                     reportAllocation(node);
@@ -351,9 +358,9 @@ public class JavaPerformanceDetector extends Detector implements SourceCodeScann
                             PAINT_ALLOC,
                             node,
                             callLocation,
-                            "Avoid object allocations during draw operations: Use "
-                                    + "`Canvas.getClipBounds(Rect)` instead of `Canvas.getClipBounds()` "
-                                    + "which allocates a temporary `Rect`");
+                            "Avoid object allocations during draw operations: Use"
+                                + " `Canvas.getClipBounds(Rect)` instead of"
+                                + " `Canvas.getClipBounds()` which allocates a temporary `Rect`");
                 }
             }
         }

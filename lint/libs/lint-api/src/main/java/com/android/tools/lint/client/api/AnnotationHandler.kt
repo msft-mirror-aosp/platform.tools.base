@@ -820,7 +820,7 @@ internal class AnnotationHandler(
       }
     }
 
-    val superMethod = evaluator.getSuperMethod(method)
+    val superMethod = evaluator.getSuperMethod(method.javaPsi)
     if (superMethod == null) {
       // getSuperMethod does not return a PsiMethod for implicit default constructors
       if (method.isConstructor) {
@@ -1059,7 +1059,7 @@ internal class AnnotationHandler(
   }
 
   fun visitEnumConstant(context: JavaContext, constant: UEnumConstant) {
-    val method = constant.resolveMethod()
+    val method = constant.resolve()
     if (method != null) {
       checkCall(context, method, constant)
     }

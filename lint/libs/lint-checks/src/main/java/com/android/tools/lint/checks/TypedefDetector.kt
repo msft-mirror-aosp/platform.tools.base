@@ -627,7 +627,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         // a constant declaration intended to be used in a typedef itself)
         if (fieldInitialization != null && expression is UReferenceExpression) {
           val resolved = expression.resolve()
-          if (resolved != null && resolved.isEquivalentTo(fieldInitialization)) {
+          if (resolved != null && resolved.isEquivalentTo(fieldInitialization.javaPsi)) {
             return
           }
         }
@@ -681,7 +681,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         }
       }
 
-      if (allowed is PsiCompiledElement || annotation.psi is PsiCompiledElement) {
+      if (annotation.javaPsi is PsiCompiledElement) {
         // If we for some reason have a compiled annotation, don't flag the error
         // since we can't represent IntDef data on these annotations
         return

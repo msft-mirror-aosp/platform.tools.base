@@ -122,27 +122,61 @@ public class LocalRepoTest extends TestCase {
         SchemaModuleUtil.marshal(
                 RepoManager.getCommonModule().createLatestFactory().generateRepository(repo),
                 ImmutableSet.of(RepoManager.getGenericModule()), output,
-                manager.getResourceResolver(progress), progress);
+                manager.getResourceResolver(progress), progress, true);
+        progress.assertNoErrorsOrWarnings();
+
+        assertThat(output.toString())
+                .isEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+                           + "<ns4:repository xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\" xmlns:ns3=\"http://schemas.android.com/repository/android/generic/02\" xmlns:ns4=\"http://schemas.android.com/repository/android/common/02\">\n"
+                           + "    <license id=\"license1\" type=\"text\">some license text</license>\n"
+                           + "    <localPackage path=\"mypackage;path\">\n"
+                           + "        <type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"ns3:genericDetailsType\"/>\n"
+                           + "        <revision>\n"
+                           + "            <major>1</major>\n"
+                           + "            <minor>2</minor>\n"
+                           + "        </revision>\n"
+                           + "        <display-name>package name</display-name>\n"
+                           + "        <uses-license ref=\"license1\"/>\n"
+                           + "        <dependencies>\n"
+                           + "            <dependency path=\"depId1\">\n"
+                           + "                <min-revision>\n"
+                           + "                    <major>1</major>\n"
+                           + "                    <minor>2</minor>\n"
+                           + "                    <micro>3</micro>\n"
+                           + "                </min-revision>\n"
+                           + "            </dependency>\n"
+                           + "            <dependency path=\"depId2\"/>\n"
+                           + "        </dependencies>\n"
+                           + "    </localPackage>\n"
+                           + "</ns4:repository>\n");
+
+        // Now check with formattedOutput == false
+        output = new ByteArrayOutputStream();
+        SchemaModuleUtil.marshal(
+                RepoManager.getCommonModule().createLatestFactory().generateRepository(repo),
+                ImmutableSet.of(RepoManager.getGenericModule()), output,
+                manager.getResourceResolver(progress), progress, false);
         progress.assertNoErrorsOrWarnings();
 
         assertThat(output.toString())
                 .isEqualTo(
                         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><ns4:repository "
-                                + "xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\" "
-                                + "xmlns:ns3=\"http://schemas.android.com/repository/android/generic/02\" "
-                                + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/02\">"
-                                + "<license id=\"license1\" type=\"text\">some license text</license>"
-                                + "<localPackage path=\"mypackage;path\">"
-                                + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-                                + "xsi:type=\"ns3:genericDetailsType\"/>"
-                                + "<revision><major>1</major><minor>2</minor></revision>"
-                                + "<display-name>package name</display-name>"
-                                + "<uses-license ref=\"license1\"/>"
-                                + "<dependencies>"
-                                + "<dependency path=\"depId1\"><min-revision><major>1</major>"
-                                + "<minor>2</minor><micro>3</micro></min-revision></dependency>"
-                                + "<dependency path=\"depId2\"/></dependencies>"
-                                + "</localPackage></ns4:repository>");
+                        + "xmlns:ns2=\"http://schemas.android.com/repository/android/generic/01\" "
+                        + "xmlns:ns3=\"http://schemas.android.com/repository/android/generic/02\" "
+                        + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/02\">"
+                        + "<license id=\"license1\" type=\"text\">some license text</license>"
+                        + "<localPackage path=\"mypackage;path\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns3:genericDetailsType\"/>"
+                        + "<revision><major>1</major><minor>2</minor></revision>"
+                        + "<display-name>package name</display-name>"
+                        + "<uses-license ref=\"license1\"/>"
+                        + "<dependencies>"
+                        + "<dependency path=\"depId1\"><min-revision><major>1</major>"
+                        + "<minor>2</minor><micro>3</micro></min-revision></dependency>"
+                        + "<dependency path=\"depId2\"/></dependencies>"
+                        + "</localPackage></ns4:repository>");
+
     }
 
     // Test that a package in an inconsistent location gives a warning.

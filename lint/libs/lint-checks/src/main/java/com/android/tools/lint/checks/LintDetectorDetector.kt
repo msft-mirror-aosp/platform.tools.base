@@ -37,6 +37,7 @@ import com.android.tools.lint.detector.api.isDuplicatedOverload
 import com.android.tools.lint.detector.api.isJava
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.isPolyadicFromStringTemplate
+import com.android.tools.lint.detector.api.nameFromSource
 import com.android.utils.usLocaleCapitalize
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
 import com.intellij.psi.PsiClassType
@@ -225,7 +226,7 @@ class LintDetectorDetector : Detector(), UastScanner {
     checkKotlin(context, declaration)
     declaration.accept(LintDetectorVisitor(context))
 
-    if (context.evaluator.inheritsFrom(declaration, CLASS_ISSUE_REGISTRY)) {
+    if (context.evaluator.inheritsFrom(declaration.javaPsi, CLASS_ISSUE_REGISTRY)) {
       checkIssueRegistry(context, declaration)
     }
   }
@@ -545,7 +546,7 @@ class LintDetectorDetector : Detector(), UastScanner {
     }
 
     override fun visitField(node: UField): Boolean {
-      if (node.name == "issues") {
+      if (node.nameFromSource == "issues") {
         val initializer = node.uastInitializer
         if (initializer != null) {
           checkGetIssues(initializer)
@@ -581,7 +582,7 @@ class LintDetectorDetector : Detector(), UastScanner {
                 if (
                   issue != null &&
                     isJava(issue.lang) &&
-                    evaluator.inheritsFrom(issue.getContainingUClass(), CLASS_DETECTOR)
+                    evaluator.inheritsFrom(issue.getContainingUClass()?.javaPsi, CLASS_DETECTOR)
                 ) {
                   // Don't need to do anything; we'll see this registration
                   // as part of our regular detector visit

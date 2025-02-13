@@ -33,14 +33,17 @@ import com.android.tools.lint.detector.api.LintFix;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.SourceCodeScanner;
+
 import com.intellij.psi.PsiMethod;
-import java.util.Arrays;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UExpression;
 import org.jetbrains.uast.UMethod;
 import org.jetbrains.uast.USuperExpression;
 import org.jetbrains.uast.UastUtils;
+
+import java.util.Arrays;
+import java.util.List;
 
 /** Checks for cases where the wrong call is being made */
 public class WrongCallDetector extends Detector implements SourceCodeScanner {
@@ -49,8 +52,8 @@ public class WrongCallDetector extends Detector implements SourceCodeScanner {
             Issue.create(
                             "WrongCall",
                             "Using wrong draw/layout method",
-                            "Custom views typically need to call `measure()` on their children, not `onMeasure`. "
-                                    + "Ditto for onDraw, onLayout, etc.",
+                            "Custom views typically need to call `measure()` on their children, not"
+                                + " `onMeasure`. Ditto for onDraw, onLayout, etc.",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -82,7 +85,7 @@ public class WrongCallDetector extends Detector implements SourceCodeScanner {
             return;
         }
 
-        PsiMethod method = UastUtils.getParentOfType(node, UMethod.class, true);
+        UMethod method = UastUtils.getParentOfType(node, UMethod.class, true);
         if (method != null) {
             String callName = getMethodName(node);
             if (callName != null && !callName.equals(method.getName())) {
@@ -104,7 +107,8 @@ public class WrongCallDetector extends Detector implements SourceCodeScanner {
         String suggestion = Character.toLowerCase(name.charAt(2)) + name.substring(3);
         String message =
                 String.format(
-                        "Suspicious method call; should probably call \"`%1$s`\" rather than \"`%2$s`\"",
+                        "Suspicious method call; should probably call \"`%1$s`\" rather than"
+                            + " \"`%2$s`\"",
                         suggestion, name);
         LintFix fix =
                 LintFix.create()

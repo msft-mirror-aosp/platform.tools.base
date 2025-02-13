@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
@@ -34,6 +35,7 @@ import kotlin.io.path.writeBytes
  *
  * This class represents non Android projects that don't have their own custom interfaces
  */
+@GradleDefinitionDsl
 interface GenericProjectDefinition: GradleProjectDefinition {
     /** executes the lambda that adds/updates/removes files from the project */
     fun files(action: GradleProjectFiles.() -> Unit)

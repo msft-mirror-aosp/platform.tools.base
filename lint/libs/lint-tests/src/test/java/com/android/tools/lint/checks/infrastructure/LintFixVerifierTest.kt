@@ -469,7 +469,7 @@ class LintFixVerifierTest {
       val part2 =
         fix()
           .replace()
-          .range(context.getLocation(node.getContainingUClass()!!.lastChild))
+          .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
           .beginning()
           .with(
             "        @RequiresApi(21)\n" +
@@ -526,7 +526,7 @@ class LintFixVerifierTest {
       val part2 =
         fix()
           .replace()
-          .range(context.getLocation(node.getContainingUClass()!!.lastChild))
+          .range(context.getLocation(node.getContainingUClass()!!.sourcePsi?.lastChild))
           .beginning()
           .with(
             "        @RequiresApi(21)\n" +

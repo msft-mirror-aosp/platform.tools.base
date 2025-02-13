@@ -123,7 +123,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     }
     if (qualifier == null) {
       // Implicit: check surrounding class
-      val currentMethod = call.getParentOfType(UMethod::class.java, true)
+      val currentMethod = call.getParentOfType(UMethod::class.java, true)?.javaPsi
       if (
         currentMethod != null &&
           !evaluator.isMemberInSubClassOf(currentMethod, SdkConstants.CLASS_APPLICATION, true)

@@ -67,10 +67,11 @@ class RecyclerViewDetector : Detector(), SourceCodeScanner {
 
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val evaluator = context.evaluator
-    for (method in declaration.findMethodsByName(ON_BIND_VIEW_HOLDER, false)) {
+    val psiClass = declaration.javaPsi
+    for (method in psiClass.findMethodsByName(ON_BIND_VIEW_HOLDER, false)) {
       val size = evaluator.getParameterCount(method)
       if (size == 2 || size == 3) {
-        checkMethod(context, method, declaration)
+        checkMethod(context, method, psiClass)
       }
     }
   }

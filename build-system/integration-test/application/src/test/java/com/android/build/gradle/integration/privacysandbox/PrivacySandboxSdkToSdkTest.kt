@@ -72,10 +72,10 @@ class PrivacySandboxSdkToSdkTest {
         build.configuredExecutor().run(":sdk-impl-a:assembleDebug")
 
         build.androidLibrary(":sdk-impl-a").assertAar(AarSelector.DEBUG) {
-            containsExactlyMainClasses(
-                "com/example/sdkImplA/Example\$Companion\$useSymbolFromPrivacySandboxB$1.class",
-                "com/example/sdkImplA/Example\$Companion.class",
-                "com/example/sdkImplA/Example.class"
+            mainJar().classes().containsExactly(
+                "com/example/sdkImplA/Example\$Companion\$useSymbolFromPrivacySandboxB$1",
+                "com/example/sdkImplA/Example\$Companion",
+                "com/example/sdkImplA/Example"
             )
         }
 

@@ -1009,8 +1009,10 @@ class UastTest : TestCase() {
       )
 
       fun isUParameterNamedThis(element: UElement) =
-        element is UParameter && element.name == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
-      fun isUClassNamedHello(element: UElement) = element is UClass && element.name == "Hello"
+        element is UParameter &&
+          element.nameFromSource == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME
+      fun isUClassNamedHello(element: UElement) =
+        element is UClass && element.nameFromSource == "Hello"
 
       // Each `this` expression from the code above (numbered 0, 1, 2, etc.) should resolve to
       // either the UClass named `Hello` or the UParameter named `<this>` from the parent lambda
@@ -1586,29 +1588,29 @@ class UastTest : TestCase() {
 
       val evaluator = DefaultJavaEvaluator(null, null)
       val sb = StringBuilder()
-      for (cls in file.classes.sortedBy { it.name }) {
+      for (cls in file.classes.sortedBy { it.nameFromSource }) {
         for (declaration in cls.uastDeclarations) {
           if (declaration is UClass) {
             sb.append("nested class ")
-            sb.append(declaration.name).append(":")
-            if (evaluator.isCompanion(declaration)) {
+            sb.append(declaration.nameFromSource).append(":")
+            if (evaluator.isCompanion(declaration.javaPsi)) {
               sb.append(" companion")
             }
             sb.append("\n")
           }
         }
         sb.append("class ")
-        sb.append(cls.name).append(":")
+        sb.append(cls.nameFromSource).append(":")
         if (evaluator.isData(cls)) {
           sb.append(" data")
         }
         if (evaluator.isSealed(cls)) {
           sb.append(" sealed")
         }
-        if (evaluator.isCompanion(cls)) {
+        if (evaluator.isCompanion(cls.javaPsi)) {
           sb.append(" companion")
         }
-        for (typeParameter in cls.typeParameters) {
+        for (typeParameter in cls.javaPsi.typeParameters) {
           sb.append(" ")
           if (isOutVariance(typeParameter)) {
             sb.append("out ")
@@ -1631,7 +1633,7 @@ class UastTest : TestCase() {
           sb.append("    method ").append(methodName)
           sb.append("(")
           var first = true
-          for (parameter in method.uastParameters) {
+          for (parameter in method.javaPsi.parameterList.parameters) {
             if (first) {
               first = false
             } else {
@@ -1653,7 +1655,7 @@ class UastTest : TestCase() {
           if (evaluator.isNoInline(method)) {
             sb.append(" noinline")
           }
-          if (evaluator.isTailRec(method)) {
+          if (evaluator.isTailRec(method.javaPsi)) {
             sb.append(" tailrec")
           }
           if (evaluator.isSuspend(method)) {
@@ -1681,7 +1683,7 @@ class UastTest : TestCase() {
             sb.append(" external")
           }
           first = true
-          for (typeParam in method.typeParameters) {
+          for (typeParam in method.javaPsi.typeParameters) {
             if (first) {
               first = false
             } else {
@@ -1703,12 +1705,12 @@ class UastTest : TestCase() {
 
           sb.append("\n")
         }
-        for (method in cls.fields.sortedBy { it.name }) {
-          sb.append("    field ").append(method.name).append(":")
-          if (evaluator.isLateInit(method)) {
+        for (field in cls.fields.sortedBy { it.nameFromSource }) {
+          sb.append("    field ").append(field.nameFromSource).append(":")
+          if (evaluator.isLateInit(field)) {
             sb.append(" lateinit")
           }
-          if (evaluator.isConst(method)) {
+          if (evaluator.isConst(field)) {
             sb.append(" const")
           }
           sb.append("\n")
@@ -2129,6 +2131,8 @@ class UastTest : TestCase() {
   }
 
   fun testRecord() {
+    // b/380707645
+    // https://youtrack.jetbrains.com/issue/IDEA-363783
     val source =
       java(
         """
@@ -2145,7 +2149,8 @@ class UastTest : TestCase() {
         file.accept(
           object : AbstractUastVisitor() {
             override fun visitClass(node: UClass): Boolean {
-              assertFalse(node.sourcePsi?.text, node.isRecord)
+              // Intentionally calling unimplemented KotlinUClass.isRecord
+              @Suppress("UElementAsPsi") assertFalse(node.sourcePsi?.text, node.isRecord)
               assertTrue((node.sourcePsi as? PsiClass)?.isRecord == true)
               count++
               return super.visitClass(node)
@@ -2236,7 +2241,7 @@ class UastTest : TestCase() {
           object : AbstractUastVisitor() {
             override fun visitLocalVariable(node: ULocalVariable): Boolean {
               val initializerType = node.uastInitializer?.getExpressionType()
-              val interfaceType = node.type
+              val interfaceType = node.typeFromPsi
               @Suppress("UNUSED_VARIABLE")
               val equals = initializerType == interfaceType // Stack overflow!
 
@@ -2498,7 +2503,7 @@ class UastTest : TestCase() {
           override fun visitMethod(node: UMethod): Boolean {
             if (node.isConstructor) return super.visitMethod(node)
 
-            val javaPsiModifierList = node.modifierList
+            val javaPsiModifierList = node.javaPsi.modifierList
             assertTrue(javaPsiModifierList.textOffset > 0)
             assertFalse(javaPsiModifierList.textRange.isEmpty)
             assertEquals(javaPsiModifierList.textOffset, javaPsiModifierList.textRange.startOffset)
@@ -2545,7 +2550,7 @@ class UastTest : TestCase() {
           override fun visitMethod(node: UMethod): Boolean {
             if (node.sourcePsi !is KtPropertyAccessor) return super.visitMethod(node)
 
-            val javaPsiModifierList = node.modifierList
+            val javaPsiModifierList = node.javaPsi.modifierList
             assertTrue(javaPsiModifierList.textOffset > 0)
             assertFalse(javaPsiModifierList.textRange.isEmpty)
             assertEquals(javaPsiModifierList.textOffset, javaPsiModifierList.textRange.startOffset)
@@ -2640,7 +2645,7 @@ class UastTest : TestCase() {
             assertTrue(
               node.sourcePsi is KtConstructor<*> ||
                 (node.sourcePsi is KtClassOrObject &&
-                  node.parameterList.isEmpty &&
+                  node.uastParameters.isEmpty() &&
                   node.name in expectedTypes)
             )
             return super.visitMethod(node)
@@ -3090,6 +3095,125 @@ class UastTest : TestCase() {
             assertEquals(1, resolved.typeParameters.size)
             val typeParam = resolved.typeParameters.single()
             assertEquals("T", typeParam.name)
+
+            return super.visitCallExpression(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testResolveToInlineInFacadeInLibrary() {
+    // b/393435169
+    // https://youtrack.jetbrains.com/issue/KTIJ-32941
+    val testFiles =
+      arrayOf(
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/Util.kt",
+              """
+              @file:JvmMultifileClass
+              @file:JvmName("UtilKt")
+
+              package test
+
+              annotation class MyAnnotation
+
+              @MyAnnotation
+              inline fun <T> T.inlineFun(): String = TODO()
+
+              @MyAnnotation
+              inline fun <reified T> T.reifiedFun(): String = TODO()
+            """,
+            )
+            .indented(),
+          0xeee05feb,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hUuRiKQGyhPhC
+                SzJzvEvi4yG0FCOjEhuEqcSgxQAAKePyfUcAAAA=
+                """,
+          """
+                test/MyAnnotation.class:
+                H4sIAAAAAAAA/4VQPU8CQRSct4h3nF8gfoAUWlF6SOy00USTS0ANig3VAhuz
+                sNwl3nKR7ip/lIUhlv4o4zsLMdHEZnb27cxk9r1/vLwCOEaNULIqtn57dhaG
+                kZVWR6EDIhRHMpG+keGDf90fqYF1kCPsL6byW+//tOYJB60/VR1lVZixE0I+
+                kWaqCPV/pDeR0YMZG5xO9+ouaF9w39Y4skaHfltZOZRW8quYJDn+D2VQyAAE
+                GvP8SWe3BrPhEaE6T11PVIQnijX37VlU5mlTNOh8nmaCJqHc+rUMTucwp2u1
+                ORxbgncbTR8H6lIbrl/tTLnmRN3rWPeNWrjiOidiiZ3LWRvm1S+sYI/PU2a8
+                ZLgKBXhYQR6rPeQCrAVYD7CBIlOUAmyi3APF2MJ2DyLGTozdT6g1Gey8AQAA
+                """,
+          """
+                test/UtilKt.class:
+                H4sIAAAAAAAA/31Q204aURRdG1BkpBUvbaX24gWJmuho0qdqmjRNTCYdaVKo
+                Lz6YAxzxwHAmmTlD9K/6aHzwA/pRxn0GWkmxfdmXtdbeWXv/ur+9A/ABVcKs
+                kbFxfxgVfDV5EKHUFQPhBkJ33G/NrmwxmiUUlA6UlseJJlS3/L81h9tjUN1E
+                SncOCbtHjY+T0k9bjcbT+kU/NXNy/Vnr0AijQs3ohh9GHbcrTTMSSseu+EPG
+                bi00tSQI7OzYHefnv+9xipjCtINZFAlzFXOp4srYJQuT7ghOJNWFkm1WFFEa
+                Ts/zX4bTjyRh3u+Fhpe5J9KItjCCpzP9QZZ/SzYUbACBerbIMXmlbLXPVfuA
+                kLc293qGkPsStiU79NlZLek3ZdQQzUBah2FLBKciUrYfgYW66mhhkojr8vdE
+                G9WXpypWTD5+LiasjDhPD55gnXqYRC15rAKJA2SQs2Y5l+3LuHvPnWvdc57a
+                ucGznym9ynE6BQlrHItDAZ5jjvN6qsljY6Sa4VwZ1QWgVLYfRXZi+cL/ly/+
+                c3kGm2l8l6JVRpfY+4szZD289PDKwzLKHl5jxcMbvD0DxXAeALD1p0cBAwAA
+                """,
+          """
+                test/UtilKt__UtilKt.class:
+                H4sIAAAAAAAA/41SXU8TQRQ9sy394msBRVr8hIoFhUXjkxAMAQkbWkykkhge
+                yLQd6rTbWTM72+gbb/4P/4SJJkp49EcZ7y4Vi2Bisjv3zDl35ty5Mz9+fvkG
+                4CkchgkjAuO8NtLbMYeHZzENxmC3eJc7HldN52WtJerEJhiyUnlSia1QMcyV
+                yn/nrMz3UXtGS9VcYVhcrT67nLpWqlavzp8ox0VVPqwr5RtupK+InS37uum0
+                hKlpLlXg8HMxcHZ9sxt6HmUV2r6hCiPG7bzzREcoIxovtPZ1GjmG1KpU0qwx
+                bJYuW7vl3upWt+NIWqgV95xNccRDz2yQkdFh3fi6wnVb6JX5/SEMYTiHQYww
+                jBRl8ajY1x/mMowWzVsZ9LPjlzvBkNNCHknRiDNG4436Gftsl35q7HepFWF4
+                gxtOu1idboLulUVDNhpARbQjMEDiexmhZUKNxww7J8e5HP2WPZKzMonClH1y
+                XLCW2Uwyc3JsWwvWtrV9+jFz+ill2YlCwU7GYioWp9hFOdryCYvdqpFRwDDY
+                96wY0hFYahNKbvgNQUcsUzt2w05N6CqveSJqi1/n3j7XMpr3yOyebCpuQk04
+                /ypURnbEvgwkiX+eBrlN9zRXda9Qc3t+qOtiS3rCXoaFZNQZinkMIEWzEs3W
+                CVsUhxOrXzH4hiXZZ4x+j9PmaUzR2SxksUB4kpBFV25jjFhagnFMUHwYZ6fx
+                qJefobjYw1nAzuMa4cT/2w1dsLt+bjf5TzsLS/H4IGafE3uDtKkDJFzkXRRc
+                TOOmi1u47eIO7h6ABbiHmQMMBNE3G6AYIBVQofcDzP0CGHl5BicEAAA=
+                """,
+        ),
+        kotlin(
+          """
+            import test.*
+
+            fun test() {
+              Any().inlineFun()
+              Any().reifiedFun()
+            }
+          """
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            if (node.isConstructorCall()) {
+              // Like Any()
+              return super.visitCallExpression(node)
+            }
+
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            resolved!!
+
+            val facadeOrPart =
+              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
+              else "test.UtilKt__UtilKt"
+            assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
+
+            assertEquals(txt, 1, resolved.parameterList.parametersCount)
+            val rcv = resolved.parameterList.parameters.single()
+            val rcvType =
+              if (!useFirUast() && resolved.name == "reifiedFun") "java.lang.Object" else "T"
+            assertEquals(txt, rcvType, rcv.type.canonicalText)
+
+            assertEquals(txt, 2, resolved.annotations.size)
+            assertTrue(txt, resolved.hasAnnotation("test.MyAnnotation"))
 
             return super.visitCallExpression(node)
           }
@@ -4085,7 +4209,7 @@ class UastTest : TestCase() {
         object : AbstractUastVisitor() {
           override fun visitClass(node: UClass): Boolean {
             count++
-            val superTypes = node.superTypes
+            val superTypes = node.javaPsi.superTypes
             assertEquals(1, superTypes.size)
             assertEquals("java.lang.Object", superTypes.single().canonicalText)
             return super.visitClass(node)
@@ -5589,7 +5713,7 @@ class UastTest : TestCase() {
       file.accept(
         object : AbstractUastVisitor() {
           override fun visitMethod(node: UMethod): Boolean {
-            val psiAnnotation = node.annotations.single()
+            val psiAnnotation = node.javaPsi.annotations.single()
             val attributeValue = psiAnnotation.findAttributeValue("password")
             assertNotNull(attributeValue)
             val initializer =
