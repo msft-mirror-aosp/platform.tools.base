@@ -22,6 +22,7 @@ import com.android.adblib.AdbServerController
 import com.android.adblib.ProcessRunner.ProcessResult
 import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.IDevice.DeviceState.ONLINE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +48,22 @@ class AdbLibAndroidDebugBridgeTest {
             null, null, false, false, emptyMap()
         )
     )
+
+    @Test
+    fun init_cannotBeCalledTwice() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController(startDelayMs = 200)
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        bridge.init(AdbInitOptions.DEFAULT)
+        try {
+            bridge.init(AdbInitOptions.DEFAULT)
+            fail("Should have thrown")
+        } catch (e: IllegalStateException) {
+            // expected
+        }
+    }
 
     @Test
     fun startReturnsFalse_whenItTimesOut() {

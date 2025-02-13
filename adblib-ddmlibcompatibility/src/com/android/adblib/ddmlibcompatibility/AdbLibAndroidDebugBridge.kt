@@ -79,24 +79,30 @@ class AdbLibAndroidDebugBridge(
 
     private val lock = ReentrantLock()
 
-    // We need this because the AndroidDebugBridge class is mostly static, coming from ddmlib,
-    // and an instance is required for some APIs (e.g. `getDevices`, `isConnected`, `restart`)
+    /**
+     * We need this because the AndroidDebugBridge class is mostly static, coming from ddmlib,
+     * and an instance is required for some APIs (e.g. `getDevices`, `isConnected`, `restart`).
+     */
     @Volatile
     private var currentAndroidDebugBridge: AndroidDebugBridge? = null
 
-    // Set to `true` after one of the `init` methods is called. Is reset to `false` when
-    // AndroidDebugBridge is `terminate`-ed.
+    /**
+     * Set to `true` after one of the `init` methods is called. Is reset to `false` when
+     * AndroidDebugBridge is `terminate`-ed.
+     */
     @Volatile
     private var initialized: Boolean = false
 
-    // We re-use the `IDeviceManager` implementation from this ddmlib compatibility module, and
-    // we create a new instance every time `start` or `restart` is called
+    /**
+     * We re-use the `IDeviceManager` implementation from this ddmlib compatibility module, and
+     * we create a new instance every time `start` or `restart` is called.
+     */
     private var adblibCompatDeviceManager: IDeviceManager? = null
 
     private var passedAdbServerVersionCheck: Boolean = false
 
     /** Port where adb server will be started  */
-    private var sAdbServerPort: Int = 0
+    private var sAdbServerPort: Int? = null
 
     /** Full path to adb.  */
     private var mAdbOsLocation: String? = null
@@ -203,7 +209,7 @@ class AdbLibAndroidDebugBridge(
                     + "terminate() has not been called yet."
         )
         isUnitTestMode = false
-        sAdbServerPort = 0
+        sAdbServerPort = null
     }
 
     override fun getClientSupport(): Boolean {
@@ -379,7 +385,7 @@ class AdbLibAndroidDebugBridge(
         // If this is not a user managed ADB server, perform version checks
         if (!isUserManagedAdbMode) {
             // If we are configured correctly, check if we need to start ADB
-            if (mAdbOsLocation != null && sAdbServerPort != 0) {
+            if (mAdbOsLocation != null && sAdbServerPort != null) {
                 // If we don't have a valid ADB version (or if we have not checked successfully), we
                 // can't start
                 if (!passedAdbServerVersionCheck) {
@@ -765,7 +771,13 @@ class AdbLibAndroidDebugBridge(
             null
         }
 
-        knownRemoteAddress ?: InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort)
+        if (isUnitTestMode && knownRemoteAddress == null && sAdbServerPort == null) {
+            logger.warn("Trying to getSocketAddress after `sAdbServerPort` was set to null")
+        }
+        knownRemoteAddress ?: InetSocketAddress(
+            InetAddress.getLoopbackAddress(),
+            sAdbServerPort ?: 0
+        )
     }
 
     private fun startIDeviceManager(bridgeInstance: AndroidDebugBridge) {
@@ -892,7 +904,7 @@ class AdbLibAndroidDebugBridge(
             return false
         }
 
-        if (sAdbServerPort == 0) {
+        if (sAdbServerPort == null) {
             Log.e(
                 ADB,
                 "ADB server port for restarting AndroidDebugBridge is not set."
