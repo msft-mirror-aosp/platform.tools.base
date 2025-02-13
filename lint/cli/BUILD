@@ -15,6 +15,7 @@ maven_library(
     ]),
     bundled_deps = [
         ":groovy_neverlink",
+        "//tools/adt/idea/gradle-declarative-lang:tools.dcl-lang",
     ],
     coordinates = "com.android.tools.lint:lint",
     description = "Lint tools. Both a Command line tool and a library to add lint features to other tools",
