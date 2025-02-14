@@ -29,8 +29,7 @@ import org.jetbrains.uast.UPolyadicExpression
 import org.jetbrains.uast.UastBinaryOperator
 
 /** Context for analyzing a particular file. */
-open class GradleContext
-constructor(
+open class GradleContext(
   /** Visitor to use to analyze the file. */
   val gradleVisitor: GradleVisitor,
 
@@ -50,6 +49,9 @@ constructor(
   /** the file to be analyzed */
   file: File,
 ) : Context(driver, project, main, file) {
+  /** If this is a KTS file, the corresponding [JavaContext] */
+  open val ktsContext: JavaContext?
+    get() = null
 
   /** Returns a location for the given range. */
   fun getLocation(cookie: Any): Location = gradleVisitor.createLocation(this, cookie)

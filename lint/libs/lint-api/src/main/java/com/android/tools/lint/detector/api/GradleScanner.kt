@@ -106,7 +106,9 @@ interface GradleScanner : FileScanner {
 
   /**
    * Manually visiting the build script. Typically used when you want to look at a Gradle file (e.g.
-   * including [Scope.GRADLE_FILE]) but not looking at the Gradle file semantically.
+   * including [Scope.GRADLE_FILE]) but not looking at the Gradle file semantically, or perhaps
+   * accessing the [com.android.tools.lint.detector.api.GradleContext.ktsContext] in order to visit
+   * the file as code.
    */
-  fun visitBuildScript(context: Context)
+  fun visitBuildScript(context: GradleContext)
 }

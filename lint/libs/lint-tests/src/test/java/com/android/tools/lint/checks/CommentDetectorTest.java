@@ -348,6 +348,7 @@ public class CommentDetectorTest extends AbstractCheckTest {
                                         + "    // STOPSHIP do something here\n"
                                         + "  id(\"com.android.application\")\n"
                                         + "  id(\"kotlin-android\")\n"
+                                        + "  val s = \"// STOPSHIP\" // OK\n"
                                         + "} // STOPSHIP")
                                 .indented())
                 .variant("release")
@@ -360,7 +361,7 @@ public class CommentDetectorTest extends AbstractCheckTest {
                                 + "build.gradle.kts:2: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]\n"
                                 + "    // STOPSHIP do something here\n"
                                 + "       ~~~~~~~~\n"
-                                + "build.gradle.kts:5: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]\n"
+                                + "build.gradle.kts:6: Error: STOPSHIP comment found; points to code which must be fixed prior to release [StopShip]\n"
                                 + "} // STOPSHIP\n"
                                 + "     ~~~~~~~~\n"
                                 + "3 errors, 0 warnings")
@@ -374,8 +375,8 @@ public class CommentDetectorTest extends AbstractCheckTest {
                                 + "@@ -2 +2\n"
                                 + "-     // STOPSHIP do something here\n"
                                 + "+     //  do something here\n"
-                                + "Fix for build.gradle.kts line 5: Remove STOPSHIP:\n"
-                                + "@@ -5 +5\n"
+                                + "Fix for build.gradle.kts line 6: Remove STOPSHIP:\n"
+                                + "@@ -6 +6\n"
                                 + "- } // STOPSHIP\n"
                                 + "+ } //");
     }
