@@ -17,12 +17,17 @@
 package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.services.AnalyticsService
-import com.android.tools.render.common.readPreviewScreenshotsJson
 import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -34,64 +39,143 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.TestDescriptor
+import org.gradle.api.tasks.testing.TestListener
+import org.gradle.api.tasks.testing.TestResult
+import java.io.File
 
 /**
  * Runs screenshot tests of a variant.
  */
 @CacheableTask
 abstract class PreviewScreenshotValidationTask : Test() {
-    @get:Optional
-    @get:InputFiles // using InputFiles to allow nonexistent reference image directory
+    @get:InputFiles
+    @get:Classpath
+    abstract val mainProjectClassDirs: ListProperty<Directory>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val mainProjectJars: ListProperty<RegularFile>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val mainRuntimeClassDirs: ListProperty<Directory>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val mainRuntimeJars: ListProperty<RegularFile>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val testProjectClassDirs: ListProperty<Directory>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val testProjectJars: ListProperty<RegularFile>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val testRuntimeClassDirs: ListProperty<Directory>
+
+    @get:InputFiles
+    @get:Classpath
+    abstract val testRuntimeJars: ListProperty<RegularFile>
+
+    @get:InputFiles // Using InputFiles to allow nonexistent reference image directory.
     @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Optional
     abstract val referenceImageDir: DirectoryProperty
 
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val renderTaskOutputDir: DirectoryProperty
-
-    @get:OutputDirectory
-    abstract val diffImageDir: DirectoryProperty
+    @get:Optional
+    abstract val sdkFontsDir: DirectoryProperty
 
     @get:InputFile
+    @get:Optional
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val previewFile: RegularFileProperty
+    abstract val resourceApkFile: RegularFileProperty
 
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val renderTaskOutputFile: RegularFileProperty
+    @get:Input
+    abstract val namespace: Property<String>
 
-    @get:OutputDirectory
-    abstract val resultsDir: DirectoryProperty
-
-    @get:Internal
-    abstract val analyticsService: Property<AnalyticsService>
+    @get:InputFiles
+    @get:Classpath
+    abstract val layoutlibDataDir: ConfigurableFileCollection
 
     @get:Input
     abstract val threshold: Property<Float>
 
+    @get:OutputDirectory
+    abstract val previewImageOutputDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val diffImageOutputDir: DirectoryProperty
+
+    @get:Internal
+    abstract val analyticsService: Property<AnalyticsService>
+
+    init {
+        classpath = objectFactory.fileCollection().apply {
+            from(testRuntimeClassDirs, testRuntimeJars, mainRuntimeClassDirs, mainRuntimeJars)
+        }
+        testClassesDirs = objectFactory.fileCollection().apply {
+            from(testProjectJars, testProjectClassDirs)
+        }
+
+        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+            // Required by LayoutLib.
+            jvmArgs("-Djava.security.manager=allow")
+        }
+    }
+
+    override fun getClasspath(): ConfigurableFileCollection {
+        return super.getClasspath() as ConfigurableFileCollection
+    }
+
     @TaskAction
     override fun executeTests() {
         analyticsService.get().recordTaskAction(path) {
-            val screenshots = readPreviewScreenshotsJson(previewFile.get().asFile.reader())
-            if (screenshots.isNotEmpty()) {
-                analyticsService.get().recordPreviewScreenshotTestRun(
-                    totalTestCount = screenshots.size,
-                )
-            }
-            if (referenceImageDir.orNull?.asFile?.exists() != true){
-                throw GradleException("Reference images missing. Please run the update<variant>ScreenshotTest task to generate the reference images.")
-            }
-            setTestEngineParam("previews-discovered", previewFile.get().asFile.absolutePath)
-            setTestEngineParam("referenceImageDirPath", referenceImageDir.get().asFile.absolutePath)
-            setTestEngineParam("diffImageDirPath", diffImageDir.get().asFile.absolutePath)
-            setTestEngineParam("renderResultsFilePath", renderTaskOutputFile.get().asFile.absolutePath)
-            setTestEngineParam("renderTaskOutputDir", renderTaskOutputDir.get().asFile.absolutePath)
-            setTestEngineParam("resultsDirPath", resultsDir.get().asFile.absolutePath)
+            var testCount = 0
+            addTestListener(object: TestListener {
+                override fun beforeSuite(suite: TestDescriptor) {}
+                override fun afterSuite(suite: TestDescriptor, result: TestResult) {}
+                override fun beforeTest(testDescriptor: TestDescriptor?) {
+                    testCount++
+                }
+                override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
+            })
+
+            setTestEngineParam("screenshotTestDirectory", testProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("screenshotTestJars", testProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("mainDirectory", mainProjectClassDirs.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("mainJars", mainProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            val testProjectJarSet = setOf(*testProjectJars.get().map { it.asFile.absolutePath }.toTypedArray())
+            setTestEngineParam("dependencyJars", testRuntimeJars.get().filterNot { it.asFile.absolutePath in testProjectJarSet }.joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("previewImageOutputDir", previewImageOutputDir.get().asFile.absolutePath)
+            setTestEngineParam("previewDiffImageOutputDir", diffImageOutputDir.get().asFile.absolutePath)
+            setTestEngineParam("referenceImageDir", referenceImageDir.get().asFile.absolutePath)
+            setTestEngineParam("Renderer.fontsPath", sdkFontsDir.orNull?.asFile?.absolutePath ?: "")
+            setTestEngineParam("Renderer.resourceApkPath", resourceApkFile.orNull?.asFile?.absolutePath ?: "")
+            setTestEngineParam("Renderer.namespace", namespace.get())
+            setTestEngineParam("Renderer.mainAllClassPath", (mainRuntimeClassDirs.get() + mainRuntimeJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("Renderer.mainProjectClassPath", (mainProjectClassDirs.get() + mainProjectJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("Renderer.screenshotAllClassPath", (testRuntimeClassDirs.get() + testRuntimeJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("Renderer.screenshotProjectClassPath", (testProjectClassDirs.get() + testProjectJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
+            setTestEngineParam("Renderer.layoutlibDataDir", layoutlibDataDir.singleFile.absolutePath)
+
             threshold.orNull?.let {
                 validateFloat(it)
-                setTestEngineParam("threshold", it.toString())
+                setTestEngineParam("ImageDiffer.threshold", it.toString())
             }
-            super.executeTests()
+
+            try {
+                super.executeTests()
+            } finally {
+                analyticsService.get().recordPreviewScreenshotTestRun(
+                    totalTestCount = testCount,
+                )
+            }
         }
     }
 
@@ -100,8 +184,8 @@ abstract class PreviewScreenshotValidationTask : Test() {
             throw GradleException("Invalid threshold provided. Please provide a float value between 0.0 and 1.0")
         }
     }
-}
 
-fun PreviewScreenshotValidationTask.setTestEngineParam(key: String, value: String) {
-    jvmArgs("-Dcom.android.tools.preview.screenshot.junit.engine.${key}=${value}")
+    private fun setTestEngineParam(key: String, value: String) {
+        jvmArgs("-DPreviewScreenshotTestEngineInput.${key}=${value}")
+    }
 }

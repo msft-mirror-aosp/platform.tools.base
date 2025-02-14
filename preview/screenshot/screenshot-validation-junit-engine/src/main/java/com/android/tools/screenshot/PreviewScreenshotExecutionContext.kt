@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
 
 package com.android.tools.screenshot
 
-internal class Tests(private val testMethods: Map<String, MutableSet<TestMethod>>) {
+import com.android.tools.render.Renderer
+import org.junit.platform.engine.ExecutionRequest
+import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
+import java.io.File
 
-    val classes: Set<String>
-        get() = testMethods.keys
-
-    fun getMethods(className: String): MutableSet<TestMethod> {
-        val methods = testMethods[className]
-        return methods ?: mutableSetOf()
-    }
-
-    data class TestMethod(val methodName: String, val generatesMultipleScreenshotTests: Boolean, val previewNames: MutableList<String>)
-}
+data class PreviewScreenshotExecutionContext(
+    val executionRequest: ExecutionRequest,
+    val previewImageOutputDir: File,
+    val previewDiffImageOutputDir: File,
+    val referenceImageDir: File,
+    val renderer: Renderer? = null,
+) : EngineExecutionContext

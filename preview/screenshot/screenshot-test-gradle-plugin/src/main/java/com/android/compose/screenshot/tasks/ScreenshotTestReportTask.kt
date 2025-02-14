@@ -29,6 +29,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskAction
 
+// TODO: Consider to make it just an Action of the Test task.
 abstract class ScreenshotTestReportTask: DefaultTask() {
 
     @get:SkipWhenEmpty

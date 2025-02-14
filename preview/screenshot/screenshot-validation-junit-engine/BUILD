@@ -5,7 +5,7 @@ load("//tools/base/preview/screenshot:version.bzl", "SCREENSHOT_TEST_PLUGIN_VERS
 maven_library(
     name = "screenshot-validation-junit-engine",
     srcs = glob([
-        "src/main/java/com/android/tools/screenshot/*.kt",
+        "src/main/java/**/*.kt",
     ]),
     coordinates = "com.android.tools.screenshot:screenshot-validation-junit-engine",
     resource_strip_prefix = "tools/base/preview/screenshot/screenshot-validation-junit-engine/src/main/resources/",
@@ -13,6 +13,8 @@ maven_library(
     version = SCREENSHOT_TEST_PLUGIN_VERSION,
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/multipreview-asm:compose-preview-detector",
+        "//tools/base/standalone-render/compose-cli:compose-preview-renderer",
         "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
         "@maven//:com.google.protobuf.protobuf-java-util",
         "@maven//:com.google.testing.platform.core-proto",

@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.screenshot.descriptor
+
+import com.android.tools.preview.multipreview.PreviewMethod
+import com.android.tools.screenshot.PreviewScreenshotExecutionContext
+import org.junit.platform.engine.TestDescriptor
+import org.junit.platform.engine.TestSource
+import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.MethodSource
+import org.junit.platform.engine.support.hierarchical.Node
+import java.util.Optional
+
+class PreviewMethodDescriptor(
+    parentId: UniqueId,
+    private val className: String,
+    private val methodName: String,
+    private val preview: PreviewMethod
+)
+    : AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
+    companion object {
+        const val SEGMENT_TYPE: String = "method"
+    }
+
+    private val source: MethodSource = MethodSource.from(className, methodName)
+
+    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+
+    override fun getSource(): Optional<TestSource> = Optional.of(source)
+
+    override fun mayRegisterTests(): Boolean = true
+
+    override fun execute(
+        context: PreviewScreenshotExecutionContext,
+        dynamicTestExecutor: Node.DynamicTestExecutor
+    ): PreviewScreenshotExecutionContext {
+        preview.previewAnnotations.forEach { previewAnnotation ->
+            val childNode = PreviewAnnotationDescriptor(
+                uniqueId, className, methodName, preview, previewAnnotation,
+                displayNameIncludesParams = preview.previewAnnotations.size > 1
+            )
+            addChild(childNode)
+            dynamicTestExecutor.execute(childNode)
+        }
+        return context
+    }
+}

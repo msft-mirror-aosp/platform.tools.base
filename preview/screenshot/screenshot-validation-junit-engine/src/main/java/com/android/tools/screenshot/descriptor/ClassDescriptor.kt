@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.tools.screenshot
+package com.android.tools.screenshot.descriptor
 
+import org.junit.platform.engine.TestDescriptor
+import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
-import org.junit.platform.engine.TestDescriptor.Type
+import java.util.Optional
 
-internal class TestClassDescriptor(uniqueId: UniqueId, val className: String) :
-    AbstractTestDescriptor(uniqueId, className, ClassSource.from(className)) {
+class ClassDescriptor(parentId: UniqueId, className: String) :
+    AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, className), className) {
+    companion object {
+        const val SEGMENT_TYPE: String = "class"
+    }
 
-    override fun getType(): Type = Type.CONTAINER
+    private val source: ClassSource = ClassSource.from(className)
+
+    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+
+    override fun getSource(): Optional<TestSource> {
+        return Optional.of(source)
+    }
 }

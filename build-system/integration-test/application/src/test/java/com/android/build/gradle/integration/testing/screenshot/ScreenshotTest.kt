@@ -25,24 +25,22 @@ import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.compose.screenshot.gradle.ScreenshotTestOptions
-import com.android.compose.screenshot.tasks.PreviewScreenshotUpdateTask
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
+import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan.ExecutionType
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -278,12 +276,12 @@ class ScreenshotTest {
         val build = rule.build
         val appProject = build.androidApplication()
 
-        build.sstExecutor().run(":app:updateScreenshotTest")
+        updateReferenceImage()
         //update the preview - tests fail
         appProject.files.update("src/main/java/com/Example.kt")
             .searchAndReplace("Hello World", "Hello Worid")
 
-        val result = build.sstExecutor().expectFailure().run(":app:validateScreenshotTest")
+        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
         result.assertErrorContains("There were failing tests. See the results at: ")
 
         //set high threshold - tests pass
@@ -299,7 +297,7 @@ class ScreenshotTest {
             }
         }
 
-        build.sstExecutor().run(":app:validateScreenshotTest")
+        build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         //reduce threshold - tests fail
         appProject.reconfigure {
@@ -312,96 +310,50 @@ class ScreenshotTest {
             }
         }
 
-        val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateScreenshotTest")
+        val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
         resultLowThreshold.assertErrorContains("There were failing tests. See the results at: ")
     }
 
-    @Test
-    fun discoverPreviews() {
+    private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
         val build = rule.build
-        val appProject = build.androidApplication()
+        val variantName = if (flavor.isEmpty()) {
+            buildType
+        } else {
+            flavor + buildType.usLocaleCapitalize()
+        }
+        val result = build.sstExecutor().expectFailure().run(
+            ":$projectName:validate${variantName.usLocaleCapitalize()}ScreenshotTest")
 
-        build.sstExecutor().run(":app:debugPreviewDiscovery")
-        val previewsDiscoveredFile  = appProject.buildDir.resolve("intermediates/preview/debug/previews_discovered.json")
-        assertThat(previewsDiscoveredFile).exists()
-        assertThat(previewsDiscoveredFile.readText()).isEqualTo("""
-            {
-              "screenshots": [
-                {
-                  "methodFQN": "pkg.name.ExampleTest.multiPreviewTest",
-                  "methodParams": [],
-                  "previewParams": {
-                    "name": "with_Background",
-                    "showBackground": "true"
-                  },
-                  "previewId": "pkg.name.ExampleTest.multiPreviewTest_with_Background_6d9364e2",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.multiPreviewTest",
-                  "methodParams": [],
-                  "previewParams": {
-                    "name": "withoutBackground",
-                    "showBackground": "false"
-                  },
-                  "previewId": "pkg.name.ExampleTest.multiPreviewTest_withoutBackground_3619adf7",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.parameterProviderTest",
-                  "methodParams": [
-                    {
-                      "provider": "pkg.name.SimplePreviewParameterProvider"
-                    }
-                  ],
-                  "previewParams": {
-                    "name": "simplePreviewParameterProvider"
-                  },
-                  "previewId": "pkg.name.ExampleTest.parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.previewNameCannotBeUsedAsFileNameTest",
-                  "methodParams": [],
-                  "previewParams": {
-                    "name": "invalid/File/Name"
-                  },
-                  "previewId": "pkg.name.ExampleTest.previewNameCannotBeUsedAsFileNameTest_aa50de45",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.simpleComposableTest2",
-                  "methodParams": [],
-                  "previewParams": {
-                    "heightDp": "800",
-                    "name": "simpleComposable",
-                    "widthDp": "800"
-                  },
-                  "previewId": "pkg.name.ExampleTest.simpleComposableTest2_simpleComposable_7362dd6b",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.simpleComposableTest",
-                  "methodParams": [],
-                  "previewParams": {
-                    "name": "simpleComposable",
-                    "showBackground": "true"
-                  },
-                  "previewId": "pkg.name.ExampleTest.simpleComposableTest_simpleComposable_c5877f71",
-                  "previewType": "COMPOSE"
-                },
-                {
-                  "methodFQN": "pkg.name.TopLevelPreviewTestKt.simpleComposableTest_3",
-                  "methodParams": [],
-                  "previewParams": {
-                    "showBackground": "true"
-                  },
-                  "previewId": "pkg.name.TopLevelPreviewTestKt.simpleComposableTest_3_748aa731",
-                  "previewType": "COMPOSE"
-                }
-              ]
-            }
-        """.trimIndent())
+        val previewDir = build.directory.resolve(
+            "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
+        val refDir = build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference").toFile()
+
+        assertTrue(
+            "Failed to update reference images",
+            previewDir.copyRecursively(refDir, overwrite = true))
+
+        return result
+    }
+
+    private fun updateReferenceImageForAllProjects(variantName: String = "debug"): GradleBuildResult {
+        val build = rule.build
+        val result = build.sstExecutor().expectFailure().run(
+            "validate${variantName.usLocaleCapitalize()}ScreenshotTest")
+
+        for (projectName in listOf("app", "lib", "lib2_0", "lib2_1")) {
+            val previewDir = build.directory.resolve(
+                "$projectName/build/outputs/screenshotTest-results/preview/$variantName/rendered"
+            ).toFile()
+            val refDir =
+                build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference")
+                    .toFile()
+
+            assertTrue(
+                "Failed to update reference images",
+                previewDir.copyRecursively(refDir, overwrite = true)
+            )
+        }
+        return result
     }
 
     @Test
@@ -410,7 +362,7 @@ class ScreenshotTest {
         val appProject = build.androidApplication()
 
         // Generate screenshots to be tested against
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+        updateReferenceImage()
 
         val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
         val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
@@ -459,19 +411,6 @@ class ScreenshotTest {
         assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
         assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
 
-        // Verify test result protos
-        val pbFile = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results/test-result.pb")
-        assertThat(pbFile).exists()
-        var testSuiteResult = pbFile.toFile().inputStream().use { input ->
-            TestSuiteResult.parseFrom(input)
-        }
-        assertThat(testSuiteResult.testResultCount).isEqualTo(8)
-        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.PASSED)
-        var simpleComposableTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleComposableTest_simpleComposable"}
-        // Verify two test artifacts - actual and reference images
-        assertThat(simpleComposableTestMethodResult.outputArtifactCount).isEqualTo(2)
-        assertThat(simpleComposableTestMethodResult.detailsList.single { it.key == "percentDifference" }.value).isEqualTo("0.00%")
-
         // Update previews to be different from the references
         appProject.files.apply {
             update("src/main/java/com/Example.kt")
@@ -513,14 +452,6 @@ class ScreenshotTest {
         assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_3_748aa731_0.png"
         )
-
-        testSuiteResult = pbFile.toFile().inputStream().use { input ->
-            TestSuiteResult.parseFrom(input)
-        }
-        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.FAILED)
-        simpleComposableTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleComposableTest_simpleComposable"}
-        // Verify three test artifacts - actual, diff, and reference images
-        assertThat(simpleComposableTestMethodResult.outputArtifactCount).isEqualTo(3)
     }
 
     @Test
@@ -529,17 +460,20 @@ class ScreenshotTest {
             useOldPluginStyleForSeparateClassloaders = true
         }
         // Generate screenshots to be tested against
-        verifyClassLoaderSetup(build.sstExecutor().run("updateDebugScreenshotTest"))
+        verifyClassLoaderSetup(updateReferenceImageForAllProjects())
 
         // Validate previews matches screenshots
-        verifyClassLoaderSetup(build.sstExecutor().run("validateDebugScreenshotTest"))
+        build.sstExecutor().run("validateDebugScreenshotTest")
     }
 
     @Test
     fun runUpdateScreenshotTestWithMultiModuleProjectBySingleWorker() {
+        // Generate screenshots to be tested against
+        updateReferenceImageForAllProjects()
+
         // Set the max workers to 1 to let Gradle reuse the same worker daemon process for
-        // running PreviewRenderWorkAction more than once. See b/340362066 for more details.
-        rule.build.sstExecutor().withArguments(listOf("--max-workers", "1")).run("updateScreenshotTest")
+        // running TestEngine more than once. See b/340362066 for more details.
+        rule.build.sstExecutor().withArguments(listOf("--max-workers", "1")).run("validateDebugScreenshotTest")
     }
 
     private fun verifyClassLoaderSetup(result: GradleBuildResult) {
@@ -560,18 +494,15 @@ class ScreenshotTest {
         val capturer = ProfileCapturer(build)
 
         val profiles = capturer.capture {
-            build.sstExecutor().run(":app:debugPreviewDiscovery")
+            updateReferenceImage()
         }
 
         profiles.mapNotNull { profile ->
             val spanList = profile.spanList
             val taskSpan = spanList.firstOrNull {
-                it.task.type == GradleTaskExecutionType.PREVIEW_DISCOVERY_VALUE
+                it.task.type == GradleTaskExecutionType.PREVIEW_SCREENSHOT_VALIDATION_VALUE
             } ?: return@mapNotNull null
-            val executionSpan = spanList.firstOrNull {
-                it.parentId == taskSpan.id && it.type == ExecutionType.TASK_EXECUTION_ALL_PHASES
-            } ?: return@mapNotNull null
-            executionSpan.durationInMs
+            taskSpan.durationInMs
         }.first { durationInMs ->
             durationInMs > 0L
         }
@@ -591,17 +522,9 @@ class ScreenshotTest {
         }
         val appProject = build.androidApplication()
 
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
-
-        val referenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference")
-        assertThat(referenceScreenshotDir.listDirectoryEntries()).isEmpty()
-
-        val resultsJson = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results.json")
-        assertThat(resultsJson.readText()).contains(""""screenshotResults": []""")
-
-        // Validation and reporting is skipped when there are no source files
-        val result2 = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-        assertThat(result2.skippedTasks).containsAtLeastElementsIn(
+        // Validation is skipped when there are no source files
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        assertThat(result.skippedTasks).containsAtLeastElementsIn(
             listOf(":app:validateDebugScreenshotTest", ":app:debugScreenshotReport")
         )
 
@@ -632,24 +555,13 @@ class ScreenshotTest {
         }
         val appProject = build.androidApplication()
 
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
-
-        val referenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference")
-        assertThat(referenceScreenshotDir.listDirectoryEntries()).isEmpty()
-
-        val resultsJson = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results.json")
-        assertThat(resultsJson.readText()).contains(""""screenshotResults": []""")
-
         // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
-        val result1 = build.sstExecutor()
+        build.sstExecutor()
             .expectFailure()
             .run(":app:validateDebugScreenshotTest")
-        assertThat(result1.skippedTasks).containsAtLeastElementsIn(
-            listOf(":app:debugScreenshotReport")
-        )
 
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
-        assertThat(indexHtmlReport).doesNotExist()
+        assertThat(indexHtmlReport).exists()
     }
 
     @Test
@@ -665,7 +577,7 @@ class ScreenshotTest {
             }
         }
 
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+        updateReferenceImage()
 
         // Verify that exception is thrown when ui-tooling dep is missing
         build.androidApplication().reconfigure {
@@ -674,18 +586,8 @@ class ScreenshotTest {
             }
         }
 
-        val result = build.sstExecutor().expectFailure().run(":app:updateDebugScreenshotTest")
+        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
         result.assertErrorContains("Missing required runtime dependency. Please add androidx.compose.ui:ui-tooling as a screenshotTestImplementation dependency.")
-    }
-
-    @Test
-    fun runScreenshotTestWithMissingRefImageDir() {
-        // Verify that tasks runs successfully before any screenshot tasks have been run
-        rule.build.sstExecutor().run(":app:tasks")
-
-        val result =
-            rule.build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        result.assertErrorContains("Reference images missing. Please run the update<variant>ScreenshotTest task to generate the reference images.")
     }
 
     @Test
@@ -696,7 +598,7 @@ class ScreenshotTest {
                     .searchAndReplace("SimpleComposable()", "")
             }
         }
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+        updateReferenceImage()
         build.sstExecutor().run(":app:validateDebugScreenshotTest")
     }
 
@@ -727,7 +629,8 @@ class ScreenshotTest {
         }
         val appProject = build.androidApplication()
 
-        build.sstExecutor().run(":app:updateScreenshotTest")
+        updateReferenceImage("debug", "flavor1")
+        updateReferenceImage("debug", "flavor2")
 
         // Verify that reference images are created for both flavors
         val flavor1ReferenceScreenshotDir = appProject.resolve("src/flavor1DebugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
@@ -778,7 +681,7 @@ class ScreenshotTest {
         val appProject = build.androidApplication()
 
         // Generate screenshots to be tested against
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+        updateReferenceImage()
         val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
         val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
@@ -847,41 +750,7 @@ class ScreenshotTest {
                 project.tasks.named("validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
                     it.setTestNameIncludePatterns(listOf("*simpleComposableTest*"))
                 }
-                project.tasks.named("updateDebugScreenshotTest", PreviewScreenshotUpdateTask::class.java) {
-                    it.setUpdateFilter(listOf("*pkg.name.*.simpleComposableTest*"))
-                }
             }
         }
-    }
-
-    @Test
-    fun runPreviewScreenshotTestRemoveUnusedImages() {
-        val build = rule.build
-        val appProject = build.androidApplication()
-
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
-
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
-        assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-            "multiPreviewTest_with_Background_6d9364e2_0.png",
-            "multiPreviewTest_withoutBackground_3619adf7_0.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
-            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
-            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
-        )
-
-        appProject.files.update("src/screenshotTest/java/com/ExampleTest.kt")
-            .searchAndReplace("@Preview(name = \"simplePreviewParameterProvider\")", "")
-
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
-        assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
-            "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
-            "multiPreviewTest_with_Background_6d9364e2_0.png",
-            "multiPreviewTest_withoutBackground_3619adf7_0.png",
-            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
-        )
     }
 }

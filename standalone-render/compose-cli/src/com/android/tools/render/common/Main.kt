@@ -77,7 +77,7 @@ fun renderPreview(previewRendering: PreviewRendering): PreviewRenderingResult {
     return previewRenderingResult
 }
 
-private fun render(screenshot: PreviewScreenshot, outputFolderPath: String, renderer: Renderer):
+fun render(screenshot: PreviewScreenshot, outputFolderPath: String, renderer: Renderer):
         Sequence<PreviewScreenshotResult> {
     val previewElement = screenshot.toPreviewElement(renderer.module)
     val renderRequest = RenderRequest(
