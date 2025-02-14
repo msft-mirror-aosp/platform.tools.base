@@ -43,8 +43,6 @@ package com.android.build.api.artifact {
   }
 
   public enum Artifact.Category {
-    method public static com.android.build.api.artifact.Artifact.Category valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.artifact.Artifact.Category[] values();
     enum_constant public static final com.android.build.api.artifact.Artifact.Category GENERATED;
     enum_constant public static final com.android.build.api.artifact.Artifact.Category INTERMEDIATES;
     enum_constant public static final com.android.build.api.artifact.Artifact.Category OUTPUTS;
@@ -53,6 +51,8 @@ package com.android.build.api.artifact {
   }
 
   public static final class Artifact.Companion {
+    property public final com.android.build.api.artifact.ArtifactKind.DIRECTORY DIRECTORY;
+    property public final com.android.build.api.artifact.ArtifactKind.FILE FILE;
   }
 
   public static interface Artifact.ContainsMany {
@@ -195,6 +195,7 @@ package com.android.build.api.attributes {
   }
 
   public static final class AgpVersionAttr.Companion {
+    property public org.gradle.api.attributes.Attribute<com.android.build.api.attributes.AgpVersionAttr> ATTRIBUTE;
   }
 
   public interface BuildTypeAttr extends org.gradle.api.Named {
@@ -203,6 +204,7 @@ package com.android.build.api.attributes {
   }
 
   public static final class BuildTypeAttr.Companion {
+    property public org.gradle.api.attributes.Attribute<com.android.build.api.attributes.BuildTypeAttr> ATTRIBUTE;
   }
 
   public interface ProductFlavorAttr extends org.gradle.api.Named {
@@ -272,7 +274,7 @@ package com.android.build.api.dsl {
   }
 
   public interface AndroidSourceDirectorySet extends org.gradle.api.Named {
-    method @org.gradle.api.Incubating public Object setSrcDirs(Iterable<?> srcDirs);
+    method @org.gradle.api.Incubating public Object setSrcDirs(Iterable<? extends java.lang.Object?> srcDirs);
     method @org.gradle.api.Incubating public Object srcDir(Object srcDir);
     method @org.gradle.api.Incubating public Object srcDirs(java.lang.Object... srcDirs);
   }
@@ -1769,7 +1771,7 @@ package com.android.build.api.dsl {
     method @Deprecated @org.gradle.api.Incubating public Void? setManifestPlaceholders(java.util.Map<java.lang.String,?> manifestPlaceholders);
     method @Deprecated @org.gradle.api.Incubating public void setMultiDexKeepFile(java.io.File?);
     method @org.gradle.api.Incubating public void setMultiDexKeepProguard(java.io.File?);
-    method @org.gradle.api.Incubating public Object setProguardFiles(Iterable<?> proguardFileIterable);
+    method @org.gradle.api.Incubating public Object setProguardFiles(Iterable<? extends java.lang.Object?> proguardFileIterable);
     method @org.gradle.api.Incubating public void shaders(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Shaders,kotlin.Unit> action);
     method @org.gradle.api.Incubating public Object testProguardFile(Object proguardFile);
     method @org.gradle.api.Incubating public Object testProguardFiles(java.lang.Object... proguardFiles);
@@ -1831,8 +1833,6 @@ package com.android.build.api.instrumentation {
   }
 
   public enum FramesComputationMode {
-    method public static com.android.build.api.instrumentation.FramesComputationMode valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.instrumentation.FramesComputationMode[] values();
     enum_constant public static final com.android.build.api.instrumentation.FramesComputationMode COMPUTE_FRAMES_FOR_ALL_CLASSES;
     enum_constant public static final com.android.build.api.instrumentation.FramesComputationMode COMPUTE_FRAMES_FOR_INSTRUMENTED_CLASSES;
     enum_constant public static final com.android.build.api.instrumentation.FramesComputationMode COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS;
@@ -1852,8 +1852,6 @@ package com.android.build.api.instrumentation {
   }
 
   public enum InstrumentationScope {
-    method public static com.android.build.api.instrumentation.InstrumentationScope valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.instrumentation.InstrumentationScope[] values();
     enum_constant public static final com.android.build.api.instrumentation.InstrumentationScope ALL;
     enum_constant public static final com.android.build.api.instrumentation.InstrumentationScope PROJECT;
   }
@@ -1888,7 +1886,7 @@ package com.android.build.api.transform {
     method @Deprecated public java.util.Set<com.android.build.api.transform.QualifiedContent.ContentType!> getContentTypes();
     method @Deprecated public java.io.File getFile();
     method @Deprecated public String getName();
-    method @Deprecated public java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope> getScopes();
+    method @Deprecated public java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope!> getScopes();
   }
 
   @Deprecated public static interface QualifiedContent.ContentType {
@@ -1951,8 +1949,8 @@ package com.android.build.api.transform {
     method @Deprecated public abstract String getName();
     method @Deprecated public java.util.Set<com.android.build.api.transform.QualifiedContent.ContentType!> getOutputTypes();
     method @Deprecated public java.util.Map<java.lang.String!,java.lang.Object!> getParameterInputs();
-    method @Deprecated public java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope> getReferencedScopes();
-    method @Deprecated public abstract java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope> getScopes();
+    method @Deprecated public java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope!> getReferencedScopes();
+    method @Deprecated public abstract java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope!> getScopes();
     method @Deprecated public java.util.Collection<java.io.File!> getSecondaryDirectoryOutputs();
     method @Deprecated public java.util.Collection<java.io.File!> getSecondaryFileInputs();
     method @Deprecated public java.util.Collection<java.io.File!> getSecondaryFileOutputs();
@@ -1987,7 +1985,7 @@ package com.android.build.api.transform {
 
   @Deprecated public interface TransformOutputProvider {
     method @Deprecated public void deleteAll() throws java.io.IOException;
-    method @Deprecated public java.io.File getContentLocation(String, java.util.Set<com.android.build.api.transform.QualifiedContent.ContentType!>, java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope>, com.android.build.api.transform.Format);
+    method @Deprecated public java.io.File getContentLocation(String, java.util.Set<com.android.build.api.transform.QualifiedContent.ContentType!>, java.util.Set<? super com.android.build.api.transform.QualifiedContent.Scope!>, com.android.build.api.transform.Format);
   }
 
 }
@@ -2107,12 +2105,12 @@ package com.android.build.api.variant {
 
   public interface BuiltArtifacts {
     method public String getApplicationId();
-    method public com.android.build.api.artifact.Artifact<?> getArtifactType();
+    method public com.android.build.api.artifact.Artifact<? extends java.lang.Object?> getArtifactType();
     method public java.util.Collection<com.android.build.api.variant.BuiltArtifact> getElements();
     method public String getVariantName();
     method public void save(org.gradle.api.file.Directory out);
     property public abstract String applicationId;
-    property public abstract com.android.build.api.artifact.Artifact<?> artifactType;
+    property public abstract com.android.build.api.artifact.Artifact<? extends java.lang.Object?> artifactType;
     property public abstract java.util.Collection<com.android.build.api.variant.BuiltArtifact> elements;
     property public abstract String variantName;
     field public static final com.android.build.api.variant.BuiltArtifacts.Companion Companion;
@@ -2120,6 +2118,7 @@ package com.android.build.api.variant {
   }
 
   public static final class BuiltArtifacts.Companion {
+    property public static final int METADATA_FILE_VERSION;
     field public static final int METADATA_FILE_VERSION = 3; // 0x3
   }
 
@@ -2284,8 +2283,6 @@ package com.android.build.api.variant {
   }
 
   public enum FilterConfiguration.FilterType {
-    method public static com.android.build.api.variant.FilterConfiguration.FilterType valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.variant.FilterConfiguration.FilterType[] values();
     enum_constant public static final com.android.build.api.variant.FilterConfiguration.FilterType ABI;
     enum_constant public static final com.android.build.api.variant.FilterConfiguration.FilterType DENSITY;
     enum_constant public static final com.android.build.api.variant.FilterConfiguration.FilterType LANGUAGE;
@@ -2322,11 +2319,11 @@ package com.android.build.api.variant {
     method public org.gradle.api.provider.Property<java.lang.Boolean> getFunctionalTest();
     method public org.gradle.api.provider.Property<java.lang.Boolean> getHandleProfiling();
     method public org.gradle.api.provider.Property<java.lang.String> getInstrumentationRunner();
-    method public org.gradle.api.provider.Property<java.lang.String> getTestLabel();
+    method public org.gradle.api.provider.Property<java.lang.String?> getTestLabel();
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> functionalTest;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> handleProfiling;
     property public abstract org.gradle.api.provider.Property<java.lang.String> instrumentationRunner;
-    property public abstract org.gradle.api.provider.Property<java.lang.String> testLabel;
+    property public abstract org.gradle.api.provider.Property<java.lang.String?> testLabel;
   }
 
   public interface HasAndroidResources {
@@ -2451,8 +2448,6 @@ package com.android.build.api.variant {
   }
 
   public enum ScopedArtifacts.Scope {
-    method public static com.android.build.api.variant.ScopedArtifacts.Scope valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.variant.ScopedArtifacts.Scope[] values();
     enum_constant public static final com.android.build.api.variant.ScopedArtifacts.Scope ALL;
     enum_constant public static final com.android.build.api.variant.ScopedArtifacts.Scope PROJECT;
   }
@@ -2635,12 +2630,12 @@ package com.android.build.api.variant {
   public interface VariantOutput extends com.android.build.api.variant.VariantOutputConfiguration {
     method @Deprecated public org.gradle.api.provider.Property<java.lang.Boolean> getEnable();
     method public org.gradle.api.provider.Property<java.lang.Boolean> getEnabled();
-    method public org.gradle.api.provider.Property<java.lang.Integer> getVersionCode();
-    method public org.gradle.api.provider.Property<java.lang.String> getVersionName();
+    method public org.gradle.api.provider.Property<java.lang.Integer?> getVersionCode();
+    method public org.gradle.api.provider.Property<java.lang.String?> getVersionName();
     property @Deprecated public abstract org.gradle.api.provider.Property<java.lang.Boolean> enable;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enabled;
-    property public abstract org.gradle.api.provider.Property<java.lang.Integer> versionCode;
-    property public abstract org.gradle.api.provider.Property<java.lang.String> versionName;
+    property public abstract org.gradle.api.provider.Property<java.lang.Integer?> versionCode;
+    property public abstract org.gradle.api.provider.Property<java.lang.String?> versionName;
   }
 
   public interface VariantOutputConfiguration {
@@ -2651,8 +2646,6 @@ package com.android.build.api.variant {
   }
 
   public enum VariantOutputConfiguration.OutputType {
-    method public static com.android.build.api.variant.VariantOutputConfiguration.OutputType valueOf(String value) throws java.lang.IllegalArgumentException, java.lang.NullPointerException;
-    method public static com.android.build.api.variant.VariantOutputConfiguration.OutputType[] values();
     enum_constant public static final com.android.build.api.variant.VariantOutputConfiguration.OutputType ONE_OF_MANY;
     enum_constant public static final com.android.build.api.variant.VariantOutputConfiguration.OutputType SINGLE;
     enum_constant public static final com.android.build.api.variant.VariantOutputConfiguration.OutputType UNIVERSAL;

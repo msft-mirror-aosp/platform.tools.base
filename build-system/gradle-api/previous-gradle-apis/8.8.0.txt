@@ -7,24 +7,37 @@ package com.android.build.api {
     method public com.android.build.api.AndroidPluginVersion alpha(int alpha);
     method public com.android.build.api.AndroidPluginVersion beta(int beta);
     method public int compareTo(com.android.build.api.AndroidPluginVersion other);
-    method @org.gradle.api.Incubating public com.android.build.api.AndroidPluginVersion dev();
+    method public com.android.build.api.AndroidPluginVersion dev();
     method public static com.android.build.api.AndroidPluginVersion getCurrent();
     method public int getMajor();
     method public int getMicro();
     method public int getMinor();
     method public int getPreview();
     method public String? getPreviewType();
+    method public String getVersion();
     method public com.android.build.api.AndroidPluginVersion rc(int rc);
     property public final int major;
     property public final int micro;
     property public final int minor;
     property public final int preview;
     property public final String? previewType;
+    property public final String version;
     field public static final com.android.build.api.AndroidPluginVersion.Companion Companion;
   }
 
   public static final class AndroidPluginVersion.Companion {
     method public com.android.build.api.AndroidPluginVersion getCurrent();
+  }
+
+}
+
+package com.android.build.api.annotations {
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.FIELD, kotlin.annotation.AnnotationTarget.CONSTRUCTOR, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER}) public @interface ReplacedByIncubating {
+    method public abstract long bugId();
+    method public abstract String message();
+    property public abstract long bugId;
+    property public abstract String message;
   }
 
 }
@@ -98,7 +111,8 @@ package com.android.build.api.artifact {
   }
 
   public interface Artifacts {
-    method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> void add(com.android.build.api.artifact.MultipleArtifact<FileTypeT> type, FileTypeT artifact);
+    method @Deprecated public <FileTypeT extends org.gradle.api.file.FileSystemLocation> void add(com.android.build.api.artifact.MultipleArtifact<FileTypeT> type, FileTypeT artifact);
+    method public <MultipleArtifactT extends com.android.build.api.artifact.MultipleArtifact<org.gradle.api.file.Directory> & com.android.build.api.artifact.Artifact.Appendable> void addStaticDirectory(MultipleArtifactT type, org.gradle.api.file.Directory inputLocation);
     method public com.android.build.api.variant.ScopedArtifacts forScope(com.android.build.api.variant.ScopedArtifacts.Scope scope);
     method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> org.gradle.api.provider.Provider<FileTypeT> get(com.android.build.api.artifact.SingleArtifact<FileTypeT> type);
     method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> org.gradle.api.provider.Provider<java.util.List<FileTypeT>> getAll(com.android.build.api.artifact.MultipleArtifact<FileTypeT> type);
@@ -112,11 +126,12 @@ package com.android.build.api.artifact {
 
   public interface InAndOutDirectoryOperationRequest<TaskT extends org.gradle.api.Task> {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> & com.android.build.api.artifact.Artifact.Transformable> void toTransform(ArtifactTypeT type);
-    method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> & com.android.build.api.artifact.Artifact.ContainsMany> com.android.build.api.artifact.ArtifactTransformationRequest<TaskT> toTransformMany(ArtifactTypeT type);
+    method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> & com.android.build.api.artifact.Artifact.ContainsMany & com.android.build.api.artifact.Artifact.Transformable> com.android.build.api.artifact.ArtifactTransformationRequest<TaskT> toTransformMany(ArtifactTypeT type);
   }
 
   public interface InAndOutFileOperationRequest {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.RegularFile> & com.android.build.api.artifact.Artifact.Transformable> void toTransform(ArtifactTypeT type);
+    method public com.android.build.api.artifact.InAndOutFileOperationRequest withName(String name);
   }
 
   public abstract sealed class MultipleArtifact<FileTypeT extends org.gradle.api.file.FileSystemLocation> extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT> {
@@ -134,24 +149,25 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.MultipleArtifact.NATIVE_SYMBOL_TABLES INSTANCE;
   }
 
-  @org.gradle.api.Incubating public interface MultipleArtifactTypeOutOperationRequest<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
+  public interface MultipleArtifactTypeOutOperationRequest<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT>> void toListenTo(ArtifactTypeT type);
   }
 
   public interface OutOperationRequest<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT> & com.android.build.api.artifact.Artifact.Appendable> void toAppendTo(ArtifactTypeT type);
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<FileTypeT> & com.android.build.api.artifact.Artifact.Replaceable> void toCreate(ArtifactTypeT type);
-    method @org.gradle.api.Incubating public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<FileTypeT>> void toListenTo(ArtifactTypeT type);
+    method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<FileTypeT>> void toListenTo(ArtifactTypeT type);
+    method public com.android.build.api.artifact.OutOperationRequest<FileTypeT> withName(String name);
   }
 
   public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.RegularFile> {
   }
 
-  public static final class ScopedArtifact.CLASSES extends com.android.build.api.artifact.ScopedArtifact {
+  public static final class ScopedArtifact.CLASSES extends com.android.build.api.artifact.ScopedArtifact implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.ScopedArtifact.CLASSES INSTANCE;
   }
 
-  public static final class ScopedArtifact.JAVA_RES extends com.android.build.api.artifact.ScopedArtifact {
+  public static final class ScopedArtifact.JAVA_RES extends com.android.build.api.artifact.ScopedArtifact implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.ScopedArtifact.JAVA_RES INSTANCE;
   }
 
@@ -166,7 +182,7 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.APK INSTANCE;
   }
 
-  @org.gradle.api.Incubating public static final class SingleArtifact.APK_FROM_BUNDLE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Transformable {
+  @org.gradle.api.Incubating public static final class SingleArtifact.APK_FROM_BUNDLE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
     field public static final com.android.build.api.artifact.SingleArtifact.APK_FROM_BUNDLE INSTANCE;
   }
 
@@ -207,7 +223,7 @@ package com.android.build.api.artifact {
     method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> com.android.build.api.artifact.CombiningOperationRequest<FileTypeT> wiredWith(kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.ListProperty<FileTypeT>> taskInput, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.file.FileSystemLocationProperty<FileTypeT>> taskOutput);
     method public com.android.build.api.artifact.InAndOutDirectoryOperationRequest<TaskT> wiredWithDirectories(kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.file.DirectoryProperty> taskInput, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.file.DirectoryProperty> taskOutput);
     method public com.android.build.api.artifact.InAndOutFileOperationRequest wiredWithFiles(kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.file.RegularFileProperty> taskInput, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.file.RegularFileProperty> taskOutput);
-    method @org.gradle.api.Incubating public <FileTypeT extends org.gradle.api.file.FileSystemLocation> com.android.build.api.artifact.MultipleArtifactTypeOutOperationRequest<FileTypeT> wiredWithMultiple(kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.ListProperty<FileTypeT>> taskInput);
+    method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> com.android.build.api.artifact.MultipleArtifactTypeOutOperationRequest<FileTypeT> wiredWithMultiple(kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.ListProperty<FileTypeT>> taskInput);
   }
 
 }
@@ -233,12 +249,12 @@ package com.android.build.api.attributes {
   }
 
   public interface ProductFlavorAttr extends org.gradle.api.Named {
-    method @org.gradle.api.Incubating public static org.gradle.api.attributes.Attribute<com.android.build.api.attributes.ProductFlavorAttr> of(String flavorDimension);
+    method public static org.gradle.api.attributes.Attribute<com.android.build.api.attributes.ProductFlavorAttr> of(String flavorDimension);
     field public static final com.android.build.api.attributes.ProductFlavorAttr.Companion Companion;
   }
 
-  @org.gradle.api.Incubating public static final class ProductFlavorAttr.Companion {
-    method @org.gradle.api.Incubating public org.gradle.api.attributes.Attribute<com.android.build.api.attributes.ProductFlavorAttr> of(String flavorDimension);
+  public static final class ProductFlavorAttr.Companion {
+    method public org.gradle.api.attributes.Attribute<com.android.build.api.attributes.ProductFlavorAttr> of(String flavorDimension);
   }
 
 }
@@ -256,15 +272,15 @@ package com.android.build.api.dsl {
   }
 
   public interface AarMetadata {
-    method @org.gradle.api.Incubating public String? getMinAgpVersion();
+    method public String? getMinAgpVersion();
     method public Integer? getMinCompileSdk();
-    method @org.gradle.api.Incubating public Integer? getMinCompileSdkExtension();
-    method @org.gradle.api.Incubating public void setMinAgpVersion(String?);
+    method public Integer? getMinCompileSdkExtension();
+    method public void setMinAgpVersion(String?);
     method public void setMinCompileSdk(Integer?);
-    method @org.gradle.api.Incubating public void setMinCompileSdkExtension(Integer?);
-    property @org.gradle.api.Incubating public abstract String? minAgpVersion;
+    method public void setMinCompileSdkExtension(Integer?);
+    property public abstract String? minAgpVersion;
     property public abstract Integer? minCompileSdk;
-    property @org.gradle.api.Incubating public abstract Integer? minCompileSdkExtension;
+    property public abstract Integer? minCompileSdkExtension;
   }
 
   public interface AbiSplit extends com.android.build.api.dsl.Split {
@@ -274,6 +290,17 @@ package com.android.build.api.dsl {
   }
 
   @Deprecated public interface AdbOptions extends com.android.build.api.dsl.Installation {
+  }
+
+  @org.gradle.api.Incubating public interface AiPackExtension {
+    method @org.gradle.api.Incubating public void dynamicDelivery(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicDelivery,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.DynamicDelivery getDynamicDelivery();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.ModelDependency getModelDependency();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getPackName();
+    method @org.gradle.api.Incubating public void modelDependency(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ModelDependency,kotlin.Unit> action);
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.DynamicDelivery dynamicDelivery;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ModelDependency modelDependency;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> packName;
   }
 
   public interface AndroidResources {
@@ -299,9 +326,11 @@ package com.android.build.api.dsl {
   }
 
   public interface AndroidSourceDirectorySet extends org.gradle.api.Named {
+    method @org.gradle.api.Incubating public java.util.Set<java.lang.String> getDirectories();
     method public Object setSrcDirs(Iterable<? extends java.lang.Object?> srcDirs);
     method public Object srcDir(Object srcDir);
     method public Object srcDirs(java.lang.Object... srcDirs);
+    property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> directories;
   }
 
   public interface AndroidSourceFile extends org.gradle.api.Named {
@@ -317,11 +346,13 @@ package com.android.build.api.dsl {
     method public String getApiConfigurationName();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getAssets();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getBaselineProfiles();
+    method public String getCompileOnlyApiConfigurationName();
     method public String getCompileOnlyConfigurationName();
     method public String getImplementationConfigurationName();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getJava();
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getJni();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getJniLibs();
+    method public String getKaptConfigurationName();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getKotlin();
     method public com.android.build.api.dsl.AndroidSourceFile getManifest();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getMlModels();
@@ -330,7 +361,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getResources();
     method public String getRuntimeOnlyConfigurationName();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getShaders();
-    method public String getWearAppConfigurationName();
+    method @Deprecated public String getWearAppConfigurationName();
     method public void java(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jni(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method public void jniLibs(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
@@ -347,11 +378,13 @@ package com.android.build.api.dsl {
     property public abstract String apiConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet assets;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet baselineProfiles;
+    property public abstract String compileOnlyApiConfigurationName;
     property public abstract String compileOnlyConfigurationName;
     property public abstract String implementationConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet java;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet jni;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet jniLibs;
+    property public abstract String kaptConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet kotlin;
     property public abstract com.android.build.api.dsl.AndroidSourceFile manifest;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet mlModels;
@@ -360,13 +393,13 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet resources;
     property public abstract String runtimeOnlyConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet shaders;
-    property public abstract String wearAppConfigurationName;
+    property @Deprecated public abstract String wearAppConfigurationName;
   }
 
   @org.gradle.api.Incubating public interface AndroidTest {
-    method public boolean getEnableMinification();
-    method public void setEnableMinification(boolean);
-    property public abstract boolean enableMinification;
+    method @org.gradle.api.Incubating public boolean getEnableMinification();
+    method @org.gradle.api.Incubating public void setEnableMinification(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enableMinification;
   }
 
   public interface AnnotationProcessorOptions {
@@ -410,17 +443,19 @@ package com.android.build.api.dsl {
 
   public interface ApplicationAndroidResources extends com.android.build.api.dsl.AndroidResources {
     method @org.gradle.api.Incubating public boolean getGenerateLocaleConfig();
+    method @org.gradle.api.Incubating public java.util.Set<java.lang.String> getLocaleFilters();
     method @org.gradle.api.Incubating public void setGenerateLocaleConfig(boolean);
     property @org.gradle.api.Incubating public abstract boolean generateLocaleConfig;
+    property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> localeFilters;
   }
 
   public interface ApplicationBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.ApplicationVariantDimension {
-    method public String? getApplicationId();
-    method public Integer? getMaxSdk();
-    method public Integer? getTargetSdk();
-    method public String? getTargetSdkPreview();
-    method public Integer? getVersionCode();
-    method public String? getVersionName();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getApplicationId();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getMaxSdk();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getTargetSdk();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTargetSdkPreview();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getVersionCode();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getVersionName();
     method @Deprecated public void maxSdkVersion(int maxSdkVersion);
     method public void setApplicationId(String?);
     method public void setMaxSdk(Integer?);
@@ -431,20 +466,20 @@ package com.android.build.api.dsl {
     method public void setVersionName(String?);
     method @Deprecated public void targetSdkVersion(int targetSdkVersion);
     method @Deprecated public void targetSdkVersion(String? targetSdkVersion);
-    property public abstract String? applicationId;
-    property public abstract Integer? maxSdk;
-    property public abstract Integer? targetSdk;
-    property public abstract String? targetSdkPreview;
-    property public abstract Integer? versionCode;
-    property public abstract String? versionName;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? applicationId;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? maxSdk;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? targetSdk;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? targetSdkPreview;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? versionCode;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? versionName;
   }
 
   public interface ApplicationBuildFeatures extends com.android.build.api.dsl.BuildFeatures {
-    method public Boolean? getDataBinding();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getDataBinding();
     method public Boolean? getMlModelBinding();
     method public void setDataBinding(Boolean?);
     method public void setMlModelBinding(Boolean?);
-    property public abstract Boolean? dataBinding;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? dataBinding;
     property public abstract Boolean? mlModelBinding;
   }
 
@@ -496,7 +531,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public boolean getEnableBaselineProfile();
     method @org.gradle.api.Incubating public void setEnableBaselineProfile(boolean);
     property @org.gradle.api.Incubating public abstract boolean enableBaselineProfile;
-    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> installOptions;
+    property public abstract java.util.List<java.lang.String> installOptions;
   }
 
   public interface ApplicationProductFlavor extends com.android.build.api.dsl.ApplicationBaseFlavor com.android.build.api.dsl.ProductFlavor {
@@ -513,23 +548,25 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationVariantDimension extends com.android.build.api.dsl.VariantDimension {
-    method public String? getApplicationIdSuffix();
-    method public Boolean? getMultiDexEnabled();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getApplicationIdSuffix();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getMultiDexEnabled();
     method public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method public String? getVersionNameSuffix();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getVersionNameSuffix();
     method public void setApplicationIdSuffix(String?);
     method public void setMultiDexEnabled(Boolean?);
     method public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     method public void setVersionNameSuffix(String?);
-    property public abstract String? applicationIdSuffix;
-    property public abstract Boolean? multiDexEnabled;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? applicationIdSuffix;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
-    property public abstract String? versionNameSuffix;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? versionNameSuffix;
   }
 
   public interface AssetPackBundleExtension {
+    method @org.gradle.api.Incubating public void aiModelVersion(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleAiModelVersion,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void countrySet(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleAiModelVersion getAiModelVersion();
     method public String getApplicationId();
     method public java.util.Set<java.lang.String> getAssetPacks();
     method public int getCompileSdk();
@@ -544,6 +581,7 @@ package com.android.build.api.dsl {
     method public void setVersionTag(String);
     method public void signingConfig(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.SigningConfig,kotlin.Unit> action);
     method public void texture(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleTexture,kotlin.Unit> action);
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleAiModelVersion aiModelVersion;
     property public abstract String applicationId;
     property public abstract java.util.Set<java.lang.String> assetPacks;
     property public abstract int compileSdk;
@@ -564,18 +602,18 @@ package com.android.build.api.dsl {
   }
 
   public interface BaseFlavor extends com.android.build.api.dsl.VariantDimension {
-    method public Integer? getMinSdk();
-    method public String? getMinSdkPreview();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getMinSdk();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getMinSdkPreview();
     method public String getName();
     method public Boolean? getRenderscriptNdkModeEnabled();
     method public Boolean? getRenderscriptSupportModeBlasEnabled();
     method public Boolean? getRenderscriptSupportModeEnabled();
     method public Integer? getRenderscriptTargetApi();
-    method public java.util.Set<java.lang.String> getResourceConfigurations();
+    method @Deprecated public java.util.Set<java.lang.String> getResourceConfigurations();
     method public String? getTestApplicationId();
     method public Boolean? getTestFunctionalTest();
     method public Boolean? getTestHandleProfiling();
-    method public String? getTestInstrumentationRunner();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTestInstrumentationRunner();
     method public java.util.Map<java.lang.String,java.lang.String> getTestInstrumentationRunnerArguments();
     method public com.android.build.api.dsl.VectorDrawables getVectorDrawables();
     method public Boolean? getWearAppUnbundled();
@@ -607,17 +645,17 @@ package com.android.build.api.dsl {
     method @Deprecated public void testInstrumentationRunnerArgument(String key, String value);
     method @Deprecated public void testInstrumentationRunnerArguments(java.util.Map<java.lang.String,java.lang.String> args);
     method public void vectorDrawables(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.VectorDrawables,kotlin.Unit> action);
-    property public abstract Integer? minSdk;
-    property public abstract String? minSdkPreview;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? minSdk;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? minSdkPreview;
     property public abstract Boolean? renderscriptNdkModeEnabled;
     property public abstract Boolean? renderscriptSupportModeBlasEnabled;
     property public abstract Boolean? renderscriptSupportModeEnabled;
     property public abstract Integer? renderscriptTargetApi;
-    property public abstract java.util.Set<java.lang.String> resourceConfigurations;
+    property @Deprecated public abstract java.util.Set<java.lang.String> resourceConfigurations;
     property public abstract String? testApplicationId;
     property public abstract Boolean? testFunctionalTest;
     property public abstract Boolean? testHandleProfiling;
-    property public abstract String? testInstrumentationRunner;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? testInstrumentationRunner;
     property public abstract java.util.Map<java.lang.String,java.lang.String> testInstrumentationRunnerArguments;
     property public abstract com.android.build.api.dsl.VectorDrawables vectorDrawables;
     property public abstract Boolean? wearAppUnbundled;
@@ -632,14 +670,14 @@ package com.android.build.api.dsl {
   }
 
   public interface BuildFeatures extends org.gradle.api.plugins.ExtensionAware {
-    method public Boolean? getAidl();
-    method public Boolean? getBuildConfig();
-    method public Boolean? getCompose();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getAidl();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getBuildConfig();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getCompose();
     method public Boolean? getPrefab();
     method public Boolean? getRenderScript();
-    method public Boolean? getResValues();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getResValues();
     method public Boolean? getShaders();
-    method public Boolean? getViewBinding();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getViewBinding();
     method public void setAidl(Boolean?);
     method public void setBuildConfig(Boolean?);
     method public void setCompose(Boolean?);
@@ -648,14 +686,14 @@ package com.android.build.api.dsl {
     method public void setResValues(Boolean?);
     method public void setShaders(Boolean?);
     method public void setViewBinding(Boolean?);
-    property public abstract Boolean? aidl;
-    property public abstract Boolean? buildConfig;
-    property public abstract Boolean? compose;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? aidl;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? buildConfig;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? compose;
     property public abstract Boolean? prefab;
     property public abstract Boolean? renderScript;
-    property public abstract Boolean? resValues;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? resValues;
     property public abstract Boolean? shaders;
-    property public abstract Boolean? viewBinding;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? viewBinding;
   }
 
   public interface BuildType extends org.gradle.api.Named org.gradle.api.plugins.ExtensionAware com.android.build.api.dsl.VariantDimension {
@@ -667,7 +705,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public com.android.build.api.dsl.VcsInfo getVcsInfo();
     method public void initWith(com.android.build.api.dsl.BuildType that);
     method public boolean isJniDebuggable();
-    method public boolean isMinifyEnabled();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean isMinifyEnabled();
     method public boolean isPseudoLocalesEnabled();
     method @Deprecated public boolean isRenderscriptDebuggable();
     method public boolean isShrinkResources();
@@ -690,7 +728,7 @@ package com.android.build.api.dsl {
     property public abstract boolean enableAndroidTestCoverage;
     property public abstract boolean enableUnitTestCoverage;
     property public abstract boolean isJniDebuggable;
-    property public abstract boolean isMinifyEnabled;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isMinifyEnabled;
     property public abstract boolean isPseudoLocalesEnabled;
     property @Deprecated public abstract boolean isRenderscriptDebuggable;
     property public abstract boolean isShrinkResources;
@@ -704,11 +742,13 @@ package com.android.build.api.dsl {
 
   public interface Bundle {
     method public void abi(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleAbi,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void aiModelVersion(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleAiModelVersion,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void codeTransparency(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCodeTransparency,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void countrySet(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet,kotlin.Unit> action);
     method public void density(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDensity,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void deviceTier(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier,kotlin.Unit> action);
     method public com.android.build.api.dsl.BundleAbi getAbi();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleAiModelVersion getAiModelVersion();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCodeTransparency getCodeTransparency();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCountrySet getCountrySet();
     method public com.android.build.api.dsl.BundleDensity getDensity();
@@ -721,6 +761,7 @@ package com.android.build.api.dsl {
     method public void storeArchive(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleStoreArchive,kotlin.Unit> action);
     method public void texture(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleTexture,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.BundleAbi abi;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleAiModelVersion aiModelVersion;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCodeTransparency codeTransparency;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCountrySet countrySet;
     property public abstract com.android.build.api.dsl.BundleDensity density;
@@ -734,6 +775,15 @@ package com.android.build.api.dsl {
   public interface BundleAbi {
     method @org.gradle.api.Incubating public Boolean? getEnableSplit();
     method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
+  }
+
+  @org.gradle.api.Incubating public interface BundleAiModelVersion {
+    method @org.gradle.api.Incubating public String? getDefaultVersion();
+    method @org.gradle.api.Incubating public Boolean? getEnableSplit();
+    method @org.gradle.api.Incubating public void setDefaultVersion(String?);
+    method @org.gradle.api.Incubating public void setEnableSplit(Boolean?);
+    property @org.gradle.api.Incubating public abstract String? defaultVersion;
     property @org.gradle.api.Incubating public abstract Boolean? enableSplit;
   }
 
@@ -827,7 +877,7 @@ package com.android.build.api.dsl {
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super BuildFeaturesT,kotlin.Unit> action);
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<BuildTypeT>,kotlin.Unit> action);
-    method public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
     method @Deprecated public void compileSdkVersion(int apiLevel);
     method @Deprecated public void compileSdkVersion(String version);
@@ -844,13 +894,13 @@ package com.android.build.api.dsl {
     method public String getBuildToolsVersion();
     method public org.gradle.api.NamedDomainObjectContainer<? extends BuildTypeT> getBuildTypes();
     method public com.android.build.api.dsl.CompileOptions getCompileOptions();
-    method public Integer? getCompileSdk();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getCompileSdk();
     method public Integer? getCompileSdkExtension();
     method public String? getCompileSdkPreview();
     method public com.android.build.api.dsl.ComposeOptions getComposeOptions();
     method public com.android.build.api.dsl.DataBinding getDataBinding();
     method public DefaultConfigT getDefaultConfig();
-    method public java.io.File getDefaultProguardFile(String name);
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public java.io.File getDefaultProguardFile(String name);
     method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
     method public com.android.build.api.dsl.ExternalNativeBuild getExternalNativeBuild();
     method public java.util.List<java.lang.String> getFlavorDimensions();
@@ -858,7 +908,7 @@ package com.android.build.api.dsl {
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.JacocoOptions getJacoco();
     method public com.android.build.api.dsl.Lint getLint();
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.LintOptions getLintOptions();
-    method public String? getNamespace();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getNamespace();
     method public String? getNdkPath();
     method public String getNdkVersion();
     method public com.android.build.api.dsl.Packaging getPackaging();
@@ -874,7 +924,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.ViewBinding getViewBinding();
     method public void installation(kotlin.jvm.functions.Function1<? super InstallationT,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jacoco(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions,kotlin.Unit> action);
-    method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void lintOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions,kotlin.Unit> action);
     method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
@@ -903,7 +953,7 @@ package com.android.build.api.dsl {
     property public abstract String buildToolsVersion;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends BuildTypeT> buildTypes;
     property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
-    property public abstract Integer? compileSdk;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? compileSdk;
     property public abstract Integer? compileSdkExtension;
     property public abstract String? compileSdkPreview;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
@@ -916,7 +966,7 @@ package com.android.build.api.dsl {
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JacocoOptions jacoco;
     property public abstract com.android.build.api.dsl.Lint lint;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.LintOptions lintOptions;
-    property public abstract String? namespace;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? namespace;
     property public abstract String? ndkPath;
     property public abstract String ndkVersion;
     property public abstract com.android.build.api.dsl.Packaging packaging;
@@ -933,32 +983,32 @@ package com.android.build.api.dsl {
   }
 
   public interface CompileOptions {
-    method public String getEncoding();
-    method public org.gradle.api.JavaVersion getSourceCompatibility();
-    method public org.gradle.api.JavaVersion getTargetCompatibility();
-    method public boolean isCoreLibraryDesugaringEnabled();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String getEncoding();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.JavaVersion getSourceCompatibility();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.JavaVersion getTargetCompatibility();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean isCoreLibraryDesugaringEnabled();
     method public void setCoreLibraryDesugaringEnabled(boolean);
     method public void setEncoding(String);
     method public void setSourceCompatibility(org.gradle.api.JavaVersion);
     method public void setTargetCompatibility(org.gradle.api.JavaVersion);
     method public void sourceCompatibility(Object sourceCompatibility);
     method public void targetCompatibility(Object targetCompatibility);
-    property public abstract String encoding;
-    property public abstract boolean isCoreLibraryDesugaringEnabled;
-    property public abstract org.gradle.api.JavaVersion sourceCompatibility;
-    property public abstract org.gradle.api.JavaVersion targetCompatibility;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String encoding;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isCoreLibraryDesugaringEnabled;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion sourceCompatibility;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion targetCompatibility;
   }
 
   public interface ComposeOptions {
     method public String? getKotlinCompilerExtensionVersion();
     method @Deprecated public String? getKotlinCompilerVersion();
-    method public boolean getUseLiveLiterals();
+    method @Deprecated public boolean getUseLiveLiterals();
     method public void setKotlinCompilerExtensionVersion(String?);
     method @Deprecated public void setKotlinCompilerVersion(String?);
-    method public void setUseLiveLiterals(boolean);
+    method @Deprecated public void setUseLiveLiterals(boolean);
     property public abstract String? kotlinCompilerExtensionVersion;
     property @Deprecated public abstract String? kotlinCompilerVersion;
-    property public abstract boolean useLiveLiterals;
+    property @Deprecated public abstract boolean useLiveLiterals;
   }
 
   @org.gradle.api.Incubating public interface ConfigurableFiles {
@@ -1069,8 +1119,11 @@ package com.android.build.api.dsl {
 
   public interface DynamicFeatureBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.DynamicFeatureVariantDimension {
     method @org.gradle.api.Incubating public Boolean? isCrunchPngs();
+    method public boolean isDebuggable();
     method @org.gradle.api.Incubating public void setCrunchPngs(Boolean?);
+    method public void setDebuggable(boolean);
     property @org.gradle.api.Incubating public abstract Boolean? isCrunchPngs;
+    property public abstract boolean isDebuggable;
   }
 
   public interface DynamicFeatureDefaultConfig extends com.android.build.api.dsl.DynamicFeatureBaseFlavor com.android.build.api.dsl.DefaultConfig {
@@ -1146,15 +1199,6 @@ package com.android.build.api.dsl {
     property @Deprecated public abstract int maxSnapshots;
   }
 
-  @org.gradle.api.Incubating public interface FusedLibraryExtension {
-    method @org.gradle.api.Incubating public Integer? getMinSdk();
-    method @org.gradle.api.Incubating public String? getNamespace();
-    method @org.gradle.api.Incubating public void setMinSdk(Integer?);
-    method @org.gradle.api.Incubating public void setNamespace(String?);
-    property @org.gradle.api.Incubating public abstract Integer? minSdk;
-    property @org.gradle.api.Incubating public abstract String? namespace;
-  }
-
   public interface HasConfigurableValue<T> {
     method public void configure(kotlin.jvm.functions.Function1<? super T,kotlin.Unit> action);
   }
@@ -1164,12 +1208,12 @@ package com.android.build.api.dsl {
   }
 
   public interface Installation {
-    method @org.gradle.api.Incubating public java.util.List<java.lang.String> getInstallOptions();
+    method public java.util.List<java.lang.String> getInstallOptions();
     method public int getTimeOutInMs();
     method @Deprecated public void installOptions(String option);
     method @Deprecated public void installOptions(java.lang.String... options);
     method public void setTimeOutInMs(int);
-    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> installOptions;
+    property public abstract java.util.List<java.lang.String> installOptions;
     property public abstract int timeOutInMs;
   }
 
@@ -1189,17 +1233,21 @@ package com.android.build.api.dsl {
     method public java.util.Set<java.lang.String> getExcludes();
     method public java.util.Set<java.lang.String> getKeepDebugSymbols();
     method public java.util.Set<java.lang.String> getPickFirsts();
+    method public java.util.Set<java.lang.String> getTestOnly();
     method public Boolean? getUseLegacyPackaging();
     method public void setUseLegacyPackaging(Boolean?);
     property public abstract java.util.Set<java.lang.String> excludes;
     property public abstract java.util.Set<java.lang.String> keepDebugSymbols;
     property public abstract java.util.Set<java.lang.String> pickFirsts;
+    property public abstract java.util.Set<java.lang.String> testOnly;
     property public abstract Boolean? useLegacyPackaging;
   }
 
   @org.gradle.api.Incubating public interface KeepRules {
-    method @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
-    method @org.gradle.api.Incubating public void ignoreExternalDependencies(java.lang.String... ids);
+    method @Deprecated @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
+    method @Deprecated @org.gradle.api.Incubating public void ignoreExternalDependencies(java.lang.String... ids);
+    method @org.gradle.api.Incubating public void ignoreFrom(java.lang.String... ids);
+    method @org.gradle.api.Incubating public void ignoreFromAllExternalDependencies(boolean ignore);
   }
 
   @org.gradle.api.Incubating public interface KmpOptimization {
@@ -1214,155 +1262,170 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ConfigurableFiles testKeepRules;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidCompilation extends org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions> {
+  public interface KotlinMultiplatformAndroidCompilation extends org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions> {
     method public org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> getCompilerOptions();
+    method @org.gradle.api.Incubating public String getComponentName();
     method @Deprecated public org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions getKotlinOptions();
     method @Deprecated public void kotlinOptions(kotlin.jvm.functions.Function1<? super org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions,kotlin.Unit> configure);
     method @Deprecated public void kotlinOptions(org.gradle.api.Action<org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions> configure);
     property public abstract org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> compilerOptions;
+    property @org.gradle.api.Incubating public abstract String componentName;
     property @Deprecated public abstract org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions kotlinOptions;
   }
 
   @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidCompilationBuilder {
-    method @org.gradle.api.Incubating public String getCompilationName();
-    method @org.gradle.api.Incubating public String getDefaultSourceSetName();
+    method @Deprecated @org.gradle.api.Incubating public String getCompilationName();
+    method @Deprecated @org.gradle.api.Incubating public String getDefaultSourceSetName();
     method @org.gradle.api.Incubating public String? getSourceSetTreeName();
-    method @org.gradle.api.Incubating public void setCompilationName(String);
-    method @org.gradle.api.Incubating public void setDefaultSourceSetName(String);
+    method @Deprecated @org.gradle.api.Incubating public void setCompilationName(String);
+    method @Deprecated @org.gradle.api.Incubating public void setDefaultSourceSetName(String);
     method @org.gradle.api.Incubating public void setSourceSetTreeName(String?);
-    property @org.gradle.api.Incubating public abstract String compilationName;
-    property @org.gradle.api.Incubating public abstract String defaultSourceSetName;
+    property @Deprecated @org.gradle.api.Incubating public abstract String compilationName;
+    property @Deprecated @org.gradle.api.Incubating public abstract String defaultSourceSetName;
     property @org.gradle.api.Incubating public abstract String? sourceSetTreeName;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidExtension {
-    method @org.gradle.api.Incubating public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void dependencyVariantSelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.AarMetadata getAarMetadata();
-    method @org.gradle.api.Incubating public String getBuildToolsVersion();
-    method @org.gradle.api.Incubating public Integer? getCompileSdk();
-    method @org.gradle.api.Incubating public Integer? getCompileSdkExtension();
-    method @org.gradle.api.Incubating public String? getCompileSdkPreview();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.DependencyVariantSelection getDependencyVariantSelection();
-    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.Lint getLint();
-    method @org.gradle.api.Incubating public Integer? getMaxSdk();
-    method @org.gradle.api.Incubating public Integer? getMinSdk();
-    method @org.gradle.api.Incubating public String? getMinSdkPreview();
-    method @org.gradle.api.Incubating public String? getNamespace();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.KmpOptimization getOptimization();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.Packaging getPackaging();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.TestCoverage getTestCoverage();
-    method @org.gradle.api.Incubating public String? getTestNamespace();
-    method @org.gradle.api.Incubating public boolean isCoreLibraryDesugaringEnabled();
-    method @org.gradle.api.Incubating public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void setBuildToolsVersion(String);
-    method @org.gradle.api.Incubating public void setCompileSdk(Integer?);
-    method @org.gradle.api.Incubating public void setCompileSdkExtension(Integer?);
-    method @org.gradle.api.Incubating public void setCompileSdkPreview(String?);
-    method @org.gradle.api.Incubating public void setCoreLibraryDesugaringEnabled(boolean);
-    method @org.gradle.api.Incubating public void setMaxSdk(Integer?);
-    method @org.gradle.api.Incubating public void setMinSdk(Integer?);
-    method @org.gradle.api.Incubating public void setMinSdkPreview(String?);
-    method @org.gradle.api.Incubating public void setNamespace(String?);
-    method @org.gradle.api.Incubating public void setTestNamespace(String?);
-    method @org.gradle.api.Incubating public void useLibrary(String name);
-    method @org.gradle.api.Incubating public void useLibrary(String name, boolean required);
-    method @org.gradle.api.Incubating public void withAndroidTestOnDevice(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDevice,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDevice> withAndroidTestOnDeviceBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void withAndroidTestOnJvm(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvm,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvm> withAndroidTestOnJvmBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
-    property @org.gradle.api.Incubating public abstract String buildToolsVersion;
-    property @org.gradle.api.Incubating public abstract Integer? compileSdk;
-    property @org.gradle.api.Incubating public abstract Integer? compileSdkExtension;
-    property @org.gradle.api.Incubating public abstract String? compileSdkPreview;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.DependencyVariantSelection dependencyVariantSelection;
-    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
-    property @org.gradle.api.Incubating public abstract boolean isCoreLibraryDesugaringEnabled;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Lint lint;
-    property @org.gradle.api.Incubating public abstract Integer? maxSdk;
-    property @org.gradle.api.Incubating public abstract Integer? minSdk;
-    property @org.gradle.api.Incubating public abstract String? minSdkPreview;
-    property @org.gradle.api.Incubating public abstract String? namespace;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.KmpOptimization optimization;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Packaging packaging;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.TestCoverage testCoverage;
-    property @org.gradle.api.Incubating public abstract String? testNamespace;
+  public interface KotlinMultiplatformAndroidDeviceTest {
+    method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void emulatorSnapshots(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots,kotlin.Unit> action);
+    method public boolean getAnimationsDisabled();
+    method public String? getApplicationId();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorSnapshots getEmulatorSnapshots();
+    method public boolean getEnableCoverage();
+    method public String getExecution();
+    method public Boolean? getFunctionalTest();
+    method public Boolean? getHandleProfiling();
+    method public com.android.build.api.dsl.Installation getInstallation();
+    method public String? getInstrumentationRunner();
+    method public java.util.Map<java.lang.String,java.lang.String> getInstrumentationRunnerArguments();
+    method public com.android.build.api.dsl.ManagedDevices getManagedDevices();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.MultiDexConfig getMultidex();
+    method public com.android.build.api.dsl.ApkSigningConfig getSigning();
+    method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Installation,kotlin.Unit> action);
+    method public void managedDevices(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ManagedDevices,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void multidex(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig,kotlin.Unit> action);
+    method public void setAnimationsDisabled(boolean);
+    method public void setApplicationId(String?);
+    method public void setEnableCoverage(boolean);
+    method public void setExecution(String);
+    method public void setFunctionalTest(Boolean?);
+    method public void setHandleProfiling(Boolean?);
+    method public void setInstrumentationRunner(String?);
+    method public void signing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApkSigningConfig,kotlin.Unit> action);
+    property public abstract boolean animationsDisabled;
+    property public abstract String? applicationId;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorSnapshots emulatorSnapshots;
+    property public abstract boolean enableCoverage;
+    property public abstract String execution;
+    property public abstract Boolean? functionalTest;
+    property public abstract Boolean? handleProfiling;
+    property public abstract com.android.build.api.dsl.Installation installation;
+    property public abstract String? instrumentationRunner;
+    property public abstract java.util.Map<java.lang.String,java.lang.String> instrumentationRunnerArguments;
+    property public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.MultiDexConfig multidex;
+    property public abstract com.android.build.api.dsl.ApkSigningConfig signing;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTarget extends org.jetbrains.kotlin.gradle.plugin.KotlinTarget com.android.build.api.dsl.KotlinMultiplatformAndroidExtension {
+  public interface KotlinMultiplatformAndroidDeviceTestCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
+  }
+
+  public interface KotlinMultiplatformAndroidHostTest {
+    method public boolean getEnableCoverage();
+    method public boolean isIncludeAndroidResources();
+    method public boolean isReturnDefaultValues();
+    method public void setEnableCoverage(boolean);
+    method public void setIncludeAndroidResources(boolean);
+    method public void setReturnDefaultValues(boolean);
+    property public abstract boolean enableCoverage;
+    property public abstract boolean isIncludeAndroidResources;
+    property public abstract boolean isReturnDefaultValues;
+  }
+
+  public interface KotlinMultiplatformAndroidHostTestCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
+  }
+
+  public interface KotlinMultiplatformAndroidLibraryExtension {
+    method public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void dependencyVariantSelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection,kotlin.Unit> action);
+    method public com.android.build.api.dsl.AarMetadata getAarMetadata();
+    method public String getBuildToolsVersion();
+    method public Integer? getCompileSdk();
+    method public Integer? getCompileSdkExtension();
+    method public String? getCompileSdkPreview();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.DependencyVariantSelection getDependencyVariantSelection();
+    method public boolean getEnableCoreLibraryDesugaring();
+    method public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
+    method public com.android.build.api.dsl.Lint getLint();
+    method public Integer? getMinSdk();
+    method public String? getMinSdkPreview();
+    method public String? getNamespace();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.KmpOptimization getOptimization();
+    method public com.android.build.api.dsl.Packaging getPackaging();
+    method public com.android.build.api.dsl.TestCoverage getTestCoverage();
+    method public String? getTestNamespace();
+    method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method public void setBuildToolsVersion(String);
+    method public void setCompileSdk(Integer?);
+    method public void setCompileSdkExtension(Integer?);
+    method public void setCompileSdkPreview(String?);
+    method public void setEnableCoreLibraryDesugaring(boolean);
+    method public void setMinSdk(Integer?);
+    method public void setMinSdkPreview(String?);
+    method public void setNamespace(String?);
+    method public void setTestNamespace(String?);
+    method public void useLibrary(String name);
+    method public void useLibrary(String name, boolean required);
+    method @Deprecated public void withAndroidTestOnDevice(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> withAndroidTestOnDeviceBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
+    method @Deprecated public void withAndroidTestOnJvm(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> withAndroidTestOnJvmBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
+    method public void withDeviceTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> withDeviceTestBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
+    method public void withHostTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> withHostTestBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
+    property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
+    property public abstract String buildToolsVersion;
+    property public abstract Integer? compileSdk;
+    property public abstract Integer? compileSdkExtension;
+    property public abstract String? compileSdkPreview;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.DependencyVariantSelection dependencyVariantSelection;
+    property public abstract boolean enableCoreLibraryDesugaring;
+    property public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
+    property public abstract com.android.build.api.dsl.Lint lint;
+    property public abstract Integer? minSdk;
+    property public abstract String? minSdkPreview;
+    property public abstract String? namespace;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.KmpOptimization optimization;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+    property public abstract com.android.build.api.dsl.TestCoverage testCoverage;
+    property public abstract String? testNamespace;
+  }
+
+  public interface KotlinMultiplatformAndroidLibraryTarget extends com.android.build.api.dsl.KotlinMultiplatformAndroidTarget com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension org.jetbrains.kotlin.gradle.plugin.KotlinTarget {
     method public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> getCompilations();
-    method @org.gradle.api.Incubating public void withJava();
+    method public void withJava();
     property public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> compilations;
   }
 
-  public final class KotlinMultiplatformAndroidTargetKt {
-    method @org.gradle.api.Incubating public static void androidLibrary(org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidTarget,kotlin.Unit> action);
+  public final class KotlinMultiplatformAndroidLibraryTargetKt {
+    method @org.gradle.api.Incubating public static void androidLibrary(org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget,kotlin.Unit> action);
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnDevice {
-    method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void emulatorSnapshots(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public boolean getAnimationsDisabled();
-    method @org.gradle.api.Incubating public String? getApplicationId();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorSnapshots getEmulatorSnapshots();
-    method @org.gradle.api.Incubating public boolean getEnableCoverage();
-    method @org.gradle.api.Incubating public String getExecution();
-    method @org.gradle.api.Incubating public Boolean? getFunctionalTest();
-    method @org.gradle.api.Incubating public Boolean? getHandleProfiling();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.Installation getInstallation();
-    method @org.gradle.api.Incubating public String? getInstrumentationRunner();
-    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.String> getInstrumentationRunnerArguments();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedDevices getManagedDevices();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.MultiDexConfig getMultidex();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.ApkSigningConfig getSigning();
-    method @org.gradle.api.Incubating public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Installation,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void managedDevices(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ManagedDevices,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void multidex(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void setAnimationsDisabled(boolean);
-    method @org.gradle.api.Incubating public void setApplicationId(String?);
-    method @org.gradle.api.Incubating public void setEnableCoverage(boolean);
-    method @org.gradle.api.Incubating public void setExecution(String);
-    method @org.gradle.api.Incubating public void setFunctionalTest(Boolean?);
-    method @org.gradle.api.Incubating public void setHandleProfiling(Boolean?);
-    method @org.gradle.api.Incubating public void setInstrumentationRunner(String?);
-    method @org.gradle.api.Incubating public void signing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApkSigningConfig,kotlin.Unit> action);
-    property @org.gradle.api.Incubating public abstract boolean animationsDisabled;
-    property @org.gradle.api.Incubating public abstract String? applicationId;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorSnapshots emulatorSnapshots;
-    property @org.gradle.api.Incubating public abstract boolean enableCoverage;
-    property @org.gradle.api.Incubating public abstract String execution;
-    property @org.gradle.api.Incubating public abstract Boolean? functionalTest;
-    property @org.gradle.api.Incubating public abstract Boolean? handleProfiling;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Installation installation;
-    property @org.gradle.api.Incubating public abstract String? instrumentationRunner;
-    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.String> instrumentationRunnerArguments;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.MultiDexConfig multidex;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ApkSigningConfig signing;
+  @Deprecated public interface KotlinMultiplatformAndroidTarget extends org.jetbrains.kotlin.gradle.plugin.KotlinTarget com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension {
+    method @Deprecated public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> getCompilations();
+    method @Deprecated public void withJava();
+    property @Deprecated public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> compilations;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnDeviceCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDevice com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
+  @Deprecated @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnDeviceCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnJvm {
-    method @org.gradle.api.Incubating public boolean getEnableCoverage();
-    method @org.gradle.api.Incubating public boolean isIncludeAndroidResources();
-    method @org.gradle.api.Incubating public boolean isReturnDefaultValues();
-    method @org.gradle.api.Incubating public void setEnableCoverage(boolean);
-    method @org.gradle.api.Incubating public void setIncludeAndroidResources(boolean);
-    method @org.gradle.api.Incubating public void setReturnDefaultValues(boolean);
-    property @org.gradle.api.Incubating public abstract boolean enableCoverage;
-    property @org.gradle.api.Incubating public abstract boolean isIncludeAndroidResources;
-    property @org.gradle.api.Incubating public abstract boolean isReturnDefaultValues;
-  }
-
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnJvmCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvm com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
+  @Deprecated @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnJvmCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
   }
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
@@ -1451,25 +1514,25 @@ package com.android.build.api.dsl {
     method public Object consumerProguardFiles(java.lang.Object... proguardFiles);
     method public com.android.build.api.dsl.AarMetadata getAarMetadata();
     method public java.util.List<java.io.File> getConsumerProguardFiles();
-    method public Boolean? getMultiDexEnabled();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getMultiDexEnabled();
     method public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
     method public void setMultiDexEnabled(Boolean?);
     method public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
     property public abstract java.util.List<java.io.File> consumerProguardFiles;
-    property public abstract Boolean? multiDexEnabled;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
   public interface Lint {
-    method public boolean getAbortOnError();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getAbortOnError();
     method public boolean getAbsolutePaths();
     method public java.io.File? getBaseline();
     method public boolean getCheckAllWarnings();
     method public boolean getCheckDependencies();
     method public boolean getCheckGeneratedSources();
     method public java.util.Set<java.lang.String> getCheckOnly();
-    method public boolean getCheckReleaseBuilds();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getCheckReleaseBuilds();
     method public boolean getCheckTestSources();
     method public java.util.Set<java.lang.String> getDisable();
     method public java.util.Set<java.lang.String> getEnable();
@@ -1524,14 +1587,14 @@ package com.android.build.api.dsl {
     method public void setWarningsAsErrors(boolean);
     method public void setXmlOutput(java.io.File?);
     method public void setXmlReport(boolean);
-    property public abstract boolean abortOnError;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
     property public abstract boolean absolutePaths;
     property public abstract java.io.File? baseline;
     property public abstract boolean checkAllWarnings;
     property public abstract boolean checkDependencies;
     property public abstract boolean checkGeneratedSources;
     property public abstract java.util.Set<java.lang.String> checkOnly;
-    property public abstract boolean checkReleaseBuilds;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean checkReleaseBuilds;
     property public abstract boolean checkTestSources;
     property public abstract java.util.Set<java.lang.String> disable;
     property public abstract java.util.Set<java.lang.String> enable;
@@ -1693,6 +1756,13 @@ package com.android.build.api.dsl {
     property public abstract String systemImageSource;
   }
 
+  @org.gradle.api.Incubating public interface ModelDependency {
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getAiModelName();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getAiModelPackageName();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> aiModelName;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> aiModelPackageName;
+  }
+
   @org.gradle.api.Incubating public interface MultiDexConfig {
     method @org.gradle.api.Incubating public boolean getEnable();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ConfigurableFiles getMainDexKeepRules();
@@ -1709,24 +1779,24 @@ package com.android.build.api.dsl {
 
   public interface Ndk {
     method public java.util.Set<java.lang.String> getAbiFilters();
-    method public String? getCFlags();
+    method @Deprecated public String? getCFlags();
     method public String? getDebugSymbolLevel();
-    method public Integer? getJobs();
-    method public java.util.List<java.lang.String>? getLdLibs();
-    method public String? getModuleName();
-    method public String? getStl();
-    method public void setCFlags(String?);
+    method @Deprecated public Integer? getJobs();
+    method @Deprecated public java.util.List<java.lang.String>? getLdLibs();
+    method @Deprecated public String? getModuleName();
+    method @Deprecated public String? getStl();
+    method @Deprecated public void setCFlags(String?);
     method public void setDebugSymbolLevel(String?);
-    method public void setJobs(Integer?);
-    method public void setModuleName(String?);
-    method public void setStl(String?);
+    method @Deprecated public void setJobs(Integer?);
+    method @Deprecated public void setModuleName(String?);
+    method @Deprecated public void setStl(String?);
     property public abstract java.util.Set<java.lang.String> abiFilters;
-    property public abstract String? cFlags;
+    property @Deprecated public abstract String? cFlags;
     property public abstract String? debugSymbolLevel;
-    property public abstract Integer? jobs;
-    property public abstract java.util.List<java.lang.String>? ldLibs;
-    property public abstract String? moduleName;
-    property public abstract String? stl;
+    property @Deprecated public abstract Integer? jobs;
+    property @Deprecated public abstract java.util.List<java.lang.String>? ldLibs;
+    property @Deprecated public abstract String? moduleName;
+    property @Deprecated public abstract String? stl;
   }
 
   public interface NdkBuild {
@@ -1836,6 +1906,14 @@ package com.android.build.api.dsl {
     property public abstract boolean enable;
   }
 
+  @org.gradle.api.Incubating public interface PrivacySandboxKeepRules extends com.android.build.api.dsl.ConfigurableFiles {
+    method @org.gradle.api.Incubating public java.util.Set<java.lang.String> getIgnoreFrom();
+    method @org.gradle.api.Incubating public boolean getIgnoreFromAllExternalDependencies();
+    method @org.gradle.api.Incubating public void setIgnoreFromAllExternalDependencies(boolean);
+    property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> ignoreFrom;
+    property @org.gradle.api.Incubating public abstract boolean ignoreFromAllExternalDependencies;
+  }
+
   @org.gradle.api.Incubating public interface PrivacySandboxSdkBundle {
     method @org.gradle.api.Incubating public String? getApplicationId();
     method @org.gradle.api.Incubating public String? getCompatSdkProviderClassName();
@@ -1860,10 +1938,15 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public Integer? getCompileSdkExtension();
     method @org.gradle.api.Incubating public String? getCompileSdkPreview();
     method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.Lint getLint();
     method @org.gradle.api.Incubating public Integer? getMinSdk();
     method @org.gradle.api.Incubating public String? getMinSdkPreview();
     method @Deprecated @org.gradle.api.Incubating public String? getNamespace();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.PrivacySandboxSdkOptimization getOptimization();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.SigningConfig getSigningConfig();
+    method @org.gradle.api.Incubating public Integer? getTargetSdk();
+    method @org.gradle.api.Incubating public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandboxSdkOptimization,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void setBuildToolsVersion(String);
     method @org.gradle.api.Incubating public void setCompileSdk(Integer?);
     method @org.gradle.api.Incubating public void setCompileSdkExtension(Integer?);
@@ -1871,6 +1954,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void setMinSdk(Integer?);
     method @org.gradle.api.Incubating public void setMinSdkPreview(String?);
     method @Deprecated @org.gradle.api.Incubating public void setNamespace(String?);
+    method @org.gradle.api.Incubating public void setTargetSdk(Integer?);
     method @org.gradle.api.Incubating public void signingConfig(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.SigningConfig?,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract String buildToolsVersion;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.PrivacySandboxSdkBundle bundle;
@@ -1878,10 +1962,18 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract Integer? compileSdkExtension;
     property @org.gradle.api.Incubating public abstract String? compileSdkPreview;
     property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Lint lint;
     property @org.gradle.api.Incubating public abstract Integer? minSdk;
     property @org.gradle.api.Incubating public abstract String? minSdkPreview;
     property @Deprecated @org.gradle.api.Incubating public abstract String? namespace;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.PrivacySandboxSdkOptimization optimization;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.SigningConfig signingConfig;
+    property @org.gradle.api.Incubating public abstract Integer? targetSdk;
+  }
+
+  @org.gradle.api.Incubating public interface PrivacySandboxSdkOptimization {
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.PrivacySandboxKeepRules getKeepRules();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.PrivacySandboxKeepRules keepRules;
   }
 
   public interface ProductFlavor extends org.gradle.api.Named com.android.build.api.dsl.BaseFlavor org.gradle.api.plugins.ExtensionAware {
@@ -2023,8 +2115,11 @@ package com.android.build.api.dsl {
   }
 
   public interface TestExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.TestBuildFeatures,com.android.build.api.dsl.TestBuildType,com.android.build.api.dsl.TestDefaultConfig,com.android.build.api.dsl.TestProductFlavor,com.android.build.api.dsl.TestAndroidResources,com.android.build.api.dsl.TestInstallation> {
+    method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public String? getTargetProjectPath();
+    method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void setTargetProjectPath(String?);
+    property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract String? targetProjectPath;
   }
 
@@ -2116,7 +2211,7 @@ package com.android.build.api.dsl {
 
   public interface VariantDimension {
     method public void addManifestPlaceholders(java.util.Map<java.lang.String,?> manifestPlaceholders);
-    method public void buildConfigField(String type, String name, String value);
+    method @org.gradle.declarative.dsl.model.annotations.Adding public void buildConfigField(String type, String name, String value);
     method @org.gradle.api.Incubating public void externalNativeBuild(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ExternalNativeBuildFlags,kotlin.Unit> action);
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ExternalNativeBuildFlags getExternalNativeBuild();
     method public com.android.build.api.dsl.JavaCompileOptions getJavaCompileOptions();
@@ -2396,37 +2491,36 @@ package com.android.build.api.variant {
     method public void onVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantT,kotlin.Unit> callback);
     method public void onVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantT> callback);
     method @org.gradle.api.Incubating public void registerExtension(com.android.build.api.variant.DslExtension dslExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.variant.VariantExtensionConfig<VariantT>,? extends com.android.build.api.variant.VariantExtension> configurator);
-    method @org.gradle.api.Incubating public void registerSourceType(String name);
+    method public void registerSourceType(String name);
     method public com.android.build.api.variant.VariantSelector selector();
   }
 
   public interface AndroidResources {
     method public org.gradle.api.provider.ListProperty<java.lang.String> getAaptAdditionalParameters();
+    method @org.gradle.api.Incubating public boolean getDataBinding();
     method public org.gradle.api.provider.ListProperty<java.lang.String> getIgnoreAssetsPatterns();
     method @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<java.lang.String> getNoCompress();
+    method @org.gradle.api.Incubating public boolean getViewBinding();
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> aaptAdditionalParameters;
+    property @org.gradle.api.Incubating public abstract boolean dataBinding;
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> ignoreAssetsPatterns;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.ListProperty<java.lang.String> noCompress;
+    property @org.gradle.api.Incubating public abstract boolean viewBinding;
   }
 
-  public interface AndroidTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.HasAndroidResources com.android.build.api.variant.TestComponent {
-    method public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
-    method public org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> getBuildConfigFields();
-    method public org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> getProguardFiles();
-    method public com.android.build.api.variant.SigningConfig? getSigningConfig();
+  @org.gradle.api.Incubating public interface AndroidResourcesBuilder {
+  }
+
+  public interface AndroidTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.DeviceTest com.android.build.api.variant.HasAndroidResources {
     property public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
     property public abstract org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
     property public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
     property public abstract com.android.build.api.variant.SigningConfig? signingConfig;
   }
 
-  @org.gradle.api.Incubating public interface AndroidTestBuilder {
-    method public boolean getEnable();
-    method @Deprecated @org.gradle.api.Incubating public Boolean? getEnableMultiDex();
-    method public void setEnable(boolean);
-    method @org.gradle.api.Incubating public void setEnableMultiDex(Boolean?);
+  public interface AndroidTestBuilder extends com.android.build.api.variant.DeviceTestBuilder {
     property public abstract boolean enable;
-    property @Deprecated @org.gradle.api.Incubating public abstract Boolean? enableMultiDex;
+    property @Deprecated public abstract Boolean? enableMultiDex;
   }
 
   public interface AndroidVersion {
@@ -2445,6 +2539,22 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> classNames;
   }
 
+  @org.gradle.api.Incubating public interface ApkInstallGroup {
+    method @org.gradle.api.Incubating public java.util.List<org.gradle.api.file.RegularFile> getApks();
+    method @org.gradle.api.Incubating public String getDescription();
+    property @org.gradle.api.Incubating public abstract java.util.List<org.gradle.api.file.RegularFile> apks;
+    property @org.gradle.api.Incubating public abstract String description;
+  }
+
+  @org.gradle.api.Incubating public interface ApkOutput {
+    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.variant.ApkInstallGroup> getApkInstallGroups();
+    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.variant.ApkInstallGroup> apkInstallGroups;
+  }
+
+  @org.gradle.api.Incubating public interface ApkOutputProviders {
+    method @org.gradle.api.Incubating public <TaskT extends org.gradle.api.Task> void provideApkOutputToTask(org.gradle.api.tasks.TaskProvider<TaskT> taskProvider, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>> taskInput, com.android.build.api.variant.DeviceSpec deviceSpec);
+  }
+
   public interface ApkPackaging extends com.android.build.api.variant.Packaging {
     method public com.android.build.api.variant.DexPackagingOptions getDex();
     method public com.android.build.api.variant.JniLibsApkPackaging getJniLibs();
@@ -2455,24 +2565,45 @@ package com.android.build.api.variant {
   public interface ApplicationAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.ApplicationExtension,com.android.build.api.variant.ApplicationVariantBuilder,com.android.build.api.variant.ApplicationVariant> {
   }
 
-  public interface ApplicationVariant extends com.android.build.api.variant.GeneratesApk com.android.build.api.variant.CanMinifyAndroidResources com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest com.android.build.api.variant.Variant {
+  @org.gradle.api.Incubating public interface ApplicationAndroidResources extends com.android.build.api.variant.AndroidResources {
+    method @org.gradle.api.Incubating public boolean getGenerateLocaleConfig();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.SetProperty<java.lang.String> getLocaleFilters();
+    property @org.gradle.api.Incubating public abstract boolean generateLocaleConfig;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.SetProperty<java.lang.String> localeFilters;
+  }
+
+  @org.gradle.api.Incubating public interface ApplicationAndroidResourcesBuilder extends com.android.build.api.variant.AndroidResourcesBuilder {
+    method @org.gradle.api.Incubating public boolean getGenerateLocaleConfig();
+    method @org.gradle.api.Incubating public void setGenerateLocaleConfig(boolean);
+    property @org.gradle.api.Incubating public abstract boolean generateLocaleConfig;
+  }
+
+  public interface ApplicationVariant extends com.android.build.api.variant.GeneratesApk com.android.build.api.variant.CanMinifyAndroidResources com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest com.android.build.api.variant.Variant {
+    method @org.gradle.api.Incubating public com.android.build.api.variant.ApplicationAndroidResources getAndroidResources();
     method public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
     method @org.gradle.api.Incubating public com.android.build.api.variant.BundleConfig getBundleConfig();
     method public com.android.build.api.variant.DependenciesInfo getDependenciesInfo();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.ApkOutputProviders getOutputProviders();
     method public java.util.List<com.android.build.api.variant.VariantOutput> getOutputs();
+    method public com.android.build.api.variant.TestedApkPackaging getPackaging();
     method public com.android.build.api.variant.SigningConfig getSigningConfig();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.ApplicationAndroidResources androidResources;
     property public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.BundleConfig bundleConfig;
     property public abstract com.android.build.api.variant.DependenciesInfo dependenciesInfo;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.ApkOutputProviders outputProviders;
     property public abstract java.util.List<com.android.build.api.variant.VariantOutput> outputs;
+    property public abstract com.android.build.api.variant.TestedApkPackaging packaging;
     property public abstract com.android.build.api.variant.SigningConfig signingConfig;
   }
 
-  public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+    method public com.android.build.api.variant.ApplicationAndroidResourcesBuilder getAndroidResources();
     method public boolean getDebuggable();
     method public com.android.build.api.variant.DependenciesInfoBuilder getDependenciesInfo();
     method @Deprecated @org.gradle.api.Incubating public boolean getProfileable();
     method @org.gradle.api.Incubating public void setProfileable(boolean);
+    property public abstract com.android.build.api.variant.ApplicationAndroidResourcesBuilder androidResources;
     property public abstract boolean debuggable;
     property public abstract com.android.build.api.variant.DependenciesInfoBuilder dependenciesInfo;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean profileable;
@@ -2559,6 +2690,7 @@ package com.android.build.api.variant {
   }
 
   public interface Component extends com.android.build.api.variant.ComponentIdentity {
+    method @org.gradle.api.Incubating public String computeTaskName(String action, String subject);
     method public org.gradle.api.artifacts.Configuration getAnnotationProcessorConfiguration();
     method public com.android.build.api.artifact.Artifacts getArtifacts();
     method @org.gradle.api.Incubating public org.gradle.api.file.FileCollection getCompileClasspath();
@@ -2627,6 +2759,73 @@ package com.android.build.api.variant {
     property @Deprecated public abstract boolean includedInBundle;
   }
 
+  @org.gradle.api.Incubating public final class DeviceSpec {
+    method public java.util.List<java.lang.String> getAbis();
+    method public int getApiLevel();
+    method public String? getCodeName();
+    method public String? getName();
+    method public int getScreenDensity();
+    method public boolean getSupportsPrivacySandbox();
+    property public final java.util.List<java.lang.String> abis;
+    property public final int apiLevel;
+    property public final String? codeName;
+    property public final String? name;
+    property public final int screenDensity;
+    property public final boolean supportsPrivacySandbox;
+  }
+
+  @org.gradle.api.Incubating public static final class DeviceSpec.Builder {
+    ctor public DeviceSpec.Builder();
+    method public com.android.build.api.variant.DeviceSpec build();
+    method public java.util.List<java.lang.String> getAbis();
+    method public int getApiLevel();
+    method public String? getCodeName();
+    method public String? getName();
+    method public int getScreenDensity();
+    method public boolean getSupportsPrivacySandbox();
+    method public com.android.build.api.variant.DeviceSpec.Builder setAbis(java.util.List<java.lang.String> abis);
+    method public com.android.build.api.variant.DeviceSpec.Builder setApiLevel(int apiLevel);
+    method public com.android.build.api.variant.DeviceSpec.Builder setCodeName(String? codeName);
+    method public com.android.build.api.variant.DeviceSpec.Builder setName(String? name);
+    method public com.android.build.api.variant.DeviceSpec.Builder setScreenDensity(int screenDensity);
+    method public com.android.build.api.variant.DeviceSpec.Builder setSupportsPrivacySandbox(boolean supportsPrivacySandbox);
+    property public final java.util.List<java.lang.String> abis;
+    property public final int apiLevel;
+    property public final String? codeName;
+    property public final String? name;
+    property public final int screenDensity;
+    property public final boolean supportsPrivacySandbox;
+  }
+
+  @org.gradle.api.Incubating public interface DeviceTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.HasAndroidResources com.android.build.api.variant.TestComponent {
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> getBuildConfigFields();
+    method public boolean getCodeCoverageEnabled();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> getProguardFiles();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SigningConfig? getSigningConfig();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.MapProperty<java.lang.String,? extends com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> buildConfigFields;
+    property public abstract boolean codeCoverageEnabled;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SigningConfig? signingConfig;
+  }
+
+  @org.gradle.api.Incubating public interface DeviceTestBuilder extends com.android.build.api.variant.GeneratesTestApkBuilder {
+    method @org.gradle.api.Incubating public boolean getEnable();
+    method @Deprecated @org.gradle.api.Incubating public boolean getEnableCodeCoverage();
+    method @org.gradle.api.Incubating public void setEnable(boolean);
+    method @org.gradle.api.Incubating public void setEnableCodeCoverage(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enable;
+    property @Deprecated @org.gradle.api.Incubating public abstract boolean enableCodeCoverage;
+    field @org.gradle.api.Incubating public static final String ANDROID_TEST_TYPE = "AndroidTest";
+    field public static final com.android.build.api.variant.DeviceTestBuilder.Companion Companion;
+  }
+
+  public static final class DeviceTestBuilder.Companion {
+    property @org.gradle.api.Incubating public static final String ANDROID_TEST_TYPE;
+    field @org.gradle.api.Incubating public static final String ANDROID_TEST_TYPE = "AndroidTest";
+  }
+
   public interface DexPackagingOptions {
     method public org.gradle.api.provider.Property<java.lang.Boolean> getUseLegacyPackaging();
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> useLegacyPackaging;
@@ -2660,7 +2859,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.DslExtension.Builder extendProjectWith(Class<?> typeExtension);
   }
 
-  @org.gradle.api.Incubating public interface DslLifecycle<T> {
+  public interface DslLifecycle<T> {
     method public void finalizeDsl(kotlin.jvm.functions.Function1<? super T,kotlin.Unit> callback);
     method public void finalizeDsl(org.gradle.api.Action<T> callback);
   }
@@ -2668,10 +2867,12 @@ package com.android.build.api.variant {
   public interface DynamicFeatureAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.DynamicFeatureExtension,com.android.build.api.variant.DynamicFeatureVariantBuilder,com.android.build.api.variant.DynamicFeatureVariant> {
   }
 
-  public interface DynamicFeatureVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.GeneratesApk com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
+  public interface DynamicFeatureVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.GeneratesApk com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
+    method public com.android.build.api.variant.TestedApkPackaging getPackaging();
+    property public abstract com.android.build.api.variant.TestedApkPackaging packaging;
   }
 
-  public interface DynamicFeatureVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface DynamicFeatureVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
   public interface ExternalNativeBuild {
@@ -2712,6 +2913,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.AndroidResources getAndroidResources();
     method public org.gradle.api.provider.Provider<java.lang.String> getApplicationId();
     method @org.gradle.api.Incubating public com.android.build.api.variant.Dexing getDexing();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.AndroidVersion getMinSdk();
     method public com.android.build.api.variant.ApkPackaging getPackaging();
     method public com.android.build.api.variant.Renderscript? getRenderscript();
     method public com.android.build.api.variant.AndroidVersion getTargetSdk();
@@ -2719,6 +2921,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.AndroidResources androidResources;
     property public abstract org.gradle.api.provider.Provider<java.lang.String> applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Dexing dexing;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.AndroidVersion minSdk;
     property public abstract com.android.build.api.variant.ApkPackaging packaging;
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
     property public abstract com.android.build.api.variant.AndroidVersion targetSdk;
@@ -2742,12 +2945,18 @@ package com.android.build.api.variant {
     method public org.gradle.api.provider.Property<java.lang.Boolean> getHandleProfiling();
     method public org.gradle.api.provider.Property<java.lang.String> getInstrumentationRunner();
     method public org.gradle.api.provider.MapProperty<java.lang.String,java.lang.String> getInstrumentationRunnerArguments();
-    method public org.gradle.api.provider.Property<java.lang.String?> getTestLabel();
+    method public org.gradle.api.provider.Property<java.lang.String> getTestLabel();
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> functionalTest;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> handleProfiling;
     property public abstract org.gradle.api.provider.Property<java.lang.String> instrumentationRunner;
     property public abstract org.gradle.api.provider.MapProperty<java.lang.String,java.lang.String> instrumentationRunnerArguments;
-    property public abstract org.gradle.api.provider.Property<java.lang.String?> testLabel;
+    property public abstract org.gradle.api.provider.Property<java.lang.String> testLabel;
+  }
+
+  @org.gradle.api.Incubating public interface GeneratesTestApkBuilder extends com.android.build.api.variant.GeneratesApkBuilder {
+    method @Deprecated @org.gradle.api.Incubating public boolean getDebuggable();
+    method @org.gradle.api.Incubating public void setDebuggable(boolean);
+    property @Deprecated @org.gradle.api.Incubating public abstract boolean debuggable;
   }
 
   public interface HasAndroidResources {
@@ -2760,18 +2969,40 @@ package com.android.build.api.variant {
 
   public interface HasAndroidTest {
     method public com.android.build.api.variant.AndroidTest? getAndroidTest();
+    method public com.android.build.api.variant.TestedComponentPackaging getPackaging();
     property public abstract com.android.build.api.variant.AndroidTest? androidTest;
+    property public abstract com.android.build.api.variant.TestedComponentPackaging packaging;
   }
 
-  public interface HasAndroidTestBuilder {
-    method @org.gradle.api.Incubating public com.android.build.api.variant.AndroidTestBuilder getAndroidTest();
-    method @Deprecated public boolean getAndroidTestEnabled();
-    method @Deprecated public boolean getEnableAndroidTest();
-    method @Deprecated public void setAndroidTestEnabled(boolean);
-    method @Deprecated public void setEnableAndroidTest(boolean);
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.AndroidTestBuilder androidTest;
-    property @Deprecated public abstract boolean androidTestEnabled;
-    property @Deprecated public abstract boolean enableAndroidTest;
+  @com.android.build.api.annotations.ReplacedByIncubating(message="Replaced by the new interface HasDeviceTestsBuilder", bugId=357083708L) public interface HasAndroidTestBuilder {
+    method public com.android.build.api.variant.AndroidTestBuilder getAndroidTest();
+    method public boolean getAndroidTestEnabled();
+    method public boolean getEnableAndroidTest();
+    method public void setAndroidTestEnabled(boolean);
+    method public void setEnableAndroidTest(boolean);
+    property public abstract com.android.build.api.variant.AndroidTestBuilder androidTest;
+    property public abstract boolean androidTestEnabled;
+    property public abstract boolean enableAndroidTest;
+  }
+
+  @org.gradle.api.Incubating public interface HasDeviceTests {
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,com.android.build.api.variant.DeviceTest> getDeviceTests();
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,com.android.build.api.variant.DeviceTest> deviceTests;
+  }
+
+  @org.gradle.api.Incubating public interface HasDeviceTestsBuilder {
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,com.android.build.api.variant.DeviceTestBuilder> getDeviceTests();
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,com.android.build.api.variant.DeviceTestBuilder> deviceTests;
+  }
+
+  @org.gradle.api.Incubating public interface HasHostTests {
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,com.android.build.api.variant.HostTest> getHostTests();
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,com.android.build.api.variant.HostTest> hostTests;
+  }
+
+  @org.gradle.api.Incubating public interface HasHostTestsBuilder {
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,com.android.build.api.variant.HostTestBuilder> getHostTests();
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,com.android.build.api.variant.HostTestBuilder> hostTests;
   }
 
   @org.gradle.api.Incubating public interface HasTestFixtures {
@@ -2794,6 +3025,34 @@ package com.android.build.api.variant {
     method public boolean getEnableUnitTest();
     method public void setEnableUnitTest(boolean);
     property public abstract boolean enableUnitTest;
+  }
+
+  @org.gradle.api.Incubating public interface HostTest extends com.android.build.api.variant.TestComponent {
+    method @org.gradle.api.Incubating public void configureTestTask(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public boolean getCodeCoverageEnabled();
+    property @org.gradle.api.Incubating public abstract boolean codeCoverageEnabled;
+  }
+
+  @org.gradle.api.Incubating public interface HostTestBuilder {
+    method @org.gradle.api.Incubating public boolean getEnable();
+    method @Deprecated @org.gradle.api.Incubating public boolean getEnableCodeCoverage();
+    method @org.gradle.api.Incubating public String getType();
+    method @org.gradle.api.Incubating public void setEnable(boolean);
+    method @org.gradle.api.Incubating public void setEnableCodeCoverage(boolean);
+    method @org.gradle.api.Incubating public void setType(String);
+    property @org.gradle.api.Incubating public abstract boolean enable;
+    property @Deprecated @org.gradle.api.Incubating public abstract boolean enableCodeCoverage;
+    property @org.gradle.api.Incubating public abstract String type;
+    field public static final com.android.build.api.variant.HostTestBuilder.Companion Companion;
+    field @org.gradle.api.Incubating public static final String SCREENSHOT_TEST_TYPE = "ScreenshotTest";
+    field @org.gradle.api.Incubating public static final String UNIT_TEST_TYPE = "UnitTest";
+  }
+
+  public static final class HostTestBuilder.Companion {
+    property @org.gradle.api.Incubating public static final String SCREENSHOT_TEST_TYPE;
+    property @org.gradle.api.Incubating public static final String UNIT_TEST_TYPE;
+    field @org.gradle.api.Incubating public static final String SCREENSHOT_TEST_TYPE = "ScreenshotTest";
+    field @org.gradle.api.Incubating public static final String UNIT_TEST_TYPE = "UnitTest";
   }
 
   public interface Instrumentation {
@@ -2824,35 +3083,45 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.SetProperty<java.lang.String> pickFirsts;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.KotlinMultiplatformAndroidExtension> com.android.build.api.variant.AndroidComponents {
+  public interface JniLibsTestedApkPackaging extends com.android.build.api.variant.JniLibsTestedComponentPackaging com.android.build.api.variant.JniLibsApkPackaging {
+  }
+
+  public interface JniLibsTestedComponentPackaging extends com.android.build.api.variant.JniLibsPackaging {
+    method public org.gradle.api.provider.SetProperty<java.lang.String> getTestOnly();
+    property public abstract org.gradle.api.provider.SetProperty<java.lang.String> testOnly;
+  }
+
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension> com.android.build.api.variant.AndroidComponents {
     method public void onVariant(kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant,kotlin.Unit> callback);
     method public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasUnitTest {
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasUnitTest {
     method @org.gradle.api.Incubating public com.android.build.api.artifact.Artifacts getArtifacts();
     method @org.gradle.api.Incubating public org.gradle.api.file.FileCollection getCompileClasspath();
     method @org.gradle.api.Incubating public com.android.build.api.variant.Instrumentation getInstrumentation();
     method @org.gradle.api.Incubating public com.android.build.api.variant.LifecycleTasks getLifecycleTasks();
     method @org.gradle.api.Incubating public String getName();
     method @org.gradle.api.Incubating public java.util.List<com.android.build.api.variant.Component> getNestedComponents();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.Sources getSources();
     property @org.gradle.api.Incubating public abstract com.android.build.api.artifact.Artifacts artifacts;
     property @org.gradle.api.Incubating public abstract org.gradle.api.file.FileCollection compileClasspath;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Instrumentation instrumentation;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LifecycleTasks lifecycleTasks;
     property @org.gradle.api.Incubating public abstract String name;
     property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.variant.Component> nestedComponents;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Sources sources;
   }
 
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
   }
 
-  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
+  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
     method public com.android.build.api.variant.Renderscript? getRenderscript();
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
   }
 
-  public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
   @org.gradle.api.Incubating public interface LifecycleTasks {
@@ -2929,10 +3198,10 @@ package com.android.build.api.variant {
   }
 
   public interface ScopedArtifactsOperation<T extends org.gradle.api.Task> {
-    method public void toAppend(com.android.build.api.artifact.ScopedArtifact to, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.Property<? extends org.gradle.api.file.FileSystemLocation>> with);
+    method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Appendable> void toAppend(ArtifactT to, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.Property<? extends org.gradle.api.file.FileSystemLocation>> with);
     method public void toGet(com.android.build.api.artifact.ScopedArtifact type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories);
-    method public void toReplace(com.android.build.api.artifact.ScopedArtifact type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
-    method public void toTransform(com.android.build.api.artifact.ScopedArtifact type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
+    method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Replaceable> void toReplace(ArtifactT type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
+    method public <ArtifactT extends com.android.build.api.artifact.ScopedArtifact & com.android.build.api.artifact.Artifact.Transformable> void toTransform(ArtifactT type, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile>> inputJars, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.provider.ListProperty<org.gradle.api.file.Directory>> inputDirectories, kotlin.jvm.functions.Function1<? super T,? extends org.gradle.api.file.RegularFileProperty> into);
   }
 
   public interface SigningConfig {
@@ -2954,19 +3223,23 @@ package com.android.build.api.variant {
 
   public static interface SourceDirectories.Flat extends com.android.build.api.variant.SourceDirectories {
     method public org.gradle.api.provider.Provider<? extends java.util.Collection<org.gradle.api.file.Directory>> getAll();
+    method public org.gradle.api.provider.Provider<? extends java.util.Collection<org.gradle.api.file.Directory>> getStatic();
     property public abstract org.gradle.api.provider.Provider<? extends java.util.Collection<org.gradle.api.file.Directory>> all;
+    property public abstract org.gradle.api.provider.Provider<? extends java.util.Collection<org.gradle.api.file.Directory>> static;
   }
 
   public static interface SourceDirectories.Layered extends com.android.build.api.variant.SourceDirectories {
     method public org.gradle.api.provider.Provider<java.util.List<java.util.Collection<org.gradle.api.file.Directory>>> getAll();
+    method public org.gradle.api.provider.Provider<java.util.List<java.util.Collection<org.gradle.api.file.Directory>>> getStatic();
     property public abstract org.gradle.api.provider.Provider<java.util.List<java.util.Collection<org.gradle.api.file.Directory>>> all;
+    property public abstract org.gradle.api.provider.Provider<java.util.List<java.util.Collection<org.gradle.api.file.Directory>>> static;
   }
 
   public interface Sources {
     method public com.android.build.api.variant.SourceDirectories.Flat? getAidl();
     method public com.android.build.api.variant.SourceDirectories.Layered? getAssets();
     method public com.android.build.api.variant.SourceDirectories.Flat? getBaselineProfiles();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
+    method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
@@ -3003,9 +3276,11 @@ package com.android.build.api.variant {
 
   public interface TestVariant extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.Variant {
     method public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.ApkOutputProviders getOutputProviders();
     method @org.gradle.api.Incubating public org.gradle.api.provider.Provider<org.gradle.api.file.Directory> getTestedApks();
     method public org.gradle.api.provider.Provider<java.lang.String> getTestedApplicationId();
     property public abstract org.gradle.api.provider.Property<java.lang.String> applicationId;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.ApkOutputProviders outputProviders;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<org.gradle.api.file.Directory> testedApks;
     property public abstract org.gradle.api.provider.Provider<java.lang.String> testedApplicationId;
   }
@@ -3013,7 +3288,18 @@ package com.android.build.api.variant {
   public interface TestVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder {
   }
 
+  public interface TestedApkPackaging extends com.android.build.api.variant.TestedComponentPackaging com.android.build.api.variant.ApkPackaging {
+    method public com.android.build.api.variant.JniLibsTestedApkPackaging getJniLibs();
+    property public abstract com.android.build.api.variant.JniLibsTestedApkPackaging jniLibs;
+  }
+
+  public interface TestedComponentPackaging extends com.android.build.api.variant.Packaging {
+    method public com.android.build.api.variant.JniLibsTestedComponentPackaging getJniLibs();
+    property public abstract com.android.build.api.variant.JniLibsTestedComponentPackaging jniLibs;
+  }
+
   public interface UnitTest extends com.android.build.api.variant.TestComponent {
+    method @org.gradle.api.Incubating public void configureTestTask(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test,kotlin.Unit> action);
   }
 
   public interface Variant extends com.android.build.api.variant.Component com.android.build.api.variant.HasAndroidResources {
@@ -3113,12 +3399,12 @@ package com.android.build.api.variant {
   public interface VariantOutput extends com.android.build.api.variant.VariantOutputConfiguration {
     method @Deprecated public org.gradle.api.provider.Property<java.lang.Boolean> getEnable();
     method public org.gradle.api.provider.Property<java.lang.Boolean> getEnabled();
-    method public org.gradle.api.provider.Property<java.lang.Integer?> getVersionCode();
-    method public org.gradle.api.provider.Property<java.lang.String?> getVersionName();
+    method public org.gradle.api.provider.Property<java.lang.Integer> getVersionCode();
+    method public org.gradle.api.provider.Property<java.lang.String> getVersionName();
     property @Deprecated public abstract org.gradle.api.provider.Property<java.lang.Boolean> enable;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enabled;
-    property public abstract org.gradle.api.provider.Property<java.lang.Integer?> versionCode;
-    property public abstract org.gradle.api.provider.Property<java.lang.String?> versionName;
+    property public abstract org.gradle.api.provider.Property<java.lang.Integer> versionCode;
+    property public abstract org.gradle.api.provider.Property<java.lang.String> versionName;
   }
 
   public interface VariantOutputConfiguration {
@@ -3146,6 +3432,11 @@ package com.android.build.api.variant {
 }
 
 package com.android.build.gradle {
+
+  @org.gradle.api.Incubating public final class AiPackPlugin implements org.gradle.api.Plugin<org.gradle.api.Project> {
+    ctor public AiPackPlugin();
+    method public void apply(org.gradle.api.Project project);
+  }
 
   public final class AppPlugin extends com.android.build.gradle.BasePlugin {
     ctor public AppPlugin();
@@ -3188,11 +3479,6 @@ package com.android.build.gradle.api {
 
   public final class AndroidBasePlugin implements org.gradle.api.Plugin<org.gradle.api.Project> {
     ctor public AndroidBasePlugin();
-    method public void apply(org.gradle.api.Project project);
-  }
-
-  @org.gradle.api.Incubating public final class FusedLibraryPlugin implements org.gradle.api.Plugin<org.gradle.api.Project> {
-    ctor public FusedLibraryPlugin();
     method public void apply(org.gradle.api.Project project);
   }
 

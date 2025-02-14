@@ -549,6 +549,7 @@ DATA = [
     "androidx.xr.runtime:runtime:1.0.0-alpha01",
     "androidx.xr.scenecore:scenecore:1.0.0-alpha01",
     "biz.aQute.bnd:biz.aQute.bndlib:6.4.0",
+    "ch.randelshofer:fastdoubleparser:0.8.0",
     "com.adobe.marketing.mobile:core:1.5.1",  # Used by SdkIndexIssuesSyncListenerTest
     "com.android.application:com.android.application.gradle.plugin:pom:7.2.0",
     "com.android.application:com.android.application.gradle.plugin:pom:7.4.0",  # Dependency of architecture-samples
@@ -751,7 +752,7 @@ DATA = [
     "com.android.tools.lint:lint-gradle:31.6.0",
     "com.android.tools.lint:lint-gradle:31.7.0",
     "com.android.tools.lint:lint-gradle:31.8.0",
-    "com.android.tools.metalava:metalava:1.0.0-alpha09",
+    "com.android.tools.metalava:metalava:1.0.0-alpha12",
     "com.android.tools.utp:android-device-provider-ddmlib:30.2.0",
     "com.android.tools.utp:android-device-provider-ddmlib:31.1.0",
     "com.android.tools.utp:android-device-provider-ddmlib:jar:30.2.0",
