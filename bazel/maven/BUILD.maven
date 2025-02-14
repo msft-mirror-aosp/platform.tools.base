@@ -65194,6 +65194,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jacoco.org.jacoco.agent_0.8.11",
+    pom = "repository/org/jacoco/org.jacoco.agent/0.8.11/org.jacoco.agent-0.8.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.agent/0.8.11",
+    parent = "org.jacoco.org.jacoco.build_0.8.11",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jacoco.org.jacoco.agent_0.8.7",
     pom = "repository/org/jacoco/org.jacoco.agent/0.8.7/org.jacoco.agent-0.8.7.pom",
     repo_root_path = "repository",
@@ -65208,6 +65217,20 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/jacoco/org.jacoco.agent/0.8.8",
     parent = "org.jacoco.org.jacoco.build_0.8.8",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.ant_0.8.11",
+    pom = "repository/org/jacoco/org.jacoco.ant/0.8.11/org.jacoco.ant-0.8.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.ant/0.8.11",
+    parent = "org.jacoco.org.jacoco.build_0.8.11",
+    deps = [
+        "org.jacoco.org.jacoco.core_0.8.11",
+        "org.jacoco.org.jacoco.report_0.8.11",
+        "org.jacoco.org.jacoco.agent_0.8.11",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -65263,6 +65286,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jacoco.org.jacoco.core_0.8.11",
+    pom = "repository/org/jacoco/org.jacoco.core/0.8.11/org.jacoco.core-0.8.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.core/0.8.11",
+    parent = "org.jacoco.org.jacoco.build_0.8.11",
+    deps = [
+        "org.ow2.asm.asm_9.6",
+        "org.ow2.asm.asm-commons_9.6",
+        "org.ow2.asm.asm-tree_9.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jacoco.org.jacoco.core_0.8.7",
     pom = "repository/org/jacoco/org.jacoco.core/0.8.7/org.jacoco.core-0.8.7.pom",
     repo_root_path = "repository",
@@ -65298,6 +65335,18 @@ maven_artifact(
     parent = "org.jacoco.org.jacoco.build_0.7.4.201502262128",
     deps = [
         "org.jacoco.org.jacoco.core_0.7.4.201502262128",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.report_0.8.11",
+    pom = "repository/org/jacoco/org.jacoco.report/0.8.11/org.jacoco.report-0.8.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.report/0.8.11",
+    parent = "org.jacoco.org.jacoco.build_0.8.11",
+    deps = [
+        "org.jacoco.org.jacoco.core_0.8.11",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76796,6 +76845,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-bom_9.6",
+    pom = "repository/org/ow2/asm/asm-bom/9.6/asm-bom-9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-bom/9.6",
+    parent = "org.ow2.ow2_1.5.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-commons_5.1",
     pom = "repository/org/ow2/asm/asm-commons/5.1/asm-commons-5.1.pom",
     repo_root_path = "repository",
@@ -80380,6 +80438,13 @@ maven_artifact(
     pom = "repository/org/jacoco/org.jacoco.build/0.7.4.201502262128/org.jacoco.build-0.7.4.201502262128.pom",
     repo_root_path = "repository",
     repo_path = "org/jacoco/org.jacoco.build/0.7.4.201502262128",
+)
+
+maven_artifact(
+    name = "org.jacoco.org.jacoco.build_0.8.11",
+    pom = "repository/org/jacoco/org.jacoco.build/0.8.11/org.jacoco.build-0.8.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jacoco/org.jacoco.build/0.8.11",
 )
 
 maven_artifact(

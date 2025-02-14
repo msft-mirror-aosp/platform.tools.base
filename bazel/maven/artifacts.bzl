@@ -977,6 +977,7 @@ DATA = [
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.12",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.7",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.8",
+    "org.jacoco:org.jacoco.ant:0.8.11",
     "org.jacoco:org.jacoco.ant:0.8.12",
     "org.jacoco:org.jacoco.ant:0.8.7",
     "org.jacoco:org.jacoco.ant:0.8.8",
@@ -1289,6 +1290,7 @@ DATA = [
     "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:jar:sources:0.8.18",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:jar:sources:0.8.18",
     "org.mockito:mockito-core:4.3.1",
+    "org.ow2.asm:asm-bom:pom:9.6",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]
