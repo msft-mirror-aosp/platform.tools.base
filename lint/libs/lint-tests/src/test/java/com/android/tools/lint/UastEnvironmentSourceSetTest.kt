@@ -27,6 +27,7 @@ import java.io.File
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.junit.After
+import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -56,9 +57,7 @@ class UastEnvironmentSourceSetTest {
             )
             .indented(),
           kotlin(
-              // NB: not under `src` to make the test pass in K2.
-              // Put this under `src` will cause b/347624107#comment12
-              "expected/Foo.kt",
+              "src/Foo.kt",
               """
                   public open class Foo {
                     companion object {
@@ -84,6 +83,7 @@ class UastEnvironmentSourceSetTest {
             )
             .indented(),
         )
+        .allowClassNameClashes(true)
         .createProjects(root)
 
     @Language("XML")
@@ -91,10 +91,9 @@ class UastEnvironmentSourceSetTest {
       """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
-          <module name="app" android="true" library="false">
+          <module name="app" android="true" library="false" compute_source_roots="false">
             <classpath jar="libs/support-annotations.jar" />
-            <!-- This test works even without Foo.java... -->
-            <!-- src file="src/Foo.java" /-->
+            <src file="src/Foo.java" />
             <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
             <!-- src file="src/Foo.kt" /-->
             <src file="src/Bar.java" />
@@ -108,6 +107,180 @@ class UastEnvironmentSourceSetTest {
         "    return foo(x);\n" +
         "           ~~~\n" +
         "1 error",
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+      { it.dos2unix() },
+      null,
+    )
+  }
+
+  @Test
+  fun testSelectiveInput_duplicated() {
+    // Regression test for b/347624107
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          SUPPORT_ANNOTATIONS_JAR,
+          java(
+              "src/Foo.java",
+              """
+                  import androidx.annotation.RequiresApi;
+                  public class Foo {
+                    @RequiresApi(24)
+                    public static String foo(String x) {
+                      return x;
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+          kotlin(
+              "src/Foo.kt",
+              """
+                  public open class Foo {
+                    companion object {
+                      @JvmStatic
+                      public fun foo(x: String): String {
+                        return x
+                      }
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+          java(
+              "src/Bar.java",
+              """
+                  import static Foo.foo;
+                  public class Bar {
+                    public String bar(String x) {
+                      return foo(x);
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+        )
+        .allowClassNameClashes(true)
+        .createProjects(root)
+
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <module name="app" android="true" library="false" compute_source_roots="false">
+            <classpath jar="libs/support-annotations.jar" />
+            <src file="src/Foo.java" />
+            <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
+            <!-- src file="src/Foo.kt" /-->
+            <src file="src/Bar.java" />
+            <src file="src/Bar.java" />
+          </module>
+        </project>
+      """
+
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+    MainTest.checkDriver(
+      """
+        src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
+            return foo(x);
+                   ~~~
+        src/Bar.java:4: Error: Call requires API level 24 (current min is 1): foo [NewApi]
+            return foo(x);
+                   ~~~
+        2 errors
+      """
+        .trimIndent(),
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+      { it.dos2unix() },
+      null,
+    )
+  }
+
+  @Test
+  fun testSelectiveInput_overlapped() {
+    Assume.assumeTrue(useFirUast())
+    // Regression test for b/347624107
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          SUPPORT_ANNOTATIONS_JAR,
+          java(
+              "src/Foo.java",
+              """
+                  import androidx.annotation.RequiresApi;
+                  public class Foo {
+                    @RequiresApi(24)
+                    public static String foo(String x) {
+                      return x;
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+          kotlin(
+              "src/Foo.kt",
+              """
+                  public open class Foo {
+                    companion object {
+                      @JvmStatic
+                      public fun foo(x: String): String {
+                        return x
+                      }
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+          java(
+              "src/Bar.java",
+              """
+                  import static Foo.foo;
+                  public class Bar {
+                    public String bar(String x) {
+                      return foo(x);
+                    }
+                  }
+                  """,
+            )
+            .indented(),
+        )
+        .allowClassNameClashes(true)
+        .createProjects(root)
+
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <module name="app" android="true" library="false" compute_source_roots="false">
+            <classpath jar="libs/support-annotations.jar" />
+            <src file="src/Foo.java" />
+            <!-- Intentionally miss Foo.kt to see if Foo.foo in Bar.java refers to Foo.java, not Foo.kt -->
+            <!-- src file="src/Foo.kt" /-->
+            <src file="src/Bar.java" />
+            <src file="src/" />
+          </module>
+        </project>
+      """
+
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+    MainTest.checkDriver(
+      "No issues found.", // `foo` not resolved due to conflict, so error not detected
       "",
 
       // Expected exit code
