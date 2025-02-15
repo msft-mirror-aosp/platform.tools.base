@@ -25,17 +25,6 @@
 
     <issue
         id="EagerGradleConfiguration"
-        message="Avoid using eager method get"
-        errorLine1="            val processJavaResourcesTask = taskContainer.processJavaResourcesTask.get()"
-        errorLine2="                                                                                  ~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/variant/BaseVariantData.kt"
-            line="181"
-            column="83"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
         message="Use configureEach instead of whenObjectAdded"
         errorLine1="        signingConfigContainer.whenObjectAdded(this::addSigningConfig)"
         errorLine2="                               ~~~~~~~~~~~~~~~">
