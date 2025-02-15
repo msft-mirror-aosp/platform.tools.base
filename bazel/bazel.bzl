@@ -139,7 +139,8 @@ def _iml_module_jar_impl(
     kotlin_providers = []
     if kotlin_srcs:
         kotlinc_opts.append("-Xcontext-receivers")  # Needed to use the Kotlin K2 analysis API (b/308454624).
-
+        # TODO(b/401362418): remove this usage of K1ModeProjectStructureApi.
+        kotlinc_opts.append("-opt-in=org.jetbrains.kotlin.idea.base.util.K1ModeProjectStructureApi")
         # TODO(b/310045274): remove this usage of KtAllowProhibitedAnalyzeFromWriteAction.
         kotlinc_opts.append("-opt-in=org.jetbrains.kotlin.analysis.api.permissions.KaAllowProhibitedAnalyzeFromWriteAction")
         kotlin_providers.append(kotlin_compile(
