@@ -180,25 +180,30 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
     if (SdkConstants.ANDROID_URI != attribute.namespaceURI) {
       return
     }
+    val fix = fix().url("https://developer.android.com/adaptive-apps").build()
     when (attribute.localName) {
       ATTR_MIN_ASPECT_RATIO,
       ATTR_MAX_ASPECT_RATIO -> {
         val message =
-          "Should not restrict activity to maximum or minimum aspect ratio. This may not be suitable for different form factors, " +
-            "causing the app to be letterboxed."
-        context.report(ISSUE, attribute, context.getLocation(attribute), message)
+          "Minimum and maximum aspect ratios will be ignored in most cases, starting from Android 16. " +
+            "Android is moving toward a model where apps are expected to adapt to " +
+            "various orientations, display sizes, and aspect ratios."
+        context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
       }
       ATTR_SCREEN_ORIENTATION -> {
         val message =
-          "Should not restrict activity to fixed orientation. This may not be suitable for different form factors, " +
-            "causing the app to be letterboxed."
-        context.report(ISSUE, attribute, context.getLocation(attribute), message)
+          "Fixed screen orientations will be ignored in most cases, starting from Android 16. " +
+            "Android is moving toward a model where apps are expected to adapt to " +
+            "various orientations, display sizes, and aspect ratios."
+        context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
       }
       ATTR_RESIZEABLE_ACTIVITY -> {
         if (attribute.value == "false") {
           val message =
-            "Activity should not be non-resizable. With this setting, apps cannot be used in multi-window or free form mode."
-          context.report(ISSUE, attribute, context.getLocation(attribute), message)
+            "Setting `resizeableActivity` to `false` will be ignored in most cases, starting from Android 16. " +
+              "Android is moving toward a model where apps are expected to adapt to " +
+              "various orientations, display sizes, and aspect ratios."
+          context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
         }
       }
     }
