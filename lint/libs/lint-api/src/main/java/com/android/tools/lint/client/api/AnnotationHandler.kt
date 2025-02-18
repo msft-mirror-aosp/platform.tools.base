@@ -536,10 +536,15 @@ internal class AnnotationHandler(
     val ktFile =
       topLevelClass.containingFile as? KtFile
         ?: (topLevelClass as? KtLightClass)?.kotlinOrigin?.containingKtFile
-    ktFile?.annotationEntries?.forEach { entry ->
-      val annotation = UastFacade.convertElement(entry, null) as? UAnnotation
-      if (annotation != null) {
-        list.addAnnotation(annotation, ktFile, FILE)
+    // Reading a compiled [KtFile] triggers decompilation. When there are no decompiler
+    // plugins registered (which is the case for CLI), this raises an exception when
+    // reading annotations or package names from binaries (.class, .jar, or .knm).
+    if (ktFile != null && !ktFile.isCompiled) {
+      for (entry in ktFile.annotationEntries) {
+        val annotation = UastFacade.convertElement(entry, null) as? UAnnotation
+        if (annotation != null) {
+          list.addAnnotation(annotation, ktFile, FILE)
+        }
       }
     }
 

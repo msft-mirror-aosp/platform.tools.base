@@ -346,7 +346,10 @@ open class DefaultJavaEvaluator(
             }
           }
         }
-      } else if (containingFile is KtFile) {
+      } else if (containingFile is KtFile && !containingFile.isCompiled) {
+        // Reading a compiled [KtFile] triggers decompilation. When there are no decompiler
+        // plugins registered (which is the case for CLI), this raises an exception when
+        // reading annotations or package names from binaries (.class, .jar, or .knm).
         val packageFqName = containingFile.packageFqName
         return JavaPsiFacade.getInstance(node.project).findPackage(packageFqName.asString())
       }
