@@ -199,7 +199,7 @@ abstract class AbstractAdbServices(
   override suspend fun isInstalled(applicationId: String): Boolean {
     try {
       val lines = executeCommand("pm list packages $applicationId").stdout.lines()
-      return lines.firstOrNull() == "package:$applicationId"
+      return lines.contains("package:$applicationId")
     } catch (e: BackupException) {
       // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
       // problem.
