@@ -27,14 +27,11 @@
           <option name="issueRegexp" value="\bcs/([^\s]+[\w$])" />
           <option name="linkRegexp" value="https://cs.corp.google.com/search/?q=$1" />
         </IssueNavigationLink>
-        <IssueNavigationLink>
-          <option name="issueRegexp" value="(LINT\.IfChange)|(LINT\.ThenChange)" />
-          <option name="linkRegexp" value="https://goto.google.com/ifthisthenthatlint" />
-        </IssueNavigationLink>
       </list>
     </option>
   </component>
   <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$/../adt/idea" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../analytics-library" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../apksig" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../apkzlib" vcs="Git" />
