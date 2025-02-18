@@ -283,16 +283,18 @@ class BuiltInKotlinForAppTest {
     }
 
     @Test
-    fun testErrorWhenBuiltInKotlinSupportAndKagpUsedInSameModule() {
+    fun `fail when both built-in Kotlin and kotlin-android plugins are applied`() {
         val build = rule.build {
             androidApplication {
+                // Set `applyFirst = true` because the following error message currently appears
+                // only when the `kotlin-android` plugin is applied *before* the built-in Kotlin
+                // plugin (b/397373580)
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
         }
-
         val result = build.executor.expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            "The \"org.jetbrains.kotlin.android\" plugin has been applied, but it is not compatible"
+            "The 'org.jetbrains.kotlin.android' plugin is not compatible with the 'com.android.experimental.built-in-kotlin' plugin."
         )
     }
 

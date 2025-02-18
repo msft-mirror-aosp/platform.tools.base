@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.plugins
 
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
@@ -24,23 +23,42 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 class AndroidKotlinPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        val incompatiblePlugin = "org.jetbrains.kotlin.android"
-        project.plugins.withId(incompatiblePlugin) {
-            throw GradleException(
-                """
-                    The "$incompatiblePlugin" plugin has been applied, but it is not compatible with
-                    the "$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID" plugin.
-                    Remove the "$incompatiblePlugin" plugin from ${project.buildFile.toURI()}.
-                   """.trimMargin()
-            )
-        }
-        val kotlinJvmFactory = project.plugins.apply(KotlinBaseApiPlugin::class.java)
-        val kotlinExtension = kotlinJvmFactory.createKotlinAndroidExtension()
+        project.disallowPlugin(
+            mainPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
+            incompatiblePlugin = KOTLIN_ANDROID_PLUGIN_ID
+        )
+
+        // Apply KotlinBaseApiPlugin
+        val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)
+
+        // Add the `kotlin` extension
+        val kotlinAndroidExtension = kotlinBaseApiPlugin.createKotlinAndroidExtension()
+        project.extensions.add("kotlin", kotlinAndroidExtension)
+
         // Set default coreLibrariesVersion
-        kotlinExtension.coreLibrariesVersion = kotlinJvmFactory.pluginVersion
-        project.extensions.add("kotlin", kotlinExtension)
+        kotlinAndroidExtension.coreLibrariesVersion = kotlinBaseApiPlugin.pluginVersion
+    }
+}
+
+/**
+ * Fails the build if the given [incompatiblePlugin] has been applied.
+ *
+ * If the [incompatiblePlugin] has not been applied but will be applied later, then this will make
+ * the build fail later at the point when the [incompatiblePlugin] has been applied (unless that
+ * plugin fails the build before that point -- see b/397373580).
+ *
+ * [mainPlugin] is the plugin that the [incompatiblePlugin] is incompatible with.
+ */
+internal fun Project.disallowPlugin(mainPlugin: String, incompatiblePlugin: String) {
+    pluginManager.withPlugin(incompatiblePlugin) {
+        error(
+            """
+            The '$incompatiblePlugin' plugin is not compatible with the '$mainPlugin' plugin.
+            Remove the '$incompatiblePlugin' plugin from this project's build file: $buildFile.
+            """.trimIndent()
+        )
     }
 }
 
 internal const val ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID = "com.android.experimental.built-in-kotlin"
-
+internal const val KOTLIN_ANDROID_PLUGIN_ID = "org.jetbrains.kotlin.android"

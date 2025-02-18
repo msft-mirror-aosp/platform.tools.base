@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.plugins
 
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
@@ -24,31 +23,39 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 class AndroidKaptPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        val incompatiblePlugin = "org.jetbrains.kotlin.kapt"
-        project.plugins.withId(incompatiblePlugin) {
-            throw GradleException(
-                """
-                    The "$incompatiblePlugin" plugin has been applied, but it is not compatible with
-                    the "$ANDROID_BUILT_IN_KAPT_PLUGIN_ID" plugin.
-                    Remove the "$incompatiblePlugin" plugin from ${project.buildFile.toURI()}.
-                    """.trimMargin()
-            )
-        }
-        project.afterEvaluate {
-            if (!project.plugins.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
-                throw GradleException(
-                    """
-                        The "$ANDROID_BUILT_IN_KAPT_PLUGIN_ID" plugin requires the
-                        "$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID" to be applied.
-                        Apply the "$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID" plugin to
-                        ${project.buildFile.toURI()}.
-                        """.trimMargin()
-                )
-            }
-        }
-        val kotlinJvmFactory = project.plugins.apply(KotlinBaseApiPlugin::class.java)
-        project.extensions.add("kapt", kotlinJvmFactory.kaptExtension)
+        project.requirePlugin(
+            mainPlugin = ANDROID_BUILT_IN_KAPT_PLUGIN_ID,
+            requiredPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
+        )
+        project.disallowPlugin(
+            mainPlugin = ANDROID_BUILT_IN_KAPT_PLUGIN_ID,
+            incompatiblePlugin = KOTLIN_KAPT_PLUGIN_ID
+        )
+
+        // Apply KotlinBaseApiPlugin
+        val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)
+
+        // Add the `kapt` extension
+        project.extensions.add("kapt", kotlinBaseApiPlugin.kaptExtension)
     }
 }
 
-private const val ANDROID_BUILT_IN_KAPT_PLUGIN_ID = "com.android.legacy-kapt"
+/**
+ * Fails the build if the given [requiredPlugin] has not been applied after this project's
+ * evaluation.
+ *
+ * [mainPlugin] is the plugin that requires the [requiredPlugin].
+ */
+private fun Project.requirePlugin(mainPlugin: String, requiredPlugin: String) {
+    afterEvaluate {
+        check(pluginManager.hasPlugin(requiredPlugin)) {
+            """
+            The '$mainPlugin' plugin requires the '$requiredPlugin' plugin to be applied.
+            Apply the '$requiredPlugin' plugin in this project's build file: $buildFile.
+            """.trimIndent()
+        }
+    }
+}
+
+internal const val ANDROID_BUILT_IN_KAPT_PLUGIN_ID = "com.android.legacy-kapt"
+internal const val KOTLIN_KAPT_PLUGIN_ID = "org.jetbrains.kotlin.kapt"
