@@ -26,7 +26,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /** task packaging the rs headers */
 @DisableCachingByDefault
@@ -35,12 +34,6 @@ abstract class PackageRenderscriptTask : Sync(), VariantTask {
 
     @get:OutputDirectory
     abstract val headersDir: DirectoryProperty
-
-    // Override to remove the @OutputDirectory, since it is captured by the above property
-    @Suppress("RedundantOverride")
-    override fun getDestinationDir(): File {
-        return super.getDestinationDir()
-    }
 
     @Internal
     override lateinit var variantName: String
@@ -74,6 +67,9 @@ abstract class PackageRenderscriptTask : Sync(), VariantTask {
                 task.from(it.all).include("**/*.rsh")
             }
             task.into(task.headersDir)
+            task.handleDestinationDirIncompatibility(
+                creationConfig, InternalArtifactType.RENDERSCRIPT_HEADERS,
+                task.headersDir)
         }
     }
 }
