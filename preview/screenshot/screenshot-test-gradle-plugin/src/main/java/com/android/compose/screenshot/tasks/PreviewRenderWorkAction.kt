@@ -16,13 +16,15 @@
 
 package com.android.compose.screenshot.tasks
 
-import com.android.tools.render.common.readPreviewRenderingJson
+import com.android.compose.screenshot.configureInput
+import com.android.tools.render.common.PreviewRendering
 import com.android.tools.render.common.readPreviewRenderingResultJson
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
-import java.io.File
 import java.nio.file.Paths
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -34,21 +36,42 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
         private val logger: Logger = Logger.getLogger(PreviewRenderWorkAction::class.qualifiedName)
     }
     abstract class RenderWorkActionParameters : WorkParameters {
-        abstract val cliToolArgumentsFile: RegularFileProperty
+        abstract val classpathJars: ListProperty<String>
+        abstract val projectClassPath: ListProperty<String>
+        abstract val sdkFontsDir: RegularFileProperty
+        abstract val layoutlibDataDir: RegularFileProperty
+        abstract val outputDir: RegularFileProperty
+        abstract val metaDataDir: RegularFileProperty
+        abstract val namespace: Property<String>
+        abstract val resourceFile: RegularFileProperty
+        abstract val previewsDiscovered: RegularFileProperty
         abstract val resultsFile: RegularFileProperty
     }
 
     override fun execute() {
-        render()
-        verifyRender()
+        val previewRendering = configureInput(
+            parameters.classpathJars.get(),
+            parameters.projectClassPath.get(),
+            parameters.sdkFontsDir.orNull?.asFile?.absolutePath,
+            parameters.layoutlibDataDir.get().asFile.absolutePath + "/",
+            parameters.outputDir.get().asFile.absolutePath,
+            parameters.metaDataDir.get().asFile.absolutePath,
+            parameters.namespace.get(),
+            parameters.resourceFile.get().asFile.absolutePath,
+            parameters.previewsDiscovered.get().asFile,
+            parameters.resultsFile.get().asFile.absolutePath
+        )
+        render(previewRendering)
+        verifyRender(previewRendering)
     }
 
-    private fun render() {
-        Class.forName(MAIN_CLASS).getMethod("renderPreview", File::class.java)(
-            null, parameters.cliToolArgumentsFile.asFile.get())
+    private fun render(previewRendering: PreviewRendering) {
+
+        Class.forName(MAIN_CLASS).getMethod("renderPreview", PreviewRendering::class.java)(
+            null, previewRendering)
     }
 
-    private fun verifyRender() {
+    private fun verifyRender(previewRendering: PreviewRendering) {
         val resultFile = parameters.resultsFile.get().asFile
         if (!resultFile.exists()) {
             throw GradleException(
@@ -57,7 +80,7 @@ abstract class PreviewRenderWorkAction: WorkAction<PreviewRenderWorkAction.Rende
         }
 
         val previewRenderingResult = readPreviewRenderingResultJson(resultFile.reader())
-        val outputFolder = readPreviewRenderingJson(parameters.cliToolArgumentsFile.get().asFile.reader()).outputFolder
+        val outputFolder = previewRendering.outputFolder
 
         val hasAtLeastOneRenderingWithoutErrors = previewRenderingResult.screenshotResults.any {
             Paths.get(outputFolder, it.imagePath).exists() && it.error == null

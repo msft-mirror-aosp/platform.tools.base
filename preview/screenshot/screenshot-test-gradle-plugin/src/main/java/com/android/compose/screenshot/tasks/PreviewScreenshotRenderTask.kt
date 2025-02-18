@@ -80,9 +80,6 @@ abstract class PreviewScreenshotRenderTask : DefaultTask(), VerificationTask {
     abstract val testClassesDirProject: ListProperty<Directory>
 
     @get:OutputFile
-    abstract val cliToolArgumentsFile: RegularFileProperty
-
-    @get:OutputFile
     abstract val resultsFile: RegularFileProperty
 
     @get:Classpath
@@ -153,21 +150,6 @@ abstract class PreviewScreenshotRenderTask : DefaultTask(), VerificationTask {
         else
             null
 
-        val fontsDir = sdkFontsDir.orNull?.asFile?.absolutePath
-        configureInput(
-            classpathJars,
-            projectClassPath,
-            fontsDir,
-            layoutlibDataDir.singleFile.absolutePath + "/",
-            outputDir.get().asFile.absolutePath,
-            metaDataDir.get().asFile.absolutePath,
-            namespace.get(),
-            resourceFile.get().asFile.absolutePath,
-            cliToolArgumentsFile.get().asFile,
-            previewsDiscovered.get().asFile,
-            resultsFile.get().asFile.absolutePath
-        )
-
         // Invoke CLI tool
         val workerQueue = workerExecutor.processIsolation{ spec ->
             spec.forkOptions.jvmArgs(listOfNotNull(
@@ -176,7 +158,15 @@ abstract class PreviewScreenshotRenderTask : DefaultTask(), VerificationTask {
             spec.classpath.setFrom(screenshotCliJar, layoutlibJar)
         }
         workerQueue.submit(PreviewRenderWorkAction::class.java) { parameters ->
-            parameters.cliToolArgumentsFile.set(cliToolArgumentsFile)
+            parameters.classpathJars.set(classpathJars)
+            parameters.projectClassPath.set(projectClassPath)
+            parameters.sdkFontsDir.set(sdkFontsDir.orNull?.asFile )
+            parameters.layoutlibDataDir.set(layoutlibDataDir.singleFile)
+            parameters.outputDir.set(outputDir.get().asFile)
+            parameters.metaDataDir.set(metaDataDir.get().asFile)
+            parameters.namespace.set(namespace)
+            parameters.resourceFile.set(resourceFile)
+            parameters.previewsDiscovered.set(previewsDiscovered)
             parameters.resultsFile.set(resultsFile)
         }
     }

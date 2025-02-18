@@ -25,7 +25,6 @@ import com.android.tools.preview.multipreview.ComposePreviewMethod
 import com.android.tools.preview.multipreview.WearTilePreviewMethod
 import com.android.tools.render.common.PreviewRendering
 import com.android.tools.render.common.readPreviewScreenshotsJson
-import com.android.tools.render.common.writePreviewRenderingToJson
 import com.android.tools.render.common.writePreviewScreenshotsToJson
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
@@ -50,15 +49,14 @@ fun configureInput (
     metaDataFolder: String,
     namespace: String,
     resourceApkPath: String,
-    cliToolArgumentsFile: File,
     previewsFile: File,
     resultsFilePath: String
-) {
+): PreviewRendering {
     if (!File(outputFolder).exists()) {
         Files.createDirectories(Path.of(outputFolder))
     }
     val previews = readPreviewScreenshotsJson(previewsFile.reader())
-    val previewRendering = PreviewRendering(
+    return PreviewRendering(
         fontsPath,
         layoutlibPath,
         outputFolder,
@@ -70,7 +68,6 @@ fun configureInput (
         previews,
         resultsFilePath
     )
-    writePreviewRenderingToJson(cliToolArgumentsFile.writer(), previewRendering)
 }
 
 fun discoverPreviews(
