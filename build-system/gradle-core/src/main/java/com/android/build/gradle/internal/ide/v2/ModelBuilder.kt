@@ -264,7 +264,7 @@ class ModelBuilder<
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(12, 0, humanReadable = "Android Gradle Plugin 8.7")
+        val modelProducer = VersionImpl(13, 0, humanReadable = "Android Gradle Plugin 8.11")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -397,7 +397,7 @@ class ModelBuilder<
             })
 
         abstract val variantData: VariantDimensionData
-        abstract val defaultSourceSet: DefaultAndroidSourceSet
+        abstract val defaultSourceSet: DefaultAndroidSourceSet?
 
         private fun getAndroidTestSourceSet() =
             variantData.getSourceSetForModel(ComponentTypeImpl.ANDROID_TEST)
@@ -421,7 +421,7 @@ class ModelBuilder<
 
         fun build() =
             SourceSetContainerImpl(
-                sourceProvider = defaultSourceSet.convert(buildFeatures, additionalDefaultConfig()),
+                sourceProvider = defaultSourceSet?.convert(buildFeatures, additionalDefaultConfig()),
                 deviceTestSourceProviders = mutableMapOf<String, SourceProvider>().apply {
                     getAndroidTestSourceSet()
                         ?.takeIf { shouldTakeAndroidTestSourceSet() }

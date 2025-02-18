@@ -253,7 +253,7 @@ class SettingsExecutionProfileTest {
         assertThat(androidDsl.compileTarget)
                 .named("androidDsl.compileTarget")
                 .isEqualTo("android-$compileSdk")
-        assertThat(androidDsl.defaultConfig.targetSdkVersion?.apiLevel)
+        assertThat(androidDsl.defaultConfig?.targetSdkVersion?.apiLevel)
                 .named("androidDsl.defaultConfig.targetSdkVersion.apiLevel")
                 .isEqualTo(targetSdk)
         assertThat(androidDsl.lintOptions?.targetSdk?.apiLevel)

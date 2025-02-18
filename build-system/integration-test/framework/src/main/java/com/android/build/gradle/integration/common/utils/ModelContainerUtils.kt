@@ -32,9 +32,23 @@ fun ModelContainerV2.getGenerateSourcesCommands(projectToVariantName: (String) -
 
     for ((projectPath, project) in  this.rootInfoMap) {
         val variant = project.androidProject!!.getVariantByName(projectToVariantName(projectPath))
-        commands.add(createCommandTask(projectPath, variant.mainArtifact.sourceGenTaskName))
+        variant.mainArtifact.sourceGenTaskName?.let {
+            commands.add(
+                createCommandTask(
+                    projectPath,
+                    it
+                )
+            )
+        }
         variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]?.let {
-            commands.add(createCommandTask(projectPath, it.sourceGenTaskName))
+            it.sourceGenTaskName?.let { taskName ->
+                commands.add(
+                    createCommandTask(
+                        projectPath,
+                        taskName
+                    )
+                )
+            }
         }
         variant.hostTestArtifacts.forEach { (_, v) ->
             for (taskName in v.ideSetupTaskNames) {

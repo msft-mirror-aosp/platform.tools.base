@@ -103,16 +103,16 @@ internal fun ModelSnapshotter<BasicAndroidProject>.snapshotBasicAndroidProject()
     objectList(
         name = "buildTypes",
         propertyAction = BasicAndroidProject::buildTypeSourceSets,
-        nameAction = { sourceProvider.name },
-        sortAction = { collection -> collection?.sortedBy { it.sourceProvider.name } }
+        nameAction = { sourceProvider?.name ?: error("Unable to get name from null sourceProvider.")  },
+        sortAction = { collection -> collection?.sortedBy { it.sourceProvider?.name } }
     ) {
         snapshotSourceSetContainer()
     }
     objectList(
         name = "productFlavors",
         propertyAction = BasicAndroidProject::productFlavorSourceSets,
-        nameAction = { sourceProvider.name },
-        sortAction = { collection -> collection?.sortedBy { it.sourceProvider.name } }
+        nameAction = { sourceProvider?.name ?: error("Unable to get name from null sourceProvider.")},
+        sortAction = { collection -> collection?.sortedBy { it.sourceProvider?.name } }
     ) {
         snapshotSourceSetContainer()
     }

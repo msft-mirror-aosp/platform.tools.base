@@ -154,7 +154,7 @@ class LibraryBuildConfigTest {
         map["VALUE_FLAVOR"] = "1"
         map["VALUE_DEBUG"] = "1"
         map["VALUE_VARIANT"] = "1"
-        checkMaps(map, dslModel.defaultConfig.buildConfigFields, "defaultConfig")
+        checkMaps(map, dslModel.defaultConfig?.buildConfigFields, "defaultConfig")
     }
 
     @Test
