@@ -173,7 +173,14 @@ abstract class IssueRegistry protected constructor() {
 
       val implementation = issue.implementation
       val detectorClass: Class<out Detector> = implementation.detectorClass
-      val issueScope = implementation.scope
+      val issueScope =
+        implementation.scope.let {
+          if (!it.contains(Scope.TEST_SOURCES) && configuration.isIncludeInTests(issue)) {
+            EnumSet.copyOf(it).apply { add(Scope.TEST_SOURCES) }
+          } else {
+            it
+          }
+        }
       if (!detectorClasses.contains(detectorClass)) {
         // Determine if the issue is enabled
         if (!configuration.isEnabled(issue)) {

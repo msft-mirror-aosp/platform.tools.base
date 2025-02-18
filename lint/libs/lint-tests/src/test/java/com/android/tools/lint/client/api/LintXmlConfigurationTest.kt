@@ -211,6 +211,27 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
     )
   }
 
+  fun testAppliesToTests() {
+    val configuration =
+      getConfiguration(
+        // language=XML
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <lint>
+          <issue id="TooManyViews" tests="true">
+            <option name="maxCount" value="20"/>
+          </issue>
+          <issue id="NewApi" severity="warning"/>
+          <issue id="TooDeepLayout" severity="error" tests="false"/>
+        </lint>
+        """
+          .trimIndent()
+      )
+    assertFalse(configuration.isIncludeInTests(TooManyViewsDetector.TOO_DEEP))
+    assertTrue(configuration.isIncludeInTests(TooManyViewsDetector.TOO_MANY))
+    assertFalse(configuration.isIncludeInTests(ApiDetector.UNSUPPORTED))
+  }
+
   fun testInheritedFileBasePath() {
     // Regression test for https://issuetracker.google.com/191692647
     val folder = temporaryFolder.root
@@ -997,6 +1018,7 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
                     <option />
                     <issue id="NonexistentId" severity="fatal" other="other" />
                     <issue id="Correctness" severity="warning" />
+                    <issue id="NewApi" tests="true" />
                 </lint>
                 """,
           )
@@ -1045,10 +1067,13 @@ class LintXmlConfigurationTest : AbstractCheckTest() {
             src/main/kotlin/test/pkg1/lint.xml:13: Warning: Unexpected attribute other, expected id, in or severity [LintWarning]
                 <issue id="NonexistentId" severity="fatal" other="other" />
                 ^
+            src/main/kotlin/test/pkg1/lint.xml:15: Warning: The tests attribute can only be specified for lint.xml files at the module level or higher [LintWarning]
+                <issue id="NewApi" tests="true" />
+                ^
             src/main/kotlin/test/pkg1/subpkg1/MyTest.kt:4: Warning: Do not hardcode "/sdcard/"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]
                 val s: String = "/sdcard/mydir"
                                  ~~~~~~~~~~~~~
-            0 errors, 13 warnings
+            0 errors, 14 warnings
             """
       )
   }

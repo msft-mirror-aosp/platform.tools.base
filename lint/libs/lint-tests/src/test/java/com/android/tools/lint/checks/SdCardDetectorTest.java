@@ -508,12 +508,11 @@ public class SdCardDetectorTest extends AbstractCheckTest {
     }
 
     public void testMultiPart() {
-        // Make sure that when we have a single UAST class coming from multiple separate source
-        // files,
-        // when lint visits each of those source files, it does not visit parts of the class that
-        // came
-        // from other sources, which would mean reporting the same issues multiple times. This is
-        // now handled in UElementVisitor.acceptSameFile.
+        // Make sure that when we have a single UAST class coming from multiple
+        // separate source files, when lint visits each of those source files, it
+        // does not visit parts of the class that came from other sources, which
+        // would mean reporting the same issues multiple times. This is now handled
+        // in UElementVisitor.acceptSameFile.
         lint().files(
                         kotlin(
                                         "src/test/pkg/file1.kt",
@@ -540,6 +539,41 @@ public class SdCardDetectorTest extends AbstractCheckTest {
                 .expect(
                         ""
                                 + "src/test/pkg/file1.kt:6: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
+                                + "    val p = \"/sdcard/path\"\n"
+                                + "             ~~~~~~~~~~~~\n"
+                                + "0 errors, 1 warnings");
+    }
+
+    public void testEnableInTests() {
+        // Make sure that when we have a single UAST class coming from multiple
+        // separate source files, when lint visits each of those source files, it
+        // does not visit parts of the class that came from other sources, which
+        // would mean reporting the same issues multiple times. This is now handled
+        // in UElementVisitor.acceptSameFile.
+        lint().files(
+                        // test/ prefix makes it a test folder entry:
+                        kotlin(
+                                        "test/test/pkg/test.kt",
+                                        ""
+                                                + "@file:JvmMultifileClass\n"
+                                                + "@file:JvmName(\"Test\")\n"
+                                                + "package test.pkg\n"
+                                                + "\n"
+                                                + "fun test() {\n"
+                                                + "    val p = \"/sdcard/path\"\n"
+                                                + "}\n")
+                                .indented(),
+                        source(
+                                        "lint.xml",
+                                        ""
+                                                + "<lint>\n"
+                                                + "    <issue id=\"SdCardPath\" tests=\"true\" />\n"
+                                                + "</lint>\n")
+                                .indented())
+                .run()
+                .expect(
+                        ""
+                                + "test/test/pkg/test.kt:6: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n"
                                 + "    val p = \"/sdcard/path\"\n"
                                 + "             ~~~~~~~~~~~~\n"
                                 + "0 errors, 1 warnings");
