@@ -3189,7 +3189,7 @@ package com.android.build.api.variant {
     method public void registerPreBuild(java.lang.Object... objects);
   }
 
-  @org.gradle.api.Incubating public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {
+  public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {
   }
 
   public interface ManifestFiles extends org.gradle.api.Named {
