@@ -165,11 +165,11 @@ internal class ReverseForwardStream(
     streamReader?.kill()
   }
 
-  override fun sendWrite(command: WriteCommand) {
+  override suspend fun sendWrite(command: WriteCommand) {
     logger.warning("Unexpected command: $command")
   }
 
-  override fun sendClose() {
+  override suspend fun sendClose() {
     logger.warning("Unexpected close")
   }
 

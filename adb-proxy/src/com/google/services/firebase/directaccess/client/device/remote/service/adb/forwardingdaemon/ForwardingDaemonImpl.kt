@@ -325,7 +325,7 @@ internal class ForwardingDaemonImpl(
     // OKAY from local ADB server. Nothing to do here.
   }
 
-  private fun handleClose(command: CloseCommand) {
+  private suspend fun handleClose(command: CloseCommand) {
     streams[command.remoteId]?.sendClose()
 
     streams.remove(command.remoteId)

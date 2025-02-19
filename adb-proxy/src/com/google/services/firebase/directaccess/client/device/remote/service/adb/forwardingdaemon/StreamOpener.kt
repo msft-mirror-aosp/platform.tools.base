@@ -31,11 +31,11 @@ import com.android.adblib.AdbOutputChannel
  */
 interface StreamOpener : AutoCloseable {
   /** Connect to the remote service and register the provided ForwardingDaemon for callbacks. */
-  fun connect(forwardingDaemon: ForwardingDaemon)
+  suspend fun connect(forwardingDaemon: ForwardingDaemon)
 
   /**
    * Open a new service stream on the remote device. The returned stream will be managed by the
    * [ForwardingDaemon].
    */
-  fun open(service: String, streamId: Int, adbOutputChannel: AdbOutputChannel): Stream
+  suspend fun open(service: String, streamId: Int, adbOutputChannel: AdbOutputChannel): Stream
 }
