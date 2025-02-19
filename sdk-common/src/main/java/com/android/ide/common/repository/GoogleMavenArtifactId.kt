@@ -18,6 +18,7 @@ package com.android.ide.common.repository
 import com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID
 import com.android.ide.common.gradle.Component
 import com.android.ide.common.gradle.Dependency
+import com.android.ide.common.gradle.Module
 import com.android.ide.common.gradle.RichVersion
 import com.android.ide.common.gradle.Version
 
@@ -130,6 +131,8 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx", false),
   ;
+
+  fun getModule(): Module = Module(mavenGroupId, mavenArtifactId)
 
   fun getCoordinate(revision: String): GradleCoordinate =
     GradleCoordinate(mavenGroupId, mavenArtifactId, revision)
