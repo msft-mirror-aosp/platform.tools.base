@@ -76,6 +76,7 @@ _ARTIFACTS = [
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),
     ('tools/base/annotations/annotations.jar', 'artifacts'),
     ('tools/base/common/tools.common.jar', 'artifacts'),
+    ('tools/base/common/tools.common.src.jar', 'artifacts'),
     ('tools/base/ddmlib/libincfs.jar', 'artifacts'),
     ('tools/base/lint/libs/lint-tests/lint-tests.jar', 'artifacts'),
     ('tools/base/deploy/deployer/deployer.runner_deploy.jar', 'artifacts/deployer.jar'),
@@ -88,6 +89,14 @@ _ARTIFACTS = [
     ('tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin.zip', 'artifacts'),
     ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
     ('tools/adt/idea/aswb/aswb/aswb_bazel.zip', 'artifacts'),
+    ('tools/base/sdk-common/tools.sdk-common.jar', 'artifacts'),
+    ('tools/base/sdk-common/tools.sdk-common.src.jar', 'artifacts'),
+    ('tools/base/ninepatch/tools.ninepatch.jar', 'artifacts'),
+    ('tools/base/ninepatch/tools.ninepatch.src.jar', 'artifacts'),
+    ('tools/base/layoutlib-api/tools.layoutlib-api.jar', 'artifacts'),
+    ('tools/base/layoutlib-api/tools.layoutlib-api.src.jar', 'artifacts'),
+    ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
+    ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
 ]
 
 
