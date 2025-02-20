@@ -38,5 +38,6 @@
     <orderEntry type="library" name="studio-sdk" level="project" />
     <orderEntry type="library" name="studio-plugin-com.intellij.java" level="project" />
     <orderEntry type="library" name="agp-version" level="project" />
+    <orderEntry type="module" module-name="intellij.android.gradle.declarative.lang" />
   </component>
 </module>

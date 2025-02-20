@@ -1112,6 +1112,94 @@ class LintBaselineTest {
   }
 
   @Test
+  fun testChangedMessage() {
+    // Regression test for b/373651251
+    val baselineFile = temporaryFolder.newFile("baseline.xml")
+
+    fun String.toXmlAttribute() = XmlUtils.toXmlAttributeValue(this)
+
+    // Same trimming behavior as that applied in LintDriver to detector-reported messages.
+    fun String.lintTrim() = this.trimIndent().replace("\\\n", "")
+
+    val originalMessage = "\n\nConcrete class...\nSecond line\n"
+
+    @Language("XML")
+    val baselineContents =
+      """
+      <issues format="6" by="lint 8.10.0-alpha04" type="baseline" client="" dependencies="true" name="" variant="all" version="8.10.0-alpha04">
+
+          <!--
+              This is an older baseline error message (before
+              https://cs.android.com/android-studio/platform/tools/base/+/5f7f27c938e2807f1965dbb0293db26057d7f3e5
+              went into effect)
+          -->
+          <issue
+              id="NewApi"
+              message="${originalMessage.toXmlAttribute()}"
+              errorLine1="class Breakage {"
+              errorLine2="      ~~~~~~~~">
+              <location
+                  file="File1.java"
+                  line="3"
+                  column="7"/>
+          </issue>
+
+          <!--
+              This error message is identical to the above error message, *after* trimming. This means
+              that (after the new trimming is applied to the reported error message), we'll match on this
+              entry rather than the above one (though the filename is not a match.)
+          -->
+          <issue
+              id="NewApi"
+              message="${originalMessage.lintTrim().toXmlAttribute()}"
+              errorLine1="class Breakage {"
+              errorLine2="      ~~~~~~~~">
+              <location
+                  file="File2.java"
+                  line="3"
+                  column="7"/>
+          </issue>
+
+        </issues>
+        """
+        .trimIndent()
+    baselineFile.writeText(baselineContents)
+    val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
+
+    assertTrue(
+      baseline.findAndMark(
+        ApiDetector.UNSUPPORTED,
+        Location.create(File("File1.java")),
+        originalMessage.lintTrim(),
+        Severity.WARNING,
+        null,
+      )
+    )
+
+    assertTrue(
+      baseline.findAndMark(
+        ApiDetector.UNSUPPORTED,
+        Location.create(File("File2.java")),
+        originalMessage.lintTrim(),
+        Severity.WARNING,
+        null,
+      )
+    )
+
+    assertFalse(
+      baseline.findAndMark(
+        ApiDetector.UNSUPPORTED,
+        Location.create(File("File1.java")),
+        originalMessage.lintTrim(),
+        Severity.WARNING,
+        null,
+      )
+    )
+
+    baseline.close()
+  }
+
+  @Test
   fun testTemporaryMessages() {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 

@@ -51,6 +51,7 @@ import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
 import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.renderer.render
 import org.jetbrains.uast.UAnnotation
+import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UBinaryExpressionWithType
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
@@ -67,10 +68,12 @@ import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.skipParenthesizedExprUp
 import org.jetbrains.uast.toUElement
 import org.jetbrains.uast.tryResolve
+import org.jetbrains.uast.util.isAssignment
 import org.jetbrains.uast.util.isConstructorCall
 
 /**
@@ -146,6 +149,17 @@ class FullyQualifyNamesTestMode :
             parent is UQualifiedReferenceExpression &&
               parent.receiver.skipParenthesizedExprDown() !== node
           ) {
+            return
+          }
+          if (
+            member.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true &&
+              parent != null &&
+              parent.isAssignment() &&
+              (parent as UBinaryExpression).leftOperand.skipParenthesizedExprDown() == node &&
+              member.containingClass == node.getParentOfType<UClass>()?.javaPsi
+          ) {
+            // If a variable is final, we have to initialize it without a qualified
+            // expression
             return
           }
           val qualified = getQualifiedName(node, member) ?: return
@@ -443,7 +457,7 @@ class FullyQualifyNamesTestMode :
       if (node.receiver != null) {
         return
       }
-      val identifier = node.methodIdentifier
+      val identifier = node.methodIdentifier ?: node.classReference
       if (!node.isConstructorCall()) {
         val method = node.tryResolve() as? PsiMethod
         if (identifier != null && method != null) {

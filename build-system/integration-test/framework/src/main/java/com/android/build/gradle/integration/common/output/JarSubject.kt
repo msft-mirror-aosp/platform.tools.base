@@ -19,16 +19,23 @@ package com.android.build.gradle.integration.common.output
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.PrimitiveByteArraySubject
+import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.util.regex.Pattern
 
+/**
+ * Truth subject for a zip archive as a jar.
+ *
+ * This provides custom content validation, in a different way than [ZipSubject] does.
+ */
+@SubjectDsl
 open class JarSubject(
     metadata: FailureMetadata,
     actual: Zip
-): AbstractZipSubject<JarSubject, Zip>(metadata, actual) {
+): BaseZipSubject<JarSubject, Zip>(metadata, actual) {
 
     companion object {
         /**
@@ -123,6 +130,26 @@ open class JarSubject(
     }
 
     /**
+     * Returns a [StringSubject] with the text content of the file at the given path.
+     *
+     * @param path the path of the item which must not include a leading /
+     */
+    fun resourceAsText(path: String): StringSubject {
+        containsResource(path)
+        return check("resourceAsText($path)").that(actual().textFile(path))
+    }
+
+    /**
+     * Returns a [PrimitiveByteArraySubject] with the binary content of the file at the given path.
+     *
+     * @param path the path of the item which must not include a leading /
+     */
+    fun resourceAsBytes(path: String): PrimitiveByteArraySubject {
+        containsResource(path)
+        return check("resourceAsBytes($path)").that(actual().binaryFile(path))
+    }
+
+    /**
      * Returns a [PrimitiveByteArraySubject] with the binary content of class with the
      * given binary name.
      */
@@ -163,4 +190,4 @@ open class JarSubject(
     internal fun String.toPath(): String = "$this.class"
 }
 
-val PATTERN_CLASS_FILE = Pattern.compile("^.+\\.class$")
+private val PATTERN_CLASS_FILE: Pattern = Pattern.compile("^.+\\.class$")

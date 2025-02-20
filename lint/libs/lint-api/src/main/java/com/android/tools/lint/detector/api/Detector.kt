@@ -354,7 +354,13 @@ abstract class Detector {
 
   open val customVisitor: Boolean = false
 
+  @Deprecated("Override `visitBuildScript(GradleContext)` instead")
   open fun visitBuildScript(context: Context) {}
+
+  open fun visitBuildScript(context: GradleContext) {
+    // Backwards compatibility
+    @Suppress("DEPRECATION") visitBuildScript(context as Context)
+  }
 
   open fun checkDslPropertyAssignment(
     context: GradleContext,

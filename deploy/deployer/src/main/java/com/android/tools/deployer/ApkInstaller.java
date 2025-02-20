@@ -45,6 +45,7 @@ public class ApkInstaller {
         API_NOT_SUPPORTED,
         DUMP_FAILED,
         PATCH_SIZE_EXCEEDED,
+        CUSTOM_PATCH_SIZE_EXCEEDED,
         NO_CHANGES,
         DUMP_UNKNOWN_PACKAGE,
         STREAM_APK_FAILED,
@@ -79,10 +80,13 @@ public class ApkInstaller {
         this.logger = logger;
     }
 
-    /** @return true if if installation happened. False if installation was skipped */
+    /**
+     * @return true if installation happened. False if installation was skipped
+     */
     public boolean install(
             @NonNull App app,
-            InstallOptions options,
+            DeployerOption deployOptions,
+            InstallOptions installOptions,
             Deployer.InstallMode installMode,
             Collection<DeployMetric> metrics)
             throws DeployerException {
@@ -93,7 +97,8 @@ public class ApkInstaller {
         boolean allowReinstall = true;
         long deltaInstallStart = System.nanoTime();
         try {
-            deltaInstallResult = deltaInstall(app, options, allowReinstall, installMode);
+            deltaInstallResult =
+                    deltaInstall(app, deployOptions, installOptions, allowReinstall, installMode);
         } catch (DeployerException e) {
             logger.info("Unable to delta install: '%s'", e.getDetails());
         }
@@ -128,9 +133,9 @@ public class ApkInstaller {
                                     invokeAdbInstall(
                                             adb,
                                             app,
-                                            options.getFlags(),
+                                            installOptions.getFlags(),
                                             allowReinstall,
-                                            options.getShouldUseAssumeVerified());
+                                            installOptions.getShouldUseAssumeVerified());
                             long installStartTime = System.nanoTime();
                             DeployMetric installResult =
                                     new DeployMetric("INSTALL", installStartTime);
@@ -149,6 +154,7 @@ public class ApkInstaller {
             case DUMP_FAILED:
             case DUMP_UNKNOWN_PACKAGE:
             case PATCH_SIZE_EXCEEDED:
+            case CUSTOM_PATCH_SIZE_EXCEEDED:
             case STREAM_APK_FAILED:
             case STREAM_APK_NOT_SUPPORTED:
             case BASELINE_PROFILE_NOT_SUPPORTED:
@@ -167,10 +173,9 @@ public class ApkInstaller {
                             invokeAdbInstall(
                                     adb,
                                     app,
-                                    options.getFlags(),
+                                    installOptions.getFlags(),
                                     allowReinstall,
-                                    options.getShouldUseAssumeVerified());
-
+                                    installOptions.getShouldUseAssumeVerified());
                     DeployMetric installResult = new DeployMetric("INSTALL", installStartedNs);
                     installResult.finish(result.status.name(), metrics);
                     break;
@@ -227,9 +232,9 @@ public class ApkInstaller {
                             invokeAdbInstall(
                                     adb,
                                     app,
-                                    options.getFlags(),
+                                    installOptions.getFlags(),
                                     allowReinstall,
-                                    options.getShouldUseAssumeVerified());
+                                    installOptions.getShouldUseAssumeVerified());
                     message = message(result);
                 }
                 break;
@@ -255,7 +260,8 @@ public class ApkInstaller {
 
     DeltaInstallResult deltaInstall(
             @NonNull App app,
-            InstallOptions options,
+            DeployerOption deployerOption,
+            InstallOptions installOptions,
             boolean allowReinstall,
             Deployer.InstallMode installMode)
             throws DeployerException {
@@ -292,7 +298,7 @@ public class ApkInstaller {
 
         // Send deltaInstall request
         Deploy.InstallInfo.Builder builder = Deploy.InstallInfo.newBuilder();
-        builder.addAllOptions(options.getFlags());
+        builder.addAllOptions(installOptions.getFlags());
         // We need to match what happens in ddmlib implementation of installPackages where
         // a "-r" is added.
         if (allowReinstall) {
@@ -333,11 +339,25 @@ public class ApkInstaller {
         builder.setInherit(inherit);
         builder.addAllPatchInstructions(patches);
         builder.setPackageName(app.getAppId());
-        builder.setAssumeVerified(app.isDebuggable() && options.getShouldUseAssumeVerified());
-
+        builder.setAssumeVerified(
+                app.isDebuggable() && installOptions.getShouldUseAssumeVerified());
         Deploy.InstallInfo info = builder.build();
-        // Check that size if not beyond the limit.
-        if (info.getSerializedSize() > PatchSetGenerator.MAX_PATCHSET_SIZE) {
+
+        int serializedSize = info.getSerializedSize();
+        int customDeltaInstallThreshold = deployerOption.maxDeltaInstallPatchSize;
+        // Check the custom value if given. If there is no custom value given, check the
+        // default of PatchSetGenerator.
+        if (customDeltaInstallThreshold > 0) {
+            if (serializedSize > customDeltaInstallThreshold) {
+                logger.info(
+                        "Total Patch Size %d exceeds custom limit of %d",
+                        serializedSize, customDeltaInstallThreshold);
+                return new DeltaInstallResult(DeltaInstallStatus.CUSTOM_PATCH_SIZE_EXCEEDED);
+            }
+        } else if (serializedSize > PatchSetGenerator.MAX_PATCHSET_SIZE) {
+            logger.info(
+                    "Total Patch Size %d exceeds default limit of %d",
+                    serializedSize, DeltaInstallStatus.PATCH_SIZE_EXCEEDED);
             return new DeltaInstallResult(DeltaInstallStatus.PATCH_SIZE_EXCEEDED);
         }
 

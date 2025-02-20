@@ -25,17 +25,6 @@
 
     <issue
         id="EagerGradleConfiguration"
-        message="Avoid using eager method get"
-        errorLine1="            val processJavaResourcesTask = taskContainer.processJavaResourcesTask.get()"
-        errorLine2="                                                                                  ~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/variant/BaseVariantData.kt"
-            line="181"
-            column="83"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
         message="Use configureEach instead of whenObjectAdded"
         errorLine1="        signingConfigContainer.whenObjectAdded(this::addSigningConfig)"
         errorLine2="                               ~~~~~~~~~~~~~~~">
@@ -274,17 +263,6 @@
             file="src/main/java/com/android/build/gradle/internal/services/Aapt2ThreadPoolBuildService.kt"
             line="35"
             column="41"/>
-    </issue>
-
-    <issue
-        id="NewForkJoinPool"
-        message="Avoid using new ForkJoinPool instances when possible. Prefer using the IntelliJ application pool via `com.intellij.openapi.application.Application#executeOnPooledThread`, or for the Android Gradle Plugin use `com.android.build.gradle.internal.tasks.Workers`. See `go/do-not-freeze`."
-        errorLine1="            ForkJoinPool()"
-        errorLine2="            ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/tasks/DexMergingTask.kt"
-            line="859"
-            column="13"/>
     </issue>
 
 </issues>

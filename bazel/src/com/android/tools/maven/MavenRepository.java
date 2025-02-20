@@ -87,8 +87,7 @@ public class MavenRepository {
                     "org.testng:testng:module:7.3.0",
                     // https://github.com/google/Accessibility-Test-Framework-for-Android/issues/80
                     "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:3.1.2",
-                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:pom:4.1.1",
-                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:jar:4.1.1");
+                    "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:module:4.1.1");
 
     public MavenRepository(String repoPath, List<RemoteRepository> repositories, boolean verbose) {
         serviceLocator = AetherUtils.newServiceLocator(verbose);

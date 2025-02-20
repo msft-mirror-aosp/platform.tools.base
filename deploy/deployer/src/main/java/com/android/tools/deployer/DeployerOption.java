@@ -28,6 +28,7 @@ public class DeployerOption {
     public final boolean enableCoroutineDebugger;
     public final boolean skipPostInstallTasks;
     public final boolean useRootPushInstall;
+    public final int maxDeltaInstallPatchSize;
 
     private DeployerOption(
             boolean useOptimisticSwap,
@@ -39,7 +40,8 @@ public class DeployerOption {
             boolean fastRestartOnSwapFail,
             boolean enableCoroutineDebugger,
             boolean skipPostInstallTasks,
-            boolean useRootPushInstall) {
+            boolean useRootPushInstall,
+            int maxDeltaInstallPatchSize) {
         this.useOptimisticSwap = useOptimisticSwap;
         this.useOptimisticResourceSwap = useOptimisticResourceSwap;
         this.optimisticInstallSupport = optimisticInstallSupport;
@@ -50,6 +52,7 @@ public class DeployerOption {
         this.enableCoroutineDebugger = enableCoroutineDebugger;
         this.skipPostInstallTasks = skipPostInstallTasks;
         this.useRootPushInstall = useRootPushInstall;
+        this.maxDeltaInstallPatchSize = maxDeltaInstallPatchSize;
     }
 
     public static class Builder {
@@ -63,6 +66,8 @@ public class DeployerOption {
         private boolean enableCoroutineDebugger;
         private boolean skipPostInstallTasks;
         private boolean useRootPushInstall;
+        private int maxDeltaInstallPatchSize =
+                -1; // Negative to indicate the normal threshold of 40MB.
 
         public Builder setUseOptimisticSwap(boolean useOptimisticSwap) {
             this.useOptimisticSwap = useOptimisticSwap;
@@ -114,6 +119,11 @@ public class DeployerOption {
             return this;
         }
 
+        public Builder setMaxDeltaInstallPatchSize(int maxDeltaInstallPatchSize) {
+            this.maxDeltaInstallPatchSize = maxDeltaInstallPatchSize;
+            return this;
+        }
+
         public DeployerOption build() {
             return new DeployerOption(
                     useOptimisticSwap,
@@ -125,7 +135,8 @@ public class DeployerOption {
                     fastRestartOnSwapFail,
                     enableCoroutineDebugger,
                     skipPostInstallTasks,
-                    useRootPushInstall);
+                    useRootPushInstall,
+                    maxDeltaInstallPatchSize);
         }
     }
 }

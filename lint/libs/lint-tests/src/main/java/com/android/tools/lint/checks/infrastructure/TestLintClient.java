@@ -256,6 +256,9 @@ public class TestLintClient extends LintCliClient {
                 return files.get(0);
             }
         }
+        if (incrementalFileName.equals("libs.versions.toml")) {
+            incrementalFileName = "../gradle/libs.versions.toml";
+        }
         if (files.size() > 1) {
             for (File dir : files) {
                 File root = dir.getParentFile(); // Allow the project name to be part of the name
@@ -334,6 +337,16 @@ public class TestLintClient extends LintCliClient {
                 List<File> allFiles = new ArrayList<>();
                 for (File file : files) {
                     allFiles.addAll(getFilesRecursively(file));
+                }
+
+                // We sometimes put a version catalog outside the normal test project
+                // module (and look for it in ../gradle); handle that here as well
+                // such that it shows up in the possible file list
+                if (!files.isEmpty()) {
+                    File catalog = new File(files.get(0), "../gradle/libs.versions.toml");
+                    if (catalog.isFile()) {
+                        allFiles.add(new File("../gradle/libs.versions.toml"));
+                    }
                 }
 
                 String all = allFiles.toString();

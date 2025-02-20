@@ -179,6 +179,11 @@ protected constructor(
     var patterns: MutableList<Pattern>? = null,
     /** Optional parameters to the issue checker, defined by the detector. */
     var options: MutableMap<String, String>? = null,
+    /**
+     * Whether this issue should always be analyzed, even if in test sources (where
+     * [LintDriver.checkTestSources] is false, the default)
+     */
+    var appliesToTests: Boolean = false,
   ) {
     /**
      * Returns true if there is no significant configuration for this issue (so can be skipped in
@@ -193,7 +198,7 @@ protected constructor(
 
     // For debugging only
     override fun toString(): String {
-      return "IssueData(severity=$severity, paths=$paths, patterns=$patterns, options=$options)"
+      return "IssueData(severity=$severity, paths=$paths, patterns=$patterns, options=$options, tests=$appliesToTests)"
     }
 
     operator fun plusAssign(other: IssueData) {
@@ -259,6 +264,17 @@ protected constructor(
       issueMap[VALUE_ALL]?.let { if (checker(it)) return true }
     }
     return false
+  }
+
+  override fun isIncludeInTests(issue: Issue): Boolean {
+    val id = issue.id
+    val issueMaps = getIssueMaps()
+    for (issueMap in issueMaps) {
+      if (issueMap[id]?.appliesToTests == true) {
+        return true
+      }
+    }
+    return parent?.isIncludeInTests(issue) ?: false
   }
 
   override fun isIgnored(context: Context, incident: Incident): Boolean {
@@ -347,7 +363,7 @@ protected constructor(
               reportOptionValidationError(option, "${option.name}: ${option.rangeAsString()}")
             }
             value
-          } catch (e: NumberFormatException) {
+          } catch (_: NumberFormatException) {
             reportOptionValidationError(
               option,
               "${option.name} must be an integer (was $valueString)",
@@ -362,7 +378,7 @@ protected constructor(
               reportOptionValidationError(option, "${option.name}: ${option.rangeAsString()}")
             }
             value
-          } catch (e: NumberFormatException) {
+          } catch (_: NumberFormatException) {
             reportOptionValidationError(option, "${option.name} must be a float (was $valueString)")
             option.defaultValue
           }
@@ -861,6 +877,7 @@ protected constructor(
             TAG_ISSUE -> {
               val n = parser.attributeCount
               var severityString = ""
+              var appliesToTests = false
               for (i in 0 until n) {
                 val name = parser.getAttributeName(i)
                 val value = parser.getAttributeValue(i)
@@ -888,6 +905,16 @@ protected constructor(
                     idList = splitter.split(idString)
                   }
                   ATTR_SEVERITY -> severityString = value
+                  ATTR_TESTS -> {
+                    appliesToTests = value.toBoolean()
+                    if (fileLevel) {
+                      reportError(
+                        "The `tests` attribute can only be specified for lint.xml files at the module level or higher",
+                        parser,
+                        severity = Severity.WARNING,
+                      )
+                    }
+                  }
                   else ->
                     reportError(
                       "Unexpected attribute `$name`, expected `$ATTR_ID`, `$ATTR_IN` or `$ATTR_SEVERITY`",
@@ -917,6 +944,9 @@ protected constructor(
                 } else {
                   reportError("Unknown severity `$severityString`", parser)
                 }
+              }
+              if (appliesToTests) {
+                addAppliesToTests(idList, fileClients, issueClients)
               }
             }
             TAG_IGNORE -> {
@@ -1175,6 +1205,18 @@ protected constructor(
     }
   }
 
+  private fun addAppliesToTests(
+    ids: Iterable<String>,
+    fileClients: String? = null,
+    issueClients: String? = null,
+  ) {
+    val issueMap = getOrCreateIssueMap(issueClients ?: fileClients)
+    for (id in ids) {
+      val data = issueMap[id] ?: IssueData().also { issueMap[id] = it }
+      data.appliesToTests = true
+    }
+  }
+
   fun getCheckAllWarnings(): Boolean? {
     ensureInitialized()
     return checkAllWarnings
@@ -1326,8 +1368,7 @@ protected constructor(
               regexps != null && regexps.isNotEmpty() ||
               options != null && options.isNotEmpty()
           ) {
-            writer.write('>'.toInt())
-            writer.write('\n'.toInt())
+            writer.write(">\n")
             if (options != null) {
               // The options are kept in file order by LinkedHashMap
               for (option in options) {
@@ -1359,8 +1400,7 @@ protected constructor(
             }
             writer.write("    </")
             writer.write(TAG_ISSUE)
-            writer.write('>'.toInt())
-            writer.write('\n'.toInt())
+            writer.write(">\n")
           } else {
             writer.write(" />\n")
           }
@@ -1388,12 +1428,11 @@ protected constructor(
   }
 
   private fun writeAttribute(writer: Writer, name: String, value: String) {
-    writer.write(' '.toInt())
+    writer.write(" ")
     writer.write(name)
-    writer.write('='.toInt())
-    writer.write('"'.toInt())
+    writer.write("=\"")
     writer.write(value)
-    writer.write('"'.toInt())
+    writer.write("\"")
   }
 
   override fun ignore(context: Context, issue: Issue, location: Location?, message: String) {
@@ -1556,6 +1595,7 @@ protected constructor(
     private const val ATTR_REGEXP = "regexp"
     private const val ATTR_NAME = "name"
     private const val ATTR_VALUE = "value"
+    private const val ATTR_TESTS = "tests"
     const val VALUE_ALL = "all"
     private const val ATTR_BASELINE = "baseline"
     private val RES_PATH_START = "res" + File.separatorChar

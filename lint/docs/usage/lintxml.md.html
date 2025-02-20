@@ -25,6 +25,8 @@ attributes:
   the special value “all”, which will match all issue id's. And when
   configuring severity, the id is also allowed to be a category, such
   as “Security”.
+- `severity`: The severity level (fatal, error, warning, ignore) to use
+  instead of whatever the default is
 - `in`: Specifies that this configuration only applies when lint
   runs in the given hosts. There are predefined names for various
   integrations of lint; “gradle” refers to lint running in the Gradle
@@ -35,6 +37,15 @@ attributes:
   you can also add a “!” in front of each host to negate the check. For
   example, to enable a check anywhere except when running in Studio,
   use `in="!studio"`.
+- `tests`: Normally, when analyzing test sources, lint only runs a
+  small set of lint checks -- those that specifically apply to tests,
+  such as `IgnoreWithoutReason` (using `@Ignore` without a reason
+  parameter in a test declaration). However, if you don't want to
+  turn on all lint checks on test sources, with the `checkTestSources`
+  attribute set to true on the root `<lint>` element (or via command
+  line flags or Gradle DSL options), you can individually opt in
+  specific issues with a `checks="true"` attribute, e.g.
+  `<issue id="NewApi" tests="true" />`.
 
 In addition, the <issue> element can specify one or more children:
 
@@ -81,6 +92,21 @@ in this order:
 3. A match which specifies other hosts. For example, if you're
    running in Studio and a configuration specifies
    “!gradle”, this will match after the other attempts.
+
+!!! Tip
+   While you can place `lint.xml` files within your source folders
+   to apply to a specific file or directory, there are a couple of
+   restrictions where you can only set the configuration at the
+   project level. First, you cannot change the severity of a
+   disabled by default issue back to enabled, and similarly you
+   can't use the `tests` attribute below the project level either.
+   The reason for this is that lint configures the set of detectors
+   to be run at the project level. When issues are found, it will
+   check the nearest lint.xml file to see if there's a new severity
+   or ignore option to apply to override the current settings for
+   the issue, but this doesn't happen if the detector isn't running
+   at all (and lint doesn't run all detectors all the time, just
+   in case they're needed at the file level, for performance reasons.)
 
 ## Sample lint.xml file
 

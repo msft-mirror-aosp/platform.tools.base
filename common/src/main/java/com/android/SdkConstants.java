@@ -3065,4 +3065,7 @@ public final class SdkConstants {
 
     /** Current version for ASM dependencies. */
     public static final String CURRENT_ASM_VERSION = "9.7.1";
+
+    /** Logical ID of the primary display of an Android device. */
+    public static int PRIMARY_DISPLAY_ID = 0;
 }

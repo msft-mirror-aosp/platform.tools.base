@@ -18,8 +18,7 @@ package com.android.tools.lint
 import com.google.common.io.Files as GoogleFiles
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFileSystemItem
-import com.intellij.psi.PsiManager
+import com.intellij.openapi.vfs.local.CoreLocalFileSystem
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileVisitResult
@@ -31,7 +30,6 @@ import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.isDirectory
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtBinaryModuleBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtSourceModuleBuilder
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.parsing.KotlinParserDefinition
 
@@ -183,31 +181,23 @@ internal class PathCollection(
 
   fun isNotEmpty(): Boolean = !isEmpty()
 
-  /** Retain the paths that can be retrieved as [F] satisfying [keepFile] */
-  inline fun <reified F : PsiFileSystemItem> filter(
-    kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
-    crossinline keepFile: (F) -> Boolean,
-  ): PathCollection {
-    val keepVirtual: (VirtualFile) -> Boolean =
-      with(PsiManager.getInstance(kotlinCoreProjectEnvironment.project)) {
-        { vFile ->
-          val file = if (vFile.isDirectory) findDirectory(vFile) else findFile(vFile)
-          file is F && keepFile(file)
-        }
-      }
-    val keepPhysical: (Path) -> Boolean =
-      with(kotlinCoreProjectEnvironment.environment.localFileSystem) {
-        { path ->
-          val vFile = findFileByPath(path.toString())
-          vFile != null && keepVirtual(vFile)
-        }
-      }
-    return PathCollection(
-      physicalFiles.filter(keepPhysical),
-      physicalDirectories.filter(keepPhysical),
-      virtualFiles.filter(keepVirtual),
-      virtualDirectories.filter(keepVirtual),
-    )
+  /** Partition the paths into those that satisfy [keepVirtual] and don't, respectively */
+  fun partition(
+    fileSystem: CoreLocalFileSystem,
+    keepVirtual: (VirtualFile) -> Boolean,
+  ): Pair<PathCollection, PathCollection> {
+    fun keepPhysical(path: Path): Boolean {
+      val vFile = fileSystem.findFileByPath(path.toString())
+      return vFile != null && keepVirtual(vFile)
+    }
+
+    val (physicalFilesT, physicalFilesF) = physicalFiles.partition(::keepPhysical)
+    val (physicalDirsT, physicalDirsF) = physicalDirectories.partition(::keepPhysical)
+    val (virtualFilesT, virtualFilesF) = virtualFiles.partition(keepVirtual)
+    val (virtualDirsT, virtualDirsF) = virtualDirectories.partition(keepVirtual)
+
+    return PathCollection(physicalFilesT, physicalDirsT, virtualFilesT, virtualDirsT) to
+      PathCollection(physicalFilesF, physicalDirsF, virtualFilesF, virtualDirsF)
   }
 
   operator fun plus(paths: Collection<Path>): PathCollection {

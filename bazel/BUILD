@@ -33,6 +33,12 @@ java_binary(
 java_binary(
     name = "kotlinc",
     srcs = ["src/com/android/tools/kotlin/KotlinCompiler.java"],
+    jvm_flags = [
+        # Kotlinc is heavy on the JIT compiler, especially when running as a persistent worker.
+        # We increase the code cache size to keep the JIT compiler enabled,
+        # and to maybe prevent suspected JVM crashes (b/396205154).
+        "-XX:ReservedCodeCacheSize=512m",
+    ],
     main_class = "com.android.tools.kotlin.KotlinCompiler",
     visibility = ["//visibility:public"],
     deps = [

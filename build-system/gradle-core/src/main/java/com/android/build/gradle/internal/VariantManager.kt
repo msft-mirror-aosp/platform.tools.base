@@ -396,8 +396,7 @@ class VariantManager<
         val variantData = variantFactory.createVariantData(
             componentIdentity,
             artifacts,
-            variantPropertiesApiServices,
-            taskContainer
+            variantPropertiesApiServices
         )
 
         // then the new Variant which will contain the 2 old objects.

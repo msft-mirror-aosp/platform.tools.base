@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.UElementHandler;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.GradleContext;
 import com.android.tools.lint.detector.api.GradleScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Incident;
@@ -40,11 +41,10 @@ import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.tools.lint.model.LintModelVariant;
 import com.android.utils.CharSequences;
+
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+
 import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UComment;
 import org.jetbrains.uast.UElement;
@@ -52,6 +52,10 @@ import org.jetbrains.uast.UFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 /** Looks for issues in Java or Kotlin comments */
 public class CommentDetector extends ResourceXmlDetector
@@ -78,9 +82,9 @@ public class CommentDetector extends ResourceXmlDetector
             Issue.create(
                             "EasterEgg",
                             "Code contains easter egg",
-                            "An \"easter egg\" is code deliberately hidden in the code, both from potential "
-                                    + "users and even from other developers. This lint check looks for code which "
-                                    + "looks like it may be hidden from sight.",
+                            "An \"easter egg\" is code deliberately hidden in the code, both from"
+                                + " potential users and even from other developers. This lint check"
+                                + " looks for code which looks like it may be hidden from sight.",
                             Category.SECURITY,
                             6,
                             Severity.WARNING,
@@ -94,14 +98,16 @@ public class CommentDetector extends ResourceXmlDetector
             Issue.create(
                             "StopShip",
                             "Code contains `STOPSHIP` marker",
-                            "Using the comment `// STOPSHIP` can be used to flag code that is incomplete but "
-                                    + "checked in. This comment marker can be used to indicate that the code should not "
-                                    + "be shipped until the issue is addressed, and lint will look for these. In Gradle "
-                                    + "projects, this is only checked for non-debug (release) builds.\n"
-                                    + "\n"
-                                    + "In Kotlin, the `TODO()` method is also treated as a stop ship marker; you can use "
-                                    + "it to make incomplete code compile, but it will throw an exception at runtime "
-                                    + "and therefore should be fixed before shipping releases.",
+                            "Using the comment `// STOPSHIP` can be used to flag code that is"
+                                + " incomplete but checked in. This comment marker can be used to"
+                                + " indicate that the code should not be shipped until the issue is"
+                                + " addressed, and lint will look for these. In Gradle projects,"
+                                + " this is only checked for non-debug (release) builds.\n"
+                                + "\n"
+                                + "In Kotlin, the `TODO()` method is also treated as a stop ship"
+                                + " marker; you can use it to make incomplete code compile, but it"
+                                + " will throw an exception at runtime and therefore should be"
+                                + " fixed before shipping releases.",
                             Category.CORRECTNESS,
                             10,
                             Severity.FATAL,
@@ -160,8 +166,8 @@ public class CommentDetector extends ResourceXmlDetector
                     if (regionMatches(
                             source, true, i - 1, ESCAPE_STRING, 0, ESCAPE_STRING.length())) {
                         String message =
-                                "Code might be hidden here; found unicode escape sequence "
-                                        + "which is interpreted as comment end, compiled code follows";
+                                "Code might be hidden here; found unicode escape sequence which is"
+                                        + " interpreted as comment end, compiled code follows";
                         if (context instanceof JavaContext && node instanceof UElement) {
                             JavaContext javaContext = (JavaContext) context;
                             UElement javaNode = (UElement) node;
@@ -273,11 +279,12 @@ public class CommentDetector extends ResourceXmlDetector
                 "`TODO` call found; points to code which must be fixed prior " + "to release";
         PsiClass containingClass = method.getContainingClass();
         if (containingClass == null) {
-          return;
+            return;
         }
         String fqName = containingClass.getQualifiedName();
         // See libraries/stdlib/jvm/build/stdlib-declarations.json
-        if (!"kotlin.StandardKt__StandardKt".equals(fqName) && !"kotlin.StandardKt".equals(fqName)) {
+        if (!"kotlin.StandardKt__StandardKt".equals(fqName)
+                && !"kotlin.StandardKt".equals(fqName)) {
             return;
         }
 
@@ -309,13 +316,13 @@ public class CommentDetector extends ResourceXmlDetector
     }
 
     @Override
-    public void visitBuildScript(@NonNull Context context) {
-        if (context instanceof JavaContext) {
+    public void visitBuildScript(@NonNull GradleContext context) {
+        JavaContext ktsContext = context.getKtsContext();
+        if (ktsContext != null) {
             // Kts files
-            JavaContext javaContext = (JavaContext) context;
-            UFile file = javaContext.getUastFile();
+            UFile file = ktsContext.getUastFile();
             if (file != null) {
-                new CommentChecker(javaContext).visitFile(file);
+                new CommentChecker(ktsContext).visitFile(file);
             }
         } else {
             // Groovy: just do simple text scanning for block and line comments

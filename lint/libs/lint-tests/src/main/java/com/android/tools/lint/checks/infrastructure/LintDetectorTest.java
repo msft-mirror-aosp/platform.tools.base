@@ -64,11 +64,25 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+
 import com.google.common.collect.Lists;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiErrorElement;
 import com.intellij.psi.util.PsiTreeUtil;
+
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
+
+import org.intellij.lang.annotations.Language;
+import org.jetbrains.kotlin.config.LanguageVersionSettings;
+import org.jetbrains.uast.UFile;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -81,17 +95,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.imageio.ImageIO;
-import kotlin.io.FilesKt;
-import kotlin.text.Charsets;
-import org.intellij.lang.annotations.Language;
-import org.jetbrains.kotlin.config.LanguageVersionSettings;
-import org.jetbrains.uast.UFile;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /** Test case for lint detectors. */
 @SuppressWarnings("javadoc")
@@ -391,6 +396,11 @@ public abstract class LintDetectorTest extends BaseLintDetectorTest {
     @NonNull
     public static TestFile kts(@NonNull String to, @NonNull @Language("kts") String source) {
         return TestFiles.kts(to, source);
+    }
+
+    @NonNull
+    public static TestFile dcl(@NonNull String to, @NonNull @Language("dcl") String source) {
+        return TestFiles.dcl(to, source);
     }
 
     @NonNull

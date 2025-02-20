@@ -50,11 +50,11 @@ import com.android.sdklib.repository.targets.AndroidTargetManager;
 import com.android.sdklib.repository.targets.SystemImage;
 import com.android.sdklib.repository.targets.SystemImageManager;
 
+import com.android.sdklib.util.CacheByCanonicalPath;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -172,9 +172,7 @@ public final class AndroidSdkHandler {
     private BuildToolInfo mLatestBuildTool = null;
 
     /** Singleton instance of this class. */
-    private static final Map<Path, AndroidSdkHandler> sInstances = Maps.newConcurrentMap();
-
-    private static final Path NULL_PATH = Paths.get("");
+    private static final CacheByCanonicalPath<AndroidSdkHandler> sInstances = new CacheByCanonicalPath<>();
 
     /** Location of the local SDK. */
     @Nullable private final Path mLocation;
@@ -203,20 +201,15 @@ public final class AndroidSdkHandler {
     @NonNull
     public static AndroidSdkHandler getInstance(
             @NonNull AndroidLocationsProvider locationProvider, @Nullable Path localPath) {
-        Path key = localPath == null ? NULL_PATH : localPath;
-        synchronized (sInstances) {
-            return sInstances.computeIfAbsent(
-                    key,
-                    k -> {
-                        Path androidFolder;
-                        try {
-                            androidFolder = locationProvider.getPrefsLocation();
-                        } catch (Throwable e) {
-                            androidFolder = null;
-                        }
-                        return new AndroidSdkHandler(localPath, androidFolder);
-                    });
-        }
+        return sInstances.computeIfAbsent(localPath, canonicalKey -> {
+            Path androidFolder;
+            try {
+                androidFolder = locationProvider.getPrefsLocation();
+            } catch (Throwable e) {
+                androidFolder = null;
+            }
+            return new AndroidSdkHandler(canonicalKey, androidFolder);
+        });
     }
 
     /**
@@ -226,9 +219,7 @@ public final class AndroidSdkHandler {
      * @param localPath The path to the local SDK.
      */
     public static void resetInstance(@NonNull Path localPath) {
-        synchronized (sInstances) {
-            sInstances.remove(localPath);
-        }
+        sInstances.remove(localPath);
     }
 
     /**

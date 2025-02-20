@@ -1423,7 +1423,7 @@ class LintDriver(
 
             val uastVisitor = UastGradleVisitor(context)
             val gradleContext =
-              createGradleContext(uastVisitor, project, main, context.file, tomlDocument)
+              createGradleContext(uastVisitor, project, main, context.file, tomlDocument, context)
             fireEvent(EventType.SCANNING_FILE, context)
             for (detector in detectors) {
               detector.beforeCheckFile(gradleContext)
@@ -1454,7 +1454,8 @@ class LintDriver(
                 } catch (e: NoClassDefFoundError) {
                   return@runReadAction (false)
                 }
-              val context = createGradleContext(gradleVisitor, project, main, file, tomlDocument)
+              val context =
+                createGradleContext(gradleVisitor, project, main, file, tomlDocument, null)
               fireEvent(EventType.SCANNING_FILE, context)
               for (detector in detectors) {
                 detector.beforeCheckFile(context)
@@ -1494,9 +1495,13 @@ class LintDriver(
     main: Project?,
     file: File,
     tomlDocument: LintTomlDocument?,
+    ktsContext: JavaContext?,
   ): GradleContext {
     val driver = this
     return object : GradleContext(gradleVisitor, driver, project, main, file) {
+      override val ktsContext: JavaContext?
+        get() = ktsContext
+
       override fun getTomlValue(key: String, source: Boolean): LintTomlValue? {
         return tomlDocument?.getValue(key)
       }

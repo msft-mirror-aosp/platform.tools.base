@@ -19,7 +19,6 @@ import com.android.testutils.TestUtils
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradle
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.parse
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.GradleContext
 import com.android.tools.lint.detector.api.GradleScanner
@@ -346,7 +345,7 @@ class GroovyGradleVisitorTest {
       sb.append('\n')
     }
 
-    override fun visitBuildScript(context: Context) {
+    override fun visitBuildScript(context: GradleContext) {
       log("visitBuildScript", "file" to context.file.name)
     }
 

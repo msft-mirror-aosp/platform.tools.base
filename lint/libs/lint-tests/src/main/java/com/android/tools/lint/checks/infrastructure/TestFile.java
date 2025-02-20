@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks.infrastructure;
 
+import static com.android.SdkConstants.DOT_DECLARATIVE;
 import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_GRADLE;
 import static com.android.SdkConstants.DOT_JAR;
@@ -720,9 +721,12 @@ public class TestFile {
 
         public GradleTestFile(@NonNull String to, @NonNull @Language("Groovy") String source) {
             to(to).withSource(source);
-            if (!to.endsWith(DOT_GRADLE) && !to.endsWith(DOT_KTS)) {
+            if (!to.endsWith(DOT_GRADLE)
+                    && !to.endsWith(DOT_KTS)
+                    && !to.endsWith(DOT_DECLARATIVE)) {
                 throw new IllegalArgumentException(
-                        "Expected .gradle or .gradle.kts suffix for Gradle test files");
+                        "Expected .gradle, .gradle.kts or .gradle.dcl suffix for Gradle test"
+                                + " files");
             }
         }
 

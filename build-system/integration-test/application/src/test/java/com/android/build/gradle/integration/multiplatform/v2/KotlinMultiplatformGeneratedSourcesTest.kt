@@ -70,7 +70,7 @@ class KotlinMultiplatformGeneratedSourcesTest {
         build.executor.run(":library:assembleAndroidMain")
 
         build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
-            allJars().textFile("res.txt").isEqualTo("foo")
+            allJars().resourceAsText("res.txt").isEqualTo("foo")
         }
     }
 }

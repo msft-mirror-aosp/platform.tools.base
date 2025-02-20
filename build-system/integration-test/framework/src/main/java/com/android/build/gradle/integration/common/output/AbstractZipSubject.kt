@@ -17,59 +17,19 @@
 package com.android.build.gradle.integration.common.output
 
 import com.android.build.gradle.integration.common.output.ZipSubject.Companion.zips
-import com.google.common.truth.Fact
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.PrimitiveByteArraySubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
- * Base Truth subject for all Zip archive types.
+ * Base Truth subject for all Zip archive types, providing basic validation for the content.
  */
 open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     metadata: FailureMetadata,
     actual: T
-): Subject<S, T>(metadata, actual) {
-
-    /**
-     * Checks if the zip file exists.
-     */
-    fun exists() {
-        when (actual().status) {
-            Zip.Status.EXISTS -> {
-                // nothing to be done here.
-            }
-            Zip.Status.DIRECTORY -> {
-                failWithoutActual(Fact.simpleFact("points to a directory"))
-            }
-            Zip.Status.DOES_NOT_EXIST -> {
-                val zip = actual() as? SimpleZip
-                    ?: throw RuntimeException("Zip other than SimpleZip should only be with status EXIST")
-
-                var nearestParent: Path? =zip.archivePath
-                while (nearestParent != null && !Files.exists(nearestParent)) {
-                    nearestParent = nearestParent.parent
-                }
-
-                failWithoutActual(
-                    Fact.fact("expected to exist", zip.archivePath),
-                    Fact.fact("nearest existing ancestor", nearestParent)
-                )
-            }
-        }
-    }
-
-    /**
-     * Checks if the zip file does not exist.
-     */
-    fun doesNotExist() {
-        if (actual().exists()) {
-            failWithActual(Fact.simpleFact("expected zip to not exist"))
-        }
-    }
+): BaseZipSubject<S, T>(metadata, actual) {
 
     /**
      * Checks if the zip file contains a given path.
@@ -144,6 +104,4 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     fun innerZip(path: String, action: ZipSubject.() -> Unit) {
         action(innerZip(path))
     }
-
-    // --------------
 }

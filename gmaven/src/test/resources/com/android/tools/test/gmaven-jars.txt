@@ -897,6 +897,8 @@ com/android/tools/external/com-intellij/intellij-core
   DebugProbesKt.bin
   META-INF/
   META-INF/AL2.0
+  META-INF/Analysis.xml
+  META-INF/AnalysisImpl.xml
   META-INF/Core.xml
   META-INF/CoreImpl.xml
   META-INF/JavaPsiPlugin.xml
@@ -918,6 +920,8 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/com.android.tools/r8/kotlinx-serialization-r8.pro
   META-INF/intellij.java.frontback.psi.impl.kotlin_module
   META-INF/intellij.java.psi.kotlin_module
+  META-INF/intellij.platform.analysis.impl.kotlin_module
+  META-INF/intellij.platform.analysis.kotlin_module
   META-INF/intellij.platform.backend.workspace.kotlin_module
   META-INF/intellij.platform.concurrency.kotlin_module
   META-INF/intellij.platform.core.impl.kotlin_module
@@ -1084,24 +1088,74 @@ com/android/tools/external/com-intellij/intellij-core
   com/github/benmanes/caffeine/cache/
   com/github/benmanes/caffeine/cache/stats/
   com/intellij/
+  com/intellij/analysis/
   com/intellij/application/
+  com/intellij/application/options/
+  com/intellij/application/options/colors/
+  com/intellij/codeHighlighting/
   com/intellij/codeInsight/
+  com/intellij/codeInsight/codeFragment/
   com/intellij/codeInsight/completion/
+  com/intellij/codeInsight/completion/impl/
+  com/intellij/codeInsight/completion/ml/
   com/intellij/codeInsight/completion/proc/
   com/intellij/codeInsight/completion/scope/
+  com/intellij/codeInsight/completion/util/
   com/intellij/codeInsight/controlflow/
   com/intellij/codeInsight/controlflow/impl/
   com/intellij/codeInsight/daemon/
   com/intellij/codeInsight/daemon/impl/
+  com/intellij/codeInsight/daemon/impl/actions/
   com/intellij/codeInsight/daemon/impl/analysis/
+  com/intellij/codeInsight/daemon/impl/quickfix/
+  com/intellij/codeInsight/dataflow/
+  com/intellij/codeInsight/dataflow/map/
   com/intellij/codeInsight/documentation/
+  com/intellij/codeInsight/editorActions/
   com/intellij/codeInsight/folding/
   com/intellij/codeInsight/folding/impl/
   com/intellij/codeInsight/generation/
   com/intellij/codeInsight/highlighting/
+  com/intellij/codeInsight/hint/
+  com/intellij/codeInsight/intention/
+  com/intellij/codeInsight/intention/choice/
+  com/intellij/codeInsight/intention/impl/
+  com/intellij/codeInsight/intention/impl/config/
+  com/intellij/codeInsight/intention/preview/
   com/intellij/codeInsight/javadoc/
+  com/intellij/codeInsight/lookup/
+  com/intellij/codeInsight/lookup/impl/
+  com/intellij/codeInsight/navigation/
+  com/intellij/codeInsight/navigation/action/
+  com/intellij/codeInsight/navigation/actions/
+  com/intellij/codeInsight/parameterInfo/
+  com/intellij/codeInsight/problems/
+  com/intellij/codeInsight/quickfix/
   com/intellij/codeInsight/runner/
+  com/intellij/codeInsight/template/
+  com/intellij/codeInsight/template/impl/
+  com/intellij/codeInsight/template/macro/
+  com/intellij/codeInsight/util/
   com/intellij/codeInspection/
+  com/intellij/codeInspection/actions/
+  com/intellij/codeInspection/dataFlow/
+  com/intellij/codeInspection/dataFlow/interpreter/
+  com/intellij/codeInspection/dataFlow/lang/
+  com/intellij/codeInspection/dataFlow/lang/ir/
+  com/intellij/codeInspection/dataFlow/memory/
+  com/intellij/codeInspection/dataFlow/rangeSet/
+  com/intellij/codeInspection/dataFlow/types/
+  com/intellij/codeInspection/dataFlow/value/
+  com/intellij/codeInspection/ex/
+  com/intellij/codeInspection/inspection-black-list.txt
+  com/intellij/codeInspection/lang/
+  com/intellij/codeInspection/options/
+  com/intellij/codeInspection/package.html
+  com/intellij/codeInspection/reference/
+  com/intellij/codeInspection/ui/
+  com/intellij/codeInspection/ui/util/
+  com/intellij/codeInspection/util/
+  com/intellij/codeInspection/visibility/
   com/intellij/codeWithMe/
   com/intellij/concurrency/
   com/intellij/concurrency/client/
@@ -1125,7 +1179,11 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/execution/wsl/
   com/intellij/extapi/
   com/intellij/extapi/psi/
+  com/intellij/featureStatistics/
   com/intellij/filename/
+  com/intellij/find/
+  com/intellij/find/findUsages/
+  com/intellij/find/impl/
   com/intellij/formatting/
   com/intellij/ide/
   com/intellij/ide/bootstrap/
@@ -1138,11 +1196,14 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/ide/plugins/
   com/intellij/ide/plugins/.editorconfig
   com/intellij/ide/plugins/cl/
+  com/intellij/ide/presentation/
+  com/intellij/ide/scratch/
   com/intellij/ide/util/
   com/intellij/idea/
   com/intellij/indentation/
   com/intellij/injected/
   com/intellij/injected/editor/
+  com/intellij/inlinePrompt/
   com/intellij/java/
   com/intellij/java/frontback/
   com/intellij/java/frontback/psi/
@@ -1158,8 +1219,12 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/jna/
   com/intellij/l10n/
   com/intellij/lang/
+  com/intellij/lang/annotation/
+  com/intellij/lang/annotation/package.html
+  com/intellij/lang/documentation/
   com/intellij/lang/folding/
   com/intellij/lang/impl/
+  com/intellij/lang/impl/modcommand/
   com/intellij/lang/injection/
   com/intellij/lang/injection/general/
   com/intellij/lang/java/
@@ -1173,11 +1238,15 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/lang/jvm/source/
   com/intellij/lang/jvm/types/
   com/intellij/lang/jvm/util/
+  com/intellij/lang/parameterInfo/
+  com/intellij/lang/parser/
+  com/intellij/lang/refactoring/
   com/intellij/lang/spi/
   com/intellij/lang/tree/
   com/intellij/lang/tree/util/
   com/intellij/lexer/
   com/intellij/mock/
+  com/intellij/modcommand/
   com/intellij/model/
   com/intellij/model/presentation/
   com/intellij/model/psi/
@@ -1187,6 +1256,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/notebook/
   com/intellij/notebook/editor/
   com/intellij/openapi/
+  com/intellij/openapi/actionSystem/
   com/intellij/openapi/application/
   com/intellij/openapi/application/ex/
   com/intellij/openapi/application/impl/
@@ -1194,6 +1264,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/command/
   com/intellij/openapi/command/impl/
   com/intellij/openapi/command/undo/
+  com/intellij/openapi/command/undo/package.html
   com/intellij/openapi/components/
   com/intellij/openapi/diagnostic/
   com/intellij/openapi/editor/
@@ -1208,13 +1279,16 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/extensions/
   com/intellij/openapi/extensions/impl/
   com/intellij/openapi/fileEditor/
+  com/intellij/openapi/fileEditor/ex/
   com/intellij/openapi/fileEditor/impl/
   com/intellij/openapi/fileTypes/
   com/intellij/openapi/fileTypes/ex/
   com/intellij/openapi/fileTypes/impl/
   com/intellij/openapi/module/
   com/intellij/openapi/module/impl/
+  com/intellij/openapi/module/impl/scopes/
   com/intellij/openapi/options/
+  com/intellij/openapi/paths/
   com/intellij/openapi/progress/
   com/intellij/openapi/progress/impl/
   com/intellij/openapi/progress/util/
@@ -1237,6 +1311,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/vfs/
   com/intellij/openapi/vfs/encoding/
   com/intellij/openapi/vfs/ex/
+  com/intellij/openapi/vfs/ex/dummy/
   com/intellij/openapi/vfs/ex/http/
   com/intellij/openapi/vfs/impl/
   com/intellij/openapi/vfs/impl/http/
@@ -1250,6 +1325,8 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/vfs/transformer/
   com/intellij/openapi/wm/
   com/intellij/openapi/wm/ex/
+  com/intellij/packageDependencies/
+  com/intellij/packageDependencies/package.html
   com/intellij/patterns/
   com/intellij/patterns/compiler/
   com/intellij/platform/
@@ -1329,6 +1406,9 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/pom/tree/events/
   com/intellij/pom/tree/events/impl/
   com/intellij/pom/wrappers/
+  com/intellij/problems/
+  com/intellij/profile/
+  com/intellij/profile/codeInspection/
   com/intellij/projectModel/
   com/intellij/psi/
   com/intellij/psi/augment/
@@ -1336,6 +1416,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/compiled/
   com/intellij/psi/controlFlow/
   com/intellij/psi/css/
+  com/intellij/psi/file/
   com/intellij/psi/filters/
   com/intellij/psi/filters/classes/
   com/intellij/psi/filters/element/
@@ -1367,6 +1448,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/impl/source/tree/injected/
   com/intellij/psi/impl/source/tree/java/
   com/intellij/psi/infos/
+  com/intellij/psi/injection/
   com/intellij/psi/javadoc/
   com/intellij/psi/meta/
   com/intellij/psi/presentation/
@@ -1377,7 +1459,11 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/scope/util/
   com/intellij/psi/search/
   com/intellij/psi/search/impl/
+  com/intellij/psi/search/scope/
+  com/intellij/psi/search/scope/impl/
+  com/intellij/psi/search/scope/packageSet/
   com/intellij/psi/search/searches/
+  com/intellij/psi/statistics/
   com/intellij/psi/stub/
   com/intellij/psi/stubs/
   com/intellij/psi/targets/
@@ -1389,6 +1475,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/util/
   com/intellij/psi/util/package.html
   com/intellij/refactoring/
+  com/intellij/refactoring/listeners/
   com/intellij/refactoring/rename/
   com/intellij/refactoring/util/
   com/intellij/reference/
@@ -1450,11 +1537,14 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/text/minimatch/
   com/intellij/util/text/package.html
   com/intellij/util/ui/
+  com/intellij/util/ui/classpath/
   com/intellij/util/xml/
   com/intellij/util/xml/dom/
   com/intellij/util/xmlb/
   com/intellij/util/xmlb/.editorconfig
   com/intellij/util/xmlb/annotations/
+  com/intellij/webcore/
+  com/intellij/webcore/packaging/
   com/intellij/workspaceModel/
   com/intellij/workspaceModel/ide/
   com/intellij/workspaceModel/ide/legacyBridge/
@@ -1720,8 +1810,13 @@ com/android/tools/external/com-intellij/intellij-core
   kotlinx/serialization/json/internal/
   kotlinx/serialization/modules/
   messages/
+  messages/AnalysisBundle.properties
+  messages/CommonQuickFixBundle.properties
   messages/CoreBundle.properties
   messages/CoreDeprecatedMessagesBundle.properties
+  messages/FindBundle.properties
+  messages/InspectionsBundle.properties
+  messages/InspectionsDeprecatedMessagesBundle.properties
   messages/JavaErrorBundle.properties
   messages/JavaOptionBundle.properties
   messages/JavaPsiBundle.properties
@@ -3200,11 +3295,20 @@ com/android/tools/layoutlib/layoutlib-api
 com/android/tools/lint/lint
   META-INF/
   META-INF/MANIFEST.MF
+  META-INF/dcl-lang.kotlin_module
   META-INF/lint-cli.kotlin_module
   NOTICE
   com/
   com/android/
   com/android/tools/
+  com/android/tools/idea/
+  com/android/tools/idea/gradle/
+  com/android/tools/idea/gradle/dcl/
+  com/android/tools/idea/gradle/dcl/lang/
+  com/android/tools/idea/gradle/dcl/lang/lexer/
+  com/android/tools/idea/gradle/dcl/lang/parser/
+  com/android/tools/idea/gradle/dcl/lang/psi/
+  com/android/tools/idea/gradle/dcl/lang/psi/impl/
   com/android/tools/lint/
   com/android/tools/lint/gradle/
   com/android/tools/lint/uast/

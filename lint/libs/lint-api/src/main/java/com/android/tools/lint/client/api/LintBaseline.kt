@@ -138,6 +138,8 @@ class LintBaseline(
   /** Custom attributes defined for this baseline. */
   private var attributes: MutableMap<String, String>? = null
 
+  private var hasUntrimmedMessages = false
+
   init {
     readBaselineFile()
   }
@@ -349,6 +351,23 @@ class LintBaseline(
       }
     }
 
+    if (hasUntrimmedMessages) {
+      val messages = idToMessages[issue.id]
+      if (
+        !messages.isNullOrEmpty() &&
+          (messages.size > 1 || messages.size == 1 && messages.first() != message)
+      ) {
+        val checked = alreadyChecked ?: mutableSetOf<String>().apply { add(message) }
+        for (oldMessage in messages) {
+          if (checked.add(oldMessage) && sameMessage(issue, message, oldMessage)) {
+            if (findAndMark(issue, location, oldMessage, severity, checked)) {
+              return true
+            }
+          }
+        }
+      }
+    }
+
     return false
   }
 
@@ -546,7 +565,7 @@ class LintBaseline(
               .getDeclaredConstructor()
               .newInstance()
               .sameMessage(issue, new, old)
-          } catch (ignore: Throwable) {
+          } catch (_: Throwable) {
             false
           }
       }
@@ -597,7 +616,7 @@ class LintBaseline(
         if (eventType == XmlPullParser.END_TAG) {
           val tag = parser.name
           if (tag == TAG_LOCATION) {
-            if (issue != null && message != null && path != null) {
+            if (issue != null && message != null && path != null && message.isNotBlank()) {
               path = pathVariables.fromPathString(path).path ?: path
               val entry = Entry(issue, message, path)
               if (currentEntry != null) {
@@ -607,8 +626,15 @@ class LintBaseline(
               currentEntry = entry
               messageToEntry.put(entry.message, entry)
               val messages: MutableSet<String> =
-                idToMessages[issue] ?: HashSet<String>().also { idToMessages[issue!!] = it }
+                idToMessages[issue] ?: HashSet<String>().also { idToMessages[issue] = it }
               messages.add(message)
+              if (
+                message[0].isWhitespace() &&
+                  !hasUntrimmedMessages &&
+                  message != message.trimIndent()
+              ) {
+                hasUntrimmedMessages = true
+              }
             }
           } else if (tag == TAG_ISSUE) {
             if (issue != null && !IssueRegistry.isDeletedIssueId(issue)) {

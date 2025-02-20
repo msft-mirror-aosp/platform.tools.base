@@ -30,7 +30,9 @@ import com.android.tools.deployer.tasks.TaskRunner;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
+
 import com.google.common.collect.ImmutableMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -50,7 +52,7 @@ public class Deployer {
     private final UIService service;
     private final MetricsRecorder metrics;
     private final ILogger logger;
-    private final DeployerOption options;
+    private final DeployerOption deployOptions;
 
     public Deployer(
             AdbClient adb,
@@ -70,7 +72,7 @@ public class Deployer {
         this.service = service;
         this.metrics = metrics;
         this.logger = logger;
-        this.options = options;
+        this.deployOptions = options;
     }
 
     enum Tasks {
@@ -172,7 +174,7 @@ public class Deployer {
             String sessionUID = UUID.randomUUID().toString();
 
             InstallInfo info;
-            if (options.useRootPushInstall) {
+            if (deployOptions.useRootPushInstall) {
                 info = rootPushInstall(sessionUID, app, installOptions, installMode);
             } else if (supportsNewPipeline()) {
                 info = optimisticInstall(sessionUID, app, installOptions, installMode);
@@ -180,7 +182,7 @@ public class Deployer {
                 info = packageManagerInstall(sessionUID, app, installOptions, installMode);
             }
 
-            if (options.skipPostInstallTasks) {
+            if (deployOptions.skipPostInstallTasks) {
                 return new Result(info.skippedInstall, false, false, app);
             }
 
@@ -216,7 +218,12 @@ public class Deployer {
         logger.info("Deploying with package manager for install session %s", deploySessionUID);
         ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
         boolean skippedInstall =
-                !apkInstaller.install(app, installOptions, installMode, metrics.getDeployMetrics());
+                !apkInstaller.install(
+                        app,
+                        deployOptions,
+                        installOptions,
+                        installMode,
+                        metrics.getDeployMetrics());
         return new InstallInfo(skippedInstall, app.getApks());
     }
 
@@ -244,7 +251,11 @@ public class Deployer {
             ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
             skippedInstall =
                     !apkInstaller.install(
-                            app, installOptions, installMode, metrics.getDeployMetrics());
+                            app,
+                            deployOptions,
+                            installOptions,
+                            installMode,
+                            metrics.getDeployMetrics());
         }
         return new InstallInfo(skippedInstall, app.getApks());
     }
@@ -265,11 +276,11 @@ public class Deployer {
         Task<String> packageName = runner.create(app.getAppId());
         Task<List<Apk>> apks = runner.create(app.getApks());
         boolean installSuccess = false;
-        if (!options.optimisticInstallSupport.isEmpty()) {
+        if (!deployOptions.optimisticInstallSupport.isEmpty()) {
             logger.info("Deploying with optimistic install for session %s", deploySessionUID);
             OptimisticApkInstaller apkInstaller =
                     new OptimisticApkInstaller(
-                            installer, adb, deployCache, metrics, options, logger);
+                            installer, adb, deployCache, metrics, deployOptions, logger);
             Task<List<String>> userFlags = runner.create(installOptions.getUserFlags());
             Task<OverlayId> overlayId =
                     runner.create(
@@ -299,7 +310,11 @@ public class Deployer {
             ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
             skippedInstall =
                     !apkInstaller.install(
-                            app, installOptions, installMode, metrics.getDeployMetrics());
+                            app,
+                            deployOptions,
+                            installOptions,
+                            installMode,
+                            metrics.getDeployMetrics());
             runner.create(
                     Tasks.DEPLOY_CACHE_STORE, deployCache::invalidate, deviceSerial, packageName);
         }
@@ -322,7 +337,7 @@ public class Deployer {
 
     public Result fullSwap(@NonNull App app, Canceller canceller) throws DeployerException {
         try (Trace ignored = Trace.begin("fullSwap")) {
-            if (supportsNewPipeline() && options.useOptimisticResourceSwap) {
+            if (supportsNewPipeline() && deployOptions.useOptimisticResourceSwap) {
                 return optimisticSwap(app, true, ImmutableMap.of(), canceller);
             } else {
                 return swap(app, true, ImmutableMap.of(), canceller);
@@ -346,8 +361,8 @@ public class Deployer {
     private boolean useCoroutineDebugger() {
         // --attach-agent was added on API 28. Furthermore before API 28 there is no guarantee
         // for the code_cache folder to be created during app install.
-        return this.options.enableCoroutineDebugger
-               && adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.P);
+        return this.deployOptions.enableCoroutineDebugger
+                && adb.getVersion().isAtLeast(AndroidVersion.VersionCodes.P);
     }
 
     private Result swap(
@@ -487,7 +502,7 @@ public class Deployer {
 
         // Perform the swap.
         OptimisticApkSwapper swapper =
-                new OptimisticApkSwapper(installer, redefiners, argRestart, options, metrics);
+                new OptimisticApkSwapper(installer, redefiners, argRestart, deployOptions, metrics);
         Task<OptimisticApkSwapper.OverlayUpdate> overlayUpdate =
                 runner.create(
                         Tasks.COLLECT_SWAP_DATA,
@@ -533,7 +548,8 @@ public class Deployer {
 
         // TODO: May be notify user we IWI'ed.
         // deployResult.didIwi = true;
-        boolean needsRestart = options.fastRestartOnSwapFail && !swapResultTask.get().hotswapSucceeded;
+        boolean needsRestart =
+                deployOptions.fastRestartOnSwapFail && !swapResultTask.get().hotswapSucceeded;
         return new Result(false, needsRestart, false, app);
     }
 
@@ -553,7 +569,7 @@ public class Deployer {
     }
 
     public boolean supportsNewPipeline() {
-        return options.useOptimisticSwap
+        return deployOptions.useOptimisticSwap
                 && adb.getVersion().getApiLevel() >= AndroidVersion.VersionCodes.R;
     }
 }

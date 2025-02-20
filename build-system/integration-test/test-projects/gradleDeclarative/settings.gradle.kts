@@ -37,3 +37,4 @@ plugins {
 }
 
 include(":lib")
+include(":app")

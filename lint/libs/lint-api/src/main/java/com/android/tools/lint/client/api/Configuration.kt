@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.LintFix
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Option
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.detector.api.guessGradleLocation
@@ -116,6 +117,17 @@ abstract class Configuration(val configurations: ConfigurationHierarchy) {
    */
   open fun isEnabled(issue: Issue): Boolean {
     return getSeverity(issue) !== Severity.IGNORE
+  }
+
+  /**
+   * Returns true if the given issue should always be run, even on test sources when the
+   * [LintDriver.checkTestSources] property is false. Note that returning false here doesn't mean
+   * that it *shouldn't* be run (e.g. for issues specifically marked as having [Scope.TEST_SOURCES]
+   * applicability); it only indicates to *override* the behavior of skipping this issue on tests if
+   * it doesn't have test scope.
+   */
+  open fun isIncludeInTests(issue: Issue): Boolean {
+    return parent?.isIncludeInTests(issue) ?: false
   }
 
   /**

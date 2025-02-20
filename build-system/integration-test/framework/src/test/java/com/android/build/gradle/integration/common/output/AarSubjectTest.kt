@@ -63,8 +63,8 @@ class AarSubjectTest: BaseZipSubjectTest() {
                 classData("com/bar/SomeOtherClass") {
                     methods().containsExactly("<init>", "foo")
                 }
-                textFile("foo/file.txt").isEqualTo("foo")
-                binaryFile("bar/file.data").isEqualTo("bar".toByteArray())
+                resourceAsText("foo/file.txt").isEqualTo("foo")
+                resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
             }
         }
 
@@ -114,67 +114,6 @@ class AarSubjectTest: BaseZipSubjectTest() {
             jarConfigAction = { withApiJar(it) },
             jarSubjectProvider = { apiJar() }
         )
-    }
-
-    @Test
-    fun secondaryJars() {
-        val aar = createAar("valid.aar") {
-            addSecondaryJar("foo") {
-                addEmptyClasses("com/foo/SomeClass", "com/foo/SomeOtherClass")
-            }
-        }
-
-        assertThat(aar) {
-            secondaryJars().contains("foo.jar")
-        }
-
-        // test negative results
-        expectFailure {
-            it.that(aar).secondaryJars().hasSize(5)
-        }.assert {
-            // we don't care about testing the 'expected' and 'but was' facts
-            factKeys().containsAtLeast("value of", "aar was")
-            factValue("value of").isEqualTo("aar.secondaryJars().size()")
-            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
-        }
-    }
-
-    @Test
-    fun secondaryJar() {
-        val aar = createAar("valid.aar") {
-            addSecondaryJar("foo") {
-                addEmptyClasses("com/foo/SomeClass", "com/foo/SomeOtherClass")
-            }
-        }
-
-        assertThat(aar) {
-            secondaryJar("foo.jar").classes().contains("com/foo/SomeClass")
-        }
-
-        // test negative results
-        expectFailure {
-            it.that(aar).secondaryJar("foo.jar").classes().contains("com/foo/MissingClass")
-        }.assert {
-            // we don't care about testing the 'expected' and 'but was' facts
-            factKeys().containsAtLeast("value of", "aar was")
-            factValue("value of").isEqualTo("aar.secondaryJar(foo.jar).classes()")
-            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
-        }
-
-        // check querying missing jar has right error.
-        expectFailure {
-            it.that(aar).secondaryJar("missing.jar")
-        }.assert {
-            // we want to check for a specific expected/but was here as we want to validate
-            // which error is thrown
-            factKeys().containsAtLeast("value of", "aar was", "expected to contain", "but was")
-            factValue("value of").isEqualTo("aar.secondaryJars()")
-            factValue("expected to contain").isEqualTo("missing.jar")
-            // we want to make sure that the list only contains the /libs folder. This
-            // should not contains any other files (e.g. manifest, classes.jar, etc...)
-            factValue("but was").isEqualTo("[foo.jar]")
-            factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
-        }
     }
 
     @Test

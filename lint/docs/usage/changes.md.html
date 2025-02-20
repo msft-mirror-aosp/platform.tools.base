@@ -16,6 +16,20 @@ lint check authors, see the API Guide.
   `CoreLibDesugaringV1`       | Android 15 requires `desugar_jdk_libs` 2.+
   `RequiresWindowSdk`         | API requires a `WindowSdkExtensions.extensionVersion` check
 
+* Normally, when analyzing test sources, lint only runs a
+  small set of lint checks -- those that specifically apply to tests,
+  such as `IgnoreWithoutReason` (using `@Ignore` without a reason
+  parameter in a test declaration). However, if you don't want to
+  turn on all lint checks on test sources (via the `checkTestSources`
+  flag or Gradle DSL option), you can opt in individual lint checks
+  via a  [lint XML file](lintxml.md.html) option like the following:
+
+  ```xml
+  <lint>
+      <issue id="NewApi" tests="true" />
+  </lint>
+  ```
+
 **8.9**
 
 * New built-in lint checks:
