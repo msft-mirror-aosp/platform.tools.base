@@ -225,9 +225,6 @@ fun runR8(
         )
     )
 
-    val compilationMode =
-        if (toolConfig.debuggable) CompilationMode.DEBUG else CompilationMode.RELEASE
-
     val dataResourceConsumer = JavaResourcesConsumer(javaResourcesJar)
     val programConsumer =
         if (toolConfig.r8OutputType == R8OutputType.CLASSES) {
@@ -253,15 +250,14 @@ fun runR8(
                 }
             }
         }
+    r8CommandBuilder.setProgramConsumer(programConsumer)
 
-    @Suppress("UsePropertyAccessSyntax")
     r8CommandBuilder
+        .setMode(if (toolConfig.debuggable) CompilationMode.DEBUG else CompilationMode.RELEASE)
         .setDisableTreeShaking(toolConfig.disableTreeShaking)
         .setDisableMinification(toolConfig.disableMinification)
         .setDisableDesugaring(toolConfig.disableDesugaring)
         .setProguardCompatibility(!toolConfig.fullMode)
-        .setMode(compilationMode)
-        .setProgramConsumer(programConsumer)
 
     // Use this to control all resources provided to R8
     val r8ProgramResourceProvider = R8ProgramResourceProvider()
