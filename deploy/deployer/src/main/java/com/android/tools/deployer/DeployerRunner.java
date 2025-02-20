@@ -23,6 +23,7 @@ import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.deployer.tasks.Canceller;
 import com.android.tools.deployer.tasks.TaskRunner;
 import com.android.tools.tracer.Trace;
@@ -33,6 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -228,8 +230,8 @@ public class DeployerRunner {
                         logger,
                         deployerOption);
         final Deployer.Result deployResult;
-        App app = App.fromPaths(parameters.getApplicationId(), parameters.getApks());
         try {
+            App app = getAppToInstall(parameters.getApplicationId(), parameters.getApks());
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
@@ -281,6 +283,14 @@ public class DeployerRunner {
 
     public List<DeployMetric> getMetrics() {
         return metrics.getDeployMetrics();
+    }
+
+    public static App getAppToInstall(String appId, List<Path> apks) throws DeployerException {
+        try {
+            return App.fromPaths(appId, apks);
+        } catch (ApkParserException e) {
+            throw DeployerException.parseFailed(e.getMessage());
+        }
     }
 
     private Map<String, IDevice> waitForDevices(

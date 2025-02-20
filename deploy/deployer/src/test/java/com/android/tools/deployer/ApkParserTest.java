@@ -17,6 +17,7 @@
 package com.android.tools.deployer;
 
 import static com.android.tools.deployer.ApkTestUtils.assertApkEntryEquals;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -26,10 +27,16 @@ import com.android.testutils.TestUtils;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.ApkParser;
+import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,8 +51,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ApkParserTest {
 
@@ -267,7 +272,7 @@ public class ApkParserTest {
     }
 
     @Test
-    public void testGracefulMissingManifest() throws IOException, DeployerException {
+    public void testGracefulMissingManifest() throws IOException {
         Path tempDirectory = Files.createTempDirectory("");
         try {
             Path zip = tempDirectory.resolve("testGracefulMissingManifest.zip");
@@ -276,13 +281,13 @@ public class ApkParserTest {
             createZip(numFiles, sizePerFile, zip.toFile());
             ApkParser.parse(zip.toString());
             Assert.fail("No exception thrown in apk missing AndroidManifest.xml");
-        } catch (IllegalStateException e) {
+        } catch (ApkParserException e) {
             Assert.assertTrue(e.getMessage().contains(ApkParser.NO_MANIFEST_MSG));
         }
     }
 
     @Test
-    public void testParseManifest() throws DeployerException {
+    public void testParseManifest() throws ApkParserException {
         Path file = TestUtils.resolveWorkspacePath(BASE + "parserTest/app.apk");
         Apk apk = ApkParser.parsePaths(ImmutableList.of(file.toString())).get(0);
 
@@ -290,7 +295,8 @@ public class ApkParserTest {
         ManifestServiceInfo service = apk.services.get(0);
         assertEquals("com.example.parser.test.MyService", service.getQualifiedName());
         assertFalse(service.isolatedProcess);
-        assertTrue(service.hasPermission("com.google.android.wearable.permission.BIND_TILE_PROVIDER"));
+        assertTrue(
+                service.hasPermission("com.google.android.wearable.permission.BIND_TILE_PROVIDER"));
         assertTrue(service.hasAction(
                 "android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"));
         assertTrue(service.getIntentFilters().get(0).getCategories().isEmpty());
@@ -307,7 +313,7 @@ public class ApkParserTest {
     }
 
     @Test
-    public void testParseSdkManifest() throws DeployerException {
+    public void testParseSdkManifest() throws ApkParserException {
         Path file = TestUtils.resolveWorkspacePath(BASE + "apks/sdk.apk");
         Apk apk = ApkParser.parsePaths(ImmutableList.of(file.toString())).get(0);
 
@@ -321,7 +327,7 @@ public class ApkParserTest {
     }
 
     @Test
-    public void testApkInJarFile() throws IOException, DeployerException {
+    public void testApkInJarFile() throws IOException, ApkParserException {
         Path srcFile = TestUtils.resolveWorkspacePath(BASE + "parserTest/app.apk");
         Path jarFile = Files.createTempFile("container", ".jar");
         String destinationPath = "jar:" + jarFile.toUri() + "!/app.apk";
@@ -338,7 +344,7 @@ public class ApkParserTest {
         try {
             ApkParser.parsePaths(ImmutableList.of("jar:" + jarFile.toUri())).get(0);
             fail("Parsing of an invalid path should fail.");
-        } catch (IllegalStateException ignore) {
+        } catch (ApkParserException ignore) {
         } catch (Throwable t) {
             fail(t.getMessage());
         }

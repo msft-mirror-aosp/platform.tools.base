@@ -19,6 +19,8 @@ package com.android.tools.deployer.model;
 import static java.util.Collections.emptyList;
 
 import com.android.annotations.NonNull;
+import com.android.tools.deployer.model.component.ApkParserException;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,18 +54,21 @@ public class App {
         return new App(appId, apks, emptyList());
     }
 
-    public static App fromString(@NonNull String appId, @NonNull String apkPath) {
+    public static App fromString(@NonNull String appId, @NonNull String apkPath)
+            throws ApkParserException {
         return new App(appId, Arrays.asList(ApkParser.parse(apkPath)), emptyList());
     }
 
     public static App fromPaths(
             @NonNull String appId,
             @NonNull List<Path> paths,
-            @NonNull List<BaselineProfile> baselineProfiles) {
+            @NonNull List<BaselineProfile> baselineProfiles)
+            throws ApkParserException {
         return new App(appId, convert(paths), baselineProfiles);
     }
 
-    public static App fromPaths(@NonNull String appId, @NonNull List<Path> paths) {
+    public static App fromPaths(@NonNull String appId, @NonNull List<Path> paths)
+            throws ApkParserException {
         List<Path> apks = new ArrayList<>();
         List<BaselineProfile> baselineProfiles = new ArrayList<>();
         for (Path path : paths) {
@@ -85,12 +90,13 @@ public class App {
         return fromPaths(appId, apks, baselineProfiles);
     }
 
-    public static App fromPath(@NonNull String appId, @NonNull Path path) {
+    public static App fromPath(@NonNull String appId, @NonNull Path path)
+            throws ApkParserException {
         return fromPaths(appId, Arrays.asList(path), emptyList());
     }
 
     @NonNull
-    private static List<Apk> convert(@NonNull List<Path> paths) {
+    private static List<Apk> convert(@NonNull List<Path> paths) throws ApkParserException {
         List<Apk> apks = new ArrayList<>();
         for (Path path : paths) {
             apks.add(ApkParser.parse(path.toAbsolutePath().toString()));
