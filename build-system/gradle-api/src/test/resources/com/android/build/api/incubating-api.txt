@@ -697,11 +697,6 @@ https://issuetracker.google.com/373816438
   * com.android.build.api.dsl.BundleDeviceGroup.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleDeviceGroup.setDefaultGroup: void (java.lang.String)
   * com.android.build.api.dsl.BundleDeviceGroup.setEnableSplit: void (java.lang.Boolean)
-https://issuetracker.google.com/376815836
-  * com.android.build.api.dsl.SdkComponents.getAapt2: org.gradle.api.provider.Provider<com.android.build.api.variant.Aapt2> ()
-  * com.android.build.api.variant.Aapt2
-  * com.android.build.api.variant.Aapt2.getExecutable: org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile> ()
-  * com.android.build.api.variant.Aapt2.getVersion: org.gradle.api.provider.Provider<java.lang.String> ()
 https://issuetracker.google.com/379870599
   * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/380074867
