@@ -568,6 +568,8 @@ open class ControlFlowGraph<T : Any> private constructor() {
     private const val FUNCTIONAL_INTERFACE_CLASS = "java.lang.FunctionalInterface"
     /** *Prefix* for the function interfaces -- Function1, Function2, Function3, etc. */
     private const val KOTLIN_FUNCTION_PREFIX = "kotlin.jvm.functions.Function"
+    /** * *Prefix* for the function interfaces w/ reflection info -- KFunction* */
+    private const val KOTLIN_KFUNCTION_PREFIX = "kotlin.reflect.KFunction"
     /** Jetpack Compose marker interface */
     private const val COMPOSABLE_CLASS = "androidx.compose.runtime.Composable"
 
@@ -578,6 +580,11 @@ open class ControlFlowGraph<T : Any> private constructor() {
     val BoolDomain = Domain(false, Boolean::or)
     val IntBitsDomain = Domain(0, Int::or)
     val UnitDomain = Domain(Unit) { _, _ -> }
+
+    private fun String?.isFunctionInterface(): Boolean {
+      if (this == null) return false
+      return this.startsWith(KOTLIN_FUNCTION_PREFIX) || this.startsWith(KOTLIN_KFUNCTION_PREFIX)
+    }
 
     /**
      * Creates a new [ControlFlowGraph] and populates it with the flow control for the given method.
@@ -1410,8 +1417,7 @@ open class ControlFlowGraph<T : Any> private constructor() {
             val containingClass = resolved?.containingClass
             if (containingClass != null) {
               if (
-                resolved.name == "invoke" &&
-                  containingClass.qualifiedName?.startsWith(KOTLIN_FUNCTION_PREFIX) == true
+                resolved.name == "invoke" && containingClass.qualifiedName.isFunctionInterface()
               ) {
                 val variable = node.receiver?.tryResolve()
                 if (variable != null) {
