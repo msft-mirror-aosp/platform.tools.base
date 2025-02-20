@@ -30,7 +30,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.tools.lint.UastEnvironmentKt;
 import com.android.tools.lint.checks.infrastructure.ProjectDescription;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestLintResult;
@@ -9751,10 +9750,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testRemoveTest() {
-        // TODO(b/350744053)
-        if (UastEnvironmentKt.useFirUast()) {
-            return;
-        }
         TestLintResult result =
                 lint().files(
                                 kotlin(
@@ -9903,10 +9898,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testRemoveWithAlias() {
-        // TODO(b/350744053)
-        if (UastEnvironmentKt.useFirUast()) {
-            return;
-        }
         // Regression test for b/355299370
         lint().files(
                         kotlin(
