@@ -499,17 +499,30 @@ class VariantDependencies internal constructor(
                 runtimeClasspath.dependencies.add(project.dependencies.create(project))
             }
 
-            project.objects.named(
+            val aarLibraryElements = project.objects.named(
                 LibraryElements::class.java,
                 AndroidArtifacts.ArtifactType.AAR.type
-            ).let { aar ->
-                apiPublication?.attributes?.attribute(
-                    LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    aar
+            )
+
+            apiPublication?.attributes?.apply {
+                attribute(
+                    Usage.USAGE_ATTRIBUTE,
+                    project.objects.named(Usage::class.java, Usage.JAVA_API)
                 )
-                runtimePublication?.attributes?.attribute(
+                attribute(
                     LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    aar
+                    aarLibraryElements
+                )
+            }
+
+            runtimePublication?.attributes?.apply {
+                attribute(
+                    Usage.USAGE_ATTRIBUTE,
+                    project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
+                )
+                attribute(
+                    LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                    aarLibraryElements
                 )
             }
 
