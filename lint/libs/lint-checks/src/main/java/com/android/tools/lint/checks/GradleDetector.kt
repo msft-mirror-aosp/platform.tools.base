@@ -3953,9 +3953,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           if (start in 0 until end) {
             val substring = response.substring(start, end)
             val revision = Version.parse(substring)
-            if (revision != null) {
-              versions.add(revision)
-            }
+            versions.add(revision)
           }
         }
       }

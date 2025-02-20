@@ -33,7 +33,6 @@ import com.android.SdkConstants.TAG_MANIFEST
 import com.android.SdkConstants.TAG_RESOURCES
 import com.android.ide.common.gradle.Version
 import com.android.ide.common.repository.GoogleMavenRepository
-import com.android.ide.common.repository.GradleCoordinate
 import com.android.ide.common.resources.ResourceRepository
 import com.android.resources.ResourceFolderType
 import com.android.support.AndroidxNameUtils
@@ -4425,8 +4424,7 @@ class LintIssueDocGenerator(
       }
 
       fun getVersions(client: LintClient): List<String> {
-        val gc = GradleCoordinate.parseCoordinateString("$group:$artifact:+")!!
-        return getLatestVersionFromRemoteRepo(client, gc)
+        return getVersionsFromRemoteRepo(client)
       }
 
       fun getUrl(version: String, extension: String) =
@@ -4446,20 +4444,15 @@ class LintIssueDocGenerator(
         // https://search.maven.org/remotecontent?filepath=com/github/guilhe/styling-lint/2.0.1/styling-lint-2.0.1.aar
       }
 
-      private fun getLatestVersionFromRemoteRepo(
-        client: LintClient,
-        dependency: GradleCoordinate,
-      ): List<String> {
-        val groupId = dependency.groupId
-        val artifactId = dependency.artifactId
+      private fun getVersionsFromRemoteRepo(client: LintClient): List<String> {
         val query = StringBuilder()
         val encoding = Charsets.UTF_8.name()
         try {
           query.append("https://search.maven.org/solrsearch/select?q=g:%22")
-          query.append(URLEncoder.encode(groupId, encoding))
+          query.append(URLEncoder.encode(group, encoding))
           query.append("%22+AND+a:%22")
-          query.append(URLEncoder.encode(artifactId, encoding))
-        } catch (e: UnsupportedEncodingException) {
+          query.append(URLEncoder.encode(artifact, encoding))
+        } catch (_: UnsupportedEncodingException) {
           return emptyList()
         }
         query.append("%22&core=gav")
@@ -4469,7 +4462,7 @@ class LintIssueDocGenerator(
           try {
             println("Reading $query")
             readUrlDataAsString(client, query.toString(), 40000) ?: return emptyList()
-          } catch (e: SocketTimeoutException) {
+          } catch (_: SocketTimeoutException) {
             println("Couldn't download $query; read timed out")
             return emptyList()
           }
@@ -4485,13 +4478,7 @@ class LintIssueDocGenerator(
             val end = response.indexOf('"', start + 1)
             if (start in 0 until end) {
               val substring = response.substring(start, end)
-              try {
-                // Try parsing to see if it's a valid version
-                Version.parse(substring)
-                versions.add(substring)
-              } catch (ignore: IllegalArgumentException) {
-                // Not a version
-              }
+              versions.add(substring)
             }
           }
         }
