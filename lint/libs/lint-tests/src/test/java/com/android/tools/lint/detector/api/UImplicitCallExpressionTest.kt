@@ -271,9 +271,6 @@ class UImplicitCallExpressionTest {
       listOf("get", "set", "compareTo", "inc", "in", "rangeTo", "contains", "plus", "minus")
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-      if (method.belongsToJvmPrimitiveType()) {
-        return
-      }
       context.report(
         ISSUE,
         context.getCallLocation(node, includeReceiver = false, includeArguments = false),
