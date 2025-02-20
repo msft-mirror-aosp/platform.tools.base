@@ -121,6 +121,7 @@ public class FakeAdbTestRule extends ExternalResource {
                     throw new RuntimeException("fake adb server didn't stop");
                 }
             }
+            AndroidDebugBridge.disconnectBridge();
             AndroidDebugBridge.terminate();
             AndroidDebugBridge.disableFakeAdbServerMode();
         }
