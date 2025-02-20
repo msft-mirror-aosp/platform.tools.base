@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.transforms.testdata.Animal
 import com.android.build.gradle.internal.transforms.testdata.CarbonForm
 import com.android.build.gradle.internal.transforms.testdata.Cat
 import com.android.build.gradle.internal.transforms.testdata.Toy
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.R8OutputType
@@ -706,6 +707,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
                 disableMinification = disableMinification,
                 disableDesugaring = java8Support != Java8LangSupport.R8 || componentType.isAar,
                 fullMode = useFullR8,
+                strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
                 r8OutputType = if (componentType.isAar) R8OutputType.CLASSES else R8OutputType.DEX
             ),
             resourceShrinkingConfig = null,

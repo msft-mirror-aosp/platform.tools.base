@@ -258,6 +258,7 @@ fun runR8(
         .setDisableMinification(toolConfig.disableMinification)
         .setDisableDesugaring(toolConfig.disableDesugaring)
         .setProguardCompatibility(!toolConfig.fullMode)
+        .enableLegacyFullModeForKeepRules(!toolConfig.strictFullModeForKeepRules)
 
     // Use this to control all resources provided to R8
     val r8ProgramResourceProvider = R8ProgramResourceProvider()
@@ -569,6 +570,7 @@ data class ToolConfig(
     val disableMinification: Boolean,
     val disableDesugaring: Boolean,
     val fullMode: Boolean,
+    val strictFullModeForKeepRules: Boolean,
     val r8OutputType: R8OutputType,
 ) : java.io.Serializable { // Serializable so it can be used in Gradle workers
 

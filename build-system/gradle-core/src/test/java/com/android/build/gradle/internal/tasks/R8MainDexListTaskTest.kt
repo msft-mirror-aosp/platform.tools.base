@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.transforms.testdata.Animal
 import com.android.build.gradle.internal.transforms.testdata.CarbonForm
 import com.android.build.gradle.internal.transforms.testdata.Toy
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.R8OutputType
@@ -198,6 +199,7 @@ fun runR8(
             disableMinification = true,
             disableDesugaring = true,
             fullMode = false,
+            strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
             r8OutputType = R8OutputType.DEX
         ),
         resourceShrinkingConfig = null,

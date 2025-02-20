@@ -45,6 +45,7 @@ class TraceReferenceToolTest {
             disableMinification = true,
             disableDesugaring = true,
             fullMode = true,
+            strictFullModeForKeepRules = true,
             r8OutputType = R8OutputType.DEX
         )
         val mainDexConfig = MainDexListConfig(listOf(), listOf())

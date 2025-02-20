@@ -466,6 +466,37 @@ class R8ToolTest {
         }
     }
 
+    @Test
+    fun testLegacyAndStrictFullModeForKeepRules() { // See b/391864651
+        val classes = tmp.newFolder().toPath()
+        TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B"))
+
+        val proguardRulesFile = tmp.newFile("proguard-rules.pro")
+        proguardRulesFile.writeText("-keep class test.A")
+        val proguardConfig = ProguardConfig(listOf(proguardRulesFile.toPath()), null, listOf(), emptyProguardOutputFiles)
+
+        val output = tmp.newFolder().toPath()
+
+        // With `strictFullModeForKeepRules = false`, `test.A.<init>` should be kept
+        runR8Tool(
+            inputClasses = listOf(classes),
+            output = output,
+            toolConfig = defaultToolConfig().copy(strictFullModeForKeepRules = false),
+            proguardConfig = proguardConfig
+        )
+        val outputDexFile = output.resolve("classes.dex").toFile()
+        assertThatDex(outputDexFile).containsClass("Ltest/A;").that().hasMethod("<init>")
+
+        // With `strictFullModeForKeepRules = true`, `test.A.<init>` should be removed
+        runR8Tool(
+            inputClasses = listOf(classes),
+            output = output,
+            toolConfig = defaultToolConfig().copy(strictFullModeForKeepRules = true),
+            proguardConfig = proguardConfig
+        )
+        assertThatDex(outputDexFile).containsClass("Ltest/A;").that().doesNotHaveMethod("<init>")
+    }
+
     private fun runR8Tool(
         inputClasses: Collection<Path>,
         output: Path,
@@ -519,6 +550,7 @@ class R8ToolTest {
         disableMinification = false,
         disableDesugaring = false,
         fullMode = true,
+        strictFullModeForKeepRules = true,
         r8OutputType = R8OutputType.DEX
     )
 

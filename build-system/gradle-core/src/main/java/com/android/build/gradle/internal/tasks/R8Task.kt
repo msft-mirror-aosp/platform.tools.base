@@ -311,6 +311,7 @@ abstract class R8Task @Inject constructor(
                     disableMinification = disableMinification,
                     disableDesugaring = false,
                     fullMode = creationConfig.services.projectOptions[BooleanOption.FULL_R8],
+                    strictFullModeForKeepRules = creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES],
                     r8OutputType = R8OutputType.DEX
                 )
             )
@@ -552,6 +553,7 @@ abstract class R8Task @Inject constructor(
                                 creationConfig.dexing.java8LangSupportType == Java8LangSupport.R8
                     ),
                     fullMode = creationConfig.services.projectOptions[BooleanOption.FULL_R8],
+                    strictFullModeForKeepRules = creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES],
                     r8OutputType = if (componentType.isAar) {
                         R8OutputType.CLASSES
                     } else {
