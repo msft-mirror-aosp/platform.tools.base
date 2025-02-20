@@ -15,7 +15,6 @@
  */
 package com.android.tools.lint.checks
 
-import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
@@ -69,7 +68,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -113,7 +111,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -154,7 +151,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -197,7 +193,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -239,7 +234,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:dataSync requires permission:[android.permission.FOREGROUND_SERVICE_DATA_SYNC] [ForegroundServicePermission]
@@ -288,7 +282,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -330,7 +323,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:mediaPlayback requires permission:[android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK] [ForegroundServicePermission]
@@ -380,7 +372,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -422,10 +413,9 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
-        """AndroidManifest.xml:13: Error: foregroundServiceType:phoneCall requires permission:[android.permission.FOREGROUND_SERVICE_PHONE_CALL] AND any permission in list:[android.permission.MANAGE_OWN_CALLS] [ForegroundServicePermission]
+        """AndroidManifest.xml:13: Error: foregroundServiceType:phoneCall requires permission:[android.permission.FOREGROUND_SERVICE_PHONE_CALL] [ForegroundServicePermission]
         <service
         ^
 1 errors, 0 warnings
@@ -472,7 +462,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -514,7 +503,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:location requires permission:[android.permission.FOREGROUND_SERVICE_LOCATION] AND any permission in list:[android.permission.ACCESS_COARSE_LOCATION, android.permission.ACCESS_FINE_LOCATION] [ForegroundServicePermission]
@@ -564,7 +552,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -606,10 +593,9 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
-        """AndroidManifest.xml:13: Error: foregroundServiceType:connectedDevice requires permission:[android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE] AND any permission in list:[android.permission.BLUETOOTH_ADVERTISE, android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_SCAN, android.permission.CHANGE_NETWORK_STATE, android.permission.CHANGE_WIFI_STATE, android.permission.CHANGE_WIFI_MULTICAST_STATE, android.permission.NFC, android.permission.TRANSMIT_IR, android.permission.UWB_RANGING] [ForegroundServicePermission]
+        """AndroidManifest.xml:13: Error: foregroundServiceType:connectedDevice requires permission:[android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE] [ForegroundServicePermission]
         <service
         ^
 1 errors, 0 warnings
@@ -655,7 +641,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -697,7 +682,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:mediaProjection requires permission:[android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION] [ForegroundServicePermission]
@@ -747,7 +731,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -792,7 +775,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:camera requires permission:[android.permission.FOREGROUND_SERVICE_CAMERA] AND any permission in list:[android.permission.CAMERA, android.permission.SYSTEM_CAMERA] [ForegroundServicePermission]
@@ -843,7 +825,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -885,7 +866,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:microphone requires permission:[android.permission.FOREGROUND_SERVICE_MICROPHONE] AND any permission in list:[android.permission.CAPTURE_AUDIO_HOTWORD, android.permission.CAPTURE_AUDIO_OUTPUT, android.permission.CAPTURE_MEDIA_OUTPUT, android.permission.CAPTURE_TUNER_AUDIO_INPUT, android.permission.CAPTURE_VOICE_COMMUNICATION_OUTPUT, android.permission.RECORD_AUDIO] [ForegroundServicePermission]
@@ -935,7 +915,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -977,7 +956,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:health requires permission:[android.permission.FOREGROUND_SERVICE_HEALTH] AND any permission in list:[android.permission.ACTIVITY_RECOGNITION, android.permission.BODY_SENSORS, android.permission.HIGH_SAMPLING_RATE_SENSORS] [ForegroundServicePermission]
@@ -1026,7 +1004,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1068,7 +1045,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:remoteMessaging requires permission:[android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING] [ForegroundServicePermission]
@@ -1118,7 +1094,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1160,7 +1135,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:systemExempted requires permission:[android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED] AND any permission in list:[android.permission.SCHEDULE_EXACT_ALARM, android.permission.USE_EXACT_ALARM] [ForegroundServicePermission]
@@ -1209,7 +1183,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1251,7 +1224,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:fileManagement requires permission:[android.permission.FOREGROUND_SERVICE_FILE_MANAGEMENT] [ForegroundServicePermission]
@@ -1300,7 +1272,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1342,7 +1313,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:specialUse requires permission:[android.permission.FOREGROUND_SERVICE_SPECIAL_USE] [ForegroundServicePermission]
@@ -1397,7 +1367,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1439,7 +1408,6 @@ class ForegroundServicePermissionDetectorTest : AbstractCheckTest() {
         ),
         mStrings,
       )
-      .testModes(TestMode.DEFAULT)
       .run()
       .expect(
         """AndroidManifest.xml:13: Error: foregroundServiceType:camera requires permission:[android.permission.FOREGROUND_SERVICE_CAMERA] AND any permission in list:[android.permission.CAMERA, android.permission.SYSTEM_CAMERA] [ForegroundServicePermission]
