@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
 import org.objectweb.asm.tree.ClassNode
 
 /**
@@ -49,4 +50,18 @@ class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDefinition 
 
     override val methods: List<String>
         get() = classNode.methods.map { it.name }
+}
+
+/**
+ * Implementation of [ClassDefinition] over smali's [DexBackedClassDef]
+ */
+internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef): ClassDefinition {
+    override val interfaces: List<String>
+        get() = throw RuntimeException("Not yet implemented")
+    override val innerClasses: List<String>
+        get() = throw RuntimeException("Not yet implemented")
+    override val fields: List<String>
+        get() = dex.fields.map { it.name }
+    override val methods: List<String>
+        get() = dex.methods.map { it.name }
 }
