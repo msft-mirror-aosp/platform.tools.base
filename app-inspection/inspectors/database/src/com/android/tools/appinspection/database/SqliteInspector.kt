@@ -80,6 +80,7 @@ import java.util.WeakHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.Future
 import kotlin.coroutines.CoroutineContext
+import kotlin.text.RegexOption.IGNORE_CASE
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.asCoroutineDispatcher
 
@@ -128,7 +129,8 @@ private const val QUERY_TABLE_INFO =
       ti.type as columnType,
       [notnull],
       pk,
-      ifnull([unique], 0) as [unique]
+      ifnull([unique], 0) as [unique],
+      m.sql
     from sqlite_master AS m, pragma_table_info(m.name) as ti
     left outer join
       (
@@ -153,7 +155,12 @@ private const val QUERY_TABLE_INFO =
     order by type, tableName, ti.cid  -- cid = columnId
     """
 
+// language=SQLite
+private const val QUERY_TABLE_SQL = "select name, sql from sqlite_master"
+
 private val HIDDEN_TABLES = setOf("android_metadata", "sqlite_sequence")
+
+private val REGEX_WITHOUT_ROWID = "\\s*without\\s+rowid".toRegex(IGNORE_CASE)
 
 /**
  * Inspector to work with SQLite databases
@@ -709,6 +716,7 @@ internal class SqliteInspector(
   private fun querySchema(database: SQLiteDatabase): Response {
     var cursor: Cursor? = null
     try {
+      val withoutRowidMap = getWithoutRowIdMap(database)
       cursor = rawQuery(database, QUERY_TABLE_INFO, arrayOfNulls(0), null)
       val schemaBuilder =
         GetSchemaResponse.newBuilder()
@@ -739,6 +747,7 @@ internal class SqliteInspector(
           tableBuilder = Table.newBuilder()
           tableBuilder.setName(tableName)
           tableBuilder.setIsView("view".equals(cursor.getString(objectTypeIx), ignoreCase = true))
+          tableBuilder.withoutRowid = withoutRowidMap.getOrDefault(tableName, true)
         }
 
         // append column information to the current table info
@@ -767,6 +776,19 @@ internal class SqliteInspector(
       return createErrorOccurredResponse(e, null, ERROR_UNKNOWN)
     } finally {
       cursor?.close()
+    }
+  }
+
+  private fun getWithoutRowIdMap(database: SQLiteDatabase): Map<String, Boolean> {
+    return buildMap {
+      rawQuery(database, QUERY_TABLE_SQL, emptyArray(), null).use { cursor ->
+        while (cursor.moveToNext()) {
+          val tableName = cursor.getString(0)
+          val sql = cursor.getString(1)
+          val withoutRowId = sql?.substringAfterLast(')')?.contains(REGEX_WITHOUT_ROWID) == true
+          put(tableName, withoutRowId)
+        }
+      }
     }
   }
 
