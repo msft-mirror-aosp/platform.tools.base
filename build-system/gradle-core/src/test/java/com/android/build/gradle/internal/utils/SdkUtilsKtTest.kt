@@ -226,17 +226,23 @@ internal class SdkUtilsKtTest {
 
     @Test
     fun `compile data to hash`() {
-        Truth.assertThat(CompileData(apiLevel = 36).toHash())
+        Truth.assertThat(CompileData(36).toHash())
             .isEqualTo("android-36")
-        Truth.assertThat(CompileData(apiLevel = 36, sdkExtension = 12).toHash())
+        Truth.assertThat(CompileData(36, sdkExtension = 12).toHash())
             .isEqualTo("android-36-ext12")
-        Truth.assertThat(CompileData(apiLevel = 36, minorApiLevel = 3).toHash())
+        Truth.assertThat(CompileData(36, minorApiLevel = 3).toHash())
             .isEqualTo("android-36.3")
-        Truth.assertThat(CompileData(apiLevel = 36, sdkExtension = 12, minorApiLevel = 3).toHash())
+        Truth.assertThat(CompileData(36, sdkExtension = 12, minorApiLevel = 3).toHash())
             .isEqualTo("android-36.3-ext12")
-        Truth.assertThat(CompileData(minorApiLevel = 3, sdkExtension = 12).toHash()).isNull()
-        Truth.assertThat(CompileData(addonName = "addonName").toHash()).isNull()
-        Truth.assertThat(CompileData(codeName = "codeName").toHash()).isNull()
-        Truth.assertThat(CompileData(vendorName = "vendorName").toHash()).isNull()
+        Truth.assertThat(CompileData(minorApiLevel = 3, sdkExtension = 12).toHash())
+            .isNull()
+        Truth.assertThat(CompileData(addonName = "addon", vendorName = "vendor").toHash())
+            .isNull()
+        Truth.assertThat(CompileData(35, addonName = "addon", vendorName = "vendor").toHash())
+            .isEqualTo("vendor:addon:35")
+        Truth.assertThat(CompileData(35, addonName = "addonName").toHash())
+            .isEqualTo("android-35")
+        Truth.assertThat(CompileData(codeName = "codeName").toHash())
+            .isEqualTo("android-codeName")
     }
 }

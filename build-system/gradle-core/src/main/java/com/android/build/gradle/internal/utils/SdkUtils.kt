@@ -33,11 +33,16 @@ data class CompileData(
 ) {
     fun isAddon() = vendorName != null && addonName != null
 
-    // Converts to string representation of the Android version
-    // Codename and add-on format is not supported in this method
+    // Converts to the string representation of the Android version
     fun toHash(): String? {
+        if (codeName != null) {
+            return "android-$codeName"
+        }
         if (apiLevel == null) {
             return null
+        }
+        if (isAddon()) {
+            return "$vendorName:$addonName:$apiLevel"
         }
         var compileSdkString = "android-$apiLevel"
         if (minorApiLevel != null) {
