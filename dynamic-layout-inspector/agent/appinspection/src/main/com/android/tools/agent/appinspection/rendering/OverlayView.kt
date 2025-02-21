@@ -16,7 +16,6 @@
 
 package com.android.tools.agent.appinspection.rendering
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
@@ -25,8 +24,9 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-import androidx.annotation.VisibleForTesting
+import android.view.ViewGroup
 import com.android.tools.agent.appinspection.SPAM_LOG_TAG
+import com.android.tools.agent.appinspection.framework.measureSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -38,12 +38,10 @@ import kotlinx.coroutines.launch
  * Each [OverlayView] is controlled by the [OnDeviceRenderingViewModel].
  */
 class OverlayView(
-    context: Context,
-    private val rootId: Long,
+    private val root: ViewGroup,
     private val scope: CoroutineScope,
     private val viewModel: OnDeviceRenderingViewModel
-) : View(context) {
-
+) : View(root.context) {
     /**
      * Drawing instructions for an [OverlayView].
      * @param rect The rect to be drawn.
@@ -51,6 +49,7 @@ class OverlayView(
      */
     private class DrawInstruction(val rect: Rect, val color: Int)
 
+    private val rootId = root.uniqueDrawingId
     private val selectedRectPaint = Paint().apply {
         style = Paint.Style.STROKE
         strokeWidth = dpToPx(4f)
@@ -66,6 +65,15 @@ class OverlayView(
     private val recomposingRectPaint = Paint().apply {
         style = Paint.Style.FILL
     }
+
+    /** Holds the screen coordinates of this [OverlayView]. Updated in onLayout. */
+    private val currentScreenLocation = intArrayOf(0, 0)
+
+    /**
+     * Temporary [Rect] used to convert a [DrawInstruction.rect] from screen to view
+     * coordinates, without allocating a new [Rect] instance each time.
+     */
+    private val rectForDrawing = Rect(0, 0, 0, 0)
 
     /** Rendering instruction for the selected rectangles. */
     private var selectedRectangles: List<DrawInstruction> = emptyList()
@@ -86,6 +94,19 @@ class OverlayView(
     private var interceptTouchEvents = false
 
     private var viewScope: CoroutineScope? = null
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        // This is important for dialogs and popups that occupy a smaller part of the display.
+        // Without this the parent DecorView may get larger after this OverlayView is added.
+        val size = root.measureSize(this)
+        setMeasuredDimension(size.width, size.height)
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        // Store the current screen location of this [OverlayView] for coordinate conversions.
+        getLocationOnScreen(currentScreenLocation)
+    }
 
     override fun onAttachedToWindow() {
         Log.w(SPAM_LOG_TAG, "OverlayView $rootId onAttachedToWindow")
@@ -140,7 +161,7 @@ class OverlayView(
     }
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
-        val point = PointF(ev.x, ev.y)
+        val point = ev.toScreenCoordinates()
         Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point")
 
         if (ev.action == MotionEvent.ACTION_DOWN && ev.buttonState == MotionEvent.BUTTON_SECONDARY) {
@@ -155,7 +176,7 @@ class OverlayView(
     }
 
     override fun onHoverEvent(ev: MotionEvent): Boolean {
-        val point = PointF(ev.x, ev.y)
+        val point = ev.toScreenCoordinates()
         Log.w(SPAM_LOG_TAG, "OverlayView $rootId hover event: $point")
         viewModel.onHoverEvent(rootId, point)
         return interceptTouchEvents || super.onHoverEvent(ev)
@@ -163,23 +184,38 @@ class OverlayView(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
         // The rendering order matters.
         recomposingRectangles.forEach {
             recomposingRectPaint.color = it.color.setColorAlpha(64)
-            canvas.drawRect(it.rect, recomposingRectPaint)
+            canvas.drawRect(it.rect.toViewCoordinates(), recomposingRectPaint)
         }
         visibleRectangles.forEach {
             visibleRectPaint.color = it.color
-            canvas.drawRect(it.rect, visibleRectPaint)
+            canvas.drawRect(it.rect.toViewCoordinates(), visibleRectPaint)
         }
         hoveredRectangle.forEach {
             hoveredRectPaint.color = it.color
-            canvas.drawRect(it.rect, hoveredRectPaint)
+            canvas.drawRect(it.rect.toViewCoordinates(), hoveredRectPaint)
         }
         selectedRectangles.forEach {
             selectedRectPaint.color = it.color
-            canvas.drawRect(it.rect, selectedRectPaint)
+            canvas.drawRect(it.rect.toViewCoordinates(), selectedRectPaint)
         }
+    }
+
+    /** Convert the [MotionEvent] coordinates from view to screen coordinates. */
+    private fun MotionEvent.toScreenCoordinates(): PointF {
+        return PointF(x + currentScreenLocation[0], y + currentScreenLocation[1])
+    }
+
+    /**
+     * Convert the [Rect] from screen to view coordinates without allocating anything.
+     */
+    private fun Rect.toViewCoordinates(): Rect {
+        rectForDrawing.set(this)
+        rectForDrawing.offset(-currentScreenLocation[0], -currentScreenLocation[1])
+        return rectForDrawing
     }
 
     private fun dpToPx(dp: Float): Float {

@@ -19,6 +19,7 @@ package com.android.tools.agent.appinspection.framework
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
+import android.util.Size
 import android.view.PixelCopy
 import android.view.View
 import android.view.ViewGroup
@@ -88,4 +89,19 @@ fun View.takeScreenshot(scale: Float, bitmapType: BitmapType): Bitmap? {
         Log.w("ViewLayoutInspector", t)
         null
     }
+}
+
+/**
+ * Return the max size among the siblings of [view] within this parent [ViewGroup].
+ */
+fun ViewGroup.measureSize(view: View): Size {
+    var width = 0
+    var height = 0
+    getChildren().forEach { child ->
+        if (child !== view) {
+            width = maxOf(width, child.left + child.measuredWidth)
+            height = maxOf(height, child.top + child.measuredHeight)
+        }
+    }
+    return Size(width - paddingLeft, height - paddingTop)
 }

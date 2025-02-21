@@ -151,8 +151,7 @@ class OnDeviceRenderingViewModel(
             } else {
                 try {
                     val overlayView = OverlayView(
-                        context = view.context,
-                        rootId = view.uniqueDrawingId,
+                        root = view,
                         scope = scope,
                         viewModel = this@OnDeviceRenderingViewModel
                     )
@@ -163,7 +162,7 @@ class OnDeviceRenderingViewModel(
                             ViewGroup.LayoutParams.MATCH_PARENT
                         )
                     )
-                    Log.w(SPAM_LOG_TAG, "OverlayView added")
+                    Log.w(SPAM_LOG_TAG, "OverlayView added (${view.left}, ${view.top})")
                 } catch (t: Throwable) {
                     Log.w(SPAM_LOG_TAG, "Failed to add OverlayView to view: $view, $t")
                 }

@@ -16,6 +16,8 @@
 
 package android.graphics;
 
+import androidx.annotation.NonNull;
+
 import java.util.Objects;
 
 public class Rect {
@@ -29,6 +31,20 @@ public class Rect {
         top = t;
         right = r;
         bottom = b;
+    }
+
+    public void set(@NonNull Rect src) {
+        this.left = src.left;
+        this.top = src.top;
+        this.right = src.right;
+        this.bottom = src.bottom;
+    }
+
+    public void offset(int dx, int dy) {
+        left += dx;
+        top += dy;
+        right += dx;
+        bottom += dy;
     }
 
     public int width() {
