@@ -28,6 +28,7 @@ import com.android.tools.agent.appinspection.framework.getChildren
 import com.android.tools.agent.appinspection.sendEvent
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.DrawInstruction
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.UserInputEvent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,8 +55,14 @@ class OnDeviceRenderingViewModel(
     var roots = emptyMap<Long, InspectorView>()
         private set
 
-    private val _selectedNode = MutableStateFlow<OverlayViewInstruction?>(null)
-    val selectedNode = _selectedNode.asStateFlow()
+    private val _selectedNodes = MutableStateFlow<List<OverlayViewInstruction>>(emptyList())
+    val selectedNodes = _selectedNodes.asStateFlow()
+
+    private val _hoveredNodes = MutableStateFlow<List<OverlayViewInstruction>>(emptyList())
+    val hoveredNodes = _hoveredNodes.asStateFlow()
+
+    private val _visibleNodes = MutableStateFlow<List<OverlayViewInstruction>>(emptyList())
+    val visibleNodes = _visibleNodes.asStateFlow()
 
     private val _interceptTouchEvents = MutableStateFlow<Boolean>(false)
     var interceptTouchEvents = _interceptTouchEvents.asStateFlow()
@@ -81,30 +88,48 @@ class OnDeviceRenderingViewModel(
         roots = newRoots
     }
 
-    fun setSelectedNode(instruction: DrawInstruction?) {
-        _selectedNode.value = instruction?.toOverlayViewInstruction()
+    fun setSelectedNodes(instruction: List<DrawInstruction>) {
+        _selectedNodes.value = instruction.map { it.toOverlayViewInstruction() }
+    }
+
+    fun setHoveredNodes(instruction: List<DrawInstruction>) {
+        _hoveredNodes.value = instruction.map { it.toOverlayViewInstruction() }
+    }
+
+    fun setVisibleNodes(instructions: List<DrawInstruction>) {
+        _visibleNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setInterceptTouchEvents(intercept: Boolean) {
         _interceptTouchEvents.value = intercept
     }
 
-    fun onTouchEvent(point: PointF) {
-        if (!_interceptTouchEvents.value) {
-            return
-        }
+    fun onTouchEvent(rootId: Long, point: PointF) {
+        sendInputEvent(rootId, point, UserInputEvent.Type.SELECTION)
+    }
 
-        connection.sendEvent {
-            touchEvent = LayoutInspectorViewProtocol.TouchEvent.newBuilder().apply {
-                x = point.x
-                y = point.y
-            }.build()
-        }
+    fun onHoverEvent(rootId: Long, point: PointF) {
+        sendInputEvent(rootId, point, UserInputEvent.Type.HOVER)
     }
 
     suspend fun dispose() {
         setEnableOnDeviceRendering(false)
         setRoots(emptyMap())
+    }
+
+    private fun sendInputEvent(rootId: Long, point: PointF, type: UserInputEvent.Type) {
+        if (!interceptTouchEvents.value) {
+            return
+        }
+
+        connection.sendEvent {
+            userInputEvent = UserInputEvent.newBuilder().apply {
+                this.rootId = rootId
+                this.type = type
+                x = point.x
+                y = point.y
+            }.build()
+        }
     }
 
     private suspend fun addOverlayView(inspectorView: InspectorView) = withContext(mainDispatcher) {

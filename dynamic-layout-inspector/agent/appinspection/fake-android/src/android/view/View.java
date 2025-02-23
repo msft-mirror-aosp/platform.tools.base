@@ -324,4 +324,8 @@ public class View {
     public boolean onTouchEvent(MotionEvent ev) {
         return false;
     }
+
+    public boolean onHoverEvent(MotionEvent ev) {
+        return false;
+    }
 }

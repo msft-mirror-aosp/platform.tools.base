@@ -24,7 +24,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.inspection.Connection
 import com.android.tools.agent.appinspection.InspectorView
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Event
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -159,39 +159,94 @@ class OnDeviceRenderingViewModelTest {
     }
 
     @Test
-    fun testSelectedNode() = runTest {
+    fun testSetSelectedNodes() = runTest {
         val connection = object : Connection() { }
 
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
-        val instructions = mutableListOf<OverlayViewInstruction?>()
+        val instructions = mutableListOf<List<OverlayViewInstruction>>()
         val job = launch {
-            onDeviceRenderingViewModel.selectedNode.collect {
+            onDeviceRenderingViewModel.selectedNodes.collect {
                 instructions.add(it)
             }
         }
 
-        val drawInstruction = buildDrawInstructions(rootId = 1L, bounds = Rect(0, 0, 2, 2))
-        onDeviceRenderingViewModel.setSelectedNode(drawInstruction)
+        val drawInstruction = buildDrawInstructionsProto(rootId = 1L, bounds = listOf(Rect(0, 0, 2, 2)))
+        onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
 
-        onDeviceRenderingViewModel.setSelectedNode(null)
+        onDeviceRenderingViewModel.setSelectedNodes(emptyList())
         testScheduler.advanceUntilIdle()
 
         job.cancelAndJoin()
 
         assertThat(instructions).hasSize(2)
-        assertThat(instructions[0]).isEqualTo(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2)))
-        assertThat(instructions[1]).isNull()
+        assertThat(instructions[0]).isEqualTo(listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2))))
+        assertThat(instructions[1]).isEmpty()
+    }
+
+    @Test
+    fun testSetHoveredNodes() = runTest {
+        val connection = object : Connection() { }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val instructions = mutableListOf<List<OverlayViewInstruction>>()
+        val job = launch {
+            onDeviceRenderingViewModel.hoveredNodes.collect {
+                instructions.add(it)
+            }
+        }
+
+        val drawInstruction = buildDrawInstructionsProto(rootId = 1L, bounds = listOf(Rect(0, 0, 2, 2)))
+        onDeviceRenderingViewModel.setHoveredNodes(drawInstruction)
+        testScheduler.advanceUntilIdle()
+
+        onDeviceRenderingViewModel.setHoveredNodes(emptyList())
+        testScheduler.advanceUntilIdle()
+
+        job.cancelAndJoin()
+
+        assertThat(instructions).hasSize(2)
+        assertThat(instructions[0]).isEqualTo(listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2))))
+        assertThat(instructions[1]).isEmpty()
+    }
+
+    @Test
+    fun testSetVisibleNodes() = runTest {
+        val connection = object : Connection() { }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val instructions = mutableListOf<List<OverlayViewInstruction>>()
+        val job = launch {
+            onDeviceRenderingViewModel.visibleNodes.collect {
+                instructions.add(it)
+            }
+        }
+
+        val drawInstruction = buildDrawInstructionsProto(rootId = 1L, bounds = listOf(Rect(0, 0, 2, 2)))
+        onDeviceRenderingViewModel.setVisibleNodes(drawInstruction)
+        testScheduler.advanceUntilIdle()
+
+        onDeviceRenderingViewModel.setVisibleNodes(emptyList())
+        testScheduler.advanceUntilIdle()
+
+        job.cancelAndJoin()
+
+        assertThat(instructions).hasSize(2)
+        assertThat(instructions[0]).isEqualTo(listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2))))
+        assertThat(instructions[1]).isEmpty()
     }
 
     @Test
     fun testOnTouchEvent() = runTest {
-        val expectedEvent = Event.newBuilder()
-            .setTouchEvent(buildTouchEvent(1f, 1f))
-            .build()
-            .toByteArray()
+        val expectedEvent = buildUserInputEventProto(
+            rootId = 1L, x = 1f, y = 1f, LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
+        ).toByteArray()
 
         val receivedEvents = mutableListOf<ByteArray>()
         val connection = object : Connection() {
@@ -204,7 +259,30 @@ class OnDeviceRenderingViewModelTest {
         val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
         onDeviceRenderingViewModel.setInterceptTouchEvents(true)
 
-        onDeviceRenderingViewModel.onTouchEvent(PointF(1f, 1f))
+        onDeviceRenderingViewModel.onTouchEvent(rootId = 1L, point = PointF(1f, 1f))
+
+        assertThat(receivedEvents).hasSize(1)
+        assertThat(receivedEvents.first()).isEqualTo(expectedEvent)
+    }
+
+    @Test
+    fun testOnHoverEvent() = runTest {
+        val expectedEvent = buildUserInputEventProto(
+            rootId = 1L, x = 1f, y = 1f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.HOVER
+        ).toByteArray()
+
+        val receivedEvents = mutableListOf<ByteArray>()
+        val connection = object : Connection() {
+            override fun sendEvent(data: ByteArray) {
+                receivedEvents.add(data)
+            }
+        }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+        onDeviceRenderingViewModel.setInterceptTouchEvents(true)
+
+        onDeviceRenderingViewModel.onHoverEvent(rootId = 1L, point = PointF(1f, 1f))
 
         assertThat(receivedEvents).hasSize(1)
         assertThat(receivedEvents.first()).isEqualTo(expectedEvent)
@@ -223,7 +301,7 @@ class OnDeviceRenderingViewModelTest {
         val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
         onDeviceRenderingViewModel.setInterceptTouchEvents(false)
 
-        onDeviceRenderingViewModel.onTouchEvent(PointF(1f, 1f))
+        onDeviceRenderingViewModel.onTouchEvent(rootId = 1L, point = PointF(1f, 1f))
 
         assertThat(receivedEvents).isEmpty()
     }

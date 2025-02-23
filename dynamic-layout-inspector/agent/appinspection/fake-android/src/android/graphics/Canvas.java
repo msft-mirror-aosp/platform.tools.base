@@ -27,6 +27,7 @@ import java.util.Objects;
 public final class Canvas {
     // This is not in AOSP. We use it for tests.
     @VisibleForTesting public List<DrawLog> drawLogs = new ArrayList<>();
+    private int generation = 0;
 
     private Bitmap mBitmap;
 
@@ -46,15 +47,18 @@ public final class Canvas {
     public void scale(float x, float y) {}
 
     public void drawRect(Rect rect, @NonNull Paint paint) {
-        drawLogs.add(new DrawLog(rect, paint));
+        drawLogs.add(new DrawLog(generation, rect, paint));
+        generation += 1;
     }
 
     @VisibleForTesting
     public static class DrawLog {
         public final Rect rect;
         public final Paint paint;
+        public final int generation;
 
-        public DrawLog(Rect rect, Paint paint) {
+        public DrawLog(int generation, Rect rect, Paint paint) {
+            this.generation = generation;
             this.rect = rect;
             this.paint = paint;
         }
@@ -63,12 +67,14 @@ public final class Canvas {
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             DrawLog that = (DrawLog) o;
-            return Objects.equals(rect, that.rect) && Objects.equals(paint, that.paint);
+            return generation == that.generation
+                    && Objects.equals(rect, that.rect)
+                    && Objects.equals(paint, that.paint);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(rect, paint);
+            return Objects.hash(rect, paint, generation);
         }
     }
 }

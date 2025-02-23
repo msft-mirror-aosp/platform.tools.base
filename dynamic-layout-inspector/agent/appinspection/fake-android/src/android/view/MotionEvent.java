@@ -19,14 +19,27 @@ package android.view;
 import androidx.annotation.VisibleForTesting;
 
 public class MotionEvent {
+
     @VisibleForTesting
-    public MotionEvent() {}
+    final float x;
+    final float y;
+
+    @VisibleForTesting
+    public MotionEvent() {
+        this.x = -1f;
+        this.y = -1f;
+    }
+
+    public MotionEvent(float x, float y) {
+        this.x = x;
+        this.y = y;
+    }
 
     public float getX() {
-        return 1f;
+        return x;
     }
 
     public float getY() {
-        return 1f;
+        return y;
     }
 }

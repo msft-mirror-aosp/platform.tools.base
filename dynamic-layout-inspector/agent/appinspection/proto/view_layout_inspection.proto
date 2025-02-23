@@ -260,10 +260,17 @@ message DrawInstruction {
     Rect bounds = 2;
 }
 
-// A touch event detected by on-device rendering.
-message TouchEvent {
-    float x = 1;
-    float y = 2;
+// User input detected by on-device rendering.
+message UserInputEvent {
+    enum Type {
+        SELECTION = 0;
+        HOVER = 1;
+    }
+
+    int64 root_id = 1;
+    float x = 2;
+    float y = 3;
+    Type type = 4;
 }
 
 // ======= COMMANDS, RESPONSES, AND EVENTS =======
@@ -337,10 +344,18 @@ message EnableOnDeviceRenderingCommand {
 message EnableOnDeviceRenderingResponse {
 }
 
-message SelectNodeCommand {
-    optional DrawInstruction draw_instructions = 1;
+message DrawCommand {
+    enum Type {
+        // All the nodes currently visible on screen.
+        VISIBLE_NODES = 0;
+        HOVERED_NODES = 1;
+        SELECTED_NODES = 2;
+    }
+
+    repeated DrawInstruction draw_instructions = 1;
+    Type type = 2;
 }
-message SelectNodeResponse {
+message DrawResponse {
 }
 
 message InterceptTouchEventsCommand {
@@ -422,7 +437,7 @@ message Command {
         EnableBitmapScreenshotCommand enable_bitmap_screenshot_command = 6;
         EnableXrInspectionCommand enable_xr_inspection_command = 7;
         EnableOnDeviceRenderingCommand enable_on_device_rendering_command = 8;
-        SelectNodeCommand select_node_command = 9;
+        DrawCommand draw_command = 9;
         InterceptTouchEventsCommand intercept_touch_events_command = 10;
     }
 }
@@ -437,7 +452,7 @@ message Response {
         EnableBitmapScreenshotResponse enable_bitmap_screenshot_response = 6;
         EnableXrInspectionResponse enable_xr_inspection_response = 7;
         EnableOnDeviceRenderingResponse enable_on_device_rendering_response = 8;
-        SelectNodeResponse select_node_response = 9;
+        DrawResponse draw_response = 9;
         InterceptTouchEventsResponse intercept_touch_events_response = 10;
     }
 }
@@ -450,6 +465,6 @@ message Event {
         PropertiesEvent properties_event = 4;
         ProgressEvent progress_event = 5;
         FoldEvent fold_event = 6;
-        TouchEvent touch_event = 7;
+        UserInputEvent user_input_event = 7;
     }
 }

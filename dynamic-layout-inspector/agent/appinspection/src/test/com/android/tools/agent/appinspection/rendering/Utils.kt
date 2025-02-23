@@ -19,21 +19,43 @@ package com.android.tools.agent.appinspection.rendering
 import android.graphics.Rect
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 
-fun buildDrawInstructions(rootId: Long, bounds: Rect): LayoutInspectorViewProtocol.DrawInstruction {
-    return LayoutInspectorViewProtocol.DrawInstruction.newBuilder().apply {
-        this.rootId = rootId
-        this.bounds = LayoutInspectorViewProtocol.Rect.newBuilder().apply {
-            x = bounds.left
-            y = bounds.top
-            w = bounds.right - bounds.left
-            h = bounds.bottom - bounds.top
-        }.build()
-    }.build()
+fun buildDrawInstructionsProto(
+    rootId: Long,
+    bounds: List<Rect>
+): List<LayoutInspectorViewProtocol.DrawInstruction> {
+    return bounds.map {
+            val rect =
+                LayoutInspectorViewProtocol.Rect.newBuilder()
+                    .apply {
+                        x = it.left
+                        y = it.top
+                        w = it.right - it.left
+                        h = it.bottom - it.top
+                    }
+                    .build()
+
+            LayoutInspectorViewProtocol.DrawInstruction.newBuilder()
+                .apply {
+                    this.rootId = rootId
+                    this.bounds = rect
+                }
+                .build()
+        }
 }
 
-fun buildTouchEvent(x: Float, y: Float): LayoutInspectorViewProtocol.TouchEvent {
-    return LayoutInspectorViewProtocol.TouchEvent.newBuilder().apply {
-        this.x = x
-        this.y = y
-    }.build()
+fun buildUserInputEventProto(
+    rootId: Long,
+    x: Float,
+    y: Float,
+    type: LayoutInspectorViewProtocol.UserInputEvent.Type
+): LayoutInspectorViewProtocol.Event {
+    val userInputEvent =
+        LayoutInspectorViewProtocol.UserInputEvent.newBuilder()
+            .setType(type)
+            .setRootId(rootId)
+            .setX(x)
+            .setY(y)
+            .build()
+
+    return LayoutInspectorViewProtocol.Event.newBuilder().setUserInputEvent(userInputEvent).build()
 }

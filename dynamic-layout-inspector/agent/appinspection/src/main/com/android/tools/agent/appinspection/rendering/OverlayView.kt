@@ -18,6 +18,7 @@ package com.android.tools.agent.appinspection.rendering
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
@@ -35,6 +36,10 @@ import kotlinx.coroutines.launch
 
 @VisibleForTesting
 const val SELECTION_COLOR = 0xFF1886F7.toInt()
+@VisibleForTesting
+const val HOVER_COLOR = 0xFF6AA0D3.toInt()
+@VisibleForTesting
+const val BASE_COLOR = 0x80000000.toInt()
 
 /**
  * View responsible for drawing Layout Inspector overlay on-top the app's ui.
@@ -47,14 +52,33 @@ class OverlayView(
     private val scope: CoroutineScope,
     private val viewModel: OnDeviceRenderingViewModel
 ) : View(context) {
-    private val paint = Paint().apply {
+    private val selectedRectPaint = Paint().apply {
         color = SELECTION_COLOR
         style = Paint.Style.STROKE
-        strokeWidth = dpToPx(2f)
+        strokeWidth = dpToPx(4f)
+    }
+    private val hoveredRectPaint = Paint().apply {
+        color = HOVER_COLOR
+        style = Paint.Style.STROKE
+        strokeWidth = dpToPx(4f)
+    }
+    private val visibleRectPaint = Paint().apply {
+        color = BASE_COLOR
+        style = Paint.Style.STROKE
+        strokeWidth = dpToPx(1f)
     }
 
-    /** Rendering instruction for the selected rectangle. */
-    private var selectedRect: Rect? = null
+    /** Rendering instruction for the selected rectangles. */
+    private var selectedRectangles: List<Rect> = emptyList()
+
+    /** Rendering instruction for the hovered rectangles. */
+    private var hoveredRectangle: List<Rect> = emptyList()
+
+    /**
+     * Rendering instruction for the visible rectangles,
+     * which include selected and hovered rectangles.
+     */
+    private var visibleRectangles: List<Rect> = emptyList()
 
     /** Set to true when the view should prevent other views from receiving touch events. */
     private var interceptTouchEvents = false
@@ -62,16 +86,30 @@ class OverlayView(
     private var viewScope: CoroutineScope? = null
 
     override fun onAttachedToWindow() {
-        Log.w(SPAM_LOG_TAG, "OverlayView onAttachedToWindow")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onAttachedToWindow")
         super.onAttachedToWindow()
 
         viewScope = CoroutineScope(scope.coroutineContext + SupervisorJob()).apply {
             launch {
-                viewModel.selectedNode.collect { drawInstructions ->
-                    selectedRect = drawInstructions
-                        ?.takeIf { it.rootId == rootId }
-                        ?.bounds
-                    Log.w(SPAM_LOG_TAG, "OverlayView selectedRectChanged: $selectedRect")
+                viewModel.selectedNodes.collect { drawInstructions ->
+                    selectedRectangles = drawInstructions.mapToRectangles(rootId)
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId selectedRectangles changed: $selectedRectangles")
+                    postInvalidate()
+                }
+            }
+
+            launch {
+                viewModel.hoveredNodes.collect { drawInstructions ->
+                    hoveredRectangle = drawInstructions.mapToRectangles(rootId)
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId hoveredRectangle changed: $hoveredRectangle")
+                    postInvalidate()
+                }
+            }
+
+            launch {
+                viewModel.visibleNodes.collect { drawInstructions ->
+                    visibleRectangles = drawInstructions.mapToRectangles(rootId)
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId visibleRectangles changed: $visibleRectangles")
                     postInvalidate()
                 }
             }
@@ -85,7 +123,7 @@ class OverlayView(
     }
 
     override fun onDetachedFromWindow() {
-        Log.w(SPAM_LOG_TAG, "OverlayView onDetachedFromWindow")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onDetachedFromWindow")
         super.onDetachedFromWindow()
         viewScope?.cancel()
         viewScope = null
@@ -93,14 +131,24 @@ class OverlayView(
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val point = PointF(ev.x, ev.y)
-        Log.w(SPAM_LOG_TAG, "touch event: $point, OverlayView: $uniqueDrawingId")
-        viewModel.onTouchEvent(point)
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId touch event: $point")
+        viewModel.onTouchEvent(rootId, point)
         return interceptTouchEvents || super.onTouchEvent(ev)
+    }
+
+    override fun onHoverEvent(ev: MotionEvent): Boolean {
+        val point = PointF(ev.x, ev.y)
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId hover event: $point")
+        viewModel.onHoverEvent(rootId, point)
+        return interceptTouchEvents || super.onHoverEvent(ev)
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        selectedRect?.let { canvas.drawRect(it, paint) }
+        // The rendering order matters.
+        visibleRectangles.forEach { canvas.drawRect(it, visibleRectPaint) }
+        hoveredRectangle.forEach { canvas.drawRect(it, hoveredRectPaint) }
+        selectedRectangles.forEach { canvas.drawRect(it, selectedRectPaint) }
     }
 
     private fun dpToPx(dp: Float): Float {
@@ -110,4 +158,9 @@ class OverlayView(
             resources.displayMetrics
         )
     }
+}
+
+/** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
+private fun List<OverlayViewInstruction>.mapToRectangles(ownerRootId: Long): List<Rect> {
+    return filter { it.rootId == ownerRootId }.map { it.bounds }
 }

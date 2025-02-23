@@ -168,8 +168,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 command.enableXrInspectionCommand,
                 callback
             )
-            Command.SpecializedCase.SELECT_NODE_COMMAND -> handleSelectNodeCommand(
-                command.selectNodeCommand,
+            Command.SpecializedCase.DRAW_COMMAND -> handleDrawCommand(
+                command.drawCommand,
                 callback
             )
             Command.SpecializedCase.ENABLE_ON_DEVICE_RENDERING_COMMAND -> handleEnableOnDeviceRendering(
@@ -194,6 +194,29 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             foldSupport?.shutdown()
             SynchronousPixelCopy.stopHandler()
             scope.cancel("ViewLayoutInspector has been disposed")
+        }
+    }
+
+    private fun handleDrawCommand(
+        drawCommand: LayoutInspectorViewProtocol.DrawCommand,
+        callback: CommandCallback
+    ) {
+        val type = drawCommand.type
+        when (type) {
+            LayoutInspectorViewProtocol.DrawCommand.Type.SELECTED_NODES -> {
+                onDeviceRenderingViewModel.setSelectedNodes(drawCommand.drawInstructionsList)
+            }
+            LayoutInspectorViewProtocol.DrawCommand.Type.HOVERED_NODES -> {
+                onDeviceRenderingViewModel.setHoveredNodes(drawCommand.drawInstructionsList)
+            }
+            LayoutInspectorViewProtocol.DrawCommand.Type.VISIBLE_NODES -> {
+                onDeviceRenderingViewModel.setVisibleNodes(drawCommand.drawInstructionsList)
+            }
+            else -> throw IllegalArgumentException("Unknown draw command type: $type")
+        }
+
+        callback.reply {
+            drawResponse = LayoutInspectorViewProtocol.DrawResponse.newBuilder().build()
         }
     }
 
@@ -585,18 +608,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                     rootView.view.invalidate()
                 }
             }
-        }
-    }
-
-    private fun handleSelectNodeCommand(
-        command: LayoutInspectorViewProtocol.SelectNodeCommand,
-        callback: CommandCallback
-    ) {
-        val drawInstructions = command.takeIf { it.hasDrawInstructions() }?.drawInstructions
-        onDeviceRenderingViewModel.setSelectedNode(drawInstructions)
-
-        callback.reply {
-            selectNodeResponse = LayoutInspectorViewProtocol.SelectNodeResponse.newBuilder().build()
         }
     }
 
