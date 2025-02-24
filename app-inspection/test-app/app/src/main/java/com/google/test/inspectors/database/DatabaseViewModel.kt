@@ -17,6 +17,7 @@
 package com.google.test.inspectors.database
 
 import android.app.Application
+import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
@@ -33,9 +34,11 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.google.test.inspectors.Logger
 import com.google.test.inspectors.SqlDelightDatabase
 import com.google.test.inspectors.database.room.RoomDatabase
+import com.google.test.inspectors.database.room.RoomUserEntity
 import com.google.test.inspectors.ui.scafold.AppScaffoldViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
@@ -51,7 +54,7 @@ private const val NATIVE_DATABASE_VERSION = 1
 private const val NATIVE_DATABASE_CREATE =
   """
   CREATE TABLE Users (
-    _id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT
   )
   """
@@ -76,6 +79,7 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
 
   private val sqldelightDriver =
     AndroidSqliteDriver(SqlDelightDatabase.Schema, application, "sqldelight-database.db")
+  private val sqlDelightDatabase = SqlDelightDatabase.invoke(sqldelightDriver)
 
   private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
     setSnack("Error: ${throwable.message}")
@@ -126,6 +130,25 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
     scope.launch(IO) {
       readOnlyDatabaseFlow.value?.close()
       readOnlyDatabaseFlow.value = null
+    }
+  }
+
+  override fun addUserRoom() {
+    scope.launch(IO) { roomDatabase.userDao().insert(RoomUserEntity(name = randomUserName())) }
+  }
+
+  override fun addUserSqlDelight() {
+    scope.launch(IO) { sqlDelightDatabase.sqlDelightDatabaseQueries.insert(randomUserName()) }
+  }
+
+  override fun addUserNative() {
+    scope.launch(IO) {
+      readWriteDatabaseFlow.value = readWriteDatabaseOpenHelper.writableDatabase
+      readWriteDatabaseFlow.value?.insert(
+        "Users",
+        null,
+        ContentValues().apply { put("name", randomUserName()) },
+      )
     }
   }
 
@@ -207,3 +230,5 @@ private fun AndroidSqliteDriver.getTables() =
       0,
     )
     .value
+
+private fun randomUserName() = "User ${Random.nextInt(0, 100)}"

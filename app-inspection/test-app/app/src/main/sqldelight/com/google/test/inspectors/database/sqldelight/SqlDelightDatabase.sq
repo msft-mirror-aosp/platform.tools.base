@@ -10,3 +10,7 @@ CREATE TABLE users (
 );
 
 INSERT INTO users (name) VALUES ('Foo');
+
+insert:
+INSERT INTO users(name) VALUES (?);
+

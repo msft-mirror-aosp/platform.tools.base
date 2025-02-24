@@ -20,4 +20,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "users")
-internal data class RoomUserEntity(@PrimaryKey(autoGenerate = true) val id: Int, val name: String)
+internal data class RoomUserEntity(
+  @PrimaryKey(autoGenerate = true) val id: Int = 0,
+  val name: String,
+)

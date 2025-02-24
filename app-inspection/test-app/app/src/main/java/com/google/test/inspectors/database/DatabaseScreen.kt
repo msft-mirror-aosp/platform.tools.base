@@ -62,6 +62,9 @@ private fun DatabaseScreen(
         false -> button("Open read-only DB") { actions.doOpenReadOnlyDatabase() }
       }
     }
+    button("Add Room User") { actions.addUserRoom() }
+    button("Add SqlDelight User") { actions.addUserSqlDelight() }
+    button("Add Native User") { actions.addUserNative() }
   }
 }
 

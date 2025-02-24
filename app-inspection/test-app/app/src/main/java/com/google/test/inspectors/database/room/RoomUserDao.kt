@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.test.inspectors.database
+package com.google.test.inspectors.database.room
 
-import androidx.annotation.RequiresApi
+import androidx.room.Dao
+import androidx.room.Insert
 
-internal interface DatabaseActions {
-
-  fun doOpenReadWriteDatabase() {}
-
-  fun doCloseReadWriteDatabase() {}
-
-  @RequiresApi(28) fun doOpenReadOnlyDatabase() {}
-
-  fun doCloseReadOnlyDatabase() {}
-
-  fun addUserRoom() {}
-
-  fun addUserSqlDelight() {}
-
-  fun addUserNative() {}
+@Dao
+internal interface RoomUserDao {
+  @Insert fun insert(user: RoomUserEntity)
 }
