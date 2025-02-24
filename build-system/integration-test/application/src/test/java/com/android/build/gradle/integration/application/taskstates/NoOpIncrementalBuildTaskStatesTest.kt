@@ -63,6 +63,7 @@ class NoOpIncrementalBuildTaskStatesTest {
                 ":app:mapDebugSourceSetPaths",
                 ":app:mergeDebugAssets",
                 ":app:mergeDebugJavaResource",
+                ":app:mergeDebugUnitTestJavaResource",
                 ":app:mergeDebugJniLibFolders",
                 ":app:mergeDebugResources",
                 ":app:mergeDebugShaders",
