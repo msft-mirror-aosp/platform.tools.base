@@ -17,6 +17,7 @@
 package com.google.test.inspectors.settings.db
 
 import android.content.Context
+import androidx.room.ExperimentalRoomApi
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -30,6 +31,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 internal object SettingsDatabaseModule {
 
+  @OptIn(ExperimentalRoomApi::class)
   @Singleton
   @Provides
   fun provideDataBase(@ApplicationContext context: Context): SettingsDatabase {
