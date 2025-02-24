@@ -30,7 +30,11 @@ internal interface DatabaseActions {
 
   fun addUserRoom() {}
 
+  fun addUserRoomBundled() {}
+
   fun addUserSqlDelight() {}
 
   fun addUserNative() {}
+
+  fun addUserBundled() {}
 }

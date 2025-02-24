@@ -57,6 +57,7 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.sqlite)
+  implementation(libs.androidx.sqlite.bundled)
   implementation(libs.androidx.work)
   implementation(libs.core.ktx)
   implementation(libs.grpc.android)

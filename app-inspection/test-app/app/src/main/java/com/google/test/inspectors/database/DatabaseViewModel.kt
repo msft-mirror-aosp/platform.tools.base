@@ -27,7 +27,10 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.viewModelScope
 import androidx.room.InvalidationTracker
 import androidx.room.Room
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
@@ -53,11 +56,14 @@ private const val NATIVE_DATABASE_VERSION = 1
 // language=SQLite
 private const val NATIVE_DATABASE_CREATE =
   """
-  CREATE TABLE Users (
+  CREATE TABLE IF NOT EXISTS Users (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     name TEXT
   )
   """
+
+// language=SQLite
+private const val INSERT_USER = "INSERT INTO Users(name) VALUES (?)"
 
 private val SYSTEM_TABLES =
   listOf("sqlite_sequence", "room_master_table", "android_metadata").joinToString { "'$it'" }
@@ -77,6 +83,11 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
   private val roomDatabase =
     Room.databaseBuilder(application, RoomDatabase::class.java, "room-database.db").build()
 
+  private val roomBundledDatabase =
+    Room.databaseBuilder(application, RoomDatabase::class.java, "room-bundled-database.db")
+      .setDriver(BundledSQLiteDriver())
+      .build()
+
   private val sqldelightDriver =
     AndroidSqliteDriver(SqlDelightDatabase.Schema, application, "sqldelight-database.db")
   private val sqlDelightDatabase = SqlDelightDatabase.invoke(sqldelightDriver)
@@ -93,14 +104,22 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
   @RequiresApi(28) private val readOnlyDatabaseOpenHelper = ReadOnlyDatabaseOpenHelper(application)
   private val readOnlyDatabaseFlow: MutableStateFlow<SQLiteDatabase?> = MutableStateFlow(null)
 
+  private lateinit var bundledDatabase: SQLiteConnection
+
   init {
     scope.launch(IO) {
       val roomTables = roomDatabase.openHelper.readableDatabase.use { it.getTables() }
-      roomDatabase.invalidationTracker.addObserver(RoomObserver(roomTables))
+      roomDatabase.invalidationTracker.addObserver(RoomObserver("Android", roomTables))
+      roomBundledDatabase.invalidationTracker.addObserver(RoomObserver("Bundled", roomTables))
 
       sqldelightDriver.getTables().forEach {
         sqldelightDriver.addListener(it, listener = SqlDelightListener(it))
       }
+
+      bundledDatabase =
+        BundledSQLiteDriver().open(application.getDatabasePath("bundled-database.db").path).apply {
+          execSQL(NATIVE_DATABASE_CREATE)
+        }
     }
   }
 
@@ -137,6 +156,12 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
     scope.launch(IO) { roomDatabase.userDao().insert(RoomUserEntity(name = randomUserName())) }
   }
 
+  override fun addUserRoomBundled() {
+    scope.launch(IO) {
+      roomBundledDatabase.userDao().insert(RoomUserEntity(name = randomUserName()))
+    }
+  }
+
   override fun addUserSqlDelight() {
     scope.launch(IO) { sqlDelightDatabase.sqlDelightDatabaseQueries.insert(randomUserName()) }
   }
@@ -149,6 +174,15 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
         null,
         ContentValues().apply { put("name", randomUserName()) },
       )
+    }
+  }
+
+  override fun addUserBundled() {
+    scope.launch(IO) {
+      bundledDatabase.prepare(INSERT_USER).use {
+        it.bindText(1, randomUserName())
+        it.step()
+      }
     }
   }
 
@@ -188,11 +222,11 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
   }
 
-  private inner class RoomObserver(tables: List<String>) :
+  private inner class RoomObserver(private val driver: String, tables: List<String>) :
     InvalidationTracker.Observer(tables.toTypedArray()) {
 
     override fun onInvalidated(tables: Set<String>) {
-      setSnack("Room tables [${tables.joinToString { it }}]  updated")
+      setSnack("Room ($driver) tables [${tables.joinToString { it }}]  updated")
     }
   }
 
