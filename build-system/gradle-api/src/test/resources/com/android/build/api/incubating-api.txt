@@ -651,11 +651,6 @@ https://issuetracker.google.com/361880963
 https://issuetracker.google.com/362870092
   * com.android.build.api.variant.GeneratesApk.getMinSdk: com.android.build.api.variant.AndroidVersion ()
 https://issuetracker.google.com/362941219
-  * com.android.build.api.variant.ApkInstallGroup
-  * com.android.build.api.variant.ApkInstallGroup.getApks: java.util.List<org.gradle.api.file.RegularFile> ()
-  * com.android.build.api.variant.ApkInstallGroup.getDescription: java.lang.String ()
-  * com.android.build.api.variant.ApkOutput
-  * com.android.build.api.variant.ApkOutput.getApkInstallGroups: java.util.List<com.android.build.api.variant.ApkInstallGroup> ()
   * com.android.build.api.variant.ApkOutputProviders
   * com.android.build.api.variant.ApkOutputProviders.provideApkOutputToTask: void (org.gradle.api.tasks.TaskProvider<TaskT>, kotlin.jvm.functions.Function1<? super TaskT, ? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>>, com.android.build.api.variant.DeviceSpec)
   * com.android.build.api.variant.DeviceSpec

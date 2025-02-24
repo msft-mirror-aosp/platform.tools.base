@@ -2619,16 +2619,16 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> classNames;
   }
 
-  @org.gradle.api.Incubating public interface ApkInstallGroup {
-    method @org.gradle.api.Incubating public java.util.List<org.gradle.api.file.RegularFile> getApks();
-    method @org.gradle.api.Incubating public String getDescription();
-    property @org.gradle.api.Incubating public abstract java.util.List<org.gradle.api.file.RegularFile> apks;
-    property @org.gradle.api.Incubating public abstract String description;
+  public interface ApkInstallGroup {
+    method public java.util.List<org.gradle.api.file.RegularFile> getApks();
+    method public String getDescription();
+    property public abstract java.util.List<org.gradle.api.file.RegularFile> apks;
+    property public abstract String description;
   }
 
-  @org.gradle.api.Incubating public interface ApkOutput {
-    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.variant.ApkInstallGroup> getApkInstallGroups();
-    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.variant.ApkInstallGroup> apkInstallGroups;
+  public interface ApkOutput {
+    method public java.util.List<com.android.build.api.variant.ApkInstallGroup> getApkInstallGroups();
+    property public abstract java.util.List<com.android.build.api.variant.ApkInstallGroup> apkInstallGroups;
   }
 
   @org.gradle.api.Incubating public interface ApkOutputProviders {
