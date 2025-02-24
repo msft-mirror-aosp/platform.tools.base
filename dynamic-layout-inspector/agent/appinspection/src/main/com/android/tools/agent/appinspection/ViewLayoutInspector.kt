@@ -212,6 +212,9 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             LayoutInspectorViewProtocol.DrawCommand.Type.VISIBLE_NODES -> {
                 onDeviceRenderingViewModel.setVisibleNodes(drawCommand.drawInstructionsList)
             }
+            LayoutInspectorViewProtocol.DrawCommand.Type.RECOMPOSING_NODES -> {
+                onDeviceRenderingViewModel.setRecomposingNodes(drawCommand.drawInstructionsList)
+            }
             else -> throw IllegalArgumentException("Unknown draw command type: $type")
         }
 

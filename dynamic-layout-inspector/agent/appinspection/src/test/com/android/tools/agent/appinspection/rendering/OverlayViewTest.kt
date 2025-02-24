@@ -98,6 +98,29 @@ class OverlayViewTest {
     }
 
     @Test
+    fun testDrawsRecomposingRect() = runTest {
+        val connection = object : Connection() { }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
+        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        overlayView.onAttachedToWindow()
+        testScheduler.advanceUntilIdle()
+
+        overlayView.fakeCanvas.drawLogs.clear()
+
+        val drawInstruction = buildDrawInstructionsProto(rootId = 1L, bounds = listOf(Rect(0, 0, 2, 2)))
+        viewModel.setRecomposingNodes(drawInstruction)
+        testScheduler.advanceUntilIdle()
+
+        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView.fakeCanvas.drawLogs.first().paint.color).isEqualTo(RECOMPOSITION_COLOR)
+    }
+
+    @Test
     fun testDoesNotDrawSelectedRectBelongingToOtherOverlayView() = runTest {
         val connection = object : Connection() { }
 
@@ -208,7 +231,7 @@ class OverlayViewTest {
         viewModel.setSelectedNodes(drawInstruction1)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(3)
+        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(4)
 
         overlayView.fakeCanvas.drawLogs.clear()
         overlayView.onDetachedFromWindow()

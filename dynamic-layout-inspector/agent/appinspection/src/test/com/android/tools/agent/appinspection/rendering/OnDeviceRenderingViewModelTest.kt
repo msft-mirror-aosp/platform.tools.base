@@ -243,6 +243,34 @@ class OnDeviceRenderingViewModelTest {
     }
 
     @Test
+    fun testSetRecomposingNodes() = runTest {
+        val connection = object : Connection() { }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val instructions = mutableListOf<List<OverlayViewInstruction>>()
+        val job = launch {
+            onDeviceRenderingViewModel.recomposingNodes.collect {
+                instructions.add(it)
+            }
+        }
+
+        val drawInstruction = buildDrawInstructionsProto(rootId = 1L, bounds = listOf(Rect(0, 0, 2, 2)))
+        onDeviceRenderingViewModel.setRecomposingNodes(drawInstruction)
+        testScheduler.advanceUntilIdle()
+
+        onDeviceRenderingViewModel.setRecomposingNodes(emptyList())
+        testScheduler.advanceUntilIdle()
+
+        job.cancelAndJoin()
+
+        assertThat(instructions).hasSize(2)
+        assertThat(instructions[0]).isEqualTo(listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2))))
+        assertThat(instructions[1]).isEmpty()
+    }
+
+    @Test
     fun testOnTouchEvent() = runTest {
         val expectedEvent = buildUserInputEventProto(
             rootId = 1L, x = 1f, y = 1f, LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION

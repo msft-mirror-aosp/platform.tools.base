@@ -40,6 +40,9 @@ const val SELECTION_COLOR = 0xFF1886F7.toInt()
 const val HOVER_COLOR = 0xFF6AA0D3.toInt()
 @VisibleForTesting
 const val BASE_COLOR = 0x80000000.toInt()
+@VisibleForTesting
+// TODO(next CL): receive color from studio
+val RECOMPOSITION_COLOR = 0x20FFA9A9.toInt()
 
 /**
  * View responsible for drawing Layout Inspector overlay on-top the app's ui.
@@ -67,6 +70,10 @@ class OverlayView(
         style = Paint.Style.STROKE
         strokeWidth = dpToPx(1f)
     }
+    private val recomposingRectPaint = Paint().apply {
+        color = RECOMPOSITION_COLOR
+        style = Paint.Style.FILL
+    }
 
     /** Rendering instruction for the selected rectangles. */
     private var selectedRectangles: List<Rect> = emptyList()
@@ -79,6 +86,9 @@ class OverlayView(
      * which include selected and hovered rectangles.
      */
     private var visibleRectangles: List<Rect> = emptyList()
+
+    /** Rendering instructions for the recomposition highlights. */
+    private var recomposingRectangles: List<Rect> = emptyList()
 
     /** Set to true when the view should prevent other views from receiving touch events. */
     private var interceptTouchEvents = false
@@ -115,6 +125,14 @@ class OverlayView(
             }
 
             launch {
+                viewModel.recomposingNodes.collect { drawInstructions ->
+                    recomposingRectangles = drawInstructions.mapToRectangles(rootId)
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId recomposingRectangles changed: $recomposingRectangles")
+                    postInvalidate()
+                }
+            }
+
+            launch {
                 viewModel.interceptTouchEvents.collect { intercept ->
                     interceptTouchEvents = intercept
                 }
@@ -146,6 +164,7 @@ class OverlayView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // The rendering order matters.
+        recomposingRectangles.forEach { canvas.drawRect(it, recomposingRectPaint) }
         visibleRectangles.forEach { canvas.drawRect(it, visibleRectPaint) }
         hoveredRectangle.forEach { canvas.drawRect(it, hoveredRectPaint) }
         selectedRectangles.forEach { canvas.drawRect(it, selectedRectPaint) }

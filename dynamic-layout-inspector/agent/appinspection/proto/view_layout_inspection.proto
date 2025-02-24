@@ -350,6 +350,7 @@ message DrawCommand {
         VISIBLE_NODES = 0;
         HOVERED_NODES = 1;
         SELECTED_NODES = 2;
+        RECOMPOSING_NODES = 3;
     }
 
     repeated DrawInstruction draw_instructions = 1;

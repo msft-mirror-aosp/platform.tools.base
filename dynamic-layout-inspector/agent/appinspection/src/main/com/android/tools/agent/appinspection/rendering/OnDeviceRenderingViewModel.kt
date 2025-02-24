@@ -64,6 +64,9 @@ class OnDeviceRenderingViewModel(
     private val _visibleNodes = MutableStateFlow<List<OverlayViewInstruction>>(emptyList())
     val visibleNodes = _visibleNodes.asStateFlow()
 
+    private val _recomposingNodes = MutableStateFlow<List<OverlayViewInstruction>>(emptyList())
+    val recomposingNodes = _recomposingNodes.asStateFlow()
+
     private val _interceptTouchEvents = MutableStateFlow<Boolean>(false)
     var interceptTouchEvents = _interceptTouchEvents.asStateFlow()
 
@@ -98,6 +101,10 @@ class OnDeviceRenderingViewModel(
 
     fun setVisibleNodes(instructions: List<DrawInstruction>) {
         _visibleNodes.value = instructions.map { it.toOverlayViewInstruction() }
+    }
+
+    fun setRecomposingNodes(instructions: List<DrawInstruction>) {
+        _recomposingNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setInterceptTouchEvents(intercept: Boolean) {
