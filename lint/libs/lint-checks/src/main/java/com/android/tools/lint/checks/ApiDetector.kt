@@ -1003,7 +1003,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
   }
 
   override fun createUastHandler(context: JavaContext): UElementHandler? {
-    if (apiDatabase == null || context.isTestSource && !context.driver.checkTestSources) {
+    if (apiDatabase == null) {
       if (invalidDatabaseFormatError != null) {
         // Attach the error to the first important source element (skipping comments and imports
         // etc)
