@@ -265,6 +265,7 @@ message UserInputEvent {
     enum Type {
         SELECTION = 0;
         HOVER = 1;
+        RIGHT_CLICK = 2;
     }
 
     int64 root_id = 1;

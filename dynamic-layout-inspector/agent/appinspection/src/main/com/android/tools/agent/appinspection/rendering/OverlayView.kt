@@ -149,8 +149,16 @@ class OverlayView(
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val point = PointF(ev.x, ev.y)
-        Log.w(SPAM_LOG_TAG, "OverlayView $rootId touch event: $point")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point")
+
+        if (ev.action == MotionEvent.ACTION_DOWN && ev.buttonState == MotionEvent.BUTTON_SECONDARY) {
+            viewModel.onRightClick(rootId, point)
+            Log.w(SPAM_LOG_TAG, "OverlayView $rootId right click")
+        }
+
+        // Always select the view.
         viewModel.onTouchEvent(rootId, point)
+
         return interceptTouchEvents || super.onTouchEvent(ev)
     }
 

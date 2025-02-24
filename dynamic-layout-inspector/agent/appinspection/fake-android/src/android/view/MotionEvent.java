@@ -20,19 +20,41 @@ import androidx.annotation.VisibleForTesting;
 
 public class MotionEvent {
 
+    public static final int ACTION_DOWN = 0;
+    public static final int BUTTON_SECONDARY = 1;
+
+
     @VisibleForTesting
     final float x;
+    @VisibleForTesting
     final float y;
+    @VisibleForTesting
+    final int action;
+    @VisibleForTesting
+    final int buttonState;
+
 
     @VisibleForTesting
     public MotionEvent() {
         this.x = -1f;
         this.y = -1f;
+        this.action = -1;
+        this.buttonState = -1;
+    }
+
+    @VisibleForTesting
+    public MotionEvent(float x, float y, int action, int buttonState) {
+        this.x = x;
+        this.y = y;
+        this.action = action;
+        this.buttonState = buttonState;
     }
 
     public MotionEvent(float x, float y) {
         this.x = x;
         this.y = y;
+        this.action = -1;
+        this.buttonState = -1;
     }
 
     public float getX() {
@@ -41,5 +63,13 @@ public class MotionEvent {
 
     public float getY() {
         return y;
+    }
+
+    public final int getButtonState() {
+        return buttonState;
+    }
+
+    public final int getAction() {
+        return action;
     }
 }

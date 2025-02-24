@@ -317,6 +317,29 @@ class OnDeviceRenderingViewModelTest {
     }
 
     @Test
+    fun testOnRightClickEvent() = runTest {
+        val expectedEvent = buildUserInputEventProto(
+            rootId = 1L, x = 1f, y = 1f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.RIGHT_CLICK
+        ).toByteArray()
+
+        val receivedEvents = mutableListOf<ByteArray>()
+        val connection = object : Connection() {
+            override fun sendEvent(data: ByteArray) {
+                receivedEvents.add(data)
+            }
+        }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+        onDeviceRenderingViewModel.setInterceptTouchEvents(true)
+
+        onDeviceRenderingViewModel.onRightClick(rootId = 1L, point = PointF(1f, 1f))
+
+        assertThat(receivedEvents).hasSize(1)
+        assertThat(receivedEvents.first()).isEqualTo(expectedEvent)
+    }
+
+    @Test
     fun testOnTouchEventNotDispatchedWhenDisabled() = runTest {
         val receivedEvents = mutableListOf<ByteArray>()
         val connection = object : Connection() {
