@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.SdkConstants
+import com.android.SdkConstants.PLATFORM_WINDOWS
+import com.android.SdkConstants.currentPlatform
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
 import com.android.build.gradle.internal.fixtures.FakeFileChange
@@ -146,6 +148,8 @@ class JacocoTransformTest {
         TestInputsGenerator.pathWithClasses(
             inputDir.toPath(), testClasses + NewClass::class.java
         )
+        val someOtherClassPath = getClassFilepath(SomeOtherClass::class)
+        val someOtherClassClass = File(inputDir, someOtherClassPath)
         val newClass = File(inputDir, getClassFilepath(NewClass::class))
         val newClassInstrumented = FileUtils.join(
             outputDir,
@@ -160,7 +164,23 @@ class JacocoTransformTest {
                     ChangeType.ADDED,
                     FileType.FILE,
                     newClass.toRelativeString(inputDir)
-                )
+                ),
+                // When using @Classpath with @Incremental, Gradle reports adjacent files in the
+                // normalized path as both REMOVED and ADDED, despite no change when a file
+                // is ADDED or REMOVED.
+                // See https://github.com/gradle/gradle/issues/32244
+                FakeFileChange(
+                    someOtherClassClass,
+                    ChangeType.REMOVED,
+                    FileType.FILE,
+                    someOtherClassClass.toRelativeString(inputDir)
+                ),
+                FakeFileChange(
+                    someOtherClassClass,
+                    ChangeType.ADDED,
+                    FileType.FILE,
+                    someOtherClassClass.toRelativeString(inputDir)
+                ),
             )
         )
         transformIncremental.transform(transformOutputs)
@@ -205,7 +225,10 @@ class JacocoTransformTest {
         FileUtils.writeToFile(metaInfA, "Transform 2")
         FileUtils.writeToFile(metaInfB, "Transform 2")
 
+        // Output deleted to verify that marking the catClass as MODIFIED will re-instrument the
+        // class.
         outputCatClass.delete()
+
         getTestTransform(
             inputDir,
             listOf(
@@ -243,6 +266,7 @@ class JacocoTransformTest {
         val catClass = File(inputDir, catPath)
         val outputCatClass = FileUtils.join(outputDir, "instrumented_classes", catPath)
         val someOtherClassPath = getClassFilepath(SomeOtherClass::class)
+        val someOtherClassClass = File(inputDir, someOtherClassPath)
         val someOtherClassOutput = FileUtils.join(
             outputDir, "instrumented_classes", someOtherClassPath)
         val someOtherClassOutputCreationTimestamp = someOtherClassOutput.lastModified()
@@ -255,14 +279,36 @@ class JacocoTransformTest {
                     ChangeType.REMOVED,
                     FileType.FILE,
                     catClass.toRelativeString(inputDir)
-                )
+                ),
+                // When using @Classpath with @Incremental, Gradle reports adjacent files in the
+                // normalized path as both ADDED and REMOVED, despite no change when a file
+                // is ADDED or REMOVED.
+                // See https://github.com/gradle/gradle/issues/32244
+                FakeFileChange(
+                    someOtherClassClass,
+                    ChangeType.ADDED,
+                    FileType.FILE,
+                    someOtherClassClass.toRelativeString(inputDir)
+                ),
+                FakeFileChange(
+                    someOtherClassClass,
+                    ChangeType.REMOVED,
+                    FileType.FILE,
+                    someOtherClassClass.toRelativeString(inputDir)
+                ),
             )
         )
 
+        // This is to avoid the flakiness of timestamp checks
+        TestUtils.waitForFileSystemTick()
         removedCatTransform.transform(transformOutputs)
 
+        // When we remove catClass, the ordering changes, leading Gradle to report ADDED and REMOVED,
+        // however as it is ambiguous whether the file has been modified or not we must
+        // instrument it again. File modifications ordered before the normalised catClass path would
+        // not need to re-instrumented if they had been modified.
         assertThat(someOtherClassOutputCreationTimestamp)
-            .isEqualTo(someOtherClassOutput.lastModified())
+            .isLessThan(someOtherClassOutput.lastModified())
         assertThat(outputCatClass.exists()).isFalse()
     }
 
