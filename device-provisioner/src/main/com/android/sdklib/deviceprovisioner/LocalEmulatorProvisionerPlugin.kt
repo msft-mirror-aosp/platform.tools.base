@@ -795,6 +795,7 @@ data class LocalEmulatorProperties(
   override val isVirtual: Boolean?,
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
+  override val isResizable: Boolean?,
   override val wearPairingId: String?,
   override val resolution: Resolution?,
   override val density: Int?,
@@ -864,6 +865,9 @@ data class LocalEmulatorProperties(
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
+      isResizable =
+        avdInfo.androidVersion.isAtLeast(AndroidVersion.MIN_RESIZABLE_DEVICE_API) &&
+          avdInfo.deviceName == "resizable"
       preferredAbi = avdInfo.userSettings[PREFERRED_ABI]
       avdConfigProperties.putAll(avdInfo.properties)
     }
@@ -881,6 +885,7 @@ data class LocalEmulatorProperties(
         isVirtual = isVirtual,
         isRemote = isRemote,
         isDebuggable = isDebuggable,
+        isResizable = isResizable,
         wearPairingId = wearPairingId,
         resolution = resolution,
         density = density,
