@@ -129,9 +129,10 @@ class AndroidVersionUtilsTest : TestCase() {
             includeCodeName = false,
         ))
 
-        assertEquals("API 36.0", AndroidVersion(36).getFullApiName())
-
+        assertEquals("API 36", AndroidVersion(36).getFullApiName())
         assertEquals("API 36.1", AndroidVersion(36, 1).getFullApiName())
+        assertEquals("API 37.0", AndroidVersion(37).getFullApiName())
+        assertEquals("API 37.1", AndroidVersion(37, 1).getFullApiName())
 
         assertEquals(
             "API 16 ext. 14 (\"Jelly Bean\"; Android 4.1)",

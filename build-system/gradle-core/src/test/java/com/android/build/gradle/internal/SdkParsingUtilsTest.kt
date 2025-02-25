@@ -526,7 +526,7 @@ class SdkParsingUtilsTest {
             """
             We recommend using a newer Android Gradle plugin to use compile SDK version 36.3
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.0.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.
 
             You are strongly encouraged to update your project to use a newer
             Android Gradle plugin that has been tested with compile SDK version 36.3.
@@ -549,33 +549,33 @@ class SdkParsingUtilsTest {
     fun `warn for minor version eligible API`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
-            version = AndroidVersion(37),
+            version = AndroidVersion(38),
             issueReporter = issueReporter,
-            maxVersion = AndroidVersion(36),
-            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
-            suppressWarningIfTooNewForVersions = "S , 31.2 , 37," // will not suppress; must be 37.0
+            maxVersion = AndroidVersion(37),
+            androidGradlePluginVersion = AgpVersion.parse("9.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = "S , 31.2 , 38," // will not suppress; must be 38.0
         )
         assertThat(issueReporter.messages).containsExactly(
             """
-            We recommend using a newer Android Gradle plugin to use compile SDK version 37.0
+            We recommend using a newer Android Gradle plugin to use compile SDK version 38.0
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.0.
+            This Android Gradle plugin (9.0.0-beta01) was tested up to compile SDK version 37.0.
 
             You are strongly encouraged to update your project to use a newer
-            Android Gradle plugin that has been tested with compile SDK version 37.0.
+            Android Gradle plugin that has been tested with compile SDK version 38.0.
 
             If you are already using the latest version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compile SDK version 37.0 is available.
+            you may need to wait until a newer version with support for compile SDK version 38.0 is available.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
 
             To suppress this warning, add/update
-                android.suppressUnsupportedCompileSdk=S,31.2,37,37.0
+                android.suppressUnsupportedCompileSdk=S,31.2,38,38.0
             to this project's gradle.properties.
             """.trimIndent()
         )
-        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S,31.2,37,37.0")
+        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S,31.2,38,38.0")
     }
 
     @Test

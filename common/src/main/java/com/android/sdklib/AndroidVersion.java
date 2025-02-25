@@ -17,6 +17,7 @@
 package com.android.sdklib;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsFirst;
@@ -129,7 +130,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     public static final Pattern PREVIEW_PATTERN = Pattern.compile("^[A-Z][0-9A-Za-z_]*$");
-    public static final Pattern API_LEVEL_PATTERN = Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
+    public static final Pattern API_LEVEL_PATTERN =
+            Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
 
     private static final long serialVersionUID = 1L;
 
@@ -194,7 +196,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     public static final int MIN_RECTANGULAR_WEAR_API = 28;
 
     /** First API level to have a minor version */
-    public static final int MIN_MINOR_VERSION_API = 36;
+    public static final int MIN_MINOR_VERSION_API = 37;
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
@@ -408,7 +410,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             return getApiStringWithoutExtension();
         }
 
-        return String.format(Locale.US, "%1$s-ext%2$d", getApiStringWithoutExtension(), mExtensionLevel);
+        return String.format(
+                Locale.US, "%1$s-ext%2$d", getApiStringWithoutExtension(), mExtensionLevel);
     }
 
     /**
