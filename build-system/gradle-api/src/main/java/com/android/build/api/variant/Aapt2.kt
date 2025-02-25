@@ -23,10 +23,38 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 
 /**
- * Provides structured access to AAPT tool.
+ * Provides structured access to AAPT2 tool.
  *
  * An instance of [Aapt2] can be obtained via [AndroidComponentsExtension.sdkComponents]
  *
+ * For example, this is the structure of a [org.gradle.api.Task] that runs aapt2:
+ *
+ * ```kotlin
+ *  abstract class MyTaskUsingAapt2: DefaultTask() {
+ *    @get:Nested
+ *    abstract val aapt2Input: Property<com.android.build.api.variant.Aapt2>
+ *
+ *    @get:Inject
+ *    abstract val execOperations: ExecOperations
+ *
+ *    @TaskAction
+ *    fun execute() {
+ *      val aapt2Executable = aapt2Input.get().executable.get().asFile
+ *
+ *      // execute aapt2 help
+ *      execOperations.exec { spec ->
+ *        spec.commandLine(aapt2Executable)
+ *        spec.args("-h")
+ *        spec.isIgnoreExitValue = true // -h returns exit value 1
+ *      }
+ *    }
+ *  }
+ *
+ *  tasks.register<MyTaskUsingAapt2>("myTaskUsingAapt2") {
+ *    // get an instance of Aapt2
+ *    this.aapt2Input.set(androidComponents.sdkComponents.aapt2)
+ *  }
+ *  ```
  */
 @Incubating
 interface Aapt2 {
