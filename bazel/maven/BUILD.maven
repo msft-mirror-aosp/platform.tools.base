@@ -32952,6 +32952,57 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.sqlite.sqlite-android_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite-android/2.5.0-beta01/sqlite-android-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-android/2.5.0-beta01",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.8.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.sqlite.sqlite-bundled-android_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite-bundled-android/2.5.0-beta01/sqlite-bundled-android-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-bundled-android/2.5.0-beta01",
+    deps = [
+        "androidx.sqlite.sqlite_2.5.0-beta01",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.sqlite.sqlite-bundled_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite-bundled/2.5.0-beta01/sqlite-bundled-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-bundled/2.5.0-beta01",
+    deps = [
+        "androidx.sqlite.sqlite_2.5.0-beta01",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "androidx.sqlite.sqlite-bundled-android_2.5.0-beta01",
+        "androidx.sqlite.sqlite-framework_2.5.0-beta01",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.sqlite.sqlite-framework-android_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite-framework-android/2.5.0-beta01/sqlite-framework-android-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-framework-android/2.5.0-beta01",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.8.1",
+        "androidx.sqlite.sqlite_2.5.0-beta01",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.sqlite.sqlite-framework_2.0.0",
     pom = "repository/androidx/sqlite/sqlite-framework/2.0.0/sqlite-framework-2.0.0.pom",
     repo_root_path = "repository",
@@ -33001,6 +33052,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.sqlite.sqlite-framework_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite-framework/2.5.0-beta01/sqlite-framework-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite-framework/2.5.0-beta01",
+    deps = [
+        "androidx.annotation.annotation_1.8.1",
+        "androidx.sqlite.sqlite_2.5.0-beta01",
+        "androidx.sqlite.sqlite-framework-android_2.5.0-beta01",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.sqlite.sqlite_2.0.0",
     pom = "repository/androidx/sqlite/sqlite/2.0.0/sqlite-2.0.0.pom",
     repo_root_path = "repository",
@@ -33041,6 +33106,19 @@ maven_artifact(
     deps = [
         "androidx.annotation.annotation_1.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.sqlite.sqlite_2.5.0-beta01",
+    pom = "repository/androidx/sqlite/sqlite/2.5.0-beta01/sqlite-2.5.0-beta01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/sqlite/sqlite/2.5.0-beta01",
+    deps = [
+        "androidx.annotation.annotation_1.8.1",
+        "androidx.sqlite.sqlite-android_2.5.0-beta01",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -74385,6 +74463,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.1.0-RC/kotlin-stdlib-2.1.0-RC.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.1.0-RC",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.1.10/kotlin-stdlib-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.1.10",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],

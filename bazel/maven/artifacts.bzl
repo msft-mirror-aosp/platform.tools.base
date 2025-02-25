@@ -501,6 +501,8 @@ DATA = [
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.savedstate:savedstate-ktx:1.2.1",
     "androidx.slice:slice-builders:1.0.0",
+    "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
     "androidx.startup:startup-runtime:1.1.1",
     "androidx.test:core:1.3.0",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test:core:1.4.0-alpha06",
@@ -1236,6 +1238,8 @@ DATA = [
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
+    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",
