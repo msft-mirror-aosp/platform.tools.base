@@ -29,12 +29,14 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_API_ANNOTATION
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiModifierListOwner
 import java.util.EnumSet
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UVariable
+import org.jetbrains.uast.getContainingUClass
 
 /** Makes sure that in tests, `@SdkSuppress` is used instead of `@RequiresApi`. */
 class SdkSuppressDetector : Detector(), SourceCodeScanner {
@@ -65,6 +67,10 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
         androidSpecific = true,
       )
+
+    private const val TEST_ANNOTATION = "org.junit.Test"
+
+    private const val TEST_CASE_CLASS = "junit.framework.TestCase"
   }
 
   override fun applicableAnnotations(): List<String> =
@@ -102,6 +108,22 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
       return
     }
 
+    // Only warn on methods annotated @Test, classes with @Test methods, TestCase classes, and test
+    // method of test case classes.
+    // Test helper code should use @RequiresApi.
+    if (
+      annotated is UMethod &&
+        !annotated.hasAnnotation(TEST_ANNOTATION) &&
+        !annotated.isTestCaseClassTestMethod()
+    )
+      return
+    if (
+      annotated is UClass &&
+        !annotated.isTestCaseClass() &&
+        annotated.methods.none { it.hasAnnotation(TEST_ANNOTATION) }
+    )
+      return
+
     val source = annotation.sourcePsi?.text
     val fix =
       if (source != null) {
@@ -135,5 +157,19 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
     message.append(" instead")
 
     context.report(ISSUE, element, context.getNameLocation(element), message.toString(), fix)
+  }
+
+  private fun UMethod.isTestCaseClassTestMethod(): Boolean {
+    return name.startsWith("test") && getContainingUClass()?.isTestCaseClass() == true
+  }
+
+  private fun UClass.isTestCaseClass(): Boolean {
+    return javaPsi.isInstanceOf(TEST_CASE_CLASS)
+  }
+
+  /** Checks if the class is [qualifiedName] or has [qualifiedName] as a super type. */
+  fun PsiClass.isInstanceOf(qualifiedName: String): Boolean {
+    // Recursion will stop when this hits Object, which has no [supers]
+    return qualifiedName == this.qualifiedName || supers.any { it.isInstanceOf(qualifiedName) }
   }
 }
