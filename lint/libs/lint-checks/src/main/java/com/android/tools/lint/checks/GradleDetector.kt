@@ -82,9 +82,7 @@ import com.android.utils.XmlUtils
 import com.android.utils.appendCapitalized
 import com.android.utils.iterator
 import com.android.utils.usLocaleCapitalize
-import com.google.common.base.Joiner
 import com.google.common.base.Splitter
-import com.google.common.collect.ArrayListMultimap
 import com.intellij.pom.java.LanguageLevel.JDK_1_7
 import com.intellij.pom.java.LanguageLevel.JDK_1_8
 import java.io.ByteArrayInputStream
@@ -125,13 +123,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
 
   private var artifactCacheHome: File? = null
-
-  /**
-   * If incrementally editing a single build.gradle file, tracks whether we've already transitively
-   * checked GMS versions such that we don't flag the same error on every single dependency
-   * declaration.
-   */
-  private var mCheckedGms: Boolean = false
 
   /**
    * If incrementally editing a single build.gradle file, tracks whether we've already transitively
@@ -1958,33 +1949,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return
     }
 
-    if (GMS_GROUP_ID == groupId || FIREBASE_GROUP_ID == groupId) {
-      if (!mCheckedGms) {
-        mCheckedGms = true
-        // Incremental analysis only? If so, tie the check to
-        // a specific GMS play dependency if only, such that it's highlighted
-        // in the editor
-        if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
-          // Incremental editing: try flagging them in this file!
-          checkConsistentPlayServices(context, cookie)
-        }
-      }
-    } else {
-      if (!mCheckedWearableLibs) {
-        mCheckedWearableLibs = true
-        // Incremental analysis only? If so, tie the check to
-        // a specific GMS play dependency if only, such that it's highlighted
-        // in the editor
-        if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
-          // Incremental editing: try flagging them in this file!
-          checkConsistentWearableLibraries(context, cookie, statementCookie)
-        }
+    if (!mCheckedWearableLibs) {
+      mCheckedWearableLibs = true
+      // Incremental analysis only? If so, tie the check to
+      // a specific GMS play dependency if only, such that it's highlighted
+      // in the editor
+      if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
+        // Incremental editing: try flagging them in this file!
+        checkConsistentWearableLibraries(context, cookie, statementCookie)
       }
     }
-  }
-
-  private fun checkConsistentPlayServices(context: Context, cookie: Any?) {
-    checkConsistentLibraries(context, cookie, GMS_GROUP_ID, FIREBASE_GROUP_ID)
   }
 
   private fun checkConsistentWearableLibraries(
@@ -2090,85 +2064,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     return project.buildVariant?.artifact?.dependencies?.getAll() ?: emptyList()
   }
 
-  private fun checkConsistentLibraries(
-    context: Context,
-    cookie: Any?,
-    groupId: String,
-    groupId2: String?,
-  ) {
-    // Make sure we're using a consistent version across all play services libraries
-    // (b/22709708)
-
-    val project = context.mainProject
-    val versionToCoordinate = ArrayListMultimap.create<String, LintModelMavenName>()
-    val allLibraries = getAllLibraries(project).filterIsInstance<LintModelExternalLibrary>()
-    for (library in allLibraries) {
-      val coordinates = library.resolvedCoordinates
-      if (
-        (coordinates.groupId == groupId || coordinates.groupId == groupId2) &&
-          // Historically the multidex library ended up in the support package but
-          // decided to do its own numbering (and isn't tied to the rest in terms
-          // of implementation dependencies)
-          !coordinates.artifactId.startsWith("multidex") &&
-          // Renderscript has stated in b/37630182 that they are built and
-          // distributed separate from the rest and do not have any version
-          // dependencies
-          !coordinates.artifactId.startsWith("renderscript") &&
-          // Similarly firebase job dispatcher doesn't follow normal firebase version
-          // numbering
-          !coordinates.artifactId.startsWith("firebase-jobdispatcher") &&
-          // The Android annotations library is decoupled from the rest and doesn't
-          // need to be matched to the other exact support library versions
-          coordinates.artifactId != "support-annotations"
-      ) {
-        versionToCoordinate.put(coordinates.version, coordinates)
-      }
-    }
-
-    val versions = versionToCoordinate.keySet()
-    if (versions.size > 1) {
-      val sortedVersions = ArrayList(versions)
-      sortedVersions.sortWith(Collections.reverseOrder())
-      val c1 = findFirst(versionToCoordinate.get(sortedVersions[0]))
-      val c2 = findFirst(versionToCoordinate.get(sortedVersions[1]))
-
-      // For GMS, the synced version requirement ends at version 14
-      if (groupId == GMS_GROUP_ID || groupId == FIREBASE_GROUP_ID) {
-        // c2 is the smallest of all the versions; if it is at least 14,
-        // they all are
-        val version = Version.parse(c2.version)
-        if (version.major?.let { it >= 14 } != false) {
-          return
-        }
-      }
-
-      // Not using toString because in the IDE, these are model proxies which display garbage output
-      val example1 = c1.groupId + ":" + c1.artifactId + ":" + c1.version
-      val example2 = c2.groupId + ":" + c2.artifactId + ":" + c2.version
-      val groupDesc = if (GMS_GROUP_ID == groupId) "gms/firebase" else groupId
-      val message =
-        "All " +
-          groupDesc +
-          " libraries must use the exact same " +
-          "version specification (mixing versions can lead to runtime crashes). " +
-          "Found versions " +
-          Joiner.on(", ").join(sortedVersions) +
-          ". " +
-          "Examples include `" +
-          example1 +
-          "` and `" +
-          example2 +
-          "`"
-
-      if (cookie != null) {
-        reportNonFatalCompatibilityIssue(context, cookie, message)
-      } else {
-        val location = getDependencyLocation(context, c1, c2)
-        reportNonFatalCompatibilityIssue(context, location, message)
-      }
-    }
-  }
-
   override fun beforeCheckRootProject(context: Context) {
     val project = context.project
     blockedDependencies[project] = BlockedDependencies(project)
@@ -2188,7 +2083,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun checkLibraryConsistency(context: Context) {
-    checkConsistentPlayServices(context, null)
     checkConsistentWearableLibraries(context, null, null)
   }
 
