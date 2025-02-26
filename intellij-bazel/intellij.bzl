@@ -154,10 +154,7 @@ def intellij_plugin(name, plugin_id, platforms, **kwargs):
     _intellij_plugin(
         name = name,
         plugin = ":%s.platform" % plugin_id,
-        platforms = select({
-            "@platforms//os:windows": ["studio-sdk"],
-            "//conditions:default": platforms,
-        }),
+        platforms = platforms,
         visibility = ["@bazel_tools//tools/whitelists/function_transition_whitelist"] + kwargs.get("visibility", []),
     )
 
@@ -212,10 +209,7 @@ def _intellij_plugin_test(
         **kwargs):
     _transitioned_java(
         name = name + "_module",
-        platform = select({
-            "@platforms//os:windows": "studio-sdk",
-            "//conditions:default": platform,
-        }),
+        platform = platform,
         testonly = 1,
         target = module + "_testlib",
     )
@@ -233,14 +227,8 @@ def intellij_plugin_test(name, module, plugin, platforms, data = [], visibility 
         targets.append(":" + test_name)
         _plugin_data(
             name = test_name + "_data",
-            platform = select({
-                "@platforms//os:windows": "studio-sdk",
-                "//conditions:default": platform,
-            }),
-            platforms = select({
-                "@platforms//os:windows": ["studio-sdk"],
-                "//conditions:default": platforms,
-            }),
+            platform = platform,
+            platforms = platforms,
             plugin = plugin,
         )
         _intellij_plugin_test(
@@ -297,6 +285,9 @@ def setup_intellij_platforms(specs):
             visibility = ["//visibility:public"],
         )
 
+def _is_windows(ctx):
+    return ctx.os.name.lower().startswith("windows")
+
 def _intellij_remote_platform_impl(ctx):
     if not ctx.attr.sha256:
         fail("Downloading without a fixed sha256 is not supported.")
@@ -315,7 +306,9 @@ def _intellij_remote_platform_impl(ctx):
     content += "    spec = SPEC,\n"
     content += ")\n"
     ctx.file("BUILD.bazel", content)
-    exec_result = ctx.execute([ctx.path(ctx.attr.cmd)], quiet = False)
+    # On windows we can't rely on the shebang for python
+    python = ["python"] if _is_windows(ctx) else []
+    exec_result = ctx.execute(python + [ctx.path(ctx.attr.cmd)], quiet = False)
     if exec_result.return_code != 0:
         fail("received non-zero exit code from " + str(ctx.attr.cmd))
 
