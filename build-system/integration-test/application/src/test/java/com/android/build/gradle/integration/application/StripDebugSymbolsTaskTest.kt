@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification.doTest
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -51,7 +52,8 @@ class StripDebugSymbolsTaskTest {
     @Test
     fun testSingleStripDebugSymbolsWarning() {
         val expectedWarning =
-            "Unable to strip the following libraries, packaging them as they are: bar.so, foo.so."
+            "Unable to strip the following libraries, packaging them as they are: bar.so, foo.so." +
+                    " Run with --info option to learn more."
         doTest(project) {
             it.addFile("src/main/jniLibs/x86/foo.so", "foo")
             it.addFile("src/main/jniLibs/x86/bar.so", "bar")
@@ -60,7 +62,27 @@ class StripDebugSymbolsTaskTest {
             project.executor().run("stripDebugDebugSymbols").stdout.use { scanner ->
                 assertThat(scanner).contains(expectedWarning)
                 assertThat(scanner).doesNotContain("packaging it as is")
-                assertThat(scanner).doesNotContain("Packaging it as is")
+            }
+        }
+    }
+
+    @Test
+    fun testStripDebugSymbolsVerboseLogs() {
+        TestFileUtils.appendToFile(
+            project.buildFile,
+            """
+                android {
+                    ndkPath "/fake/path"
+                }
+            """.trimIndent()
+        )
+        val expectedWarning = "due to missing strip tool for ABI 'x86'. Packaging it as is"
+        doTest(project) {
+            it.addFile("src/main/jniLibs/x86/foo.so", "foo")
+            project.executor()
+                .withArgument("--info")
+                .run("stripDebugDebugSymbols").stdout.use { scanner ->
+                    assertThat(scanner).contains(expectedWarning)
             }
         }
     }
