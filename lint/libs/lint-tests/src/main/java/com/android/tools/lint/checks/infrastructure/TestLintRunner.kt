@@ -725,6 +725,7 @@ class TestLintRunner(private val task: TestLintTask) {
 
   private fun validateJson(json: String) {
     try {
+      //noinspection CheckResult
       JsonParser.parseString(json)
     } catch (e: JsonParseException) {
       throw RuntimeException(
