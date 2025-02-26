@@ -202,7 +202,8 @@ class InvalidationTest {
   }
 
   private fun cursorForQuery(query: String): SQLiteCursor {
-    val db = testEnvironment.openDatabase(Database("ignored", Table("t1", Column("c1", "int"))))
+    val db =
+      testEnvironment.openDatabase(DatabaseModel("ignored", Table("t1", Column("c1", "int"))))
     val cursor = closeablesRule.register(db.rawQuery(query, null))
     val context = RuntimeEnvironment.getApplication()
     context.deleteDatabase(db.path)

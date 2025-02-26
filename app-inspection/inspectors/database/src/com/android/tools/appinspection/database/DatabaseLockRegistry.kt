@@ -15,7 +15,6 @@
  */
 package com.android.tools.appinspection.database
 
-import android.database.sqlite.SQLiteDatabase
 import android.os.CancellationSignal
 import android.util.Log
 import androidx.annotation.GuardedBy
@@ -51,7 +50,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
    * in place, an existing lock will be issued. Locks keep count of simultaneous requests, so that
    * the database is only unlocked once all callers release their issued locks.
    */
-  fun acquireLock(databaseId: Int, database: SQLiteDatabase): Int {
+  fun acquireLock(databaseId: Int, database: Database): Int {
     synchronized(guard) {
       val lock =
         databaseIdToLockMap.getOrPut(databaseId) {
@@ -132,7 +131,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
         executor.submit {
           // starts a transaction
           database.rawQuery("BEGIN IMMEDIATE;", arrayOfNulls(0), cancellationSignal).use {
-            it.count // forces the cursor to execute the query
+            it.moveToNext() // forces the cursor to execute the query
           }
         }
       future.get(TIMEOUT_MS, MILLISECONDS)
@@ -161,7 +160,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
       future =
         SqliteInspectionExecutors.submit(executor) { // ends the transaction
           database.rawQuery("ROLLBACK;", arrayOfNulls(0), cancellationSignal).use {
-            it.count // forces the cursor to execute the query
+            it.moveToNext() // forces the cursor to execute the query
           }
           database.releaseReference()
         }
@@ -185,7 +184,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
   private class Lock(
     val lockId: Int,
     val databaseId: Int,
-    val database: SQLiteDatabase,
+    val database: Database,
     val latch: CountDownLatch = CountDownLatch(1),
   ) {
     var count: Int = 0 // number of simultaneous locks secured on the database

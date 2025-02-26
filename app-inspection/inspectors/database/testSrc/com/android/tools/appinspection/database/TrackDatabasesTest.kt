@@ -63,8 +63,8 @@ class TrackDatabasesTest {
   fun test_track_databases(): Unit = runBlocking {
     val alreadyOpenDatabases =
       listOf(
-        testEnvironment.openDatabase(Database("db1")),
-        testEnvironment.openDatabase(Database("db2")),
+        testEnvironment.openDatabase(DatabaseModel("db1")),
+        testEnvironment.openDatabase(DatabaseModel("db2")),
       )
 
     testEnvironment.registerAlreadyOpenDatabases(alreadyOpenDatabases)
@@ -115,7 +115,7 @@ class TrackDatabasesTest {
 
       // verify that executing the registered hook will result in tracking events
       testEnvironment.assertNoQueuedEvents()
-      val database = testEnvironment.openDatabase(Database("db3_$ix"))
+      val database = testEnvironment.openDatabase(DatabaseModel("db3_$ix"))
       testEnvironment.receiveEvent().let { event ->
         assertThat(event.databaseOpened.path).isEqualTo(database.displayName)
       }
@@ -139,18 +139,18 @@ class TrackDatabasesTest {
 
     // file based db: first open
     val fileDbPath = "db1"
-    val fileDb = testEnvironment.openDatabase(Database(fileDbPath))
+    val fileDb = testEnvironment.openDatabase(DatabaseModel(fileDbPath))
     checkDbOpenedEvent(testEnvironment.receiveEvent(), fileDb)
 
     // file based db: same instance
     testEnvironment.assertNoQueuedEvents()
 
     // file based db: same path
-    testEnvironment.openDatabase(Database(fileDbPath))
+    testEnvironment.openDatabase(DatabaseModel(fileDbPath))
     testEnvironment.assertNoQueuedEvents()
 
     // in-memory database: first open
-    val inMemDb = testEnvironment.openDatabase(Database(null))
+    val inMemDb = testEnvironment.openDatabase(DatabaseModel(null))
     checkDbOpenedEvent(testEnvironment.receiveEvent(), inMemDb)
 
     // in-memory database: same instance
@@ -158,7 +158,7 @@ class TrackDatabasesTest {
 
     // in-memory database: new instances (same path = :memory:)
     repeat(3) {
-      val db = testEnvironment.openDatabase(Database(null))
+      val db = testEnvironment.openDatabase(DatabaseModel(null))
       assertThat(db.path).isEqualTo(":memory:")
       checkDbOpenedEvent(testEnvironment.receiveEvent(), db)
     }
@@ -167,7 +167,7 @@ class TrackDatabasesTest {
   @Test
   fun test_track_databases_keep_db_open_toggle() = runBlocking {
     // without inspecting
-    testEnvironment.openDatabase(Database("db1")).let { db ->
+    testEnvironment.openDatabase(DatabaseModel("db1")).let { db ->
       db.close()
       assertClosed(db)
     }
@@ -279,8 +279,8 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_closed() = runBlocking {
-    val db1a = testEnvironment.openDatabase(Database("db1"))
-    val db2 = testEnvironment.openDatabase(Database("db2"))
+    val db1a = testEnvironment.openDatabase(DatabaseModel("db1"))
+    val db2 = testEnvironment.openDatabase(DatabaseModel("db2"))
     assertOpen(db1a)
     assertOpen(db2)
     db1a.close()
@@ -306,8 +306,8 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_disk() = runBlocking {
-    val db1a = testEnvironment.openDatabase(Database("db1"))
-    val db2 = testEnvironment.openDatabase(Database("db2"))
+    val db1a = testEnvironment.openDatabase(DatabaseModel("db1"))
+    val db2 = testEnvironment.openDatabase(DatabaseModel("db2"))
 
     testEnvironment.registerApplication(db1a, db2)
     startTracking()
@@ -331,7 +331,7 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_disk_forceOpen(): Unit = runBlocking {
-    val db = testEnvironment.openDatabase(Database("db1"))
+    val db = testEnvironment.openDatabase(DatabaseModel("db1"))
     testEnvironment.registerApplication(db)
     startTracking(forceOpen = true)
 
@@ -340,7 +340,7 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_disk_forceOpenThenOpenNative(): Unit = runBlocking {
-    val database = Database("db1")
+    val database = DatabaseModel("db1")
     val db = testEnvironment.openDatabase(database)
 
     testEnvironment.registerApplication(db)
@@ -355,7 +355,7 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_disk_forceOpenThenOpenNativeAndClosed(): Unit = runBlocking {
-    val database = Database("db1")
+    val database = DatabaseModel("db1")
     val db = testEnvironment.openDatabase(database)
 
     testEnvironment.registerApplication(db)
@@ -373,7 +373,7 @@ class TrackDatabasesTest {
 
   @Test
   fun test_findInstances_disk_filters_helper_files() = runBlocking {
-    val db = testEnvironment.openDatabase(Database("db1"))
+    val db = testEnvironment.openDatabase(DatabaseModel("db1"))
 
     val application =
       object : Application() {
@@ -429,8 +429,8 @@ class TrackDatabasesTest {
   @Test
   fun test_temporary_databases_same_path_different_database() {
     // given
-    val db1 = testEnvironment.openDatabase(Database(null))
-    val db2 = testEnvironment.openDatabase(Database(null))
+    val db1 = testEnvironment.openDatabase(DatabaseModel(null))
+    val db2 = testEnvironment.openDatabase(DatabaseModel(null))
     fun queryTableCount(db: SQLiteDatabase): Long =
       db.compileStatement("select count(*) from sqlite_master").simpleQueryForLong()
     assertThat(queryTableCount(db1)).isEqualTo(1) // android_metadata sole table

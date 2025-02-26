@@ -67,7 +67,7 @@ internal class DatabaseRegistry(
    * collection is meant to only contain open connections (eventually consistent after all callbacks
    * queued behind [lock] are processed).
    */
-  @GuardedBy("lock") private val databases = mutableMapOf<Int, MutableSet<SQLiteDatabase>>()
+  @GuardedBy("lock") private val databases = mutableMapOf<Int, MutableSet<Database>>()
 
   // Database connection id -> extra database reference used to facilitate the
   // keep-database-connection-open functionality.
@@ -79,7 +79,7 @@ internal class DatabaseRegistry(
   // references pointing to the same path.
   @GuardedBy("lock") private val pathToId = mutableMapOf<String, Int>()
 
-  @GuardedBy("lock") private val forcedOpen = mutableSetOf<SQLiteDatabase>()
+  @GuardedBy("lock") private val forcedOpen = mutableSetOf<Database>()
 
   /**
    * Should be called when the inspection code detects a database being open operation.
@@ -88,11 +88,11 @@ internal class DatabaseRegistry(
    * e.g. in an [androidx.inspection.ArtTooling.ExitHook.onExit] before the return value is
    * released. Thread-safe.
    */
-  fun notifyDatabaseOpened(database: SQLiteDatabase) {
+  fun notifyDatabaseOpened(database: Database) {
     handleDatabaseSignal(database)
   }
 
-  fun notifyReleaseReference(database: SQLiteDatabase) {
+  fun notifyReleaseReference(database: Database) {
     synchronized(lock) {
       /**
        * Prevent all other methods from releasing a reference if a [KeepOpenReference] is present
@@ -112,7 +112,7 @@ internal class DatabaseRegistry(
    * Should be called when the inspection code detects that the last database connection reference
    * has been released (effectively a connection closed event). Thread-safe.
    */
-  fun notifyAllDatabaseReferencesReleased(database: SQLiteDatabase) {
+  fun notifyAllDatabaseReferencesReleased(database: Database) {
     handleDatabaseSignal(database)
   }
 
@@ -155,7 +155,7 @@ internal class DatabaseRegistry(
         // We just need to open the database. Our hook will call notifyDatabaseOpened()
         isForceOpenInProgress = true
         try {
-          val db = SQLiteDatabase.openDatabase(path, null, OPEN_READWRITE)
+          val db = AndroidDatabase(SQLiteDatabase.openDatabase(path, null, OPEN_READWRITE))
           if (testMode) {
             // During tests, ART Tooling hooks are not activated so this, so we need to trigger it
             // manually.
@@ -173,17 +173,16 @@ internal class DatabaseRegistry(
     }
   }
 
-  fun isForcedConnection(database: SQLiteDatabase) =
-    synchronized(lock) { forcedOpen.contains(database) }
+  fun isForcedConnection(database: Database) = synchronized(lock) { forcedOpen.contains(database) }
 
   /**
    * Handles database-opened and database-closed signals from the API
    *
    * Thread-safe
    */
-  private fun handleDatabaseSignal(database: SQLiteDatabase) {
+  private fun handleDatabaseSignal(database: Database) {
     synchronized(lock) {
-      val isOpen = database.isOpen
+      val isOpen = database.isOpen()
       if (isForceOpenInProgress && isOpen) {
         forcedOpen.add(database)
       }
@@ -193,19 +192,19 @@ internal class DatabaseRegistry(
       val after = getConnection(id)
 
       when {
-        after == null -> onClosedCallback.onDatabaseClosed(id, database.pathForDatabase())
+        after == null -> onClosedCallback.onDatabaseClosed(id, database.getKey())
         after.getScore() != before?.getScore() -> onOpenedCallback.onDatabaseOpened(id, after)
       }
 
       secureKeepOpenReference(id)
-      logDatabaseStatus(database.path)
+      logDatabaseStatus(database.getPath())
     }
   }
 
   /**
    * Returns a currently active database reference if one is available. Null otherwise. Thread-safe
    */
-  fun getConnection(id: Int, filter: (SQLiteDatabase) -> Boolean = { true }): SQLiteDatabase? {
+  fun getConnection(id: Int, filter: (Database) -> Boolean = { true }): Database? {
     synchronized(lock) {
       return databases[id]?.filter(filter)?.findBestConnection()
     }
@@ -215,7 +214,7 @@ internal class DatabaseRegistry(
     forceOpen = true
   }
 
-  @VisibleForTesting fun getDatabases(id: Int): Set<SQLiteDatabase> = databases.getValue(id)
+  @VisibleForTesting fun getDatabases(id: Int): Set<Database> = databases.getValue(id)
 
   fun dispose() {
     // TODO(161081452): release database locks and keep-open references
@@ -227,16 +226,16 @@ internal class DatabaseRegistry(
   }
 
   @GuardedBy("lock")
-  private fun registerReference(id: Int, database: SQLiteDatabase) {
+  private fun registerReference(id: Int, database: Database) {
     val references =
       databases.getOrPut(id) {
         if (!database.isInMemoryDatabase()) {
-          pathToId[database.pathForDatabase()] = id
+          pathToId[database.getKey()] = id
         }
         mutableSetOf()
       }
 
-    when (database.isOpen) {
+    when (database.isOpen()) {
       true -> references.add(database)
       false -> references.remove(database)
     }
@@ -258,11 +257,11 @@ internal class DatabaseRegistry(
   }
 
   @GuardedBy("lock")
-  private fun getIdForDatabase(database: SQLiteDatabase): Int {
+  private fun getIdForDatabase(database: Database): Int {
     val id =
       when (database.isInMemoryDatabase()) {
         true -> findInMemoryReferenceKey(database)
-        false -> pathToId[database.pathForDatabase()]
+        false -> pathToId[database.getKey()]
       }
     return id ?: nextId.getAndIncrement()
   }
@@ -276,7 +275,7 @@ internal class DatabaseRegistry(
   }
 
   @VisibleForTesting
-  internal inner class KeepOpenReference(val database: SQLiteDatabase) {
+  internal inner class KeepOpenReference(val database: Database) {
     private val lock = Any()
 
     @GuardedBy("lock") private var acquiredReferenceCount = 0
@@ -300,7 +299,7 @@ internal class DatabaseRegistry(
           database.releaseReference()
           acquiredReferenceCount--
         }
-        if (testMode && !database.isOpen) {
+        if (testMode && !database.isOpen()) {
           // Simulate hook call if operation resulted in database getting actually closed
           notifyAllDatabaseReferencesReleased(database)
         }
@@ -308,7 +307,7 @@ internal class DatabaseRegistry(
     }
   }
 
-  private fun findInMemoryReferenceKey(database: SQLiteDatabase): Int? =
+  private fun findInMemoryReferenceKey(database: Database): Int? =
     databases.entries.find { (_, items) -> items.contains(database) }?.key
 
   private fun logDatabaseStatus(path: String) {
@@ -324,11 +323,11 @@ internal class DatabaseRegistry(
   }
 
   @GuardedBy("lock")
-  private fun SQLiteDatabase.getStatus(): String {
-    val id = pathToId[path] ?: -1
+  private fun Database.getStatus(): String {
+    val id = pathToId[getPath()] ?: -1
     val suffix = if (keepOpenReferences[id]?.database == this) "*" else ""
     return when {
-      isReadOnly -> "ReadOnly"
+      isReadOnly() -> "ReadOnly"
       isForcedConnection(this) -> "Forced"
       else -> "ReadWrite"
     } + suffix
@@ -340,9 +339,9 @@ internal class DatabaseRegistry(
     }
   }
 
-  private class DbScore(val db: SQLiteDatabase, val score: Int)
+  private class DbScore(val db: Database, val score: Int)
 
-  private fun Collection<SQLiteDatabase>.findBestConnection(): SQLiteDatabase? {
+  private fun Collection<Database>.findBestConnection(): Database? {
     // Assign a score to each candidate.
     // - Read-only instance has the lowest score.
     // - Non forced read-write instance has the max score.
@@ -359,22 +358,17 @@ internal class DatabaseRegistry(
     return scores.maxByOrNull { it.score }?.db
   }
 
-  private fun OnDatabaseOpenedCallback.onDatabaseOpened(id: Int, database: SQLiteDatabase) {
-    onDatabaseOpened(
-      id,
-      database.pathForDatabase(),
-      isForcedConnection(database),
-      database.isReadOnly,
-    )
+  private fun OnDatabaseOpenedCallback.onDatabaseOpened(id: Int, database: Database) {
+    onDatabaseOpened(id, database.getKey(), isForcedConnection(database), database.isReadOnly())
   }
 
-  private fun findKeepOpenReference(database: SQLiteDatabase): KeepOpenReference? {
+  private fun findKeepOpenReference(database: Database): KeepOpenReference? {
     return keepOpenReferences.values.find { it.database == database }
   }
 
-  private fun SQLiteDatabase.getScore() =
+  private fun Database.getScore() =
     when {
-      isReadOnly -> SCORE_READ_ONLY
+      isReadOnly() -> SCORE_READ_ONLY
       isForcedConnection(this) -> SCORE_FORCED
       else -> SCORE_BEST
     }

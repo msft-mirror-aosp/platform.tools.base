@@ -53,7 +53,7 @@ class GetSchemaTest {
   fun test_get_schema_complex_tables() {
     test_get_schema(
       listOf(
-        Database(
+        DatabaseModel(
           "db1",
           Table(
             "table1",
@@ -117,9 +117,9 @@ class GetSchemaTest {
   fun test_get_schema_multiple_databases() {
     test_get_schema(
       listOf(
-        Database("db3", Table("t3", Column("c3", "BLOB"))),
-        Database("db2", Table("t2", Column("c2", "TEXT"))),
-        Database("db1", Table("t1", Column("c1", "TEXT"))),
+        DatabaseModel("db3", Table("t3", Column("c3", "BLOB"))),
+        DatabaseModel("db2", Table("t2", Column("c2", "TEXT"))),
+        DatabaseModel("db1", Table("t1", Column("c1", "TEXT"))),
       )
     )
   }
@@ -131,7 +131,7 @@ class GetSchemaTest {
     val c3 = Column("c3", "INT")
     test_get_schema(
       listOf(
-        Database(
+        DatabaseModel(
           "db1",
           Table("t1", c1, c2),
           Table("t2", c1, c2, c3),
@@ -149,7 +149,7 @@ class GetSchemaTest {
   @Test
   fun test_get_schema_auto_increment() = runBlocking {
     val db =
-      testEnvironment.openDatabase(Database("db1")).also {
+      testEnvironment.openDatabase(DatabaseModel("db1")).also {
         it.execSQL("CREATE TABLE t1 (c2 INTEGER PRIMARY KEY AUTOINCREMENT)")
         it.execSQL("INSERT INTO t1 VALUES(3)")
       }
@@ -163,7 +163,7 @@ class GetSchemaTest {
   @Test
   fun test_get_schema_without_row_id() = runBlocking {
     val db =
-      testEnvironment.openDatabase(Database("db1")).also {
+      testEnvironment.openDatabase(DatabaseModel("db1")).also {
         it.execSQL("CREATE TABLE t1 (c2 TEXT PRIMARY KEY) WITHOUT ROWID")
         it.execSQL("CREATE TABLE t2 (c2 TEXT PRIMARY KEY)")
       }
@@ -191,7 +191,7 @@ class GetSchemaTest {
 
   @Test
   fun test_get_scheme_isNotForcedOpen() = runBlocking {
-    val database = testEnvironment.openDatabase(Database("db1"))
+    val database = testEnvironment.openDatabase(DatabaseModel("db1"))
 
     testEnvironment.registerAlreadyOpenDatabases(listOf(database))
     testEnvironment.sendCommand(createTrackDatabasesCommand())
@@ -204,7 +204,7 @@ class GetSchemaTest {
 
   @Test
   fun test_get_scheme_isForcedOpen() = runBlocking {
-    val database = testEnvironment.openDatabase(Database("db1"))
+    val database = testEnvironment.openDatabase(DatabaseModel("db1"))
     testEnvironment.registerApplication(database)
     testEnvironment.sendCommand(createTrackDatabasesCommand(forceOpen = true))
     val databaseId = testEnvironment.awaitDatabaseOpenedEvent(database.displayName).databaseId
@@ -215,7 +215,7 @@ class GetSchemaTest {
   }
 
   private fun test_get_schema(
-    alreadyOpenDatabases: List<Database>,
+    alreadyOpenDatabases: List<DatabaseModel>,
     onDatabaseCreated: (SQLiteDatabase) -> Unit = {},
   ) = runBlocking {
     assertThat(alreadyOpenDatabases).isNotEmpty() // sanity check

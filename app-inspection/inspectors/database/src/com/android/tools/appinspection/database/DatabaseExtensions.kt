@@ -27,7 +27,7 @@ private const val IN_MEMORY_DATABASE_PATH = ":memory:"
 private const val IN_MEMORY_DATABASE_NAME_FORMAT = "$IN_MEMORY_DATABASE_PATH {hashcode=0x%x}"
 
 /** Thread-safe as [SQLiteDatabase.getPath] and [Any.hashCode] are thread-safe */
-fun SQLiteDatabase.pathForDatabase(): String =
+fun SQLiteDatabase.getKey(): String =
   when {
     isInMemoryDatabase() -> IN_MEMORY_DATABASE_NAME_FORMAT.format(hashCode())
     else -> File(path).absolutePath
@@ -43,8 +43,8 @@ fun SQLiteDatabase.isInMemoryDatabase() = IN_MEMORY_DATABASE_PATH == path
  *   already closed; otherwise re-throws the exception thrown by
  *   [ ][SQLiteDatabase.acquireReference].
  */
-fun SQLiteDatabase.tryAcquireReference(): Boolean {
-  if (!isOpen) {
+fun Database.tryAcquireReference(): Boolean {
+  if (!isOpen()) {
     return false
   }
 
