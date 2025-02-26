@@ -195,8 +195,23 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     /** First version to support rectangular Wear display */
     public static final int MIN_RECTANGULAR_WEAR_API = 28;
 
-    /** First API level to have a minor version */
-    public static final int MIN_MINOR_VERSION_API = 37;
+    /**
+     * If the apiLevel is at least MIN_MAJOR_WITH_EXPLICIT_MINOR, the version string will always
+     * include the minor version, even if it is zero.
+     *
+     * <p>In other words, the expected sequence of versions currently encoded is:
+     *
+     * <ul>
+     *   <li>35
+     *   <li>36 (minor is not included in the version string)
+     *   <li>36.1 (the first version with a minor version)
+     *   <li>37.0 (minor version is always included in the version string for 37 and above)
+     *   <li>37.1
+     * </ul>
+     *
+     * See AndroidVersionTest.testMinorVersionNormalization
+     */
+    private static final int MIN_API_FOR_EXPLICIT_MINOR = 37;
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
@@ -395,9 +410,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      */
     @NonNull
     private String getApiLevelString() {
-        return mApiLevel >= MIN_MINOR_VERSION_API || mApiMinorLevel > 0
-               ? mApiLevel + "." + mApiMinorLevel
-               : Integer.toString(mApiLevel);
+        return mApiLevel >= MIN_API_FOR_EXPLICIT_MINOR || mApiMinorLevel > 0
+                ? mApiLevel + "." + mApiMinorLevel
+                : Integer.toString(mApiLevel);
     }
 
     @NonNull

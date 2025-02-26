@@ -15,7 +15,9 @@
  */
 package com.android.sdklib
 
+import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import kotlin.test.fail
 
@@ -42,5 +44,23 @@ class AndroidVersionTest {
                 // do nothing
             }
         }
+    }
+
+    @Test
+    fun testMinorVersionNormalization() {
+        fun assertAndroidVersionNormalized(from: String): StringSubject {
+            return assertThat(AndroidVersion.fromString(from).getApiStringWithExtension())
+                .named("AndroidVersion.fromString(\"%s\").getApiStringWithExtension()", from)
+        }
+        assertAndroidVersionNormalized("36").isEqualTo("36")
+        assertAndroidVersionNormalized("36.0").isEqualTo("36")
+        assertAndroidVersionNormalized("36.00").isEqualTo("36")
+        assertAndroidVersionNormalized("36.1").isEqualTo("36.1")
+        assertAndroidVersionNormalized("36.01").isEqualTo("36.1")
+        assertAndroidVersionNormalized("37").isEqualTo("37.0")
+        assertAndroidVersionNormalized("37.0").isEqualTo("37.0")
+        assertAndroidVersionNormalized("37.00").isEqualTo("37.0")
+        assertAndroidVersionNormalized("37.1").isEqualTo("37.1")
+        assertAndroidVersionNormalized("37.01").isEqualTo("37.1")
     }
 }
