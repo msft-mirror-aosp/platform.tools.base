@@ -685,7 +685,7 @@ internal class SqliteInspector(
     if (connection != null) {
       // With WAL enabled, we prefer to use the IO executor. With WAL off we don't have a
       // choice and must use the executor that has a lock (transaction) on the database.
-      return if (connection.database.isWriteAheadLoggingEnabled)
+      return if (connection.database.isWriteAheadLoggingEnabled())
         DatabaseConnection(connection.database, ioExecutor)
       else connection
     }

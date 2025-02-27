@@ -60,11 +60,7 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.O)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class DatabaseLockingTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()

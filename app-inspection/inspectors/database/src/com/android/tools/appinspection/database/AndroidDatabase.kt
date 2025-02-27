@@ -20,38 +20,34 @@ import android.database.sqlite.SQLiteDatabase
 import android.os.CancellationSignal
 
 /** A [Database] wrapping the Android Framework [SQLiteDatabase] */
-internal class AndroidDatabase(database: SQLiteDatabase) :
-  AbstractDatabase<SQLiteDatabase>(database, database.path) {
-  override val isReadOnly = delegate.isReadOnly
+internal class AndroidDatabase(private val database: SQLiteDatabase) : Database {
+  override fun isOpen() = database.isOpen
 
-  override fun isOpen() = delegate.isOpen
+  override fun isInMemoryDatabase() = database.isInMemoryDatabase()
 
-  override fun close() = delegate.close()
+  override fun getKey() = database.getKey()
 
-  override fun acquireReference() = delegate.acquireReference()
+  override fun getPath(): String = database.path
 
-  override fun releaseReference() = delegate.releaseReference()
+  override fun isReadOnly() = database.isReadOnly
 
-  override fun execSql(
-    sql: String,
-    selectionArgs: Array<String?>?,
-    cancellationSignal: CancellationSignal?,
-  ) {
-    when (cancellationSignal) {
-      null -> delegate.execSQL(sql, selectionArgs)
-      else -> delegate.rawQuery(sql, selectionArgs, cancellationSignal).use { it.moveToNext() }
-    }
-  }
+  override fun close() = database.close()
+
+  override fun acquireReference() = database.acquireReference()
+
+  override fun releaseReference() = database.releaseReference()
+
+  override fun isWriteAheadLoggingEnabled() = database.isWriteAheadLoggingEnabled
 
   override fun rawQuery(
-    sql: String,
-    selectionArgs: Array<String?>,
+    queryText: String,
+    params: Array<String?>,
     cancellationSignal: CancellationSignal?,
   ): Cursor {
     val cursorFactory =
       SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
-        for (i in selectionArgs.indices) {
-          val value = selectionArgs[i]
+        for (i in params.indices) {
+          val value = params[i]
           val index = i + 1
           if (value == null) {
             query.bindNull(index)
@@ -62,7 +58,13 @@ internal class AndroidDatabase(database: SQLiteDatabase) :
         SQLiteCursor(driver, editTable, query)
       }
     return AndroidCursor(
-      delegate.rawQueryWithFactory(cursorFactory, sql, null, null, cancellationSignal)
+      database.rawQueryWithFactory(cursorFactory, queryText, null, null, cancellationSignal)
     )
   }
+
+  /** Equality is delegated to the [SQLiteDatabase] because this object is stored in a [Set] */
+  override fun equals(other: Any?): Boolean = database == (other as? AndroidDatabase)?.database
+
+  /** Hash code is delegated to the [SQLiteDatabase] because this object is stored in a [Set] */
+  override fun hashCode(): Int = database.hashCode()
 }
