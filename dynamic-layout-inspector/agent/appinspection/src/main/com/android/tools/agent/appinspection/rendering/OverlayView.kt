@@ -39,7 +39,7 @@ const val SELECTION_COLOR = 0xFF1886F7.toInt()
 @VisibleForTesting
 const val HOVER_COLOR = 0xFF6AA0D3.toInt()
 @VisibleForTesting
-const val BASE_COLOR = 0x80000000.toInt()
+const val BASE_COLOR = 0x80FFFFFF.toInt()
 @VisibleForTesting
 // TODO(next CL): receive color from studio
 val RECOMPOSITION_COLOR = 0x20FFA9A9.toInt()
