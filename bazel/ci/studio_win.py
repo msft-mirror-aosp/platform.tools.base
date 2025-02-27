@@ -29,7 +29,7 @@ def studio_win(build_env: bazel.BuildEnv):
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
   ]
-  test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k1,-kotlin-plugin-k1'
+  test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
   profile_path = dist_path / f'winprof{build_env.build_number}.json.gz'
   flags = [
