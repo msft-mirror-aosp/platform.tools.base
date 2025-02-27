@@ -314,15 +314,19 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
         ): List<Dependency> {
 
             return try {
+                val boms = mutableListOf<Dependency>()
                 val dependencies = mutableListOf<Dependency>()
                 val parser = KXmlParser()
                 parser.setInput(stream, SdkConstants.UTF_8)
                 while (parser.next() != XmlPullParser.END_DOCUMENT) {
                     val eventType = parser.eventType
-                    if (eventType == XmlPullParser.START_TAG && parser.name == "dependency") {
-                        val dependency = readDependency(parser, requiredScope)
-                        if (dependency != null) {
-                            dependencies.add(dependency)
+                    if (eventType == XmlPullParser.START_TAG) {
+                        val name = parser.name
+                        if (name == "dependency") {
+                            val dependency = readDependency(parser, requiredScope, boms)
+                            if (dependency != null) {
+                                dependencies.add(dependency)
+                            }
                         }
                     }
                 }
@@ -337,7 +341,11 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
             }
         }
 
-        private fun readDependency(parser: KXmlParser, requiredScope: String): Dependency? {
+        private fun readDependency(
+            parser: KXmlParser,
+            requiredScope: String,
+            boms: MutableList<Dependency>
+        ): Dependency? {
             var groupId = ""
             var artifactId = ""
             var version = ""
@@ -353,13 +361,31 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                         }
                     XmlPullParser.END_TAG ->
                         if (parser.name == "dependency") {
-                            check(groupId, "groupId")
-                            check(artifactId, "artifactId")
-                            check(version, "version")
-                            return if (scope == requiredScope)
+                            return if (scope == requiredScope) {
+                                check(groupId, "groupId")
+                                check(artifactId, "artifactId")
+                                if (version.isEmpty()) {
+                                    val bom =
+                                        boms.firstOrNull {
+                                            it.group == groupId && it.name == artifactId
+                                        }
+                                    version = bom?.version?.lowerBound?.toString() ?: ""
+                                }
+                                check(version, "version")
                                 Dependency(groupId, artifactId, RichVersion.parse(version))
-                            else
+                            } else if (parser.depth == 4 && groupId.isNotEmpty() &&
+                                artifactId.isNotEmpty() && version.isNotEmpty()) {
+                                boms.add(
+                                    Dependency(
+                                        groupId,
+                                        artifactId,
+                                        RichVersion.parse(version)
+                                    )
+                                )
                                 null
+                            } else {
+                                null
+                            }
                         }
                 }
             }

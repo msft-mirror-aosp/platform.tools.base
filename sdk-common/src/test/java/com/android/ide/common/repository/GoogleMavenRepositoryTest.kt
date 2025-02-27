@@ -39,9 +39,10 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
          * This way tests don't break when we update.
          */
         private val builtInData = mapOf(
-            "master-index.xml" to """
+            "master-index.xml" to /*language=XML */ """
                 <?xml version='1.0' encoding='UTF-8'?>
                 <metadata>
+                  <androidx.activity/>
                   <com.android.support.constraint/>
                   <com.android.databinding/>
                   <com.android.support/>
@@ -65,7 +66,7 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
                   <com.android.tools.lint/>
                 </metadata>
             """.trimIndent(),
-            "com/android/support/group-index.xml" to """
+            "com/android/support/group-index.xml" to /*language=XML */ """
                 <?xml version='1.0' encoding='UTF-8'?>
                 <com.android.support>
                   <support-compat versions="25.3.1,26.0.0-beta1"/>
@@ -106,7 +107,7 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
                   <support-emoji-bundled versions="26.0.0-beta1"/>
                 </com.android.support>
             """.trimIndent(),
-            "com/android/support/support-compat/25.3.1/support-compat-25.3.1.pom" to """
+            "com/android/support/support-compat/25.3.1/support-compat-25.3.1.pom" to /*language=XML */  """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -125,7 +126,7 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
                   </dependencies>
                 </project>
             """.trimIndent(),
-            "com/android/support/leanback-v17/25.3.1/leanback-v17-25.3.1.pom" to """
+            "com/android/support/leanback-v17/25.3.1/leanback-v17-25.3.1.pom" to /*language=XML */  """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -186,6 +187,148 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
                     </dependency>
                   </dependencies>
                 </project>
+            """.trimIndent(),
+            "androidx/activity/group-index.xml" to /*language=XML */ """
+            <androidx.activity>
+              <activity versions="1.10.0"/>
+              <activity-compose versions="1.10.0"/>
+              <activity-ktx versions="1.10.0"/>
+            </androidx.activity>
+            """.trimIndent(),
+            "androidx/activity/activity-compose/1.10.0/activity-compose-1.10.0.pom" to /*language=XML */ """
+            <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+              <!-- This module was also published with a richer model, Gradle metadata,  -->
+              <!-- which should be used instead. Do not delete the following line which  -->
+              <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+              <!-- that they should prefer consuming it instead. -->
+              <!-- do_not_remove: published-with-gradle-metadata -->
+              <modelVersion>4.0.0</modelVersion>
+              <groupId>androidx.activity</groupId>
+              <artifactId>activity-compose</artifactId>
+              <version>1.10.0</version>
+              <packaging>aar</packaging>
+              <name>Activity Compose</name>
+              <description>Compose integration with Activity</description>
+              <url>https://developer.android.com/jetpack/androidx/releases/activity#1.10.0</url>
+              <inceptionYear>2020</inceptionYear>
+              <organization>
+                <name>The Android Open Source Project</name>
+              </organization>
+              <licenses>
+                <license>
+                  <name>The Apache Software License, Version 2.0</name>
+                  <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+                  <distribution>repo</distribution>
+                </license>
+              </licenses>
+              <developers>
+                <developer>
+                  <name>The Android Open Source Project</name>
+                </developer>
+              </developers>
+              <scm>
+                <connection>scm:git:https://android.googlesource.com/platform/frameworks/support</connection>
+                <url>https://cs.android.com/androidx/platform/frameworks/support</url>
+              </scm>
+              <dependencyManagement>
+                <dependencies>
+                  <dependency>
+                    <groupId>androidx.activity</groupId>
+                    <artifactId>activity</artifactId>
+                    <version>1.10.0</version>
+                  </dependency>
+                  <dependency>
+                    <groupId>androidx.activity</groupId>
+                    <artifactId>activity-ktx</artifactId>
+                    <version>1.10.0</version>
+                  </dependency>
+                  <dependency>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib</artifactId>
+                    <version>1.8.22</version>
+                  </dependency>
+                </dependencies>
+              </dependencyManagement>
+              <dependencies>
+                <dependency>
+                  <groupId>androidx.compose.runtime</groupId>
+                  <artifactId>runtime-saveable</artifactId>
+                  <version>1.7.0</version>
+                  <scope>compile</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.activity</groupId>
+                  <artifactId>activity-ktx</artifactId>
+                  <version>[1.10.0]</version>
+                  <scope>compile</scope>
+                  <type>aar</type>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.compose.runtime</groupId>
+                  <artifactId>runtime</artifactId>
+                  <version>1.7.0</version>
+                  <scope>compile</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.compose.ui</groupId>
+                  <artifactId>ui</artifactId>
+                  <version>1.0.1</version>
+                  <scope>compile</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.core</groupId>
+                  <artifactId>core-ktx</artifactId>
+                  <version>1.13.0</version>
+                  <scope>compile</scope>
+                  <type>aar</type>
+                </dependency>
+                <dependency>
+                  <groupId>org.jetbrains.kotlinx</groupId>
+                  <artifactId>kotlinx-coroutines-core</artifactId>
+                  <version>1.7.3</version>
+                  <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.lifecycle</groupId>
+                  <artifactId>lifecycle-runtime</artifactId>
+                  <version>2.6.1</version>
+                  <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.savedstate</groupId>
+                  <artifactId>savedstate</artifactId>
+                  <version>1.2.1</version>
+                  <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.lifecycle</groupId>
+                  <artifactId>lifecycle-viewmodel</artifactId>
+                  <version>2.6.1</version>
+                  <scope>compile</scope>
+                </dependency>
+                <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-stdlib</artifactId>
+                  <!-- In the real activity-compose pom, this has runtime scope; here we're
+                      just testing that it's included in the resolved (compile) versions -->
+                  <scope>compile</scope>
+                </dependency>
+                <!-- This dependency isn't in the real activity-compose file; what we're
+                  testing here is that we don't bother validating dependencies where the
+                  scope doesn't match anyway -->
+                <dependency>
+                  <groupId>my.invalid</groupId>
+                  <artifactId>dep</artifactId>
+                  <scope>other</scope>
+                </dependency>
+                <dependency>
+                  <groupId>androidx.lifecycle</groupId>
+                  <artifactId>lifecycle-common</artifactId>
+                  <version>2.6.1</version>
+                  <scope>runtime</scope>
+                </dependency>
+              </dependencies>
+            </project>
             """.trimIndent()
         )
     }
@@ -298,5 +441,22 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         )
         val version = repo.findVersion("foo.bar", "my-artifact", allowPreview = true)
         assertNull(version)
+    }
+
+    @Test
+    fun testMissingVersion() {
+        val repo =
+            StubGoogleMavenRepository(builtInData = builtInData) // no cache dir set: will only read built-in index
+        val version = repo.findVersion("androidx.activity", "activity-compose")
+        val dependencies = repo.findCompileDependencies("androidx.activity", "activity-compose", version!!)
+        assertThat(dependencies).containsExactly(
+            Dependency.parse("androidx.compose.runtime:runtime-saveable:1.7.0"),
+            Dependency.parse("androidx.activity:activity-ktx:[1.10.0]"),
+            Dependency.parse("androidx.compose.runtime:runtime:1.7.0"),
+            Dependency.parse("androidx.compose.ui:ui:1.0.1"),
+            Dependency.parse("androidx.core:core-ktx:1.13.0"),
+            Dependency.parse("androidx.lifecycle:lifecycle-viewmodel:2.6.1"),
+            Dependency.parse("org.jetbrains.kotlin:kotlin-stdlib:1.8.22"),
+        )
     }
 }
