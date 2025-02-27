@@ -370,11 +370,10 @@ internal class SqliteInspector(
    * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
    */
   private fun registerDatabaseClosedHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook(
-      SQLiteDatabase::class.java,
-      ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE,
-    ) { exitFrame ->
-      val thisObject = exitFrame.thisObject
+    hookRegistry.registerHook<SQLiteDatabase, Unit>(ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) {
+      thisObject,
+      _,
+      _ ->
       if (thisObject is SQLiteDatabase) {
         onDatabaseClosed(AndroidDatabase(thisObject))
       }
@@ -487,9 +486,12 @@ internal class SqliteInspector(
         "Ljava/lang/String;" +
         "Landroid/os/CancellationSignal;" +
         ")Landroid/database/Cursor;")
-    hookRegistry.registerHook(SQLiteDatabase::class.java, rawQueryMethodSignature) { exitFrame ->
-      val cursor = cursorParam(exitFrame.result)
-      val query = stringParam(exitFrame.args[1]!!)
+    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(rawQueryMethodSignature) {
+      _,
+      args,
+      result ->
+      val query = stringParam(args[1]!!)
+      val cursor = cursorParam(result)
 
       // Only track cursors that might modify the database.
       // TODO: handle PRAGMA select queries, e.g. PRAGMA_TABLE_INFO
@@ -500,6 +502,7 @@ internal class SqliteInspector(
       ) {
         trackedCursors[cursor] = null
       }
+      result
     }
 
     environment.artTooling().registerEntryHook(SQLiteCursor::class.java, "close()V") { thisObject, _

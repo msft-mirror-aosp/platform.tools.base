@@ -15,6 +15,7 @@
  */
 package com.android.tools.appinspection.database
 
+import androidx.inspection.ArtTooling.EntryHook
 import androidx.inspection.InspectorEnvironment
 import com.android.tools.appinspection.common.threadLocal
 import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.OnExitCallback
@@ -22,7 +23,7 @@ import java.util.ArrayDeque
 import java.util.Deque
 
 /**
- * The class allows for observing method's EntryHook parameters in ExitHook.
+ * The class allows for observing method's thisObject and args in ExitHook.
  *
  * It works by registering both (entry and exit) hooks and keeping its own method frame stack. On
  * exit, it calls [OnExitCallback] provided by the user.
@@ -35,19 +36,24 @@ import java.util.Deque
 internal class EntryExitMatchingHookRegistry(private val environment: InspectorEnvironment) {
   private val frameStack: Deque<Frame> by threadLocal { ArrayDeque() }
 
-  fun registerHook(originClass: Class<*>, originMethod: String, onExitCallback: OnExitCallback) {
+  inline fun <reified Origin, Result> registerHook(
+    originMethod: String,
+    entryHook: EntryHook? = null,
+    onExitCallback: OnExitCallback<Origin, Result>,
+  ) {
     val artTooling = environment.artTooling()
 
-    artTooling.registerEntryHook(originClass, originMethod) { thisObject, args ->
+    artTooling.registerEntryHook(Origin::class.java, originMethod) { thisObject, args ->
       frameStack.addLast(Frame(originMethod, thisObject, args))
+      entryHook?.onEntry(thisObject, args)
     }
 
-    artTooling.registerExitHook<Any>(originClass, originMethod) { result ->
-      val entryFrame: Frame = frameStack.pollLast()
+    artTooling.registerExitHook<Result>(Origin::class.java, originMethod) { result ->
+      val frame = frameStack.pollLast()
       // TODO: make more specific and handle
-      check(originMethod == entryFrame.method)
-      onExitCallback.onExit(entryFrame.copy(result = result))
-      result
+      check(originMethod == frame.method)
+      check(frame.thisObject is Origin?)
+      onExitCallback.onExit(frame.thisObject as Origin?, frame.args, result)
     }
   }
 
@@ -58,7 +64,7 @@ internal class EntryExitMatchingHookRegistry(private val environment: InspectorE
     val result: Any? = null,
   )
 
-  internal fun interface OnExitCallback {
-    fun onExit(exitFrame: Frame)
+  internal fun interface OnExitCallback<O, R> {
+    fun onExit(thisObject: O?, args: List<Any?>, result: R?): R?
   }
 }
