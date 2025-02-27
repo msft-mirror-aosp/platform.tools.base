@@ -30,7 +30,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.tools.lint.UastEnvironmentKt;
 import com.android.tools.lint.checks.infrastructure.ProjectDescription;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestLintResult;
@@ -2293,6 +2292,35 @@ public class ApiDetectorTest extends AbstractCheckTest {
                                 + "                                ~~~~~~~~~~~~~~\n"
                                 + "1 errors, 0 warnings");
     }
+
+    public void testUnignoreTestSourcesForNewApiIssue() {
+        lint().files(
+            manifest().minSdk(4),
+            java(
+                "test/test/pkg/UnitTest.java",
+                ""
+                    + "package test.pkg;\n"
+                    + "\n"
+                    + "import android.widget.GridLayout;\n"
+                    + "\n"
+                    + "public class UnitTest {\n"
+                    + "    private GridLayout field1 = new GridLayout(null);\n"
+                    + "}\n"),
+            source(
+                "lint.xml",
+                ""
+                    + "<lint>\n"
+                    + "    <issue id=\"NewApi\" tests=\"true\" />\n"
+                    + "</lint>\n")
+                .indented())
+        .run()
+        .expect(
+            "test/test/pkg/UnitTest.java:6: Error: Call requires API level 14 (current"
+                + " min is 4): new android.widget.GridLayout [NewApi]\n"
+                + "    private GridLayout field1 = new GridLayout(null);\n"
+                + "                                ~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings");
+  }
 
     public void testTestSourcesInEditor() {
         lint().files(
@@ -9751,10 +9779,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testRemoveTest() {
-        // TODO(b/350744053)
-        if (UastEnvironmentKt.useFirUast()) {
-            return;
-        }
         TestLintResult result =
                 lint().files(
                                 kotlin(
@@ -9903,10 +9927,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testRemoveWithAlias() {
-        // TODO(b/350744053)
-        if (UastEnvironmentKt.useFirUast()) {
-            return;
-        }
         // Regression test for b/355299370
         lint().files(
                         kotlin(

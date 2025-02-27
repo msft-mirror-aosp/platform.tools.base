@@ -145,7 +145,11 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
             element,
             type,
             listOf("android.permission.FOREGROUND_SERVICE_PHONE_CALL"),
-            listOf("android.permission.MANAGE_OWN_CALLS"),
+            null,
+            // It would be nice to check this, but the dev can alternatively
+            // make their app the default dialer app through the ROLE_DIALER
+            // role, so declaring this permission is not actually required.
+            // listOf("android.permission.MANAGE_OWN_CALLS"),
           )
         "location" ->
           checkPermission(
@@ -164,6 +168,11 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
             element,
             type,
             listOf("android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"),
+            null,
+            // It would be nice to check this, but the dev can alternatively
+            // call UsbManager.requestPermission() at runtime, so declaring one
+            // of the permissions below is not actually required.
+            /*
             listOf(
               "android.permission.BLUETOOTH_ADVERTISE",
               "android.permission.BLUETOOTH_CONNECT",
@@ -175,6 +184,7 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
               "android.permission.TRANSMIT_IR",
               "android.permission.UWB_RANGING",
             ),
+            */
           )
         "mediaProjection" ->
           checkPermission(

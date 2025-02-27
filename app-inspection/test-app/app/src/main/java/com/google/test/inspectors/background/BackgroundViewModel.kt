@@ -46,6 +46,7 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 private val jobId = AtomicInteger(1)
@@ -85,10 +86,10 @@ internal class BackgroundViewModel @Inject constructor(private val application: 
   private fun startWork(worker: Class<out Worker>) {
     val request = OneTimeWorkRequest.Builder(worker).build()
     val workManager = WorkManager.getInstance(application)
-    val work: LiveData<WorkInfo> = workManager.getWorkInfoByIdLiveData(request.id)
+    val work: LiveData<WorkInfo?> = workManager.getWorkInfoByIdLiveData(request.id)
 
     scope.launch {
-      work.asFlow().collect {
+      work.asFlow().filterNotNull().collect {
         Logger.info("State of ${request.id}: ${it.state}")
         if (it.state == WorkInfo.State.SUCCEEDED) {
           setSnack(it.outputData.getString(InjectedWorker.MESSAGE_KEY) ?: "no-message")

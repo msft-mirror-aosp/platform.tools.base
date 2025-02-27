@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.lint.checks.fx
+package com.android.tools.lint.checks.fx.utils
 
 import com.google.common.truth.Truth
 import kotlinx.collections.immutable.persistentMapOf

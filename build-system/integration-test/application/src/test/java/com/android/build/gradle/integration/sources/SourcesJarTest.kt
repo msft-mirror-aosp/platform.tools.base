@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.sources
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
-import com.android.testutils.truth.ZipFileSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -77,9 +77,8 @@ class SourcesJarTest {
                 libProject.buildDir,
                 "intermediates/source_jar/release/release-sources.jar"
             )
-            Truth.assertThat(sourceJar.exists()).isTrue()
-            ZipFileSubject.assertThat(sourceJar) {
-                it.contains("SomeSource.kt")
+            ZipSubject.assertThat(sourceJar.toPath()) {
+                contains("SomeSource.kt")
             }
         }
     }
@@ -127,9 +126,8 @@ class SourcesJarTest {
                 libProject.buildDir,
                 "intermediates/source_jar/release/release-sources.jar"
             )
-            Truth.assertThat(sourceJar.exists()).isTrue()
-            ZipFileSubject.assertThat(sourceJar) {
-                it.contains("SomeSource.kt")
+            ZipSubject.assertThat(sourceJar.toPath()) {
+                contains("SomeSource.kt")
             }
         }
     }
@@ -177,9 +175,8 @@ class SourcesJarTest {
                 libProject.buildDir,
                 "intermediates/source_jar/release/release-sources.jar"
             )
-            Truth.assertThat(sourceJar.exists()).isTrue()
-            ZipFileSubject.assertThat(sourceJar) {
-                it.contains("SomeSource.java")
+            ZipSubject.assertThat(sourceJar.toPath()) {
+                contains("SomeSource.java")
             }
         }
     }

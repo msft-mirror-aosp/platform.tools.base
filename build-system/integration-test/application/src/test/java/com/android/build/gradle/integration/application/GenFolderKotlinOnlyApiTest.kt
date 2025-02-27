@@ -65,7 +65,7 @@ class GenFolderKotlinOnlyApiTest {
     fun testBuildSucceeds() {
         project.executor().run("assembleDebug")
         project.assertThatAar("debug") {
-            containsClass("Ltest/Generated;")
+            allJars().containsClass("test/Generated")
         }
     }
 }

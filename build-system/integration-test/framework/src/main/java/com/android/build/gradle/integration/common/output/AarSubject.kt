@@ -18,9 +18,9 @@ package com.android.build.gradle.integration.common.output
 
 import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.build.gradle.internal.tasks.AarMetadataReader
+import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import java.nio.file.Files
@@ -114,6 +114,26 @@ class AarSubject(
     }
 
     /**
+     * Returns all the classes from any secondary jars as a single [JarSubject].
+     *
+     */
+    fun allSecondaryJars(): JarSubject {
+        exists()
+        val secondaryJars = actual().getEntries(PATTERN_LIBS_JAR).mapNotNull { actual().innerZip(it) }
+
+        return check("allSecondaryJars()").about(JarSubject.jars())
+            .that(MultiZip(secondaryJars, "allSecondaryClasses"))
+    }
+
+    /**
+     * Creates a [JarSubject] representing all the classes from the secondary jars, and configure it
+     * with the given action
+     */
+    fun allSecondaryJars(action: JarSubject.() -> Unit) {
+        action(allSecondaryJars())
+    }
+
+    /**
      * returns a [StringSubject] for the Android Manifest of the AAR.
      */
     fun manifest(): StringSubject {
@@ -182,9 +202,9 @@ class AarSubject(
      * returns a [AarMetadataSubject] for the metadata of this AAR
      */
     fun aarMetadata(): AarMetadataSubject {
-        contains("META-INF/com/android/build/gradle/aar-metadata.properties")
+        contains(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
 
-        val path= actual().getEntry("META-INF/com/android/build/gradle/aar-metadata.properties")
+        val path= actual().getEntry(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null

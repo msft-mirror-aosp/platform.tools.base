@@ -145,32 +145,31 @@ class NamespacedAarTest {
         assertThat(publishedLibData?.resStaticLibrary).exists()
 
         val subproject = project.getSubproject("publishedLib")
-        subproject.withAar("release") {
-            assertThat(entries.map { it.toString() })
-                .containsExactly(
-                    "/META-INF/com/android/build/gradle/aar-metadata.properties",
-                    "/res/values/values.xml",
-                    "/classes.jar",
-                    "/res.apk",
-                    "/AndroidManifest.xml",
-                    "/R.txt"
-                )
+        subproject.assertThatAar("release") {
+            entries().containsExactly(
+                "META-INF/com/android/build/gradle/aar-metadata.properties",
+                "res/values/values.xml",
+                "classes.jar",
+                "res.apk",
+                "AndroidManifest.xml",
+                "R.txt"
+            )
+
             // Check that the AndroidManifest.xml in the AAR does not contain namespaces.
-            val manifest = androidManifestContentsAsString
-            assertThat(manifest).contains("@string/my_version_name")
-            assertThat(manifest).doesNotContain("@com.example.publishedLib:string/my_version_name")
+            manifest().apply {
+                contains("@string/my_version_name")
+                doesNotContain("@com.example.publishedLib:string/my_version_name")
+            }
         }
 
         subproject.assertThatAar("release") {
-            containsFileWithContent(
-                "R.txt",
+            textSymbolFile().isEqualTo(
                 """
                     int string foo 0x0
                     int string my_version_name 0x0
                 """.trimIndent()
             )
-            containsFileWithContent(
-            "res/values/values.xml",
+            androidResources().textFile("values/values.xml").isEqualTo(
                 """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
@@ -179,7 +178,7 @@ class NamespacedAarTest {
                         <string name="my_version_name">1.0</string>
 
                     </resources>
-                    """.trimIndent()
+                """.trimIndent()
             )
         }
     }

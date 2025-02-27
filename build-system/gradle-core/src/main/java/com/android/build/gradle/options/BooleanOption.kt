@@ -151,7 +151,37 @@ enum class BooleanOption(
 
     // FIXME switch to false once we know we don't use these getters internally.
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Supported),
-    FULL_R8("android.enableR8.fullMode", true, FeatureStage.Supported),
+
+    /**
+     * Enables R8 full mode
+     * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
+     *
+     * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
+     *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
+     *   mode, the default constructor is implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
+     *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
+     *   mode, the default constructor is not implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
+     *
+     * When migrating from legacy full mode to strict full mode, if the user's app or a library that
+     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
+     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
+     * the default constructor. If they don't want to keep the default constructor, then they can
+     * keep the rule as-is.
+     */
+    FULL_R8(
+        "android.enableR8.fullMode",
+        defaultValue = true,
+        FeatureStage.Supported
+    ),
+
+    /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
+    R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
+        "android.r8.strictFullModeForKeepRules",
+        defaultValue = false,
+        FeatureStage.Supported
+    ),
 
     /* -----------------
      * EXPERIMENTAL APIs

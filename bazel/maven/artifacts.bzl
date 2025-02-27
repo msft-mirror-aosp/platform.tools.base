@@ -501,6 +501,8 @@ DATA = [
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.savedstate:savedstate-ktx:1.2.1",
     "androidx.slice:slice-builders:1.0.0",
+    "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
     "androidx.startup:startup-runtime:1.1.1",
     "androidx.test:core:1.3.0",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test:core:1.4.0-alpha06",
@@ -896,6 +898,7 @@ DATA = [
     "com.google.protobuf:protobuf-java-util:3.22.3",
     "com.google.protobuf:protobuf-java-util:3.24.4",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
+    "com.google.protobuf:protobuf-kotlin:3.24.4",
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
@@ -942,6 +945,13 @@ DATA = [
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup.okio:okio:3.4.0",
     "commons-lang:commons-lang:2.4",
+    "io.grpc:grpc-inprocess:1.66.0",
+    "io.grpc:grpc-kotlin-stub:1.4.1",
+    "io.grpc:protoc-gen-grpc-java:exe:linux-x86_64:1.66.0",
+    "io.grpc:protoc-gen-grpc-java:exe:osx-aarch_64:1.66.0",
+    "io.grpc:protoc-gen-grpc-java:exe:osx-x86_64:1.66.0",
+    "io.grpc:protoc-gen-grpc-java:exe:windows-x86_64:1.66.0",
+    "io.grpc:protoc-gen-grpc-kotlin:jar:jdk8:1.4.1",
     "io.ktor:ktor-client-content-negotiation-jvm:2.3.2",
     "io.ktor:ktor-client-core-jvm:2.3.2",
     "io.ktor:ktor-client-logging-jvm:2.3.2",
@@ -969,6 +979,7 @@ DATA = [
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.12",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.7",
     "org.jacoco:org.jacoco.agent:jar:runtime:0.8.8",
+    "org.jacoco:org.jacoco.ant:0.8.11",
     "org.jacoco:org.jacoco.ant:0.8.12",
     "org.jacoco:org.jacoco.ant:0.8.7",
     "org.jacoco:org.jacoco.ant:0.8.8",
@@ -999,7 +1010,7 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.9.24",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20-Beta2",
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20-RC-129",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.2.0-dev-5532",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.20-Beta2",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
@@ -1010,13 +1021,13 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-Beta2",
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-RC-129",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0-dev-5532",
     "org.jetbrains.kotlin:jvm-abi-gen:2.0.21",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20-Beta2",
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20-RC-129",
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-android-extensions:2.1.20-Beta2",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
@@ -1042,7 +1053,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20-Beta2",
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20-RC-129",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.21",
@@ -1070,7 +1081,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20-Beta2",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20-RC-129",
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle71:1.7.20",
@@ -1129,7 +1140,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.1.20-Beta2",
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-Beta2",
-    "org.jetbrains.kotlin:kotlin-stdlib:2.1.20-RC-129",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
@@ -1137,7 +1148,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.20-Beta2",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.20-RC-129",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.31",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21",
@@ -1153,7 +1164,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-Beta2",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20-RC-129",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0-dev-5532",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:1.7.10",
@@ -1165,7 +1176,7 @@ DATA = [
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.1.20-Beta2",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.20-Beta2",
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.1.20-RC-129",
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.2.0-dev-5532",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.1.20-Beta2",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.1",
@@ -1227,6 +1238,8 @@ DATA = [
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
+    "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",
@@ -1281,6 +1294,7 @@ DATA = [
     "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:jar:sources:0.8.18",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:jar:sources:0.8.18",
     "org.mockito:mockito-core:4.3.1",
+    "org.ow2.asm:asm-bom:pom:9.6",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]

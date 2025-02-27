@@ -337,15 +337,15 @@ class SdkParsingUtilsTest {
         )
         assertThat(issueReporter.messages).containsExactly(
             """
-            We recommend using a newer Android Gradle plugin to use compileSdk = 31
+            We recommend using a newer Android Gradle plugin to use compile SDK version 31
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30.
 
             You are strongly encouraged to update your project to use a newer
-            Android Gradle plugin that has been tested with compileSdk = 31.
+            Android Gradle plugin that has been tested with compile SDK version 31.
 
             If you are already using the latest version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compileSdk = 31 is available.
+            you may need to wait until a newer version with support for compile SDK version 31 is available.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -368,12 +368,12 @@ class SdkParsingUtilsTest {
         )
         assertThat(issueReporter.messages).containsExactly(
             """
-            compileSdkPreview = "S" has not been tested with this version of the Android Gradle plugin.
+            compile SDK preview version "S" has not been tested with this version of the Android Gradle plugin.
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30.
 
             If you are already using the latest preview version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compileSdkPreview = "S" is available.
+            you may need to wait until a newer version with support for compile SDK preview version "S" is available.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -400,7 +400,7 @@ class SdkParsingUtilsTest {
     }
 
     @Test
-    fun `warn when using a newer preview version with alpha AGP where mex supported is a preview`() {
+    fun `warn when using a newer preview version with alpha AGP where max supported is a preview`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
             version = AndroidVersion(30, "S2"),
@@ -410,12 +410,12 @@ class SdkParsingUtilsTest {
         )
         assertThat(issueReporter.messages).containsExactly(
             """
-            compileSdkPreview = "S2" has not been tested with this version of the Android Gradle plugin.
+            compile SDK preview version "S2" has not been tested with this version of the Android Gradle plugin.
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30 (and compileSdkPreview = "S").
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30 (and compile SDK preview version "S").
 
             If you are already using the latest preview version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compileSdkPreview = "S2" is available.
+            you may need to wait until a newer version with support for compile SDK preview version "S2" is available.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -443,7 +443,44 @@ class SdkParsingUtilsTest {
     }
 
     @Test
-    fun `suppress warning non matching version`() {
+    fun `suppress warning minor version`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(36, 5),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(30),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = ",,,S,36.5,",
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
+    }
+
+    @Test
+    fun `suppress warning preview`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(33, "S"),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(30),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = ",,,S,31,",
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(38, 4, "S", null, true),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(30),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = ",,,S,31,",
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
+    }
+
+    @Test
+    fun `warn non matching version`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
             version = AndroidVersion(32),
@@ -454,15 +491,15 @@ class SdkParsingUtilsTest {
         )
         assertThat(issueReporter.messages).containsExactly(
             """
-            We recommend using a newer Android Gradle plugin to use compileSdk = 32
+            We recommend using a newer Android Gradle plugin to use compile SDK version 32
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compileSdk = 30.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 30.
 
             You are strongly encouraged to update your project to use a newer
-            Android Gradle plugin that has been tested with compileSdk = 32.
+            Android Gradle plugin that has been tested with compile SDK version 32.
 
             If you are already using the latest version of the Android Gradle plugin,
-            you may need to wait until a newer version with support for compileSdk = 32 is available.
+            you may need to wait until a newer version with support for compile SDK version 32 is available.
 
             For more information refer to the compatibility table:
             https://d.android.com/r/tools/api-level-support
@@ -473,7 +510,86 @@ class SdkParsingUtilsTest {
             """.trimIndent()
         )
         assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S,31,32")
+    }
 
+    @Test
+    fun `warn non matching minor version`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(36, 3),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(36),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = "S , 31.2 , ,",
+        )
+        assertThat(issueReporter.messages).containsExactly(
+            """
+            We recommend using a newer Android Gradle plugin to use compile SDK version 36.3
+
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.
+
+            You are strongly encouraged to update your project to use a newer
+            Android Gradle plugin that has been tested with compile SDK version 36.3.
+
+            If you are already using the latest version of the Android Gradle plugin,
+            you may need to wait until a newer version with support for compile SDK version 36.3 is available.
+
+            For more information refer to the compatibility table:
+            https://d.android.com/r/tools/api-level-support
+
+            To suppress this warning, add/update
+                android.suppressUnsupportedCompileSdk=S,31.2,36.3
+            to this project's gradle.properties.
+            """.trimIndent()
+        )
+        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S,31.2,36.3")
+    }
+
+    @Test
+    fun `warn for minor version eligible API`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(38),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(37),
+            androidGradlePluginVersion = AgpVersion.parse("9.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = "S , 31.2 , 38," // will not suppress; must be 38.0
+        )
+        assertThat(issueReporter.messages).containsExactly(
+            """
+            We recommend using a newer Android Gradle plugin to use compile SDK version 38.0
+
+            This Android Gradle plugin (9.0.0-beta01) was tested up to compile SDK version 37.0.
+
+            You are strongly encouraged to update your project to use a newer
+            Android Gradle plugin that has been tested with compile SDK version 38.0.
+
+            If you are already using the latest version of the Android Gradle plugin,
+            you may need to wait until a newer version with support for compile SDK version 38.0 is available.
+
+            For more information refer to the compatibility table:
+            https://d.android.com/r/tools/api-level-support
+
+            To suppress this warning, add/update
+                android.suppressUnsupportedCompileSdk=S,31.2,38,38.0
+            to this project's gradle.properties.
+            """.trimIndent()
+        )
+        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=S,31.2,38,38.0")
+    }
+
+    @Test
+    fun `suppress warning for minor version eligible API`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(37),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(36),
+            androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
+            suppressWarningIfTooNewForVersions = "S , 31.2 , 37.0,"
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
     }
 
     @Test

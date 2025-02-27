@@ -27,4 +27,14 @@ internal interface DatabaseActions {
   @RequiresApi(28) fun doOpenReadOnlyDatabase() {}
 
   fun doCloseReadOnlyDatabase() {}
+
+  fun addUserRoom() {}
+
+  fun addUserRoomBundled() {}
+
+  fun addUserSqlDelight() {}
+
+  fun addUserNative() {}
+
+  fun addUserBundled() {}
 }

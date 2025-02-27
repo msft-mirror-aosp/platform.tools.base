@@ -22,8 +22,6 @@ import static com.google.common.truth.Truth.assert_;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.Logcat;
-import com.android.builder.model.Variant;
-import com.android.testutils.apk.Aar;
 import com.android.testutils.apk.Apk;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Optional;
@@ -95,24 +93,6 @@ public class TruthHelper {
     @NonNull
     public static ApkSubject assertThat(@Nullable Apk apk) {
         return assertAbout(ApkSubject.apks()).that(apk);
-    }
-
-    @NonNull
-    public static AarSubject assertThatAar(@NonNull File aar) {
-        try {
-            return assertThat(new Aar(aar.toPath()));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static AarSubject assertThat(@NonNull Aar aar) {
-        return assertAbout(AarSubject.aars()).that(aar);
-    }
-
-
-    public static AarSubject assertThatAar(@NonNull Aar aar) {
-        return assertAbout(AarSubject.aars()).that(aar);
     }
 
     @NonNull

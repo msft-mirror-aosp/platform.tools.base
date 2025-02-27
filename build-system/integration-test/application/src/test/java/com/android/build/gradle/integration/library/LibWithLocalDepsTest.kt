@@ -51,11 +51,10 @@ class LibWithLocalDepsTest {
     fun testLocalJarPackagedWithAar() {
         executor().run("clean", ":baseLibrary:assembleDebug")
         project.getSubproject("baseLibrary").assertThatAar("debug") {
-            containsClass("Lcom/example/local/Foo;")
-            containsJavaResourceWithContent(
-                "com/example/local/javaRes.txt",
-                "local java res"
-            )
+            allJars {
+                containsClass("com/example/local/Foo")
+                resourceAsText("com/example/local/javaRes.txt").isEqualTo("local java res")
+            }
         }
     }
 
@@ -65,8 +64,10 @@ class LibWithLocalDepsTest {
         // library depends on baseLibrary, so library has localJavaLib.jar as a transitive
         // dependency.
         project.getSubproject("library").assertThatAar("debug") {
-            doesNotContainClass("Lcom/example/local/Foo;")
-            doesNotContainJavaResource("com/example/local/javaRes.txt")
+            allJars {
+                doesNotContainClass("com/example/local/Foo")
+                doesNotContainResource("com/example/local/javaRes.txt")
+            }
         }
     }
 

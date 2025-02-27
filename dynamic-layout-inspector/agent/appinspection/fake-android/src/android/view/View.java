@@ -38,6 +38,8 @@ import java.util.function.Consumer;
 @SuppressWarnings({"MethodMayBeStatic", "FieldCanBeLocal", "unused"})
 public class View {
 
+    @VisibleForTesting public Canvas fakeCanvas = new Canvas();
+
     public static final int VISIBLE = 0x0;
     public static final int INVISIBLE = 0x4;
     public static final int GONE = 0x8;
@@ -249,6 +251,7 @@ public class View {
             Handler handler = new Handler(Looper.getMainLooper());
             handler.post(() -> forcePictureCapture(mPictureCapture));
         }
+        onDraw(fakeCanvas);
     }
 
     public void postInvalidate() {
@@ -310,5 +313,19 @@ public class View {
     @VisibleForTesting
     public Picture getPictureCapture() {
         return mPictureCapture;
+    }
+
+    protected void onDraw(Canvas canvas) {}
+
+    public void onAttachedToWindow() {}
+
+    public void onDetachedFromWindow() {}
+
+    public boolean onTouchEvent(MotionEvent ev) {
+        return false;
+    }
+
+    public boolean onHoverEvent(MotionEvent ev) {
+        return false;
     }
 }

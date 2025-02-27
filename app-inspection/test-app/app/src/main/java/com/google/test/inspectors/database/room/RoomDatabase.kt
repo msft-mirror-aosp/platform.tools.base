@@ -25,4 +25,6 @@ import androidx.room.RoomDatabase as AndroidxRoomDatabase
  * We don't do much with this database except register an invalidation listener
  */
 @Database(entities = [RoomUserEntity::class], version = 1, exportSchema = false)
-internal abstract class RoomDatabase : AndroidxRoomDatabase()
+internal abstract class RoomDatabase : AndroidxRoomDatabase() {
+  abstract fun userDao(): RoomUserDao
+}

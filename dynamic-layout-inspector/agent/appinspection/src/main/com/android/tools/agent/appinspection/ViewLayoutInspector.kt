@@ -33,19 +33,16 @@ import com.android.tools.agent.appinspection.framework.flatten
 import com.android.tools.agent.appinspection.framework.takeScreenshot
 import com.android.tools.agent.appinspection.framework.toByteArray
 import com.android.tools.agent.appinspection.proto.createGetPropertiesResponse
+import com.android.tools.agent.appinspection.rendering.OnDeviceRenderingViewModel
+import com.android.tools.agent.appinspection.util.MainThreadExecutor
 import com.android.tools.agent.appinspection.util.ThreadUtils
 import com.android.tools.agent.appinspection.util.compress
-import com.android.tools.layoutinspector.BitmapType
-import com.android.tools.layoutinspector.errors.errorCode
-import com.android.tools.layoutinspector.errors.noHardwareAcceleration
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Command
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotCommand
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotResponse
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionCommand
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionResponse
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Event
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.GetPropertiesCommand
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.GetPropertiesResponse
@@ -60,10 +57,16 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.UpdateScreenshotTypeCommand
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.UpdateScreenshotTypeResponse
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.WindowRootsEvent
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotCommand
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableBitmapScreenshotResponse
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionCommand
-import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.EnableXrInspectionResponse
+import com.android.tools.layoutinspector.BitmapType
+import com.android.tools.layoutinspector.errors.errorCode
+import com.android.tools.layoutinspector.errors.noHardwareAcceleration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -73,8 +76,11 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
-import com.android.tools.agent.appinspection.XrHelper
-import com.android.tools.agent.appinspection.InspectorView
+
+// The ".studio" prefix prevents logs from showing in logcat,
+// unless the "logcat.ignore.studio.tags" flag is enabled.
+const val LOG_TAG = "ViewInspector"
+const val SPAM_LOG_TAG = "studio.$LOG_TAG"
 
 private const val LAYOUT_INSPECTION_ID = "layoutinspector.view.inspection"
 
@@ -112,8 +118,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             }
         }
 
-    private val scope =
-        CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
+    @VisibleForTesting
+    val scope = CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
 
     @GuardedBy("state.lock")
     private val state = InspectorState()
@@ -126,6 +132,13 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
     private val xrHelper = XrHelper(environment)
     private val rootsDetector = RootsDetector(xrHelper, connection, ::onRootsChanged) { checkpoint = it }
+
+    @VisibleForTesting
+    val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(
+        scope = scope,
+        connection = connection,
+        mainDispatcher = MainThreadExecutor().asCoroutineDispatcher()
+    )
 
     override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
         val command = Command.parseFrom(data)
@@ -155,15 +168,82 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 command.enableXrInspectionCommand,
                 callback
             )
+            Command.SpecializedCase.DRAW_COMMAND -> handleDrawCommand(
+                command.drawCommand,
+                callback
+            )
+            Command.SpecializedCase.ENABLE_ON_DEVICE_RENDERING_COMMAND -> handleEnableOnDeviceRendering(
+                command.enableOnDeviceRenderingCommand,
+                callback
+            )
+            Command.SpecializedCase.INTERCEPT_TOUCH_EVENTS_COMMAND -> handleInterceptTouchEventsCommand(
+                command.interceptTouchEventsCommand,
+                callback
+            )
             else -> error("Unexpected view inspector command case: ${command.specializedCase}")
         }
     }
 
     override fun onDispose() {
-        forceStopAllCaptures()
-        foldSupport?.shutdown()
-        scope.cancel("ViewLayoutInspector has been disposed")
-        SynchronousPixelCopy.stopHandler()
+        Log.w(SPAM_LOG_TAG, "onDispose")
+        // Use runBlocking to prevent the Inspector from being disposed
+        // before these functions are executed.
+        runBlocking {
+            onDeviceRenderingViewModel.dispose()
+            forceStopAllCaptures()
+            foldSupport?.shutdown()
+            SynchronousPixelCopy.stopHandler()
+            scope.cancel("ViewLayoutInspector has been disposed")
+        }
+    }
+
+    private fun handleDrawCommand(
+        drawCommand: LayoutInspectorViewProtocol.DrawCommand,
+        callback: CommandCallback
+    ) {
+        val type = drawCommand.type
+        when (type) {
+            LayoutInspectorViewProtocol.DrawCommand.Type.SELECTED_NODES -> {
+                onDeviceRenderingViewModel.setSelectedNodes(drawCommand.drawInstructionsList)
+            }
+            LayoutInspectorViewProtocol.DrawCommand.Type.HOVERED_NODES -> {
+                onDeviceRenderingViewModel.setHoveredNodes(drawCommand.drawInstructionsList)
+            }
+            LayoutInspectorViewProtocol.DrawCommand.Type.VISIBLE_NODES -> {
+                onDeviceRenderingViewModel.setVisibleNodes(drawCommand.drawInstructionsList)
+            }
+            LayoutInspectorViewProtocol.DrawCommand.Type.RECOMPOSING_NODES -> {
+                onDeviceRenderingViewModel.setRecomposingNodes(drawCommand.drawInstructionsList)
+            }
+            else -> throw IllegalArgumentException("Unknown draw command type: $type")
+        }
+
+        callback.reply {
+            drawResponse = LayoutInspectorViewProtocol.DrawResponse.newBuilder().build()
+        }
+    }
+
+    private fun handleEnableOnDeviceRendering(
+        enableOnDeviceRenderingCommand: LayoutInspectorViewProtocol.EnableOnDeviceRenderingCommand,
+        callback: CommandCallback
+    ) {
+        scope.launch {
+            onDeviceRenderingViewModel.setEnableOnDeviceRendering(enableOnDeviceRenderingCommand.enable)
+        }
+
+        callback.reply {
+            LayoutInspectorViewProtocol.EnableOnDeviceRenderingResponse.newBuilder().build()
+        }
+    }
+
+    private fun handleInterceptTouchEventsCommand(
+        interceptTouchEventsCommand: LayoutInspectorViewProtocol.InterceptTouchEventsCommand,
+        callback: CommandCallback
+    ) {
+        onDeviceRenderingViewModel.setInterceptTouchEvents(interceptTouchEventsCommand.intercept)
+        callback.reply {
+            LayoutInspectorViewProtocol.InterceptTouchEventsResponse.newBuilder().build()
+        }
     }
 
     /**
@@ -177,6 +257,10 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
             }
             added.mapNotNull { roots[it] }.forEach { foldSupport?.start(it.view) }
             removed.mapNotNull { roots[it] }.forEach { foldSupport?.stop(it.view) }
+
+            scope.launch {
+                onDeviceRenderingViewModel.setRoots(roots)
+            }
 
             if (state.fetchContinuously) {
                 if (added.isNotEmpty()) {

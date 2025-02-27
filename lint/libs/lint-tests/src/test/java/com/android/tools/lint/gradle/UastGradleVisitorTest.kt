@@ -208,6 +208,21 @@ class UastGradleVisitorTest {
     )
   }
 
+  @Test
+  fun testMethodCallReceiver() {
+    check(
+      """
+      tasks.withType(Test::class.java) {
+        enabled = false
+      }
+      """,
+      """
+      checkDslPropertyAssignment(property="enabled", value="false", parent="withType", parentParent="tasks")
+      checkMethodCall(statement="withType", parent="tasks", unnamedArguments="Test::class.java, { enabled = false }")
+      """,
+    )
+  }
+
   // Test infrastructure only below
 
   private fun check(@Language("kotlin-script") gradleSource: String, expected: String) {

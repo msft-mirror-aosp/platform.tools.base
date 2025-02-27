@@ -61,8 +61,8 @@ class LibWithPackageLocalJarTest : ModelComparator() {
     @Test
     fun `check provided local jar is packaged`() {
         project.execute("clean", "assembleDebug")
-        project.testAar(
-            GradleTestProject.ApkType.DEBUG.buildType
-        ) { aar -> aar.containsSecondaryClass("Lcom/example/android/multiproject/person/People;") }
+        project.testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
+            aar.allSecondaryJars().containsClass("com/example/android/multiproject/person/People")
+        }
     }
 }

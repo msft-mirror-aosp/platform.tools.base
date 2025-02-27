@@ -17,6 +17,7 @@
 package com.android.compose.screenshot
 
 import com.google.common.truth.Truth
+import com.android.tools.render.compose.ComposeScreenshot
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -44,7 +45,6 @@ class PreviewFinderTest {
     fun testConfigureInput() {
         val classpath = listOf("path/to/classes.jar","path/to/R.jar")
         val previewsFile = tempDirRule.newFile("previews_discovered.json")
-        val cliToolArgumentsFile = tempDirRule.newFile("cli_tools_arguments.json")
         previewsFile.writeText("""
             {
               "screenshots": [
@@ -60,7 +60,7 @@ class PreviewFinderTest {
               ]
             }
         """.trimIndent())
-        configureInput(classpath,
+        val previewRendering = configureInput(classpath,
             classpath,
             "fontsPath",
             "layoutlibpath",
@@ -68,41 +68,22 @@ class PreviewFinderTest {
             "metaDataFolder",
             "namespace",
             "resourceApkPath",
-            cliToolArgumentsFile,
             previewsFile,
             "resultsFilePath"
             )
-        assertEquals("""
-            {
-              "fontsPath": "fontsPath",
-              "layoutlibPath": "layoutlibpath",
-              "outputFolder": "outputFolder",
-              "metaDataFolder": "metaDataFolder",
-              "classPath": [
-                "path/to/classes.jar",
-                "path/to/R.jar"
-              ],
-              "projectClassPath": [
-                "path/to/classes.jar",
-                "path/to/R.jar"
-              ],
-              "namespace": "namespace",
-              "resourceApkPath": "resourceApkPath",
-              "screenshots": [
-                {
-                  "methodFQN": "com.example.agptest.ExampleInstrumentedTest.previewThere",
-                  "methodParams": [],
-                  "previewParams": {
-                    "showBackground": "true"
-                  },
-                  "previewId": "com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee",
-                  "previewType": "COMPOSE"
-                }
-              ],
-              "resultsFilePath": "resultsFilePath"
-            }
-        """.trimIndent(),
-                cliToolArgumentsFile.readText())
+        assertEquals("fontsPath", previewRendering.fontsPath)
+        assertEquals("layoutlibpath", previewRendering.layoutlibPath)
+        assertEquals("metaDataFolder", previewRendering.metaDataFolder)
+        assertEquals("namespace", previewRendering.namespace)
+        assertEquals("resourceApkPath", previewRendering.resourceApkPath)
+        assertEquals("resultsFilePath", previewRendering.resultsFilePath)
+        assertEquals(2, previewRendering.classPath.size)
+        assertEquals(2, previewRendering.projectClassPath.size)
+        assertEquals(1, previewRendering.screenshots.size)
+        val screenshot = previewRendering.screenshots[0]
+        assertEquals("com.example.agptest.ExampleInstrumentedTest.previewThere", screenshot.methodFQN)
+        assertEquals("com.example.agptest.ExampleInstrumentedTest.previewThere_3d8b4969_da39a3ee", screenshot.previewId)
+        assert(screenshot is ComposeScreenshot)
     }
 
     @Test

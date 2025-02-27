@@ -18,6 +18,9 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Truth.assertAbout
+import java.io.File
+import java.nio.file.Path
+import java.util.function.Consumer
 
 /**
  * Generic Zip archive Truth subject
@@ -30,18 +33,44 @@ class ZipSubject(
 
     companion object {
         /**
-         * Returns a [com.android.build.gradle.integration.common.output.ZipSubject]
+         * Returns a [ZipSubject]
          */
         fun assertThat(zip: Zip): ZipSubject {
             return assertAbout(zips()).that(zip)
         }
 
         /**
-         * Creates a [com.android.build.gradle.integration.common.output.ZipSubject] and
-         * configures it with the given action
+         * Creates a [ZipSubject] and configures it with the given action
          */
         fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
             action(assertThat(zip))
+        }
+
+        /**
+         * Creates a [ZipSubject] and configures it with the given action
+         */
+        fun assertThat(path: Path, action: ZipSubject.() -> Unit) {
+            SimpleZip(path).use {
+                action(assertThat(it))
+            }
+        }
+
+        /**
+         * Creates a [ZipSubject] and configures it with the given action
+         */
+        @JvmStatic
+        fun assertThat(path: Path, action: Consumer<ZipSubject>) {
+            SimpleZip(path).use {
+                action.accept(assertThat(it))
+            }
+        }
+
+        /**
+         * Creates a [ZipSubject] and configures it with the given action
+         */
+        @JvmStatic
+        fun assertThat(file: File, action: Consumer<ZipSubject>) {
+            assertThat(file.toPath(), action)
         }
 
         /**

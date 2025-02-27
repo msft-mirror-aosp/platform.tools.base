@@ -18,15 +18,22 @@ package com.android.testutils.truth;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.apk.Zip;
+
 import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Truth;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.function.Consumer;
 
-/** Truth support for zip files. */
+/**
+ * Truth support for zip files.
+ *
+ * <p>Use com.android.build.gradle.integration.common.output.ZipSubject instead
+ */
+@Deprecated()
 public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject, Zip> {
 
     public ZipFileSubject(@NonNull FailureMetadata failureMetadata, @NonNull Zip subject) {
@@ -62,7 +69,8 @@ public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject, Zip> {
         for (String path :  paths) {
             if (actual().getEntry(path) == null) {
                 failWithoutActual(
-                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+                        Fact.simpleFact(
+                                String.format("'%s' does not contain '%s'", actual(), path)));
             }
         }
     }
@@ -73,7 +81,8 @@ public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject, Zip> {
         for (String path :  paths) {
             if (actual().getEntry(path) == null) {
                 failWithoutActual(
-                        Fact.simpleFact(String.format("'%s' does not contain '%s'", actual(), path)));
+                        Fact.simpleFact(
+                                String.format("'%s' does not contain '%s'", actual(), path)));
             }
         }
     }

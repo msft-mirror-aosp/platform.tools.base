@@ -262,7 +262,7 @@ class BuiltInKaptTest {
 
         val result = app.executor().expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            "The \"org.jetbrains.kotlin.kapt\" plugin has been applied, but it is not compatible"
+            "The 'org.jetbrains.kotlin.kapt' plugin is not compatible with the 'com.android.legacy-kapt' plugin."
         )
     }
 
@@ -276,7 +276,9 @@ class BuiltInKaptTest {
         )
 
         val result = app.executor().expectFailure().run(":app:assembleDebug")
-        result.assertErrorContains("The \"$ANDROID_BUILT_IN_KAPT_PLUGIN_ID\" plugin requires the")
+        result.assertErrorContains(
+            "The 'com.android.legacy-kapt' plugin requires the 'com.android.experimental.built-in-kotlin' plugin to be applied."
+        )
     }
 
     /**

@@ -23,14 +23,16 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /** Test native .so packaging from a subproject that directly publish an AAR. */
 public class NativeSoPackagingDirectSubprojectAarTest {
@@ -50,22 +52,16 @@ public class NativeSoPackagingDirectSubprojectAarTest {
         File buildFile = project.file("directLib/build.gradle");
         FileUtils.mkdirs(buildFile.getParentFile());
 
-        lib.getAar(
-                "debug",
-                it -> {
-                    try {
-                        Files.write(
-                                buildFile.toPath(),
-                                ("configurations.create('default')\n"
-                                                + "artifacts.add('default', file('"
-                                                + FileUtils.toSystemIndependentPath(
-                                                        it.getFile().toString())
-                                                + "'))")
-                                        .getBytes(StandardCharsets.UTF_8));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
+        Path aarPath = lib.getAarLocationForCopy("debug");
+
+        Files.write(
+                buildFile.toPath(),
+                ("configurations.create('default')\n"
+                                + "artifacts.add('default', file('"
+                                + FileUtils.toSystemIndependentPath(aarPath.toString())
+                                + "'))")
+                        .getBytes(StandardCharsets.UTF_8));
+
         TestFileUtils.appendToFile(project.file("settings.gradle"), "include 'directLib'\n");
 
         // Rewrite app project to depend on directLib.

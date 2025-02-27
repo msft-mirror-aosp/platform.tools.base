@@ -17,9 +17,9 @@
 package com.android.build.gradle.integration.dependencies
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getSingleOutputFile
@@ -28,8 +28,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.Variant
 import com.android.builder.model.v2.models.AndroidProject
-import com.android.testutils.truth.PathSubject
-import com.android.testutils.truth.ZipFileSubject
 import com.google.common.collect.Sets
 import org.junit.Before
 import org.junit.Rule
@@ -157,11 +155,8 @@ class VariantDependencyTest : ModelComparator() {
         // use the model to get the output APK!
         val variant: Variant = androidProject.getVariantByName(variantName)
         val apk = File(variant.getSingleOutputFile())
-        PathSubject.assertThat(apk).isFile()
-        ZipFileSubject.assertThat(apk) { it: ZipFileSubject ->
-            it.contains(
-                checkFilePath
-            )
+        ZipSubject.assertThat(apk) { it: ZipSubject ->
+            it.contains(checkFilePath)
         }
     }
 
@@ -171,12 +166,8 @@ class VariantDependencyTest : ModelComparator() {
         // use the model to get the output APK!
         val variant: Variant = androidProject.getVariantByName(variantName)
         val apk = File(variant.getSingleOutputFile())
-        PathSubject.assertThat(apk).isFile()
-        ZipFileSubject.assertThat(
-            apk
-        ) { it: ZipFileSubject ->
-            it.entries(".*")
-                .containsNoneIn(checkFilePath)
+        ZipSubject.assertThat(apk) { it: ZipSubject ->
+            it.entries().containsNoneIn(checkFilePath)
         }
     }
 }

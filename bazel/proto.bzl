@@ -2,18 +2,23 @@ load(":android.bzl", "select_android")
 load(":functions.bzl", "label_workspace_path")
 load(":maven.bzl", "maven_library")
 load(":utils.bzl", "java_jarjar")
+load(":kotlin.bzl", "kotlin_library")
 
 # Enum-like values to determine the language the gen_proto rule will compile
 # the .proto files to.
 proto_languages = struct(
     CPP = 0,
     JAVA = 1,
+    KOTLIN = 2,
 )
 
 # This version of protoc is the one currently used in the studio-sdk.jar
 # It will be used to pin the version of protoc used to generate protofiles for analytics.
 # Please do not remove or change it unless the version in the platform has changed
 INTELLIJ_PLATFORM_PROTO_VERSION = "3.24.4"
+INTELLIJ_PLATFORM_GRPC_VERSION = "1.66.0"
+INTELLIJ_PLATFORM_KOTLIN_GRPC_PLUGIN_VERSION = "1.4.1"
+
 PROTOC_VERSION = "3.22.3"
 PROTOC_GRPC_VERSION = "1.57.0"
 
@@ -22,6 +27,7 @@ ProtoPackageInfo = provider(fields = ["proto_src", "proto_paths"])
 def _gen_proto_impl(ctx):
     inputs = ctx.files.srcs + ctx.files.include
 
+    name = ctx.attr.name
     args = []
     needs_label_path = False
     proto_paths = []
@@ -85,6 +91,18 @@ def _gen_proto_impl(ctx):
                 "--java_rpc_out=" + out_path,
                 "--plugin=protoc-gen-java_rpc=" + ctx.executable.grpc_plugin.path,
             ]
+    elif ctx.attr.target_language == proto_languages.KOTLIN:
+        kotlin_src_dir = ctx.actions.declare_directory(name + "/kotlin")
+        outs = [kotlin_src_dir]
+        out_path = kotlin_src_dir.path
+        args.append(
+            "--kotlin_out=" + out_path,
+        )
+        if ctx.executable.grpc_plugin != None:
+            args += [
+                "--grpckt_out=" + out_path,
+                "--plugin=protoc-gen-grpckt=" + ctx.executable.grpc_plugin.path,
+            ]
 
     tools = []
     if ctx.executable.grpc_plugin != None:
@@ -109,12 +127,13 @@ def _gen_proto_impl(ctx):
             command = "cp " + srcjar.path + ".jar" + " " + srcjar.path,
         )
 
-    return ProtoPackageInfo(
+    return [ProtoPackageInfo(
         proto_src = inputs,
         proto_paths = proto_paths,
-    )
+    )] + ([DefaultInfo(files = depset([kotlin_src_dir]))] if ctx.attr.target_language == proto_languages.KOTLIN else [])
 
 _gen_proto_rule = rule(
+    provides = [DefaultInfo, ProtoPackageInfo],
     attrs = {
         "srcs": attr.label_list(
             allow_files = [".proto"],
@@ -136,7 +155,6 @@ _gen_proto_rule = rule(
         "grpc_plugin": attr.label(
             cfg = "exec",
             executable = True,
-            allow_single_file = True,
         ),
         "target_language": attr.int(),
         "strip_prefix": attr.string(default = ""),
@@ -389,3 +407,105 @@ def maven_proto_library(
             visibility = visibility,
             **kwargs
         )
+
+def kotlin_proto_library(
+        name,
+        srcs = None,
+        proto_deps = [],
+        deps = [],
+        visibility = None,
+        grpc_support = False,
+        protoc_version = INTELLIJ_PLATFORM_PROTO_VERSION,
+        protoc_java_grpc_version = INTELLIJ_PLATFORM_GRPC_VERSION,
+        protoc_kotlin_grpc_version = INTELLIJ_PLATFORM_KOTLIN_GRPC_PLUGIN_VERSION,
+        proto_java_runtime_library = ["@intellij//:intellij-sdk"],
+        proto_kotlin_runtime_library = ["@//prebuilts/tools/common/m2:com.google.protobuf.protobuf-kotlin." + INTELLIJ_PLATFORM_PROTO_VERSION],
+        strip_prefix = "",
+        skip_default_includes = False,
+        **kwargs):
+    """Compiles protobuf into a kotlin library.
+
+    NOTE: Be cautious to use this rule. You may need to use android_java_proto_library instead.
+    See the comments in android_java_proto_library rule before using it.
+    Be cautious to override the versions as they may not be compatible with each other.
+
+    Args:
+      name: Name of the rule.
+      srcs:  A list of file names of the protobuf definition to compile.
+      proto_deps: A list of dependent proto_library to compile the library.
+      deps: Additional jvm libraries to be packaged into the library.
+      visibility: Visibility of the rule.
+      grpc_support: True if the proto library requires grpc protoc plugin.
+      protoc_version: The protoc version to use.
+      protoc_java_grpc_version: A version of the java grpc protoc plugin to use.
+      protoc_kotlin_grpc_version: A version of the kotlin grpc protoc plugin to use.
+      proto_java_runtime_library: A label of java_library to be loaded at runtime.
+      proto_kotlin_runtime_library: A label of kotlin_library to be loaded at runtime.
+      strip_prefix: A directory prefix to remove from source files when compiling protos,
+                    so they can be properly found when included from other protos.
+                    If source files are in an external repository, the repository root is already
+                    stripped, so it should not be included.
+                    E.g. if the proto you want to include is build at my/target/path/foo.proto,
+                    but it's included as just "path/foo.proto", you can specify
+                    strip_prefix="my/target". (In terms of the protoc command run, this means that
+                    it will get "--proto_path=my/target" as an extra argument).
+      skip_default_includes: don't add //tools/base/bazel:common-java_proto as a dependency.
+                             This should probably only be used by
+                             //tools/base/bazel:common-java_proto itself.
+      **kwargs: other arguments accepted by bazel rule `kotlin_library` are passed untouched.
+    """
+
+    # Targets that require grpc support should specify the version of protoc-gen-grpc-java plugin.
+    if grpc_support and not protoc_kotlin_grpc_version:
+        fail("grpc support was requested, but the version of grpc kotlin protoc plugin was not specified")
+
+    java_proto_name = name.removesuffix("_kt_proto") + "_java_proto"
+    java_proto_label = ":" + java_proto_name
+
+    # Generate a java_proto_library target implicitly as a dependency of the kotlin target.
+    java_proto_library(
+        name = java_proto_name,
+        srcs = srcs,
+        proto_deps = proto_deps,
+        java_deps = deps + ["@intellij//:intellij.libraries.grpc"],
+        visibility = visibility,
+        grpc_support = grpc_support,
+        protoc_version = protoc_version,
+        protoc_grpc_version = protoc_java_grpc_version,
+        proto_java_runtime_library = proto_java_runtime_library,
+    )
+
+    srcs_name = name + "_srcs"
+    srcs_label = ":" + srcs_name
+
+    # Generate kotlin wrapper source code on top of the java_proto_library.
+    _gen_proto_rule(
+        name = srcs_name,
+        srcs = srcs,
+        deps = proto_deps + ([] if skip_default_includes else ["@//tools/base/bazel:common-java_proto_srcs"]),
+        outs = [],
+        protoc = "@//prebuilts/tools/common/m2:com.google.protobuf.protoc." + protoc_version + "_exe",
+        grpc_plugin =
+            "@//prebuilts/tools/common/m2:io.grpc.protoc-gen-grpc-kotlin-" + protoc_kotlin_grpc_version + "-jdk8" if grpc_support else None,
+        target_language = proto_languages.KOTLIN,
+        visibility = visibility,
+        strip_prefix = strip_prefix,
+    )
+
+    # Ideally "@maven//:io.grpc.grpc-kotlin-stub" is the only element needed in grpc_extra_deps.
+    # However adding "io.grpc.grpc-kotlin-stub" to maven artifacts breaks versions of other grpc libraries.
+    # As an alternative, we add the jar of "io.grpc.grpc-kotlin-stub" and its dependencies.
+    grpc_extra_deps = [
+        "@//prebuilts/tools/common/m2:io.grpc.grpc-kotlin-stub." + protoc_kotlin_grpc_version,
+        "@intellij//:org.jetbrains.kotlin",
+        "@maven//:io.grpc.grpc-all",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ]
+    deps = list(deps) + (grpc_extra_deps if grpc_support else []) + proto_kotlin_runtime_library
+    kotlin_library(
+        name = name,
+        srcs = [srcs_label],
+        deps = deps + [java_proto_label],
+        visibility = visibility,
+        **kwargs
+    )

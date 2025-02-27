@@ -82,11 +82,8 @@ class NdkRiscvBuildTest {
         AssumeUtil.assumeIsLinux()
         setupBuildFile(isLibrary = true)
         project.execute("clean", "assembleDebug")
-        project.withAar("debug") {
-            Zip(file).use { aar ->
-                Truth.assertThat(aar.entries.map { it.toString() })
-                    .contains("/jni/riscv64/libhello-jni.so")
-            }
+        project.assertThatAar("debug") {
+            contains("jni/riscv64/libhello-jni.so")
         }
      }
 

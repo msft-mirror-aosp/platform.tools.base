@@ -16,25 +16,29 @@
 package com.android.tools.deployer;
 
 import static com.android.tools.deployer.PatchSet.Status.SizeThresholdExceeded;
+
 import static java.util.Collections.singletonList;
 
 import com.android.testutils.TestUtils;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkParser;
+import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.utils.NullLogger;
 import com.android.utils.PathUtils;
 import com.android.zipflinger.BytesSource;
 import com.android.zipflinger.ZipArchive;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.Deflater;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class PatchTest {
     private static final String BASE = "tools/base/deploy/deployer/src/test/resource/";
@@ -75,7 +79,7 @@ public class PatchTest {
     }
 
     @Test
-    public void testPatchSetTooBig() throws DeployerException, IOException {
+    public void testPatchSetTooBig() throws ApkParserException, IOException {
         PatchSetGenerator patchSetGenerator =
                 new PatchSetGenerator(
                         PatchSetGenerator.WhenNoChanges.GENERATE_EMPTY_PATCH, new NullLogger());
@@ -109,7 +113,7 @@ public class PatchTest {
     }
 
     @Test
-    public void testPatchTooBig() throws IOException, DeployerException {
+    public void testPatchTooBig() throws IOException, ApkParserException {
         PatchGenerator patchGenerator = new PatchGenerator(new NullLogger());
 
         int fileSize = PatchSetGenerator.MAX_PATCHSET_SIZE + 1;
@@ -137,7 +141,7 @@ public class PatchTest {
     }
 
     @Test
-    public void testPatchWithVeryLargeArchive() throws IOException, DeployerException {
+    public void testPatchWithVeryLargeArchive() throws IOException, ApkParserException {
 
         int fileSize = 1 << 20; // 1 MiB
         byte[] bytes = new byte[fileSize];

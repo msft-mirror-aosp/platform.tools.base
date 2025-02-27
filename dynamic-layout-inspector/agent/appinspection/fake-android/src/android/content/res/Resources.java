@@ -16,8 +16,11 @@
 
 package android.content.res;
 
+import android.util.DisplayMetrics;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+
 import java.util.Map;
 
 public final class Resources {
@@ -94,5 +97,9 @@ public final class Resources {
             return;
         }
         throw new RuntimeException("Invalid resource ID: " + Integer.toHexString(resourceId));
+    }
+
+    public DisplayMetrics getDisplayMetrics() {
+        return null;
     }
 }

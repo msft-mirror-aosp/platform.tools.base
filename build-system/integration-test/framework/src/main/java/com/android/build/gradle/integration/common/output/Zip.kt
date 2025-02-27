@@ -53,9 +53,16 @@ abstract class Zip(
      */
     abstract fun getEntry(path: String): Path?
 
+    /**
+     * Returns the list of entries, filtered by the given pattern.
+     */
     fun getEntries(pattern: Pattern): List<String> {
         return getEntries { pattern.matcher(it.toString()).matches() }
     }
+
+    /**
+     * Returns the list of entries, filtered by the given filter.
+     */
     abstract fun getEntries(filter: ((String) -> Boolean)? = null): List<String>
 
     fun innerZip(path: String): Zip? {
@@ -77,7 +84,9 @@ abstract class Zip(
         val zipPath = getEntry(path) ?: return null
 
         try {
-            return zipPath.readText()
+            // read the lines separately and recombine them with the right carriage return
+            // in order to work properly on windows.
+            return Files.readAllLines(zipPath).stream().collect(Collectors.joining("\n")).trim()
         } catch (e: IOException) {
             throw UncheckedIOException(e)
         }
@@ -106,7 +115,7 @@ abstract class Zip(
  * @param archivePath the path to the archive. if invalid [status] will no be [Status.EXISTS]
  * @param name the name of the zip when displaying assertion
  */
-open class SimpleZip(
+class SimpleZip(
     val archivePath: Path?,
     name: String = archivePath?.fileName?.toString() ?: "missing zip path"
 ): Zip(name) {

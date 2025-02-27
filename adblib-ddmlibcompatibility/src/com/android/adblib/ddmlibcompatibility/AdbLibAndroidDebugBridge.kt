@@ -21,6 +21,7 @@ import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.rethrowCancellation
+import com.android.ddmlib.AdbDelegateUsageTracker
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AdbVersion
@@ -93,6 +94,8 @@ class AdbLibAndroidDebugBridge(
 
     private val lock = ReentrantLock()
 
+    private var adbDelegateUsageTracker: AdbDelegateUsageTracker? = null
+
     /**
      * Initialized the library only if needed; deprecated for non-test usages.
      */
@@ -125,31 +128,34 @@ class AdbLibAndroidDebugBridge(
 
     @Synchronized
     override fun init(options: AdbInitOptions) {
-        Preconditions.checkState(
-            !sInitialized, "AndroidDebugBridge.init() has already been called."
-        )
-        sInitialized = true
-        sIDeviceManagerFactory = options.iDeviceManagerFactory
-        iDeviceUsageTracker = options.iDeviceUsageTracker
-        sClientSupport = options.clientSupport
-        sClientManager = options.clientManager
-        if (sClientManager != null) {
-            // A custom client manager is not compatible with "client support"
-            sClientSupport = false
-        }
-        if (sIDeviceManagerFactory != null) {
-            // A custom "IDevice" manager is not compatible with a "Client" manager
-            sClientManager = null
-            sClientSupport = false
-        }
-        sAdbEnvVars = options.adbEnvVars
-        sUserManagedAdbMode = options.userManagedAdbMode
-        DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
-        DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
-        DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
+        logUsage(AdbDelegateUsageTracker.Method.INIT_3) {
+            Preconditions.checkState(
+                !sInitialized, "AndroidDebugBridge.init() has already been called."
+            )
+            sInitialized = true
+            sIDeviceManagerFactory = options.iDeviceManagerFactory
+            iDeviceUsageTracker = options.iDeviceUsageTracker
+            adbDelegateUsageTracker = options.adbDelegateUsageTracker
+            sClientSupport = options.clientSupport
+            sClientManager = options.clientManager
+            if (sClientManager != null) {
+                // A custom client manager is not compatible with "client support"
+                sClientSupport = false
+            }
+            if (sIDeviceManagerFactory != null) {
+                // A custom "IDevice" manager is not compatible with a "Client" manager
+                sClientManager = null
+                sClientSupport = false
+            }
+            sAdbEnvVars = options.adbEnvVars
+            sUserManagedAdbMode = options.userManagedAdbMode
+            DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
+            DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
+            DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
 
-        // Determine port and instantiate socket address.
-        initAdbPort(options.userManagedAdbPort)
+            // Determine port and instantiate socket address.
+            initAdbPort(options.userManagedAdbPort)
+        }
     }
 
     override fun enableFakeAdbServerMode(port: Int) {
@@ -949,6 +955,23 @@ class AdbLibAndroidDebugBridge(
 
     private fun unsupportedMethod(): Nothing {
         throw UnsupportedOperationException("This method is not used in Android Studio")
+    }
+
+    /**
+     * Executes a block and logs its success of failure status using the Android Studio UsageTracker
+     */
+    private inline fun <R> logUsage(
+        method: AdbDelegateUsageTracker.Method,
+        crossinline block: () -> R
+    ): R {
+        return try {
+            block().also {
+                adbDelegateUsageTracker?.logUsage(method, /* isException = */ false)
+            }
+        } catch (t: Throwable) {
+            adbDelegateUsageTracker?.logUsage(method, /* isException = */ true)
+            throw t
+        }
     }
 
     companion object {

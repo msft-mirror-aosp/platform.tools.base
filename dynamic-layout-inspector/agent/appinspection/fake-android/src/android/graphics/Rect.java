@@ -16,6 +16,8 @@
 
 package android.graphics;
 
+import java.util.Objects;
+
 public class Rect {
     public int left;
     public int top;
@@ -35,5 +37,17 @@ public class Rect {
 
     public int height() {
         return bottom - top;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Rect rect = (Rect) o;
+        return left == rect.left && top == rect.top && right == rect.right && bottom == rect.bottom;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, top, right, bottom);
     }
 }

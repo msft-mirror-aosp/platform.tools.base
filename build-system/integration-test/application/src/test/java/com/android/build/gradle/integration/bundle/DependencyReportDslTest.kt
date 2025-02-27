@@ -20,8 +20,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.testutils.truth.ZipFileSubject
 import com.android.tools.build.libraries.metadata.AppDependencies
 import com.google.common.collect.ImmutableList.toImmutableList
 import com.google.common.truth.Truth.assertThat
@@ -126,10 +126,9 @@ class DependenciesReportDslTest {
 
         project.addUseAndroidXProperty()
         project.executor().run(":app:bundleRelease")
-        val bundle = project.locateBundleFileViaModel("release", ":app")
-        assertThat(bundle).exists()
-        ZipFileSubject.assertThat(bundle) {
-            it.doesNotContain("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
+        val bundle = project.locateBundleFileViaModel("release", ":app").toPath()
+        ZipSubject.assertThat(bundle) {
+            doesNotContain("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
         }
     }
 }

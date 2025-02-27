@@ -25,7 +25,8 @@ import com.android.build.gradle.integration.common.fixture.gradle_project.Projec
 import com.android.build.gradle.integration.common.fixture.gradle_project.initializeProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
-import com.android.build.gradle.integration.common.truth.AarSubject
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getApkLocations
@@ -41,7 +42,6 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.OsType
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Aar
 import com.android.testutils.apk.Apk
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
@@ -55,7 +55,6 @@ import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.Lists
-import com.google.common.truth.Truth
 import org.gradle.launcher.daemon.client.NoUsableDaemonFoundException
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
@@ -1203,7 +1202,7 @@ allprojects { proj ->
         return getApk(ApkType.ANDROIDTEST_DEBUG, *dimensions)
     }
 
-    private fun testAar(
+    fun testAar(
         dimensions: List<String>,
         action: AarSubject.() -> Unit
     ) {
@@ -1211,16 +1210,13 @@ allprojects { proj ->
             Lists.newArrayListWithExpectedSize(1 + dimensions.size)
         dimensionList.add(name)
         dimensionList.addAll(dimensions)
-        Aar(
-            getOutputFile(
-                "aar",
-                Joiner.on("-").join(dimensionList) + SdkConstants
-                    .DOT_AAR
-            )
-        ).use { aar ->
-            val subject =
-                Truth.assertAbout(AarSubject.aars()).that(aar)
-            action(subject)
+        val path = getOutputFile(
+            "aar",
+            Joiner.on("-").join(dimensionList) + SdkConstants
+                .DOT_AAR
+        )
+        AarSubject.assertThat(path.toPath()) {
+            action(this)
         }
     }
 
@@ -1286,65 +1282,29 @@ allprojects { proj ->
         testAar(listOf(dimension1, dimension2), action)
     }
 
-    private fun getAar(
-        dimensions: List<String>,
-        action: Aar.() -> Unit
-    ) {
+    private fun getAarLocation(dimensions: List<String>, ): Path {
         val dimensionList: MutableList<String?> =
             Lists.newArrayListWithExpectedSize(1 + dimensions.size)
         dimensionList.add(name)
         dimensionList.addAll(dimensions)
-        Aar(
-            getOutputFile(
+
+        return getOutputFile(
                 "aar",
                 Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR
-            )
-        ).use { aar -> action(aar) }
+            ).toPath()
     }
 
     /**
-     * Allows testing the aar.
+     * Returns a path to the AAR, so that the file can be copied in other location.
      *
-     * Testing happens in the callback that receives an [AarSubject]
+     * This should not be used to validate the content of the file. Instead, use [assertThatAar]
+     * or [testAar]
      *
      * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
      * "unsigned", "aligned")
      */
-    fun getAar(
-        dimension1: String,
-        action: Consumer<Aar>
-    ) {
-        getAar(listOf(dimension1)) { action.accept(this) }
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun withAar(
-        dimension1: String,
-        action: Aar.() -> Unit
-    ) {
-        getAar(listOf(dimension1), action)
-    }
-
-    /**
-     * Allows testing the aar.
-     *
-     * Testing happens in the callback that receives an [AarSubject]
-     *
-     * Expected dimensions orders are: - product flavors - build type - other modifiers (e.g.
-     * "unsigned", "aligned")
-     */
-    fun withAar(
-        dimensions: List<String>,
-        action: Aar.() -> Unit
-    ) {
-        getAar(dimensions, action)
+    fun getAarLocationForCopy( dimension1: String,): Path {
+        return getAarLocation(listOf(dimension1))
     }
 
     /**

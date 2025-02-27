@@ -33,15 +33,22 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import org.jetbrains.kotlin.analysis.api.KaSession
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.resolution.successfulConstructorCallOrNull
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.isGetter
 import org.jetbrains.kotlin.asJava.elements.isSetter
+import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.util.isArrayInitializer
+import org.jetbrains.uast.util.isConstructorCall
 import org.jetbrains.uast.util.isNewArray
 
 /**
@@ -112,6 +119,8 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
         } else {
           if (!context.evaluator.isPrivate(method)) {
             return
+          } else if (isCallToPrivateCtorDueToValueClassType(node)) {
+            return
           }
 
           val aClass = method.containingClass ?: return
@@ -135,6 +144,31 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
           // Mention it's an implicit constructor here?
           reportError(context, node, method, aClass)
         }
+      }
+
+      private fun isCallToPrivateCtorDueToValueClassType(node: UCallExpression): Boolean {
+        // Reaching here (or calling this) means the resolved [method] is `private`.
+        // But, one exceptional case: primary constructor whose parameters have `value` class type.
+        // In that case, the constructor is created as `private` to hide it from Java.
+        // However, in Kotlin, a synthetic constructor (w/ marker) is created and used.
+        // Alas, that "synthetic" one is not visible to Java either, and not created by LC.
+        // Therefore, the UAST resolution ends up with the original private constructor.
+        // To avoid false alarms, we check
+        //  1) if the call-site is Kotlin; and
+        //  2) if the resolved [method] is a constructor with `value` class parameter.
+        if (!isKotlin(node.lang)) return false
+        if (!node.isConstructorCall()) return false
+        val sourcePsi = node.sourcePsi as? KtCallElement ?: return false
+        analyze(sourcePsi) {
+          val call = sourcePsi.resolveToCall()?.successfulConstructorCallOrNull() ?: return false
+          val parameters = call.partiallyAppliedSymbol.signature.valueParameters
+          return parameters.any { param -> typeForValueClass(param.returnType) }
+        }
+      }
+
+      private fun KaSession.typeForValueClass(type: KaType): Boolean {
+        val symbol = type.expandedSymbol as? KaNamedClassSymbol ?: return false
+        return symbol.isInline
       }
 
       private fun isSameCompilationUnit(aClass: PsiClass, node: UElement): Boolean {

@@ -215,7 +215,7 @@ class FusedLibraryMergeResourcesTaskTest {
         val app = build.androidApplication()
 
         build.executor.run(":fusedLib1:assemble")
-        val aarFile = build.fusedLibrary(":fusedLib1").getAarFile(AarSelector.NO_BUILD_TYPE)
+        val aarFile = build.fusedLibrary(":fusedLib1").getAarLocationForCopy(AarSelector.NO_BUILD_TYPE)
 
         app.reconfigure {
             dependencies {
@@ -266,7 +266,6 @@ class FusedLibraryMergeResourcesTaskTest {
                     int string string_from_android_lib_2 0x0
                     int string string_from_android_lib_3 0x0
                     int string string_overridden 0x0
-
                 """.trimIndent())
         }
 

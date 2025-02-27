@@ -47,8 +47,25 @@ fun main(args: Array<String>) {
 
 fun renderPreview(previewRenderingJson: File) {
     val previewRendering = readPreviewRenderingJson(previewRenderingJson.reader())
+    renderPreview(previewRendering)
+
+}
+
+fun renderPreview(previewRendering: PreviewRendering): PreviewRenderingResult {
     val previewRenderingResult = try {
-        renderPreview(previewRendering)
+        Renderer(
+            previewRendering.fontsPath,
+            previewRendering.resourceApkPath,
+            previewRendering.namespace,
+            previewRendering.classPath,
+            previewRendering.projectClassPath,
+            previewRendering.layoutlibPath,
+        ).use { renderer ->
+            val screenshotResults = previewRendering.screenshots.flatMap {
+                render(it, previewRendering.outputFolder, renderer)
+            }.sortedBy { it.imagePath }
+            PreviewRenderingResult(globalError = null, screenshotResults)
+        }
     } catch (t: Throwable) {
         PreviewRenderingResult(t.stackTraceToString(), emptyList())
     }
@@ -57,22 +74,7 @@ fun renderPreview(previewRenderingJson: File) {
         File(previewRendering.resultsFilePath).writer(),
         previewRenderingResult,
     )
-}
-
-fun renderPreview(previewRendering: PreviewRendering): PreviewRenderingResult {
-    return Renderer(
-        previewRendering.fontsPath,
-        previewRendering.resourceApkPath,
-        previewRendering.namespace,
-        previewRendering.classPath,
-        previewRendering.projectClassPath,
-        previewRendering.layoutlibPath,
-    ).use { renderer ->
-        val screenshotResults = previewRendering.screenshots.flatMap {
-            render(it, previewRendering.outputFolder, renderer)
-        }.sortedBy { it.imagePath }
-        PreviewRenderingResult(globalError = null, screenshotResults)
-    }
+    return previewRenderingResult
 }
 
 private fun render(screenshot: PreviewScreenshot, outputFolderPath: String, renderer: Renderer):

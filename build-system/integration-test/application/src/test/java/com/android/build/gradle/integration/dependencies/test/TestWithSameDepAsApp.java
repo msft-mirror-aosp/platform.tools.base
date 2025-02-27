@@ -25,14 +25,17 @@ import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
 import com.google.common.collect.Lists;
-import java.util.Collection;
-import java.util.List;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Tests the handling of test dependency.
@@ -57,22 +60,30 @@ public class TestWithSameDepAsApp {
 
         for (String plugin : plugins) {
             // Check two JARs.
-            parameters.add(Lists.newArrayList(
-                    plugin,
-                    "org.hamcrest:hamcrest-core:1.3",
-                    "org.hamcrest:hamcrest-core:1.3",
-                    "Lorg/hamcrest/Matcher;",
-                    "org.hamcrest.Matcher<String> m = org.hamcrest.CoreMatchers.is(\"foo\");",
-                    "org.hamcrest.Matcher<String> m = org.hamcrest.CoreMatchers.is(\"foo\");").toArray());
+            parameters.add(
+                    Lists.newArrayList(
+                                    plugin,
+                                    "org.hamcrest:hamcrest-core:1.3",
+                                    "org.hamcrest:hamcrest-core:1.3",
+                                    "Lorg/hamcrest/Matcher;",
+                                    "org.hamcrest.Matcher<String> m ="
+                                            + " org.hamcrest.CoreMatchers.is(\"foo\");",
+                                    "org.hamcrest.Matcher<String> m ="
+                                            + " org.hamcrest.CoreMatchers.is(\"foo\");")
+                            .toArray());
 
             // Check two JARs, indirect conflict.
-            parameters.add(Lists.newArrayList(
-                    plugin,
-                    "org.hamcrest:hamcrest-core:1.3",
-                    "junit:junit:4.12",
-                    "Lorg/hamcrest/Matcher;",
-                    "org.hamcrest.Matcher<String> m = org.hamcrest.CoreMatchers.is(\"foo\");",
-                    "org.hamcrest.Matcher<String> m = org.hamcrest.CoreMatchers.is(\"foo\");").toArray());
+            parameters.add(
+                    Lists.newArrayList(
+                                    plugin,
+                                    "org.hamcrest:hamcrest-core:1.3",
+                                    "junit:junit:4.12",
+                                    "Lorg/hamcrest/Matcher;",
+                                    "org.hamcrest.Matcher<String> m ="
+                                            + " org.hamcrest.CoreMatchers.is(\"foo\");",
+                                    "org.hamcrest.Matcher<String> m ="
+                                            + " org.hamcrest.CoreMatchers.is(\"foo\");")
+                            .toArray());
 
             // Check two AARs.
             parameters.add(
@@ -172,7 +183,10 @@ public class TestWithSameDepAsApp {
             project.testAar(
                     "debug",
                     it -> {
-                        it.doesNotContainClass(this.className);
+                        // have to remove the L; for AarSubject. APK migration will follow
+                        it.allJars()
+                                .doesNotContainClass(
+                                        this.className.substring(1, this.className.length() - 1));
                     });
             // But should be in the test APK.
             assertThat(project.getTestApk()).containsClass(this.className);

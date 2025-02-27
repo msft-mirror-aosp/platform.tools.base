@@ -115,6 +115,12 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "gradle-distrib-8.10.2",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.10.2"],
+    visibility = ["//visibility:public"],
+)
+
 # See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
 maven_repository(
     name = "gradle-runtime-maven",

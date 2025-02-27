@@ -63,7 +63,6 @@ interface SdkComponents {
      *  The returned [Provider] can be used by tasks requiring aidl tools as input
      *  with [org.gradle.api.tasks.Nested]
      */
-    @get:Incubating
     val aidl: Provider<Aidl>
 
     /**

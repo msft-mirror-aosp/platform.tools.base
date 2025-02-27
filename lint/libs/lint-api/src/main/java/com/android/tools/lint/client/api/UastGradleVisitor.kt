@@ -62,7 +62,7 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
     if (node.isAssignment()) {
       val hierarchy = getPropertyHierarchy(node.leftOperand)
       val target = hierarchy.firstOrNull() ?: return
-      val hierarchyWithParents = hierarchy + getParent(node) + getParentN(node, 2)
+      val hierarchyWithParents = hierarchy + getParentsN(node, 1) + getParentsN(node, 2)
       val parentName = hierarchyWithParents[1] ?: ""
       val parentParentName = hierarchyWithParents[2]
       val value = node.rightOperand.getSource()
@@ -124,8 +124,10 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
     if (propertyName == null) {
       return
     } else {
-      val parentName = getParent(node)
-      val parentParentName = getParentN(node, 2)
+      val parents =
+        getMethodCallHierarchy(node).drop(1) + getParentsN(node, 1) + getParentsN(node, 2)
+      val parentName = parents.getOrNull(0)
+      val parentParentName = parents.getOrNull(1)
       val unnamedArguments = valueArguments.map { it.getSource() }
       for (scanner in detectors) {
         scanner.checkMethodCall(
@@ -206,6 +208,13 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
     }
   }
 
+  private fun getMethodCallHierarchy(call: UCallExpression): List<String> {
+    val result = mutableListOf<String>()
+    getMethodName(call)?.let(result::add)
+    call.receiver?.let { result.addAll(getPropertyHierarchy(it)) }
+    return result
+  }
+
   private fun getSurroundingNamedBlock(node: UElement): UCallExpression? {
     var parent = node.uastParent
     while (parent is UBinaryExpression || parent is UCallExpression) {
@@ -238,6 +247,15 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
   }
 
   private fun getParent(node: UElement) = getParentN(node, 1)
+
+  private fun getParentsN(node: UElement, n: Int): List<String?> {
+    val parentCall = getSurroundingNamedBlock(node)
+    return when {
+      parentCall == null -> listOf(null)
+      n == 1 -> getMethodCallHierarchy(parentCall)
+      else -> getParentsN(parentCall, n - 1)
+    }
+  }
 
   private fun isMethodCallInClosure(node: UElement): Boolean =
     getSurroundingNamedBlock(node)?.let { block ->

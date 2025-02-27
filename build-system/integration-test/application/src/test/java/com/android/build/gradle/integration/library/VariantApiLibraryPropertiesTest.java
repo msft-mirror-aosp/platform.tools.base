@@ -19,8 +19,9 @@ package com.android.build.gradle.integration.library;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.testutils.truth.AbstractZipSubject;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -37,16 +38,19 @@ public class VariantApiLibraryPropertiesTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "    libraryVariants.all { variant ->\n"
-                        + "        if (variant.name == 'debug') {\n"
-                        + "            assert variant.outputs.first().outputFileName == 'project-debug.aar'\n"
-                        + "            def outputFileName = variant.outputs.first().outputFileName\n"
-                        + "            def variantOutput = variant.outputs.first()\n"
-                        + "            variantOutput.outputFileName = outputFileName.replace('project', \"project-1.0\")\n"
-                        + "            assert variantOutput.outputFile == project.file(\"build/outputs/aar/${variantOutput.outputFileName}\")\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
+                    + "    libraryVariants.all { variant ->\n"
+                    + "        if (variant.name == 'debug') {\n"
+                    + "            assert variant.outputs.first().outputFileName =="
+                    + " 'project-debug.aar'\n"
+                    + "            def outputFileName = variant.outputs.first().outputFileName\n"
+                    + "            def variantOutput = variant.outputs.first()\n"
+                    + "            variantOutput.outputFileName = outputFileName.replace('project',"
+                    + " \"project-1.0\")\n"
+                    + "            assert variantOutput.outputFile =="
+                    + " project.file(\"build/outputs/aar/${variantOutput.outputFileName}\")\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n");
 
         project.executor().run("assembleDebug");
         project.testAar("debug", AbstractZipSubject::doesNotExist);

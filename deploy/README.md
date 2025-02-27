@@ -145,3 +145,31 @@ ANDROID_LINKOPTS = select_android(
 
 To symbolize ASAN report, follow the steps in section "Symbolizing crash-dump".
 Note that you cannot use ASAN for ART jvmti agent yet because of b/182005971.
+
+## Updating the Deployer JAR in google3
+
+We release the deployer jar to
+`google3/third_party/java/android_devtools/studio/deployer/` for use by
+1st-party teams and codebases.
+
+As uploading jars directly to google3 is disallowed, we utilize the Argon
+service (go/android-argon) to copy our jar from the artifacts folder of an
+android build into google3.
+
+Our Argon-specific code lives at
+`google3/java/com/google/android/apps/common/testing/pipeline/releases/studiodeployer/`;
+it defines an MPM package that Argon will use to transform the output from ab/
+before uploading to google3. Currently, it is simply a pass-through, but could
+be modified to perform additional transformations if needed.
+
+Releases are currently done manually. To trigger a new release:
+
+Go to
+`https://android-build.corp.google.com/build_explorer/branch/git_studio-main`
+and determine the build ID you wish to deploy.
+
+Choose a reviewer from `/google3/third_party/java/android_devtools/OWNERS`.
+
+Obtain prodaccess and run the update script as follows: `update_deployer_google3.sh <build id> <reviewer>`.
+The script will cause a CL to be created with you and the selected reviewer.
+Once the CL is LGTM'd and submitted, the jar will be updated in google3.

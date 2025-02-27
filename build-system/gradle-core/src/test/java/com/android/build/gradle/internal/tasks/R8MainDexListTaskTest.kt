@@ -19,9 +19,11 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.transforms.testdata.Animal
 import com.android.build.gradle.internal.transforms.testdata.CarbonForm
 import com.android.build.gradle.internal.transforms.testdata.Toy
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
-import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.DexingType
+import com.android.builder.dexing.R8OutputType
+import com.android.builder.dexing.ToolConfig
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Dex
@@ -163,20 +165,13 @@ fun runR8(
         bootClasspath = listOf(
             TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
         ),
-        minSdkVersion = minSdkVersion,
-        isDebuggable = true,
-        enableDesugaring = false,
-        disableTreeShaking = false,
-        disableMinification = true,
         mainDexListFiles = listOf(),
         mainDexRulesFiles = mainDexRulesFiles,
         inputProguardMapping = null,
         proguardConfigurationFiles = listOf(),
         proguardConfigurations = proguardConfigurations,
-        isAar = ComponentTypeImpl.BASE_APK.isAar,
         errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
         legacyMultiDexEnabled = dexingType == DexingType.LEGACY_MULTIDEX,
-        useFullR8 = false,
         referencedInputs = referencedInputs,
         classes = classes,
         resourcesJar = resourcesJar.toFile(),
@@ -197,6 +192,16 @@ fun runR8(
         outputArtProfile = null,
         inputProfileForDexStartupOptimization = null,
         r8Metadata = null,
+        toolConfig = ToolConfig(
+            minSdkVersion = minSdkVersion,
+            debuggable = true,
+            disableTreeShaking = false,
+            disableMinification = true,
+            disableDesugaring = true,
+            fullMode = false,
+            strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
+            r8OutputType = R8OutputType.DEX
+        ),
         resourceShrinkingConfig = null,
         partialShrinkingConfig = null,
         r8ThreadPool = MoreExecutors.newDirectExecutorService()

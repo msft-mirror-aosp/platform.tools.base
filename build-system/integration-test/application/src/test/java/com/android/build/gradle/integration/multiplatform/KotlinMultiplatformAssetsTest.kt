@@ -16,13 +16,10 @@
 
 package com.android.build.gradle.integration.multiplatform
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Aar
-import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -87,14 +84,12 @@ class KotlinMultiplatformAssetsTest {
             )
         )
 
-        Aar(
-            project.getSubproject("kmpFirstLib")
-                .getOutputFile("aar", "kmpFirstLib.aar")
-        ).use { aar ->
-            PathSubject.assertThat(aar.getEntry("assets/something.json")).isNotNull()
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
 
-            val content = aar.getEntry("assets/something.json")
-            Truth.assertThat(content.readText()).isEqualTo(
+        AarSubject.assertThat(aarPath) {
+            assets().textFile("something.json").isEqualTo(
                 """
                    {
                      "id": 123,

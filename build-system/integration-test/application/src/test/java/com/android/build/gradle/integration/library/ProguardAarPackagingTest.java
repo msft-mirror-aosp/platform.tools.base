@@ -9,13 +9,16 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Joiner;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Integration test to check that libraries included directly as jar files are correctly handled
@@ -59,7 +62,8 @@ public class ProguardAarPackagingTest {
                                 + "\n"
                                 + "public class LibInJar {\n"
                                 + "    public static void method() {\n"
-                                + "        throw new UnsupportedOperationException(\"Not implemented\");\n"
+                                + "        throw new UnsupportedOperationException(\"Not"
+                                + " implemented\");\n"
                                 + "    }\n"
                                 + "}\n"));
     }
@@ -97,7 +101,8 @@ public class ProguardAarPackagingTest {
                         + "    buildTypes {\n"
                         + "        release {\n"
                         + "            minifyEnabled true\n"
-                        + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'\n"
+                        + "            proguardFiles"
+                        + " getDefaultProguardFile('proguard-android.txt'), 'config.pro'\n"
                         + "        }\n"
                         + "    }\n"
                         + "}");
@@ -139,10 +144,10 @@ public class ProguardAarPackagingTest {
                 "debug",
                 it -> {
                     // check that the classes from the local jars are still in a local jar
-                    it.containsSecondaryClass("Lcom/example/libinjar/LibInJar;");
+                    it.allSecondaryJars().containsClass("com/example/libinjar/LibInJar");
 
                     // check that it's not in the main class file.
-                    it.doesNotContainMainClass("Lcom/example/libinjar/LibInJar;");
+                    it.mainJar().doesNotContainClass("com/example/libinjar/LibInJar");
                 });
     }
 
@@ -155,7 +160,7 @@ public class ProguardAarPackagingTest {
                 it -> {
                     // check that the classes from the local jars are not minified and is included
                     // in the AAR
-                    it.containsSecondaryClass("Lcom/example/libinjar/LibInJar;");
+                    it.allSecondaryJars().containsClass("com/example/libinjar/LibInJar");
                 });
     }
 
@@ -170,10 +175,10 @@ public class ProguardAarPackagingTest {
                 "release",
                 it -> {
                     // check that the classes from the local jars are in the main class file
-                    it.containsMainClass("Lcom/example/libinjar/a;");
+                    it.mainJar().containsClass("com/example/libinjar/a");
 
                     // check that it's not in any local jar
-                    it.doesNotContainSecondaryClass("Lcom/example/libinjar/LibInJar;");
+                    it.allSecondaryJars().doesNotContainClass("com/example/libinjar/LibInJar");
                 });
     }
 }

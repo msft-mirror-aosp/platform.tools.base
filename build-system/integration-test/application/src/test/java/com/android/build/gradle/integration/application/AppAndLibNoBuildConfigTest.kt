@@ -17,14 +17,10 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.AarSubject
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
-import com.google.common.truth.Truth
 import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,7 +52,7 @@ class AppAndLibNoBuildConfigTest {
         project.execute("lib:assembleDebug")
 
         project.getSubproject(":lib").assertThatAar("debug") {
-            doesNotContainClass("Lcom/android/tests/testprojecttest/lib/BuildConfig;")
+            allJars().doesNotContainClass("com/android/tests/testprojecttest/lib/BuildConfig")
         }
     }
 

@@ -75,13 +75,8 @@ class LibWithProvidedAarAsJarTest : ModelComparator() {
     @Test
     fun `check project jar is not packaged`() {
         project.executor().run("clean", ":library:assembleDebug")
-        project.getSubproject("library")
-            .testAar(
-                GradleTestProject.ApkType.DEBUG.buildType
-            ) { aar ->
-                aar.doesNotContainClass(
-                    "Lcom/example/android/multiproject/library2/PersionView2;"
-                )
-            }
+        project.getSubproject("library").testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
+            aar.allJars().doesNotContainClass("com/example/android/multiproject/library2/PersionView2")
+        }
     }
 }

@@ -33,20 +33,18 @@ class LibProguardConsumerFilesTest {
     fun checkProguardDotTxtHasBeenCorrectlyMerged() {
         project.execute("assembleDebug", "assembleRelease")
 
-        project.withAar("debug") {
-            val debugProguardFile = getEntry("proguard.txt")
-            assertThat(nonEmptyLines(debugProguardFile!!)).containsExactly("A")
+        project.assertThatAar("debug") {
+            textFile("proguard.txt").isEqualTo("A")
         }
 
-        project.withAar("release") {
-            val releaseProguardFile = getEntry("proguard.txt")
-            assertThat(nonEmptyLines(releaseProguardFile!!)).containsExactly("A", "B", "C")
+        project.assertThatAar("release") {
+            textFile("proguard.txt").isEqualTo("""
+                A
+
+                B
+
+                C
+            """.trimIndent())
         }
     }
-
-    private fun nonEmptyLines(path: Path) =
-            Files.readAllLines(path)
-                    .map { it.trim() }
-                    .filter { !it.isEmpty()}
-                    .toList()
 }

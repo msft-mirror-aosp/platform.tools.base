@@ -16,12 +16,12 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.JarSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.testutils.apk.Aar
 import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.ZipFileSubject
 import com.android.utils.FileUtils
@@ -29,7 +29,6 @@ import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.readText
 
 class KotlinMultiplatformResourcesTest {
 
@@ -87,21 +86,20 @@ class KotlinMultiplatformResourcesTest {
     fun testLibraryAarContents() {
         project.executor().run(":kmpFirstLib:assemble")
 
-        Aar(
-            project.getSubproject("kmpFirstLib")
-                .getOutputFile("aar", "kmpFirstLib.aar")
-        ).use { aar ->
-            PathSubject.assertThat(aar.getEntry("R.txt")).isNotNull()
-            Truth.assertThat(
-                aar.getEntry("R.txt").readText()
-            ).contains("int string kmp_lib_string 0x0")
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
 
-            val values = aar.getEntry("res/values/values.xml")
-            Truth.assertThat(values.readText()).isEqualTo(
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<resources>\n" +
-                    "    <string name=\"kmp_lib_string\">lib string</string>\n" +
-                    "</resources>"
+        AarSubject.assertThat(aarPath) {
+            textSymbolFile().contains("int string kmp_lib_string 0x0")
+
+            androidResources().textFile("values/values.xml").isEqualTo(
+                """
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <resources>
+                        <string name="kmp_lib_string">lib string</string>
+                    </resources>
+                """.trimIndent()
             )
         }
     }
@@ -132,12 +130,12 @@ class KotlinMultiplatformResourcesTest {
                 InternalArtifactType.COMPILE_LIBRARY_CLASSES_JAR.getFolderName()
                         + "/androidMain/bundleAndroidMainClassesToCompileJar/classes.jar"
             )
-        ZipFileSubject.assertThat(
-            classesJar
-        ) { it: ZipFileSubject ->
-            it.contains("/com/example/kmpfirstlib/UseR.class")
-            it.contains("/com/example/kmpfirstlib/R.class")
-            it.contains("/com/example/kmpfirstlib/R\$string.class")
+        JarSubject.assertThat(classesJar) {
+            classes().containsAtLeast(
+                "com/example/kmpfirstlib/UseR",
+                "com/example/kmpfirstlib/R",
+                "com/example/kmpfirstlib/R\$string"
+            )
         }
     }
 

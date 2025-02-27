@@ -260,7 +260,7 @@ class FusedLibraryPlugin @Inject constructor(
     }
 
     override fun getAnalyticsPluginType(): GradleBuildProject.PluginType =
-            GradleBuildProject.PluginType.FUSED_LIBRARIES
+            GradleBuildProject.PluginType.FUSED_LIBRARY
 
     override fun apply(project: Project) {
         super.basePluginApply(project, buildFeatures)

@@ -18,16 +18,13 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Aar
-import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.pathString
-import kotlin.io.path.readText
 
 class KotlinMultiplatformAndroidMinificationTest {
 
@@ -78,18 +75,14 @@ class KotlinMultiplatformAndroidMinificationTest {
         project.executor()
             .run(":kmpFirstLib:assemble")
 
-        Aar(
-            project.getSubproject("kmpFirstLib").getOutputFile(
-                "aar",
-                "kmpFirstLib.aar"
-            )
-        ).use { aar ->
-            aar.getEntryAsZip("classes.jar").use { classesJar ->
-                Truth.assertThat(classesJar.entries.map { it.pathString })
-                    .containsExactly(
-                        "/kmp_resource.txt",
-                        "/com/example/kmpfirstlib/KmpAndroidActivity.class"
-                    )
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
+
+        AarSubject.assertThat(aarPath) {
+            mainJar {
+                classes().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
+                resources().containsExactly("kmp_resource.txt")
             }
         }
     }
@@ -127,22 +120,20 @@ class KotlinMultiplatformAndroidMinificationTest {
         project.executor()
             .run(":kmpFirstLib:assemble")
 
-        Aar(
-            project.getSubproject("kmpFirstLib").getOutputFile(
-                "aar",
-                "kmpFirstLib.aar"
-            )
-        ).use { aar ->
-            aar.getEntryAsZip("classes.jar").use { classesJar ->
-                Truth.assertThat(classesJar.entries.map { it.pathString })
-                    // code is optimized by default, and so the invocations to classes from common
-                    // and androidLib are replaced by a literal string and removed.
-                    .containsExactly(
-                        "/kmp_resource.txt",
-                        "/com/example/kmpfirstlib/KmpAndroidActivity.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibClass.class",
-                        "/com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass.class",
-                    )
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
+
+        AarSubject.assertThat(aarPath) {
+            mainJar {
+                // code is optimized by default, and so the invocations to classes from common
+                // and androidLib are replaced by a literal string and removed.
+                classes().containsExactly(
+                    "com/example/kmpfirstlib/KmpAndroidActivity",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                    "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+                )
+                resources().containsExactly("kmp_resource.txt")
             }
         }
     }
@@ -214,16 +205,12 @@ class KotlinMultiplatformAndroidMinificationTest {
 
         project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
 
-        Aar(
-            project.getSubproject("kmpFirstLib").getOutputFile(
-                "aar",
-                "kmpFirstLib.aar"
-            )
-        ).use { aar ->
-            PathSubject.assertThat(aar.getEntry("proguard.txt")).isNotNull()
+        val aarPath = project.getSubproject("kmpFirstLib")
+            .getOutputFile("aar", "kmpFirstLib.aar")
+            .toPath()
 
-            val content = aar.getEntry("proguard.txt")
-            Truth.assertThat(content.readText()).isEqualTo(
+        AarSubject.assertThat(aarPath) {
+            textFile("proguard.txt").isEqualTo(
                 """
                    -keep class com.example.kmpfirstlib.** { *; }
                 """.trimIndent()

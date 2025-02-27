@@ -161,6 +161,21 @@ class GetSchemaTest {
   }
 
   @Test
+  fun test_get_schema_without_row_id() = runBlocking {
+    val db =
+      testEnvironment.openDatabase(Database("db1")).also {
+        it.execSQL("CREATE TABLE t1 (c2 TEXT PRIMARY KEY) WITHOUT ROWID")
+        it.execSQL("CREATE TABLE t2 (c2 TEXT PRIMARY KEY)")
+      }
+    val databaseId = testEnvironment.inspectDatabase(db)
+    testEnvironment.sendCommand(createGetSchemaCommand(databaseId)).let { response ->
+      val tables = response.getSchema.tablesList.associateBy({ it.name }, { it.withoutRowid })
+      assertThat(tables["t1"]).isTrue()
+      assertThat(tables["t2"]).isFalse()
+    }
+  }
+
+  @Test
   fun test_get_schema_wrong_database_id() = runBlocking {
     val databaseId = 123456789
     testEnvironment.sendCommand(createGetSchemaCommand(databaseId)).let { response ->

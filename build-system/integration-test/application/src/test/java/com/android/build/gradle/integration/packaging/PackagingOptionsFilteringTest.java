@@ -25,16 +25,18 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
-import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 /**
  * Checks that the packaging options filtering are honored.
@@ -367,11 +369,10 @@ public class PackagingOptionsFilteringTest {
         lib.assertThatAar(
                 "debug",
                 aar -> {
-                    aar.doesNotContainJavaResource("foo.exclude");
-                    aar.containsJavaResourceWithContent("foo.keep", c0);
+                    aar.allJars().doesNotContainResource("foo.exclude");
+                    aar.allJars().resourceAsBytes("foo.keep").isEqualTo(c0);
                     return null;
-                }
-        );
+                });
     }
 
     /**
@@ -496,11 +497,10 @@ public class PackagingOptionsFilteringTest {
         lib.assertThatAar(
                 "debug",
                 aar -> {
-                    aar.doesNotContainJavaResource("foo.libExclude");
-                    aar.containsJavaResourceWithContent("foo.libKeep", c0);
+                    aar.allJars().doesNotContainResource("foo.libExclude");
+                    aar.allJars().resourceAsBytes("foo.libKeep").isEqualTo(c0);
                     return null;
-                }
-        );
+                });
 
         assertThat(lib.getApk(ANDROIDTEST_DEBUG).getFile()).exists();
         ApkSubject libAndroidTestApk = TruthHelper.assertThat(lib.getApk(ANDROIDTEST_DEBUG));

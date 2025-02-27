@@ -19,11 +19,13 @@ package com.android.build.gradle.integration.library;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import java.io.IOException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /** Assemble tests for minifyLib with compileOnly dependency */
 public class MinifyLibProvidedDepTest {
@@ -62,7 +64,7 @@ public class MinifyLibProvidedDepTest {
         project.testAar(
                 "debug",
                 it -> {
-                    it.doesNotContainClass("Lcom/android/tests/basic.R;");
+                    it.allJars().doesNotContainClass("com/android/tests/basic.R");
                 });
     }
 }

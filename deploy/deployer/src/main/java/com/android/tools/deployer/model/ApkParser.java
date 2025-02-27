@@ -16,11 +16,12 @@
 package com.android.tools.deployer.model;
 
 import com.android.SdkConstants;
-import com.android.tools.deployer.DeployerException;
 import com.android.tools.deployer.ZipUtils;
+import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.manifest.parser.ManifestInfo;
 import com.android.tools.tracer.Trace;
 import com.android.utils.FileUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +70,7 @@ public class ApkParser {
     public ApkParser() {}
 
     // TODO: This should be private or package private to prevent wild apks parsing
-    public static List<Apk> parsePaths(List<String> paths) throws DeployerException {
+    public static List<Apk> parsePaths(List<String> paths) throws ApkParserException {
         try (Trace ignored = Trace.begin("parseApks")) {
             List<Apk> newFiles = new ArrayList<>();
             for (String apkPath : paths) {
@@ -91,9 +92,6 @@ public class ApkParser {
             }
             InputStream stream = zipFile.getInputStream(manifestEntry);
             manifestInfo = ManifestInfo.parseBinaryFromStream(stream);
-        }
-        if (manifestInfo.getApplicationId() == null) {
-            throw new IllegalArgumentException("Package name was not found in manifest");
         }
         return manifestInfo;
     }
@@ -120,7 +118,7 @@ public class ApkParser {
         return new File(apkPath);
     }
 
-    public static Apk parse(String apkPath) {
+    public static Apk parse(String apkPath) throws ApkParserException {
         try {
             File file = getApkFileFromPath(apkPath);
             String absolutePath = file.getAbsolutePath();
@@ -165,7 +163,7 @@ public class ApkParser {
 
             return builder.build();
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new ApkParserException(e);
         }
     }
 
@@ -205,10 +203,10 @@ public class ApkParser {
     }
 
     public static void findCDLocation(FileChannel channel, ApkArchiveMap map)
-            throws IOException, DeployerException {
+            throws IOException, ApkParserException {
         long fileSize = channel.size();
         if (fileSize < EOCD_SIZE) {
-            throw DeployerException.parseFailed("File is too small to be a valid zip file");
+            throw new ApkParserException("File is too small to be a valid zip file");
         }
         // Search the End of Central Directory Record
         // The End of Central Directory record size is 22 bytes if the comment section size is zero.
@@ -236,7 +234,7 @@ public class ApkParser {
             }
 
             if (endofFileBuffer.position() - 5 < 0) {
-                throw DeployerException.parseFailed("Unable to find apk's ECOD signature");
+                throw new ApkParserException("Unable to find apk's ECOD signature");
             }
             endofFileBuffer.position(endofFileBuffer.position() - 5);
         }

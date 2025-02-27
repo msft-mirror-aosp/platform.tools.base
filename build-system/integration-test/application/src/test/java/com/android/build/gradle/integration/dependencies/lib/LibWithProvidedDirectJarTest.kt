@@ -81,9 +81,8 @@ class LibWithProvidedDirectJarTest : ModelComparator() {
     @Test
     fun `check project jar is not packaged`() {
         project.execute("clean", ":library:assembleDebug")
-        project.getSubproject("library")
-            .testAar(
-                GradleTestProject.ApkType.DEBUG.buildType
-            ) { aar -> aar.doesNotContainClass("Lcom/example/android/multiproject/person/People;") }
+        project.getSubproject("library").testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
+            aar.allJars().doesNotContainClass("com/example/android/multiproject/person/People")
+        }
     }
 }

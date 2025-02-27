@@ -201,7 +201,7 @@ def kotlin_library(
     """Compiles a library jar from Java and Kotlin sources
 
     Args:
-        name: The sources of the library.
+        name: The name of the library.
         srcs: The sources of the library.
         deps: The dependencies of this library.
         exports: A list of exports. Optional.
@@ -269,16 +269,22 @@ def kotlin_library(
             timeout = lint_timeout if lint_timeout else None,
         )
 
+def _is_dir(file, basename):
+    return file.is_directory and file.basename == basename
+
+def _is_file(file, extension):
+    return (not file.is_directory) and file.extension == extension
+
 def _kotlin_library_impl(ctx):
     kotlin_srcs = []
     java_srcs = []
     source_jars = []
     for src in ctx.files.srcs:
-        if src.path.endswith(".kt"):
+        if _is_file(src, "kt") or _is_dir(src, "kotlin"):
             kotlin_srcs.append(src)
-        elif src.path.endswith(".java"):
+        elif _is_file(src, "java") or _is_dir(src, "java"):
             java_srcs.append(src)
-        elif src.path.endswith(".srcjar"):
+        elif _is_file(src, "srcjar"):
             source_jars.append(src)
         else:
             fail("Unexpected file type passed to kotlin_library target: " + src.path)

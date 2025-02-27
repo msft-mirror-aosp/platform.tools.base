@@ -130,6 +130,8 @@ message Table {
   // True for a view; false for a regular table.
   bool is_view = 2;
   repeated Column columns = 3;
+  // True if table has a `WITHOUT ROWID` setting.
+  bool without_rowid = 4;
 }
 
 // Schema information for a table column.

@@ -254,6 +254,25 @@ enum ErrorCode {
     NO_ROOT_VIEWS_FOUND = 2;
 }
 
+message DrawInstruction {
+    // The uniqueDrawId of the root view containing the OverlayView that needs to draw the bounds.
+    int64 root_id = 1;
+    Rect bounds = 2;
+}
+
+// User input detected by on-device rendering.
+message UserInputEvent {
+    enum Type {
+        SELECTION = 0;
+        HOVER = 1;
+    }
+
+    int64 root_id = 1;
+    float x = 2;
+    float y = 3;
+    Type type = 4;
+}
+
 // ======= COMMANDS, RESPONSES, AND EVENTS =======
 
 // Tells the inspector to start sending |LayoutEvent|s asynchronously
@@ -317,6 +336,33 @@ message EnableXrInspectionCommand {
     bool enable = 1;
 }
 message EnableXrInspectionResponse {
+}
+
+message EnableOnDeviceRenderingCommand {
+    bool enable = 1;
+}
+message EnableOnDeviceRenderingResponse {
+}
+
+message DrawCommand {
+    enum Type {
+        // All the nodes currently visible on screen.
+        VISIBLE_NODES = 0;
+        HOVERED_NODES = 1;
+        SELECTED_NODES = 2;
+        RECOMPOSING_NODES = 3;
+    }
+
+    repeated DrawInstruction draw_instructions = 1;
+    Type type = 2;
+}
+message DrawResponse {
+}
+
+message InterceptTouchEventsCommand {
+    bool intercept = 1;
+}
+message InterceptTouchEventsResponse {
 }
 
 // An event sent for metrics logging purposes when the inspector passes certain
@@ -391,6 +437,9 @@ message Command {
         CaptureSnapshotCommand capture_snapshot_command = 5;
         EnableBitmapScreenshotCommand enable_bitmap_screenshot_command = 6;
         EnableXrInspectionCommand enable_xr_inspection_command = 7;
+        EnableOnDeviceRenderingCommand enable_on_device_rendering_command = 8;
+        DrawCommand draw_command = 9;
+        InterceptTouchEventsCommand intercept_touch_events_command = 10;
     }
 }
 
@@ -403,6 +452,9 @@ message Response {
         CaptureSnapshotResponse capture_snapshot_response = 5;
         EnableBitmapScreenshotResponse enable_bitmap_screenshot_response = 6;
         EnableXrInspectionResponse enable_xr_inspection_response = 7;
+        EnableOnDeviceRenderingResponse enable_on_device_rendering_response = 8;
+        DrawResponse draw_response = 9;
+        InterceptTouchEventsResponse intercept_touch_events_response = 10;
     }
 }
 
@@ -414,5 +466,6 @@ message Event {
         PropertiesEvent properties_event = 4;
         ProgressEvent progress_event = 5;
         FoldEvent fold_event = 6;
+        UserInputEvent user_input_event = 7;
     }
 }

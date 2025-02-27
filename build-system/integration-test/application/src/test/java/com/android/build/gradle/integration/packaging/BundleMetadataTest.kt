@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.packaging
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.testutils.truth.ZipFileSubject
+import com.android.build.gradle.integration.common.output.ZipSubject
 import org.junit.Rule
 import org.junit.Test
 import java.nio.file.Path
@@ -33,9 +33,9 @@ class BundleMetadataTest {
     @Test
     fun bundleContainsAppMetadataTest() {
         val apksPath = generateApks()
-        ZipFileSubject.assertThat(apksPath) { apks ->
-            apks.nested("splits/base-master.apk") { baseApk ->
-                baseApk.contains("META-INF/com/android/build/gradle/app-metadata.properties")
+        ZipSubject.assertThat(apksPath) { apks ->
+            apks.innerZip("splits/base-master.apk") {
+                contains("META-INF/com/android/build/gradle/app-metadata.properties")
             }
         }
     }

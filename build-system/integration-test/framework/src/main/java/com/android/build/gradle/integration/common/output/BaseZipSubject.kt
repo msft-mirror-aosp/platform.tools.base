@@ -45,15 +45,21 @@ open class BaseZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
                 val zip = actual() as? SimpleZip
                     ?: throw RuntimeException("Zip other than SimpleZip should only be with status EXIST")
 
-                var nearestParent: Path? =zip.archivePath
-                while (nearestParent != null && !Files.exists(nearestParent)) {
-                    nearestParent = nearestParent.parent
-                }
+                if (zip.archivePath != null) {
+                    var nearestParent: Path? = zip.archivePath
+                    while (nearestParent != null && !Files.exists(nearestParent)) {
+                        nearestParent = nearestParent.parent
+                    }
 
-                failWithoutActual(
-                    Fact.fact("expected to exist", zip.archivePath),
-                    Fact.fact("nearest existing ancestor", nearestParent)
-                )
+                    failWithoutActual(
+                        Fact.fact("expected to exist", zip.archivePath),
+                        Fact.fact("nearest existing ancestor", nearestParent)
+                    )
+                } else {
+                    failWithoutActual(
+                        Fact.simpleFact("expected to exist"),
+                    )
+                }
             }
         }
     }

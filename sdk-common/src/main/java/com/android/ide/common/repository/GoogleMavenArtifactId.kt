@@ -15,9 +15,9 @@
  */
 package com.android.ide.common.repository
 
-import com.android.SdkConstants.CONSTRAINT_LAYOUT_LIB_GROUP_ID
 import com.android.ide.common.gradle.Component
 import com.android.ide.common.gradle.Dependency
+import com.android.ide.common.gradle.Module
 import com.android.ide.common.gradle.RichVersion
 import com.android.ide.common.gradle.Version
 
@@ -131,6 +131,8 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx", false),
   ;
 
+  fun getModule(): Module = Module(mavenGroupId, mavenArtifactId)
+
   fun getCoordinate(revision: String): GradleCoordinate =
     GradleCoordinate(mavenGroupId, mavenArtifactId, revision)
 
@@ -140,28 +142,6 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   fun getDependency(richVersion: String): Dependency =
     Dependency(mavenGroupId, mavenArtifactId, RichVersion.parse(richVersion))
 
-  fun isAndroidxLibrary(): Boolean = mavenGroupId.startsWith("androidx.")
-
-  fun isAndroidxPlatformLibrary(): Boolean = isPlatformSupportLibrary && isAndroidxLibrary()
-
-  fun hasAndroidxEquivalent(): Boolean {
-    // All the platform support libraries have an androidx version
-    if (isPlatformSupportLibrary) {
-      return true
-    }
-    // Return true to the rest of groups that also have androidx version
-    when(mavenGroupId) {
-      CONSTRAINT_LAYOUT_LIB_GROUP_ID,
-        "com.android.support.test",
-        "com.android.support.test.espresso",
-        "com.android.databinding",
-        "com.google.android.gms",
-        "com.google.android.support" -> return true
-    }
-    // The rest of the libraries do not have an equivalent Androidx library
-    return false
-  }
-
   override fun toString(): String = "$mavenGroupId:$mavenArtifactId"
 
   companion object {
@@ -170,12 +150,5 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
 
     @JvmStatic fun find(groupId: String, artifactId: String): GoogleMavenArtifactId? =
         values().asSequence().find { it.mavenGroupId == groupId && it.mavenArtifactId == artifactId }
-
-    @JvmStatic fun forCoordinate(coordinate: GradleCoordinate): GoogleMavenArtifactId? {
-      val groupId = coordinate.groupId ?: return null
-      val artifactId = coordinate.artifactId ?: return null
-
-      return find(groupId, artifactId)
-    }
   }
 }

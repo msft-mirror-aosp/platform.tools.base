@@ -30,20 +30,23 @@ import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth8;
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 import kotlin.Unit;
+
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** test to verify the hook to register custom pre-javac compilers */
 @Category(SmokeTests.class)
@@ -169,23 +172,19 @@ public class BytecodeGenerationHooksTest {
         project.execute("clean", "lib:assembleDebug");
 
         project.getSubproject("library")
-                .getAar(
+                .testAar(
                         "debug",
-                        it -> {
-                            try {
-                                assertThat(
-                                        Objects.requireNonNull(it.getEntryAsFile("classes.jar")),
-                                        classes -> {
-                                            classes.contains("com/example/bytecode/Lib.class");
-                                            classes.contains(
-                                                    "com/example/bytecode/PostJavacLib.class");
-                                            classes.contains("META-INF/lib.kotlin_module");
-                                            classes.contains("META-INF/post-lib.kotlin_module");
-                                        });
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                        aar ->
+                                aar.mainJar(
+                                        mainJar -> {
+                                            mainJar.containsClass("com/example/bytecode/Lib");
+                                            mainJar.containsClass(
+                                                    "com/example/bytecode/PostJavacLib");
+                                            mainJar.containsResource("META-INF/lib.kotlin_module");
+                                            mainJar.containsResource(
+                                                    "META-INF/post-lib.kotlin_module");
+                                            return null;
+                                        }));
     }
 
     @Test

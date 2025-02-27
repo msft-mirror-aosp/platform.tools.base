@@ -17,28 +17,21 @@
 package com.android.build.gradle.integration.library;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.AarSubject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
+
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -49,6 +42,18 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Test for the jarjar integration.
@@ -69,26 +74,33 @@ public class JarJarLibTest {
     public void checkRepackagedGsonLibrary() throws IOException {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                ""
-                        + "android {\n"
-                        + "    registerTransform(new com.android.test.jarjar.JarJarTransform(false /*broken transform*/))\n"
+                "android {\n"
+                        + "    registerTransform(new com.android.test.jarjar.JarJarTransform(false"
+                        + " /*broken transform*/))\n"
                         + "}\n");
 
         project.execute("clean", "assembleDebug");
         AndroidProject androidProject =
                 project.modelV2().fetchModels().getContainer().getProject().getAndroidProject();
         Variant debug = AndroidProjectUtilsV2.getVariantByName(androidProject, "debug");
-        File outputFile = new File(ProjectBuildOutputUtilsV2.getSingleOutputFile(debug));
-        assertThatAar(outputFile).containsClass("Lcom/android/tests/basic/Main;");
+        String aarLocation = ProjectBuildOutputUtilsV2.getSingleOutputFile(debug);
+        Path aarPath = Paths.get(aarLocation);
+        AarSubject.assertThat(
+                aarPath,
+                aar -> {
+                    aar.allJars().containsClass("com/android/tests/basic/Main");
 
-        // libraries do not include their dependencies unless they are local (which is not
-        // the case here), so neither versions of Gson should be present here).
-        assertThatAar(outputFile).doesNotContainClass("Lcom/google/repacked/gson/Gson;");
-        assertThatAar(outputFile).doesNotContainClass("Lcom/google/gson/Gson;");
+                    // libraries do not include their dependencies unless they are local (which is
+                    // not
+                    // the case here), so neither versions of Gson should be present here).
+                    aar.allJars().doesNotContainClass("com/google/repacked/gson/Gson");
+                    aar.allJars().doesNotContainClass("com/google/gson/Gson");
 
-        // check we do not have the R class of the library in there.
-        assertThatAar(outputFile).doesNotContainClass("Lcom/android/tests/basic/R;");
-        assertThatAar(outputFile).doesNotContainClass("Lcom/android/tests/basic/R$drawable;");
+                    // check we do not have the R class of the library in there.
+                    aar.allJars().doesNotContainClass("com/android/tests/basic/R");
+                    aar.allJars().doesNotContainClass("com/android/tests/basic/R$drawable");
+                    return null;
+                });
 
         // check the content of the Main class.
         File jarFile =
@@ -106,9 +118,9 @@ public class JarJarLibTest {
     public void checkBrokenTransform() throws IOException {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                ""
-                        + "android {\n"
-                        + "    registerTransform(new com.android.test.jarjar.JarJarTransform(true /*broken transform*/))\n"
+                "android {\n"
+                        + "    registerTransform(new com.android.test.jarjar.JarJarTransform(true"
+                        + " /*broken transform*/))\n"
                         + "}\n");
 
         Collection<SyncIssue> issues =
@@ -125,7 +137,9 @@ public class JarJarLibTest {
         assertThat(error.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
         assertThat(error.getMessage())
                 .isEqualTo(
-                        "Transforms with scopes '[SUB_PROJECTS, EXTERNAL_LIBRARIES, PROJECT_LOCAL_DEPS, SUB_PROJECTS_LOCAL_DEPS]' cannot be applied to library projects.");
+                        "Transforms with scopes '[SUB_PROJECTS, EXTERNAL_LIBRARIES,"
+                            + " PROJECT_LOCAL_DEPS, SUB_PROJECTS_LOCAL_DEPS]' cannot be applied to"
+                            + " library projects.");
 
         Collection<SyncIssue> warnings =
                 issues.stream()
@@ -136,8 +150,8 @@ public class JarJarLibTest {
         assertThat(warning.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
         assertThat(warning.getMessage())
                 .isEqualTo(
-                        "Transform 'jarjar' uses scope SUB_PROJECTS_LOCAL_DEPS which is deprecated and replaced with EXTERNAL");
-
+                        "Transform 'jarjar' uses scope SUB_PROJECTS_LOCAL_DEPS which is deprecated"
+                                + " and replaced with EXTERNAL");
     }
 
     private static void checkClassFile(@NonNull File jarFile) throws IOException {

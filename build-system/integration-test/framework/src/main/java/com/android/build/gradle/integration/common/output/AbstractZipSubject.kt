@@ -19,9 +19,11 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.integration.common.output.ZipSubject.Companion.zips
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
-import com.google.common.truth.PrimitiveByteArraySubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
+import java.util.regex.Pattern
 
 /**
  * Base Truth subject for all Zip archive types, providing basic validation for the content.
@@ -58,11 +60,22 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     // --------------
 
     /**
-     * Returns a [IterableSubject] of all the Zip entries (as [String])
+     * Returns a [IterableSubject] of all the Zip entries (as [String]).
+     *
+     * An optional filter allows selecting a subset of the entries to test against.
      */
-    fun entries(): IterableSubject {
+    fun entries(filter: ((String) -> Boolean)? = null): IterableSubject {
         exists()
-        return check("entries()").that(actual().getEntries())
+        return check("entries()").that(actual().getEntries(filter))
+    }
+
+    /**
+     * Returns a [IterableSubject] of all the Zip entries (as [String]) matching the giaven
+     * pattern
+     */
+    fun entries(pattern: Pattern): IterableSubject {
+        exists()
+        return check("entries()").that(actual().getEntries(pattern))
     }
 
     /**
@@ -76,13 +89,13 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
     }
 
     /**
-     * Returns a [PrimitiveByteArraySubject] with the binary content of the file at the given path.
+     * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
      * @param path the path of the item which must not include a leading /
      */
-    fun binaryFile(path: String): PrimitiveByteArraySubject {
+    fun binaryFile(path: String): BinarySubject {
         contains(path)
-        return check("binaryFile($path)").that(actual().binaryFile(path))
+        return check("binaryFile($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
     }
 
     /**
@@ -91,8 +104,11 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      * @param path the path of the item which must not include a leading /
      */
     fun innerZip(path: String): ZipSubject {
-        contains(path)
-        return check("innerZip($path)").about(zips()).that(actual().innerZip(path))
+        // it's possible the zip does not exist, but we want to still return something because we
+        // want to be able to check for missing zip (though technically this can also be done
+        // with doesNot exist)
+        val zip = actual().innerZip(path) ?: SimpleZip(null)
+        return check("innerZip($path)").about(zips()).that(zip)
     }
 
     /**
@@ -103,5 +119,12 @@ open class AbstractZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
      */
     fun innerZip(path: String, action: ZipSubject.() -> Unit) {
         action(innerZip(path))
+    }
+
+    fun fileAttributes(path: String): FileAttributesSubject {
+        contains(path)
+        val entryPath = actual().getEntry(path)!!
+        val attributes = Files.readAttributes(entryPath, BasicFileAttributes::class.java)
+        return check("fileAttributes($path)").about(FileAttributesSubject.attributes()).that(attributes)
     }
 }

@@ -290,7 +290,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         resourceFileProvider?.let { task.resourceFile.set(it) }
 
                         task.namespace.set(variant.namespace)
-                        task.cliToolArgumentsFile.set(buildDir.file("$PREVIEW_INTERMEDIATES/$variantSegments/cli_tool_arguments.json"))
 
                         val toolchain = project.extensions.getByType(JavaPluginExtension::class.java).toolchain
                         val service = project.extensions.getByType(JavaToolchainService::class.java)

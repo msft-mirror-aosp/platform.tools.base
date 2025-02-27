@@ -225,7 +225,7 @@ class TextShellCollector(bufferCapacity: Int = 256)
     private val stringBuilder = StringBuilder()
 
     /**
-     * We store the lambda in a field to avoid allocating an new lambda instance for every
+     * We store the lambda in a field to avoid allocating a new lambda instance for every
      * invocation of [AdbBufferDecoder.decodeBuffer]
      */
     private val characterCollector = this::collectCharacters

@@ -114,6 +114,7 @@ private const val ATTR_KOTLIN_LEVEL = "kotlinLanguage"
 private const val ATTR_MODEL = "model"
 private const val ATTR_PARTIAL_RESULTS_DIR = "partial-results-dir"
 private const val ATTR_KIND = "kind"
+private const val ATTR_COMPUTE_SOURCE_ROOTS = "compute_source_roots"
 
 /**
  * Compute a list of lint [Project] instances from the given XML descriptor files. Each descriptor
@@ -509,6 +510,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val android = moduleElement.getAttribute(ATTR_ANDROID) != VALUE_FALSE
     val buildApi: String = moduleElement.getAttribute(ATTR_COMPILE_SDK_VERSION)
     val desugaring = handleDesugaring(moduleElement) ?: this.desugaring
+    val computeSourceRoots = moduleElement.getAttribute(ATTR_COMPUTE_SOURCE_ROOTS) != VALUE_FALSE
 
     if (android) {
       this.android = true
@@ -665,10 +667,19 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
       child = getNextTag(child)
     }
 
-    // Compute source roots
-    val sourceRoots = computeSourceRoots(sources)
-    val testSourceRoots = computeUniqueSourceRoots("test", testSources, sourceRoots)
-    val generatedSourceRoots = computeUniqueSourceRoots("generated", generatedSources, sourceRoots)
+    // Compute source roots (by default), or keep the file list as-is if requested
+    val sourceRoots: List<File>
+    val testSourceRoots: List<File>
+    val generatedSourceRoots: List<File>
+    if (computeSourceRoots) {
+      sourceRoots = computeSourceRoots(sources)
+      testSourceRoots = computeUniqueSourceRoots("test", testSources, sourceRoots)
+      generatedSourceRoots = computeUniqueSourceRoots("generated", generatedSources, sourceRoots)
+    } else {
+      sourceRoots = sources
+      testSourceRoots = testSources
+      generatedSourceRoots = generatedSources
+    }
 
     val resourceRoots = mutableListOf<File>()
     if (resources.isNotEmpty()) {

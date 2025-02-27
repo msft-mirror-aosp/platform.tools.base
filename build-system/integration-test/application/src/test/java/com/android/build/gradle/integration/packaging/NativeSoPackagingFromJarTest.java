@@ -21,19 +21,12 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.output.AbstractZipSubject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.testutils.apk.Apk;
-import com.android.testutils.truth.ZipFileSubject;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.nio.file.Path;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -43,12 +36,19 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+
 /**
  * test for packaging of asset files.
  */
 public class NativeSoPackagingFromJarTest {
     private static final String LIB_X86_LIBHELLO_SO = "lib/x86/libhello.so";
-    private static final String COM_FOO_FOO_CLASS = "com/foo/Foo.class";
+    private static final String COM_FOO_FOO = "com/foo/Foo";
+    private static final String COM_FOO_FOO_CLASS = COM_FOO_FOO + ".class";
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
@@ -118,22 +118,13 @@ public class NativeSoPackagingFromJarTest {
         // also check that the bar.jar is also present as a local jar with a the class
         // but not the so file.
         // first extract bar.jar from the apk.
-        libProject.getAar(
+        libProject.testAar(
                 "debug",
                 aar -> {
-                    // this zip will be closed with the AAR
-                    Path entry =
-                            java.util.Objects.requireNonNull(aar.getEntryAsFile("libs/bar.jar"));
-                    try {
-                        ZipFileSubject.assertThat(
-                                entry,
-                                it -> {
-                                    it.contains(COM_FOO_FOO_CLASS);
-                                    it.doesNotContain(LIB_X86_LIBHELLO_SO);
-                                });
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    aar.contains("libs/bar.jar");
+
+                    aar.allSecondaryJars().containsClass(COM_FOO_FOO);
+                    aar.allSecondaryJars().doesNotContainResource(LIB_X86_LIBHELLO_SO);
                 });
     }
 
@@ -184,6 +175,18 @@ public class NativeSoPackagingFromJarTest {
         }
     }
 
+    private static void check(
+            @NonNull AbstractZipSubject subject,
+            @NonNull String folderName,
+            @NonNull String filename,
+            @Nullable String content) {
+        if (content != null) {
+            subject.textFile(folderName + "/x86/" + filename).isEqualTo(content);
+        } else {
+            subject.doesNotContain(folderName + "/x86/" + filename);
+        }
+    }
+
     /**
      * Creates a class and returns the byte[] with the class
      * @return
@@ -194,7 +197,13 @@ public class NativeSoPackagingFromJarTest {
         MethodVisitor mv;
         AnnotationVisitor av0;
 
-        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, "com/foo/Foo", null, "java/lang/Object", null);
+        cw.visit(
+                Opcodes.V1_6,
+                Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
+                "com/foo/Foo",
+                null,
+                "java/lang/Object",
+                null);
 
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();

@@ -4,6 +4,7 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.ZipFileSubject
@@ -140,11 +141,11 @@ class GenerateManifestJarTaskTest(private val enableManifestClass : Boolean) {
 
         // Check Manifest JAR has been created, but contains no entries
         val intermediateCompiledManifest = getManifestJarArtifact()
-            .walkBottomUp().filter(File::isFile).toList()
+            .walkBottomUp().filter(File::isFile).map { it.toPath() }.toList()
         assertThat(intermediateCompiledManifest).hasSize(if (enableManifestClass) 1 else 0)
         intermediateCompiledManifest.forEach { manifestJar ->
-            ZipFileSubject.assertThat(manifestJar) {
-                it.entries(".*").isEmpty()
+            ZipSubject.assertThat(manifestJar) {
+                entries().isEmpty()
             }
         }
     }

@@ -19,8 +19,8 @@ package com.android.build.gradle.integration.bundle
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.testutils.truth.ZipFileSubject
 import org.junit.Rule
 import org.junit.Test
 
@@ -142,19 +142,26 @@ class DynamicFeatureAndroidTestBuildTest {
 
         // The R.jar should only contain things that are ONLY in the AT feature subtree. It should
         // not contain any libs that the app or feature depend on.
-        val androidTestFeatureRJar = project.getSubproject("feature").getIntermediateFile(
-            "compile_and_runtime_not_namespaced_r_class_jar", "debugAndroidTest", "processDebugAndroidTestResources","R.jar")
-        ZipFileSubject.assertThat(androidTestFeatureRJar) {
-            it.contains("com/example/feature/test/R\$raw.class")
-            it.contains("com/example/testFeatureLib/R\$raw.class")
-            it.doesNotContain("com/example/shared_lib/R\$raw.class")
-            it.doesNotContain("com/example/appLib/R\$raw.class")
-            it.doesNotContain("com/example/feature_lib/R\$raw.class")
-            it.doesNotContain("com/example/baseModule/R\$raw.class")
-            it.doesNotContain("com/example/feature/R\$raw.class")
-            it.doesNotContain("com/example/middleFeature/R\$raw.class")
-            it.doesNotContain("com/example/middleFeatureLib/R\$raw.class")
-            it.doesNotContain("com/example/sharedMiddleFeatureLib/R\$raw.class")
+        val androidTestFeatureRJar = project.getSubproject("feature")
+            .getIntermediateFile(
+                "compile_and_runtime_not_namespaced_r_class_jar",
+                "debugAndroidTest",
+                "processDebugAndroidTestResources",
+                "R.jar"
+            ).toPath()
+        JarSubject.assertThat(androidTestFeatureRJar) {
+            classes().apply {
+                contains("com/example/feature/test/R\$raw")
+                contains("com/example/testFeatureLib/R\$raw")
+                doesNotContain("com/example/shared_lib/R\$raw")
+                doesNotContain("com/example/appLib/R\$raw")
+                doesNotContain("com/example/feature_lib/R\$raw")
+                doesNotContain("com/example/baseModule/R\$raw")
+                doesNotContain("com/example/feature/R\$raw")
+                doesNotContain("com/example/middleFeature/R\$raw")
+                doesNotContain("com/example/middleFeatureLib/R\$raw")
+                doesNotContain("com/example/sharedMiddleFeatureLib/R\$raw")
+            }
         }
     }
 }

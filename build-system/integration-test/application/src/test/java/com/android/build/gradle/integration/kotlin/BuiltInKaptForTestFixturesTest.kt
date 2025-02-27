@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
@@ -31,7 +32,6 @@ import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
-import com.android.testutils.apk.Aar
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -123,9 +123,12 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             )
             .run("app:assembleDebugTestFixtures")
         val aar = app.outputDir.resolve("aar").listFiles()!!.single()
-        Aar(aar).use {
-            assertThat(it).containsMainClass("Lcom/example/FooStringValue;")
-            assertThat(it).containsMainClass("Lcom/example/Foo\$\$InnerClass;")
+        AarSubject.assertThat(aar.toPath()) {
+            mainJar {
+                containsClass("com/example/FooStringValue")
+                containsClass("com/example/Foo\$\$InnerClass")
+            }
+
         }
     }
 
@@ -151,9 +154,11 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
             .run("app:assembleDebugTestFixtures")
         val aar = app.outputDir.resolve("aar").listFiles()!!.single()
-        Aar(aar).use {
-            assertThat(it).containsMainClass("Lcom/example/FooStringValue;")
-            assertThat(it).containsMainClass("Lcom/example/Foo\$\$InnerClass;")
+        AarSubject.assertThat(aar.toPath()) {
+            mainJar {
+                containsClass("com/example/FooStringValue")
+                containsClass("com/example/Foo\$\$InnerClass")
+            }
         }
     }
 
