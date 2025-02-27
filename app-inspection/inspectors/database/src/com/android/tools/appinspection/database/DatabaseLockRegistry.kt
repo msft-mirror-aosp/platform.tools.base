@@ -130,9 +130,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
       future =
         executor.submit {
           // starts a transaction
-          database.rawQuery("BEGIN IMMEDIATE;", arrayOfNulls(0), cancellationSignal).use {
-            it.moveToNext() // forces the cursor to execute the query
-          }
+          database.execSql("BEGIN IMMEDIATE;", cancellationSignal = cancellationSignal)
         }
       future.get(TIMEOUT_MS, MILLISECONDS)
     } catch (e: Exception) {
@@ -159,9 +157,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
       // Submitting a Runnable, so we can set a timeout.
       future =
         SqliteInspectionExecutors.submit(executor) { // ends the transaction
-          database.rawQuery("ROLLBACK;", arrayOfNulls(0), cancellationSignal).use {
-            it.moveToNext() // forces the cursor to execute the query
-          }
+          database.execSql("ROLLBACK;", cancellationSignal = cancellationSignal)
           database.releaseReference()
         }
       future.get(TIMEOUT_MS, MILLISECONDS)

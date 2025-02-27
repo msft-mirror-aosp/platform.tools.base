@@ -19,25 +19,31 @@ import android.os.CancellationSignal
 
 /** An interface representing a Database */
 interface Database : AutoCloseable {
+  val isInMemory: Boolean
+
+  val isWriteAheadLoggingEnabled: Boolean
+
+  val path: String
+
+  val key: String
+
+  val isReadOnly: Boolean
+
   fun isOpen(): Boolean
-
-  fun isInMemoryDatabase(): Boolean
-
-  fun getKey(): String
-
-  fun getPath(): String
-
-  fun isReadOnly(): Boolean
 
   fun acquireReference()
 
   fun releaseReference()
 
-  fun isWriteAheadLoggingEnabled(): Boolean
+  fun execSql(
+    sql: String,
+    selectionArgs: Array<String?>? = emptyArray(),
+    cancellationSignal: CancellationSignal? = null,
+  )
 
   fun rawQuery(
-    queryText: String,
-    params: Array<String?>,
+    sql: String,
+    selectionArgs: Array<String?>,
     cancellationSignal: CancellationSignal?,
   ): Cursor
 }

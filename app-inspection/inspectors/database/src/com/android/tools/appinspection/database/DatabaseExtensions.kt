@@ -19,22 +19,6 @@
 package com.android.tools.appinspection.database
 
 import android.database.sqlite.SQLiteDatabase
-import java.io.File
-
-private const val IN_MEMORY_DATABASE_PATH = ":memory:"
-
-/** Placeholder `%x` is for database's hashcode */
-private const val IN_MEMORY_DATABASE_NAME_FORMAT = "$IN_MEMORY_DATABASE_PATH {hashcode=0x%x}"
-
-/** Thread-safe as [SQLiteDatabase.getPath] and [Any.hashCode] are thread-safe */
-fun SQLiteDatabase.getKey(): String =
-  when {
-    isInMemoryDatabase() -> IN_MEMORY_DATABASE_NAME_FORMAT.format(hashCode())
-    else -> File(path).absolutePath
-  }
-
-/** Thread-safe as [SQLiteDatabase.getPath] is thread-safe. */
-fun SQLiteDatabase.isInMemoryDatabase() = IN_MEMORY_DATABASE_PATH == path
 
 /**
  * Attempts to call [SQLiteDatabase.acquireReference] on the provided object.
