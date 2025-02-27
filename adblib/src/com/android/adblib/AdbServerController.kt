@@ -22,6 +22,9 @@ import java.nio.file.Path
 /**
  * Controller that can manage starting/stopping adb server.
  *
+ * For manually managed ADB servers, this controller focuses solely on channel creation, leaving
+ * server startup and shutdown to the user.
+ *
  * It provides a [AdbServerChannelProvider] that can restart adb server when it crashed or was
  * killed by an external user action.
  */

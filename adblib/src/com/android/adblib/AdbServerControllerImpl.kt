@@ -334,10 +334,8 @@ internal class AdbServerControllerImpl(
             val port = config.serverPort
             val isUserManaged = config.isUserManaged
             val isUnitTest = config.isUnitTest
-            if (isUserManaged) {
-                throw IllegalStateException("Start adb triggered for user-managed adb mode")
-            }
-            if (!isUnitTest) {
+
+            if (!isUserManaged && !isUnitTest) {
                 if (path == null) {
                     throw IllegalStateException("adb path must be provided")
                 }
@@ -399,10 +397,7 @@ internal class AdbServerControllerImpl(
 
             val config = waitForServerConfigurationAvailable()
             val adbFilePath = config.adbPath
-            if (config.isUserManaged) {
-                throw IllegalStateException("Stop adb triggered for user-managed adb mode")
-            }
-            if (!config.isUnitTest) {
+            if (!config.isUserManaged && !config.isUnitTest) {
                 if (adbFilePath == null) {
                     throw IllegalStateException("adb path must be provided")
                 }
@@ -454,9 +449,9 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbPath
+            val adbFilePath = config.adbPath
             val port = config.serverPort!!
-            if (path == null) {
+            if (config.isUserManaged || config.isUnitTest) {
                 // This is a non-restartable channel, but still try using `port` from the config the next
                 // time we try to create a channel
                 params.lastUsedConfig.update { config }
@@ -465,8 +460,11 @@ internal class AdbServerControllerImpl(
 
             // TODO: Revisit the code below to match `AndroidDebugBridgeImpl` behavior. E.g. should we
             //  be updating `isStarted` value if `server-kill` succeeds and `server-start` fails
-            runKillServerProcess(path, config.envVars)
-            runStartServerProcess(path, port, config.envVars)
+            if (adbFilePath == null) {
+                throw IllegalStateException("adb path must be provided")
+            }
+            runKillServerProcess(adbFilePath, config.envVars)
+            runStartServerProcess(adbFilePath, port, config.envVars)
 
             params.lastUsedConfig.update { config }
         }

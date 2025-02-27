@@ -20,7 +20,10 @@ import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
+import com.android.adblib.isTrackerConnecting
+import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.tools.debugging.rethrowCancellation
+import com.android.adblib.trackDevices
 import com.android.ddmlib.AdbDelegateUsageTracker
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbInitOptions
@@ -324,10 +327,7 @@ class AdbLibAndroidDebugBridge(
         val rem = TimeoutRemainder(timeout, unit)
         killMonitoringServices()
 
-        // Don't stop ADB when using user managed ADB server.
-        if (sUserManagedAdbMode) {
-            Log.i(ADB, "User managed ADB mode: Not stopping ADB server")
-        } else if (!stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+        if (!stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
             return false
         }
 
@@ -351,7 +351,7 @@ class AdbLibAndroidDebugBridge(
 
         // TODO: these checks are duplicated inside startAdb, so they could be removed
         //  here once figure out what to do with mVersionCheck
-        // Skip server start check if using user managed ADB server
+        // If this is not a user managed ADB server, perform version checks
         if (!sUserManagedAdbMode) {
             // If we are configured correctly, check if we need to start ADB
             if (mAdbOsLocation != null && sAdbServerPort != 0) {
@@ -360,11 +360,12 @@ class AdbLibAndroidDebugBridge(
                 if (!mVersionCheck) {
                     return false
                 }
-                // Try to start adb
-                if (!startAdb(timeout, unit)) {
-                    return false
-                }
             }
+        }
+
+        // Try to start adb
+        if (!startAdb(timeout, unit)) {
+            return false
         }
 
         mStarted = true
@@ -833,7 +834,8 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun isConnected(): Boolean {
-        return adbServerController.isStarted
+        val trackState = session.trackDevices().value
+        return !trackState.isTrackerDisconnected && !trackState.isTrackerConnecting
     }
 
     /**
