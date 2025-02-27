@@ -13,120 +13,120 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.integration.packaging
 
-package com.android.build.gradle.integration.packaging;
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.project.AarSelector;
-import com.android.build.gradle.integration.common.output.AbstractZipSubject;
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.testutils.apk.Apk;
-import com.android.utils.FileUtils;
-
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.AbstractZipSubject
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.utils.FileUtils
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.FieldVisitor
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.util.function.Consumer
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
 
 /**
  * test for packaging of asset files.
  */
-public class NativeSoPackagingFromJarTest {
-    private static final String LIB_X86_LIBHELLO_SO = "lib/x86/libhello.so";
-    private static final String COM_FOO_FOO = "com/foo/Foo";
-    private static final String COM_FOO_FOO_CLASS = COM_FOO_FOO + ".class";
+class NativeSoPackagingFromJarTest {
+    @get:Rule
+    val project: GradleTestProject = builder()
+        .fromTestProject("projectWithModules")
+        .create()
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("projectWithModules")
-            .create();
-
-    private static GradleTestProject appProject;
-    private static GradleTestProject libProject;
+    private lateinit var appProject: GradleTestProject
+    private lateinit var libProject: GradleTestProject
 
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        appProject = project.getSubproject("app");
+    @Before
+    fun setUp() {
+        appProject = project.getSubproject("app")
 
         // rewrite settings.gradle to remove un-needed modules
-        project.setIncludedProjects("app", "library");
+        project.setIncludedProjects("app", "library")
 
         // setup dependencies.
         TestFileUtils.appendToFile(
-                appProject.getBuildFile(),
-                "\ndependencies {\n" + "  api files(\"libs/foo.jar\")\n" + "}\n");
+            appProject.buildFile,
+            "\ndependencies {\n" + "  api files(\"libs/foo.jar\")\n" + "}\n"
+        )
 
-        libProject = project.getSubproject("library");
+        libProject = project.getSubproject("library")
 
         TestFileUtils.appendToFile(
-                libProject.getBuildFile(),
-                "\ndependencies {\n" + "  api files(\"libs/bar.jar\")\n" + "}\n");
+            libProject.buildFile,
+            "\ndependencies {\n" + "  api files(\"libs/bar.jar\")\n" + "}\n"
+        )
 
-        File appDir = appProject.getProjectDir();
-        createJarWithNativeLib(new File(appDir, "libs"), "foo.jar", false);
+        val appDir = appProject.projectDir
+        createJarWithNativeLib(File(appDir, "libs"), "foo.jar", false)
 
-        File libDir = libProject.getProjectDir();
-        createJarWithNativeLib(new File(libDir, "libs"), "bar.jar", true);
-    }
-
-    private static void createJarWithNativeLib(
-            @NonNull File folder, @NonNull String fileName, boolean includeClass) throws Exception {
-        FileUtils.mkdirs(folder);
-        File jarFile = new File(folder, fileName);
-
-        try (FileOutputStream fos = new FileOutputStream(jarFile);
-                JarOutputStream jarOutputStream = new JarOutputStream(
-                        new BufferedOutputStream(fos))) {
-            jarOutputStream.putNextEntry(new JarEntry(LIB_X86_LIBHELLO_SO));
-            jarOutputStream.write("hello".getBytes());
-            jarOutputStream.closeEntry();
-
-            if (includeClass) {
-                jarOutputStream.putNextEntry(new JarEntry(COM_FOO_FOO_CLASS));
-                jarOutputStream.write(getDummyClassByteCode());
-                jarOutputStream.closeEntry();
-            }
-        }
+        val libDir = libProject.projectDir
+        createJarWithNativeLib(File(libDir, "libs"), "bar.jar", true)
     }
 
     @Test
-    public void testAppPackaging() throws Exception {
-        project.executor().run("app:assembleDebug");
-        checkApk(appProject, "libhello.so", "hello");
+    fun testAppPackaging() {
+        project.executor().run("app:assembleDebug")
+        checkApk(appProject, "libhello.so", "hello")
     }
 
     @Test
-    public void testLibraryPackaging() throws Exception {
-        project.executor().run("library:assembleDebug");
-        checkAar(libProject, "libhello.so", "hello");
+    fun testLibraryPackaging() {
+        project.executor().run("library:assembleDebug")
+        checkAar(libProject, "libhello.so", "hello")
 
         // also check that the bar.jar is also present as a local jar with a the class
         // but not the so file.
         // first extract bar.jar from the apk.
-        libProject.assertAar(
-                AarSelector.DEBUG,
-                aar -> {
-                    aar.contains("libs/bar.jar");
+        libProject.assertAar(AarSelector.DEBUG) {
+            contains("libs/bar.jar")
+            secondaryJars().classes().containsExactly(COM_FOO_FOO)
+            secondaryJars().resources().isEmpty()
+        }
+    }
 
-                    aar.secondaryJars().classes().containsExactly(COM_FOO_FOO);
-                    aar.secondaryJars().resources().isEmpty();
-                });
+    companion object {
+
+        private const val LIB_X86_LIBHELLO_SO = "lib/x86/libhello.so"
+        private const val COM_FOO_FOO = "com/foo/Foo"
+        private val COM_FOO_FOO_CLASS: String = COM_FOO_FOO + ".class"
+    }
+
+    private fun createJarWithNativeLib(
+        folder: File, fileName: String, includeClass: Boolean
+    ) {
+        FileUtils.mkdirs(folder)
+        val jarFile = File(folder, fileName)
+
+        FileOutputStream(jarFile).use { fos ->
+            JarOutputStream(
+                BufferedOutputStream(fos)
+            ).use { jarOutputStream ->
+                jarOutputStream.putNextEntry(JarEntry(LIB_X86_LIBHELLO_SO))
+                jarOutputStream.write("hello".toByteArray())
+                jarOutputStream.closeEntry()
+                if (includeClass) {
+                    jarOutputStream.putNextEntry(JarEntry(COM_FOO_FOO_CLASS))
+                    jarOutputStream.write(dummyClassByteCode)
+                    jarOutputStream.closeEntry()
+                }
+            }
+        }
     }
 
     /**
@@ -139,108 +139,114 @@ public class NativeSoPackagingFromJarTest {
      * @param filename the filename
      * @param content the content
      */
-    private static void checkApk(
-            @NonNull GradleTestProject project, @NonNull String filename, @Nullable String content)
-            throws Exception {
-        Apk apk = project.getApk("debug");
-        check(assertThatApk(apk), "lib", filename, content);
-        PackagingTests.checkZipAlign(apk.getFile().toFile());
+    private fun checkApk(
+        project: GradleTestProject, filename: String, content: String?
+    ) {
+        val apk = project.getApk("debug")
+        check(TruthHelper.assertThatApk(apk), "lib", filename, content)
+        PackagingTests.checkZipAlign(apk.getFile().toFile())
     }
 
     /**
      * check an aat has (or not) the given asset file name.
      *
-     * <p>If the content is non-null the file is expected to be there with the same content. If the
+     *
+     * If the content is non-null the file is expected to be there with the same content. If the
      * content is null the file is not expected to be there.
      *
      * @param project the project
      * @param filename the filename
      * @param content the content
      */
-    private static void checkAar(
-            @NonNull GradleTestProject project,
-            @NonNull String filename,
-            @Nullable String content) {
-        project.assertAar(
-                AarSelector.DEBUG,
-                it -> {
-                    check(it, "jni", filename, content);
-                });
-    }
-
-    private static void check(
-            @NonNull AbstractAndroidSubject subject,
-            @NonNull String folderName,
-            @NonNull String filename,
-            @Nullable String content) {
-        if (content != null) {
-            subject.containsFileWithContent(folderName + "/x86/" + filename, content);
-        } else {
-            subject.doesNotContain(folderName + "/x86/" + filename);
+    private fun checkAar(
+        project: GradleTestProject,
+        filename: String,
+        content: String?
+    ) {
+        project.assertAar(AarSelector.DEBUG) {
+            check(this, "jni", filename, content)
         }
     }
 
-    private static void check(
-            @NonNull AbstractZipSubject subject,
-            @NonNull String folderName,
-            @NonNull String filename,
-            @Nullable String content) {
+    private fun check(
+        subject: AbstractAndroidSubject<*, *>,
+        folderName: String,
+        filename: String,
+        content: String?
+    ) {
         if (content != null) {
-            subject.textFile(folderName + "/x86/" + filename).isEqualTo(content);
+            subject.containsFileWithContent("$folderName/x86/$filename", content)
         } else {
-            subject.doesNotContain(folderName + "/x86/" + filename);
+            subject.doesNotContain("$folderName/x86/$filename")
         }
     }
 
-    /**
-     * Creates a class and returns the byte[] with the class
-     * @return
-     */
-    private static byte[] getDummyClassByteCode() {
-        ClassWriter cw = new ClassWriter(0);
-        FieldVisitor fv;
-        MethodVisitor mv;
-        AnnotationVisitor av0;
+    private fun check(
+        subject: AbstractZipSubject<*, *>,
+        folderName: String,
+        filename: String,
+        content: String?
+    ) {
+        if (content != null) {
+            subject.textFile(folderName + "/x86/" + filename).isEqualTo(content)
+        } else {
+            subject.doesNotContain(folderName + "/x86/" + filename)
+        }
+    }
 
-        cw.visit(
+    private val dummyClassByteCode: ByteArray?
+        /**
+         * Creates a class and returns the byte[] with the class
+         * @return
+         */
+        get() {
+            val cw = ClassWriter(0)
+            var fv: FieldVisitor?
+            var mv: MethodVisitor?
+            var av0: AnnotationVisitor?
+
+            cw.visit(
                 Opcodes.V1_6,
                 Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
                 "com/foo/Foo",
                 null,
                 "java/lang/Object",
-                null);
+                null
+            )
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null)
+            mv.visitCode()
+            mv.visitVarInsn(Opcodes.ALOAD, 0)
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
+            mv.visitInsn(Opcodes.RETURN)
+            mv.visitMaxs(1, 1)
+            mv.visitEnd()
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "aaa", "()V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "test/Aaa", "bbb", "()V",
-                false);
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "aaa", "()V", null, null)
+            mv.visitCode()
+            mv.visitVarInsn(Opcodes.ALOAD, 0)
+            mv.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL, "test/Aaa", "bbb", "()V",
+                false
+            )
+            mv.visitInsn(Opcodes.RETURN)
+            mv.visitMaxs(1, 1)
+            mv.visitEnd()
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "bbb", "()V", null, null);
-        mv.visitCode();
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 1);
-        mv.visitEnd();
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "bbb", "()V", null, null)
+            mv.visitCode()
+            mv.visitInsn(Opcodes.RETURN)
+            mv.visitMaxs(0, 1)
+            mv.visitEnd()
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "ccc", "()V", null, null);
-        mv.visitCode();
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 1);
-        mv.visitEnd();
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "ccc", "()V", null, null)
+            mv.visitCode()
+            mv.visitInsn(Opcodes.RETURN)
+            mv.visitMaxs(0, 1)
+            mv.visitEnd()
 
-        cw.visitEnd();
+            cw.visitEnd()
 
-        return cw.toByteArray();
-    }
+            return cw.toByteArray()
+        }
 }
