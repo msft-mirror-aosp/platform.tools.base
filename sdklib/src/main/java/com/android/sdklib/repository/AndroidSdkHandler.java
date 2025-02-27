@@ -662,7 +662,7 @@ public final class AndroidSdkHandler {
                 @NonNull ProgressIndicator progress,
                 @Nullable Path localLocation,
                 @Nullable LocalSourceProvider userProvider) {
-            RepoManager result = RepoManager.create();
+            RepoManager result = RepoManager.create(localLocation);
 
             // Create the schema modules etc. if they haven't been already.
             result.registerSchemaModule(ADDON_MODULE);
@@ -688,8 +688,6 @@ public final class AndroidSdkHandler {
                 userProvider.setRepoManager(result);
             }
             result.setFallbackRemoteRepoLoader(new LegacyRemoteRepoLoader());
-
-            result.setLocalPath(localLocation);
 
             if (localLocation != null) {
                 // If we have a local sdk path set, set up the old-style loader so we can parse
@@ -782,12 +780,8 @@ public final class AndroidSdkHandler {
     /** Converts a {@code File} into a {@code Path} on the {@code FileSystem} used by this SDK. */
     @NonNull
     public Path toCompatiblePath(@NonNull File file) {
-        Path localPath;
-        synchronized (lock) {
-            localPath = mRepoManager == null ? mLocation : mRepoManager.getLocalPath();
-        }
-        if (localPath != null) {
-            return localPath.getFileSystem().getPath(file.getPath());
+        if (mLocation != null) {
+            return mLocation.getFileSystem().getPath(file.getPath());
         }
         return file.toPath();
     }
@@ -795,12 +789,8 @@ public final class AndroidSdkHandler {
     /** Converts a {@code String} into a {@code Path} on the {@code FileSystem} used by this SDK. */
     @NonNull
     public Path toCompatiblePath(@NonNull String file) {
-        Path localPath;
-        synchronized (lock) {
-            localPath = mRepoManager == null ? mLocation : mRepoManager.getLocalPath();
-        }
-        if (localPath != null) {
-            return localPath.getFileSystem().getPath(file);
+        if (mLocation != null) {
+            return mLocation.getFileSystem().getPath(file);
         }
         return Paths.get(file);
     }

@@ -87,8 +87,7 @@ public class SdkManagerCliTest {
 
         RemoteRepoLoader loader = createRemoteRepo();
 
-        RepoManager repoManager = new RepoManagerImpl(null, progress -> loader);
-        repoManager.setLocalPath(mSdkLocation);
+        RepoManager repoManager = new RepoManagerImpl(mSdkLocation, null, progress -> loader);
 
         createLocalRepo(repoManager);
 

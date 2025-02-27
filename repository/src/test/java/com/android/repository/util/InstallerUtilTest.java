@@ -529,8 +529,7 @@ public class InstallerUtilTest extends TestCase {
                         + "        <display-name>The first Android platform ever</display-name>\n"
                         + "    </localPackage>\n"
                         + "</repo:repository>");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
         assertFalse(InstallerUtil.checkValidPath(sdkRoot.resolve("foo/bar"), mgr, progress));
@@ -552,8 +551,7 @@ public class InstallerUtilTest extends TestCase {
                         + "        <display-name>The first Android platform ever</display-name>\n"
                         + "    </localPackage>\n"
                         + "</repo:repository>");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
         assertFalse(InstallerUtil.checkValidPath(sdkRoot.resolve("foo"), mgr, progress));
@@ -575,8 +573,7 @@ public class InstallerUtilTest extends TestCase {
                         + "        <display-name>The first Android platform ever</display-name>\n"
                         + "    </localPackage>\n"
                         + "</repo:repository>");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
         assertTrue(InstallerUtil.checkValidPath(sdkRoot.resolve("foo"), mgr, progress));
@@ -598,8 +595,7 @@ public class InstallerUtilTest extends TestCase {
                         + "        <display-name>The first Android platform ever</display-name>\n"
                         + "    </localPackage>\n"
                         + "</repo:repository>");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
         assertTrue(InstallerUtil.checkValidPath(sdkRoot.resolve("foo2"), mgr, progress));

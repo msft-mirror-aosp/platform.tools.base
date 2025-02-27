@@ -37,8 +37,7 @@ public class AbstractUninstallerTest {
     @Test
     public void uninstallerProperties() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         LocalPackage local = new FakeLocalPackage("foo;bar", sdkRoot.resolve("foo/bar"));
         AbstractUninstaller uninstaller = new TestUninstaller(local, mgr);
         assertSame(uninstaller.getPackage(), local);

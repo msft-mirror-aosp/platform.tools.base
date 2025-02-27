@@ -80,8 +80,7 @@ public class BasicInstallerTest extends TestCase {
                                 getClass().getResourceAsStream("/testPackage2.xml"))));
 
         // Set up a RepoManager.
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(repoRoot);
+        RepoManager mgr = new RepoManagerImpl(repoRoot);
 
         FakeProgressRunner runner = new FakeProgressRunner();
         // Load the local packages.
@@ -152,8 +151,7 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage.xml"))));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(root);
+        RepoManager mgr = new RepoManagerImpl(root);
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
         URL repoUrl = new URL("http://example.com/myrepo.xml");
 
@@ -252,8 +250,7 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage.xml"))));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(root);
+        RepoManager mgr = new RepoManagerImpl(root);
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
         URL repoUrl = new URL("http://example.com/myrepo.xml");
 
@@ -376,8 +373,7 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage2-lowerVersion.xml"))));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(root);
+        RepoManager mgr = new RepoManagerImpl(root);
 
         // Create the archive and register the repo to be downloaded.
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
@@ -464,9 +460,8 @@ public class BasicInstallerTest extends TestCase {
     }
 
     public void testExistingDownload() throws Exception {
-        RepoManager mgr = new RepoManagerImpl();
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(root);
+        RepoManager mgr = new RepoManagerImpl(root);
         FakeDownloader downloader =
                 new FakeDownloader(root.getRoot().resolve("tmp")) {
                     @Override

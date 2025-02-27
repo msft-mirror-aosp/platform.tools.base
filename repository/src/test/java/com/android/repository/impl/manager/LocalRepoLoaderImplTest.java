@@ -69,7 +69,7 @@ public class LocalRepoLoaderImplTest {
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
         Path knownPackagesFile = repoRoot.resolve(LocalRepoLoaderImpl.KNOWN_PACKAGES_HASH_FN);
         Files.createDirectories(repoRoot);
-        RepoManager mgr = new RepoManagerImpl();
+        RepoManager mgr = new RepoManagerImpl(repoRoot);
         LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
         // If there's no file we should think that an update is needed.
         assertTrue(loader.needsUpdate(0, false));
@@ -132,7 +132,7 @@ public class LocalRepoLoaderImplTest {
         Path repoRoot =
                 InMemoryFileSystems.createInMemoryFileSystemAndFolder(
                         AbstractPackageOperation.METADATA_FILENAME_PREFIX + "repo");
-        RepoManager mgr = new RepoManagerImpl();
+        RepoManager mgr = new RepoManagerImpl(repoRoot);
 
         // Check that the metadata folders are not scanned for packages.
         Path package1 = repoRoot.resolve("foo/package.xml");
@@ -152,7 +152,7 @@ public class LocalRepoLoaderImplTest {
     public void testNoScanningResourceCacheFolders() {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        RepoManager mgr = new RepoManagerImpl();
+        RepoManager mgr = new RepoManagerImpl(repoRoot);
 
         // Check that the resource cache folders are not scanned for packages.
         Path package1 = repoRoot.resolve("icons/package.xml");

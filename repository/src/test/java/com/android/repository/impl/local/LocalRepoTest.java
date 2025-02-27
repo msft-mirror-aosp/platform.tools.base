@@ -81,7 +81,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create();
+        RepoManager manager = RepoManager.create(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -95,7 +95,7 @@ public class LocalRepoTest extends TestCase {
 
     // Test writing a package out to xml
     public void testMarshalGeneric() {
-        RepoManager manager = new RepoManagerImpl();
+        RepoManager manager = new RepoManagerImpl(null);
 
         CommonFactory factory = RepoManager.getCommonModule().createLatestFactory();
         GenericFactory genericFactory = RepoManager.getGenericModule().createLatestFactory();
@@ -199,7 +199,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create();
+        RepoManager manager = RepoManager.create(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -243,7 +243,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create();
+        RepoManager manager = RepoManager.create(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
