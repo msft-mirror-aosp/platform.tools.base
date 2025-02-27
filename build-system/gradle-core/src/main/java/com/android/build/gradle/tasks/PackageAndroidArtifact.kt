@@ -32,7 +32,6 @@ import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.dependency.AndroidAttributes
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalString
 import com.android.build.gradle.internal.manifest.parseManifest
@@ -1048,7 +1047,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     outputFile1,
                     true,
                     null,
-                    MANIFEST_DATA_ISSUE_REPORTER)
+                    THROW_ON_ERROR_ISSUE_REPORTER)
             val nativeLibsPackagingMode = PackagingUtils.getNativeLibrariesLibrariesPackagingMode(
                     manifestData.extractNativeLibs)
             // Warn if params.getJniLibsUseLegacyPackaging() is not compatible with
@@ -1138,7 +1137,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     }
         }
 
-        private val MANIFEST_DATA_ISSUE_REPORTER: IssueReporter = object : IssueReporter() {
+        internal val THROW_ON_ERROR_ISSUE_REPORTER: IssueReporter = object : IssueReporter() {
             override fun reportIssue(
                     type: Type,
                     severity: Severity,

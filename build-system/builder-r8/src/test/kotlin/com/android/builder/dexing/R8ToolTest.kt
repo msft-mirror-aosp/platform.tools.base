@@ -551,6 +551,7 @@ class R8ToolTest {
         disableDesugaring = false,
         fullMode = true,
         strictFullModeForKeepRules = true,
+        isolatedSplits = null,
         r8OutputType = R8OutputType.DEX
     )
 

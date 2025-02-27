@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -28,6 +29,7 @@ import com.android.build.gradle.internal.dependency.ShrinkerVersion
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
+import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -45,6 +47,7 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.SyncOptions
+import com.android.build.gradle.tasks.PackageAndroidArtifact.Companion.THROW_ON_ERROR_ISSUE_REPORTER
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.MainDexListConfig
@@ -71,6 +74,7 @@ import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -224,8 +228,8 @@ abstract class R8Task @Inject constructor(
     @get:OutputFile
     abstract val r8Metadata: RegularFileProperty
 
-    @get:Input
-    abstract val toolConfig: Property<ToolConfig>
+    @get:Nested
+    abstract val toolParameters: R8ToolParameters
 
     @get:Nested
     abstract val resourceShrinkingParams: R8ResourceShrinkingParameters
@@ -303,18 +307,17 @@ abstract class R8Task @Inject constructor(
             task.legacyMultiDexEnabled.setDisallowChanges(
                 false
             )
-            task.toolConfig.setDisallowChanges(
-                ToolConfig(
-                    minSdkVersion = creationConfig.minSdkVersion.apiLevel,
-                    debuggable = false,
-                    disableTreeShaking = disableTreeShaking,
-                    disableMinification = disableMinification,
-                    disableDesugaring = false,
-                    fullMode = creationConfig.services.projectOptions[BooleanOption.FULL_R8],
-                    strictFullModeForKeepRules = creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES],
-                    r8OutputType = R8OutputType.DEX
-                )
-            )
+            task.toolParameters.let {
+                it.minSdkVersion.setDisallowChanges(creationConfig.minSdkVersion.apiLevel)
+                it.debuggable.setDisallowChanges(false)
+                it.disableTreeShaking.setDisallowChanges(disableTreeShaking)
+                it.disableMinification.setDisallowChanges(disableMinification)
+                it.disableDesugaring.setDisallowChanges(false)
+                it.fullMode.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.FULL_R8])
+                it.strictFullModeForKeepRules.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES])
+                it.packagedManifestDirectory.setDisallowChanges(null) // Not used for privacy sandbox SDK
+                it.r8OutputType.setDisallowChanges(R8OutputType.DEX)
+            }
             task.proguardConfigurations = proguardConfigurations
 
             task.baseJar.disallowChanges()
@@ -538,29 +541,31 @@ abstract class R8Task @Inject constructor(
             task.featureClassJars.disallowChanges()
             task.featureJavaResourceJars.disallowChanges()
 
-            task.toolConfig.setDisallowChanges(
-                ToolConfig(
-                    minSdkVersion = if (creationConfig is ApkCreationConfig) {
+            task.toolParameters.let {
+                it.minSdkVersion.setDisallowChanges(
+                    if (creationConfig is ApkCreationConfig) {
                         creationConfig.dexing.minSdkVersionForDexing
                     } else {
                         creationConfig.minSdk.apiLevel
-                    },
-                    debuggable = creationConfig.debuggable,
-                    disableTreeShaking = disableTreeShaking,
-                    disableMinification = disableMinification,
-                    disableDesugaring = !(
-                        creationConfig is ApkCreationConfig &&
-                                creationConfig.dexing.java8LangSupportType == Java8LangSupport.R8
-                    ),
-                    fullMode = creationConfig.services.projectOptions[BooleanOption.FULL_R8],
-                    strictFullModeForKeepRules = creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES],
-                    r8OutputType = if (componentType.isAar) {
+                    }
+                )
+                it.debuggable.setDisallowChanges(creationConfig.debuggable)
+                it.disableTreeShaking.setDisallowChanges(disableTreeShaking)
+                it.disableMinification.setDisallowChanges(disableMinification)
+                it.disableDesugaring.setDisallowChanges(
+                    !(creationConfig is ApkCreationConfig && creationConfig.dexing.java8LangSupportType == Java8LangSupport.R8)
+                )
+                it.fullMode.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.FULL_R8])
+                it.strictFullModeForKeepRules.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES])
+                it.packagedManifestDirectory.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.PACKAGED_MANIFESTS))
+                it.r8OutputType.setDisallowChanges(
+                    if (componentType.isAar) {
                         R8OutputType.CLASSES
                     } else {
                         R8OutputType.DEX
                     }
                 )
-            )
+            }
 
             if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
                 task.resourceShrinkingParams.initialize(creationConfig, task.mappingFile)
@@ -723,7 +728,7 @@ abstract class R8Task @Inject constructor(
             }
             it.inputProfileForDexStartupOptimization.set(inputProfileForDexStartupOptimization)
             it.r8Metadata.set(r8Metadata)
-            it.toolConfig.set(toolConfig)
+            it.toolConfig.set(toolParameters.toToolConfig())
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
             it.partialShrinkingConfig.set(partialShrinkingConfig.orNull)
             // Note: Build service can only be passed in Gradle worker non-isolation mode
@@ -967,4 +972,73 @@ fun ConsumableCreationConfig.getPartialShrinkingConfig(): PartialShrinkingConfig
             properties
         )
     )
+}
+
+/** Similar to [ToolConfig] but containing Gradle types. */
+abstract class R8ToolParameters {
+
+    @get:Input
+    abstract val minSdkVersion: Property<Int>
+
+    @get:Input
+    abstract val debuggable: Property<Boolean>
+
+    @get:Input
+    abstract val disableTreeShaking: Property<Boolean>
+
+    @get:Input
+    abstract val disableMinification: Property<Boolean>
+
+    @get:Input
+    abstract val disableDesugaring: Property<Boolean>
+
+    @get:Input
+    abstract val fullMode: Property<Boolean>
+
+    @get:Input
+    abstract val strictFullModeForKeepRules: Property<Boolean>
+
+    /** Used to compute [ToolConfig.isolatedSplits] */
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Optional
+    abstract val packagedManifestDirectory: DirectoryProperty
+
+    @get:Input
+    abstract val r8OutputType: Property<R8OutputType>
+
+    fun toToolConfig() = ToolConfig(
+        minSdkVersion = minSdkVersion.get(),
+        debuggable = debuggable.get(),
+        disableTreeShaking = disableTreeShaking.get(),
+        disableMinification = disableMinification.get(),
+        disableDesugaring = disableDesugaring.get(),
+        fullMode = fullMode.get(),
+        strictFullModeForKeepRules = strictFullModeForKeepRules.get(),
+        isolatedSplits = getIsolatedSplitsValue(),
+        r8OutputType = r8OutputType.get()
+    )
+
+    private fun getIsolatedSplitsValue(): Boolean? {
+        if (!packagedManifestDirectory.isPresent) return null
+
+        val packagedManifests = BuiltArtifactsLoaderImpl().load(packagedManifestDirectory)?.elements
+            ?: error("Failed to load manifests from: ${packagedManifestDirectory.get().asFile}")
+
+        val isolatedSplitsValues: Set<Boolean?> = packagedManifests.map {
+            parseManifest(
+                File(it.outputFile).readText(),
+                it.outputFile,
+                manifestFileRequired = true,
+                manifestParsingAllowedProvider = null, // Always allow manifest parsing as this should be called only in the execution phase
+                THROW_ON_ERROR_ISSUE_REPORTER
+            ).isolatedSplits
+        }.toSet()
+
+        return when (isolatedSplitsValues.size) {
+            0 -> error("No manifests found in: ${packagedManifestDirectory.get().asFile}")
+            1 -> isolatedSplitsValues.single()
+            else -> error("Multiple isolatedSplits values found in ${packagedManifestDirectory.get().asFile}: $isolatedSplitsValues")
+        }
+    }
 }
