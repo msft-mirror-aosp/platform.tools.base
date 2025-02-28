@@ -192,12 +192,12 @@ internal class DatabaseRegistry(
       val after = getConnection(id)
 
       when {
-        after == null -> onClosedCallback.onDatabaseClosed(id, database.getKey())
+        after == null -> onClosedCallback.onDatabaseClosed(id, database.key)
         after.getScore() != before?.getScore() -> onOpenedCallback.onDatabaseOpened(id, after)
       }
 
       secureKeepOpenReference(id)
-      logDatabaseStatus(database.getPath())
+      logDatabaseStatus(database.path)
     }
   }
 
@@ -229,8 +229,8 @@ internal class DatabaseRegistry(
   private fun registerReference(id: Int, database: Database) {
     val references =
       databases.getOrPut(id) {
-        if (!database.isInMemoryDatabase()) {
-          pathToId[database.getKey()] = id
+        if (!database.isInMemory) {
+          pathToId[database.key] = id
         }
         mutableSetOf()
       }
@@ -259,9 +259,9 @@ internal class DatabaseRegistry(
   @GuardedBy("lock")
   private fun getIdForDatabase(database: Database): Int {
     val id =
-      when (database.isInMemoryDatabase()) {
+      when (database.isInMemory) {
         true -> findInMemoryReferenceKey(database)
-        false -> pathToId[database.getKey()]
+        false -> pathToId[database.key]
       }
     return id ?: nextId.getAndIncrement()
   }
@@ -324,10 +324,10 @@ internal class DatabaseRegistry(
 
   @GuardedBy("lock")
   private fun Database.getStatus(): String {
-    val id = pathToId[getPath()] ?: -1
+    val id = pathToId[path] ?: -1
     val suffix = if (keepOpenReferences[id]?.database == this) "*" else ""
     return when {
-      isReadOnly() -> "ReadOnly"
+      isReadOnly -> "ReadOnly"
       isForcedConnection(this) -> "Forced"
       else -> "ReadWrite"
     } + suffix
@@ -359,7 +359,7 @@ internal class DatabaseRegistry(
   }
 
   private fun OnDatabaseOpenedCallback.onDatabaseOpened(id: Int, database: Database) {
-    onDatabaseOpened(id, database.getKey(), isForcedConnection(database), database.isReadOnly())
+    onDatabaseOpened(id, database.key, isForcedConnection(database), database.isReadOnly)
   }
 
   private fun findKeepOpenReference(database: Database): KeepOpenReference? {
@@ -368,7 +368,7 @@ internal class DatabaseRegistry(
 
   private fun Database.getScore() =
     when {
-      isReadOnly() -> SCORE_READ_ONLY
+      isReadOnly -> SCORE_READ_ONLY
       isForcedConnection(this) -> SCORE_FORCED
       else -> SCORE_BEST
     }
