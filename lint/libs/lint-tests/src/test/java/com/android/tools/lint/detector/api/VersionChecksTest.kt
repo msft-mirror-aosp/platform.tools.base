@@ -3808,7 +3808,7 @@ class VersionChecksTest : AbstractCheckTest() {
                         val actionBar = getActionBar() // OK 3
                     }
 
-                    fun testCustomMethod() {
+                    fun testCustomMethod_neverReturn() {
                         if (SDK_INT < 11) {
                             willThrow()
                         }
@@ -3816,6 +3816,22 @@ class VersionChecksTest : AbstractCheckTest() {
                     }
 
                     private fun willThrow(): Nothing {
+                        throw IllegalStateException()
+                    }
+
+                    fun testCustomMethod_mayReturn() {
+                        if (SDK_INT < 11) {
+                            mayThrow()
+                        }
+                        val actionBar = getActionBar() // ERROR
+                    }
+
+                    private fun mayThrow(): Nothing? {
+                        if (SDK_INT < 24) {
+                            throw IllegalStateException()
+                        } else {
+                            return null
+                        }
                     }
                 }
                 """
@@ -3824,7 +3840,14 @@ class VersionChecksTest : AbstractCheckTest() {
         SUPPORT_ANNOTATIONS_JAR,
       )
       .run()
-      .expectInlinedMessages(false)
+      .expect(
+        """
+src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        val actionBar = getActionBar() // ERROR
+                        ~~~~~~~~~~~~
+1 error
+        """
+      )
   }
 
   fun testNotEquals() {

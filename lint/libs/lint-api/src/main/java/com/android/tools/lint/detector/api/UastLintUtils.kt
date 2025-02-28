@@ -1149,7 +1149,8 @@ fun callNeverReturns(call: UCallExpression): Boolean {
       val callInfo = sourcePsi.resolveToCall()
       if (callInfo != null) {
         val returnType = callInfo.singleFunctionCallOrNull()?.symbol?.returnType
-        if (returnType != null && returnType.isNothingType) {
+        // Nothing, not Nothing?
+        if (returnType != null && returnType.isNothingType && !returnType.nullability.isNullable) {
           return true
         }
       }
