@@ -39,9 +39,19 @@ fun DatabaseScreen() {
   val viewModel: DatabaseViewModel = hiltViewModel()
   val readWriteDatabaseState by viewModel.readWriteDatabaseState.collectAsStateWithLifecycle()
   val readOnlyDatabaseState by viewModel.readOnlyDatabaseState.collectAsStateWithLifecycle()
+  val readWriteBundledDatabaseState by
+    viewModel.readWriteBundledDatabaseState.collectAsStateWithLifecycle()
+  val readOnlyBundledDatabaseState by
+    viewModel.readOnlyBundledDatabaseState.collectAsStateWithLifecycle()
 
   AppScaffold(viewModel, topBar = { TopBar() }) {
-    DatabaseScreen(viewModel, readWriteDatabaseState, readOnlyDatabaseState)
+    DatabaseScreen(
+      viewModel,
+      readWriteDatabaseState,
+      readOnlyDatabaseState,
+      readWriteBundledDatabaseState,
+      readOnlyBundledDatabaseState,
+    )
   }
 }
 
@@ -50,6 +60,8 @@ private fun DatabaseScreen(
   actions: DatabaseActions,
   readWriteDatabaseState: Boolean,
   readOnlyDatabaseState: Boolean,
+  readWriteBundledDatabaseState: Boolean,
+  readOnlyBundledDatabaseState: Boolean,
 ) {
   ButtonGrid {
     when (readWriteDatabaseState) {
@@ -61,6 +73,14 @@ private fun DatabaseScreen(
         true -> button("Close read-only DB") { actions.doCloseReadOnlyDatabase() }
         false -> button("Open read-only DB") { actions.doOpenReadOnlyDatabase() }
       }
+    }
+    when (readWriteBundledDatabaseState) {
+      true -> button("Close read-write Bundled DB") { actions.doCloseReadWriteBundledDatabase() }
+      false -> button("Open read-write BundledDB") { actions.doOpenReadWriteBundledDatabase() }
+    }
+    when (readOnlyBundledDatabaseState) {
+      true -> button("Close read-only Bundled DB") { actions.doCloseReadOnlyBundledDatabase() }
+      false -> button("Open read-only Bundled DB") { actions.doOpenReadOnlyBundledDatabase() }
     }
     button("Add Room User") { actions.addUserRoom() }
     button("Add Bundled Room User") { actions.addUserRoomBundled() }
@@ -86,6 +106,8 @@ fun BackgroundPreview() {
           object : DatabaseActions {},
           readWriteDatabaseState = true,
           readOnlyDatabaseState = false,
+          readWriteBundledDatabaseState = true,
+          readOnlyBundledDatabaseState = false,
         )
       }
     }
