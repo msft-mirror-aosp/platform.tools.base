@@ -2260,15 +2260,15 @@ package com.android.build.api.dsl {
   }
 
   public interface TestedExtension {
-    method public String getTestBuildType();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String getTestBuildType();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.TestFixtures getTestFixtures();
-    method public String? getTestNamespace();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTestNamespace();
     method public void setTestBuildType(String);
     method public void setTestNamespace(String?);
     method @org.gradle.api.Incubating public void testFixtures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestFixtures,kotlin.Unit> action);
-    property public abstract String testBuildType;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String testBuildType;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.TestFixtures testFixtures;
-    property public abstract String? testNamespace;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? testNamespace;
   }
 
   public interface UnitTestOptions {
