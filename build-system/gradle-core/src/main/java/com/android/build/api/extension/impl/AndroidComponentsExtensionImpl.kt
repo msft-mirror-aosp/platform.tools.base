@@ -37,7 +37,7 @@ import org.gradle.api.Action
 import org.gradle.api.plugins.ExtensionAware
 
 abstract class AndroidComponentsExtensionImpl<
-        DslExtensionT: Any,
+        DslExtensionT,
         VariantBuilderT: VariantBuilder,
         VariantT: Variant>(
         private val dslServices: DslServices,

@@ -23,7 +23,7 @@ import java.util.function.Function
 /**
  * Holder of various [OperationsRegistrar] for all the variant API related operations to a plugin.
  */
-class VariantApiOperationsRegistrar<DslExtensionT: Any, VariantBuilderT: VariantBuilder, VariantT: Variant>(
+class VariantApiOperationsRegistrar<DslExtensionT, VariantBuilderT: VariantBuilder, VariantT: Variant>(
         extension: DslExtensionT,
 ) : DslLifecycleComponentsOperationsRegistrar<DslExtensionT>(extension) {
 
