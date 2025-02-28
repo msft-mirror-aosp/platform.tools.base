@@ -21,8 +21,7 @@ import androidx.annotation.VisibleForTesting;
 public class MotionEvent {
 
     public static final int ACTION_DOWN = 0;
-    public static final int BUTTON_SECONDARY = 1;
-
+    public static final int BUTTON_SECONDARY = 2;
 
     @VisibleForTesting
     final float x;
