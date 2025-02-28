@@ -36,7 +36,7 @@ internal class AndroidDatabase(database: SQLiteDatabase) :
 
   override fun execSql(
     sql: String,
-    selectionArgs: Array<String?>?,
+    selectionArgs: Array<String?>,
     cancellationSignal: CancellationSignal?,
   ) {
     when (cancellationSignal) {
@@ -52,8 +52,7 @@ internal class AndroidDatabase(database: SQLiteDatabase) :
   ): Cursor {
     val cursorFactory =
       SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
-        for (i in selectionArgs.indices) {
-          val value = selectionArgs[i]
+        selectionArgs.forEachIndexed { i, value ->
           val index = i + 1
           if (value == null) {
             query.bindNull(index)

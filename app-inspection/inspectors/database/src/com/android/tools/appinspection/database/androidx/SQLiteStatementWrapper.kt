@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.appinspection.database
+package com.android.tools.appinspection.database.androidx
 
-/** A simple Cursor interface with the basic functionality needed by the inspector */
-interface Cursor : AutoCloseable {
-  fun moveToNext(): Boolean
+import androidx.sqlite.SQLiteStatement
 
-  fun getString(column: Int): String?
-
-  fun getColumnIndex(name: String): Int
-
-  fun getColumnNames(): Array<String>
-
-  fun getInt(column: Int): Int
-
-  fun getColumnCount(): Int
-
-  fun getType(column: Int): Int
-
-  fun getBlob(column: Int): ByteArray?
-
-  fun getLong(column: Int): Long
-
-  fun getDouble(column: Int): Double
+/**
+ * A wrapper for [SQLiteStatement]
+ *
+ * Exposes things that are not available in the actual class:
+ * * Calls an `invalidate` lambda when a mutating action might have occurred.
+ */
+internal class SQLiteStatementWrapper(
+  private val delegate: SQLiteStatement,
+  private val onInvalidate: () -> Unit,
+) : SQLiteStatement by delegate {
+  override fun step(): Boolean {
+    val result = delegate.step()
+    onInvalidate()
+    return result
+  }
 }

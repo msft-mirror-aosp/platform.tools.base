@@ -15,6 +15,8 @@ agent_deps = [
     ":database_inspector_java_proto",
     "//prebuilts/studio/sdk:platforms/latest_jar",
     "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+    "//prebuilts/tools/common/m2:androidx-sqlite-2.5.0-beta01",
+    "//prebuilts/tools/common/m2:androidx-sqlite-bundled-2.5.0-beta01",
     "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common",
     "//tools/base/bazel:studio-proto",
     "@maven//:androidx.annotation.annotation",
