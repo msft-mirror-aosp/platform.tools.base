@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
+import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 
 /**
@@ -41,19 +42,13 @@ class ClassDefinitionSubject(
         }
     }
 
-    fun interfaces(): IterableSubject {
-        return check("interfaces()").that(actual().interfaces)
-    }
+    fun superClass(): StringSubject = check("superClass()").that(actual().superClass)
 
-    fun innerClasses(): IterableSubject {
-        return check("innerClasses()").that(actual().innerClasses)
-    }
+    fun interfaces(): IterableSubject = check("interfaces()").that(actual().interfaces)
 
-    fun fields(): IterableSubject {
-        return check("fields()").that(actual().fields)
-    }
+    fun innerClasses(): IterableSubject = check("innerClasses()").that(actual().innerClasses)
 
-    fun methods(): IterableSubject {
-        return check("methods()").that(actual().methods)
-    }
+    fun fields(): IterableSubject = check("fields()").that(actual().fields)
+
+    fun methods(): IterableSubject = check("methods()").that(actual().methods)
 }

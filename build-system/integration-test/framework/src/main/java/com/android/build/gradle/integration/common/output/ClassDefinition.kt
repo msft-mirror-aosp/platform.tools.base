@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.ClassNode
  * by [ClassesSubject.classDefinition]
  */
 sealed interface ClassDefinition {
+    val superClass: String?
     val interfaces: List<String>
     val innerClasses: List<String>
     val fields: List<String>
@@ -36,6 +37,9 @@ sealed interface ClassDefinition {
  * Implementation of [ClassDefinition] over ASM's [ClassNode]
  */
 internal class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDefinition {
+
+    override val superClass: String?
+        get() = classNode.superName
     override val interfaces: List<String>
         get() = classNode.interfaces
     override val innerClasses: List<String>
@@ -50,8 +54,14 @@ internal class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDe
  * Implementation of [ClassDefinition] over smali's [DexBackedClassDef]
  */
 internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef): ClassDefinition {
+
+    override val superClass: String?
+        get() = dex.superclass?.let {
+            // the format coming from dex is L...;, so we trim these characters.
+            it.substring(1, it.length - 1)
+        }
     override val interfaces: List<String>
-        get() = throw RuntimeException("Not yet implemented")
+        get() = dex.interfaces
     override val innerClasses: List<String>
         get() = throw RuntimeException("Not yet implemented")
     override val fields: List<String>

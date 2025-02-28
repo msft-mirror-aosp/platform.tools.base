@@ -145,17 +145,15 @@ class AarPublishTest {
     fun aarContainsAllowedRootDirectories() {
         val build = rule.build
         build.executor.run(":library:assembleDebug")
-        ZipSubject.assertThat(build.androidLibrary(":library").getAarLocationForCopy(AarSelector.DEBUG)) {
-            // use a basic zip file here to validate the aar as a zip rather than an AAR
-            entries().apply {
-                contains("AndroidManifest.xml")
-                contains("R.txt")
-                contains("classes.jar")
-                contains("res/values/values.xml")
-                contains("META-INF/com/android/build/gradle/aar-metadata.properties")
-                // Regression test for b/232117952
-                doesNotContain("values/")
-            }
+        build.androidLibrary(":library").assertAar(AarSelector.DEBUG) {
+            // Regression test for b/232117952 : this should not contain values/
+            containsExactly(
+                "AndroidManifest.xml",
+                "R.txt",
+                "classes.jar",
+                "res/",
+                "META-INF/"
+            )
         }
     }
 }

@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertAbout
 import java.io.File

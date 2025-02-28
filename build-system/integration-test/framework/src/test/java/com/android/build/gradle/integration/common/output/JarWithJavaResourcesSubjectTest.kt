@@ -18,8 +18,10 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.SimpleSubjectBuilder
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 
+@Suppress("UnstableApiUsage")
 class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
 
     @Test
@@ -128,6 +130,7 @@ class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
         JarWithJavaResourcesSubject.assertThat(zip).apply(action)
     }
 
+    @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<JarWithJavaResourcesSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(JarWithJavaResourcesSubject.jars(), action)
     }

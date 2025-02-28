@@ -19,11 +19,8 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.integration.common.truth.NativeLibrarySubject
 import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
-import com.google.common.truth.Truth.assertAbout
 import java.nio.file.Files
-import java.util.regex.Pattern
 
 /**
  * An object that can validate the content of a folder of jni libraries.
@@ -31,22 +28,37 @@ import java.util.regex.Pattern
 @SubjectDsl
 interface JniSubject {
     /**
-     * Checks that the list of classes contains exactly the list provided
+     * Validates that the jni library list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(resourceNames: Iterable<String>)
+    fun containsExactly(libraryPaths: Iterable<String>)
 
     /**
-     * Checks that the list of classes contains a single entry matching the one provided
+     * Validates that the jni library list matches exactly with the provided item.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(resourceName: String) {
-        containsExactly(listOf(resourceName))
+    fun containsExactly(libraryPath: String) {
+        containsExactly(listOf(libraryPath))
     }
 
     /**
-     * Checks that the list of classes contains exactly the list provided
+     * Validates that the jni library list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(vararg resourceNames: String) {
-        containsExactly(resourceNames.toList())
+    fun containsExactly(vararg libraryPaths: String) {
+        containsExactly(libraryPaths.toList())
     }
 
     /**
@@ -59,14 +71,24 @@ interface JniSubject {
      */
     fun hasSize(size: Int)
 
-    fun library(path: String): NativeLibrarySubject
+    /**
+     * Returns a [JniSubject] representing the given ABI folder inside the current Jni folder
+     *
+     * @param abiName the name of the abi
+     */
+    fun abi(abiName: String): JniSubject
+
+    /**
+     * Returns a [NativeLibrarySubject] to test the content of the library at the provided path
+     */
+    fun library(libraryPath: String): NativeLibrarySubject
 
     /**
      * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
-     * @param path the path of the item which must not include a leading /
+     * @param libraryPath the path of the item which must not include a leading /
      */
-    fun bytesOf(path: String): BinarySubject
+    fun bytesOf(libraryPath: String): BinarySubject
 }
 
 /**
@@ -91,11 +113,11 @@ internal class JniSubjectImpl(
         }
     }
 
-    override fun containsExactly(resourceNames: Iterable<String>) {
+    override fun containsExactly(libraryPaths: Iterable<String>) {
         check("entries()")
             .about(ComparatorSubject.lists())
             .that(actual().getEntries())
-            .containsExactly(resourceNames)
+            .containsExactly(libraryPaths)
     }
 
     override fun isEmpty() {
@@ -106,15 +128,20 @@ internal class JniSubjectImpl(
         check("size()").that(actual().getEntries().size).isEqualTo(size)
     }
 
-    override fun bytesOf(path: String): BinarySubject {
-        check("entries()").that(actual().getEntries()).contains(path)
-        return check("resourceAsBytes($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
+    override fun abi(abiName: String): JniSubject {
+        val view = ZipFolderView(actual(), abiName)
+        return check("abi($abiName)").about(libs()).that(view)
     }
 
-    override fun library(path: String): NativeLibrarySubject {
-        check("entries()").that(actual().getEntries()).contains(path)
+    override fun bytesOf(libraryPath: String): BinarySubject {
+        check("entries()").that(actual().getEntries()).contains(libraryPath)
+        return check("bytesOf($libraryPath)").about(BinarySubject.bytes()).that(actual().binaryFile(libraryPath))
+    }
 
-        val location = actual().getEntry(path)
+    override fun library(libraryPath: String): NativeLibrarySubject {
+        check("entries()").that(actual().getEntries()).contains(libraryPath)
+
+        val location = actual().getEntry(libraryPath)
 
         // we need to create a temporary file because the subject needs to run command lines against it.
         // TODO inject a TemporaryFolder rule?
@@ -128,6 +155,6 @@ internal class JniSubjectImpl(
 
         nativeFile.deleteOnExit()
 
-        return check("library($path)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
+        return check("library($libraryPath)").about(NativeLibrarySubject.nativeLibraries()).that(nativeFile)
     }
 }

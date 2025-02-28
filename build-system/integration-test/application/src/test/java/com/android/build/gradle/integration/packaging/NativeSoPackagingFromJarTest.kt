@@ -18,10 +18,6 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.output.AbstractZipSubject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import org.junit.Before
@@ -35,7 +31,6 @@ import org.objectweb.asm.Opcodes
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.util.function.Consumer
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 
@@ -62,14 +57,22 @@ class NativeSoPackagingFromJarTest {
         // setup dependencies.
         TestFileUtils.appendToFile(
             appProject.buildFile,
-            "\ndependencies {\n" + "  api files(\"libs/foo.jar\")\n" + "}\n"
+            """
+                dependencies {
+                  api files("libs/foo.jar")
+                }
+            """.trimIndent()
         )
 
         libProject = project.getSubproject("library")
 
         TestFileUtils.appendToFile(
             libProject.buildFile,
-            "\ndependencies {\n" + "  api files(\"libs/bar.jar\")\n" + "}\n"
+            """
+                dependencies {
+                  api files("libs/bar.jar")
+                }
+            """.trimIndent()
         )
 
         val appDir = appProject.projectDir
@@ -82,17 +85,16 @@ class NativeSoPackagingFromJarTest {
     @Test
     fun testAppPackaging() {
         project.executor().run("app:assembleDebug")
-        checkApk(appProject, "libhello.so", "hello")
+        appProject.checkApkJniLibs("libhello.so".withContent("hello"))
     }
 
     @Test
     fun testLibraryPackaging() {
         project.executor().run("library:assembleDebug")
-        checkAar(libProject, "libhello.so", "hello")
+        libProject.checkAarJniLibs("libhello.so".withContent("hello"))
 
-        // also check that the bar.jar is also present as a local jar with a the class
+        // also check that the bar.jar is also present as a local jar with the class
         // but not the so file.
-        // first extract bar.jar from the apk.
         libProject.assertAar(AarSelector.DEBUG) {
             contains("libs/bar.jar")
             secondaryJars().classes().containsExactly(COM_FOO_FOO)
@@ -126,71 +128,6 @@ class NativeSoPackagingFromJarTest {
                     jarOutputStream.closeEntry()
                 }
             }
-        }
-    }
-
-    /**
-     * check an apk has (or not) the given asset file name.
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkApk(
-        project: GradleTestProject, filename: String, content: String?
-    ) {
-        val apk = project.getApk("debug")
-        check(TruthHelper.assertThatApk(apk), "lib", filename, content)
-        PackagingTests.checkZipAlign(apk.getFile().toFile())
-    }
-
-    /**
-     * check an aat has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkAar(
-        project: GradleTestProject,
-        filename: String,
-        content: String?
-    ) {
-        project.assertAar(AarSelector.DEBUG) {
-            check(this, "jni", filename, content)
-        }
-    }
-
-    private fun check(
-        subject: AbstractAndroidSubject<*, *>,
-        folderName: String,
-        filename: String,
-        content: String?
-    ) {
-        if (content != null) {
-            subject.containsFileWithContent("$folderName/x86/$filename", content)
-        } else {
-            subject.doesNotContain("$folderName/x86/$filename")
-        }
-    }
-
-    private fun check(
-        subject: AbstractZipSubject<*, *>,
-        folderName: String,
-        filename: String,
-        content: String?
-    ) {
-        if (content != null) {
-            subject.textFile(folderName + "/x86/" + filename).isEqualTo(content)
-        } else {
-            subject.doesNotContain(folderName + "/x86/" + filename)
         }
     }
 

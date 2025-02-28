@@ -42,7 +42,7 @@ class LocalJarTest {
         val app = build.androidApplication()
 
         ZipSubject.assertThat(app.resolve("libs/libfoo.jar")) {
-            entries().containsExactly(
+            containsExactly(
                 "com/android/build/gradle/integration/fixture/Foo.class",
                 "com/example/Bar.class",
                 "com/example/foo.txt"

@@ -29,22 +29,37 @@ import java.util.regex.Pattern
 interface ResourcesSubject {
 
     /**
-     * Checks that the list of classes contains exactly the list provided
+     * Validates that the resource list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(resourceNames: Iterable<String>)
+    fun containsExactly(resourcePaths: Iterable<String>)
 
     /**
-     * Checks that the list of classes contains a single entry matching the one provided
+     * Validates that the resource list matches exactly with the provided item.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the provided item includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(resourceName: String) {
-        containsExactly(listOf(resourceName))
+    fun containsExactly(resourcePath: String) {
+        containsExactly(listOf(resourcePath))
     }
 
     /**
-     * Checks that the list of classes contains exactly the list provided
+     * Validates that the resource list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(vararg resourceNames: String) {
-        containsExactly(resourceNames.toList())
+    fun containsExactly(vararg resourcePaths: String) {
+        containsExactly(resourcePaths.toList())
     }
 
     /**
@@ -60,18 +75,23 @@ interface ResourcesSubject {
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
      *
-     * @param path the path of the item which must not include a leading /
+     * @param resourcePath the path of the item which must not include a leading /
      */
-    fun resourceAsText(path: String): StringSubject
+    fun resourceAsText(resourcePath: String): StringSubject
 
     /**
      * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
-     * @param path the path of the item which must not include a leading /
+     * @param resourcePath the path of the item which must not include a leading /
      */
-    fun resourceAsBytes(path: String): BinarySubject
+    fun resourceAsBytes(resourcePath: String): BinarySubject
 
-    fun folderView(path: String): ResourcesSubject
+    /**
+     * Returns a [ResourcesSubject] representing the content of the provided path
+     *
+     * @param path the path inside the current resources
+     */
+    fun folder(path: String): ResourcesSubject
 }
 
 internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
@@ -81,11 +101,11 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     protected abstract val allResources: List<String>
 
-    override fun containsExactly(resourceNames: Iterable<String>) {
+    override fun containsExactly(resourcePaths: Iterable<String>) {
         check("entries()")
             .about(ComparatorSubject.lists())
             .that(allResources)
-            .containsExactly(resourceNames)
+            .containsExactly(resourcePaths)
     }
 
     override fun isEmpty() {
@@ -96,14 +116,14 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
         check("size()").that(allResources.size).isEqualTo(size)
     }
 
-    override fun resourceAsText(path: String): StringSubject {
-        check("entries()").that(allResources).contains(path)
-        return check("resourceAsText($path)").that(actual().textFile(path))
+    override fun resourceAsText(resourcePath: String): StringSubject {
+        check("entries()").that(allResources).contains(resourcePath)
+        return check("resourceAsText($resourcePath)").that(actual().textFile(resourcePath))
     }
 
-    override fun resourceAsBytes(path: String): BinarySubject {
-        check("entries()").that(allResources).contains(path)
-        return check("resourceAsBytes($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
+    override fun resourceAsBytes(resourcePath: String): BinarySubject {
+        check("entries()").that(allResources).contains(resourcePath)
+        return check("resourceAsBytes($resourcePath)").about(BinarySubject.bytes()).that(actual().binaryFile(resourcePath))
     }
 }
 
@@ -135,9 +155,9 @@ internal class ApkWithJavaResourcesSubject(
         }
     }
 
-    override fun folderView(path: String): ResourcesSubject {
+    override fun folder(path: String): ResourcesSubject {
         val view = ZipFolderView(actual(), path)
-        return check("folderView($path)").about(javaResources()).that(view)
+        return check("folder($path)").about(javaResources()).that(view)
     }
 
     /**
@@ -184,9 +204,9 @@ internal class JarWithJavaResourcesSubject(
         }
     }
 
-    override fun folderView(path: String): ResourcesSubject {
+    override fun folder(path: String): ResourcesSubject {
         val view = ZipFolderView(actual(), path)
-        return check("folderView($path)").about(jars()).that(view)
+        return check("folder($path)").about(jars()).that(view)
     }
 
     /**
@@ -223,9 +243,9 @@ internal class FullJarResourcesSubject(
         }
     }
 
-    override fun folderView(path: String): ResourcesSubject {
+    override fun folder(path: String): ResourcesSubject {
         val view = ZipFolderView(actual(), path)
-        return check("folderView($path)").about(jars()).that(view)
+        return check("folder($path)").about(jars()).that(view)
     }
 
 

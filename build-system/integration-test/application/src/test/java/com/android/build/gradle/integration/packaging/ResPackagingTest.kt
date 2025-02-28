@@ -115,7 +115,7 @@ class ResPackagingTest {
 
     @Test
     fun testNonIncrementalPackaging() {
-        execute("clean", "assembleDebug", "assembleAndroidTest")
+        execute("assembleDebug", "assembleAndroidTest")
 
         // chek the files are there. Start from the bottom of the dependency graph
         libProject2.checkAarResources("filelib2.txt".withContent("library2:abcd"))
@@ -148,7 +148,7 @@ class ResPackagingTest {
     // ---- APP DEFAULT ---
     @Test
     fun testAppProjectWithNewResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
@@ -164,7 +164,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithRemovedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/file.txt")
@@ -175,7 +175,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithModifiedResFile() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/file.txt", "new content")
@@ -190,7 +190,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithNewDebugResFileOverridingMain() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/file.txt", "new content")
@@ -213,7 +213,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithnewResFileOverridingDependency() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/filelib.txt", "new content")
@@ -236,7 +236,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithnewResFileInDebugSourceSet() {
-        execute("app:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/file.txt", "new content")
@@ -259,7 +259,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithModifiedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/filelib.txt", "new content")
@@ -274,7 +274,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithAddedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/new_lib_file.txt", "new content")
@@ -290,7 +290,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectWithRemovedResInDependency() {
-        execute("app:clean", "library:clean", "app:assembleDebug")
+        execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/filelib.txt")
@@ -451,7 +451,7 @@ class ResPackagingTest {
     // ---- APP TEST ---
     @Test
     fun testAppProjectTestWithNewResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/newfile.txt", "new file content")
@@ -462,7 +462,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectTestWithRemovedResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.removeFile("src/androidTest/res/raw/filetest.txt")
@@ -473,7 +473,7 @@ class ResPackagingTest {
 
     @Test
     fun testAppProjectTestWithModifiedResFile() {
-        execute("app:clean", "app:assembleAT")
+        execute("app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/androidTest/res/raw/filetest.txt", "new content")
@@ -528,7 +528,7 @@ class ResPackagingTest {
     // ---- LIB DEFAULT ---
     @Test
     fun testLibProjectWithNewResFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
@@ -539,7 +539,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectWithRemovedResFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/filelib.txt")
@@ -550,7 +550,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectWithModifiedResFile() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/filelib.txt", "new content")
@@ -561,7 +561,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectWithnewResFileInDebugSourceSet() {
-        execute("library:clean", "library:assembleDebug")
+        execute("library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/debug/res/raw/filelib.txt", "new content")
@@ -577,7 +577,7 @@ class ResPackagingTest {
     // ---- LIB TEST ---
     @Test
     fun testLibProjectTestWithNewResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/newfile.txt", "new file content")
@@ -593,7 +593,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectTestWithRemovedResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.removeFile("src/androidTest/res/raw/filelibtest.txt")
@@ -604,7 +604,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectTestWithModifiedResFile() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/androidTest/res/raw/filelibtest.txt", "new content")
@@ -619,7 +619,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectTestWithnewResFileOverridingTestedLib() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/filelib.txt", "new content")
@@ -642,7 +642,7 @@ class ResPackagingTest {
 
     @Test
     fun testLibProjectTestWithnewResFileOverridingDependency() {
-        execute("library:clean", "library:assembleAT")
+        execute("library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) { project: TemporaryProjectModification ->
             project.addFile("src/androidTest/res/raw/filelib2.txt", "new content")
@@ -662,7 +662,7 @@ class ResPackagingTest {
     // ---- TEST DEFAULT ---
     @Test
     fun testTestProjectWithNewResFile() {
-        execute("test:clean", "test:assembleDebug")
+        execute("test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.addFile("src/main/res/raw/newfile.txt", "newfile content")
@@ -673,7 +673,7 @@ class ResPackagingTest {
 
     @Test
     fun testTestProjectWithRemovedResFile() {
-        execute("test:clean", "test:assembleDebug")
+        execute("test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.removeFile("src/main/res/raw/file.txt")
@@ -684,7 +684,7 @@ class ResPackagingTest {
 
     @Test
     fun testTestProjectWithModifiedResFile() {
-        execute("test:clean", "test:assembleDebug")
+        execute("test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) { project: TemporaryProjectModification ->
             project.replaceFile("src/main/res/raw/file.txt", "new content")
@@ -714,8 +714,9 @@ class ResPackagingTest {
          * content is null the file is not expected to be there.
          *
          * @param project the project
-         * @param filename the filename
-         * @param content the content
+         * @param itemList a list of items that must be present in the android archive. The list
+         * can either contain [String] to just validate presence, or [StringWithContent] to validate
+         * presence and content.
          */
         private fun GradleTestProject.checkApkResources(
             vararg itemList: Any
@@ -733,8 +734,9 @@ class ResPackagingTest {
          * content is null the file is not expected to be there.
          *
          * @param project the project
-         * @param filename the filename
-         * @param content the content
+         * @param itemList a list of items that must be present in the android archive. The list
+         * can either contain [String] to just validate presence, or [StringWithContent] to validate
+         * presence and content.
          */
         private fun GradleTestProject.checkTestApkResources(
             vararg itemList: Any
@@ -752,8 +754,9 @@ class ResPackagingTest {
          * content is null the file is not expected to be there.
          *
          * @param project the project
-         * @param filename the filename
-         * @param content the content
+         * @param itemList a list of items that must be present in the android archive. The list
+         * can either contain [String] to just validate presence, or [StringWithContent] to validate
+         * presence and content.
          */
         private fun GradleTestProject.checkAarResources(vararg itemList: Any) {
             assertAar(AarSelector.DEBUG) {
@@ -761,28 +764,25 @@ class ResPackagingTest {
             }
         }
 
-        private data class StringWithContent(
-            val name: String,
-            val content: String
-        )
-
-        private fun String.withContent(content: String) = StringWithContent(this, content)
-
         private fun AbstractAndroidArchiveSubject<*,*>.checkRawResources(vararg itemList: Any) {
-            androidResources {
-                val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
-                val itemNames = itemList.map {
-                    when (it) {
-                        is StringWithContent -> it.name
-                        is String -> it
-                        else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+            androidResources().folder("raw").apply {
+                if (itemList.isEmpty()) {
+                    isEmpty()
+                } else {
+                    val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+                    val itemNames = itemList.map {
+                        when (it) {
+                            is StringWithContent -> it.name
+                            is String -> it
+                            else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+                        }
                     }
-                }
 
-                // check the list
-                folderView("raw").containsExactly(itemNames)
-                for (item in itemsWithContent) {
-                    resourceAsText("raw/${item.name}").isEqualTo(item.content)
+                    // check the list
+                    containsExactly(itemNames)
+                    for (item in itemsWithContent) {
+                        resourceAsText(item.name).isEqualTo(item.content)
+                    }
                 }
             }
         }

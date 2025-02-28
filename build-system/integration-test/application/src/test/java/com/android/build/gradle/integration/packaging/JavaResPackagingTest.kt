@@ -162,16 +162,16 @@ class JavaResPackagingTest {
 
         // All APKs should exclude .kotlin_module files, but the AAR should include it.
         appProject.assertApk(ApkSelector.DEBUG) {
-            javaResources().folderView("META-INF").containsExactly(
+            javaResources().folder("META-INF").containsExactly(
                 "MANIFEST.MF", "CERT.RSA", "CERT.SF", "com/android/build/gradle/app-metadata.properties"
             )
         }
         appProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            javaResources().folderView("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
+            javaResources().folder("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
         }
         libProject.checkAarMetaInf("foo.kotlin_module".withContent("library:abcd"))
         libProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            javaResources().folderView("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
+            javaResources().folder("META-INF").containsExactly("MANIFEST.MF", "CERT.RSA", "CERT.SF")
         }
     }
 
@@ -841,7 +841,7 @@ class JavaResPackagingTest {
         folder: String,
         vararg itemList: Any
     ) {
-        javaResources().folderView(folder).apply {
+        javaResources().folder(folder).apply {
             if (itemList.isEmpty()) {
                 isEmpty()
             } else {

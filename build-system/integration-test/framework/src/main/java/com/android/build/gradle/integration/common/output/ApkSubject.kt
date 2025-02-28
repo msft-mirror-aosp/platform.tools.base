@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.builder.core.ApkInfoParser
 import com.android.builder.internal.packaging.IncrementalPackager.APP_METADATA_ENTRY_PATH
 import com.android.ide.common.process.DefaultProcessExecutor
 import com.android.ide.common.process.ProcessException
 import com.android.ide.common.process.ProcessExecutor
+import com.android.sdklib.BuildToolInfo
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Dex
 import com.android.utils.StdLogger
@@ -161,7 +163,7 @@ class ApkSubject(
     }
 
     fun mainDex(): ClassesSubject {
-        entries().contains("classes.dex")
+        contains("classes.dex")
         val dexPath = actual().getEntry("classes.dex")!!
         val dex = Dex(dexPath)
 
@@ -196,6 +198,41 @@ class ApkSubject(
 
         return check("apkMetadata()").about(PropertiesSubject.properties()).that(properties)
 
+    }
+
+    /**
+     * Validates the APK is properly zipAligned
+     */
+    fun validateZipAlignment() {
+        checkAlignment("validateZipAlignment()")
+    }
+
+    /**
+     * Validates the APK for page sizes for native libraries.
+     */
+    fun validatePageAlignment(pageSize: Int) {
+        checkAlignment("validateZipAlignment()", pageSize.toString())
+    }
+
+    private fun checkAlignment(
+        checkName: String,
+        pageSize: String? = null) {
+        val arguments = buildList {
+            add(SdkHelper.getBuildTool(BuildToolInfo.PathId.ZIP_ALIGN).absolutePath)
+            add("-c") // check
+            add("-v") // verbose
+            pageSize?.let {
+                add("-P")
+                add(it)
+            }
+            add("4") // default alignment - you always have to use it with zipalign
+            val zip = actual() as SimpleZip
+            add(zip.archivePath.toString())
+        }
+
+        val processBuilder = ProcessBuilder(arguments)
+        val result = processBuilder.start().waitFor()
+        check(checkName).that(result == 0).isTrue()
     }
 
     /**

@@ -21,9 +21,11 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.output.AarSubject.Companion.assertThat
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.SimpleSubjectBuilder
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 import kotlin.use
 
+@Suppress("UnstableApiUsage")
 class AarSubjectTest: BaseZipSubjectTest() {
 
     @Test
@@ -628,7 +630,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }
     }
 
-
+    @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<AarSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(AarSubject.aars(), action)
     }

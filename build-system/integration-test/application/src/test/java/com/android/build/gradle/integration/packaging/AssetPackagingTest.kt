@@ -18,26 +18,21 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification.ModifiedProjectTest
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.output.AbstractZipSubject
-import com.android.build.gradle.integration.common.output.Zip
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
+import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
+import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.IOException
 import java.nio.file.Files
 import java.util.*
-import java.util.function.Consumer
 import java.util.zip.GZIPOutputStream
 
 /**
@@ -161,31 +156,33 @@ class AssetPackagingTest {
         execute("assembleDebug", "assembleAndroidTest")
 
         // check the files are there. Start from the bottom of the dependency graph
-        checkAar(libProject2, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject2, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject2, "filelib2test.txt", "library2Test:abcd")
+        libProject2.checkAar("filelib2.txt".withContent("library2:abcd"))
+        libProject2.checkTestApk(
+            "filelib2.txt".withContent("library2:abcd"),
+            "filelib2test.txt".withContent("library2Test:abcd")
+        )
 
-        checkAar(libProject, "filelib.txt", "library:abcd")
         // aar does not contain dependency's assets
-        checkAar(libProject, "filelib2.txt", null)
+        libProject.checkAar("filelib.txt".withContent("library:abcd"))
         // test apk contains both test-ony assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "filelib.txt", "library:abcd")
-        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
-        checkTestApk(libProject, "filelibtest.txt", "libraryTest:abcd")
         // but not the assets of the dependency's own test
-        checkTestApk(libProject, "filelib2test.txt", null)
+        libProject.checkTestApk(
+            "filelib.txt".withContent("library:abcd"),
+            "filelib2.txt".withContent("library2:abcd"),
+            "filelibtest.txt".withContent("libraryTest:abcd")
+        )
 
         // app contain own assets + all dependencies' assets.
-        checkApk(appProject, "file.txt", "app:abcd")
-        checkApk(appProject, "subdir/file.txt", "app:defg")
-        checkApk(appProject, "filelib.txt", "library:abcd")
-        checkApk(appProject, "filelib2.txt", "library2:abcd")
-        // This should be null because of the default AaptOptions.ignoreAssetsPattern
-        checkApk(appProject, "_anotherdir/file.txt", null)
-        checkTestApk(appProject, "filetest.txt", "appTest:abcd")
+        // but not _anotherdir/file.txt because of the default AaptOptions.ignoreAssetsPattern
+        appProject.checkApk(
+            "file.txt".withContent("app:abcd"),
+            "subdir/file.txt".withContent("app:defg"),
+            "filelib.txt".withContent("library:abcd"),
+            "filelib2.txt".withContent("library2:abcd")
+        )
+
         // app test does not contain dependencies' own test assets.
-        checkTestApk(appProject, "filelibtest.txt", null)
-        checkTestApk(appProject, "filelib2test.txt", null)
+        appProject.checkTestApk("filetest.txt".withContent("appTest:abcd"))
     }
 
     // ---- APP DEFAULT ---
@@ -193,140 +190,175 @@ class AssetPackagingTest {
     fun testAppProjectWithNewAssetFile() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content")
             execute("app:assembleDebug")
-            checkApk(appProject, "newfile.txt", "newfile content")
-        })
+            appProject.checkApk(
+                "newfile.txt".withContent("newfile content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
+        }
     }
 
     @Test
     fun testAppProjectWithRemovedAssetFile() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/assets/file.txt")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", null)
-        })
+            appProject.checkApk("subdir/file.txt", "filelib2.txt", "filelib.txt")
+        }
     }
 
     @Test
     fun testAppProjectWithModifiedAssetFile() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/main/assets/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
-        })
+            appProject.checkApk(
+                "file.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt"
+            )
+        }
     }
 
     @Test
     fun testAppProjectWithNewDebugAssetFileOverridingMain() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/assets/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
-        })
+            appProject.checkApk(
+                "file.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt"
+            )
+        }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
+        appProject.checkApk(
+            "file.txt".withContent("app:abcd"),
+            "subdir/file.txt", "filelib2.txt", "filelib.txt")
     }
 
     @Test
     fun testAppProjectWithNewAssetFileOverridingDependency() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/assets/filelib.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", "new content")
-        })
+            appProject.checkApk(
+                "filelib.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "file.txt"
+            )
+        }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "filelib.txt", "library:abcd")
+        appProject.checkApk(
+            "filelib.txt".withContent("library:abcd"),
+            "subdir/file.txt", "filelib2.txt", "file.txt"
+        )
     }
 
     @Test
     fun testAppProjectWithNewAssetFileInDebugSourceSet() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/debug/assets/file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "file.txt", "new content")
-        })
+            appProject.checkApk(
+                "file.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt"
+            )
+        }
 
         // file's been removed, checking in the other direction.
         execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
+        appProject.checkApk(
+            "file.txt".withContent("app:abcd"),
+            "subdir/file.txt", "filelib2.txt", "filelib.txt"
+        )
     }
 
     @Test
     fun testAppProjectWithModifiedAssetInDependency() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/assets/filelib.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", "new content")
-        })
+            appProject.checkApk(
+                "filelib.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "file.txt"
+            )
+        }
     }
 
     @Test
     fun testAppProjectWithAddedAssetInDependency() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/assets/new_lib_file.txt", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "new_lib_file.txt", "new content")
-        })
+            appProject.checkApk(
+                "new_lib_file.txt".withContent("new content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
+        }
     }
 
     @Test
     fun testAppProjectWithRemovedAssetInDependency() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/assets/filelib.txt")
             execute("app:assembleDebug")
-            checkApk(appProject, "filelib.txt", null)
-        })
+            appProject.checkApk("subdir/file.txt", "filelib2.txt", "file.txt")
+        }
     }
 
     @Test
     fun testAppProjectWithAddedAssetThatOverrideAaptOptions() {
         TemporaryProjectModification.doTest(
-            appProject,
-            ModifiedProjectTest {
-                it.replaceInFile(
-                    appProject.buildFile.getPath(),
-                    "aaptOptions \\{\\}",
-                    ("aaptOptions \\{ ignoreAssetsPattern = "
-                            + " \"!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~\""
-                            + " \\}")
-                )
-                // Override AaptOptions and check that the file has been included.
-                execute("app:assembleDebug")
-                checkApk(appProject, "_anotherdir/file.txt", "app:hijk")
+            appProject
+        ) {
+            it.replaceInFile(
+                appProject.buildFile.getPath(),
+                "aaptOptions \\{\\}",
+                ("aaptOptions \\{ ignoreAssetsPattern = "
+                        + " \"!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~\""
+                        + " \\}")
+            )
+            // Override AaptOptions and check that the file has been included.
+            execute("app:assembleDebug")
+            appProject.checkApk(
+                "_anotherdir/file.txt".withContent("app:hijk"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
 
-                // Another run with more files and they all should be included too as part of
-                // incremental build.
-                it.addFile("src/main/assets/_file.txt", "app:1234")
-                it.addFile("src/main/assets/_anotherdir/_file.txt", "app:5678")
-                it.addFile("src/main/assets/_onemoredir/file.txt", "app:9012")
-                execute("app:assembleDebug")
-                checkApk(appProject, "_anotherdir/file.txt", "app:hijk")
-                checkApk(appProject, "_file.txt", "app:1234")
-                checkApk(appProject, "_anotherdir/_file.txt", "app:5678")
-                checkApk(appProject, "_onemoredir/file.txt", "app:9012")
-            })
+            // Another run with more files and they all should be included too as part of
+            // incremental build.
+            it.addFile("src/main/assets/_file.txt", "app:1234")
+            it.addFile("src/main/assets/_anotherdir/_file.txt", "app:5678")
+            it.addFile("src/main/assets/_onemoredir/file.txt", "app:9012")
+            execute("app:assembleDebug")
+            appProject.checkApk(
+                "_anotherdir/file.txt".withContent("app:hijk"),
+                "_file.txt".withContent("app:1234"),
+                "_anotherdir/_file.txt".withContent("app:5678"),
+                "_onemoredir/file.txt".withContent("app:9012"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
+        }
     }
 
     @Test
@@ -334,16 +366,19 @@ class AssetPackagingTest {
         execute("app:assembleDebug")
 
         TemporaryProjectModification.doTest(
-            appProject,
-            ModifiedProjectTest {
-                it.addFile("src/main/assets/newFile.txt", "foo")
-                execute("app:assembleDebug")
-                checkApk(appProject, "newFile.txt", "foo")
-            })
+            appProject
+        ) {
+            it.addFile("src/main/assets/newFile.txt", "foo")
+            execute("app:assembleDebug")
+            appProject.checkApk(
+                "newFile.txt".withContent("foo"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
+        }
 
         // Asset file has been removed. Check it's removed from the APK after another inc build.
         execute("app:assembleDebug")
-        checkApk(appProject, "newFile.txt", null)
+        appProject.checkApk("subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt")
     }
 
     // ---- APP TEST ---
@@ -351,33 +386,36 @@ class AssetPackagingTest {
     fun testAppProjectTestWithNewAssetFile() {
         execute("app:assembleAT")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/androidTest/assets/newfile.txt", "new file content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "newfile.txt", "new file content")
-        })
+            appProject.checkTestApk(
+                "newfile.txt".withContent("new file content"),
+                "filetest.txt"
+            )
+        }
     }
 
     @Test
     fun testAppProjectTestWithRemovedAssetFile() {
         execute("app:assembleAT")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/androidTest/assets/filetest.txt")
             execute("app:assembleAT")
-            checkTestApk(appProject, "filetest.txt", null)
-        })
+            appProject.checkTestApk()
+        }
     }
 
     @Test
     fun testAppProjectTestWithModifiedAssetFile() {
         execute("app:assembleAT")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.replaceFile("src/androidTest/assets/filetest.txt", "new content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "filetest.txt", "new content")
-        })
+            appProject.checkTestApk("filetest.txt".withContent("new content"))
+        }
     }
 
     // ---- LIB DEFAULT ---
@@ -385,53 +423,53 @@ class AssetPackagingTest {
     fun testLibProjectWithNewAssetFile() {
         execute("library:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content")
             execute("library:assembleDebug")
-            checkAar(libProject, "newfile.txt", "newfile content")
-        })
+            libProject.checkAar("newfile.txt".withContent("newfile content"), "filelib.txt")
+        }
     }
 
     @Test
     fun testLibProjectWithRemovedAssetFile() {
         execute("library:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/assets/filelib.txt")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", null)
-        })
+            libProject.checkAar()
+        }
     }
 
     @Test
     fun testLibProjectWithModifiedAssetFile() {
         execute("library:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/main/assets/filelib.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", "new content")
-        })
+            libProject.checkAar("filelib.txt".withContent("new content"))
+        }
     }
 
     @Test
     fun testLibProjectWithNewAssetFileInDebugSourceSet() {
         execute("library:assembleDebug")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/debug/assets/filelib.txt", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "filelib.txt", "new content")
-        })
+            libProject.checkAar("filelib.txt".withContent("new content"))
+        }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleDebug")
-        checkAar(libProject, "filelib.txt", "library:abcd")
+        libProject.checkAar("filelib.txt".withContent("library:abcd"))
     }
 
     @Test
     fun testLibProjectWithIgnoredAssets() {
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             // first test for non-incremental
             it.addFile("src/main/assets/ignored", "ignored")
             it.addFile("src/main/assets/kept", "kept")
@@ -440,15 +478,12 @@ class AssetPackagingTest {
                 "android.aaptOptions.ignoreAssetsPattern = 'ignored'"
             )
             execute("library:assembleDebug")
-            checkAar(libProject, "ignored", null)
-            checkAar(libProject, "kept", "kept")
+            libProject.checkAar("kept".withContent("kept"), "filelib.txt")
             // then test for incremental
             it.addFile("src/main/assets/dir/ignored", "ignored")
             execute("library:assembleDebug")
-            checkAar(libProject, "ignored", null)
-            checkAar(libProject, "dir/ignored", null)
-            checkAar(libProject, "kept", "kept")
-        })
+            libProject.checkAar("kept".withContent("kept"), "filelib.txt")
+        }
     }
 
     // ---- LIB TEST ---
@@ -456,63 +491,86 @@ class AssetPackagingTest {
     fun testLibProjectTestWithNewAssetFile() {
         execute("library:assembleAT")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/newfile.txt", "new file content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "newfile.txt", "new file content")
-        })
+            libProject.checkTestApk(
+                "newfile.txt".withContent("new file content"),
+                "filelibtest.txt", "filelib2.txt", "filelib.txt"
+            )
+        }
     }
 
     @Test
     fun testLibProjectTestWithRemovedAssetFile() {
         execute("library:assembleAT")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/androidTest/assets/filelibtest.txt")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelibtest.txt", null)
-        })
+            libProject.checkTestApk("filelib.txt", "filelib2.txt")
+        }
     }
 
     @Test
     fun testLibProjectTestWithModifiedAssetFile() {
         execute("library:assembleAT")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.replaceFile("src/androidTest/assets/filelibtest.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelibtest.txt", "new content")
-        })
+            libProject.checkTestApk(
+                "filelibtest.txt".withContent("new content"),
+                "filelib2.txt",
+                "filelib.txt"
+            )
+        }
     }
 
     @Test
     fun testLibProjectTestWithNewAssetFileOverridingTestedLib() {
         execute("library:assembleAT")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/filelib.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelib.txt", "new content")
-        })
+            libProject.checkTestApk(
+                "filelib.txt".withContent("new content"),
+                "filelibtest.txt",
+                "filelib2.txt"
+            )
+        }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "filelib.txt", "library:abcd")
+        libProject.checkTestApk(
+            "filelib.txt".withContent("library:abcd"),
+            "filelibtest.txt",
+            "filelib2.txt"
+        )
     }
 
     @Test
     fun testLibProjectTestWithNewAssetFileOverridingDependency() {
         execute("library:assembleAT")
 
-        TemporaryProjectModification.doTest(libProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(libProject) {
             it.addFile("src/androidTest/assets/filelib2.txt", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "filelib2.txt", "new content")
-        })
+            libProject.checkTestApk(
+                "filelib2.txt".withContent("new content"),
+                "filelibtest.txt",
+                "filelib.txt"
+            )
+        }
 
         // file's been removed, checking in the other direction.
         execute("library:assembleAT")
-        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
+        libProject.checkTestApk(
+            "filelib2.txt".withContent("library2:abcd"),
+            "filelibtest.txt",
+            "filelib.txt"
+        )
     }
 
     // ---- TEST DEFAULT ---
@@ -520,33 +578,33 @@ class AssetPackagingTest {
     fun testTestProjectWithNewAssetFile() {
         execute("test:assembleDebug")
 
-        TemporaryProjectModification.doTest(testProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(testProject) {
             it.addFile("src/main/assets/newfile.txt", "newfile content")
             execute("test:assembleDebug")
-            checkApk(testProject, "newfile.txt", "newfile content")
-        })
+            testProject.checkApk("newfile.txt".withContent("newfile content"), "file.txt")
+        }
     }
 
     @Test
     fun testTestProjectWithRemovedAssetFile() {
         execute("test:assembleDebug")
 
-        TemporaryProjectModification.doTest(testProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(testProject) {
             it.removeFile("src/main/assets/file.txt")
             execute("test:assembleDebug")
-            checkApk(testProject, "file.txt", null)
-        })
+            testProject.checkApk()
+        }
     }
 
     @Test
     fun testTestProjectWithModifiedAssetFile() {
         execute("test:assembleDebug")
 
-        TemporaryProjectModification.doTest(testProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(testProject) {
             it.replaceFile("src/main/assets/file.txt", "new content")
             execute("test:assembleDebug")
-            checkApk(testProject, "file.txt", "new content")
-        })
+            testProject.checkApk("file.txt".withContent("new content"))
+        }
     }
 
     // -----------------------
@@ -554,11 +612,14 @@ class AssetPackagingTest {
     fun testPackageAssetsWithUnderscoreRegression() {
         execute("app:assembleDebug")
 
-        TemporaryProjectModification.doTest(appProject, ModifiedProjectTest {
+        TemporaryProjectModification.doTest(appProject) {
             it.addFile("src/main/assets/_newfile.txt", "newfile content")
             execute("app:assembleDebug")
-            checkApk(appProject, "_newfile.txt", "newfile content")
-        })
+            appProject.checkApk(
+                "_newfile.txt".withContent("newfile content"),
+                "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
+            )
+        }
     }
 
     @Test
@@ -569,10 +630,10 @@ class AssetPackagingTest {
             "android { aaptOptions { ignoreAssets = '*a:b*' } } "
         )
 
-        val aaData = byteArrayOf('e'.code.toByte())
-        val abData = byteArrayOf('f'.code.toByte())
-        val baData = byteArrayOf('g'.code.toByte())
-        val bbData = byteArrayOf('h'.code.toByte())
+        val aaData = "e"
+        val abData = "f"
+        val baData = "g"
+        val bbData = "h"
 
         val aaAsset = FileUtils.join(appProject.projectDir, "src", "main", "assets", "aa")
         val abAsset = FileUtils.join(appProject.projectDir, "src", "main", "assets", "ab")
@@ -580,25 +641,18 @@ class AssetPackagingTest {
         val bbAsset = FileUtils.join(appProject.projectDir, "src", "main", "assets", "bb")
 
         FileUtils.mkdirs(aaAsset.getParentFile())
-        FileUtils.mkdirs(abAsset.getParentFile())
-        FileUtils.mkdirs(baAsset.getParentFile())
-        FileUtils.mkdirs(bbAsset.getParentFile())
 
-        Files.write(aaAsset.toPath(), aaData)
-        Files.write(abAsset.toPath(), abData)
-        Files.write(baAsset.toPath(), baData)
-        Files.write(bbAsset.toPath(), bbData)
+        aaAsset.writeText(aaData)
+        abAsset.writeText(abData)
+        baAsset.writeText(baData)
+        bbAsset.writeText(bbData)
 
         execute("app:assembleDebug")
 
-        TruthHelper.assertThat(appProject.getApk(GradleTestProject.ApkType.DEBUG))
-            .doesNotContain("assets/aa")
-        TruthHelper.assertThat(appProject.getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent("assets/ab", abData)
-        TruthHelper.assertThat(appProject.getApk(GradleTestProject.ApkType.DEBUG))
-            .doesNotContain("assets/ba")
-        TruthHelper.assertThat(appProject.getApk(GradleTestProject.ApkType.DEBUG))
-            .doesNotContain("assets/bb")
+        appProject.checkApk(
+            "ab".withContent(abData),
+            "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt", "_anotherdir/file.txt"
+        )
     }
 
     /** Regression test for b/352352252  */
@@ -606,94 +660,93 @@ class AssetPackagingTest {
     fun testAddStaticSourceDirectory() {
         TestFileUtils.appendToFile(
             appProject.buildFile,
-            ("androidComponents {\n"
-                    + "  onVariants(selector().all()) { variant ->\n"
-                    + "    variant.sources.assets?.addStaticSourceDirectory('src/static/assets')\n"
-                    + "  }\n"
-                    + "}")
+            """
+                androidComponents {
+                  onVariants(selector().all()) { variant ->
+                    variant.sources.assets?.addStaticSourceDirectory('src/static/assets')
+                  }
+                }
+            """.trimIndent()
         )
         execute("assembleDebug")
-        checkApk(appProject, "static.txt", "app:static")
-    }
-
-    /**
-     * check an apk has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkApk(
-        project: GradleTestProject, filename: String, content: String?
-    ) {
-        check(
-            TruthHelper.assertThat(project.getApk(GradleTestProject.ApkType.DEBUG)),
-            filename,
-            content
+        appProject.checkApk(
+            "static.txt".withContent("app:static"),
+            "subdir/file.txt", "filelib2.txt", "filelib.txt", "file.txt"
         )
     }
 
     /**
-     * check a test apk has (or not) the given asset file name.
+     * Checks the DEBUG apk has the specific list of assets. The list must be exhaustive.
      *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
      */
-    private fun checkTestApk(
-        project: GradleTestProject, filename: String, content: String?
+    private fun GeneratesApk.checkApk(
+        vararg itemList: Any
     ) {
-        check(TruthHelper.assertThat(project.testApk), filename, content)
-    }
-
-    /**
-     * check an aat has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkAar(
-        project: GradleTestProject,
-        filename: String,
-        content: String?
-    ) {
-        project.assertAar(
-            AarSelector.DEBUG,
-            {
-                check(this, filename, content)
-            })
-    }
-
-    private fun check(
-        subject: AbstractZipSubject<AarSubject, Zip>,
-        filename: String,
-        content: String?
-    ) {
-        if (content != null) {
-            subject.textFile("assets/" + filename).isEqualTo(content)
-        } else {
-            subject.doesNotContain("assets/" + filename)
+        assertApk(ApkSelector.DEBUG) {
+            checkAssets(*itemList)
         }
     }
 
-    private fun check(subject: ApkSubject, filename: String, content: String?) {
-        if (content != null) {
-            subject.containsFileWithContent("assets/" + filename, content)
+    /**
+     * Checks the DEBUG test apk has the specific list of assets. The list must be exhaustive.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesApk.checkTestApk(
+        vararg itemList: Any
+    ) {
+        assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            checkAssets(*itemList)
+        }
+    }
+
+    /**
+     * Checks the DEBUG aar has the specific list of assets. The list must be exhaustive.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun GeneratesAar.checkAar(
+        vararg itemList: Any
+    ) {
+        assertAar(AarSelector.DEBUG) {
+            checkAssets(*itemList)
+        }
+    }
+
+    /**
+     * Checks the android archive has the specific list of assets. The list must be exhaustive.
+     *
+     * @param itemList a list of items that must be present in the android archive. The list
+     * can either contain [String] to just validate presence, or [StringWithContent] to validate
+     * presence and content.
+     */
+    private fun AbstractAndroidArchiveSubject<*,*>.checkAssets(vararg itemList: Any) {
+        if (itemList.isEmpty()) {
+            assets().isEmpty()
         } else {
-            subject.doesNotContain("assets/" + filename)
+            assets {
+                val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+                val itemNames = itemList.map {
+                    when (it) {
+                        is StringWithContent -> it.name
+                        is String -> it
+                        else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+                    }
+                }
+
+                // check the list
+                containsExactly(itemNames)
+                for (item in itemsWithContent) {
+                    resourceAsText(item.name).isEqualTo(item.content)
+                }
+            }
         }
     }
 }

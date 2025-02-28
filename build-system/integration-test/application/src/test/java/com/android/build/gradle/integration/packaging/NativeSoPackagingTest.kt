@@ -20,10 +20,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AbstractZipSubject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GeneratesAar
+import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
+import com.android.build.gradle.integration.common.output.AbstractAndroidArchiveSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.options.StringOption
@@ -32,8 +33,6 @@ import com.android.bundle.Config.UncompressNativeLibraries
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
@@ -128,12 +127,12 @@ class NativeSoPackagingTest {
         val jarDir = jarProject.projectDir
         val resFolder = FileUtils.join(jarDir, "src", "main", "resources", "lib", "x86")
         FileUtils.mkdirs(resFolder)
-        Files.asCharSink(File(resFolder, "libjar.so"), Charsets.UTF_8).write("jar:abcd")
+        File(resFolder, "libjar.so").writeBytes("jar:abcd".toByteArray())
 
         val jar2Dir = jarProject2.projectDir
         val res2Folder = FileUtils.join(jar2Dir, "src", "main", "resources", "lib", "x86")
         FileUtils.mkdirs(res2Folder)
-        Files.asCharSink(File(res2Folder, "libjar2.so"), Charsets.UTF_8).write("jar2:abcd")
+        File(res2Folder, "libjar2.so").writeBytes("jar2:abcd".toByteArray())
     }
 
     private fun createOriginalSoFile(
@@ -144,7 +143,24 @@ class NativeSoPackagingTest {
     ) {
         val assetFolder = FileUtils.join(projectFolder, "src", dimension, "jniLibs", "x86")
         FileUtils.mkdirs(assetFolder)
-        Files.asCharSink(File(assetFolder, filename), Charsets.UTF_8).write(content)
+        File(assetFolder, filename).writeBytes(content.toByteArray())
+    }
+
+    @Test
+    fun testAlignment() {
+        execute("app:assembleDebug", "app:assembleAT", "library:assembleAT")
+
+        appProject.assertApk(ApkSelector.DEBUG) {
+            validateZipAlignment()
+        }
+
+        appProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            validateZipAlignment()
+        }
+
+        libProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            validateZipAlignment()
+        }
     }
 
     @Test
@@ -152,128 +168,152 @@ class NativeSoPackagingTest {
         project.executor().run("clean", "assembleDebug", "assembleAndroidTest")
 
         // check the files are there. Start from the bottom of the dependency graph
-        checkAar(libProject2, "liblibrary2.so", "library2:abcd")
-        checkTestApk(libProject2, "liblibrary2.so", "library2:abcd")
-        checkTestApk(libProject2, "liblibrary2test.so", "library2Test:abcd")
+        libProject2.checkAarJniLibs("liblibrary2.so".withContent("library2:abcd"))
+        libProject2.checkTestApkJniLibs(
+            "liblibrary2.so".withContent("library2:abcd"),
+            "liblibrary2test.so".withContent("library2Test:abcd")
+        )
 
-        checkAar(libProject, "liblibrary.so", "library:abcd")
         // aar does not contain dependency's assets
-        checkAar(libProject, "liblibrary2.so", null)
+        libProject.checkAarJniLibs("liblibrary.so".withContent("library:abcd"))
         // test apk contains both test-ony assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "liblibrary.so", "library:abcd")
-        checkTestApk(libProject, "liblibrary2.so", "library2:abcd")
-        checkTestApk(libProject, "liblibrarytest.so", "libraryTest:abcd")
         // but not the assets of the dependency's own test
-        checkTestApk(libProject, "liblibrary2test.so", null)
+        libProject.checkTestApkJniLibs(
+            "liblibrary.so".withContent("library:abcd"),
+            "liblibrary2.so".withContent("library2:abcd"),
+            "liblibrarytest.so".withContent("libraryTest:abcd")
+        )
 
         // app contain own assets + all dependencies' assets.
-        checkApk(appProject, "libapp.so", "app:abcd")
-        checkApk(appProject, "liblibrary.so", "library:abcd")
-        checkApk(appProject, "liblibrary2.so", "library2:abcd")
-        checkApk(appProject, "libjar.so", "jar:abcd")
-        checkApk(appProject, "libjar2.so", "jar2:abcd")
-        checkTestApk(appProject, "libapptest.so", "appTest:abcd")
+        appProject.checkApkJniLibs(
+            "libapp.so".withContent("app:abcd"),
+            "liblibrary.so".withContent("library:abcd"),
+            "liblibrary2.so".withContent("library2:abcd"),
+            "libjar.so".withContent("jar:abcd"),
+            "libjar2.so".withContent("jar2:abcd")
+        )
+
         // app test does not contain dependencies' own test assets.
-        checkTestApk(appProject, "liblibrarytest.so", null)
-        checkTestApk(appProject, "liblibrary2test.so", null)
+        appProject.checkTestApkJniLibs("libapptest.so".withContent("appTest:abcd"))
     }
 
     // ---- APP DEFAULT ---
     @Test
-    fun testAppProjectWithNewAssetFile() {
+    fun testAppProjectWithNewJniFile() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/jniLibs/x86/libnewapp.so", "newfile content")
+            it.addBinaryFile("src/main/jniLibs/x86/libnewapp.so", "newfile content")
             execute("app:assembleDebug")
-            checkApk(appProject, "libnewapp.so", "newfile content")
+            appProject.checkApkJniLibs(
+                "libnewapp.so".withContent("newfile content"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithRemovedAssetFile() {
+    fun testAppProjectWithRemovedJniFile() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/jniLibs/x86/libapp.so")
             execute("app:assembleDebug")
-            checkApk(appProject, "libapp.so", null)
+            appProject.checkApkJniLibs(
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithRenamedAssetFile() {
+    fun testAppProjectWithRenamedJniFile() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/jniLibs/x86/libapp.so")
-            it.addFile("src/main/jniLibs/x86/moved_libapp.so", "app:abcd")
+            it.addBinaryFile("src/main/jniLibs/x86/moved_libapp.so", "app:abcd")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "libapp.so", null)
-            checkApk(appProject, "moved_libapp.so", "app:abcd")
+            appProject.checkApkJniLibs(
+                "moved_libapp.so".withContent("app:abcd"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithAssetFileWithChangedAbi() {
+    fun testAppProjectWithJniFileWithChangedAbi() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/main/jniLibs/x86/libapp.so")
-            it.addFile("src/main/jniLibs/x86_64/libapp.so", "app:abcd")
+            it.addBinaryFile("src/main/jniLibs/x86_64/libapp.so", "app:abcd")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "libapp.so", null)
-            checkApk(appProject, "x86_64", "libapp.so", "app:abcd")
+            appProject.checkApkJniLibsForAbi("x86_64", "libapp.so".withContent("app:abcd"))
         }
     }
 
     @Test
-    fun testAppProjectWithModifiedAssetFile() {
+    fun testAppProjectWithModifiedJniFile() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.replaceFile("src/main/jniLibs/x86/libapp.so", "new content")
+            it.replaceBinaryFile("src/main/jniLibs/x86/libapp.so", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "libapp.so", "new content")
+            appProject.checkApkJniLibs(
+                "libapp.so".withContent("new content"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithNewAssetFileOverridingDependency() {
+    fun testAppProjectWithNewJniFileOverridingDependency() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/jniLibs/x86/liblibrary.so", "new content")
+            it.addBinaryFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             val result = execute("app:assembleDebug")
             result.stdout.use { stdout ->
                 assertThat(stdout)
                     .contains("2 files found for path 'lib/x86/liblibrary.so'.")
             }
-            checkApk(appProject, "liblibrary.so", "new content")
+            appProject.checkApkJniLibs(
+                "liblibrary.so".withContent("new content"),
+                "liblibrary2.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
 
             // now remove it to test it works in the other direction
             it.removeFile("src/main/jniLibs/x86/liblibrary.so")
             execute("app:assembleDebug")
-            checkApk(appProject, "liblibrary.so", "library:abcd")
+            appProject.checkApkJniLibs(
+                "liblibrary.so".withContent("library:abcd"),
+                "liblibrary2.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithNewAssetFileInDebugSourceSet() {
+    fun testAppProjectWithNewJniFileInDebugSourceSet() {
         execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/debug/jniLibs/x86/libapp.so", "new content")
+            it.addBinaryFile("src/debug/jniLibs/x86/libapp.so", "new content")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "libapp.so", "new content")
+            appProject.checkApkJniLibs(
+                "libapp.so".withContent("new content"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+            )
 
             // now remove it to test it works in the other direction
             it.removeFile("src/debug/jniLibs/x86/libapp.so")
             execute("app:assembleDebug")
-            checkApk(appProject, "libapp.so", "app:abcd")
+            appProject.checkApkJniLibs(
+                "libapp.so".withContent("app:abcd"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+            )
         }
     }
 
@@ -293,21 +333,27 @@ class NativeSoPackagingTest {
             it.replaceInFile("build.gradle", ":tempJar", ":jar2")
             execute("app:assembleDebug")
 
-            checkApk(appProject, "liblibrary.so", "library:abcd")
-            checkApk(appProject, "liblibrary2.so", "library2:abcd")
-            checkApk(appProject, "libjar.so", "jar:abcd")
-            checkApk(appProject, "libjar2.so", "jar2:abcd")
+            appProject.checkApkJniLibs(
+                "liblibrary.so".withContent("library:abcd"),
+                "liblibrary2.so".withContent("library2:abcd"),
+                "libjar.so".withContent("jar:abcd"),
+                "libjar2.so".withContent("jar2:abcd"),
+                "libapp.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectWithModifiedAssetInDependency() {
+    fun testAppProjectWithModifiedJniLibInDependency() {
         execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/main/jniLibs/x86/liblibrary.so", "new content")
+            it.replaceBinaryFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "liblibrary.so", "new content")
+            appProject.checkApkJniLibs(
+                "liblibrary.so".withContent("new content"),
+                "liblibrary2.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
         }
     }
 
@@ -316,9 +362,12 @@ class NativeSoPackagingTest {
         execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/main/jniLibs/x86/libnewlibrary.so", "new content")
+            it.addBinaryFile("src/main/jniLibs/x86/libnewlibrary.so", "new content")
             execute("app:assembleDebug")
-            checkApk(appProject, "libnewlibrary.so", "new content")
+            appProject.checkApkJniLibs(
+                "libnewlibrary.so".withContent("new content"),
+                "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
         }
     }
 
@@ -329,200 +378,231 @@ class NativeSoPackagingTest {
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/jniLibs/x86/liblibrary.so")
             execute("app:assembleDebug")
-            checkApk(appProject, "liblibrary.so", null)
+            appProject.checkApkJniLibs(
+                "liblibrary2.so", "libjar2.so", "libjar.so", "libapp.so"
+            )
         }
     }
 
     // ---- APP TEST ---
     @Test
-    fun testAppProjectTestWithNewAssetFile() {
+    fun testAppProjectTestWithNewJniFile() {
         execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/androidTest/jniLibs/x86/libnewapp.so", "new file content")
+            it.addBinaryFile("src/androidTest/jniLibs/x86/libnewapp.so", "new file content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "libnewapp.so", "new file content")
+            appProject.checkTestApkJniLibs(
+                "libnewapp.so".withContent("new file content"),
+                "libapptest.so"
+            )
         }
     }
 
     @Test
-    fun testAppProjectTestWithRemovedAssetFile() {
+    fun testAppProjectTestWithRemovedJniFile() {
         execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
             it.removeFile("src/androidTest/jniLibs/x86/libapptest.so")
             execute("app:assembleAT")
-            checkTestApk(appProject, "libapptest.so", null)
+            appProject.checkTestApkJniLibs()
         }
     }
 
     @Test
-    fun testAppProjectTestWithModifiedAssetFile() {
+    fun testAppProjectTestWithModifiedJniFile() {
         execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.replaceFile("src/androidTest/jniLibs/x86/libapptest.so", "new content")
+            it.replaceBinaryFile("src/androidTest/jniLibs/x86/libapptest.so", "new content")
             execute("app:assembleAT")
-            checkTestApk(appProject, "libapptest.so", "new content")
+            appProject.checkTestApkJniLibs("libapptest.so".withContent("new content"))
         }
     }
 
     // ---- LIB DEFAULT ---
     @Test
-    fun testLibProjectWithNewAssetFile() {
+    fun testLibProjectWithNewJniFile() {
         execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/main/jniLibs/x86/libnewlibrary.so", "newfile content")
+            it.addBinaryFile("src/main/jniLibs/x86/libnewlibrary.so", "newfile content")
             execute("library:assembleDebug")
-            checkAar(libProject, "libnewlibrary.so", "newfile content")
+            libProject.checkAarJniLibs(
+                "libnewlibrary.so".withContent("newfile content"),
+                "liblibrary.so"
+            )
         }
     }
 
     @Test
-    fun testLibProjectWithRemovedAssetFile() {
+    fun testLibProjectWithRemovedJniFile() {
         execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/main/jniLibs/x86/liblibrary.so")
             execute("library:assembleDebug")
-            checkAar(libProject, "liblibrary.so", null)
+            libProject.checkAarJniLibs()
         }
     }
 
     @Test
-    fun testLibProjectWithModifiedAssetFile() {
+    fun testLibProjectWithModifiedJniFile() {
         execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/main/jniLibs/x86/liblibrary.so", "new content")
+            it.replaceBinaryFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             execute("library:assembleDebug")
-            checkAar(libProject, "liblibrary.so", "new content")
+            libProject.checkAarJniLibs("liblibrary.so".withContent("new content"))
         }
     }
 
     @Test
-    fun testLibProjectWithNewAssetFileInDebugSourceSet() {
+    fun testLibProjectWithNewJniFileInDebugSourceSet() {
         execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/debug/jniLibs/x86/liblibrary.so", "new content")
+            it.addBinaryFile("src/debug/jniLibs/x86/liblibrary.so", "new content")
             execute("library:assembleDebug")
 
-            checkAar(libProject, "liblibrary.so", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/debug/jniLibs/x86/liblibrary.so")
-            execute("library:assembleDebug")
-            checkAar(libProject, "liblibrary.so", "library:abcd")
+            libProject.checkAarJniLibs("liblibrary.so".withContent("new content"))
         }
+
+        // file is removed, test it works in the other direction
+        execute("library:assembleDebug")
+        libProject.checkAarJniLibs("liblibrary.so".withContent("library:abcd"))
     }
 
     // ---- LIB TEST ---
     @Test
-    fun testLibProjectTestWithNewAssetFile() {
+    fun testLibProjectTestWithNewJniFile() {
         execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/jniLibs/x86/libnewlibrary.so", "new file content")
+            it.addBinaryFile("src/androidTest/jniLibs/x86/libnewlibrary.so", "new file content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "libnewlibrary.so", "new file content")
+            libProject.checkTestApkJniLibs(
+                "libnewlibrary.so".withContent("new file content"),
+                "liblibrarytest.so", "liblibrary2.so", "liblibrary.so"
+            )
         }
     }
 
     @Test
-    fun testLibProjectTestWithRemovedAssetFile() {
+    fun testLibProjectTestWithRemovedJniFile() {
         execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
             it.removeFile("src/androidTest/jniLibs/x86/liblibrarytest.so")
             execute("library:assembleAT")
-            checkTestApk(libProject, "liblibrarytest.so", null)
+            libProject.checkTestApkJniLibs("liblibrary2.so", "liblibrary.so")
         }
     }
 
     @Test
-    fun testLibProjectTestWithModifiedAssetFile() {
+    fun testLibProjectTestWithModifiedJniFile() {
         execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/androidTest/jniLibs/x86/liblibrarytest.so", "new content")
+            it.replaceBinaryFile("src/androidTest/jniLibs/x86/liblibrarytest.so", "new content")
             execute("library:assembleAT")
-            checkTestApk(libProject, "liblibrarytest.so", "new content")
+            libProject.checkTestApkJniLibs(
+                "liblibrarytest.so".withContent("new content"),
+                "liblibrary2.so",
+                "liblibrary.so"
+            )
         }
     }
 
     @Test
-    fun testLibProjectTestWithNewAssetFileOverridingTestedLib() {
+    fun testLibProjectTestWithNewJniFileOverridingTestedLib() {
         execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/jniLibs/x86/liblibrary.so", "new content")
+            it.addBinaryFile("src/androidTest/jniLibs/x86/liblibrary.so", "new content")
             val result = execute("library:assembleAT")
             result.stdout.use { stdout ->
                 assertThat(stdout)
                     .contains("2 files found for path 'lib/x86/liblibrary.so'.")
             }
-            checkTestApk(libProject, "liblibrary.so", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/jniLibs/x86/liblibrary.so")
-            execute("library:assembleAT")
-            checkTestApk(libProject, "liblibrary.so", "library:abcd")
+            libProject.checkTestApkJniLibs(
+                "liblibrary.so".withContent("new content"),
+                "liblibrarytest.so",
+                "liblibrary2.so"
+            )
         }
+
+        // file is removed, test it works in the other direction
+        execute("library:assembleAT")
+        libProject.checkTestApkJniLibs(
+            "liblibrary.so".withContent("library:abcd"),
+            "liblibrarytest.so",
+            "liblibrary2.so"
+        )
     }
 
     @Test
-    fun testLibProjectTestWithNewAssetFileOverridingDepenency() {
+    fun testLibProjectTestWithNewJniFileOverridingDepenency() {
         execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/jniLibs/x86/liblibrary2.so", "new content")
+            it.addBinaryFile("src/androidTest/jniLibs/x86/liblibrary2.so", "new content")
             val result = execute("library:assembleAT")
             result.stdout.use { stdout ->
                 assertThat(stdout)
                     .contains("2 files found for path 'lib/x86/liblibrary2.so'.")
             }
-            checkTestApk(libProject, "liblibrary2.so", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/jniLibs/x86/liblibrary2.so")
-            execute("library:assembleAT")
-            checkTestApk(libProject, "liblibrary2.so", "library2:abcd")
+            libProject.checkTestApkJniLibs(
+                "liblibrary2.so".withContent("new content"),
+                "liblibrarytest.so",
+                "liblibrary.so"
+            )
         }
+
+        // file is removed, test it works in the other direction
+        execute("library:assembleAT")
+        libProject.checkTestApkJniLibs(
+            "liblibrary2.so".withContent("library2:abcd"),
+            "liblibrarytest.so",
+            "liblibrary.so"
+        )
     }
 
     // ---- TEST DEFAULT ---
     @Test
-    fun testTestProjectWithNewAssetFile() {
+    fun testTestProjectWithNewJniFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
-            it.addFile("src/main/jniLibs/x86/libnewtest.so", "newfile content")
+            it.addBinaryFile("src/main/jniLibs/x86/libnewtest.so", "newfile content")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "libnewtest.so", "newfile content")
+            testProject.checkApkJniLibs(
+                "libnewtest.so".withContent("newfile content"),
+                "libtest.so"
+            )
         }
     }
 
     @Test
-    fun testTestProjectWithRemovedAssetFile() {
+    fun testTestProjectWithRemovedJniFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
             it.removeFile("src/main/jniLibs/x86/libtest.so")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "libtest.so", null)
+            testProject.checkApkJniLibs()
         }
     }
 
     @Test
-    fun testTestProjectWithModifiedAssetFile() {
+    fun testTestProjectWithModifiedJniFile() {
         project.executor().run("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
-            it.replaceFile("src/main/jniLibs/x86/libtest.so", "new content")
+            it.replaceBinaryFile("src/main/jniLibs/x86/libtest.so", "new content")
             this.project.executor().run("test:assembleDebug")
-            checkApk(testProject, "libtest.so", "new content")
+            testProject.checkApkJniLibs("libtest.so".withContent("new content"))
         }
     }
 
@@ -558,7 +638,7 @@ class NativeSoPackagingTest {
                 "extracted_apks", "debug", "extractApksFromBundleForDebug"
             )
 
-        Apk(extractedApks.listFiles().filterNotNull<File>().first<File> {
+        Apk(extractedApks.listFiles().filterNotNull().first {
             it.name.startsWith("base-master")
         }).use {
             PackagingTests.checkZipAlignWithPageAlignedSoFiles(it, pageSize)
@@ -583,7 +663,10 @@ class NativeSoPackagingTest {
             """.trimIndent()
         )
         execute("app:assembleDebug")
-        checkApk(appProject, "libapp.so", "app:abcd")
+        appProject.checkApkJniLibs(
+            "libapp.so".withContent("app:abcd"),
+            "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+        )
         PackagingTests.checkZipAlignWithPageAlignedSoFiles(appProject.getApk("debug"), "4")
         checkBundleAlignment(UncompressNativeLibraries.PageAlignment.PAGE_ALIGNMENT_4K, "4")
     }
@@ -598,7 +681,10 @@ class NativeSoPackagingTest {
         // The default page size is 16k
         execute("app:assembleDebug")
 
-        checkApk(appProject, "libapp.so", "app:abcd")
+        appProject.checkApkJniLibs(
+            "libapp.so".withContent("app:abcd"),
+            "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+        )
         PackagingTests.checkZipAlignWithPageAlignedSoFiles(appProject.getApk("debug"), "16")
         checkBundleAlignment(
             UncompressNativeLibraries.PageAlignment.PAGE_ALIGNMENT_16K, "16"
@@ -624,7 +710,10 @@ class NativeSoPackagingTest {
         )
         execute("app:assembleDebug")
 
-        checkApk(appProject, "libapp.so", "app:abcd")
+        appProject.checkApkJniLibs(
+            "libapp.so".withContent("app:abcd"),
+            "liblibrary2.so", "liblibrary.so", "libjar2.so", "libjar.so"
+        )
         PackagingTests.checkZipAlignWithPageAlignedSoFiles(appProject.getApk("debug"), "64")
         checkBundleAlignment(
             UncompressNativeLibraries.PageAlignment.PAGE_ALIGNMENT_64K, "64"
@@ -661,111 +750,111 @@ class NativeSoPackagingTest {
             )
     }
 
-    /**
-     * check an apk has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkApk(
-        project: GradleTestProject, filename: String, content: String?
-    ) {
-        checkApk(project, "x86", filename, content)
+    private fun TemporaryProjectModification.addBinaryFile(path: String, content: String) {
+        addFile(path, content.toByteArray())
     }
 
-    /**
-     * check an apk has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param abi the abi
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkApk(
-        project: GradleTestProject,
-        abi: String,
-        filename: String,
-        content: String?
-    ) {
-        val apk = project.getApk("debug")
-        check(TruthHelper.assertThatApk(apk), "lib", abi, filename, content)
-        PackagingTests.checkZipAlign(apk)
-    }
-
-    /**
-     * check a test apk has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkTestApk(
-        project: GradleTestProject,
-        filename: String,
-        content: String?
-    ) {
-        check(TruthHelper.assertThat(project.testApk), "lib", "x86", filename, content)
-    }
-
-    /**
-     * check an aat has (or not) the given asset file name.
-     *
-     *
-     * If the content is non-null the file is expected to be there with the same content. If the
-     * content is null the file is not expected to be there.
-     *
-     * @param project the project
-     * @param filename the filename
-     * @param content the content
-     */
-    private fun checkAar(
-        project: GradleTestProject,
-        filename: String,
-        content: String?
-    ) {
-        project.assertAar(AarSelector.DEBUG) {
-            check(this, "jni", "x86", filename, content)
+    private fun TemporaryProjectModification.replaceBinaryFile(path: String, content: String) {
+        modifyFileWithBytes(path) {
+            content.toByteArray()
         }
     }
+}
 
-    private fun check(
-        subject: AbstractAndroidSubject<*, *>,
-        folderName: String,
-        abi: String,
-        filename: String,
-        content: String?
-    ) {
-        if (content != null) {
-            subject.containsFileWithContent("$folderName/$abi/$filename", content)
-        } else {
-            subject.doesNotContain("$folderName/$abi/$filename")
-        }
+/**
+ * Checks the DEBUG apk has the specific list of x86 jni libraries. The list must be exhaustive.
+ *
+ * @param itemList a list of items that must be present in the android archive. The list
+ * can either contain [String] to just validate presence, or [StringWithContent] to validate
+ * presence and content.
+ */
+internal fun GeneratesApk.checkApkJniLibs(
+    vararg itemList: Any
+) {
+    checkApkJniLibsForAbi("x86", *itemList)
+}
+
+/**
+ * Checks the DEBUG apk has the specific list of jni libraries, for a given abi.
+ * The list must be exhaustive.
+ *
+ * @param abi the abi to check
+ * @param itemList a list of items that must be present in the android archive. The list
+ * can either contain [String] to just validate presence, or [StringWithContent] to validate
+ * presence and content.
+ */
+internal fun GeneratesApk.checkApkJniLibsForAbi(
+    abi: String,
+    vararg itemList: Any
+) {
+    assertApk(ApkSelector.DEBUG) {
+        checkJniContent(abi, *itemList)
     }
+}
 
-    private fun check(
-        subject: AbstractZipSubject<*, *>,
-        folderName: String,
-        abi: String,
-        filename: String,
-        content: String?
-    ) {
-        if (content != null) {
-            subject.textFile("$folderName/$abi/$filename").isEqualTo(content)
+/**
+ * Checks the DEBUG test apk has the specific list of x86 jni libraries. The list must be
+ * exhaustive.
+ *
+ * @param itemList a list of items that must be present in the android archive. The list
+ * can either contain [String] to just validate presence, or [StringWithContent] to validate
+ * presence and content.
+ */
+internal fun GeneratesApk.checkTestApkJniLibs(
+    vararg itemList: Any
+) {
+    assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+        checkJniContent("x86", *itemList)
+    }
+}
+
+/**
+ * Checks the DEBUG aar has the specific list of x86 jni libraries. The list must be exhaustive.
+ *
+ * @param itemList a list of items that must be present in the android archive. The list
+ * can either contain [String] to just validate presence, or [StringWithContent] to validate
+ * presence and content.
+ */
+internal fun GeneratesAar.checkAarJniLibs(
+    vararg itemList: Any
+) {
+    this.assertAar(AarSelector.DEBUG) {
+        checkJniContent("x86", *itemList)
+    }
+}
+
+/**
+ * Checks the android archive has the specific list of jni libraries, for a given abi.
+ * The list must be exhaustive.
+ *
+ * @param this@checkAar the project
+ * @param abi the abi to check
+ * @param itemList a list of items that must be present in the android archive. The list
+ * can either contain [String] to just validate presence, or [StringWithContent] to validate
+ * presence and content.
+ */
+internal fun AbstractAndroidArchiveSubject<*, *>.checkJniContent(
+    abi: String,
+    vararg itemList: Any,
+) {
+    jniLibs().abi(abi).apply {
+        if (itemList.isEmpty()) {
+            isEmpty()
         } else {
-            subject.doesNotContain("$folderName/$abi/$filename")
+            val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
+            val itemNames = itemList.map {
+                when (it) {
+                    is StringWithContent -> it.name
+                    is String -> it
+                    else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
+                }
+            }
+
+            // check the list
+            containsExactly(itemNames)
+            for (item in itemsWithContent) {
+                bytesOf(item.name).isEqualTo(item.content.toByteArray())
+            }
         }
     }
 }

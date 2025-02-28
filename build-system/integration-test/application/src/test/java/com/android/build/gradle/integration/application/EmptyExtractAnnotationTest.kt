@@ -36,7 +36,8 @@ class EmptyExtractAnnotationTest {
     fun checkExtractAnnotation() {
         project.execute("assembleRelease")
         project.assertAar(AarSelector.RELEASE) {
-            entries().contains("classes.jar")
+            // this will make sure the jar is there.
+            mainJar()
         }
     }
 }

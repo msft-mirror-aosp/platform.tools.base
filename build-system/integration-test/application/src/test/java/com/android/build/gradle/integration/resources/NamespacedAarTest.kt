@@ -147,9 +147,8 @@ class NamespacedAarTest {
         assertThat(publishedLibData?.resStaticLibrary).exists()
 
         val subproject = project.getSubproject("publishedLib")
-        ZipSubject.assertThat(subproject.getAarLocationForCopy(AarSelector.RELEASE)) {
-            // use a zip subject to have a raw look at the archive.
-            entries().containsExactly(
+        subproject.assertAar(AarSelector.RELEASE) {
+            containsExactly(
                 "META-INF/com/android/build/gradle/aar-metadata.properties",
                 "res/values/values.xml",
                 "classes.jar",

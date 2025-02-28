@@ -412,8 +412,12 @@ class PrefabPublishingTest(
         executor().run("assemble$buildType")
 
         project.getSubproject(gradleModuleName).assertAar(AarSelector.of(buildType)) {
-            contains("prefab/prefab.json")
-            contains("prefab/modules/$gradleModuleName/module.json")
+            folder("prefab").containsExactly(
+                "prefab.json",
+                "modules/$gradleModuleName/module.json",
+                "modules/$gradleModuleName/libs/",
+                "modules/$gradleModuleName/include/"
+            )
         }
 
         val packageDir = project.getSubproject(gradleModuleName)

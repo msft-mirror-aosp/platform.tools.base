@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.output
 
 import com.android.build.gradle.integration.common.output.ZipSubject.Companion.zips
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
@@ -34,6 +33,54 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
 ): BaseZipSubject<S, T>(metadata, actual) {
 
     /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(filePaths: Iterable<String>) {
+        exists()
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(actual().getEntries())
+            .containsExactly(filePaths)
+    }
+
+    /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(filePath: String) {
+        containsExactly(listOf(filePath))
+    }
+
+    /**
+     * Validates that the archive file list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(vararg filePaths: String) {
+        containsExactly(filePaths.toList())
+    }
+
+    /**
+     * Validates whether the archive is empty.
+     */
+    fun isEmpty() {
+        exists()
+        check("entries()").that(actual().getEntries()).isEmpty()
+    }
+
+    /**
      * Checks if the zip file contains a given path.
      *
      * This is a shortcut to `entries().contains(path)`
@@ -42,30 +89,10 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
      */
     fun contains(path: String) {
         exists()
-        entries().contains(path)
-    }
-
-    /**
-     * Checks if the zip file does not contain a given path.
-     *
-     * This is a shortcut to `entries().doesNotContain(path)`
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun doesNotContain(path: String) {
-        exists()
-        entries().doesNotContain(path)
+        check("entries()").that(actual().getEntries()).contains(path)
     }
 
     // --------------
-
-    /**
-     * Returns a [IterableSubject] of all the Zip entries (as [String]).
-     */
-    fun entries(): IterableSubject {
-        exists()
-        return check("entries()").that(actual().getEntries())
-    }
 
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
