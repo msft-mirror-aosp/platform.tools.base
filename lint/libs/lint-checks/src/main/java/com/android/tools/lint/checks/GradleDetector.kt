@@ -30,6 +30,7 @@ import com.android.ide.common.repository.AgpVersion
 import com.android.ide.common.repository.GoogleMavenRepository
 import com.android.ide.common.repository.GoogleMavenRepository.Companion.MAVEN_GOOGLE_CACHE_DIR_KEY
 import com.android.ide.common.repository.MavenRepositories
+import com.android.ide.common.repository.NetworkCache
 import com.android.io.CancellableFileIo
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
@@ -86,11 +87,13 @@ import com.google.common.base.Splitter
 import com.google.common.collect.ArrayListMultimap
 import com.intellij.pom.java.LanguageLevel.JDK_1_7
 import com.intellij.pom.java.LanguageLevel.JDK_1_8
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
-import java.io.StringReader
+import java.io.InputStream
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Calendar
 import java.util.Collections
@@ -2827,7 +2830,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val versionStart = index + prefix.length
     val versionEnd = line.lastIndexOf('-')
     val versionString = line.substring(versionStart, versionEnd)
-    val version = Version.parse(versionString)
+    val currentVersion = Version.parse(versionString)
 
     val agpVersion = context.project.buildModule?.agpVersion
     val filter =
@@ -2836,16 +2839,17 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       } else {
         null
       }
-    val (_, newVersion) = getGradleVersion(context.client, filter, version) ?: return
+    val (_, newVersion) =
+      getGradleVersion(context.client, filter, currentVersion, allowCache = true) ?: return
 
     val location =
       Location.create(context.file, contents, offset + valueStart, offset + line.length)
-    val message = "A newer version of Gradle than $version is available: $newVersion"
+    val message = "A newer version of Gradle than $currentVersion is available: $newVersion"
     val fix =
       fix()
         .name("Update to $newVersion")
         .replace()
-        .text(version.toString())
+        .text(currentVersion.toString())
         .with(newVersion.toString())
         .build()
     val incident =
@@ -4077,7 +4081,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
      * * 8.1-alpha
      * * 8.1-beta *
      *
-     * Then if we update from 7.0-alpha, it will return 8.0 (the latest stable version). From 7.0
+     * Here, if we update from 7.0-alpha, it will return 8.0 (the latest stable version). From 7.0
      * the update is also to 8.0. From 8.0 there is no suggestion. And from 8.1-alpha, it will
      * suggest 8.1-beta.
      */
@@ -4085,25 +4089,63 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       client: LintClient,
       versionPrefixFilter: String?,
       currentVersion: Version? = null,
+      allowCache: Boolean = false,
     ): Pair<Version, Version>? {
-      val xml =
-        readUrlDataAsString(
-          client,
-          "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/maven-metadata.xml",
-          10000,
-        ) ?: return null
+      val inputStream =
+        if (allowCache) {
+          val cacheDir = client.getCacheDir(GRADLE_CACHE_KEY, true)?.toPath()
+          val cache =
+            object : NetworkCache(GRADLE_MAVEN_URL, GRADLE_CACHE_KEY, cacheDir) {
+              override fun readUrlData(
+                url: String,
+                timeout: Int,
+                lastModified: Long,
+              ): ReadUrlDataResult {
+                return readUrlData(client, url, timeout, lastModified)
+              }
+
+              override fun readDefaultData(relative: String): InputStream? = null
+
+              override fun error(throwable: Throwable, message: String?) {}
+
+              fun getMetadata(): InputStream? {
+                return findData(GRADLE_METADATA)
+              }
+            }
+          cache.getMetadata()
+        } else {
+          readUrlData(client, GRADLE_MAVEN_METADATA_URL, 10000, 0L).data?.let {
+            ByteArrayInputStream(it)
+          }
+        }
+
+      inputStream ?: return null
+
+      return getMavenMetadataVersions(inputStream, versionPrefixFilter, currentVersion)
+    }
+
+    private const val GRADLE_CACHE_KEY = "gradle-versions"
+    private const val GRADLE_MAVEN_URL =
+      "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/"
+    private const val GRADLE_METADATA = "maven-metadata.xml"
+    private const val GRADLE_MAVEN_METADATA_URL = "$GRADLE_MAVEN_URL$GRADLE_METADATA"
+
+    private fun getMavenMetadataVersions(
+      inputStream: InputStream,
+      versionPrefixFilter: String?,
+      currentVersion: Version?,
+    ): Pair<Version, Version>? {
       var stable: Version? = null
       var preview: Version? = null
-
       val parser = KXmlParser()
-      parser.setInput(StringReader(xml))
+      parser.setInput(inputStream, StandardCharsets.UTF_8.name())
       while (parser.next() != XmlPullParser.END_DOCUMENT) {
         if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
           val versionString = parser.nextText()
           if (versionPrefixFilter != null && !versionString.startsWith(versionPrefixFilter)) {
             continue
           }
-          val version = Version.parse(versionString)
+          val version = Version.parse(versionString.trim())
           if (version.isPreview) {
             if (preview == null || version > preview) {
               preview = version
@@ -4127,6 +4169,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             return Pair(stable, preview)
           } else if (currentVersion < stable) {
             return Pair(stable, stable)
+          } else {
+            return null
           }
         }
 
