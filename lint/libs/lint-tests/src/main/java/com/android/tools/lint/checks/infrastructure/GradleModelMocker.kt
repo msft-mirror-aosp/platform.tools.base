@@ -1177,6 +1177,10 @@ constructor(
           Component.tryParse(value)?.let { updateModelVersion(it.version.toString()) }
         } // else ignore other class paths
       }
+      key.startsWith("plugins.id 'com.android.application' version ") -> {
+        val value = getUnquotedValue(key.substringAfter("version "))
+        updateModelVersion(Version.parse(value).toString())
+      }
       key.startsWith("android.defaultConfig.testInstrumentationRunner ") ||
         key.contains(".proguardFiles") ||
         key.contains("getDefaultProguardFile") ||

@@ -88,6 +88,7 @@ import com.intellij.pom.java.LanguageLevel.JDK_1_7
 import com.intellij.pom.java.LanguageLevel.JDK_1_8
 import java.io.File
 import java.io.IOException
+import java.io.StringReader
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 import java.nio.file.Path
@@ -97,8 +98,10 @@ import java.util.EnumSet
 import java.util.function.Predicate
 import kotlin.text.Charsets.UTF_8
 import org.jetbrains.uast.UCallExpression
+import org.kxml2.io.KXmlParser
 import org.w3c.dom.Attr
 import org.w3c.dom.Element
+import org.xmlpull.v1.XmlPullParser
 
 /** Checks Gradle files for potential errors. */
 open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
@@ -802,7 +805,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return
     }
 
-    for (deprecatedConfiguration in DeprecatedConfiguration.values()) {
+    for (deprecatedConfiguration in DeprecatedConfiguration.entries) {
       if (deprecatedConfiguration.matches(configuration)) {
         // Compile was replaced by API and Implementation, but only suggest API if it was used
         if (
@@ -878,7 +881,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     context: GradleContext,
     propertyCookie: Any,
   ) {
-    for (compileConfiguration in CompileConfiguration.values()) {
+    for (compileConfiguration in CompileConfiguration.entries) {
       if (compileConfiguration.matches(configuration) && isCommonAnnotationProcessor(dependency)) {
         val replacement: String = compileConfiguration.replacement(configuration)
         val fix =
@@ -1971,7 +1974,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun getAllLibraries(project: Project): List<LintModelLibrary> {
-    return project.buildVariant?.mainArtifact?.dependencies?.getAll() ?: emptyList()
+    return project.buildVariant?.artifact?.dependencies?.getAll() ?: emptyList()
   }
 
   private fun checkConsistentLibraries(
@@ -2194,7 +2197,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 it.safeReplacement,
               )
           }
-        report(context, it.cookie, AGP_DEPENDENCY, message, fix)
+        val clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "com.android.application") }
+        report(
+          context,
+          it.cookie,
+          AGP_DEPENDENCY,
+          message,
+          fix,
+          clientProperties = clientProperties,
+        )
       }
     }
   }
@@ -2542,7 +2554,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           property.startsWith("androidTest") -> variant.androidTestArtifact
           property.startsWith("testFixtures") -> variant.testFixturesArtifact
           property.startsWith("test") -> variant.testArtifact
-          else -> variant.mainArtifact
+          else -> variant.artifact
         } ?: return null
       for (library in artifact.dependencies.getAll()) {
         if (library is LintModelExternalLibrary) {
@@ -2771,6 +2783,79 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
   }
 
+  /** Check property file (in particular, the gradle wrapper) */
+  override fun run(context: Context) {
+    if (!context.file.path.endsWith("gradle-wrapper.properties")) {
+      return
+    }
+    val contents = context.getContents() ?: return
+    var offset = 0
+    val iterator = Splitter.on('\n').split(contents).iterator()
+    var line: String
+    while (iterator.hasNext()) {
+      line = iterator.next()
+      if (line.startsWith("#") || line.startsWith(" ")) {
+        offset += line.length + 1
+        continue
+      }
+
+      val valueStart = line.indexOf('=') + 1
+      if (valueStart == 0) {
+        offset += line.length + 1
+        continue
+      }
+
+      if (line.startsWith("distributionUrl") && line.endsWith(".zip")) {
+        checkGradleWrapperDistribution(context, contents, offset, line, valueStart)
+      }
+      offset += line.length + 1
+    }
+  }
+
+  private fun checkGradleWrapperDistribution(
+    context: Context,
+    contents: CharSequence,
+    offset: Int,
+    line: String,
+    valueStart: Int,
+  ) {
+    val prefix = "/distributions/gradle-"
+    val index = line.indexOf(prefix)
+    if (index == -1) {
+      return
+    }
+    val versionStart = index + prefix.length
+    val versionEnd = line.lastIndexOf('-')
+    val versionString = line.substring(versionStart, versionEnd)
+    val version = Version.parse(versionString)
+
+    val agpVersion = context.project.buildModule?.agpVersion
+    val filter =
+      if (agpVersion != null && agpVersion.major >= 7) {
+        "${agpVersion.major}."
+      } else {
+        null
+      }
+    val (_, newVersion) = getGradleVersion(context.client, filter, version) ?: return
+
+    val location =
+      Location.create(context.file, contents, offset + valueStart, offset + line.length)
+    val message = "A newer version of Gradle than $version is available: $newVersion"
+    val fix =
+      fix()
+        .name("Update to $newVersion")
+        .replace()
+        .text(version.toString())
+        .with(newVersion.toString())
+        .build()
+    val incident =
+      Incident(AGP_DEPENDENCY, location, message, fix).apply {
+        clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "gradle-wrapper.properties") }
+      }
+    context.report(incident)
+  }
+
   companion object {
     private var lastTargetSdkVersion: Int = -1
     private var lastTargetSdkVersionFile: File? = null
@@ -2804,6 +2889,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         Scope.GRADLE_AND_TOML_SCOPE,
         Scope.GRADLE_SCOPE,
         Scope.TOML_SCOPE,
+      )
+    private val IMPLEMENTATION_WITH_TOML_AND_PROPERTIES =
+      Implementation(
+        GradleDetector::class.java,
+        EnumSet.of(Scope.GRADLE_FILE, Scope.TOML_FILE, Scope.PROPERTY_FILE),
+        Scope.GRADLE_SCOPE,
+        Scope.TOML_SCOPE,
+        Scope.PROPERTY_SCOPE,
       )
     private val IMPLEMENTATION_WITH_MANIFEST =
       Implementation(
@@ -2909,7 +3002,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         priority = 4,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation = IMPLEMENTATION_WITH_TOML,
+        implementation = IMPLEMENTATION_WITH_TOML_AND_PROPERTIES,
       )
 
     /** Deprecated Gradle constructs. */
@@ -3962,6 +4055,85 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         .filter { filter == null || filter.test(it) }
         .filter { allowPreview || !it.isPreview }
         .maxOrNull()
+    }
+
+    /**
+     * Returns the latest stable and preview versions of Gradle, respectively. The
+     * [versionPrefixFilter] can be used to filter down to a specific version prefix, typically a
+     * major version to limit compatibility between Gradle and AGP.
+     *
+     * If a current version is specified, the upgrade will be limited to a suggested compatible
+     * update. In particular, if the current version is a stable version, only stable versions will
+     * be returned. If the current version is a preview, it will return the latest *stable* version
+     * that is higher than the preview version, unless no such version exists, in which case it will
+     * return the latest preview version.
+     *
+     * In other words, if we have these possible versions:
+     * * 7.0-alpha
+     * * 7.0-beta
+     * * 7.0
+     * * 8.0-alpha
+     * * 8.0
+     * * 8.1-alpha
+     * * 8.1-beta *
+     *
+     * Then if we update from 7.0-alpha, it will return 8.0 (the latest stable version). From 7.0
+     * the update is also to 8.0. From 8.0 there is no suggestion. And from 8.1-alpha, it will
+     * suggest 8.1-beta.
+     */
+    fun getGradleVersion(
+      client: LintClient,
+      versionPrefixFilter: String?,
+      currentVersion: Version? = null,
+    ): Pair<Version, Version>? {
+      val xml =
+        readUrlDataAsString(
+          client,
+          "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/maven-metadata.xml",
+          10000,
+        ) ?: return null
+      var stable: Version? = null
+      var preview: Version? = null
+
+      val parser = KXmlParser()
+      parser.setInput(StringReader(xml))
+      while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
+          val versionString = parser.nextText()
+          if (versionPrefixFilter != null && !versionString.startsWith(versionPrefixFilter)) {
+            continue
+          }
+          val version = Version.parse(versionString)
+          if (version.isPreview) {
+            if (preview == null || version > preview) {
+              preview = version
+            }
+          } else {
+            if (stable == null || version > stable) {
+              stable = version
+            }
+            if (preview == null || version > preview) {
+              preview = version
+            }
+          }
+        }
+      }
+
+      if (stable != null && preview != null) {
+        if (currentVersion != null) {
+          if (currentVersion.isPreview && currentVersion < stable) {
+            return Pair(stable, stable)
+          } else if (currentVersion.isPreview && currentVersion < preview) {
+            return Pair(stable, preview)
+          } else if (currentVersion < stable) {
+            return Pair(stable, stable)
+          }
+        }
+
+        return Pair(stable, preview)
+      } else {
+        return null
+      }
     }
 
     private data class VersionCatalogDependency(

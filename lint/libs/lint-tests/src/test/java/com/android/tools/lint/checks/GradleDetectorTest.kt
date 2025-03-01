@@ -1897,24 +1897,149 @@ class GradleDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         gradle(
-          "" + "plugins {\n" + "  id 'com.android.application' version '3.4.0-alpha03'\n" + "}\n"
-        )
+            """
+            plugins {
+              id 'com.android.application' version '8.0.0'
+            }
+            """
+          )
+          .indented(),
+        source(
+            "gradle/wrapper/gradle-wrapper.properties",
+            // language=properties
+            """
+            #Tue Jun 11 09:46:18 PDT 2024
+            distributionBase=GRADLE_USER_HOME
+            distributionPath=wrapper/dists
+            distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
+            zipStoreBase=GRADLE_USER_HOME
+            zipStorePath=wrapper/dists
+            """,
+          )
+          .indented(),
       )
       .issues(DEPENDENCY, AGP_DEPENDENCY)
       .run()
       .expect(
-        "" +
-          "build.gradle:2: Warning: A newer version of com.android.application than 3.4.0-alpha03 is available: 8.0.2 [AndroidGradlePluginVersion]\n" +
-          "  id 'com.android.application' version '3.4.0-alpha03'\n" +
-          "                                       ~~~~~~~~~~~~~~~\n" +
-          "0 errors, 1 warnings\n"
+        """
+        build.gradle:2: Warning: A newer version of com.android.application than 8.0.0 is available: 8.0.2 [AndroidGradlePluginVersion]
+          id 'com.android.application' version '8.0.0'
+                                               ~~~~~~~
+        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
       )
       .expectFixDiffs(
-        "" +
-          "Fix for build.gradle line 2: Change to 8.0.2:\n" +
-          "@@ -2 +2\n" +
-          "-   id 'com.android.application' version '3.4.0-alpha03'\n" +
-          "+   id 'com.android.application' version '8.0.2'\n"
+        """
+        Autofix for build.gradle line 2: Change to 8.0.2:
+        @@ -2 +2
+        -   id 'com.android.application' version '8.0.0'
+        +   id 'com.android.application' version '8.0.2'
+        Fix for gradle/wrapper/gradle-wrapper.properties line 4: Update to 8.1.1:
+        @@ -4 +4
+        - distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
+        + distributionUrl=https\://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+        """
+      )
+  }
+
+  fun testLimitWrapperVersionsToAgpMajorVersion() {
+    lint()
+      .files(
+        gradle(
+            """
+            plugins {
+              id 'com.android.application' version '7.1.0'
+            }
+            """
+          )
+          .indented(),
+        source(
+            "gradle/wrapper/gradle-wrapper.properties",
+            // language=properties
+            """
+            #Tue Jun 11 09:46:18 PDT 2024
+            distributionBase=GRADLE_USER_HOME
+            distributionPath=wrapper/dists
+            distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
+            zipStoreBase=GRADLE_USER_HOME
+            zipStorePath=wrapper/dists
+            """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .run()
+      .expect(
+        """
+        build.gradle:2: Warning: A newer version of com.android.application than 7.1.0 is available: 8.0.2 [AndroidGradlePluginVersion]
+          id 'com.android.application' version '7.1.0'
+                                               ~~~~~~~
+        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
+      )
+  }
+
+  fun testWrapperUpdateToLatestPreview() {
+    lint()
+      .files(
+        source(
+            "gradle/wrapper/gradle-wrapper.properties",
+            // language=properties
+            """
+            distributionBase=GRADLE_USER_HOME
+            distributionPath=wrapper/dists
+            distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-milestone-1-bin.zip
+            zipStoreBase=GRADLE_USER_HOME
+            zipStorePath=wrapper/dists
+            """,
+          )
+          .indented()
+      )
+      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .run()
+      .expect(
+        """
+        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.2-milestone-1 is available: 8.2-rc-1 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-milestone-1-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testWrapperUpdateFromOldPreviewToNewStable() {
+    // Make sure that when we update from an old preview, we only update
+    // to a new stable
+    lint()
+      .files(
+        source(
+            "gradle/wrapper/gradle-wrapper.properties",
+            // language=properties
+            """
+            distributionBase=GRADLE_USER_HOME
+            distributionPath=wrapper/dists
+            distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-rc-3-bin.zip
+            zipStoreBase=GRADLE_USER_HOME
+            zipStorePath=wrapper/dists
+            """,
+          )
+          .indented()
+      )
+      .issues(DEPENDENCY, AGP_DEPENDENCY)
+      .run()
+      .expect(
+        """
+        gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 8.0-rc-3 is available: 8.1.1 [AndroidGradlePluginVersion]
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.0-rc-3-bin.zip
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
       )
   }
 
@@ -8864,6 +8989,53 @@ class GradleDetectorTest : AbstractCheckTest() {
         <androidx.compose.foundation>
           <foundation versions="1.1.0,1.2.0"/>
         </androidx.compose.foundation>
+        """
+          .trimIndent(),
+      )
+      task.networkData(
+        "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/maven-metadata.xml",
+        // language=XML
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <metadata modelVersion="1.1.0">
+          <groupId>org.gradle</groupId>
+          <artifactId>gradle-tooling-api</artifactId>
+          <version>4.3</version>
+          <versioning>
+            <latest>8.14-milestone-3</latest>
+            <release>8.14-milestone-3</release>
+            <versions>
+              <version>7.0</version>
+              <version>7.0.1</version>
+              <version>7.0.2</version>
+              <version>7.6-rc-4</version>
+              <version>7.6</version>
+              <version>7.6.1</version>
+              <version>7.6.2</version>
+              <version>7.6.3</version>
+              <version>7.6.4</version>
+              <version>8.0-milestone-6</version>
+              <version>8.0-rc-1</version>
+              <version>8.0-rc-2</version>
+              <version>8.0-rc-3</version>
+              <version>8.0-rc-4</version>
+              <version>8.0-rc-5</version>
+              <version>8.0</version>
+              <version>8.0.1</version>
+              <version>8.0.2</version>
+              <version>8.1-rc-1</version>
+              <version>8.1-rc-2</version>
+              <version>8.1-rc-3</version>
+              <version>8.1-rc-4</version>
+              <version>8.1</version>
+              <version>8.1.1</version>
+              <version>8.2-milestone-1</version>
+              <version>8.2-milestone-2</version>
+              <version>8.2-rc-1</version>
+            </versions>
+            <lastUpdated>20250225092419</lastUpdated>
+          </versioning>
+        </metadata>
         """
           .trimIndent(),
       )

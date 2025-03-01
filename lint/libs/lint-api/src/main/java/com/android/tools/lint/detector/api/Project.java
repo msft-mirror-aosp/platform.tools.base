@@ -45,6 +45,7 @@ import static com.android.SdkConstants.TAG_USES_SDK;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
 import static com.android.sdklib.AndroidTargetHash.PLATFORM_HASH_PREFIX;
+
 import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
@@ -68,12 +69,15 @@ import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.client.api.UastParser;
 import com.android.tools.lint.model.LintModelAndroidArtifact;
 import com.android.tools.lint.model.LintModelAndroidLibrary;
+import com.android.tools.lint.model.LintModelArtifact;
+import com.android.tools.lint.model.LintModelArtifactType;
 import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelMavenName;
 import com.android.tools.lint.model.LintModelModule;
 import com.android.tools.lint.model.LintModelModuleType;
 import com.android.tools.lint.model.LintModelNamespacingMode;
 import com.android.tools.lint.model.LintModelVariant;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -82,6 +86,12 @@ import com.google.common.io.Closeables;
 import com.intellij.core.CoreApplicationEnvironment;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiClass;
+
+import org.jetbrains.kotlin.config.LanguageVersionSettings;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -97,10 +107,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import org.jetbrains.kotlin.config.LanguageVersionSettings;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 /** A project contains information about an Android project being scanned for Lint errors. */
 public class Project {
@@ -139,6 +145,7 @@ public class Project {
     protected List<File> proguardFiles;
     protected List<File> gradleFiles;
     protected List<File> tomlFiles;
+    protected List<File> propertyFiles;
     protected List<File> manifestFiles;
     protected List<File> javaSourceFolders;
     protected List<File> generatedSourceFolders;
@@ -1268,18 +1275,38 @@ public class Project {
     /** Returns the .properties files to be analyzed in the project */
     @NonNull
     public List<File> getPropertyFiles() {
-        List<File> propertyFiles = new ArrayList<>(2);
-        File local = new File(dir, FN_LOCAL_PROPERTIES);
-        if (local.isFile()) {
-            propertyFiles.add(local);
-        }
-        File gradle = new File(dir, FN_GRADLE_PROPERTIES);
-        if (gradle.isFile()) {
-            propertyFiles.add(gradle);
-        }
-        File wrapper = new File(dir, FD_GRADLE_WRAPPER + separator + FN_GRADLE_WRAPPER_PROPERTIES);
-        if (wrapper.isFile()) {
-            propertyFiles.add(wrapper);
+        if (propertyFiles == null) {
+            File propertyDir = this.dir;
+            if (isGradleProject()) {
+                // See the getTomlFiles method; like the version catalog, we want to
+                // pick up project-wide properties files here that don't belong to
+                // this specific project, without repeating them for each module.
+                propertyDir = null;
+                File rootDir = client.getRootDir();
+                if (rootDir != null && isDesignatedTomlModule(rootDir)) {
+                    propertyDir = rootDir;
+                }
+            }
+            if (propertyDir != null) {
+                propertyFiles = new ArrayList<>(3);
+                File local = new File(propertyDir, FN_LOCAL_PROPERTIES);
+                if (local.isFile()) {
+                    propertyFiles.add(local);
+                }
+                File gradle = new File(propertyDir, FN_GRADLE_PROPERTIES);
+                if (gradle.isFile()) {
+                    propertyFiles.add(gradle);
+                }
+                File wrapper =
+                        new File(
+                                propertyDir,
+                                FD_GRADLE_WRAPPER + separator + FN_GRADLE_WRAPPER_PROPERTIES);
+                if (wrapper.isFile()) {
+                    propertyFiles.add(wrapper);
+                }
+            } else {
+                propertyFiles = Collections.emptyList();
+            }
         }
         return propertyFiles;
     }
@@ -1368,6 +1395,17 @@ public class Project {
      * instead.**)
      */
     private boolean isDesignatedTomlModule(File root) {
+        LintModelVariant variant = getBuildVariant();
+        if (variant != null) {
+            // In AGP we'll be invoked for each artifact (main, test, androidTest, testFixtures)
+            // as if it's a whole project; we only want to report TOML and gradle properties
+            // files from the main artifact.
+            LintModelArtifact artifact = variant.getArtifact();
+            if (artifact.getType() != LintModelArtifactType.MAIN) {
+                return false;
+            }
+        }
+
         File[] moduleDirs = root.listFiles();
         if (moduleDirs != null) {
             Arrays.sort(moduleDirs);
