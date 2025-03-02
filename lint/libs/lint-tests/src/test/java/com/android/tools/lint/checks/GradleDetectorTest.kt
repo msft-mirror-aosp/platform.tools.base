@@ -36,6 +36,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.DEPRECATED_CONFIGU
 import com.android.tools.lint.checks.GradleDetector.Companion.DEPRECATED_LIBRARY
 import com.android.tools.lint.checks.GradleDetector.Companion.DEV_MODE_OBSOLETE
 import com.android.tools.lint.checks.GradleDetector.Companion.DUPLICATE_CLASSES
+import com.android.tools.lint.checks.GradleDetector.Companion.EDITED_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.EXPIRED_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.EXPIRING_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_GETTER
@@ -1627,6 +1628,205 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testCompileSdkViaVersionCatalog() {
+    // Check common variations where the DSL uses
+    //   compileSdk = libs.versions.compile.sdk.version.get().toInt()
+    // or
+    //   compileSdk = libs.versions.android.compileSdk.get().toInt()
+    // etc
+    lint()
+      .files(
+        kts(
+            """
+            android {
+                compileSdk = libs.versions.compile.sdk.version.get().toInt() // ERROR 12
+                compileSdk = libs.versions.keys.csv.get().toInt() // ERROR 13
+                defaultConfig {
+                    minSdk = libs.versions.keys.msv.get().toInt() // ERROR 14
+                    targetSdk = libs.versions.keys.tsv.get().toInt() // ERROR 15
+                }
+            }
+            """
+          )
+          .indented(),
+        gradleToml(
+            """
+            [versions]
+            compile_sdk_version = "34" # ERROR 1
+            min_sdk_version = "15"     # ERROR 2
+            target_sdk_version = "34"  # ERROR 3
+
+            compileSdkVersion = "34"   # ERROR 4
+            minSdkVersion = "15"       # ERROR 5
+            targetSdkVersion = "34"    # ERROR 6
+
+            compileSdk = "34"          # ERROR 7
+            minSdk = "15"              # ERROR 8
+            targetSdk = "34"           # ERROR 9
+
+            # https://github.com/Kotlin/multiplatform-library-template/blob/main/gradle/libs.versions.toml
+            android-minSdk = "15"      # ERROR 10
+            android-compileSdk = "34"  # ERROR 11
+
+            # Unusual keys, referenced via KTS
+            keys-csv = "34"            # ERROR 12
+            keys-msv = "15"            # ERROR 13
+            keys-tsv = "34"            # ERROR 14
+
+            javaCompileSdk = "17"      # OK 1
+            other-compileSdk = "15"    # OK 2
+            """
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY, MIN_SDK_TOO_LOW, TARGET_NEWER, EDITED_TARGET_SDK_VERSION)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:6: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+                targetSdk = libs.versions.keys.tsv.get().toInt() // ERROR 15
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:4: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        target_sdk_version = "34"  # ERROR 3
+                             ~~~~
+        ../gradle/libs.versions.toml:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdkVersion = "34"    # ERROR 6
+                           ~~~~
+        ../gradle/libs.versions.toml:12: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdk = "34"           # ERROR 9
+                    ~~~~
+        build.gradle.kts:2: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            compileSdk = libs.versions.compile.sdk.version.get().toInt() // ERROR 12
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:3: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            compileSdk = libs.versions.keys.csv.get().toInt() // ERROR 13
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:2: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        compile_sdk_version = "34" # ERROR 1
+                              ~~~~
+        ../gradle/libs.versions.toml:6: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        compileSdkVersion = "34"   # ERROR 4
+                            ~~~~
+        ../gradle/libs.versions.toml:10: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        compileSdk = "34"          # ERROR 7
+                     ~~~~
+        ../gradle/libs.versions.toml:16: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        android-compileSdk = "34"  # ERROR 11
+                             ~~~~
+        build.gradle.kts:5: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdk = libs.versions.keys.msv.get().toInt() // ERROR 14
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:3: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        min_sdk_version = "15"     # ERROR 2
+                          ~~~~
+        ../gradle/libs.versions.toml:7: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        minSdkVersion = "15"       # ERROR 5
+                        ~~~~
+        ../gradle/libs.versions.toml:11: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        minSdk = "15"              # ERROR 8
+                 ~~~~
+        ../gradle/libs.versions.toml:15: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        android-minSdk = "15"      # ERROR 10
+                         ~~~~
+        0 errors, 15 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for gradle/libs.versions.toml line 4: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -4 +4
+        - target_sdk_version = "34"  # ERROR 3
+        + target_sdk_version = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 3
+        Fix for gradle/libs.versions.toml line 8: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -8 +8
+        - targetSdkVersion = "34"    # ERROR 6
+        + targetSdkVersion = "$HIGHEST_KNOWN_STABLE_API"    # ERROR 6
+        Fix for gradle/libs.versions.toml line 12: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -12 +12
+        - targetSdk = "34"           # ERROR 9
+        + targetSdk = "$HIGHEST_KNOWN_STABLE_API"           # ERROR 9
+        Fix for build.gradle.kts line 3: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -19 +19
+        - keys-csv = "34"            # ERROR 12
+        + keys-csv = "$HIGHEST_KNOWN_STABLE_API"            # ERROR 12
+        Fix for gradle/libs.versions.toml line 2: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -2 +2
+        - compile_sdk_version = "34" # ERROR 1
+        + compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API" # ERROR 1
+        Fix for gradle/libs.versions.toml line 6: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -6 +6
+        - compileSdkVersion = "34"   # ERROR 4
+        + compileSdkVersion = "$HIGHEST_KNOWN_STABLE_API"   # ERROR 4
+        Fix for gradle/libs.versions.toml line 10: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -10 +10
+        - compileSdk = "34"          # ERROR 7
+        + compileSdk = "$HIGHEST_KNOWN_STABLE_API"          # ERROR 7
+        Fix for gradle/libs.versions.toml line 16: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -16 +16
+        - android-compileSdk = "34"  # ERROR 11
+        + android-compileSdk = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 11
+        Fix for build.gradle.kts line 5: Update minSdkVersion to 16:
+        gradle/libs.versions.toml:
+        @@ -20 +20
+        - keys-msv = "15"            # ERROR 13
+        + keys-msv = "16"            # ERROR 13
+        Fix for gradle/libs.versions.toml line 3: Update minSdkVersion to 16:
+        @@ -3 +3
+        - min_sdk_version = "15"     # ERROR 2
+        + min_sdk_version = "16"     # ERROR 2
+        Fix for gradle/libs.versions.toml line 7: Update minSdkVersion to 16:
+        @@ -7 +7
+        - minSdkVersion = "15"       # ERROR 5
+        + minSdkVersion = "16"       # ERROR 5
+        Fix for gradle/libs.versions.toml line 11: Update minSdkVersion to 16:
+        @@ -11 +11
+        - minSdk = "15"              # ERROR 8
+        + minSdk = "16"              # ERROR 8
+        Fix for gradle/libs.versions.toml line 15: Update minSdkVersion to 16:
+        @@ -15 +15
+        - android-minSdk = "15"      # ERROR 10
+        + android-minSdk = "16"      # ERROR 10
+        """
+      )
+  }
+
+  fun testTargetExpiringViaToml() {
+    lint()
+      .files(
+        kts(
+            "settings.gradle.kts",
+            """
+            android {
+            }
+            """,
+          )
+          .indented(),
+        gradleToml(
+            """
+            [versions]
+            targetSdk = "30"           # ERROR 1
+
+            #noinspection ExpiredTargetSdkVersion
+            targetSdkVersion = "30"    # OK 1
+            #noinspection ExpiringTargetSdkVersion
+            target_sdk_version = "30"  # OK 2
+            """
+          )
+          .indented(),
+      )
+      .issues(EXPIRING_TARGET_SDK_VERSION, EXPIRED_TARGET_SDK_VERSION)
+      .run()
+      .expect(
+        """
+        ../gradle/libs.versions.toml:2: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
+        targetSdk = "30"           # ERROR 1
+                    ~~~~
+        1 error
+        """
+      )
+  }
+
   fun testDeclarativeSettingsCompileSdk() {
     lint()
       .files(
@@ -1646,7 +1846,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        settings.gradle.dcl:3: Warning: A newer version of compileSdkVersion than 28 is available: 35 [GradleDependency]
+        settings.gradle.dcl:3: Warning: A newer version of compileSdkVersion than 28 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
              compileSdk = 28
              ~~~~~~~~~~~~~~~
         0 errors, 1 warning
@@ -4073,6 +4273,18 @@ class GradleDetectorTest : AbstractCheckTest() {
       .incremental()
       .run()
       .expect(expected)
+  }
+
+  fun testIsCompileSdkVersion() {
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compileSdk"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compileSdkVersion"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compilesdk"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compile_Sdk_version"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compile.sdk.version"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("compile-sdk-version"))
+    assertTrue(GradleDetector.isCompileSdkTomlVersionKey("my-compileSdk"))
+    assertFalse(GradleDetector.isCompileSdkTomlVersionKey("mycompileSdk"))
+    assertFalse(GradleDetector.isCompileSdkTomlVersionKey(""))
   }
 
   fun testWearableConsistency1() {

@@ -623,7 +623,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
     return if (scope == Scope.ALL) {
       issues.size
     } else {
-      var initialSize = 15
+      var initialSize = 20
       when {
         scope.contains(Scope.RESOURCE_FILE) -> initialSize += 117
         scope.contains(Scope.ALL_RESOURCE_FILES) -> initialSize += 12

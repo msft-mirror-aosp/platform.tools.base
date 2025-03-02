@@ -17,6 +17,7 @@ package com.android.tools.lint.client.api
 
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.FileScanner
+import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Project
 import java.io.File
@@ -37,4 +38,11 @@ class TomlContext(
   override val suppressCommentPrefix: String = SUPPRESS_JAVA_COMMENT_PREFIX
 
   fun getLocation(tomlValue: LintTomlValue): Location = tomlValue.getLocation()
+
+  fun isSuppressedWithComment(cookie: Any, issue: Issue): Boolean {
+    val location = getLocation(cookie)
+    val start = location.start?.offset ?: 0
+    val checkComments = containsCommentSuppress()
+    return checkComments && isSuppressedWithComment(start, issue)
+  }
 }

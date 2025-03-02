@@ -30,6 +30,20 @@ lint check authors, see the API Guide.
   </lint>
   ```
 
+* Lint now warns when there are newer versions of Gradle available for the
+  gradle wrapper properties file.
+
+* Lint now applies the same checks for `minSdkVersion`, `targetSdkVersion` and
+  `compileSdkVersion` that it already provides for `build.gradle` and `build.gradle.kts`
+  files to definitions of these values in version catalogs (`libs.versions.toml`),
+  provided they're using one of a few standard key names, such as
+  ```toml
+  [versions]
+  compileSdk = "34"
+  minSdk = "15"
+  targetSdk = "34"
+  ```
+
 **8.9**
 
 * New built-in lint checks:

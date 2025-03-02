@@ -1689,7 +1689,7 @@ constructor(
       val codeName = getUnquotedValue(s)
       val sdkVersion = SdkVersionInfo.getVersion(codeName, null)
       if (sdkVersion != null) return sdkVersion
-    } else {
+    } else if (s[0].isDigit()) {
       return AndroidVersion(s.toInt(), null)
     }
     return AndroidVersion(0, "")
