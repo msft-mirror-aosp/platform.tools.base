@@ -12,6 +12,6 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/chunkio:studio.android.sdktools.chunkio[module]",
+        "//tools/base/chunkio:studio.android.sdktools.chunkio",
     ],
 )

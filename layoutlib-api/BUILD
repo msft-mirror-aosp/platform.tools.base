@@ -23,7 +23,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:kxml2",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[module]",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
     ],
 )
 

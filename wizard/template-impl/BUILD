@@ -12,6 +12,6 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/wizard/template-plugin:studio.intellij.android.wizardTemplate.plugin[module]",
+        "//tools/base/wizard/template-plugin:studio.intellij.android.wizardTemplate.plugin",
     ],
 )

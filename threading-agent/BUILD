@@ -53,16 +53,16 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
-        "//tools/base/threading-agent-callback:studio.android.sdktools.threading-agent-callback[module]",
+        "//tools/base/threading-agent-callback:studio.android.sdktools.threading-agent-callback",
         "//tools/adt/idea/.idea/libraries:asm-tools",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[module]",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:test-framework[test]",
-        "//tools/adt/idea/adt-testutils:intellij.android.adt.testutils[module, test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+        "//tools/adt/idea/adt-testutils:intellij.android.adt.testutils[test]",
+        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )

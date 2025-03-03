@@ -83,19 +83,19 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "//tools/base/lint/cli:lint-cli-psi-prebuilts",
-        "//tools/base/lint:studio.android.sdktools.lint-api[module]",
-        "//tools/analytics-library/tracker:analytics-tracker[module]",
+        "//tools/base/lint:studio.android.sdktools.lint-api",
+        "//tools/analytics-library/tracker:analytics-tracker",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
-        "//tools/analytics-library/shared:analytics-shared[module]",
-        "//tools/base/lint:studio.android.sdktools.lint-checks[module]",
-        "//tools/base/common:studio.android.sdktools.common[module]",
-        "//tools/base/sdklib:studio.android.sdktools.sdklib[module]",
-        "//tools/base/sdk-common:studio.android.sdktools.sdk-common[module]",
-        "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api[module]",
+        "//tools/analytics-library/shared:analytics-shared",
+        "//tools/base/lint:studio.android.sdktools.lint-checks",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/sdklib:studio.android.sdktools.sdklib",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:agp-version",
-        "//tools/adt/idea/gradle-declarative-lang:intellij.android.gradle.declarative.lang[module]",
+        "//tools/adt/idea/gradle-declarative-lang:intellij.android.gradle.declarative.lang",
     ],
 )
 
