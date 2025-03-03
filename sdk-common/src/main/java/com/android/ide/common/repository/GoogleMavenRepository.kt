@@ -34,6 +34,7 @@ import java.util.function.Predicate
 
 const val GMAVEN_TEST_BASE_URL_ENV_VAR = "GMAVEN_TEST_BASE_URL"
 const val DEFAULT_GMAVEN_URL = "https://maven.google.com/"
+
 @JvmField
 val GMAVEN_BASE_URL = System.getenv(GMAVEN_TEST_BASE_URL_ENV_VAR) ?: DEFAULT_GMAVEN_URL
 
@@ -60,19 +61,11 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
     cacheExpiryHours, useNetwork
 ) {
 
-    companion object {
-        /** Key used in cache directories to locate the maven.google.com network cache */
-        const val MAVEN_GOOGLE_CACHE_DIR_KEY = "maven.google"
-    }
-
     private var packageMap: MutableMap<String, PackageInfo>? = null
 
     fun hasGroupId(groupId: String): Boolean {
         return getPackageMap()[groupId] != null
     }
-
-    fun findVersion(dependency: Dependency, filter: Predicate<Version>? = null): Version? =
-        findVersion(dependency, filter, dependency.explicitlyIncludesPreview)
 
     fun findVersion(
         dependency: Dependency,
@@ -85,6 +78,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
             dependency.hasExplicitDistinctUpperBound -> {
                 { v: Version -> predicate(v) && dependency.version?.contains(v) ?: true }
             }
+
             else -> {
                 { v: Version -> predicate(v) && dependency.version?.accepts(v) ?: true }
             }
@@ -191,6 +185,36 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
         return packageMap!!
     }
 
+    protected fun <T : PackageInfo> readMasterIndex(
+        stream: InputStream,
+        map: MutableMap<String, T>,
+        factory: (String) -> T
+    ) = try {
+        stream.use {
+            val parser = KXmlParser()
+            parser.setInput(it, SdkConstants.UTF_8)
+            while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                val eventType = parser.eventType
+                if (eventType == XmlPullParser.END_TAG && parser.depth > 1) {
+                    val tag = parser.name
+                    val packageInfo = factory(tag)
+                    map[tag] = packageInfo
+                } else if (eventType != XmlPullParser.START_TAG) {
+                    continue
+                }
+            }
+        }
+    } catch (e: XmlPullParserException) {
+        // Malformed XML. Most likely the file we received was not the XML file
+        // but some sort of network portal redirect HTML page. Gracefully degrade.
+    } catch (e: IOException) {
+        error(e, null)
+    }
+
+    override fun readDefaultData(relative: String): InputStream? {
+        return GoogleMavenRepository::class.java.getResourceAsStream("/versions-offline/$relative")
+    }
+
     protected data class ArtifactInfo(val id: String, val versions: String) {
 
         private val dependencyInfo by lazy { HashMap<Version, List<Dependency>>() }
@@ -233,56 +257,13 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
         }
     }
 
-    override fun readDefaultData(relative: String): InputStream? {
-        return GoogleMavenRepository::class.java.getResourceAsStream("/versions-offline/$relative")
-    }
-
-    protected fun <T : PackageInfo> readMasterIndex(
-        stream: InputStream,
-        map: MutableMap<String, T>,
-        factory: (String) -> T
-    ) = try {
-            stream.use {
-                val parser = KXmlParser()
-                parser.setInput(it, SdkConstants.UTF_8)
-                while (parser.next() != XmlPullParser.END_DOCUMENT) {
-                    val eventType = parser.eventType
-                    if (eventType == XmlPullParser.END_TAG && parser.depth > 1) {
-                        val tag = parser.name
-                        val packageInfo = factory(tag)
-                        map[tag] = packageInfo
-                    } else if (eventType != XmlPullParser.START_TAG) {
-                        continue
-                    }
-                }
-            }
-        } catch (e: XmlPullParserException) {
-            // Malformed XML. Most likely the file we received was not the XML file
-            // but some sort of network portal redirect HTML page. Gracefully degrade.
-        } catch (e: IOException) {
-            error(e, null)
-        }
-
     protected open inner class PackageInfo(private val pkg: String) {
-         private val artifacts: Map<String, ArtifactInfo> by lazy {
-            initializeIndex()
-         }
 
-        open fun artifacts(): Set<String> = artifacts.values.map { it.id }.toSet()
-
-        open fun findArtifact(id: String): ArtifactInfo? = artifacts[id]
-
-        fun loadDependencies(id: String, version: Version, requiredScope: String): List<Dependency> {
-            val file = "${pkg.replace('.', '/')}/$id/$version/$id-$version.pom"
-            val stream = findData(file)
-            return stream?.use { readDependenciesFromPomFile(stream, file, requiredScope) } ?: emptyList()
-        }
-
-        private fun initializeIndex(): Map<String, ArtifactInfo> {
+        private val artifacts: Map<String, ArtifactInfo> by lazy {
             val map = mutableMapOf<String, ArtifactInfo>()
             val stream = findData("${pkg.replace('.', '/')}/group-index.xml")
             stream?.use { readGroupData(stream, map) }
-            return map
+            return@lazy map
         }
 
         protected fun readGroupData(stream: InputStream, map: MutableMap<String, ArtifactInfo>) =
@@ -306,6 +287,21 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
             } catch (e: Exception) {
                 error(e, null)
             }
+
+        open fun artifacts(): Set<String> = artifacts.values.map { it.id }.toSet()
+
+        open fun findArtifact(id: String): ArtifactInfo? = artifacts[id]
+
+        fun loadDependencies(
+            id: String,
+            version: Version,
+            requiredScope: String
+        ): List<Dependency> {
+            val file = "${pkg.replace('.', '/')}/$id/$version/$id-$version.pom"
+            val stream = findData(file)
+            return stream?.use { readDependenciesFromPomFile(stream, file, requiredScope) }
+                ?: emptyList()
+        }
 
         private fun readDependenciesFromPomFile(
             stream: InputStream,
@@ -359,6 +355,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                             "version" -> version = parser.nextText()
                             "scope" -> scope = parser.nextText()
                         }
+
                     XmlPullParser.END_TAG ->
                         if (parser.name == "dependency") {
                             return if (scope == requiredScope) {
@@ -374,7 +371,8 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                                 check(version, "version")
                                 Dependency(groupId, artifactId, RichVersion.parse(version))
                             } else if (parser.depth == 4 && groupId.isNotEmpty() &&
-                                artifactId.isNotEmpty() && version.isNotEmpty()) {
+                                artifactId.isNotEmpty() && version.isNotEmpty()
+                            ) {
                                 boms.add(
                                     Dependency(
                                         groupId,
@@ -397,6 +395,12 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                 throw RuntimeException("Missing $name field")
             }
         }
+    }
+
+    companion object {
+
+        /** Key used in cache directories to locate the maven.google.com network cache */
+        const val MAVEN_GOOGLE_CACHE_DIR_KEY = "maven.google"
     }
 }
 

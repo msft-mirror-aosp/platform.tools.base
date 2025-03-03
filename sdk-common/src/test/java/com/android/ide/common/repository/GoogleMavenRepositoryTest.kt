@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder
 
 class GoogleMavenRepositoryTest : BaseTestCase() {
     companion object {
+
         @ClassRule
         @JvmField
         var temp = TemporaryFolder()
@@ -365,14 +366,16 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         val repo =
             StubGoogleMavenRepository(builtInData = builtInData) // no cache dir set: will only read built-in index
         val version = repo.findVersion("com.android.support", "leanback-v17")
-        val dependencies = repo.findCompileDependencies("com.android.support", "leanback-v17", version!!)
+        val dependencies =
+            repo.findCompileDependencies("com.android.support", "leanback-v17", version!!)
         assertThat(dependencies).containsExactly(
             Dependency.parse("com.android.support:support-compat:25.3.1"),
             Dependency.parse("com.android.support:support-core-ui:25.3.1"),
             Dependency.parse("com.android.support:support-media-compat:25.3.1"),
             Dependency.parse("com.android.support:support-fragment:25.3.1"),
             Dependency.parse("com.android.support:recyclerview-v7:[25.3.1.4.5,25.4.0)"),
-            Dependency.parse("androidx.recyclerview:recyclerview:2.0.0"))
+            Dependency.parse("androidx.recyclerview:recyclerview:2.0.0")
+        )
         // TODO(xof): actually these tests are not well-founded; the special version ranges for
         //  particular artifacts are only relevant for the DependencyAnalyzer, and the logic has
         //  been moved there.
@@ -381,7 +384,11 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         // assertThat(dependencies[5].versionRange?.lowerEndpoint()).isEqualTo(Version.parse("2.0.0"))
         // assertThat(dependencies[5].versionRange?.upperEndpoint()).isEqualTo(Version.prefixInfimum("3"))
         assertThat(dependencies[4].version?.require?.lowerEndpoint()).isEqualTo(Version.parse("25.3.1.4.5"))
-        assertThat(dependencies[4].version?.require?.upperEndpoint()).isEqualTo(Version.prefixInfimum("25.4.0"))
+        assertThat(dependencies[4].version?.require?.upperEndpoint()).isEqualTo(
+            Version.prefixInfimum(
+                "25.4.0"
+            )
+        )
     }
 
     @Test
@@ -408,15 +415,21 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         assertEquals("1.0.1-alpha1", version.toString())
 
         val d1 = Dependency.parse("foo.bar:another-artifact:2.5.+")
-        assertEquals("2.5.0", repo.findVersion(d1).toString())
+        assertEquals("2.5.0", repo.findVersion(d1, null, d1.explicitlyIncludesPreview).toString())
         val d2 = Dependency.parse("foo.bar:another-artifact:2.6.0-alpha1")
-        assertEquals("2.6.0-rc1", repo.findVersion(d2).toString())
+        assertEquals(
+            "2.6.0-rc1",
+            repo.findVersion(d2, null, d2.explicitlyIncludesPreview).toString()
+        )
         val d3 = Dependency.parse("foo.bar:another-artifact:2.6.+")
         assertEquals("2.6.0-rc1", repo.findVersion(d3, null, allowPreview = true).toString())
 
         assertEquals(setOf("foo.bar", "foo.bar.baz"), repo.getGroups())
         assertEquals(setOf("my-artifact", "another-artifact"), repo.getArtifacts("foo.bar"))
-        assertEquals(setOf(Version.parse("2.5.0"), Version.parse("2.6.0-rc1")), repo.getVersions("foo.bar", "another-artifact"))
+        assertEquals(
+            setOf(Version.parse("2.5.0"), Version.parse("2.6.0-rc1")),
+            repo.getVersions("foo.bar", "another-artifact")
+        )
     }
 
     @Test
@@ -448,7 +461,8 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         val repo =
             StubGoogleMavenRepository(builtInData = builtInData) // no cache dir set: will only read built-in index
         val version = repo.findVersion("androidx.activity", "activity-compose")
-        val dependencies = repo.findCompileDependencies("androidx.activity", "activity-compose", version!!)
+        val dependencies =
+            repo.findCompileDependencies("androidx.activity", "activity-compose", version!!)
         assertThat(dependencies).containsExactly(
             Dependency.parse("androidx.compose.runtime:runtime-saveable:1.7.0"),
             Dependency.parse("androidx.activity:activity-ktx:[1.10.0]"),
