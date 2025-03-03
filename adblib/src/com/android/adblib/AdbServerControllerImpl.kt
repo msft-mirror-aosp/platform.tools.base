@@ -205,8 +205,12 @@ internal class AdbServerControllerImpl(
             return configurationFlow.first { it.serverPort != null }
         }
 
-        suspend fun runKillServerProcess(path: Path, envVars: Map<String, String>): Boolean {
-            val commandArgs = getAdbStopCommandArgs()
+        suspend fun runKillServerProcess(
+            path: Path,
+            port: Int,
+            envVars: Map<String, String>
+        ): Boolean {
+            val commandArgs = getAdbStopCommandArgs(port)
             return try {
                 processRunner.runProcess(path, commandArgs, envVars)
                 true
@@ -239,8 +243,12 @@ internal class AdbServerControllerImpl(
             }
         }
 
-        private fun getAdbStopCommandArgs(): List<String> {
-            return listOf("kill-server")
+        private fun getAdbStopCommandArgs(adbPort: Int): List<String> {
+            return if (adbPort == DEFAULT_ADB_HOST_PORT) {
+                listOf("kill-server")
+            } else {
+                listOf("-P", adbPort.toString(), "kill-server")
+            }
         }
 
         /**
@@ -402,7 +410,7 @@ internal class AdbServerControllerImpl(
                     throw IllegalStateException("adb path must be provided")
                 }
                 if (config.serverPort != null) {
-                    runKillServerProcess(adbFilePath, config.envVars)
+                    runKillServerProcess(adbFilePath, config.serverPort, config.envVars)
                 }
             }
             params.isStartedFlow.update { false }
@@ -463,7 +471,7 @@ internal class AdbServerControllerImpl(
             if (adbFilePath == null) {
                 throw IllegalStateException("adb path must be provided")
             }
-            runKillServerProcess(adbFilePath, config.envVars)
+            runKillServerProcess(adbFilePath, port, config.envVars)
             runStartServerProcess(adbFilePath, port, config.envVars)
 
             params.lastUsedConfig.update { config }

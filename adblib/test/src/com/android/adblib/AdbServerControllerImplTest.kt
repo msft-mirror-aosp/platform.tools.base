@@ -467,6 +467,44 @@ class AdbServerControllerImplTest {
     }
 
     @Test
+    fun testRestartIsNoop_whenInInitialOrStoppedState(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+
+        // Act: restart from the initial state
+        controller.restart()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+
+        // Prepare: transition to a stopped state
+        controller.start()
+        controller.stop()
+        processRunner.reset()
+
+        // Act: restart from the stopped state
+        controller.restart()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+    }
+
+    @Test
     fun testOnlyOneAdbServerRestartIsTriggered_whenConcurrentRestarts(): Unit =
         runBlockingWithTimeout {
             // Prepare
@@ -695,7 +733,9 @@ class AdbServerControllerImplTest {
         private val ADB_FILE_PATH = Paths.get("dir1", "dir2", "adb")
         private val ADB_FILE_DIR_PATH = Paths.get("dir1", "dir2")
         private const val PORT = 12345
-        private val START_COMMAND = listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "start-server")
-        private val STOP_COMMAND = listOf(ADB_FILE_PATH.toString(), "kill-server")
+        private val START_COMMAND =
+            listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "start-server")
+        private val STOP_COMMAND =
+            listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "kill-server")
     }
 }
