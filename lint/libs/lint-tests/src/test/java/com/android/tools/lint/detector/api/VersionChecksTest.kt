@@ -2208,7 +2208,7 @@ class VersionChecksTest : AbstractCheckTest() {
             public class Class {
                 public void testEarlyExit3(boolean nested) {
                   if (Build.VERSION.SDK_INT < 31) {
-                        if (Build.VERSION.SDK_INT < 31) { // Unnecessary; SDK_INT is always >= 30
+                        if (Build.VERSION.SDK_INT < 31) { // Unnecessary; SDK_INT is always < 31
                             // something
                         }
                         if (Build.VERSION.SDK_INT > 31) { // Impossible
@@ -2225,8 +2225,8 @@ class VersionChecksTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/p1/p2/Class.java:8: Warning: Unnecessary; Build.VERSION.SDK_INT < 31 is never true here (SDK_INT ≥ 11 and < 31) [ObsoleteSdkInt]
-                    if (Build.VERSION.SDK_INT < 31) { // Unnecessary; SDK_INT is always >= 30
+        src/p1/p2/Class.java:8: Warning: Unnecessary; Build.VERSION.SDK_INT < 31 is always true here (SDK_INT ≥ 11 and < 31) [ObsoleteSdkInt]
+                    if (Build.VERSION.SDK_INT < 31) { // Unnecessary; SDK_INT is always < 31
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/p1/p2/Class.java:11: Warning: Unnecessary; Build.VERSION.SDK_INT > 31 is never true here [ObsoleteSdkInt]
                     if (Build.VERSION.SDK_INT > 31) { // Impossible
@@ -5157,7 +5157,7 @@ src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): androi
           src/test/pkg/Test.kt:27: Error: Call requires API level 34 (current min is 30): uOnly [NewApi]
                       uOnly()  // ERROR 2: We may not have U, we may only have R
                       ~~~~~
-          src/test/pkg/Test.kt:37: Warning: Unnecessary; SDK_INT >= R is never true here (SDK_INT ≥ 30 and < 34) [ObsoleteSdkInt]
+          src/test/pkg/Test.kt:37: Warning: Unnecessary; SDK_INT >= R is always true here (SDK_INT ≥ 30 and < 34) [ObsoleteSdkInt]
                   if (SDK_INT >= 34 || SDK_INT >= R && SdkExtensions.getExtensionVersion(R) >= 4) {
                                        ~~~~~~~~~~~~
           src/test/pkg/Test.kt:41: Warning: Unnecessary; SDK_INT is always >= 34 [ObsoleteSdkInt]
@@ -6023,6 +6023,62 @@ src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): androi
                 requiresApi35_2()  // ERROR 5
                 ~~~~~~~~~~~~~~~
         5 errors, 0 warnings
+        """
+      )
+  }
+
+  fun test399692455() {
+    // Regression test for b/399692455
+    lint()
+      .files(
+        classpath(),
+        manifest().minSdk(26),
+        kotlin(
+            """
+            package test.pkg
+
+            import android.os.Build.VERSION.SDK_INT
+
+            class Version {
+                fun test1() {
+                    if (SDK_INT >= 31) { // OK
+                    } else {
+                        if (SDK_INT >= 26) { // ERROR 1
+                        }
+                    }
+                }
+
+                fun test2() {
+                    if (SDK_INT >= 26) {  // ERROR 2: always true
+                    } else {
+                        // Impossible
+                        // SDK_INT >= 26 and SDK_INT < 26
+                        if (SDK_INT >= 31) { // ERROR 3
+                        }
+                    }
+                }
+            }
+            """
+          )
+          .indented(),
+      )
+      // We *don't* want to use provisional computation for this:
+      // limit suggestions around SDK_INT checks to those implied
+      // by the minSdkVersion of the library.
+      .skipTestModes(PARTIAL)
+      .run()
+      .expect(
+        """
+        src/test/pkg/Version.kt:9: Warning: Unnecessary; SDK_INT >= 26 is always true here (SDK_INT ≥ 26 and < 31) [ObsoleteSdkInt]
+                    if (SDK_INT >= 26) { // ERROR 1
+                        ~~~~~~~~~~~~~
+        src/test/pkg/Version.kt:15: Warning: Unnecessary; SDK_INT is always >= 26 [ObsoleteSdkInt]
+                if (SDK_INT >= 26) {  // ERROR 2: always true
+                    ~~~~~~~~~~~~~
+        src/test/pkg/Version.kt:19: Warning: Unnecessary; SDK_INT >= 31 is never true here [ObsoleteSdkInt]
+                    if (SDK_INT >= 31) { // ERROR 3
+                        ~~~~~~~~~~~~~
+        0 errors, 3 warnings
         """
       )
   }
