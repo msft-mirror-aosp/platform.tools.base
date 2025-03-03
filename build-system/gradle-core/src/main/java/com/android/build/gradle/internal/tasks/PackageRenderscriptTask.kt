@@ -67,9 +67,6 @@ abstract class PackageRenderscriptTask : Sync(), VariantTask {
                 task.from(it.all).include("**/*.rsh")
             }
             task.into(task.headersDir)
-            task.handleDestinationDirIncompatibility(
-                creationConfig, InternalArtifactType.RENDERSCRIPT_HEADERS,
-                task.headersDir)
         }
     }
 }
