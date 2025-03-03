@@ -26,7 +26,6 @@ import org.gradle.api.Task
  * specific location in the build process that can be used to register dependent tasks. These are
  * also [Task]s that can be invoked by users which provide a consumable output.
  */
-@Incubating
 interface LifecycleTasks {
 
     /**
@@ -43,5 +42,5 @@ interface LifecycleTasks {
      * @param objects must comply to Gradle's task dependency rules defined
      * [there](https://docs.gradle.org/current/javadoc/org/gradle/api/Task.html#dependencies)
      */
-    fun registerApkInstallation(vararg objects: Any)
+    fun registerPreInstallation(vararg objects: Any)
 }

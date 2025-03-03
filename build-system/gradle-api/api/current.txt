@@ -3196,9 +3196,9 @@ package com.android.build.api.variant {
   public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
-  @org.gradle.api.Incubating public interface LifecycleTasks {
-    method public void registerApkInstallation(java.lang.Object... objects);
+  public interface LifecycleTasks {
     method public void registerPreBuild(java.lang.Object... objects);
+    method public void registerPreInstallation(java.lang.Object... objects);
   }
 
   public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {

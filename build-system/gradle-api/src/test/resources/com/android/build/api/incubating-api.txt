@@ -262,9 +262,6 @@ https://issuetracker.google.com/328748857
 https://issuetracker.google.com/328748858
   * com.android.build.api.variant.CanMinifyAndroidResources
   * com.android.build.api.variant.CanMinifyAndroidResources.getShrinkResources: boolean ()
-https://issuetracker.google.com/328748859
-  * com.android.build.api.variant.LifecycleTasks
-  * com.android.build.api.variant.LifecycleTasks.registerPreBuild: void (java.lang.Object[])
 https://issuetracker.google.com/328748875
   * com.android.build.api.dsl.FailureRetention implements com.android.build.api.dsl.EmulatorSnapshots
   * com.android.build.api.dsl.FailureRetention.getEnable: boolean ()
@@ -715,8 +712,6 @@ https://issuetracker.google.com/382716517
 https://issuetracker.google.com/382716889
   * com.android.build.api.dsl.ManagedVirtualDevice.getSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
-https://issuetracker.google.com/383567956
-  * com.android.build.api.variant.LifecycleTasks.registerApkInstallation: void (java.lang.Object[])
 https://issuetracker.google.com/384516080
   * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment extends java.lang.Enum
   * com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment.getEntries: kotlin.enums.EnumEntries<com.android.build.api.dsl.ManagedVirtualDevice$PageAlignment> ()

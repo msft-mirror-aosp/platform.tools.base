@@ -51,7 +51,7 @@ class LifecycleTasksImpl: LifecycleTasks {
         ) { mutableListOf() }.addAll(objects)
     }
 
-    override fun registerApkInstallation(vararg objects: Any) {
+    override fun registerPreInstallation(vararg objects: Any) {
         registeredDependents.getOrPut(
             LifecycleEvent.APK_INSTALLATION
         ) { mutableListOf() }.addAll(objects)
