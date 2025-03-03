@@ -618,6 +618,9 @@ def iml_module(
     test_deps = []
     for dep in deps:
         label, label_tags = _get_label_and_tags(dep)
+        for label_tag in label_tags:
+            if label_tag not in ["test"]:
+                fail("Invalid label tag: " + label_tag)
         if "test" not in label_tags:
             prod_deps.append(label)
         test_deps.append(label)

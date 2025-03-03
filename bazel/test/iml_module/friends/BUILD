@@ -16,7 +16,7 @@ iml_module(
     test_tags = ["manual"],  # There are no tests here---just checking that things build.
     visibility = ["//visibility:public"],
     deps = [
-        ":friends.impl[module, test]",
+        ":friends.impl[test]",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
     ],
 )
