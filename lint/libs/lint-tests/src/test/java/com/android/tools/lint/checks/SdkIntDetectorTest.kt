@@ -210,8 +210,11 @@ class SdkIntDetectorTest : AbstractCheckTest() {
                     public static boolean isAfter(int api) { // 5: Should annotate
                         return SDK_INT > api;
                     }
-                    public static boolean isAtLeastZ() { // 6: Should annotate
+                    public static boolean isAtLeastBaklava() { // 6: Should annotate
                         return SDK_INT >= 36;
+                    }
+                    public static boolean isAtLeastFarFuture() { // 6: Should annotate
+                        return SDK_INT >= 999;
                     }
                     public static final boolean SUPPORTS_LETTER_SPACING = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP; // 7: Should annotate
                     public boolean isLollipop() { // 8: Should annotate
@@ -303,28 +306,31 @@ class SdkIntDetectorTest : AbstractCheckTest() {
                 src/test/pkg/JavaVersionChecks.java:25: Warning: This method should be annotated with @ChecksSdkIntAtLeast(parameter=0) [AnnotateVersionCheck]
                     public static boolean isAfter(int api) { // 5: Should annotate
                                           ~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:28: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=36) [AnnotateVersionCheck]
-                    public static boolean isAtLeastZ() { // 6: Should annotate
-                                          ~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:31: Warning: This field should be annotated with ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:28: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.BAKLAVA) [AnnotateVersionCheck]
+                    public static boolean isAtLeastBaklava() { // 6: Should annotate
+                                          ~~~~~~~~~~~~~~~~
+                src/test/pkg/JavaVersionChecks.java:31: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=999) [AnnotateVersionCheck]
+                    public static boolean isAtLeastFarFuture() { // 6: Should annotate
+                                          ~~~~~~~~~~~~~~~~~~
+                src/test/pkg/JavaVersionChecks.java:34: Warning: This field should be annotated with ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP) [AnnotateVersionCheck]
                     public static final boolean SUPPORTS_LETTER_SPACING = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP; // 7: Should annotate
                                                 ~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:32: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:35: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP) [AnnotateVersionCheck]
                     public boolean isLollipop() { // 8: Should annotate
                                    ~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:35: Warning: This field should be annotated with ChecksSdkIntAtLeast(extension=0) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:38: Warning: This field should be annotated with ChecksSdkIntAtLeast(extension=0) [AnnotateVersionCheck]
                     public static final int STASHED_VERSION = Build.VERSION.SDK_INT; // Should annotate
                                             ~~~~~~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:36: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.ICE_CREAM_SANDWICH) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:39: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.ICE_CREAM_SANDWICH) [AnnotateVersionCheck]
                     public static boolean isIcs() { // 9: Should annotate
                                           ~~~~~
-                src/test/pkg/JavaVersionChecks.java:39: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.GINGERBREAD) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:42: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.GINGERBREAD) [AnnotateVersionCheck]
                     public static boolean isGingerbread() { // 10: Should annotate
                                           ~~~~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:43: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=N, lambda=0) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:46: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=N, lambda=0) [AnnotateVersionCheck]
                     public static void runOnNougat(Runnable runnable) { // 11: Should annotate
                                        ~~~~~~~~~~~
-                src/test/pkg/JavaVersionChecks.java:48: Warning: This method should be annotated with @ChecksSdkIntAtLeast(parameter=0, lambda=1) [AnnotateVersionCheck]
+                src/test/pkg/JavaVersionChecks.java:51: Warning: This method should be annotated with @ChecksSdkIntAtLeast(parameter=0, lambda=1) [AnnotateVersionCheck]
                     public static void runOnAny(int api, Runnable runnable) { // 12: Should annotate
                                        ~~~~~~~~
                 src/test/pkg/NotImported.java:6: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=N) [AnnotateVersionCheck]
@@ -369,7 +375,7 @@ class SdkIntDetectorTest : AbstractCheckTest() {
                 src/test/pkg/Utils.kt:79: Warning: This method should be annotated with @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N_MR1) [AnnotateVersionCheck]
                 fun isAfterNougat(): Boolean { // 14: Should be annotated
                     ~~~~~~~~~~~~~
-                0 errors, 27 warnings
+                0 errors, 28 warnings
                 """
       )
       .expectFixDiffs(
@@ -391,27 +397,30 @@ class SdkIntDetectorTest : AbstractCheckTest() {
                 +     @ChecksSdkIntAtLeast(parameter=0)
                 Fix for src/test/pkg/JavaVersionChecks.java line 28: Annotate with @ChecksSdkIntAtLeast:
                 @@ -28 +28
-                +     @ChecksSdkIntAtLeast(api=36)
+                +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.BAKLAVA)
                 Fix for src/test/pkg/JavaVersionChecks.java line 31: Annotate with @ChecksSdkIntAtLeast:
                 @@ -31 +31
-                +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP)
-                Fix for src/test/pkg/JavaVersionChecks.java line 32: Annotate with @ChecksSdkIntAtLeast:
-                @@ -32 +32
+                +     @ChecksSdkIntAtLeast(api=999)
+                Fix for src/test/pkg/JavaVersionChecks.java line 34: Annotate with @ChecksSdkIntAtLeast:
+                @@ -34 +34
                 +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP)
                 Fix for src/test/pkg/JavaVersionChecks.java line 35: Annotate with @ChecksSdkIntAtLeast:
                 @@ -35 +35
+                +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.LOLLIPOP)
+                Fix for src/test/pkg/JavaVersionChecks.java line 38: Annotate with @ChecksSdkIntAtLeast:
+                @@ -38 +38
                 +     @ChecksSdkIntAtLeast(extension=0)
-                Fix for src/test/pkg/JavaVersionChecks.java line 36: Annotate with @ChecksSdkIntAtLeast:
-                @@ -36 +36
-                +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.ICE_CREAM_SANDWICH)
                 Fix for src/test/pkg/JavaVersionChecks.java line 39: Annotate with @ChecksSdkIntAtLeast:
                 @@ -39 +39
+                +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+                Fix for src/test/pkg/JavaVersionChecks.java line 42: Annotate with @ChecksSdkIntAtLeast:
+                @@ -42 +42
                 +     @ChecksSdkIntAtLeast(api=Build.VERSION_CODES.GINGERBREAD)
-                Fix for src/test/pkg/JavaVersionChecks.java line 43: Annotate with @ChecksSdkIntAtLeast:
-                @@ -43 +43
+                Fix for src/test/pkg/JavaVersionChecks.java line 46: Annotate with @ChecksSdkIntAtLeast:
+                @@ -46 +46
                 +     @ChecksSdkIntAtLeast(api=N, lambda=0)
-                Fix for src/test/pkg/JavaVersionChecks.java line 48: Annotate with @ChecksSdkIntAtLeast:
-                @@ -48 +48
+                Fix for src/test/pkg/JavaVersionChecks.java line 51: Annotate with @ChecksSdkIntAtLeast:
+                @@ -51 +51
                 +     @ChecksSdkIntAtLeast(parameter=0, lambda=1)
                 Fix for src/test/pkg/NotImported.java line 6: Annotate with @ChecksSdkIntAtLeast:
                 @@ -4 +4
