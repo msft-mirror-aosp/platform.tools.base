@@ -1099,12 +1099,14 @@ maven_repository(
     visibility = ["__subpackages__"],
 )
 
+LAYOUTLIB_PREBUILTS_VERSION = "15.1.3"
+
 maven_repository(
     name = "layoutlib_prebuilts",
     artifacts = [
-        "@maven//:com.android.tools.layoutlib.layoutlib-resources_15.0.7",
-        "@maven//:com.android.tools.layoutlib.layoutlib-runtime_15.0.7",
-        "@maven//:com.android.tools.layoutlib.layoutlib_15.0.7",
+        "@maven//:com.android.tools.layoutlib.layoutlib-resources_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib-runtime_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib_" + LAYOUTLIB_PREBUILTS_VERSION,
     ],
     visibility = ["__subpackages__"],
 )

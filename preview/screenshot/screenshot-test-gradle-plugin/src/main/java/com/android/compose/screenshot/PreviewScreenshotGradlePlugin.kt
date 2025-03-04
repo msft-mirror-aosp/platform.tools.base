@@ -36,7 +36,6 @@ import com.android.compose.screenshot.tasks.PreviewScreenshotRenderTask
 import com.android.compose.screenshot.tasks.PreviewScreenshotUpdateTask
 import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
 import com.android.compose.screenshot.tasks.ScreenshotTestReportTask
-import java.lang.StringBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -89,9 +88,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         const val VALIDATION_ENGINE_VERSION_OVERRIDE = "android.compose.screenshot.validationEngineVersion"
 
         const val MIN_VALIDATION_ENGINE_VERSION = "0.0.1-alpha03"
-        private const val LAYOUTLIB_VERSION = "15.0.7"
-        private const val LAYOUTLIB_RUNTIME_VERSION = "15.0.7"
-        private const val LAYOUTLIB_RESOURCES_VERSION = "15.0.7"
+        private const val LAYOUTLIB_VERSION = "15.1.3"
 
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
             requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
@@ -153,9 +150,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             val sdkDirectory = componentsExtension.sdkComponents.sdkDirectory
             createPreviewlibCliToolConfiguration(project)
             createLayoutlibConfiguration(project)
-            createLayoutlibRuntimeConfiguration(project)
             createLayoutlibResourcesConfiguration(project)
-            val layoutlibDataFromMaven = LayoutlibDataFromMaven.create(project, LAYOUTLIB_RUNTIME_VERSION,
+            val layoutlibDataFromMaven = LayoutlibDataFromMaven.create(project, LAYOUTLIB_VERSION,
               project.configurations.getByName(layoutlibResourcesConfigurationName))
 
             val updateAllTask = project.tasks.register(
@@ -454,23 +450,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         }
     }
 
-    private fun createLayoutlibRuntimeConfiguration(project: Project) {
-        val container = project.configurations
-        val dependencies = project.dependencies
-        if (container.findByName(layoutlibRunTimeConfigurationName) == null) {
-            container.create(layoutlibRunTimeConfigurationName).apply {
-                isVisible = false
-                isTransitive = true
-                isCanBeConsumed = false
-                description = "A configuration to resolve layoutlib runtime data dependencies."
-            }
-            val version = LAYOUTLIB_RUNTIME_VERSION
-            dependencies.add(
-                layoutlibRunTimeConfigurationName,
-                "com.android.tools.layoutlib:layoutlib-runtime:$version")
-        }
-    }
-
     private fun createLayoutlibResourcesConfiguration(project: Project) {
         val container = project.configurations
         val dependencies = project.dependencies
@@ -481,7 +460,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 isCanBeConsumed = false
                 description = "A configuration to resolve render CLI tool dependencies."
             }
-            val version = LAYOUTLIB_RESOURCES_VERSION
+            val version = LAYOUTLIB_VERSION
             dependencies.add(
                 layoutlibResourcesConfigurationName,
                 "com.android.tools.layoutlib:layoutlib-resources:$version")
@@ -560,7 +539,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 private const val previewlibCliToolConfigurationName = "_internal-screenshot-test-task-previewlib-cli"
 private const val previewScreenshotTestEngineConfigurationName = "_internal-screenshot-validation-junit-engine"
 private const val layoutlibJarConfigurationName = "_internal-screenshot-test-task-layoutlib"
-private const val layoutlibRunTimeConfigurationName = "_internal-screenshot-test-task-layoutlib-data"
 private const val layoutlibResourcesConfigurationName = "_internal-screenshot-test-task-layoutlib-res"
 private const val ARTIFACT_IMPL = "com.android.build.api.artifact.impl.ArtifactsImpl"
 private const val ANALYTICS_ENABLED_ARTIFACTS = "com.android.build.api.component.analytics.AnalyticsEnabledArtifacts"
