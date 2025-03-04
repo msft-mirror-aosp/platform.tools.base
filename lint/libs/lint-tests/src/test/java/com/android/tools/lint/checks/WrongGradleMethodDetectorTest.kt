@@ -20,14 +20,14 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.TextFormat
 
-class WrongGradleMethodTest : AbstractCheckTest() {
+class WrongGradleMethodDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     return super.lint().textFormat(TextFormat.RAW)
   }
 
   override fun getDetector(): Detector {
-    return WrongGradleMethod()
+    return WrongGradleMethodDetector()
   }
 
   fun testDocumentationExample() {

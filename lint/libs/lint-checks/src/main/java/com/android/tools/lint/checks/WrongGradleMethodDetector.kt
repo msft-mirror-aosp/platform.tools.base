@@ -50,7 +50,7 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.psiUtil.getCallNameExpression
 import org.jetbrains.uast.UCallExpression
 
-class WrongGradleMethod : Detector(), GradleScanner {
+class WrongGradleMethodDetector : Detector(), GradleScanner {
   override fun checkMethodCall(
     context: GradleContext,
     statement: String,
@@ -367,7 +367,7 @@ class WrongGradleMethod : Detector(), GradleScanner {
         category = Category.CORRECTNESS,
         priority = 2,
         severity = Severity.ERROR,
-        implementation = Implementation(WrongGradleMethod::class.java, Scope.GRADLE_SCOPE),
+        implementation = Implementation(WrongGradleMethodDetector::class.java, Scope.GRADLE_SCOPE),
       )
   }
 }
