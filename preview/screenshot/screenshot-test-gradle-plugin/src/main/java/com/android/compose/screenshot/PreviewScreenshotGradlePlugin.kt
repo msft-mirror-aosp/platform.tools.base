@@ -202,7 +202,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 if (variant is HasHostTests && variant.debuggable) {
                     val variantName = variant.name
                     val screenshotTestComponent = variant.hostTests[HostTestBuilder.SCREENSHOT_TEST_TYPE] ?: return@onVariants
-                    val referenceImagePath = "src/$variantName/screenshotTest/reference"
+                    val referenceImagePath = "src/${variantName}ScreenshotTest/reference"
                     val discoveryTaskProvider =
                         project.tasks.register(
                             "${variantName}PreviewDiscovery",
