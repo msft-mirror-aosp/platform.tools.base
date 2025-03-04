@@ -42,6 +42,9 @@ sealed interface WellKnownMavenArtifactId {
     companion object {
         @JvmField val KOTLIN_STDLIB: WellKnownMavenArtifactId = WellKnownKotlinArtifactId("kotlin-stdlib")
         @JvmField val KOTLIN_REFLECT: WellKnownMavenArtifactId = WellKnownKotlinArtifactId("kotlin-reflect")
+        @JvmField val TFLITE_GPU: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-gpu")
+        @JvmField val TFLITE_METADATA: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-metadata")
+        @JvmField val TFLITE_SUPPORT: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-support")
     }
 }
 
@@ -49,6 +52,14 @@ private data class WellKnownKotlinArtifactId(
     override val artifactId: String
 ) : WellKnownMavenArtifactId {
     override val groupId = "org.jetbrains.kotlin"
+
+    override fun toString() = displayName
+}
+
+private data class WellKnownTfliteArtifactId(
+    override val artifactId: String
+) : WellKnownMavenArtifactId {
+    override val groupId = "org.tensorflow"
 
     override fun toString() = displayName
 }
