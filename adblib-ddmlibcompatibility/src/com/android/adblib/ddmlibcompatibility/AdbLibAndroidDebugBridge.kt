@@ -140,28 +140,33 @@ class AdbLibAndroidDebugBridge(
     @Deprecated("Used only in tests")
     @Synchronized
     override fun initIfNeeded(clientSupport: Boolean) {
-        if (initialized) {
-            return
+        logUsage(AdbDelegateUsageTracker.Method.INIT_IF_NEEDED) {
+            if (!initialized) {
+                init(clientSupport)
+            }
         }
-        init(clientSupport)
     }
 
     @Synchronized
     override fun init(clientSupport: Boolean) {
-        init(clientSupport, false, ImmutableMap.of())
+        logUsage(AdbDelegateUsageTracker.Method.INIT_1) {
+            init(clientSupport, false, ImmutableMap.of())
+        }
     }
 
     @Synchronized
     override fun init(
         clientSupport: Boolean, useLibusb: Boolean, env: Map<String?, String?>
     ) {
-        init(
-            AdbInitOptions.builder()
-                .withEnv(env)
-                .setClientSupportEnabled(clientSupport)
-                .withEnv("ADB_LIBUSB", if (useLibusb) "1" else "0")
-                .build()
-        )
+        logUsage(AdbDelegateUsageTracker.Method.INIT_2) {
+            init(
+                AdbInitOptions.builder()
+                    .withEnv(env)
+                    .setClientSupportEnabled(clientSupport)
+                    .withEnv("ADB_LIBUSB", if (useLibusb) "1" else "0")
+                    .build()
+            )
+        }
     }
 
     @Synchronized
@@ -197,40 +202,52 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun enableFakeAdbServerMode(port: Int) {
-        Preconditions.checkState(
-            !initialized,
-            "AndroidDebugBridge.init() has already been called or "
-                    + "terminate() has not been called yet."
-        )
-        isUnitTestMode = true
-        sAdbServerPort = port
+        logUsage(AdbDelegateUsageTracker.Method.ENABLE_FAKE_ADB_SERVER_MODE) {
+            Preconditions.checkState(
+                !initialized,
+                "AndroidDebugBridge.init() has already been called or "
+                        + "terminate() has not been called yet."
+            )
+            isUnitTestMode = true
+            sAdbServerPort = port
+        }
     }
 
     override fun disableFakeAdbServerMode() {
-        Preconditions.checkState(
-            !initialized,
-            "AndroidDebugBridge.init() has already been called or "
-                    + "terminate() has not been called yet."
-        )
-        isUnitTestMode = false
-        sAdbServerPort = null
+        logUsage(AdbDelegateUsageTracker.Method.DISABLE_FAKE_ADB_SERVER_MODE) {
+            Preconditions.checkState(
+                !initialized,
+                "AndroidDebugBridge.init() has already been called or "
+                        + "terminate() has not been called yet."
+            )
+            isUnitTestMode = false
+            sAdbServerPort = null
+        }
     }
 
     override fun getClientSupport(): Boolean {
-        return isClientSupport
+        return logUsage(AdbDelegateUsageTracker.Method.GET_CLIENT_SUPPORT) {
+            isClientSupport
+        }
     }
 
     override fun getClientManager(): ClientManager? {
-        return clientManager
+        return logUsage(AdbDelegateUsageTracker.Method.GET_CLIENT_MANAGER) {
+            clientManager
+        }
     }
 
     override fun createBridge(): AndroidDebugBridge? {
-        return createBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        return logUsage(AdbDelegateUsageTracker.Method.CREATE_BRIDGE_1) {
+            createBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        }
     }
 
     @Deprecated("This method may hang if ADB is not responding")
     override fun createBridge(osLocation: String, forceNewBridge: Boolean): AndroidDebugBridge? {
-        return createBridge(osLocation, forceNewBridge, Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        return logUsage(AdbDelegateUsageTracker.Method.CREATE_BRIDGE_3) {
+            createBridge(osLocation, forceNewBridge, Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        }
     }
 
     /**
@@ -247,33 +264,35 @@ class AdbLibAndroidDebugBridge(
      * bridge
      */
     override fun createBridge(timeout: Long, unit: TimeUnit): AndroidDebugBridge? {
-        // TODO: Rewrite this code to remove non-local returns
-        val newBridgeInstance = withLock {
-            if (currentAndroidDebugBridge != null) {
-                return currentAndroidDebugBridge
-            }
-            var newBridgeInstance: AndroidDebugBridge
-            try {
-                newBridgeInstance = AndroidDebugBridge()
-                if (!start(newBridgeInstance, timeout, unit)) {
-                    // We return without notifying listeners, since there were no changes
-                    return null
+        return logUsage(AdbDelegateUsageTracker.Method.CREATE_BRIDGE_2) {
+            // TODO: Rewrite this code to remove non-local returns
+            val newBridgeInstance = withLock {
+                if (currentAndroidDebugBridge != null) {
+                    return@logUsage currentAndroidDebugBridge
                 }
-            } catch (_: InvalidParameterException) {
-                // We return without notifying listeners, since there were no changes
-                return null
+                var newBridgeInstance: AndroidDebugBridge
+                try {
+                    newBridgeInstance = AndroidDebugBridge()
+                    if (!start(newBridgeInstance, timeout, unit)) {
+                        // We return without notifying listeners, since there were no changes
+                        return@logUsage null
+                    }
+                } catch (_: InvalidParameterException) {
+                    // We return without notifying listeners, since there were no changes
+                    return@logUsage null
+                }
+
+                // Success, store static instance
+                currentAndroidDebugBridge = newBridgeInstance
+                newBridgeInstance
             }
 
-            // Success, store static instance
-            currentAndroidDebugBridge = newBridgeInstance
-            newBridgeInstance
+            // Notify the listeners of the change (outside of the lock to decrease the likelihood
+            // of deadlocks)
+            adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
+
+            return@logUsage newBridgeInstance
         }
-
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
-
-        return newBridgeInstance
     }
 
     /**
@@ -297,53 +316,55 @@ class AdbLibAndroidDebugBridge(
         timeout: Long,
         unit: TimeUnit
     ): AndroidDebugBridge? {
-        // TODO: Rewrite this code to remove non-local returns
-        val newBridgeInstance = withLock {
-            val rem = TimeoutRemainder(timeout, unit)
-            if (!isUnitTestMode) {
-                if (currentAndroidDebugBridge != null) {
-                    if (mAdbOsLocation != null && mAdbOsLocation.equals(osLocation)
-                        && !forceNewBridge
-                    ) {
-                        // We return without notifying listeners, since there were no changes
-                        return currentAndroidDebugBridge
-                    } else {
-                        // stop the current server
-                        if (!stop(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+        return logUsage(AdbDelegateUsageTracker.Method.CREATE_BRIDGE_4) {
+            // TODO: Rewrite this code to remove non-local returns
+            val newBridgeInstance = withLock {
+                val rem = TimeoutRemainder(timeout, unit)
+                if (!isUnitTestMode) {
+                    if (currentAndroidDebugBridge != null) {
+                        if (mAdbOsLocation != null && mAdbOsLocation.equals(osLocation)
+                            && !forceNewBridge
+                        ) {
                             // We return without notifying listeners, since there were no changes
-                            return null
+                            return@logUsage currentAndroidDebugBridge
+                        } else {
+                            // stop the current server
+                            if (!stop(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+                                // We return without notifying listeners, since there were no changes
+                                return@logUsage null
+                            }
                         }
+
+                        // We are successfully stopped. We need to notify listeners in all code paths
+                        // past this point.
+                        currentAndroidDebugBridge = null
                     }
-
-                    // We are successfully stopped. We need to notify listeners in all code paths
-                    // past this point.
-                    currentAndroidDebugBridge = null
                 }
-            }
 
-            var newBridgeInstance: AndroidDebugBridge?
-            try {
-                newBridgeInstance = AndroidDebugBridge()
-                initOsLocationAndCheckVersion(osLocation)
-                if (!start(newBridgeInstance, rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+                var newBridgeInstance: AndroidDebugBridge?
+                try {
+                    newBridgeInstance = AndroidDebugBridge()
+                    initOsLocationAndCheckVersion(osLocation)
+                    if (!start(newBridgeInstance, rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+                        // Note: Don't return here, as we want to notify listeners
+                        newBridgeInstance = null
+                    }
+                } catch (_: InvalidParameterException) {
                     // Note: Don't return here, as we want to notify listeners
                     newBridgeInstance = null
                 }
-            } catch (_: InvalidParameterException) {
-                // Note: Don't return here, as we want to notify listeners
-                newBridgeInstance = null
+
+                // Success, store static instance
+                currentAndroidDebugBridge = newBridgeInstance
+                newBridgeInstance
             }
 
-            // Success, store static instance
-            currentAndroidDebugBridge = newBridgeInstance
-            newBridgeInstance
+            // Notify the listeners of the change (outside of the lock to decrease the likelihood
+            // of deadlocks)
+            adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
+
+            return@logUsage newBridgeInstance
         }
-
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        adbChangeEvents.notifyBridgeChanged(newBridgeInstance)
-
-        return newBridgeInstance
     }
 
     /**
@@ -424,17 +445,19 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun startAdb(timeout: Long, unit: TimeUnit): Boolean {
-        return runBlocking {
-            withTimeoutOrNull(unit.toMillis(timeout)) {
-                try {
-                    adbServerController.start()
-                    true
-                } catch (t: Throwable) {
-                    logger.warn(t, "Failed to start adb server")
+        return logUsage(AdbDelegateUsageTracker.Method.START_ADB) {
+            runBlocking {
+                withTimeoutOrNull(unit.toMillis(timeout)) {
+                    try {
+                        adbServerController.start()
+                        true
+                    } catch (t: Throwable) {
+                        logger.warn(t, "Failed to start adb server")
+                        false
+                    }
+                } ?: run {
                     false
                 }
-            } ?: run {
-                false
             }
         }
     }
@@ -455,22 +478,26 @@ class AdbLibAndroidDebugBridge(
       {@link #disconnectBridge(long, TimeUnit)} instead."""
     )
     override fun disconnectBridge() {
-        disconnectBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        logUsage(AdbDelegateUsageTracker.Method.DISCONNECT_BRIDGE_1) {
+            disconnectBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        }
     }
 
     override fun addDebugBridgeChangeListener(
         listener: IDebugBridgeChangeListener
     ) {
-        adbChangeEvents.addDebugBridgeChangeListener(listener)
+        logUsage(AdbDelegateUsageTracker.Method.ADD_DEBUG_BRIDGE_CHANGE_LISTENER) {
+            adbChangeEvents.addDebugBridgeChangeListener(listener)
 
-        val localThis = currentAndroidDebugBridge
+            val localThis = currentAndroidDebugBridge
 
-        if (localThis != null) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.bridgeChanged(localThis)
-            } catch (t: Throwable) {
-                Log.e(DDMS, t)
+            if (localThis != null) {
+                // we attempt to catch any exception so that a bad listener doesn't kill our thread
+                try {
+                    listener.bridgeChanged(localThis)
+                } catch (t: Throwable) {
+                    Log.e(DDMS, t)
+                }
             }
         }
     }
@@ -478,33 +505,47 @@ class AdbLibAndroidDebugBridge(
     override fun removeDebugBridgeChangeListener(
         listener: IDebugBridgeChangeListener?
     ) {
-        adbChangeEvents.removeDebugBridgeChangeListener(listener!!)
+        logUsage(AdbDelegateUsageTracker.Method.REMOVE_DEBUG_BRIDGE_CHANGE_LISTENER) {
+            adbChangeEvents.removeDebugBridgeChangeListener(listener!!)
+        }
     }
 
     override fun getDebugBridgeChangeListenerCount(): Int {
-        return adbChangeEvents.debugBridgeChangeListenerCount()
+        return logUsage(AdbDelegateUsageTracker.Method.GET_DEBUG_BRIDGE_CHANGE_LISTENER_COUNT) {
+            adbChangeEvents.debugBridgeChangeListenerCount()
+        }
     }
 
     override fun addDeviceChangeListener(
         listener: IDeviceChangeListener
     ) {
-        adbChangeEvents.addDeviceChangeListener(listener)
+        logUsage(AdbDelegateUsageTracker.Method.ADD_DEVICE_CHANGE_LISTENER) {
+            adbChangeEvents.addDeviceChangeListener(listener)
+        }
     }
 
     override fun removeDeviceChangeListener(listener: IDeviceChangeListener?) {
-        adbChangeEvents.removeDeviceChangeListener(listener!!)
+        logUsage(AdbDelegateUsageTracker.Method.REMOVE_DEVICE_CHANGE_LISTENER) {
+            adbChangeEvents.removeDeviceChangeListener(listener!!)
+        }
     }
 
     override fun getDeviceChangeListenerCount(): Int {
-        return adbChangeEvents.deviceChangeListenerCount()
+        return logUsage(AdbDelegateUsageTracker.Method.GET_DEVICE_CHANGE_LISTENER_COUNT) {
+            adbChangeEvents.deviceChangeListenerCount()
+        }
     }
 
     override fun addClientChangeListener(listener: IClientChangeListener?) {
-        adbChangeEvents.addClientChangeListener(listener!!)
+        logUsage(AdbDelegateUsageTracker.Method.ADD_CLIENT_CHANGE_LISTENER) {
+            adbChangeEvents.addClientChangeListener(listener!!)
+        }
     }
 
     override fun removeClientChangeListener(listener: IClientChangeListener?) {
-        adbChangeEvents.removeClientChangeListener(listener!!)
+        logUsage(AdbDelegateUsageTracker.Method.REMOVE_CLIENT_CHANGE_LISTENER) {
+            adbChangeEvents.removeClientChangeListener(listener!!)
+        }
     }
 
     override fun getiDeviceUsageTracker(): IDeviceUsageTracker? {
@@ -512,21 +553,29 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun deviceConnected(device: IDevice) {
-        adbChangeEvents.notifyDeviceConnected(device)
+        logUsage(AdbDelegateUsageTracker.Method.DEVICE_CONNECTED) {
+            adbChangeEvents.notifyDeviceConnected(device)
+        }
     }
 
     override fun deviceDisconnected(device: IDevice) {
-        adbChangeEvents.notifyDeviceDisconnected(device)
+        logUsage(AdbDelegateUsageTracker.Method.DEVICE_DISCONNECTED) {
+            adbChangeEvents.notifyDeviceDisconnected(device)
+        }
     }
 
     override fun deviceChanged(device: IDevice, changeMask: Int) {
-        // Notify the listeners
-        adbChangeEvents.notifyDeviceChanged(device, changeMask)
+        logUsage(AdbDelegateUsageTracker.Method.DEVICE_CHANGED) {
+            // Notify the listeners
+            adbChangeEvents.notifyDeviceChanged(device, changeMask)
+        }
     }
 
     override fun clientChanged(client: Client, changeMask: Int) {
-        // Notify the listeners
-        adbChangeEvents.notifyClientChanged(client, changeMask)
+        logUsage(AdbDelegateUsageTracker.Method.CLIENT_CHANGED) {
+            // Notify the listeners
+            adbChangeEvents.notifyClientChanged(client, changeMask)
+        }
     }
 
     override fun isUserManagedAdbMode(): Boolean {
@@ -625,7 +674,9 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun getAdbVersion(adbFile: File): ListenableFuture<AdbVersion> {
-        return getAdbVersion(adbFile.toPath())
+        return logUsage(AdbDelegateUsageTracker.Method.GET_ADB_VERSION) {
+            getAdbVersion(adbFile.toPath())
+        }
     }
 
     internal fun getAdbVersion(adbPath: Path): ListenableFuture<AdbVersion> {
@@ -675,25 +726,27 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun getRawDeviceList(): ListenableFuture<List<AdbDevice>> {
-        val config = adbServerConfiguration.value
-        val adbPath = config.adbPath
-        val envVars = config.envVars
+        return logUsage(AdbDelegateUsageTracker.Method.GET_RAW_DEVICE_LIST) {
+            val config = adbServerConfiguration.value
+            val adbPath = config.adbPath
+            val envVars = config.envVars
 
-        if (adbPath == null) {
-            return Futures.immediateFuture(emptyList())
+            if (adbPath == null) {
+                return@logUsage Futures.immediateFuture(emptyList())
+            }
+
+            session.scope.async {
+                val processResult =
+                    session.host.processRunner.runProcess(
+                        adbPath,
+                        listOf("devices", "-l"),
+                        envVars
+                    )
+                // The first line of the output is a header, and not a part of the device list. Skip it.
+                val devices = processResult.stdout.drop(1).mapNotNull { AdbDevice.parseAdbLine(it) }
+                devices
+            }.asListenableFuture()
         }
-
-        return session.scope.async {
-            val processResult =
-                session.host.processRunner.runProcess(
-                    adbPath,
-                    listOf("devices", "-l"),
-                    envVars
-                )
-            // The first line of the output is a header, and not a part of the device list. Skip it.
-            val devices = processResult.stdout.drop(1).mapNotNull { AdbDevice.parseAdbLine(it) }
-            devices
-        }.asListenableFuture()
     }
 
     private fun initOsLocationAndCheckVersion(osLocation: String?) {
@@ -845,13 +898,15 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun terminate() {
-        withLock {
-            if (currentAndroidDebugBridge != null) {
-                stopIDeviceManager()
-            }
+        logUsage(AdbDelegateUsageTracker.Method.TERMINATE) {
+            withLock {
+                if (currentAndroidDebugBridge != null) {
+                    stopIDeviceManager()
+                }
 
-            initialized = false
-            currentAndroidDebugBridge = null
+                initialized = false
+                currentAndroidDebugBridge = null
+            }
         }
     }
 
@@ -865,30 +920,38 @@ class AdbLibAndroidDebugBridge(
      * @return `true` if the method succeeds within the specified timeout.
      */
     override fun disconnectBridge(timeout: Long, unit: TimeUnit): Boolean {
-        withLock {
-            if (currentAndroidDebugBridge != null) {
-                if (!stop(timeout, unit)) {
-                    // We could not stop ADB. Assume we are still running.
-                    return false
+        return logUsage(AdbDelegateUsageTracker.Method.DISCONNECT_BRIDGE_2) {
+            withLock {
+                if (currentAndroidDebugBridge != null) {
+                    if (!stop(timeout, unit)) {
+                        // We could not stop ADB. Assume we are still running.
+                        return@logUsage false
+                    }
+                    // Success, store our local instance
+                    currentAndroidDebugBridge = null
                 }
-                // Success, store our local instance
-                currentAndroidDebugBridge = null
             }
+
+            // Notify the listeners of the change (outside of the lock to decrease the likelihood
+            // of deadlocks)
+            adbChangeEvents.notifyBridgeChanged(null)
+
+            true
         }
-
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        adbChangeEvents.notifyBridgeChanged(null)
-
-        return true
     }
 
     override fun hasInitialDeviceList(): Boolean {
-        return adblibCompatDeviceManager?.hasInitialDeviceList() == true
+        return logUsage(AdbDelegateUsageTracker.Method.HAS_INITIAL_DEVICE_LIST) {
+            adblibCompatDeviceManager?.hasInitialDeviceList() == true
+        }
     }
 
-    override fun getDevices(): Array<IDevice> = runBlocking {
-        adblibCompatDeviceManager?.devices?.toTypedArray() ?: emptyArray()
+    override fun getDevices(): Array<IDevice> {
+        return logUsage(AdbDelegateUsageTracker.Method.GET_DEVICES) {
+            runBlocking {
+                adblibCompatDeviceManager?.devices?.toTypedArray() ?: emptyArray()
+            }
+        }
     }
 
     override fun isConnected(): Boolean {
@@ -903,7 +966,9 @@ class AdbLibAndroidDebugBridge(
      */
     @Deprecated("This method may hang if ADB is not responding. Use #restart(long, TimeUnit) instead.")
     override fun restart(): Boolean {
-        return restart(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        return logUsage(AdbDelegateUsageTracker.Method.RESTART_1) {
+            restart(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        }
     }
 
     /**
@@ -912,61 +977,63 @@ class AdbLibAndroidDebugBridge(
      * @return true if success.
      */
     override fun restart(timeout: Long, unit: TimeUnit): Boolean {
-        if (isUserManagedAdbMode) {
-            Log.e(ADB, "Cannot restart adb when using user managed ADB server.")
-            return false
-        }
-
-        if (mAdbOsLocation == null) {
-            Log.e(
-                ADB,
-                "Cannot restart adb when AndroidDebugBridge is created without the location of"
-                        + " adb."
-            )
-            return false
-        }
-
-        if (sAdbServerPort == null) {
-            Log.e(
-                ADB,
-                "ADB server port for restarting AndroidDebugBridge is not set."
-            )
-            return false
-        }
-
-        if (!passedAdbServerVersionCheck) {
-            Log.logAndDisplay(
-                Log.LogLevel.ERROR,
-                ADB,
-                "Attempting to restart adb, but version check failed!"
-            )
-            return false
-        }
-
-        val rem = TimeoutRemainder(timeout, unit)
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        adbChangeEvents.notifyBridgeRestartInitiated()
-
-        val isSuccessful = withLock {
-            var success = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
-
-            if (success) {
-                success = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
+        return logUsage(AdbDelegateUsageTracker.Method.RESTART_2) {
+            if (isUserManagedAdbMode) {
+                Log.e(ADB, "Cannot restart adb when using user managed ADB server.")
+                return@logUsage false
             }
-            if (success && adblibCompatDeviceManager == null) {
-                // `sThis` is modified and accessed here from within a `withLock` block
-                checkNotNull(currentAndroidDebugBridge)
-                startIDeviceManager(currentAndroidDebugBridge!!)
+
+            if (mAdbOsLocation == null) {
+                Log.e(
+                    ADB,
+                    "Cannot restart adb when AndroidDebugBridge is created without the location of"
+                            + " adb."
+                )
+                return@logUsage false
             }
-            success
+
+            if (sAdbServerPort == null) {
+                Log.e(
+                    ADB,
+                    "ADB server port for restarting AndroidDebugBridge is not set."
+                )
+                return@logUsage false
+            }
+
+            if (!passedAdbServerVersionCheck) {
+                Log.logAndDisplay(
+                    Log.LogLevel.ERROR,
+                    ADB,
+                    "Attempting to restart adb, but version check failed!"
+                )
+                return@logUsage false
+            }
+
+            val rem = TimeoutRemainder(timeout, unit)
+            // Notify the listeners of the change (outside of the lock to decrease the likelihood
+            // of deadlocks)
+            adbChangeEvents.notifyBridgeRestartInitiated()
+
+            val isSuccessful = withLock {
+                var success = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
+
+                if (success) {
+                    success = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
+                }
+                if (success && adblibCompatDeviceManager == null) {
+                    // `sThis` is modified and accessed here from within a `withLock` block
+                    checkNotNull(currentAndroidDebugBridge)
+                    startIDeviceManager(currentAndroidDebugBridge!!)
+                }
+                success
+            }
+
+            // Notify the listeners of the change (outside of the lock to decrease the likelihood
+            // of deadlocks)
+            adbChangeEvents.notifyBridgeRestartCompleted(isSuccessful)
+
+            isSuccessful
         }
-
-        // Notify the listeners of the change (outside of the lock to decrease the likelihood
-        // of deadlocks)
-        adbChangeEvents.notifyBridgeRestartCompleted(isSuccessful)
-
-        return isSuccessful
     }
 
     override fun getCurrentAdbVersion(): AdbVersion? {
