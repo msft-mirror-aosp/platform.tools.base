@@ -37,4 +37,10 @@ def setup_intellij_platforms():
             sha256 = "b183b126de2cd457475eea184874b5da2fa33ba5ae2ff874bdc8c1d534156428",
             top_level_dir = "idea-IC-243.22562.218",
         ),
+        remote_platform(
+            name = "intellij_ce_2025_1",
+            url = "https://download.jetbrains.com/idea/ideaIC-251.23536.34.tar.gz",
+            sha256 = "fe3100203c8bd8aeedea574de88ccc8273fc3e7693c1b69c3e1e315abe22008e",
+            top_level_dir = "idea-IC-251.23536.34",
+        ),
     ])
