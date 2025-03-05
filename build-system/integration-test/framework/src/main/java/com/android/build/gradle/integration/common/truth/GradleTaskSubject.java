@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertAbout;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.truth.TaskStateList.TaskInfo;
+
 import com.google.common.truth.Fact;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
@@ -44,7 +45,7 @@ public class GradleTaskSubject extends Subject<GradleTaskSubject, TaskInfo> {
 
     @Override
     protected String actualCustomStringRepresentation() {
-        return actual().getTaskName();
+        return actual().taskName;
     }
 
     public void wasUpToDate() {
@@ -87,18 +88,18 @@ public class GradleTaskSubject extends Subject<GradleTaskSubject, TaskInfo> {
 
     public void ranBefore(String task) {
         TaskInfo taskInfo = actual();
-        TaskStateList taskStateList = taskInfo.getTaskStateList();
+        TaskStateList taskStateList = taskInfo.taskStateList;
 
-        if (taskStateList.getTaskIndex(taskInfo.getTaskName()) >= taskStateList.getTaskIndex(task)) {
+        if (taskStateList.getTaskIndex(taskInfo.taskName) >= taskStateList.getTaskIndex(task)) {
             fail("was executed before", task);
         }
     }
 
     public void ranAfter(String task) {
         TaskInfo taskInfo = actual();
-        TaskStateList taskStateList = taskInfo.getTaskStateList();
+        TaskStateList taskStateList = taskInfo.taskStateList;
 
-        if (taskStateList.getTaskIndex(taskInfo.getTaskName()) <= taskStateList.getTaskIndex(task)) {
+        if (taskStateList.getTaskIndex(taskInfo.taskName) <= taskStateList.getTaskIndex(task)) {
             fail("was executed after", task);
         }
     }

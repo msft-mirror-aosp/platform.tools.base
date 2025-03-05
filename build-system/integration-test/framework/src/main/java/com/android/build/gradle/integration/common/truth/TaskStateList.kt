@@ -13,39 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.integration.common.truth
 
-package com.android.build.gradle.integration.common.truth;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.profile.AnalyticsResourceManagerKt;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.wireless.android.sdk.stats.GradleTaskExecution.TaskState;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.gradle.tooling.events.ProgressEvent;
-import org.gradle.tooling.events.task.TaskFinishEvent;
-import org.gradle.tooling.events.task.TaskOperationResult;
+import com.android.build.gradle.internal.profile.getTaskState
+import com.google.common.base.Preconditions
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableMap
+import com.google.common.collect.ImmutableSet
+import com.google.wireless.android.sdk.stats.GradleTaskExecution
+import org.gradle.tooling.events.ProgressEvent
+import org.gradle.tooling.events.task.TaskFinishEvent
+import org.gradle.tooling.events.task.TaskOperationResult
+import java.util.*
+import java.util.regex.Pattern
 
 /**
  * List of the task state for a build.
  */
-public class TaskStateList {
-
-    /** State of a task during a build. These states are mutually exclusive. */
-    public enum ExecutionState {
+class TaskStateList(
+    progressEvents: List<ProgressEvent>,
+    gradleOutput: Scanner
+) {
+    /** State of a task during a build. These states are mutually exclusive.  */
+    enum class ExecutionState {
         UP_TO_DATE,
         FROM_CACHE,
         DID_WORK,
@@ -53,203 +43,159 @@ public class TaskStateList {
         FAILED
     }
 
-    public static final class TaskInfo {
-
-        @NonNull private final String taskName;
-        @NonNull private final ExecutionState executionState;
-        @NonNull private final TaskStateList taskStateList;
-
-        public TaskInfo(
-                @NonNull String taskName,
-                @NonNull ExecutionState executionState,
-                @NonNull TaskStateList taskStateList) {
-            this.taskName = taskName;
-            this.executionState = executionState;
-            this.taskStateList = taskStateList;
+    class TaskInfo(
+        @JvmField val taskName: String,
+        @JvmField @get:Suppress("unused") val executionState: ExecutionState,
+        @JvmField val taskStateList: TaskStateList
+    ) {
+        fun wasUpToDate(): Boolean {
+            return executionState == ExecutionState.UP_TO_DATE
         }
 
-        @NonNull
-        public String getTaskName() {
-            return taskName;
+        fun wasFromCache(): Boolean {
+            return executionState == ExecutionState.FROM_CACHE
         }
 
-        @SuppressWarnings("unused")
-        @NonNull
-        public ExecutionState getExecutionState() {
-            return executionState;
+        fun didWork(): Boolean {
+            return executionState == ExecutionState.DID_WORK
         }
 
-        public boolean wasUpToDate() {
-            return executionState == ExecutionState.UP_TO_DATE;
+        fun wasSkipped(): Boolean {
+            return executionState == ExecutionState.SKIPPED
         }
 
-        public boolean wasFromCache() {
-            return executionState == ExecutionState.FROM_CACHE;
-        }
-
-        public boolean didWork() {
-            return executionState == ExecutionState.DID_WORK;
-        }
-
-        public boolean wasSkipped() {
-            return executionState == ExecutionState.SKIPPED;
-        }
-
-        public boolean failed() {
-            return executionState == ExecutionState.FAILED;
-        }
-
-        @NonNull
-        TaskStateList getTaskStateList() {
-            return taskStateList;
+        fun failed(): Boolean {
+            return executionState == ExecutionState.FAILED
         }
     }
 
-    public static final Pattern NO_ACTIONS_PATTERN =
-            Pattern.compile("Skipping task '(.*)' as it has no actions.");
+    private val taskList: List<String>
+    private val taskInfoMap: Map<String, TaskInfo>
+    private val taskStateMap: Map<ExecutionState, Set<String>>
 
-    @NonNull private final ImmutableList<String> taskList;
-    @NonNull private final ImmutableMap<String, TaskInfo> taskInfoMap;
-    @NonNull private final ImmutableMap<ExecutionState, ImmutableSet<String>> taskStateMap;
-
-    public TaskStateList(
-            @NonNull List<ProgressEvent> progressEvents, @NonNull Scanner gradleOutput) {
-        ImmutableList.Builder<String> taskListBuilder = ImmutableList.builder();
-        Map<ExecutionState, Set<String>> taskMap = new EnumMap<>(ExecutionState.class);
-        for (ExecutionState state : ExecutionState.values()) {
-            taskMap.put(state, new HashSet<>());
+    init {
+        val taskListBuilder = ImmutableList.builder<String>()
+        val taskMap: MutableMap<ExecutionState, MutableSet<String>> = EnumMap(
+            ExecutionState::class.java
+        )
+        for (state in ExecutionState.entries) {
+            taskMap.put(state, HashSet<String>())
         }
 
-        for (ProgressEvent progressEvent : progressEvents) {
-            if (progressEvent instanceof TaskFinishEvent) {
-                String task = progressEvent.getDescriptor().getName();
-                taskListBuilder.add(task);
-                ExecutionState taskState =
-                        getTaskState(((TaskFinishEvent) progressEvent).getResult());
-                taskMap.get(taskState).add(task);
+        for (progressEvent in progressEvents) {
+            if (progressEvent is TaskFinishEvent) {
+                val task = progressEvent.getDescriptor().getName()
+                taskListBuilder.add(task)
+                val taskState: ExecutionState =
+                    getTaskState(progressEvent.getResult())
+                taskMap[taskState]!!.add(task)
             }
         }
 
-        taskList = taskListBuilder.build();
+        taskList = taskListBuilder.build()
 
         // Among the tasks that did work, detect those that were skipped and correct their state to
         // SKIPPED. (For "anchor" tasks such as "build", "check", Gradle does not report them with
         // TaskSkippedResult, so we need to detect them in the Gradle output.)
-        ImmutableSet<String> noActionsTasks =
-                getTasksByPatternFromGradleOutput(gradleOutput, NO_ACTIONS_PATTERN);
-        Preconditions.checkState(taskList.containsAll(noActionsTasks));
-        for (String noActionTask : noActionsTasks) {
-            if (taskMap.get(ExecutionState.DID_WORK).contains(noActionTask)) {
-                taskMap.get(ExecutionState.DID_WORK).remove(noActionTask);
-                taskMap.get(ExecutionState.SKIPPED).add(noActionTask);
+        val noActionsTasks: ImmutableSet<String> =
+            getTasksByPatternFromGradleOutput(gradleOutput, NO_ACTIONS_PATTERN)
+        Preconditions.checkState(taskList.containsAll(noActionsTasks))
+        for (noActionTask in noActionsTasks) {
+            if (taskMap[ExecutionState.DID_WORK]!!.contains(noActionTask!!)) {
+                taskMap[ExecutionState.DID_WORK]!!.remove(noActionTask)
+                taskMap[ExecutionState.SKIPPED]!!.add(noActionTask)
             }
         }
 
-        ImmutableMap.Builder<String, TaskInfo> taskInfoMapBuilder = ImmutableMap.builder();
-        for (ExecutionState state : taskMap.keySet()) {
-            for (String task : taskMap.get(state)) {
-                taskInfoMapBuilder.put(task, new TaskInfo(task, state, this));
+        val taskInfoMapBuilder = ImmutableMap.builder<String, TaskInfo>()
+        for (state in taskMap.keys) {
+            for (task in taskMap[state]!!) {
+                taskInfoMapBuilder.put(task, TaskInfo(task, state, this))
             }
         }
-        taskInfoMap = taskInfoMapBuilder.build();
+        taskInfoMap = taskInfoMapBuilder.build()
 
-        ImmutableMap.Builder<ExecutionState, ImmutableSet<String>> taskStateMapBuilder =
-                ImmutableMap.builder();
-        for (ExecutionState state : ExecutionState.values()) {
-            taskStateMapBuilder.put(state, ImmutableSet.copyOf(taskMap.get(state)));
+        val taskStateMapBuilder =
+            ImmutableMap.builder<ExecutionState?, Set<String>>()
+        for (state in ExecutionState.entries) {
+            taskStateMapBuilder.put(state, ImmutableSet.copyOf<String>(taskMap[state]))
         }
-        taskStateMap = taskStateMapBuilder.build();
+        taskStateMap = taskStateMapBuilder.build()
     }
 
-    @NonNull
-    private static ExecutionState getTaskState(@NonNull TaskOperationResult taskOperationResult) {
-        TaskState taskState = AnalyticsResourceManagerKt.getTaskState(taskOperationResult);
-        switch (taskState) {
-            case UP_TO_DATE:
-                return ExecutionState.UP_TO_DATE;
-            case FROM_CACHE:
-                return ExecutionState.FROM_CACHE;
-            case DID_WORK_INCREMENTAL:
-            case DID_WORK_NON_INCREMENTAL:
-                return ExecutionState.DID_WORK;
-            case SKIPPED:
-                return ExecutionState.SKIPPED;
-            case FAILED:
-                return ExecutionState.FAILED;
-        }
-        throw new IllegalStateException("Task state is not yet handled: " + taskState);
+    fun findTask(task: String): TaskInfo? {
+        return taskInfoMap[task]
     }
 
-    @NonNull
-    private static ImmutableSet<String> getTasksByPatternFromGradleOutput(
-            @NonNull Scanner gradleOutput, @NonNull Pattern pattern) {
-        ImmutableSet.Builder<String> result = ImmutableSet.builder();
-        try {
-            while (gradleOutput.hasNextLine()) {
-                Matcher matcher = pattern.matcher(gradleOutput.nextLine());
-                if (matcher.find()) {
-                    result.add(matcher.group(1));
-                }
+    fun getTask(task: String): TaskInfo {
+        return Preconditions.checkNotNull<TaskInfo>(taskInfoMap[task], "Task %s not found", task)
+    }
+
+    val tasks: List<String>
+        get() = taskList
+
+    val taskStates: Map<String, ExecutionState>
+        get() {
+            val taskStates: MutableMap<String, ExecutionState> = HashMap<String, ExecutionState>()
+            for (entry in taskInfoMap.entries) {
+                taskStates.put(entry.key, entry.value.executionState)
             }
-        } finally {
-            gradleOutput.close();
+            return taskStates
         }
-        return result.build();
-    }
 
-    @Nullable
-    public TaskInfo findTask(@NonNull String task) {
-        return taskInfoMap.get(task);
-    }
+    val upToDateTasks: Set<String>
+        get() = taskStateMap[ExecutionState.UP_TO_DATE]!!
 
-    @NonNull
-    public TaskInfo getTask(@NonNull String task) {
-        return checkNotNull(taskInfoMap.get(task), "Task %s not found", task);
-    }
+    val fromCacheTasks: Set<String>
+        get() = taskStateMap[ExecutionState.FROM_CACHE]!!
 
-    @NonNull
-    public List<String> getTasks() {
-        return taskList;
-    }
+    val didWorkTasks: Set<String>
+        get() = taskStateMap[ExecutionState.DID_WORK]!!
 
-    @NonNull
-    public Map<String, ExecutionState> getTaskStates() {
-        Map<String, ExecutionState> taskStates = new HashMap<>();
-        for (Map.Entry<String, TaskInfo> entry : taskInfoMap.entrySet()) {
-            taskStates.put(entry.getKey(), entry.getValue().getExecutionState());
-        }
-        return taskStates;
-    }
+    val skippedTasks: Set<String>
+        get() = taskStateMap[ExecutionState.SKIPPED]!!
 
-    @NonNull
-    public Set<String> getUpToDateTasks() {
-        return taskStateMap.get(ExecutionState.UP_TO_DATE);
-    }
+    val failedTasks: Set<String>
+        get() = taskStateMap[ExecutionState.FAILED]!!
 
-    @NonNull
-    public Set<String> getFromCacheTasks() {
-        return taskStateMap.get(ExecutionState.FROM_CACHE);
-    }
-
-    @NonNull
-    public Set<String> getDidWorkTasks() {
-        return taskStateMap.get(ExecutionState.DID_WORK);
-    }
-
-    @NonNull
-    public Set<String> getSkippedTasks() {
-        return taskStateMap.get(ExecutionState.SKIPPED);
-    }
-
-    @NonNull
-    public Set<String> getFailedTasks() {
-        return taskStateMap.get(ExecutionState.FAILED);
-    }
-
-    int getTaskIndex(String taskName) {
+    fun getTaskIndex(taskName: String): Int {
         Preconditions.checkArgument(
-                taskName.startsWith(":"), "Task name (\"" + taskName + "\") must start with ':'");
-        Preconditions.checkArgument(taskList.contains(taskName), "Task %s not run", taskName);
-        return taskList.indexOf(taskName);
+            taskName.startsWith(":"), "Task name (\"" + taskName + "\") must start with ':'"
+        )
+        Preconditions.checkArgument(taskList.contains(taskName), "Task %s not run", taskName)
+        return taskList.indexOf(taskName)
+    }
+
+    companion object {
+        val NO_ACTIONS_PATTERN: Pattern = Pattern.compile("Skipping task '(.*)' as it has no actions.")
+
+        private fun getTaskState(taskOperationResult: TaskOperationResult): ExecutionState {
+            val taskState = taskOperationResult.getTaskState()
+            return when (taskState) {
+                GradleTaskExecution.TaskState.UP_TO_DATE -> ExecutionState.UP_TO_DATE
+                GradleTaskExecution.TaskState.FROM_CACHE -> ExecutionState.FROM_CACHE
+                GradleTaskExecution.TaskState.DID_WORK_INCREMENTAL, GradleTaskExecution.TaskState.DID_WORK_NON_INCREMENTAL -> ExecutionState.DID_WORK
+                GradleTaskExecution.TaskState.SKIPPED -> ExecutionState.SKIPPED
+                GradleTaskExecution.TaskState.FAILED -> ExecutionState.FAILED
+                else -> throw IllegalStateException("Task state is not yet handled: " + taskState)
+            }
+        }
+
+        private fun getTasksByPatternFromGradleOutput(
+            gradleOutput: Scanner, pattern: Pattern
+        ): ImmutableSet<String> {
+            val result = ImmutableSet.builder<String>()
+            try {
+                while (gradleOutput.hasNextLine()) {
+                    val matcher = pattern.matcher(gradleOutput.nextLine())
+                    if (matcher.find()) {
+                        result.add(matcher.group(1))
+                    }
+                }
+            } finally {
+                gradleOutput.close()
+            }
+            return result.build()
+        }
     }
 }

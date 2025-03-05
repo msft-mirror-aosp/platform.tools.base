@@ -63,7 +63,7 @@ public class BasicTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(), "android.buildFeatures.renderScript = true");
         GradleBuildResult result = project.execute("compileDebugRenderscript");
-        assertThat(result.getTask(":compileDebugRenderscript").getExecutionState().toString())
+        assertThat(result.getTask(":compileDebugRenderscript").executionState.toString())
                 .isEqualTo("SKIPPED");
     }
 }
