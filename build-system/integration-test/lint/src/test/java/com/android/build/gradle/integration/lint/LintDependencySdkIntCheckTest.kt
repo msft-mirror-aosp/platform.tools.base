@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.ANDROIDX_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.testutils.truth.PathSubject.assertThat
@@ -121,8 +120,9 @@ class LintDependencySdkIntCheckTest {
     fun testDependencySdkIntCheck() {
         // First check that we get a NewApi lint error, as expected, when isOK() only checks that
         // the API level is at least 25.
-        getExecutor().run(":app:lintDebug")
-        assertThat(project.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
+        getExecutor().run(":app:lintDebug").apply {
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+        }
         val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
         assertThat(reportFile).exists()
         assertThat(reportFile).contains("NewApi")
@@ -130,8 +130,9 @@ class LintDependencySdkIntCheckTest {
         // Then change isOk() to check that the API level is at least 26, which should result in no
         // NewApi lint error.
         TestFileUtils.searchAndReplace(libSourceFile, "25", "26")
-        getExecutor().run(":app:lintDebug")
-        assertThat(project.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
+        getExecutor().run(":app:lintDebug").apply {
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+        }
         assertThat(reportFile).exists()
         assertThat(reportFile).doesNotContain("NewApi")
     }

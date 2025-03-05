@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.library;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR;
 import static com.android.testutils.truth.PathSubject.assertThat;
 import static com.android.testutils.truth.ZipFileSubject.assertThat;
@@ -27,12 +26,15 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
+
 import com.google.common.truth.Truth;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /** Test published intermediate artifacts. */
 public class LibraryIntermediateArtifactPublishingTest {
@@ -56,11 +58,15 @@ public class LibraryIntermediateArtifactPublishingTest {
 
     @Test
     public void testFullJarUpToDate() throws IOException, InterruptedException {
-        GradleBuildResult result = project.executor().run(":lib:createFullJarDebug");
-        assertThat(result.getTask(":lib:createFullJarDebug")).didWork();
+        project.executor()
+                .run(":lib:createFullJarDebug")
+                .assertTask(":lib:createFullJarDebug")
+                .didWork();
 
-        result = project.executor().run(":lib:createFullJarDebug");
-        assertThat(result.getTask(":lib:createFullJarDebug")).wasUpToDate();
+        project.executor()
+                .run(":lib:createFullJarDebug")
+                .assertTask(":lib:createFullJarDebug")
+                .wasUpToDate();
     }
 
     @Test
@@ -83,14 +89,15 @@ public class LibraryIntermediateArtifactPublishingTest {
                         + "    applicationVariants.all { v ->\n"
                         + "        if (v.name == 'debug') {\n"
                         + "            project.tasks.create('verify', VerifyTask) {\n"
-                        + "                def artifactType = Attribute.of('artifactType', String)\n"
-                        + "                fullJar = v.compileConfiguration.incoming.artifactView { attributes { it.attribute(artifactType, 'jar') }}.files\n"
+                        + "                def artifactType = Attribute.of('artifactType',"
+                        + " String)\n"
+                        + "                fullJar = v.compileConfiguration.incoming.artifactView {"
+                        + " attributes { it.attribute(artifactType, 'jar') }}.files\n"
                         + "            }\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");
-        GradleBuildResult result = project.executor().run(":app:verify");
-        assertThat(result.getTask(":lib:createFullJarDebug")).didWork();
+        project.executor().run(":app:verify").assertTask(":lib:createFullJarDebug").didWork();
         File fullJar = getJar("full.jar");
         assertThat(
                 fullJar,

@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.IntegerOption
@@ -55,8 +54,9 @@ class R8TaskTest {
     fun testCheckDuplicateClassesTaskDidWork() {
         val build = rule.build
 
-        val buildResult = build.executor.run(":app:minifyReleaseWithR8")
-        assertThat(buildResult.getTask(":app:checkReleaseDuplicateClasses")).didWork()
+        build.executor.run(":app:minifyReleaseWithR8").apply {
+            assertTask(":app:checkReleaseDuplicateClasses").didWork()
+        }
     }
 
     @Test
@@ -208,8 +208,9 @@ class R8TaskTest {
             }
         }
 
-        val result = build.executor.run(":app:assembleRelease")
-        assertThat(result.getTask(":app:minifyReleaseWithR8")).didWork()
+        build.executor.run(":app:assembleRelease").apply {
+            assertTask(":app:minifyReleaseWithR8").didWork()
+        }
     }
 
     /** Regression test for b/380110863. */

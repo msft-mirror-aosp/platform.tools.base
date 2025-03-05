@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
@@ -64,12 +63,14 @@ class CoreLibraryDesugarCachingTest {
             .run("clean", ASSEMBLE_RELEASE)
         assertThat(buildCacheDir).exists()
 
-        val result = executor
+        executor
             .withArgument("--build-cache")
             .run("clean", ASSEMBLE_RELEASE)
-        assertThat(result.getTask(L8_DEX_DESUGAR_LIB)).wasFromCache()
-        assertThat(result.getTask(MERGE_DEX)).wasFromCache()
-        assertThat(result.getTask(DEX_BUILDER)).wasFromCache()
+            .apply {
+                assertTask(L8_DEX_DESUGAR_LIB).wasFromCache()
+                assertTask(MERGE_DEX).wasFromCache()
+                assertTask(DEX_BUILDER).wasFromCache()
+            }
     }
 
     private fun configureProject(project: GradleTestProject) {

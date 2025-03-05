@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -208,8 +207,8 @@ class MergeJavaResourceTaskTest {
         assertThat(newResourcesDir).doesNotExist()
         assertThat(newResourcesDir.mkdirs()).isTrue()
         project.executor().run(":mergeDebugJavaResource").run {
-            assertThat(getTask(":processDebugJavaRes")).didWork()
-            assertThat(getTask(":mergeDebugJavaResource")).didWork()
+            assertTask(":processDebugJavaRes").didWork()
+            assertTask(":mergeDebugJavaResource").didWork()
         }
     }
 

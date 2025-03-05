@@ -18,8 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -51,16 +49,18 @@ class LintGlobalRuleJarsTest {
         val lintReportTaskName = ":lintReportDebug"
         val lintAnalyzeTaskName = ":lintAnalyzeDebug"
         executor.run(lintTaskName)
-        executor.run(lintTaskName).also { result ->
-            assertThat(result.getTask(lintReportTaskName)).wasUpToDate()
-            assertThat(result.getTask(lintAnalyzeTaskName)).wasUpToDate()
+        executor.run(lintTaskName).apply {
+            assertTask(lintReportTaskName).wasUpToDate()
+            assertTask(lintAnalyzeTaskName).wasUpToDate()
         }
 
         FileUtils.createFile(lintJar, "FOO_BAR")
-        executor.run(lintTaskName).also { result ->
-            assertThat(result.getTask(lintReportTaskName)).didWork()
-            assertThat(result.getTask(lintAnalyzeTaskName)).didWork()
-            assertThat(result.stdout).doesNotContain("this will stop working soon.")
+        executor.run(lintTaskName).apply {
+            assertTask(lintReportTaskName).didWork()
+            assertTask(lintAnalyzeTaskName).didWork()
+            assertStdOut {
+                doesNotContain("this will stop working soon.")
+            }
         }
     }
 }

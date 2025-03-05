@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
@@ -121,8 +120,9 @@ class DataBindingMultiModuleTest(useAndroidX: Boolean) {
             "android:text=\"@{inheritedInput}\"",
             "android:text=\"@{inheritedInput + inheritedInput}\""
         )
-        val result = executor().run(APP_COMPILE_JAVA_TASK)
-        GradleTaskSubject.assertThat(result.getTask(APP_COMPILE_JAVA_TASK)).wasUpToDate()
+        executor().run(APP_COMPILE_JAVA_TASK).apply {
+            assertTask(APP_COMPILE_JAVA_TASK).wasUpToDate()
+        }
     }
 
     @Test
@@ -134,9 +134,10 @@ class DataBindingMultiModuleTest(useAndroidX: Boolean) {
             "android:text=\"@{inheritedInput}\"",
             "app:setMyText=\"@{inheritedInput}\""
         )
-        val result = executor().run(APP_COMPILE_JAVA_TASK)
-        GradleTaskSubject.assertThat(result.getTask(LIBRARY_COMPILE_JAVA_TASK)).didWork()
-        GradleTaskSubject.assertThat(result.getTask(APP_COMPILE_JAVA_TASK)).wasUpToDate()
+        executor().run(APP_COMPILE_JAVA_TASK).apply {
+            assertTask(LIBRARY_COMPILE_JAVA_TASK).didWork()
+            assertTask(APP_COMPILE_JAVA_TASK).wasUpToDate()
+        }
     }
 
     @Test
@@ -147,9 +148,10 @@ class DataBindingMultiModuleTest(useAndroidX: Boolean) {
             "public class NewAdapter {",
             "public class //dummy comment\nNewAdapter {"
         )
-        val result = executor().run(APP_COMPILE_JAVA_TASK)
-        GradleTaskSubject.assertThat(result.getTask(LIBRARY_COMPILE_JAVA_TASK)).wasUpToDate()
-        GradleTaskSubject.assertThat(result.getTask(APP_COMPILE_JAVA_TASK)).wasUpToDate()
+        executor().run(APP_COMPILE_JAVA_TASK).apply {
+            assertTask(LIBRARY_COMPILE_JAVA_TASK).wasUpToDate()
+            assertTask(APP_COMPILE_JAVA_TASK).wasUpToDate()
+        }
     }
 
     private fun executor(): GradleTaskExecutor {

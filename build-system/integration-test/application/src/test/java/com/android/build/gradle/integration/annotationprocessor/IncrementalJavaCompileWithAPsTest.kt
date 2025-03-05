@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION
 import com.android.build.gradle.integration.common.fixture.TestProject
 import com.android.build.gradle.integration.common.fixture.app.BuildFileBuilder
@@ -30,12 +29,12 @@ import com.android.build.gradle.integration.common.fixture.app.ManifestFileBuild
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -547,11 +546,11 @@ class IncrementalJavaCompileWithAPsTest(
         // Check the tasks' status. Checking this once in this test is good enough, the other tests
         // don't need to repeat this check.
         if (withKapt) {
-            assertThat(fullBuildResult.getTask(KAPT_TASK)).didWork()
+            fullBuildResult.assertTask(KAPT_TASK).didWork()
         } else {
-            assertThat(fullBuildResult.findTask(KAPT_TASK)).isNull()
+            Truth.assertThat(fullBuildResult.findTask(KAPT_TASK)).isNull()
         }
-        assertThat(fullBuildResult.getTask(COMPILE_TASK)).didWork()
+        fullBuildResult.assertTask(COMPILE_TASK).didWork()
 
         // Change an original source file that has annotation 1
         TestFileUtils.searchAndReplace(
@@ -626,11 +625,11 @@ class IncrementalJavaCompileWithAPsTest(
 
         // Check the tasks' status
         if (withKapt) {
-            assertThat(result.getTask(KAPT_TASK)).didWork()
+            result.assertTask(KAPT_TASK).didWork()
         } else {
-            assertThat(result.findTask(KAPT_TASK)).isNull()
+            Truth.assertThat(result.findTask(KAPT_TASK)).isNull()
         }
-        assertThat(result.getTask(COMPILE_TASK)).didWork()
+        result.assertTask(COMPILE_TASK).didWork()
     }
 
     @Test
@@ -714,18 +713,18 @@ class IncrementalJavaCompileWithAPsTest(
 
         // Check the tasks' status
         if (withKapt) {
-            assertThat(result.getTask(KAPT_TASK)).didWork()
+            result.assertTask(KAPT_TASK).didWork()
         } else {
-            assertThat(result.findTask(KAPT_TASK)).isNull()
+            Truth.assertThat(result.findTask(KAPT_TASK)).isNull()
         }
         if (incrementalMode) {
             if (annotationProcessingByJavaCompile) {
-                assertThat(result.getTask(COMPILE_TASK)).didWork()
+                result.assertTask(COMPILE_TASK).didWork()
             } else {
-                assertThat(result.getTask(COMPILE_TASK)).wasUpToDate()
+                result.assertTask(COMPILE_TASK).wasUpToDate()
             }
         } else {
-            assertThat(result.getTask(COMPILE_TASK)).didWork()
+            result.assertTask(COMPILE_TASK).didWork()
         }
     }
 
@@ -793,10 +792,10 @@ class IncrementalJavaCompileWithAPsTest(
 
         // Check the tasks' status
         if (withKapt) {
-            assertThat(result.getTask(KAPT_TASK)).wasUpToDate()
+            result.assertTask(KAPT_TASK).wasUpToDate()
         } else {
-            assertThat(result.findTask(KAPT_TASK)).isNull()
+            Truth.assertThat(result.findTask(KAPT_TASK)).isNull()
         }
-        assertThat(result.getTask(COMPILE_TASK)).didWork()
+        result.assertTask(COMPILE_TASK).didWork()
     }
 }

@@ -20,7 +20,6 @@ import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.generators.ResValueGenerator
 import com.android.testutils.truth.PathSubject.assertThat
@@ -119,7 +118,7 @@ class GenerateResValuesIntegrationTest {
         // Run incremental build.
         val incrementalReleaseBuild = executor.run(":app:mergeReleaseResources")
 
-        assertThat(incrementalReleaseBuild.getTask(":app:mergeReleaseResources")).didWork()
+        incrementalReleaseBuild.assertTask(":app:mergeReleaseResources").didWork()
 
         // Check generated resValues and merged.dir values.xml have been updated.
         assertThat(generatedResValueReleaseXml).contentWithUnixLineSeparatorsIsExactly(
@@ -148,7 +147,8 @@ class GenerateResValuesIntegrationTest {
     fun testMergeResourcesUpToDateWhenNoResValueChange() {
         val executor = project.executor()
         executor.run(":app:mergeReleaseResources")
-        val secondBuild = executor.run(":app:mergeReleaseResources")
-        assertThat(secondBuild.getTask(":app:mergeReleaseResources")).wasUpToDate()
+        executor.run(":app:mergeReleaseResources")
+            .assertTask(":app:mergeReleaseResources")
+            .wasUpToDate()
     }
 }

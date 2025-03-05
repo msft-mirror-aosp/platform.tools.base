@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,15 +31,15 @@ class LintSystemPropertiesTest {
 
     @Test
     fun checkLintNotUpToDate() {
-        project.executor().run(":lintDebug").also { result ->
-            assertThat(result.getTask(":lintAnalyzeDebug")).didWork()
-            assertThat(result.getTask(":lintReportDebug")).didWork()
+        project.executor().run(":lintDebug").apply {
+            assertTask(":lintAnalyzeDebug").didWork()
+            assertTask(":lintReportDebug").didWork()
         }
 
         // check that the lint tasks are up-to-date if nothing changes
-        project.executor().run(":lintDebug").also { result ->
-            assertThat(result.getTask(":lintAnalyzeDebug")).wasUpToDate()
-            assertThat(result.getTask(":lintReportDebug")).wasUpToDate()
+        project.executor().run(":lintDebug").apply {
+            assertTask(":lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lintReportDebug").wasUpToDate()
         }
 
         val systemProperties =
@@ -57,13 +56,9 @@ class LintSystemPropertiesTest {
             project.executor()
                 .withArgument("-D$systemProperty=foo")
                 .run(":lintDebug")
-                .also { result ->
-                    assertThat(result.getTask(":lintAnalyzeDebug"))
-                        .named(":lintAnalyzeDebug with -D$systemProperty=foo")
-                        .didWork()
-                    assertThat(result.getTask(":lintReportDebug"))
-                        .named(":lintReportDebug with -D$systemProperty=foo")
-                        .didWork()
+                .apply {
+                    assertTask(":lintAnalyzeDebug", withInfo = "-D$systemProperty=foo").didWork()
+                    assertTask(":lintReportDebug", withInfo = "-D$systemProperty=foo").didWork()
                 }
 
             // run build without any system properties before testing the next one
@@ -84,13 +79,9 @@ class LintSystemPropertiesTest {
             project.executor()
                 .withArgument("-D$systemProperty=foo")
                 .run(":lintDebug")
-                .also { result ->
-                    assertThat(result.getTask(":lintAnalyzeDebug"))
-                        .named(":lintAnalyzeDebug with -D$systemProperty=foo")
-                        .wasUpToDate()
-                    assertThat(result.getTask(":lintReportDebug"))
-                        .named(":lintReportDebug with -D$systemProperty=foo")
-                        .didWork()
+                .apply {
+                    assertTask(":lintAnalyzeDebug", withInfo = "-D$systemProperty=foo").wasUpToDate()
+                    assertTask(":lintReportDebug", withInfo = "-D$systemProperty=foo").didWork()
                 }
 
             // run build without any system properties before testing the next one

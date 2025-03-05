@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat;
 import static com.android.testutils.truth.DexSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -34,8 +34,14 @@ import com.android.testutils.TestUtils;
 import com.android.testutils.apk.Dex;
 import com.android.testutils.apk.Zip;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -46,9 +52,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Tests for incremental dexing using dex archives. */
 @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -164,9 +167,9 @@ public class DexArchivesTest {
                 project.executor()
                         .run("assembleRelease");
 
-        assertThat(result.getTask(":dexBuilderRelease")).didWork();
-        assertThat(result.getTask(":mergeDexRelease")).didWork();
-        assertThat(result.getTask(":mergeExtDexRelease")).didWork();
+        result.assertTask(":dexBuilderRelease").didWork();
+        result.assertTask(":mergeDexRelease").didWork();
+        result.assertTask(":mergeExtDexRelease").didWork();
     }
 
     /** Regression test for http://b/68144982. */
@@ -176,15 +179,18 @@ public class DexArchivesTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "\n"
-                        + "android.defaultConfig.minSdkVersion=10\n"
-                        + "dependencies { implementation ('org.jdeferred:jdeferred-android-aar:1.2.2') {   transitive = false } }");
+                    + "android.defaultConfig.minSdkVersion=10\n"
+                    + "dependencies { implementation ('org.jdeferred:jdeferred-android-aar:1.2.2')"
+                    + " {   transitive = false } }");
 
         project.executor().run("assembleDebug");
 
         // Minor version update
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
-                "\ndependencies { implementation ('org.jdeferred:jdeferred-android-aar:1.2.3') {   transitive = false } }");
+                "\n"
+                    + "dependencies { implementation ('org.jdeferred:jdeferred-android-aar:1.2.3')"
+                    + " {   transitive = false } }");
         project.executor().run("assembleDebug");
     }
 
@@ -201,9 +207,9 @@ public class DexArchivesTest {
                         "debug/dexBuilderDebug/out");
         assertThat(inputJarHashes).exists();
         executor.run("clean");
-        GradleBuildResult result = executor.run("assembleDebug");
 
-        assertThat(result.getTask(":dexBuilderDebug")).wasFromCache();
+        GradleBuildResult result = executor.run("assembleDebug");
+        result.assertTask(":dexBuilderDebug").wasFromCache();
         assertThat(inputJarHashes).doesNotExist();
     }
 
@@ -226,7 +232,7 @@ public class DexArchivesTest {
         GradleBuildResult result =
                 executor.with(IntegerOption.DEXING_NUMBER_OF_BUCKETS, 2).run("assembleDebug");
         assertThat(previousRunDexBuckets).doesNotExist();
-        assertThat(result.getTask(":dexBuilderDebug")).wasFromCache();
+        result.assertTask(":dexBuilderDebug").wasFromCache();
 
         // 3rd build adds a source file
         if (!project.getIntermediateFile(

@@ -16,16 +16,12 @@
 
 package com.android.build.gradle.integration.lint;
 
-import static com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
-import com.android.build.gradle.integration.common.truth.TaskStateList;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
 import org.junit.Before;
@@ -34,7 +30,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 
 /** Checks if fatal lint errors stop the release build. */
 public class LintVitalTest {
@@ -84,30 +79,31 @@ public class LintVitalTest {
     public void runningLintSkipsLintVital() throws Exception {
         GradleBuildResult result =
                 project.executor().expectFailure().run("lintVitalRelease", "lint");
-        TaskStateList.TaskInfo task = result.findTask(":lintVitalRelease");
-        if (task != null) {
-            // Sometimes the task is missing completely, not SKIPPED
-            // This was causing test flakes: see b/182285100
-            TruthHelper.assertThat(task).wasSkipped();
-        }
+        result.assertStdErr(
+                stderr -> {
+                    stderr.contains("Lint found errors in the project; aborting build.");
+                });
+
+        result.assertTask(":lintVitalRelease").wasSkipped();
+
         // We make this assertion to ensure that lint is actually run and runs as expected. Without
         // this, it's possible that we break the execution in some other way and the test still
         // passes.
-        assertThat(result.getTask(":lintDebug")).failed();
+        result.assertTask(":lintDebug").failed();
     }
 
     @Test
     public void fatalLintCheckFailsBuild() {
         GradleBuildResult result = project.executor().expectFailure().run("assembleRelease");
-        TruthHelper.assertThat(result.getFailureMessage()).contains("fatal errors");
-        TruthHelper.assertThat(Objects.requireNonNull(result.findTask(":lintVitalAnalyzeRelease")))
-                .didWork();
-        TruthHelper.assertThat(result.getTask(":lintVitalRelease")).failed();
-        TruthHelper.assertThat(result.getTask(":lintVitalReportRelease")).didWork();
-        TruthHelper.assertThat(result.getFailedTasks()).doesNotContain(":lintVitalReportRelease");
+
+        result.assertFailureMessage().contains("fatal errors");
+        result.assertTask(":lintVitalAnalyzeRelease").didWork();
+
+        result.assertTask(":lintVitalRelease").failed();
+        result.assertTask(":lintVitalReportRelease").didWork();
         result = project.executor().expectFailure().run("bundleRelease"); // b/383661626
-        TruthHelper.assertThat(result.getFailureMessage()).contains("fatal errors");
-        TruthHelper.assertThat(result.getTask(":lintVitalRelease")).failed();
+        result.assertFailureMessage().contains("fatal errors");
+        result.assertTask(":lintVitalRelease").failed();
     }
 
     @Test

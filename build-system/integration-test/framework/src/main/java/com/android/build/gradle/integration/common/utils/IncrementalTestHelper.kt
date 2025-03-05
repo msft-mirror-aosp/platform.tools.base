@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.utils
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TaskStateList
@@ -153,7 +154,7 @@ class IncrementalTestHelper(
 
                 return IncrementalTestHelperAfterIncrementalBuild(
                     incrementalTestHelper,
-                    result.taskStates
+                    result
                 )
             }
         }
@@ -161,7 +162,7 @@ class IncrementalTestHelper(
 
     class IncrementalTestHelperAfterIncrementalBuild(
         private val incrementalTestHelper: IncrementalTestHelper,
-        private val taskStates: Map<String, TaskStateList.ExecutionState>
+        private val buildResult: GradleBuildResult
     ) {
 
         /**
@@ -175,7 +176,7 @@ class IncrementalTestHelper(
             expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
             exhaustive: Boolean = false
         ): IncrementalTestHelperAfterIncrementalBuild {
-            TaskStateAssertionHelper(taskStates).assertTaskStates(expectedTaskStates, exhaustive)
+            TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
             return this
         }
 

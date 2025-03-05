@@ -103,7 +103,7 @@ class CleanBuildTaskStatesTest {
     @Test
     fun `check task states`() {
         val result = project.executor().run("clean", "assembleDebug", "testDebugUnitTest")
-        TaskStateAssertionHelper(result.taskStates)
+        TaskStateAssertionHelper(result)
             .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
     }
 }

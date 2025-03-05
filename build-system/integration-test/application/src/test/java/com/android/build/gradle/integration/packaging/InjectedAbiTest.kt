@@ -27,7 +27,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
@@ -71,10 +70,12 @@ class InjectedAbiTest {
 
         // Run the first build with a target ABI, check that only the APK for that ABI is generated
         // and that APK only contains native libraries for target ABI
-        var result = build.executor
+        build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
             .run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
 
         project.assertDoesNotExist(DEBUG.fromIntermediates())
         project.assertCorrectApk(x86Selection.fromIntermediates())
@@ -89,10 +90,12 @@ class InjectedAbiTest {
         // Run the second build with another target ABI, check that another APK for that ABI is
         // generated (and generated correctly--regression test for
         // https://issuetracker.google.com/issues/38481325)
-        result = build.executor
+        build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
             .run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
 
         project.assertDoesNotExist(DEBUG.fromIntermediates())
         project.assertDoesNotExist(x86Selection.fromIntermediates())
@@ -106,8 +109,9 @@ class InjectedAbiTest {
 
         // Run the third build without any target ABI, check that the APKs for all ABIs are
         // generated (or regenerated)
-        result = build.executor.run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+        build.executor.run("assembleDebug").apply {
+            assertTask(":app:packageDebug").didWork()
+        }
 
         project.assertDoesNotExist(DEBUG)
         project.assertCorrectApk(x86Selection)
@@ -123,10 +127,12 @@ class InjectedAbiTest {
         )
 
         // Run the fourth build with a target ABI, check that the APK for that ABI is re-generated
-        result = build.executor
+        build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
             .run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
 
         project.assertDoesNotExist(DEBUG.fromIntermediates())
         project.assertCorrectApk(x86Selection.fromIntermediates())
@@ -148,7 +154,9 @@ class InjectedAbiTest {
         var result = build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
             .run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
 
         project.assertCorrectApk(DEBUG.fromIntermediates())
         project.assertDoesNotExist(x86Selection.fromIntermediates())
@@ -164,10 +172,12 @@ class InjectedAbiTest {
 
         // Run the second build with another target ABI, again check that no split APKs are
         // generated (and the main APK is re-generated)
-        result = build.executor
+        build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
             .run("assembleDebug")
-        assertThat(result.getTask(":app:packageDebug")).didWork()
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
 
         project.assertCorrectApk(DEBUG.fromIntermediates())
         project.assertDoesNotExist(x86Selection.fromIntermediates())

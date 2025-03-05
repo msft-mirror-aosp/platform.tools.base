@@ -638,8 +638,10 @@ class DataBindingIncrementalityTest {
         assertThat(libGeneratedDataBindingComponentClass).exists()
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).didWork()
-        assertThat(result.getTask(APP_COMPILE_TASK)).didWork()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).didWork()
+            assertTask(APP_COMPILE_TASK).didWork()
+        }
     }
 
     @Test
@@ -718,8 +720,10 @@ class DataBindingIncrementalityTest {
             )
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).didWork()
-        assertThat(result.getTask(APP_COMPILE_TASK)).didWork()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).didWork()
+            assertTask(APP_COMPILE_TASK).didWork()
+        }
     }
 
     @Test
@@ -802,8 +806,10 @@ class DataBindingIncrementalityTest {
             )
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).didWork()
-        assertThat(result.getTask(APP_COMPILE_TASK)).wasUpToDate()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).didWork()
+            assertTask(APP_COMPILE_TASK).wasUpToDate()
+        }
     }
 
     @Test
@@ -887,8 +893,10 @@ class DataBindingIncrementalityTest {
             )
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).didWork()
-        assertThat(result.getTask(APP_COMPILE_TASK)).wasUpToDate()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).didWork()
+            assertTask(APP_COMPILE_TASK).wasUpToDate()
+        }
     }
 
     @Test
@@ -954,8 +962,10 @@ class DataBindingIncrementalityTest {
             )
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).didWork()
-        assertThat(result.getTask(APP_COMPILE_TASK)).didWork()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).didWork()
+            assertTask(APP_COMPILE_TASK).didWork()
+        }
     }
 
     @Test
@@ -1022,7 +1032,9 @@ class DataBindingIncrementalityTest {
             )
 
         // Check the tasks' states
-        assertThat(result.getTask(LIB_COMPILE_TASK)).wasUpToDate()
-        assertThat(result.getTask(APP_COMPILE_TASK)).wasUpToDate()
+        result.apply {
+            assertTask(LIB_COMPILE_TASK).wasUpToDate()
+            assertTask(APP_COMPILE_TASK).wasUpToDate()
+        }
     }
 }

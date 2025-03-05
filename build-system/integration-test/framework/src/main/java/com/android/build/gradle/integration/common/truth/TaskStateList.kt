@@ -20,11 +20,13 @@ import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
+import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleTaskExecution
 import org.gradle.tooling.events.ProgressEvent
 import org.gradle.tooling.events.task.TaskFinishEvent
 import org.gradle.tooling.events.task.TaskOperationResult
-import java.util.*
+import java.util.EnumMap
+import java.util.Scanner
 import java.util.regex.Pattern
 
 /**
@@ -67,9 +69,18 @@ class TaskStateList(
         fun failed(): Boolean {
             return executionState == ExecutionState.FAILED
         }
+
+        override fun toString(): String {
+            return "TaskInfo(taskName='$taskName', executionState=$executionState)"
+        }
     }
 
-    private val taskList: List<String>
+    /**
+     * the list of tasks in the order that they were output by the Gradle event.
+     *
+     * This is important for testing task ordering.
+     */
+    private val orderedTaskList: List<String>
     private val taskInfoMap: Map<String, TaskInfo>
     private val taskStateMap: Map<ExecutionState, Set<String>>
 
@@ -84,22 +95,21 @@ class TaskStateList(
 
         for (progressEvent in progressEvents) {
             if (progressEvent is TaskFinishEvent) {
-                val task = progressEvent.getDescriptor().getName()
+                val task = progressEvent.descriptor.name
                 taskListBuilder.add(task)
-                val taskState: ExecutionState =
-                    getTaskState(progressEvent.getResult())
+                val taskState: ExecutionState = getTaskState(progressEvent.result)
                 taskMap[taskState]!!.add(task)
             }
         }
 
-        taskList = taskListBuilder.build()
+        orderedTaskList = taskListBuilder.build()
 
         // Among the tasks that did work, detect those that were skipped and correct their state to
         // SKIPPED. (For "anchor" tasks such as "build", "check", Gradle does not report them with
         // TaskSkippedResult, so we need to detect them in the Gradle output.)
         val noActionsTasks: ImmutableSet<String> =
             getTasksByPatternFromGradleOutput(gradleOutput, NO_ACTIONS_PATTERN)
-        Preconditions.checkState(taskList.containsAll(noActionsTasks))
+        Preconditions.checkState(orderedTaskList.containsAll(noActionsTasks))
         for (noActionTask in noActionsTasks) {
             if (taskMap[ExecutionState.DID_WORK]!!.contains(noActionTask!!)) {
                 taskMap[ExecutionState.DID_WORK]!!.remove(noActionTask)
@@ -132,7 +142,7 @@ class TaskStateList(
     }
 
     val tasks: List<String>
-        get() = taskList
+        get() = orderedTaskList
 
     val taskStates: Map<String, ExecutionState>
         get() {
@@ -162,8 +172,8 @@ class TaskStateList(
         Preconditions.checkArgument(
             taskName.startsWith(":"), "Task name (\"" + taskName + "\") must start with ':'"
         )
-        Preconditions.checkArgument(taskList.contains(taskName), "Task %s not run", taskName)
-        return taskList.indexOf(taskName)
+        Preconditions.checkArgument(orderedTaskList.contains(taskName), "Task %s not run", taskName)
+        return orderedTaskList.indexOf(taskName)
     }
 
     companion object {
@@ -197,5 +207,18 @@ class TaskStateList(
             }
             return result.build()
         }
+    }
+
+    internal fun assertTask(
+        name: String,
+        withInfo: String? = null
+    ): GradleTaskSubject {
+        Preconditions.checkArgument(name.startsWith(":"), "Task name must start with :")
+
+        // let's do a full check on the task presence. This will output a nicer error
+        // than just doing a null check on the findTask result
+        Truth.assertThat(tasks).contains(name)
+
+        return GradleTaskSubject.assertThat(findTask(name)!!, withInfo)
     }
 }

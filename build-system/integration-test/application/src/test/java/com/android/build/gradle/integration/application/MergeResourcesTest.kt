@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.output.ApkContentSize
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
@@ -470,9 +469,11 @@ class MergeResourcesTest {
         }
 
         // Run a full build with shrinkResources enabled
-        var result = this.project.build.executor.runEnforceUniquePkg(
-            ":app:clean", ":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
+        this.project.build.executor
+            .runEnforceUniquePkg(":app:clean", ":app:assembleDebug")
+            .apply {
+                assertTask(":app:mergeDebugResources").didWork()
+            }
         val apkSizeWithShrinkResources = ApkContentSize.computeContent(
             build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
         )
@@ -491,8 +492,9 @@ class MergeResourcesTest {
                 }
             }
         }
-        result = build.executor.runEnforceUniquePkg(":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
+        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+            assertTask(":app:mergeDebugResources").didWork()
+        }
         val apkSizeWithoutShrinkResources = ApkContentSize.computeContent(
             build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
         )
@@ -511,8 +513,9 @@ class MergeResourcesTest {
                 }
             }
         }
-        result = build.executor.runEnforceUniquePkg(":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
+        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+            assertTask(":app:mergeDebugResources").didWork()
+        }
         val sameApkSizeShrinkResources = ApkContentSize.computeContent(
             build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
         )

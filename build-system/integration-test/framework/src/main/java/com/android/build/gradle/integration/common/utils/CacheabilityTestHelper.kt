@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.utils
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TaskStateList
@@ -38,8 +39,7 @@ class CacheabilityTestHelper(
      * @param executorSetter a lambda that takes the default executor and returns another one that
      *     replaces it
      */
-    fun useCustomExecutor(executorSetter: (GradleTaskExecutor) -> GradleTaskExecutor):
-            CacheabilityTestHelper {
+    fun useCustomExecutor(executorSetter: (GradleTaskExecutor) -> GradleTaskExecutor): CacheabilityTestHelper {
         this.executorSetter = executorSetter
         return this
     }
@@ -70,7 +70,7 @@ class CacheabilityTestHelper(
                 .run(executorSetter ?: { it })
                 .run(tasks.asList())
 
-        return CacheabilityTestHelperAssertionStage(result.taskStates)
+        return CacheabilityTestHelperAssertionStage(result)
     }
 
     private fun setBuildCacheDirForProject(project: GradleTestProject, buildCacheDir: File) {
@@ -85,7 +85,7 @@ class CacheabilityTestHelper(
     }
 
     class CacheabilityTestHelperAssertionStage(
-        private val actualTaskStates: Map<String, TaskStateList.ExecutionState>
+        private val buildResult: GradleBuildResult
     ) {
 
         /**
@@ -99,8 +99,7 @@ class CacheabilityTestHelper(
             expectedTaskStates: Map<String, TaskStateList.ExecutionState>,
             exhaustive: Boolean = false
         ): CacheabilityTestHelperAssertionStage {
-            TaskStateAssertionHelper(actualTaskStates)
-                .assertTaskStates(expectedTaskStates, exhaustive)
+            TaskStateAssertionHelper(buildResult).assertTaskStates(expectedTaskStates, exhaustive)
             return this
         }
 
@@ -115,8 +114,7 @@ class CacheabilityTestHelper(
             expectedTaskStates: Map<TaskStateList.ExecutionState, Set<String>>,
             exhaustive: Boolean = false
         ): CacheabilityTestHelperAssertionStage {
-            TaskStateAssertionHelper(actualTaskStates)
-                .assertTaskStatesByGroups(expectedTaskStates, exhaustive)
+            TaskStateAssertionHelper(buildResult).assertTaskStatesByGroups(expectedTaskStates, exhaustive)
             return this
         }
     }

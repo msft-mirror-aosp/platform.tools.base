@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import org.junit.Rule
 import org.junit.Test
 
@@ -46,8 +45,9 @@ class LocalJarsTest : ModelComparator() {
 
     @Test
     fun checkBuildResult() {
-        val result = project.executor().run("clean", "assembleDebug")
-        TruthHelper.assertThat(result.getTask(":baseLibrary:noop"))
+        project.executor()
+            .run("clean", "assembleDebug")
+            .assertTask(":baseLibrary:noop")
             .ranBefore(":baseLibrary:copyDebugJniLibsProjectAndLocalJars")
     }
 }

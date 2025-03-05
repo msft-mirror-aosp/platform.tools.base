@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.integration.deployment
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -109,8 +107,9 @@ class MappingFileAccessTest {
                 }
             }
         """.trimIndent())
-        val result = project.executor().run("mappingFileRelease")
-        TruthHelper.assertThat(result.getTask(":mappingFileRelease")).didWork()
-        TruthHelper.assertThat(result.getTask(":minifyReleaseWithR8")).didWork()
+        project.executor().run("mappingFileRelease").apply {
+            assertTask(":mappingFileRelease").didWork()
+            assertTask(":minifyReleaseWithR8").didWork()
+        }
     }
 }

@@ -22,6 +22,7 @@ import static com.android.build.gradle.internal.scope.InternalArtifactType.DATA_
 import static com.android.build.gradle.internal.scope.InternalArtifactType.DATA_BINDING_TRIGGER;
 import static com.android.build.gradle.internal.tasks.databinding.DataBindingTriggerTaskKt.DATA_BINDING_TRIGGER_CLASS;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
@@ -35,12 +36,11 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.TestUtils;
 import com.android.testutils.truth.DexClassSubject;
 import com.android.testutils.truth.DexSubject;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
+
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assume;
@@ -49,6 +49,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /** Integration test to ensure correctness of incremental builds when data binding is used. */
 @RunWith(FilterableParameterized.class)
@@ -121,11 +125,12 @@ public class DataBindingIncrementalTest {
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
                     "android.kotlinOptions.jvmTarget = '1.8'\n"
-                            + "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {\n"
-                            + "  compilerOptions {\n"
-                            + "    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)\n"
-                            + "  }\n"
-                            + "}");
+                        + "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach"
+                        + " {\n"
+                        + "  compilerOptions {\n"
+                        + "    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)\n"
+                        + "  }\n"
+                        + "}");
         }
     }
 
@@ -202,8 +207,8 @@ public class DataBindingIncrementalTest {
         assertThat(updatedInfoFileContents).isEqualTo(infoFileContents);
         assertThat(updatedSourceFileContents).isEqualTo(sourceFileContents);
 
-        assertThat(result.getTask(TRIGGER_TASK)).wasUpToDate();
-        assertThat(result.getTask(COMPILE_JAVA_TASK)).didWork();
+        result.assertTask(TRIGGER_TASK).wasUpToDate();
+        result.assertTask(COMPILE_JAVA_TASK).didWork();
 
         TestUtils.waitForFileSystemTick();
         assertThat(generatedSourceFile).isNewerThan(sourceFileTimestamp);
@@ -238,8 +243,8 @@ public class DataBindingIncrementalTest {
         assertThat(updatedInfoFileContents).isEqualTo(infoFileContents);
         assertThat(updatedSourceFileContents).isEqualTo(sourceFileContents);
 
-        assertThat(result.getTask(TRIGGER_TASK)).wasUpToDate();
-        assertThat(result.getTask(COMPILE_JAVA_TASK)).didWork();
+        result.assertTask(TRIGGER_TASK).wasUpToDate();
+        result.assertTask(COMPILE_JAVA_TASK).didWork();
 
         TestUtils.waitForFileSystemTick();
         assertThat(generatedSourceFile).isNewerThan(sourceFileTimestamp);
@@ -265,9 +270,9 @@ public class DataBindingIncrementalTest {
         String stacktrace = Throwables.getStackTraceAsString(checkNotNull(result.getException()));
 
         if (withKotlin) {
-            assertThat(result.getTask(KAPT_TASK)).failed();
+            result.assertTask(KAPT_TASK).failed();
         } else {
-            assertThat(result.getTask(COMPILE_JAVA_TASK)).failed();
+            result.assertTask(COMPILE_JAVA_TASK).failed();
         }
         assertThat(stacktrace)
                 .contains("Could not find accessor android.databinding.testapp.User.name");
@@ -304,7 +309,8 @@ public class DataBindingIncrementalTest {
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML),
                 "<variable name=\"foo\" type=\"String\"/>",
-                "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\" type=\"String\"/>");
+                "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\""
+                        + " type=\"String\"/>");
         project.executor().run("assembleDebug");
 
         for (String className : mainActivityBindingClasses) {

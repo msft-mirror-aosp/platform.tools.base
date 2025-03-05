@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -92,9 +91,10 @@ class LintGeneratedResourcesTest {
     /** Test that changes to generated resources cause the lint tasks to re-run as expected. */
     @Test
     fun testNotUpToDate() {
-        project.executor().run("clean", "lintDebug")
-        assertThat(project.buildResult.getTask(":lintReportDebug")).didWork()
-        assertThat(project.buildResult.getTask(":lintAnalyzeDebug")).didWork()
+        project.executor().run("clean", "lintDebug").apply {
+            assertTask(":lintReportDebug").didWork()
+            assertTask(":lintAnalyzeDebug").didWork()
+        }
         val lintReport = project.file("lint-results.txt")
         assertThat(lintReport).exists()
         assertThat(lintReport).doesNotContain(
@@ -105,9 +105,10 @@ class LintGeneratedResourcesTest {
         val byteOrderMark = "\ufeff"
         TestFileUtils.searchAndReplace(project.buildFile, "xml comment", byteOrderMark)
 
-        project.executor().run("lintDebug")
-        assertThat(project.buildResult.getTask(":lintReportDebug")).didWork()
-        assertThat(project.buildResult.getTask(":lintAnalyzeDebug")).didWork()
+        project.executor().run("lintDebug").apply {
+            assertTask(":lintReportDebug").didWork()
+            assertTask(":lintAnalyzeDebug").didWork()
+        }
         assertThat(lintReport).exists()
         assertThat(lintReport).contains(
             "generated.xml:3: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]"
@@ -118,6 +119,7 @@ class LintGeneratedResourcesTest {
     @Test
     fun testDependencyOnGeneratedResForAndroidTest() {
         project.executor().run("clean", "lintDebug")
-        assertThat(project.buildResult.getTask(":generateResForDebugAndroidTest")).didWork()
+            .assertTask(":generateResForDebugAndroidTest")
+            .didWork()
     }
 }

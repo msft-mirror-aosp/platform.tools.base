@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,15 +31,15 @@ class LintEnvironmentVariablesTest {
 
     @Test
     fun checkLintNotUpToDate() {
-        project.executor().run(":lintDebug").also { result ->
-            assertThat(result.getTask(":lintAnalyzeDebug")).didWork()
-            assertThat(result.getTask(":lintReportDebug")).didWork()
+        project.executor().run(":lintDebug").apply {
+            assertTask(":lintAnalyzeDebug").didWork()
+            assertTask(":lintReportDebug").didWork()
         }
 
         // check that the lint tasks are up-to-date if nothing changes
-        project.executor().run(":lintDebug").also { result ->
-            assertThat(result.getTask(":lintAnalyzeDebug")).wasUpToDate()
-            assertThat(result.getTask(":lintReportDebug")).wasUpToDate()
+        project.executor().run(":lintDebug").apply {
+            assertTask(":lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lintReportDebug").wasUpToDate()
         }
 
         val environmentVariables =
@@ -56,13 +55,9 @@ class LintEnvironmentVariablesTest {
             project.executor()
                 .withEnvironmentVariables(mapOf(environmentVariable to "foo"))
                 .run(":lintDebug")
-                .also { result ->
-                    assertThat(result.getTask(":lintAnalyzeDebug"))
-                        .named(":lintAnalyzeDebug with $environmentVariable=foo")
-                        .didWork()
-                    assertThat(result.getTask(":lintReportDebug"))
-                        .named(":lintReportDebug with $environmentVariable=foo")
-                        .didWork()
+                .apply {
+                    assertTask(":lintAnalyzeDebug", withInfo="$environmentVariable=foo").didWork()
+                    assertTask(":lintReportDebug", withInfo="$environmentVariable=foo").didWork()
                 }
 
             // run build without any environment variables before testing the next one
@@ -81,7 +76,7 @@ class LintEnvironmentVariablesTest {
             project.executor()
                 .withEnvironmentVariables(mapOf(environmentVariable to "foo"))
                 .run(":lintDebug")
-                .also { result -> assertThat(result.getTask(":lintReportDebug")).didWork() }
+                .apply { assertTask(":lintReportDebug").didWork() }
         }
     }
 }

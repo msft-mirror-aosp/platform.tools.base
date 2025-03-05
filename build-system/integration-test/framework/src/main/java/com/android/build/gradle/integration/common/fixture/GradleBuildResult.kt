@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture
 
+import com.android.build.gradle.integration.common.truth.GradleTaskSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TaskStateList
 import com.google.common.base.Preconditions
 import com.google.common.base.Throwables
+import com.google.common.truth.StringSubject
+import com.google.common.truth.Truth
 import org.gradle.api.ProjectConfigurationException
 import org.gradle.api.tasks.TaskExecutionException
 import org.gradle.internal.serialize.ContextualPlaceholderException
@@ -29,6 +32,7 @@ import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.events.ProgressEvent
 import java.io.File
 import java.util.Scanner
+import java.util.function.Consumer
 
 /**
  * The result from running a build.
@@ -42,9 +46,44 @@ class GradleBuildResult(
     private val taskEvents: List<ProgressEvent>,
     val exception: GradleConnectionException?,
 ) {
+    @JvmOverloads
+    fun assertTask(
+        name: String,
+        withInfo: String? = null
+    ): GradleTaskSubject = taskStateList.assertTask(name, withInfo)
+
+    fun assertStdErr(action: ScannerSubject.() -> Unit)  {
+        Scanner(stderrFile).use {
+            action(ScannerSubject.assertThat(it))
+        }
+    }
+
+    fun assertStdErr(action: Consumer<ScannerSubject>)  {
+        assertStdErr {
+            action.accept(this)
+        }
+    }
+
+    fun assertStdOut(action: ScannerSubject.() -> Unit)  {
+        Scanner(stdoutFile).use {
+            action(ScannerSubject.assertThat(it))
+        }
+    }
+
+    fun assertStdOut(action: Consumer<ScannerSubject>)  {
+        assertStdOut {
+            action.accept(this)
+        }
+    }
+
+    fun assertFailureMessage(): StringSubject {
+        return Truth.assertThat(failureMessage)
+    }
+
     /**
      * Returns a new [Scanner] for the stderr messages. This instance MUST be closed when done.
      */
+    @Deprecated("Use assertStdErr")
     val stderr
         get() = Scanner(stderrFile)
 
@@ -66,26 +105,11 @@ class GradleBuildResult(
     )
     val stdoutAsTextForDebug: String by lazy { stdout.asText() }
 
-    private fun Scanner.asText(): String = use {
-        StringBuilder().apply {
-            while (it.hasNextLine()) {
-                appendLine(it.nextLine())
-            }
-        }.toString()
-    }
-
-    /**
-     * Most tests don't examine the state of the build's tasks and [TaskStateList] is relatively
-     * expensive to initialize, so this is done lazily.
-     */
-    private val taskStateList: TaskStateList by lazy {
-        TaskStateList(taskEvents, this.stdout)
-    }
-
     /**
      * Returns the short (single-line) message that Gradle would print out in the console, without
      * `--stacktrace`. If the build succeeded, returns null.
      */
+    @Deprecated("Use assertFailureMessage")
     val failureMessage: String?
         get() = exception?.let {
             val causalChain = Throwables.getCausalChain(exception)
@@ -172,18 +196,21 @@ class GradleBuildResult(
         throwableType == PlaceholderException::class.java.name
                 || throwableType == ContextualPlaceholderException::class.java.name
 
+    @Deprecated("Use assertStdOut")
     fun assertOutputContains(text: String) {
         stdout.use {
             ScannerSubject.assertThat(it).contains(text)
         }
     }
 
+    @Deprecated("Use assertStdErr")
     fun assertErrorContains(text: String) {
         stderr.use {
             ScannerSubject.assertThat(it).contains(text)
         }
     }
 
+    @Deprecated("Use assertStdErr")
     fun assertOutputDoesNotContain(text: String) {
         stdout.use {
             ScannerSubject.assertThat(it).doesNotContain(text)
@@ -200,5 +227,21 @@ class GradleBuildResult(
     fun assertConfigurationCacheMiss() {
         assertOutputContains("Calculating task graph")
         assertOutputDoesNotContain("Reusing configuration cache")
+    }
+
+    private fun Scanner.asText(): String = use {
+        StringBuilder().apply {
+            while (it.hasNextLine()) {
+                appendLine(it.nextLine())
+            }
+        }.toString()
+    }
+
+    /**
+     * Most tests don't examine the state of the build's tasks and [TaskStateList] is relatively
+     * expensive to initialize, so this is done lazily.
+     */
+    private val taskStateList: TaskStateList by lazy {
+        TaskStateList(taskEvents, this.stdout)
     }
 }

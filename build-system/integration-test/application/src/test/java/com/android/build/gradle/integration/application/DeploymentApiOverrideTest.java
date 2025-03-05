@@ -28,15 +28,18 @@ import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
 
 /**
  * Test to ensure that a build targeted to < 21 will still use native multidex when invoked by the
@@ -281,7 +284,7 @@ public class DeploymentApiOverrideTest {
 
     private static void assertDexTask(
             GradleBuildResult result, Map<String, TaskStateList.ExecutionState> expectedTasks) {
-        TaskStateAssertionHelper helper = new TaskStateAssertionHelper(result.getTaskStates());
+        TaskStateAssertionHelper helper = new TaskStateAssertionHelper(result);
         helper.assertTaskStates(expectedTasks, false);
     }
 

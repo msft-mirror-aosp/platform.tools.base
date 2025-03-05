@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.lint;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -32,10 +31,11 @@ class LintStandaloneNoSdkTest {
 
     @Test
     fun emptyJavaProjectRunLint() {
-        val result = project.executor().run(":lint")
-        Truth.assertThat(result.failedTasks).isEmpty()
-        assertThat(result.getTask(":lintJvm")).didWork();
-        assertThat(result.getTask(":lintAnalyzeJvmMain")).didWork();
+        project.executor().run(":lint").apply {
+            Truth.assertThat(failedTasks).isEmpty()
+            assertTask(":lintJvm").didWork();
+            assertTask(":lintAnalyzeJvmMain").didWork();
+        }
 
         val file = project.file("lint-results.txt");
         assertThat(file).exists();

@@ -185,7 +185,7 @@ class NoOpIncrementalBuildMinifyTest {
             run(tasks)
             run(tasks)
         }
-        TaskStateAssertionHelper(result.taskStates)
+        TaskStateAssertionHelper(result)
             .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
     }
 }
