@@ -69,7 +69,7 @@ class DeployServer : DeployServiceImplBase {
      * @param adbPath full path to adb.exe required by [AndroidDebugBridge].
      */
     fun start(port: Int, adbPath: String) {
-        AndroidDebugBridge.init(true)
+        AdbHelper.initAndroidDebugBridge()
         myActiveBridge = AndroidDebugBridge.createBridge(adbPath, false)!!
         val serverBuilder = NettyServerBuilder.forPort(port)
         serverBuilder.addService(this)

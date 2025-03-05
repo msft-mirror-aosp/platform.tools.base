@@ -19,6 +19,9 @@ kotlin_library(
     visibility = ["//visibility:public"],
     deps = [
         ":deploy-service-proto",
+        "//tools/base/adblib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility",
+        "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/annotations",
         "//tools/base/bazel:studio-grpc",
         "//tools/base/bazel:studio-proto",
