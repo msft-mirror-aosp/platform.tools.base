@@ -133,6 +133,15 @@ enum class BooleanOption(
 
     EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS("android.dependency.excludeLibraryComponentsFromConstraints", false, ApiStage.Stable),
 
+    /**
+     * This creates a sync issue when library constraints are enabled, because disabling them would
+     * result in a performance boost.
+     *
+     * It is intended to switch to on in the next major release alongside the related flag:
+     * `android.dependency.excludeLibraryComponentsFromConstraints`
+     */
+    GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED("android.generateSyncIssueWhenLibraryConstraintsAreEnabled", false, ApiStage.Stable),
+
     /* ------------------
      * SUPPORTED FEATURES
      */
@@ -182,6 +191,7 @@ enum class BooleanOption(
         defaultValue = false,
         FeatureStage.Supported
     ),
+
 
     /* -----------------
      * EXPERIMENTAL APIs
