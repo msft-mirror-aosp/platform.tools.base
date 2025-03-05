@@ -45,6 +45,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.HIGH_APP_VERSION_C
 import com.android.tools.lint.checks.GradleDetector.Companion.JAVA_PLUGIN_LANGUAGE_LEVEL
 import com.android.tools.lint.checks.GradleDetector.Companion.JCENTER_REPOSITORY_OBSOLETE
 import com.android.tools.lint.checks.GradleDetector.Companion.KAPT_USAGE_INSTEAD_OF_KSP
+import com.android.tools.lint.checks.GradleDetector.Companion.KEY_IDE_AGP_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.KTX_EXTENSION_AVAILABLE
 import com.android.tools.lint.checks.GradleDetector.Companion.LIFECYCLE_ANNOTATION_PROCESSOR_WITH_JAVA8
 import com.android.tools.lint.checks.GradleDetector.Companion.MIN_SDK_TOO_LOW
@@ -2861,7 +2862,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory({
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
-          override fun getClientRevision(): String = "3.3.0.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.3.0" else null
+          }
         }
       })
       .run()
@@ -2891,7 +2894,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
-          override fun getClientRevision(): String = "3.3.0.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.3.0.0" else null
+          }
         }
       }
       .run()
@@ -2938,7 +2943,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.4.0
-          override fun getClientRevision(): String = "3.4.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.4.0" else null
+          }
         }
       }
       .run()
@@ -2981,8 +2988,10 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(AGP_DEPENDENCY)
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-          // Studio 3.0.0
-          override fun getClientRevision(): String = "2.3.0.0"
+          // Studio 2.3.0
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "2.3.0.0" else null
+          }
         }
       }
       .run()

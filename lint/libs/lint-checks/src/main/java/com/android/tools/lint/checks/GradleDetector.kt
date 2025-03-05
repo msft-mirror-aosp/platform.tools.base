@@ -1178,7 +1178,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // version that the user is currently using, offer that one as well as it
           // may be easier to upgrade to.
           if (
-            newerVersion != null &&
+            !offerLatestGradleVersions &&
+              newerVersion != null &&
               !version.isPreview &&
               newerVersion != version &&
               (version.major != newerVersion.major || version.minor != newerVersion.minor)
@@ -1705,16 +1706,17 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   ): Predicate<Version>? {
     if (
       (groupId == "com.android.tools.build" || ALL_PLUGIN_IDS.contains(groupId)) &&
-        LintClient.isStudio
+        LintClient.isStudio &&
+        !offerLatestGradleVersions
     ) {
-      val clientRevision = context.client.getClientRevision() ?: return null
-      val ideVersion = Version.parse(clientRevision)
-      // TODO(b/145606749): this assumes that the IDE version and the AGP version are directly
-      //  comparable
+      val agpVersion =
+        context.client.getClientProperty(KEY_IDE_AGP_VERSION) as? String ?: return null
+      val ideGradleCompatibleVersion = Version.parse(agpVersion)
       return Predicate { v ->
         // Any higher IDE version that matches major and minor
         // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
-        ((v.major == ideVersion.major && v.minor == ideVersion.minor) ||
+        ((v.major == ideGradleCompatibleVersion.major &&
+          v.minor == ideGradleCompatibleVersion.minor) ||
           // Also allow matching latest current existing major/minor version
           (v.major == version.major && v.minor == version.minor))
       }
@@ -2863,7 +2865,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     val agpVersion = context.project.buildModule?.agpVersion
     val filter =
-      if (agpVersion != null && agpVersion.major >= 7) {
+      if (agpVersion != null && agpVersion.major >= 7 && !offerLatestGradleVersions) {
         "${agpVersion.major}."
       } else {
         null
@@ -2906,11 +2908,22 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
      */
     var recordClientProperties = false
 
+    /**
+     * For AGP and Gradle we constrain the offers a bit -- for example, the Gradle wrapper
+     * suggestion is limited to be compatible with the *current* version of AGP, and for AGP
+     * versions we try to offer it in multiple jumps in the IDE, e.g. if you're currently at version
+     * "7.1.0", and the latest is "8.8.0", we don't offer "8.8.0" immediately, we first offer the
+     * latest stable version of 7.1, say 7.1.4. This is to make it easier to make gradual updates.
+     * But if you want to do it all in one jump, that's not helpful.
+     */
+    var offerLatestGradleVersions = false
+
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null
 
     const val KEY_COORDINATE = "coordinate"
     const val KEY_REVISION = "revision"
+    const val KEY_IDE_AGP_VERSION = "ideAgpVersion"
 
     private const val VC_LIBRARY_PREFIX = "libs."
     private const val VC_PLUGIN_PREFIX = "libs.plugins."
@@ -3838,14 +3851,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     /** All the plugin ids from the Android Gradle Plugin */
     val ALL_PLUGIN_IDS =
       setOf(
-        "com.android.base",
+        // From build-system/gradle-core/build.gradle
         "com.android.application",
         "com.android.library",
-        "com.android.test",
-        "com.android.instant-app",
-        "com.android.feature",
         "com.android.dynamic-feature",
+        "com.android.asset-pack",
+        "com.android.asset-pack-bundle",
+        "com.android.ai-pack",
+        "com.android.lint",
+        "com.android.test",
+        "com.android.fused-library",
+        "com.android.privacy-sandbox-sdk",
+        "com.android.kotlin.multiplatform.library",
+        // from build-system/gradle-settings/build.gradle
         "com.android.settings",
+        // older and deleted
+        "android",
+        "android-library",
+        "com.android.feature",
+        "com.android.instant-app",
       )
 
     /** Group ID for GMS. */
