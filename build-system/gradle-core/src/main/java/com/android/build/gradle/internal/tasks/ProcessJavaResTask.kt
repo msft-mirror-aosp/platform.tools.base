@@ -29,6 +29,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.Sync
@@ -90,10 +91,7 @@ abstract class ProcessJavaResTask @Inject constructor(
 
             task.from(getProjectJavaRes(creationConfig, task, listOf(projectClasses)))
             task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.handleDestinationDirIncompatibility(
-                creationConfig, InternalArtifactType.JAVA_RES,
-                task.outDirectory
-            )
+            task.into(task.outDirectory)
         }
     }
 
@@ -129,14 +127,16 @@ abstract class ProcessJavaResTask @Inject constructor(
         ) {
             super.configure(task)
 
-            task.from(getProjectJavaRes(creationConfig, task, listOfNotNull(
-                creationConfig.oldVariantApiLegacySupport?.variantData?.allPreJavacGeneratedBytecode,
-                creationConfig.oldVariantApiLegacySupport?.variantData?.allPostJavacGeneratedBytecode
-            )))
+            task.from(
+                getProjectJavaRes(
+                    creationConfig, task, listOfNotNull(
+                        creationConfig.oldVariantApiLegacySupport?.variantData?.allPreJavacGeneratedBytecode,
+                        creationConfig.oldVariantApiLegacySupport?.variantData?.allPostJavacGeneratedBytecode
+                    )
+                )
+            )
             task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.handleDestinationDirIncompatibility(
-                creationConfig, InternalArtifactType.JAVA_RES,
-                task.outDirectory)
+            task.into(task.outDirectory)
         }
     }
 }
@@ -179,38 +179,4 @@ private fun getProjectJavaRes(
         javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
     }
     return javaRes.asFileTree.matching(MergeJavaResourceTask.patternSet)
-}
-
-/**
- * Starting in Gradle 9.0, the Sync.destinationDir APIs will use a DirectoryProperty rather
- * than a File in previous releases.
- *
- * Handles compiling and running against pre-9.0 and 9.0 Gradle runtimes.
- *
- * Once we switch to Gradle 9.0 as a minimum version, we should stop defining
- * [currentOutputProperty] and instead use the destinationDir everywhere12.
- */
-fun Sync.handleDestinationDirIncompatibility(
-    creationConfig: ComponentCreationConfig,
-    type: InternalArtifactType<*>,
-    currentOutputProperty: DirectoryProperty,
-) {
-    val getDestinationDirMethod = Sync::class.java.getMethod("getDestinationDir")
-    if (getDestinationDirMethod.returnType.isAssignableFrom(File::class.java)) {
-        Sync::class.java.getMethod("setDestinationDir", File::class.java)
-            .invoke(
-                this,
-                creationConfig.artifacts.getOutputPath(
-                    type,
-                    name,
-                    "out"
-                )
-            )
-    } else {
-        Sync::class.java.getMethod("setDestinationDir", DirectoryProperty::class.java)
-            .invoke(
-                this,
-                currentOutputProperty
-            )
-    }
 }

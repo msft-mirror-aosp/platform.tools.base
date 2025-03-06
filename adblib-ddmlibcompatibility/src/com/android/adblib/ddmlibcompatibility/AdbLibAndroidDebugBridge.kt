@@ -19,8 +19,13 @@ import com.android.SdkConstants
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
+import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.adbLogger
+import com.android.adblib.isTrackerConnecting
+import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.tools.debugging.rethrowCancellation
+import com.android.adblib.trackDevices
+import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbDelegateUsageTracker
 import com.android.ddmlib.AdbDevice
 import com.android.ddmlib.AdbInitOptions
@@ -47,6 +52,7 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.ListeningExecutorService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -60,6 +66,7 @@ import java.net.InetSocketAddress
 import java.nio.channels.SocketChannel
 import java.nio.file.Path
 import java.security.InvalidParameterException
+import java.time.Duration
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -74,27 +81,58 @@ class AdbLibAndroidDebugBridge(
 
     private val logger = adbLogger(session)
 
+    private val lock = ReentrantLock()
+
+    /**
+     * We need this because the AndroidDebugBridge class is mostly static, coming from ddmlib,
+     * and an instance is required for some APIs (e.g. `getDevices`, `isConnected`, `restart`).
+     */
     @Volatile
-    private var sThis: AndroidDebugBridge? = null
+    private var currentAndroidDebugBridge: AndroidDebugBridge? = null
 
+    /**
+     * Set to `true` after one of the `init` methods is called. Is reset to `false` when
+     * AndroidDebugBridge is `terminate`-ed.
+     */
     @Volatile
-    private var sInitialized: Boolean = false
+    private var initialized: Boolean = false
 
-    private var iDeviceManager: IDeviceManager? = null
+    /**
+     * We re-use the `IDeviceManager` implementation from this ddmlib compatibility module, and
+     * we create a new instance every time `start` or `restart` is called.
+     */
+    private var adblibCompatDeviceManager: IDeviceManager? = null
 
-    private var mVersionCheck: Boolean = false
+    private var passedAdbServerVersionCheck: Boolean = false
 
     /** Port where adb server will be started  */
-    private var sAdbServerPort: Int = 0
+    private var sAdbServerPort: Int? = null
 
     /** Full path to adb.  */
     private var mAdbOsLocation: String? = null
 
-    private var mStarted: Boolean = false
-
-    private val lock = ReentrantLock()
+    // TODO: Use `adbServerController.isStarted` instead. Note that currently `AdbServerController`
+    //  is not used in UserManagedAdbMode and so its `isStarted` value is not updated.
+    private var started: Boolean = false
 
     private var adbDelegateUsageTracker: AdbDelegateUsageTracker? = null
+
+    // Only set when in unit testing mode. This is a hack until we move to devicelib.
+    // http://b.android.com/221925
+    private var isUnitTestMode: Boolean = false
+
+    /** Don't automatically manage ADB server.  */
+    private var isUserManagedAdbMode: Boolean = false
+
+    private var isClientSupport: Boolean = false
+
+    private var clientManager: ClientManager? = null
+
+    private var iDeviceManagerFactory: IDeviceManagerFactory? = null
+
+    private var iDeviceUsageTracker: IDeviceUsageTracker? = null
+
+    private var adbEnvVars: Map<String, String> = emptyMap()
 
     /**
      * Initialized the library only if needed; deprecated for non-test usages.
@@ -102,7 +140,7 @@ class AdbLibAndroidDebugBridge(
     @Deprecated("Used only in tests")
     @Synchronized
     override fun initIfNeeded(clientSupport: Boolean) {
-        if (sInitialized) {
+        if (initialized) {
             return
         }
         init(clientSupport)
@@ -130,25 +168,25 @@ class AdbLibAndroidDebugBridge(
     override fun init(options: AdbInitOptions) {
         logUsage(AdbDelegateUsageTracker.Method.INIT_3) {
             Preconditions.checkState(
-                !sInitialized, "AndroidDebugBridge.init() has already been called."
+                !initialized, "AndroidDebugBridge.init() has already been called."
             )
-            sInitialized = true
-            sIDeviceManagerFactory = options.iDeviceManagerFactory
+            initialized = true
+            iDeviceManagerFactory = options.iDeviceManagerFactory
             iDeviceUsageTracker = options.iDeviceUsageTracker
             adbDelegateUsageTracker = options.adbDelegateUsageTracker
-            sClientSupport = options.clientSupport
-            sClientManager = options.clientManager
-            if (sClientManager != null) {
+            isClientSupport = options.clientSupport
+            clientManager = options.clientManager
+            if (clientManager != null) {
                 // A custom client manager is not compatible with "client support"
-                sClientSupport = false
+                isClientSupport = false
             }
-            if (sIDeviceManagerFactory != null) {
+            if (iDeviceManagerFactory != null) {
                 // A custom "IDevice" manager is not compatible with a "Client" manager
-                sClientManager = null
-                sClientSupport = false
+                clientManager = null
+                isClientSupport = false
             }
-            sAdbEnvVars = options.adbEnvVars
-            sUserManagedAdbMode = options.userManagedAdbMode
+            adbEnvVars = options.adbEnvVars
+            isUserManagedAdbMode = options.userManagedAdbMode
             DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
             DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
             DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
@@ -160,30 +198,30 @@ class AdbLibAndroidDebugBridge(
 
     override fun enableFakeAdbServerMode(port: Int) {
         Preconditions.checkState(
-            !sInitialized,
+            !initialized,
             "AndroidDebugBridge.init() has already been called or "
                     + "terminate() has not been called yet."
         )
-        sUnitTestMode = true
+        isUnitTestMode = true
         sAdbServerPort = port
     }
 
     override fun disableFakeAdbServerMode() {
         Preconditions.checkState(
-            !sInitialized,
+            !initialized,
             "AndroidDebugBridge.init() has already been called or "
                     + "terminate() has not been called yet."
         )
-        sUnitTestMode = false
-        sAdbServerPort = 0
+        isUnitTestMode = false
+        sAdbServerPort = null
     }
 
     override fun getClientSupport(): Boolean {
-        return sClientSupport
+        return isClientSupport
     }
 
     override fun getClientManager(): ClientManager? {
-        return sClientManager
+        return clientManager
     }
 
     override fun createBridge(): AndroidDebugBridge? {
@@ -211,8 +249,8 @@ class AdbLibAndroidDebugBridge(
     override fun createBridge(timeout: Long, unit: TimeUnit): AndroidDebugBridge? {
         // TODO: Rewrite this code to remove non-local returns
         val newBridgeInstance = withLock {
-            if (sThis != null) {
-                return sThis
+            if (currentAndroidDebugBridge != null) {
+                return currentAndroidDebugBridge
             }
             var newBridgeInstance: AndroidDebugBridge
             try {
@@ -227,7 +265,7 @@ class AdbLibAndroidDebugBridge(
             }
 
             // Success, store static instance
-            sThis = newBridgeInstance
+            currentAndroidDebugBridge = newBridgeInstance
             newBridgeInstance
         }
 
@@ -262,13 +300,13 @@ class AdbLibAndroidDebugBridge(
         // TODO: Rewrite this code to remove non-local returns
         val newBridgeInstance = withLock {
             val rem = TimeoutRemainder(timeout, unit)
-            if (!sUnitTestMode) {
-                if (sThis != null) {
+            if (!isUnitTestMode) {
+                if (currentAndroidDebugBridge != null) {
                     if (mAdbOsLocation != null && mAdbOsLocation.equals(osLocation)
                         && !forceNewBridge
                     ) {
                         // We return without notifying listeners, since there were no changes
-                        return sThis
+                        return currentAndroidDebugBridge
                     } else {
                         // stop the current server
                         if (!stop(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
@@ -279,7 +317,7 @@ class AdbLibAndroidDebugBridge(
 
                     // We are successfully stopped. We need to notify listeners in all code paths
                     // past this point.
-                    sThis = null
+                    currentAndroidDebugBridge = null
                 }
             }
 
@@ -297,7 +335,7 @@ class AdbLibAndroidDebugBridge(
             }
 
             // Success, store static instance
-            sThis = newBridgeInstance
+            currentAndroidDebugBridge = newBridgeInstance
             newBridgeInstance
         }
 
@@ -317,21 +355,18 @@ class AdbLibAndroidDebugBridge(
         assert(lock.isHeldByCurrentThread)
 
         // if we haven't started we return true (i.e. success)
-        if (!mStarted) {
+        if (!started) {
             return true
         }
 
         val rem = TimeoutRemainder(timeout, unit)
-        killMonitoringServices()
+        stopIDeviceManager()
 
-        // Don't stop ADB when using user managed ADB server.
-        if (sUserManagedAdbMode) {
-            Log.i(ADB, "User managed ADB mode: Not stopping ADB server")
-        } else if (!stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
+        if (!stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
             return false
         }
 
-        mStarted = false
+        started = false
         return true
     }
 
@@ -351,26 +386,27 @@ class AdbLibAndroidDebugBridge(
 
         // TODO: these checks are duplicated inside startAdb, so they could be removed
         //  here once figure out what to do with mVersionCheck
-        // Skip server start check if using user managed ADB server
-        if (!sUserManagedAdbMode) {
+        // If this is not a user managed ADB server, perform version checks
+        if (!isUserManagedAdbMode) {
             // If we are configured correctly, check if we need to start ADB
-            if (mAdbOsLocation != null && sAdbServerPort != 0) {
+            if (mAdbOsLocation != null && sAdbServerPort != null) {
                 // If we don't have a valid ADB version (or if we have not checked successfully), we
                 // can't start
-                if (!mVersionCheck) {
-                    return false
-                }
-                // Try to start adb
-                if (!startAdb(timeout, unit)) {
+                if (!passedAdbServerVersionCheck) {
                     return false
                 }
             }
         }
 
-        mStarted = true
+        // Try to start adb
+        if (!startAdb(timeout, unit)) {
+            return false
+        }
+
+        started = true
 
         // Start the underlying services.
-        startMonitoringServices(bridgeInstance)
+        startIDeviceManager(bridgeInstance)
 
         return true
     }
@@ -380,9 +416,9 @@ class AdbLibAndroidDebugBridge(
             AdbServerConfiguration(
                 mAdbOsLocation?.let { Path(it) },
                 sAdbServerPort,
-                sUserManagedAdbMode,
-                sUnitTestMode,
-                sAdbEnvVars
+                isUserManagedAdbMode,
+                isUnitTestMode,
+                adbEnvVars
             )
         }
     }
@@ -394,7 +430,6 @@ class AdbLibAndroidDebugBridge(
                     adbServerController.start()
                     true
                 } catch (t: Throwable) {
-                    t.rethrowCancellation()
                     logger.warn(t, "Failed to start adb server")
                     false
                 }
@@ -406,7 +441,7 @@ class AdbLibAndroidDebugBridge(
 
     /** Returns the current debug bridge. Can be `null` if none were created.  */
     override fun getBridge(): AndroidDebugBridge? {
-        return sThis
+        return currentAndroidDebugBridge
     }
 
     /**
@@ -428,7 +463,7 @@ class AdbLibAndroidDebugBridge(
     ) {
         adbChangeEvents.addDebugBridgeChangeListener(listener)
 
-        val localThis = sThis
+        val localThis = currentAndroidDebugBridge
 
         if (localThis != null) {
             // we attempt to catch any exception so that a bad listener doesn't kill our thread
@@ -495,14 +530,14 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun isUserManagedAdbMode(): Boolean {
-        return sUserManagedAdbMode
+        return isUserManagedAdbMode
     }
 
     /** Instantiates sSocketAddr with the address of the host's adb process.  */
     private fun initAdbPort(userManagedAdbPort: Int) {
         // If we're in unit test mode, we already manually set sAdbServerPort.
-        if (!sUnitTestMode) {
-            sAdbServerPort = if (sUserManagedAdbMode) {
+        if (!isUnitTestMode) {
+            sAdbServerPort = if (isUserManagedAdbMode) {
                 userManagedAdbPort
             } else {
                 getAdbServerPort()
@@ -662,13 +697,13 @@ class AdbLibAndroidDebugBridge(
     }
 
     private fun initOsLocationAndCheckVersion(osLocation: String?) {
-        if (osLocation == null || osLocation.isEmpty()) {
+        if (osLocation.isNullOrEmpty()) {
             throw InvalidParameterException()
         }
         mAdbOsLocation = osLocation
 
         try {
-            mVersionCheck = checkAdbVersion(fetchAdbVersion())
+            passedAdbServerVersionCheck = checkAdbVersion(fetchAdbVersion())
         } catch (e: IOException) {
             throw IllegalArgumentException(e)
         }
@@ -725,38 +760,62 @@ class AdbLibAndroidDebugBridge(
         return passes
     }
 
-    override fun getSocketAddress(): InetSocketAddress = runBlocking {
-        val knownRemoteAddress = if (!sUnitTestMode) {
-            adbServerController.lastKnownRemoteAddress ?: run {
-                // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
-                // can fail for many reasons (server not started, server not available) so we have
-                // to ignore errors.
-                if (adbServerController.isStarted) {
-                    runCatching { adbServerController.channelProvider.createChannel().use {} }
+    override fun getSocketAddress(): InetSocketAddress {
+        val knownRemoteAddress = try {
+            runBlockingLegacy {
+                if (!isUnitTestMode) {
+                    adbServerController.lastKnownRemoteAddress ?: run {
+                        // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
+                        // can fail for many reasons (server not started, server not available) so we have
+                        // to ignore errors.
+                        if (adbServerController.isStarted) {
+                            runCatching {
+                                adbServerController.channelProvider.createChannel().use {}
+                            }
+                        }
+                        adbServerController.lastKnownRemoteAddress
+                    }
+                } else {
+                    null
                 }
-                adbServerController.lastKnownRemoteAddress
             }
-        } else {
+        } catch (t: Throwable) {
+            when (t) {
+                // `InterruptedException` can be thrown from `runBlocking`, and we simply ignore it,
+                // matching the behavior in `AndroidDebugBridgeImpl`, where
+                // `ClosedByInterruptException` is also caught and ignored
+                is InterruptedException,
+                is TimeoutException -> {
+                    logger.warn(t, "Exception while getting a socketAddress")
+                }
+
+                else -> {
+                    logger.warn(t, "Unexpected exception thrown while getting a socketAddress")
+                }
+            }
             null
         }
 
-        knownRemoteAddress ?: InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort)
+        return knownRemoteAddress ?: InetSocketAddress(
+            InetAddress.getLoopbackAddress(),
+            sAdbServerPort ?: 0
+        )
     }
 
-    private fun startMonitoringServices(bridgeInstance: AndroidDebugBridge) {
+    private fun startIDeviceManager(bridgeInstance: AndroidDebugBridge) {
         assert(lock.isHeldByCurrentThread)
 
-        iDeviceManager =
+        adblibCompatDeviceManager =
             AdbLibIDeviceManagerFactory(session).createIDeviceManager(
                 bridgeInstance,
                 IDeviceManagerUtils.createIDeviceManagerListener()
             )
     }
 
-    private fun killMonitoringServices() {
+    private fun stopIDeviceManager() {
         assert(lock.isHeldByCurrentThread)
 
-        iDeviceManager?.let {
+        adblibCompatDeviceManager?.let {
             try {
                 it.close()
             } catch (e: Exception) {
@@ -764,7 +823,7 @@ class AdbLibAndroidDebugBridge(
                 Log.e(ADB, e)
             }
         }
-        iDeviceManager = null
+        adblibCompatDeviceManager = null
     }
 
     override fun stopAdb(timeout: Long, unit: TimeUnit): Boolean {
@@ -787,12 +846,12 @@ class AdbLibAndroidDebugBridge(
 
     override fun terminate() {
         withLock {
-            if (sThis != null) {
-                killMonitoringServices()
+            if (currentAndroidDebugBridge != null) {
+                stopIDeviceManager()
             }
 
-            sInitialized = false
-            sThis = null
+            initialized = false
+            currentAndroidDebugBridge = null
         }
     }
 
@@ -807,13 +866,13 @@ class AdbLibAndroidDebugBridge(
      */
     override fun disconnectBridge(timeout: Long, unit: TimeUnit): Boolean {
         withLock {
-            if (sThis != null) {
+            if (currentAndroidDebugBridge != null) {
                 if (!stop(timeout, unit)) {
                     // We could not stop ADB. Assume we are still running.
                     return false
                 }
                 // Success, store our local instance
-                sThis = null
+                currentAndroidDebugBridge = null
             }
         }
 
@@ -825,15 +884,16 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun hasInitialDeviceList(): Boolean {
-        return iDeviceManager?.hasInitialDeviceList() == true
+        return adblibCompatDeviceManager?.hasInitialDeviceList() == true
     }
 
     override fun getDevices(): Array<IDevice> = runBlocking {
-        iDeviceManager?.devices?.toTypedArray() ?: emptyArray()
+        adblibCompatDeviceManager?.devices?.toTypedArray() ?: emptyArray()
     }
 
     override fun isConnected(): Boolean {
-        return adbServerController.isStarted
+        val trackState = session.trackDevices().value
+        return !trackState.isTrackerDisconnected && !trackState.isTrackerConnecting
     }
 
     /**
@@ -852,7 +912,7 @@ class AdbLibAndroidDebugBridge(
      * @return true if success.
      */
     override fun restart(timeout: Long, unit: TimeUnit): Boolean {
-        if (sUserManagedAdbMode) {
+        if (isUserManagedAdbMode) {
             Log.e(ADB, "Cannot restart adb when using user managed ADB server.")
             return false
         }
@@ -866,7 +926,7 @@ class AdbLibAndroidDebugBridge(
             return false
         }
 
-        if (sAdbServerPort == 0) {
+        if (sAdbServerPort == null) {
             Log.e(
                 ADB,
                 "ADB server port for restarting AndroidDebugBridge is not set."
@@ -874,7 +934,7 @@ class AdbLibAndroidDebugBridge(
             return false
         }
 
-        if (!mVersionCheck) {
+        if (!passedAdbServerVersionCheck) {
             Log.logAndDisplay(
                 Log.LogLevel.ERROR,
                 ADB,
@@ -890,18 +950,14 @@ class AdbLibAndroidDebugBridge(
 
         val isSuccessful = withLock {
             var success = stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
-            if (!success) {
-                Log.w(ADB, "Error stopping ADB without specified timeout")
-            }
 
             if (success) {
-                // TODO: handle exceptions thrown from `start` and return a correct value
                 success = startAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)
             }
-            if (success && iDeviceManager == null) {
+            if (success && adblibCompatDeviceManager == null) {
                 // `sThis` is modified and accessed here from within a `withLock` block
-                checkNotNull(sThis)
-                startMonitoringServices(sThis!!)
+                checkNotNull(currentAndroidDebugBridge)
+                startIDeviceManager(currentAndroidDebugBridge!!)
             }
             success
         }
@@ -942,6 +998,28 @@ class AdbLibAndroidDebugBridge(
 
     override fun queryFeatures(adbFeaturesRequest: String): String {
         unsupportedMethod()
+    }
+
+    /**
+     * Similar to [runBlocking] but with a custom [timeout]
+     *
+     * For information about the exceptions that [runBlocking] may throw, see the [runBlocking]
+     * documentation. Additionally, this method
+     * @throws TimeoutException if [block] take more than [timeout] to execute
+     */
+    private fun <R> runBlockingLegacy(
+        timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
+        block: suspend CoroutineScope.() -> R
+    ): R {
+        return runBlocking {
+            if (timeout == INFINITE_DURATION) {
+                block()
+            } else {
+                session.withErrorTimeout(timeout) {
+                    block()
+                }
+            }
+        }
     }
 
     private inline fun <R> withLock(block: () -> R): R {
@@ -989,22 +1067,5 @@ class AdbLibAndroidDebugBridge(
 
         // Where to find the ADB bridge.
         const val DEFAULT_ADB_PORT: Int = 5037
-
-        // Only set when in unit testing mode. This is a hack until we move to devicelib.
-        // http://b.android.com/221925
-        private var sUnitTestMode: Boolean = false
-
-        /** Don't automatically manage ADB server.  */
-        private var sUserManagedAdbMode: Boolean = false
-
-        private var sClientSupport: Boolean = false
-
-        private var sClientManager: ClientManager? = null
-
-        private var sIDeviceManagerFactory: IDeviceManagerFactory? = null
-
-        private var iDeviceUsageTracker: IDeviceUsageTracker? = null
-
-        private var sAdbEnvVars: Map<String, String> = emptyMap()
     }
 }

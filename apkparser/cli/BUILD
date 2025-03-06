@@ -13,15 +13,15 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
-        "//tools/base/common:studio.android.sdktools.common[module]",
-        "//tools/base/sdklib:studio.android.sdktools.sdklib[module]",
-        "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer[module]",
-        "//tools/base/sdk-common:studio.android.sdktools.sdk-common[module]",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/sdklib:studio.android.sdktools.sdklib",
+        "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/adt/idea/.idea/libraries:google-dexlib2",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources[module]",
+        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//prebuilts/tools/common/m2:jopt-simple-4.9",
     ],
 )

@@ -69,7 +69,7 @@ public class LegacyLocalRepoTest extends TestCase {
                 mSdkLocation.resolve("tools/" + SdkConstants.FN_EMULATOR), "placeholder");
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getRepoManagerAndLoadSynchronously(progress);
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
@@ -99,7 +99,7 @@ public class LegacyLocalRepoTest extends TestCase {
                         + "Platform.MinToolsRev=22\n");
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getRepoManagerAndLoadSynchronously(progress);
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
@@ -130,7 +130,7 @@ public class LegacyLocalRepoTest extends TestCase {
                         + "Platform.MinToolsRev=22\n");
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(mSdkLocation, null).getRepoManagerAndLoadSynchronously(progress);
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
@@ -342,7 +342,7 @@ public class LegacyLocalRepoTest extends TestCase {
     private static LocalPackage loadLocalPackage(
             Path root, String packagePath, boolean allowWarnings) throws Exception {
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = new AndroidSdkHandler(root, null).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(root, null).getRepoManagerAndLoadSynchronously(progress);
 
         if (!allowWarnings) {
             progress.assertNoErrorsOrWarnings();

@@ -33,20 +33,6 @@ class ZipSubject(
 
     companion object {
         /**
-         * Returns a [ZipSubject]
-         */
-        fun assertThat(zip: Zip): ZipSubject {
-            return assertAbout(zips()).that(zip)
-        }
-
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
-            action(assertThat(zip))
-        }
-
-        /**
          * Creates a [ZipSubject] and configures it with the given action
          */
         fun assertThat(path: Path, action: ZipSubject.() -> Unit) {
@@ -58,10 +44,17 @@ class ZipSubject(
         /**
          * Creates a [ZipSubject] and configures it with the given action
          */
+        fun assertThat(file: File, action: ZipSubject.() -> Unit) {
+            assertThat(file.toPath(), action)
+        }
+
+        /**
+         * Creates a [ZipSubject] and configures it with the given action
+         */
         @JvmStatic
         fun assertThat(path: Path, action: Consumer<ZipSubject>) {
-            SimpleZip(path).use {
-                action.accept(assertThat(it))
+            assertThat(path) {
+                action.accept(this)
             }
         }
 
@@ -71,6 +64,20 @@ class ZipSubject(
         @JvmStatic
         fun assertThat(file: File, action: Consumer<ZipSubject>) {
             assertThat(file.toPath(), action)
+        }
+
+        /**
+         * Returns a [ZipSubject]
+         */
+        internal fun assertThat(zip: Zip): ZipSubject {
+            return assertAbout(zips()).that(zip)
+        }
+
+        /**
+         * Creates a [ZipSubject] and configures it with the given action
+         */
+        internal fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
+            action(assertThat(zip))
         }
 
         /**

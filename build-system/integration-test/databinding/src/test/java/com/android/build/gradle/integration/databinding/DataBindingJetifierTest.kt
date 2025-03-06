@@ -35,6 +35,12 @@ class DataBindingJetifierTest {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("databindingAndJetifier")
+        // b/116109681 - Enforce unique package names disabled in this test due to test project
+        // containing violation.
+        .addGradleProperties(
+            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName
+                    + "=false"
+        )
         .create()
 
     @Test

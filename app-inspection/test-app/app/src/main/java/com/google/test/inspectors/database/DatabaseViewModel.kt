@@ -30,6 +30,8 @@ import androidx.room.Room
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
+import androidx.sqlite.driver.bundled.SQLITE_OPEN_READWRITE
 import androidx.sqlite.execSQL
 import app.cash.sqldelight.Query
 import app.cash.sqldelight.db.QueryResult
@@ -77,15 +79,17 @@ private val QUERY_TABLES =
   """
 
 @HiltViewModel
-internal class DatabaseViewModel @Inject constructor(application: Application) :
+internal class DatabaseViewModel @Inject constructor(private val application: Application) :
   AppScaffoldViewModel(), DatabaseActions {
 
   private val roomDatabase =
     Room.databaseBuilder(application, RoomDatabase::class.java, "room-database.db").build()
 
+  private val bundledSQLiteDriver = BundledSQLiteDriver()
+
   private val roomBundledDatabase =
     Room.databaseBuilder(application, RoomDatabase::class.java, "room-bundled-database.db")
-      .setDriver(BundledSQLiteDriver())
+      .setDriver(bundledSQLiteDriver)
       .build()
 
   private val sqldelightDriver =
@@ -104,7 +108,10 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
   @RequiresApi(28) private val readOnlyDatabaseOpenHelper = ReadOnlyDatabaseOpenHelper(application)
   private val readOnlyDatabaseFlow: MutableStateFlow<SQLiteDatabase?> = MutableStateFlow(null)
 
-  private lateinit var bundledDatabase: SQLiteConnection
+  private val readWriteBundledDatabaseFlow: MutableStateFlow<SQLiteConnection?> =
+    MutableStateFlow(null)
+  private val readOnlyBundledDatabaseFlow: MutableStateFlow<SQLiteConnection?> =
+    MutableStateFlow(null)
 
   init {
     scope.launch(IO) {
@@ -115,11 +122,6 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
       sqldelightDriver.getTables().forEach {
         sqldelightDriver.addListener(it, listener = SqlDelightListener(it))
       }
-
-      bundledDatabase =
-        BundledSQLiteDriver().open(application.getDatabasePath("bundled-database.db").path).apply {
-          execSQL(NATIVE_DATABASE_CREATE)
-        }
     }
   }
 
@@ -152,6 +154,36 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
     }
   }
 
+  val readWriteBundledDatabaseState: StateFlow<Boolean> =
+    readWriteBundledDatabaseFlow
+      .map { it != null }
+      .stateIn(viewModelScope, WhileUiSubscribed, false)
+
+  val readOnlyBundledDatabaseState: StateFlow<Boolean> =
+    readOnlyBundledDatabaseFlow.map { it != null }.stateIn(viewModelScope, WhileUiSubscribed, false)
+
+  override fun doOpenReadWriteBundledDatabase() {
+    scope.launch(IO) { readWriteBundledDatabaseFlow.value = openBundledDatabase(false) }
+  }
+
+  override fun doCloseReadWriteBundledDatabase() {
+    scope.launch(IO) {
+      readWriteBundledDatabaseFlow.value?.close()
+      readWriteBundledDatabaseFlow.value = null
+    }
+  }
+
+  override fun doOpenReadOnlyBundledDatabase() {
+    scope.launch(IO) { readOnlyBundledDatabaseFlow.value = openBundledDatabase(true) }
+  }
+
+  override fun doCloseReadOnlyBundledDatabase() {
+    scope.launch(IO) {
+      readOnlyBundledDatabaseFlow.value?.close()
+      readOnlyBundledDatabaseFlow.value = null
+    }
+  }
+
   override fun addUserRoom() {
     scope.launch(IO) { roomDatabase.userDao().insert(RoomUserEntity(name = randomUserName())) }
   }
@@ -179,10 +211,12 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
 
   override fun addUserBundled() {
     scope.launch(IO) {
-      bundledDatabase.prepare(INSERT_USER).use {
+      val connection = readWriteBundledDatabaseFlow.value ?: openBundledDatabase(false)
+      connection.prepare(INSERT_USER).use {
         it.bindText(1, randomUserName())
         it.step()
       }
+      readWriteBundledDatabaseFlow.value = connection
     }
   }
 
@@ -234,6 +268,15 @@ internal class DatabaseViewModel @Inject constructor(application: Application) :
     override fun queryResultsChanged() {
       setSnack("SqlDelight table `$table` updated")
     }
+  }
+
+  private fun openBundledDatabase(isReadOnly: Boolean): SQLiteConnection {
+    val flags = if (isReadOnly) SQLITE_OPEN_READONLY else SQLITE_OPEN_READWRITE
+    val path = application.getDatabasePath("bundled-database.db").path
+    // Open a writeable database and create table if needed, then close it
+    bundledSQLiteDriver.open(path).use { it.execSQL(NATIVE_DATABASE_CREATE) }
+
+    return bundledSQLiteDriver.open(path, flags)
   }
 }
 

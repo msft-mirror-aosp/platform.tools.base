@@ -66,6 +66,13 @@ class AarSubjectTest: BaseZipSubjectTest() {
                     resourceAsText("foo/file.txt").isEqualTo("foo")
                     resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
                 }
+
+                // test that you can call the same inner zip (possibly via a different API)
+                // multiple times
+                // (must actually read some content from the zip and not rely on cache.)
+                mainJar {
+                    resourceAsText("somefile.txt").isEqualTo("foo")
+                }
             }
 
             // test negative results
@@ -118,7 +125,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }.use { aar ->
 
             assertThat(aar) {
-                allSecondaryJars() {
+                allSecondaryJars {
                     classes().containsExactly(
                         "com/foo/SomeClass",
                         "com/foo/SomeOtherClass",

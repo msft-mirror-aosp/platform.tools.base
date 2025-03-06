@@ -27,7 +27,12 @@ android {
     defaultConfig.minSdkVersion libs.versions.supportLibMinSdk.get()
 
     testOptions {
-        unitTests.includeAndroidResources = true
+        unitTests.all {
+            systemProperty "robolectric-deps.properties", "${projectDir.absolutePath}/robolectric-deps.properties"
+        }
+        unitTests {
+            includeAndroidResources = true
+        }
     }
 }
 

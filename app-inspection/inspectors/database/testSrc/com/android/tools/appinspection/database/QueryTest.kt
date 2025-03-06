@@ -111,7 +111,7 @@ class QueryTest {
     val expectedColumnNames = table1.columns.map { it.name }
 
     test_valid_query(
-      Database("db1", table1, table2),
+      DatabaseModel("db1", table1, table2),
       values,
       query,
       expectedValues,
@@ -140,7 +140,7 @@ class QueryTest {
 
   @Test
   fun test_error_invalid_query() = runBlocking {
-    val databaseId = inspectDatabase(testEnvironment.openDatabase(Database("db", table2)))
+    val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table2)))
     val mistypedSelect = "selecttt"
     val command = "$mistypedSelect * from sqlite_master"
     val queryParams = null
@@ -158,7 +158,7 @@ class QueryTest {
 
   @Test
   fun test_error_wrong_param_count() = runBlocking {
-    val databaseId = inspectDatabase(testEnvironment.openDatabase(Database("db", table2)))
+    val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table2)))
     val command = "select * from sqlite_master where name=?"
     val queryParams = listOf("'a'", "'b'") // one too many param
     val response = testEnvironment.sendCommand(createQueryCommand(databaseId, command, queryParams))
@@ -177,7 +177,7 @@ class QueryTest {
   @Test
   fun test_valid_query_nested_query_with_a_comment() {
     test_valid_query(
-      Database("db", table2),
+      DatabaseModel("db", table2),
       values =
         listOf(
           table2 to arrayOf("1", "'A'"),
@@ -253,7 +253,7 @@ class QueryTest {
 
   private fun test_valid_query_with_params(paramNameLeft: String, paramNameRight: String) {
     test_valid_query(
-      Database("db", table2),
+      DatabaseModel("db", table2),
       values =
         listOf(
           table2 to arrayOf("1", "'A'"),
@@ -274,7 +274,7 @@ class QueryTest {
   @Test
   fun test_valid_query_with_params_column_name_limitation() {
     test_valid_query(
-      Database("db", table2),
+      DatabaseModel("db", table2),
       values =
         listOf(
           table2 to arrayOf("1", "'A'"),
@@ -311,7 +311,7 @@ class QueryTest {
       )
 
     // when
-    val databaseId = inspectDatabase(testEnvironment.openDatabase(Database("db", table2)))
+    val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table2)))
     insertValues.forEach { params -> issueQuery(databaseId, insertCommand, params) }
 
     // then
@@ -331,7 +331,7 @@ class QueryTest {
   @Test
   fun test_valid_query_empty_result_column_names_present() {
     test_valid_query(
-      Database("db", table2),
+      DatabaseModel("db", table2),
       values = listOf(table2 to arrayOf("1", "'A'"), table2 to arrayOf("2", "'B'")),
       query = "select * from ${table2.name} where 1=0", // impossible condition
       expectedValues = emptyList(),
@@ -343,7 +343,7 @@ class QueryTest {
   @Test
   fun test_valid_query_missing_column_values() {
     test_valid_query(
-      Database("db", table2),
+      DatabaseModel("db", table2),
       values =
         listOf(
           table2 to arrayOf("1", "'A'"),
@@ -372,7 +372,7 @@ class QueryTest {
     // create a database
     val db =
       testEnvironment.openDatabase(
-        Database("db_large_val", Table("table1", Column("c1", "blob"))),
+        DatabaseModel("db_large_val", Table("table1", Column("c1", "blob"))),
         writeAheadLoggingEnabled = true,
       )
 
@@ -444,7 +444,7 @@ class QueryTest {
     val expectedTypes = listOf(listOf("integer", "text"), listOf("text", "text"))
 
     test_valid_query(
-      Database("db1", table1, table2),
+      DatabaseModel("db1", table1, table2),
       values,
       query,
       expectedValues,
@@ -454,7 +454,7 @@ class QueryTest {
   }
 
   private fun test_valid_query(
-    database: Database,
+    database: DatabaseModel,
     values: List<Pair<Table, Array<String>>>,
     query: String,
     expectedValues: List<List<Any?>>,
@@ -486,7 +486,7 @@ class QueryTest {
   @Test
   fun test_create_table() = runBlocking {
     // given
-    val database = Database("db1", table1, table2)
+    val database = DatabaseModel("db1", table1, table2)
     val databaseId = inspectDatabase(testEnvironment.openDatabase(database))
     val initialTotalChanges = queryTotalChanges(databaseId)
 
@@ -502,7 +502,7 @@ class QueryTest {
   @Test
   fun test_drop_table() = runBlocking {
     // given
-    val database = Database("db1", table1, table2)
+    val database = DatabaseModel("db1", table1, table2)
     val databaseId =
       inspectDatabase(
         testEnvironment.openDatabase(database).also {
@@ -525,7 +525,7 @@ class QueryTest {
   fun test_alter_table() = runBlocking {
     // given
     val table = table2
-    val databaseId = inspectDatabase(testEnvironment.openDatabase(Database("db", table)))
+    val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table)))
     val initialTotalChanges = queryTotalChanges(databaseId)
     val newColumn = Column("num", "NUM")
 
@@ -542,7 +542,7 @@ class QueryTest {
   fun test_insert_update_delete_changes() = runBlocking {
     // given
     val table = table2
-    val databaseId = inspectDatabase(testEnvironment.openDatabase(Database("db", table)))
+    val databaseId = inspectDatabase(testEnvironment.openDatabase(DatabaseModel("db", table)))
     var expectedTotalChanges = 1 // TODO: investigate why 1 and not 0
 
     val newValue = listOf("1", "a")
@@ -596,7 +596,7 @@ class QueryTest {
 
   @Test
   fun test_query_isNotForcedOpen() = runBlocking {
-    val database = testEnvironment.openDatabase(Database("db1"))
+    val database = testEnvironment.openDatabase(DatabaseModel("db1"))
 
     testEnvironment.registerAlreadyOpenDatabases(listOf(database))
     testEnvironment.sendCommand(createTrackDatabasesCommand())
@@ -609,7 +609,7 @@ class QueryTest {
 
   @Test
   fun test_query_isForcedOpen() = runBlocking {
-    val database = testEnvironment.openDatabase(Database("db1"))
+    val database = testEnvironment.openDatabase(DatabaseModel("db1"))
     testEnvironment.registerApplication(database)
     testEnvironment.sendCommand(createTrackDatabasesCommand(forceOpen = true))
     val databaseId = testEnvironment.awaitDatabaseOpenedEvent(database.displayName).databaseId
@@ -624,7 +624,7 @@ class QueryTest {
     fromCursor: (Cursor) -> T,
     fromCellValue: (CellValue) -> T,
   ) = runBlocking {
-    val db = testEnvironment.openDatabase(Database("db1", Table("t1", Column("c1", "INT"))))
+    val db = testEnvironment.openDatabase(DatabaseModel("db1", Table("t1", Column("c1", "INT"))))
     testEnvironment.registerAlreadyOpenDatabases(listOf(db))
     testEnvironment.sendCommand(createTrackDatabasesCommand())
     val id = testEnvironment.receiveEvent().databaseOpened.databaseId
@@ -652,9 +652,9 @@ class QueryTest {
   private suspend fun inspectDatabase(databaseInstance: SQLiteDatabase): Int {
     testEnvironment.registerAlreadyOpenDatabases(
       listOf(
-        testEnvironment.openDatabase(Database("ignored_1")), // extra testing value
+        testEnvironment.openDatabase(DatabaseModel("ignored_1")), // extra testing value
         databaseInstance,
-        testEnvironment.openDatabase(Database("ignored_2")), // extra testing value
+        testEnvironment.openDatabase(DatabaseModel("ignored_2")), // extra testing value
       )
     )
     testEnvironment.sendCommand(createTrackDatabasesCommand())

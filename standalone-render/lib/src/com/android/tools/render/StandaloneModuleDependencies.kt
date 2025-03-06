@@ -29,6 +29,8 @@ internal class StandaloneModuleDependencies : ModuleDependencies {
      */
     override fun dependsOn(artifactId: GoogleMavenArtifactId): Boolean = false
 
+    override fun dependsOnAndroidx(): Boolean = false
+
     /**
      * This is used to know which R-classes to load for [ResourceIdManager]. In the standalone
      * rendering we load resource ids from the apk, not from R-classes, so this is empty.

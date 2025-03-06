@@ -16,82 +16,81 @@
 
 package com.android.build.gradle.integration.api
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.truth.ScannerSubject
+
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.google.common.truth.Truth
+import java.io.File
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 
 class LifecycleTasksTest {
 
     @get:Rule
-    val tmpDirectory = TemporaryFolder()
+    val rule = GradleRule
+        .from {
+            androidApplication {
+                pluginCallbacks += MyAppCallback::class.java
+            }
+        }
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
+    class MyAppCallback: ApplicationComponentCallback {
 
-    @Test
-    fun testAddingPreBuildDependent() {
-        project.buildFile.appendText(
-            """
-            abstract class PreBuildCustomTask extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() {
-                    println("PreBuildCustomTask ran !")
-                }
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            val customPreBuildProvider = project.tasks.register(
+                "customPreBuild",
+                LifecycleDependencyCustomTask::class.java
+            ) {
+                it.outputDirectory.set(File("build/output"))
             }
 
-            def customPreBuildProvider = tasks.register("customPreBuild", PreBuildCustomTask) {
-                it.getOutputDirectory().set(new File("build/output"))
+            val customPreInstallationProvider = project.tasks.register(
+                "customPreInstallationTask",
+                LifecycleDependencyCustomTask::class.java
+            ) {
+                it.outputDirectory.set(File("build/output2"))
             }
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    variant.lifecycleTasks.registerPreBuild(customPreBuildProvider)
-                })
-            }
-        """.trimIndent()
-        )
 
-        val buildResult = project.executor().run("preDebugBuild")
-        Truth.assertThat(buildResult.didWorkTasks).contains(":customPreBuild")
-        ScannerSubject.assertThat(buildResult.stdout).contains("PreBuildCustomTask ran !")
+            androidComponents.onVariants { variant ->
+                variant.lifecycleTasks.registerPreBuild(customPreBuildProvider)
+                variant.lifecycleTasks.registerPreInstallation(customPreInstallationProvider)
+
+            }
+        }
     }
 
     @Test
-    fun testAddingApkInstallationDependent() {
-        project.buildFile.appendText(
-            """
-            abstract class CustomTask extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
+    fun testAddingPreBuildDependent() {
+        val buildResult = rule.build.executor.run("preDebugBuild")
+        Truth.assertThat(buildResult.didWorkTasks).contains(":app:customPreBuild")
+        ScannerSubject.assertThat(buildResult.stdout).contains("customPreBuild ran !")
+    }
 
-                @TaskAction
-                void run() { }
-            }
-
-            def customTaskProvider = tasks.register("customTask", CustomTask) {
-                it.getOutputDirectory().set(new File("build/output"))
-            }
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    variant.lifecycleTasks.registerApkInstallation(customTaskProvider)
-                })
-            }
-        """.trimIndent()
-        )
-
-        val buildResult = project.executor()
-            .withArgument("--dry-run").run("installDebug")
+    @Test
+    fun testAddingPreInstallationDependenct() {
+        val buildResult = rule.build.executor.withArgument("--dry-run").run("installDebug")
         Truth.assertThat(
-            buildResult.stdout.findAll(":customTask SKIPPED").findFirst().isPresent
+            buildResult.stdout.findAll(":app:customPreInstallationTask SKIPPED").findFirst().isPresent
         ).isTrue()
+    }
+}
+
+abstract class LifecycleDependencyCustomTask: DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        print("$name ran !")
     }
 }

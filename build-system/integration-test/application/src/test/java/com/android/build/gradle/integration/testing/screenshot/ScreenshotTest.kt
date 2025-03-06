@@ -412,8 +412,8 @@ class ScreenshotTest {
         // Generate screenshots to be tested against
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
+        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_simpleComposable_c5877f71_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
@@ -593,7 +593,7 @@ class ScreenshotTest {
 
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
-        val referenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference")
+        val referenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference")
         assertThat(referenceScreenshotDir.listDirectoryEntries()).isEmpty()
 
         val resultsJson = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results.json")
@@ -634,7 +634,7 @@ class ScreenshotTest {
 
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
-        val referenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference")
+        val referenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference")
         assertThat(referenceScreenshotDir.listDirectoryEntries()).isEmpty()
 
         val resultsJson = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results.json")
@@ -730,8 +730,8 @@ class ScreenshotTest {
         build.sstExecutor().run(":app:updateScreenshotTest")
 
         // Verify that reference images are created for both flavors
-        val flavor1ReferenceScreenshotDir = appProject.resolve("src/flavor1Debug/screenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
-        val flavor2ReferenceScreenshotDir = appProject.resolve("src/flavor2Debug/screenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val flavor1ReferenceScreenshotDir = appProject.resolve("src/flavor1DebugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val flavor2ReferenceScreenshotDir = appProject.resolve("src/flavor2DebugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(flavor1ReferenceScreenshotDir.listDirectoryEntries().single().name)
             .isEqualTo("simpleComposableTest_3_748aa731_0.png")
         assertThat(flavor2ReferenceScreenshotDir.listDirectoryEntries().single().name)
@@ -779,8 +779,8 @@ class ScreenshotTest {
 
         // Generate screenshots to be tested against
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
+        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_simpleComposable_c5877f71_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
@@ -861,7 +861,7 @@ class ScreenshotTest {
 
         build.sstExecutor().run(":app:updateDebugScreenshotTest")
 
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debug/screenshotTest/reference/pkg/name/ExampleTest")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_simpleComposable_c5877f71_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",

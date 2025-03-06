@@ -451,7 +451,8 @@ public class ApkInstaller {
             case NO_CERTIFICATE:
                 return "The APK was either not signed, or signed incorrectly.";
             case INSTALL_FAILED_OLDER_SDK:
-                return "The application's minSdkVersion is newer than the device API level.";
+                return "The application's minSdkVersion / targetSdkVersion is incompatible with the"
+                        + " device. Check logcat for detailed message.";
             case DEVICE_NOT_FOUND:
                 return "The device has been disconnected.";
             case SHELL_UNRESPONSIVE:

@@ -17,7 +17,11 @@ package com.android.tools.appinspection.database
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.database.Cursor
+import android.database.Cursor.FIELD_TYPE_BLOB
+import android.database.Cursor.FIELD_TYPE_FLOAT
+import android.database.Cursor.FIELD_TYPE_INTEGER
+import android.database.Cursor.FIELD_TYPE_NULL
+import android.database.Cursor.FIELD_TYPE_STRING
 import android.database.CursorWrapper
 import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteClosable
@@ -256,11 +260,12 @@ internal class SqliteInspector(
 
     // Check for database instances in memory
     for (instance in environment.artTooling().findInstances(SQLiteDatabase::class.java)) {
+      val database = AndroidDatabase(instance)
       /* the race condition here will be handled by mDatabaseRegistry */
       if (instance.isOpen) {
-        onDatabaseOpened(instance)
+        onDatabaseOpened(database)
       } else {
-        onDatabaseClosed(instance)
+        onDatabaseClosed(database)
       }
     }
     if (command.forceOpen) {
@@ -365,13 +370,12 @@ internal class SqliteInspector(
    * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
    */
   private fun registerDatabaseClosedHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook(
-      SQLiteDatabase::class.java,
-      ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE,
-    ) { exitFrame ->
-      val thisObject = exitFrame.thisObject
+    hookRegistry.registerHook<SQLiteDatabase, Unit>(ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) {
+      thisObject,
+      _,
+      _ ->
       if (thisObject is SQLiteDatabase) {
-        onDatabaseClosed(thisObject as SQLiteDatabase?)
+        onDatabaseClosed(AndroidDatabase(thisObject))
       }
     }
   }
@@ -385,7 +389,7 @@ internal class SqliteInspector(
     val exitHook =
       ExitHook<SQLiteDatabase> { database ->
         try {
-          onDatabaseOpened(database)
+          onDatabaseOpened(AndroidDatabase(database))
         } catch (exception: Throwable) {
           connection.sendEvent(
             createErrorOccurredEvent(
@@ -418,7 +422,7 @@ internal class SqliteInspector(
       thisObject,
       _ ->
       if (thisObject is SQLiteDatabase) {
-        databaseRegistry.notifyReleaseReference((thisObject as SQLiteDatabase?)!!)
+        databaseRegistry.notifyReleaseReference(AndroidDatabase(thisObject))
       }
     }
   }
@@ -482,9 +486,12 @@ internal class SqliteInspector(
         "Ljava/lang/String;" +
         "Landroid/os/CancellationSignal;" +
         ")Landroid/database/Cursor;")
-    hookRegistry.registerHook(SQLiteDatabase::class.java, rawQueryMethodSignature) { exitFrame ->
-      val cursor = cursorParam(exitFrame.result)
-      val query = stringParam(exitFrame.args[1]!!)
+    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(rawQueryMethodSignature) {
+      _,
+      args,
+      result ->
+      val query = stringParam(args[1]!!)
+      val cursor = cursorParam(result)
 
       // Only track cursors that might modify the database.
       // TODO: handle PRAGMA select queries, e.g. PRAGMA_TABLE_INFO
@@ -495,6 +502,7 @@ internal class SqliteInspector(
       ) {
         trackedCursors[cursor] = null
       }
+      result
     }
 
     environment.artTooling().registerEntryHook(SQLiteCursor::class.java, "close()V") { thisObject, _
@@ -593,7 +601,7 @@ internal class SqliteInspector(
           // treating unset field as unbounded
           if (responseSizeLimitHint <= 0) responseSizeLimitHint = Long.MAX_VALUE
 
-          val columnNames = listOf(*cursor.columnNames)
+          val columnNames = listOf(*cursor.getColumnNames())
           callback.reply(
             Response.newBuilder()
               .setQuery(
@@ -680,7 +688,7 @@ internal class SqliteInspector(
     if (connection != null) {
       // With WAL enabled, we prefer to use the IO executor. With WAL off we don't have a
       // choice and must use the executor that has a lock (transaction) on the database.
-      return if (connection.database.isWriteAheadLoggingEnabled)
+      return if (connection.database.isWriteAheadLoggingEnabled())
         DatabaseConnection(connection.database, ioExecutor)
       else connection
     }
@@ -713,7 +721,7 @@ internal class SqliteInspector(
     )
   }
 
-  private fun querySchema(database: SQLiteDatabase): Response {
+  private fun querySchema(database: Database): Response {
     var cursor: Cursor? = null
     try {
       val withoutRowidMap = getWithoutRowIdMap(database)
@@ -779,11 +787,11 @@ internal class SqliteInspector(
     }
   }
 
-  private fun getWithoutRowIdMap(database: SQLiteDatabase): Map<String, Boolean> {
+  private fun getWithoutRowIdMap(database: Database): Map<String, Boolean> {
     return buildMap {
-      rawQuery(database, QUERY_TABLE_SQL, emptyArray(), null).use { cursor ->
+      database.rawQuery(QUERY_TABLE_SQL, emptyArray(), null).use { cursor ->
         while (cursor.moveToNext()) {
-          val tableName = cursor.getString(0)
+          val tableName = cursor.getString(0)!!
           val sql = cursor.getString(1)
           val withoutRowId = sql?.substringAfterLast(')')?.contains(REGEX_WITHOUT_ROWID) == true
           put(tableName, withoutRowId)
@@ -792,13 +800,13 @@ internal class SqliteInspector(
     }
   }
 
-  private fun onDatabaseOpened(database: SQLiteDatabase?) {
+  private fun onDatabaseOpened(database: Database) {
     roomInvalidationRegistry.invalidateCache()
-    databaseRegistry.notifyDatabaseOpened(database!!)
+    databaseRegistry.notifyDatabaseOpened(database)
   }
 
-  private fun onDatabaseClosed(database: SQLiteDatabase?) {
-    databaseRegistry.notifyAllDatabaseReferencesReleased(database!!)
+  private fun onDatabaseClosed(database: Database) {
+    databaseRegistry.notifyAllDatabaseReferencesReleased(database)
   }
 
   @Suppress("SameParameterValue")
@@ -823,32 +831,18 @@ internal class SqliteInspector(
    * Executor is relevant in the context of locking, where a locked database with WAL disabled needs
    * to run queries on the thread that locked it.
    */
-  internal class DatabaseConnection(val database: SQLiteDatabase, val executor: Executor)
+  internal class DatabaseConnection(val database: Database, val executor: Executor)
 
   companion object {
 
     @SuppressLint("Recycle") // For: "The cursor should be freed up after use with #close"
     private fun rawQuery(
-      database: SQLiteDatabase,
+      database: Database,
       queryText: String,
       params: Array<String?>,
       cancellationSignal: CancellationSignal?,
     ): Cursor {
-      val cursorFactory =
-        SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
-          for (i in params.indices) {
-            val value = params[i]
-            val index = i + 1
-            if (value == null) {
-              query.bindNull(index)
-            } else {
-              query.bindString(index, value)
-            }
-          }
-          SQLiteCursor(driver, editTable, query)
-        }
-
-      return database.rawQueryWithFactory(cursorFactory, queryText, null, null, cancellationSignal)
+      return database.rawQuery(queryText, params, cancellationSignal)
     }
 
     private fun parseQueryParameterValues(command: QueryCommand): Array<String?> {
@@ -868,10 +862,10 @@ internal class SqliteInspector(
     }
 
     /** @param responseSizeLimitHint expressed in bytes */
-    private fun convert(cursor: Cursor?, responseSizeLimitHint: Long): List<Row> {
+    private fun convert(cursor: Cursor, responseSizeLimitHint: Long): List<Row> {
       var responseSize: Long = 0
       val result: MutableList<Row> = ArrayList()
-      val columnCount = cursor!!.columnCount
+      val columnCount = cursor.getColumnCount()
       while (cursor.moveToNext() && responseSize < responseSizeLimitHint) {
         val rowBuilder = Row.newBuilder()
         for (i in 0 until columnCount) {
@@ -888,15 +882,15 @@ internal class SqliteInspector(
       return result
     }
 
-    private fun readValue(cursor: Cursor?, index: Int): CellValue {
+    private fun readValue(cursor: Cursor, index: Int): CellValue {
       val builder = CellValue.newBuilder()
 
-      when (cursor!!.getType(index)) {
-        Cursor.FIELD_TYPE_NULL -> {}
-        Cursor.FIELD_TYPE_BLOB -> builder.setBlobValue(ByteString.copyFrom(cursor.getBlob(index)))
-        Cursor.FIELD_TYPE_STRING -> builder.setStringValue(cursor.getString(index))
-        Cursor.FIELD_TYPE_INTEGER -> builder.setLongValue(cursor.getLong(index))
-        Cursor.FIELD_TYPE_FLOAT -> builder.setDoubleValue(cursor.getDouble(index))
+      when (cursor.getType(index)) {
+        FIELD_TYPE_NULL -> {}
+        FIELD_TYPE_BLOB -> builder.setBlobValue(ByteString.copyFrom(cursor.getBlob(index)))
+        FIELD_TYPE_STRING -> builder.setStringValue(cursor.getString(index))
+        FIELD_TYPE_INTEGER -> builder.setLongValue(cursor.getLong(index))
+        FIELD_TYPE_FLOAT -> builder.setDoubleValue(cursor.getDouble(index))
       }
       return builder.build()
     }

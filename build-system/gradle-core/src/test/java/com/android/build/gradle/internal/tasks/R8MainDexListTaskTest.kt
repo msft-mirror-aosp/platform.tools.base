@@ -200,6 +200,7 @@ fun runR8(
             disableDesugaring = true,
             fullMode = false,
             strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
+            isolatedSplits = null,
             r8OutputType = R8OutputType.DEX
         ),
         resourceShrinkingConfig = null,

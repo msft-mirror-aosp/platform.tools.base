@@ -1,0 +1,60 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.android.adblib.ddmlibcompatibility.testutils
+
+import com.android.adblib.AdbServerConfiguration
+import com.android.adblib.AdbServerController
+import com.android.adblib.AdbSession
+import com.android.adblib.ddmlibcompatibility.AdbLibAndroidDebugBridge
+import com.android.ddmlib.AndroidDebugBridge
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.rules.ExternalResource
+
+/**
+ * This rule should be set up when we want to redirect `AndroidDebugBrdige.delegate`
+ * from `AndroidDebugBridgeImpl` to `AdbLibAndroidDebugBridge`.
+ *
+ * `portSuppier` and `adbSessionSupplier` are needed to feed the adb server port and `AdbSession`
+ * from the outer rule like `FakeAdbServerProviderRule`.
+ */
+class UseAdbLibAndroidDebugBridgeRule(
+    private val portSuppier: () -> Int, private val adbSessionSupplier: () -> AdbSession
+) : ExternalResource() {
+
+    public override fun before() {
+        val config = MutableStateFlow(
+            AdbServerConfiguration(
+                adbPath = null,
+                serverPort = portSuppier(),
+                isUserManaged = false,
+                isUnitTest = true,
+                envVars = emptyMap()
+            )
+        )
+        val adbSession = adbSessionSupplier()
+        val adbServerController =
+            AdbServerController.createServerController(adbSession.host, config)
+        AndroidDebugBridge.preInit(
+            AdbLibAndroidDebugBridge(
+                adbSession, adbServerController, config
+            )
+        )
+    }
+
+    override fun after() {
+        AndroidDebugBridge.resetForTests()
+    }
+}

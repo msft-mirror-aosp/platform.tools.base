@@ -28,6 +28,14 @@ internal interface DatabaseActions {
 
   fun doCloseReadOnlyDatabase() {}
 
+  fun doOpenReadWriteBundledDatabase() {}
+
+  fun doCloseReadWriteBundledDatabase() {}
+
+  fun doOpenReadOnlyBundledDatabase() {}
+
+  fun doCloseReadOnlyBundledDatabase() {}
+
   fun addUserRoom() {}
 
   fun addUserRoomBundled() {}

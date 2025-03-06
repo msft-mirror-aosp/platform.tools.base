@@ -84,7 +84,7 @@ class LifecycleTasksImplTest {
         val task = mock<Task>()
         val apkInstallationTask = mock<Task>()
 
-        anchorTasks.registerApkInstallation(task)
+        anchorTasks.registerPreInstallation(task)
         anchorTasks.invokeApkInstallationActions(apkInstallationTask)
 
         verify(apkInstallationTask).dependsOn(task)

@@ -23,9 +23,7 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.sdklib.SdkVersionInfo;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -33,6 +31,10 @@ import org.junit.Test;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(FilterableParameterized.class)
 public class DataBindingIntegrationTestAppsConnectedTest {
@@ -49,7 +51,14 @@ public class DataBindingIntegrationTestAppsConnectedTest {
                         .addGradleProperties(
                                 BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
                         .addGradleProperties(
-                                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
+                                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName()
+                                        + "=false")
+                        // b/116109681 - Enforce unique package names disabled in this test due to
+                        // test project
+                        // containing violation.
+                        .addGradleProperties(
+                                BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName()
+                                        + "=false")
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
         if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
             builder.withCompileSdkVersion("28");

@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -80,7 +81,7 @@ class AdbServerControllerImplTest {
     }
 
     @Test
-    fun testStartThrows_whenAdbInUserManagedMode(): Unit = runBlockingWithTimeout {
+    fun testCanStartControllerInUserManagedMode(): Unit = runBlockingWithTimeout {
         // Prepare
         val controller =
             registerCloseable(
@@ -93,15 +94,18 @@ class AdbServerControllerImplTest {
             it.copy(
                 isUserManaged = true,
                 adbPath = ADB_FILE_PATH,
-                serverPort = PORT,
+                serverPort = fakeAdb.port,
                 isUnitTest = false
             )
         }
-        exceptionRule.expect(IllegalStateException::class.java)
-        exceptionRule.expectMessage("Start adb triggered for user-managed adb mode")
 
         // Act
         controller.start()
+
+        // Assert
+        // Can create channel
+        registerCloseable(controller.channelProvider.createChannel())
+        assertTrue(controller.isStarted)
     }
 
     @Test
@@ -128,7 +132,7 @@ class AdbServerControllerImplTest {
     }
 
     @Test
-    fun testStopThrows_whenAdbInUserManagedMode(): Unit = runBlockingWithTimeout {
+    fun testCanStopControllerInUserManagedMode(): Unit = runBlockingWithTimeout {
         // Prepare
         val controller =
             registerCloseable(
@@ -139,24 +143,25 @@ class AdbServerControllerImplTest {
             )
         configFlow.update {
             it.copy(
-                serverPort = PORT,
-            )
-        }
-        // Put controller into `isStarted` state before tweaking the config
-        controller.start()
-        configFlow.update {
-            it.copy(
                 isUserManaged = true,
                 adbPath = ADB_FILE_PATH,
-                serverPort = PORT,
+                serverPort = fakeAdb.port,
                 isUnitTest = false
             )
         }
-        exceptionRule.expect(IllegalStateException::class.java)
-        exceptionRule.expectMessage("Stop adb triggered for user-managed adb mode")
+        // Put controller in a started state
+        controller.start()
+        assertTrue(controller.isStarted)
 
         // Act
         controller.stop()
+        val adbChannel = withTimeoutOrNull(100) {
+            registerCloseable(controller.channelProvider.createChannel())
+        }
+
+        // Assert: after controller is stopped, it can no longer create channels
+        assertFalse(controller.isStarted)
+        assertNull(adbChannel)
     }
 
     @Test
@@ -429,6 +434,77 @@ class AdbServerControllerImplTest {
     }
 
     @Test
+    fun testRestartIsNoop_whenInUserManagedMode(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                isUserManaged = true,
+                adbPath = ADB_FILE_PATH,
+                serverPort = fakeAdb.port,
+                isUnitTest = false
+            )
+        }
+        // Put controller in a started state
+        controller.start()
+        assertTrue(controller.isStarted)
+        processRunner.reset()
+
+        // Act
+        controller.restart()
+
+        // Assert: after controller is restarted it can still create channels
+        registerCloseable(controller.channelProvider.createChannel())
+        assertTrue(controller.isStarted)
+        // We didn't run any `adb start-server` or `adb kill-server` commands
+        assertTrue(processRunner.allCommands.isEmpty())
+    }
+
+    @Test
+    fun testRestartIsNoop_whenInInitialOrStoppedState(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+
+        // Act: restart from the initial state
+        controller.restart()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+
+        // Prepare: transition to a stopped state
+        controller.start()
+        controller.stop()
+        processRunner.reset()
+
+        // Act: restart from the stopped state
+        controller.restart()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+    }
+
+    @Test
     fun testOnlyOneAdbServerRestartIsTriggered_whenConcurrentRestarts(): Unit =
         runBlockingWithTimeout {
             // Prepare
@@ -657,7 +733,9 @@ class AdbServerControllerImplTest {
         private val ADB_FILE_PATH = Paths.get("dir1", "dir2", "adb")
         private val ADB_FILE_DIR_PATH = Paths.get("dir1", "dir2")
         private const val PORT = 12345
-        private val START_COMMAND = listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "start-server")
-        private val STOP_COMMAND = listOf(ADB_FILE_PATH.toString(), "kill-server")
+        private val START_COMMAND =
+            listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "start-server")
+        private val STOP_COMMAND =
+            listOf(ADB_FILE_PATH.toString(), "-P", 12345.toString(), "kill-server")
     }
 }

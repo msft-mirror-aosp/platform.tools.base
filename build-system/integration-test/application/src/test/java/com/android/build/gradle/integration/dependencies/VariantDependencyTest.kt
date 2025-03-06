@@ -33,6 +33,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import java.nio.file.Paths
 
 class VariantDependencyTest : ModelComparator() {
 
@@ -154,9 +155,9 @@ class VariantDependencyTest : ModelComparator() {
     ) {
         // use the model to get the output APK!
         val variant: Variant = androidProject.getVariantByName(variantName)
-        val apk = File(variant.getSingleOutputFile())
-        ZipSubject.assertThat(apk) { it: ZipSubject ->
-            it.contains(checkFilePath)
+        val apk = Paths.get(variant.getSingleOutputFile())
+        ZipSubject.assertThat(apk) {
+            contains(checkFilePath)
         }
     }
 
@@ -165,9 +166,9 @@ class VariantDependencyTest : ModelComparator() {
     ) {
         // use the model to get the output APK!
         val variant: Variant = androidProject.getVariantByName(variantName)
-        val apk = File(variant.getSingleOutputFile())
-        ZipSubject.assertThat(apk) { it: ZipSubject ->
-            it.entries().containsNoneIn(checkFilePath)
+        val apk = Paths.get(variant.getSingleOutputFile())
+        ZipSubject.assertThat(apk) {
+            entries().containsNoneIn(checkFilePath)
         }
     }
 }

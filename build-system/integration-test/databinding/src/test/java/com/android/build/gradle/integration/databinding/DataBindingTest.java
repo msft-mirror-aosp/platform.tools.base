@@ -113,7 +113,6 @@ public class DataBindingTest {
 
                                     jar.doesNotContainClass(myDbPkg + "adapters/Converters;");
                                     jar.doesNotContainClass(myDbPkg + "DataBindingComponent;");
-                                    return null;
                                 });
                     });
 

@@ -87,8 +87,7 @@ public class SdkManagerCliTest {
 
         RemoteRepoLoader loader = createRemoteRepo();
 
-        RepoManager repoManager = new RepoManagerImpl(null, progress -> loader);
-        repoManager.setLocalPath(mSdkLocation);
+        RepoManager repoManager = new RepoManagerImpl(mSdkLocation, null, progress -> loader);
 
         createLocalRepo(repoManager);
 
@@ -286,7 +285,7 @@ public class SdkManagerCliTest {
         Files.createDirectories(p2Path);
         ProgressIndicator progress = new FakeProgressIndicator();
         InstallerUtil.writePackageXml(
-                installed, p2Path, mSdkHandler.getSdkManager(progress), progress);
+                installed, p2Path, mSdkHandler.getRepoManager(progress), progress);
 
         SdkManagerCliSettings settings =
                 SdkManagerCliSettings.createSettings(
@@ -576,7 +575,7 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNotNull(mSdkHandler.getLocalPackage("test;remote1",
                 progress));
     }
@@ -601,7 +600,7 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator(true));
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNotNull(mSdkHandler.getLocalPackage("test;remote1", progress));
         assertNotNull(mSdkHandler.getLocalPackage("depends_on", progress));
         assertNotNull(mSdkHandler.getLocalPackage("depended_on", progress));
@@ -619,7 +618,7 @@ public class SdkManagerCliTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mSdkHandler
-                .getSdkManager(new FakeProgressIndicator())
+                .getRepoManager(new FakeProgressIndicator())
                 .loadSynchronously(
                         0,
                         new FakeProgressIndicator(),
@@ -637,20 +636,20 @@ public class SdkManagerCliTest {
         downloader.run(new FakeProgressIndicator());
 
         assertTrue(out.toString().replaceAll("\\r\\n", "\n").contains("Updating:\nupgrade\n"));
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertEquals(2,
                 mSdkHandler.getLocalPackage("upgrade", progress).getVersion().getMajor());
         assertEquals(1,
                 mSdkHandler.getLocalPackage("obsolete", progress).getVersion().getMajor());
         assertEquals(3,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
     }
 
     @Test
     public void testNoUpdates() throws Exception {
         PathUtils.deleteRecursivelyIfExists(mSdkLocation.resolve("upgrade"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
 
         SdkManagerCliSettings settings =
                 SdkManagerCliSettings.createSettings(
@@ -695,7 +694,7 @@ public class SdkManagerCliTest {
         } catch (SdkManagerCli.CommandFailedException ignored) {
         }
         mSdkHandler
-                .getSdkManager(new FakeProgressIndicator())
+                .getRepoManager(new FakeProgressIndicator())
                 .reloadLocalIfNeeded(new FakeProgressIndicator(true));
         assertNull(mSdkHandler.getLocalPackage("test;remote1", new FakeProgressIndicator()));
     }
@@ -713,7 +712,7 @@ public class SdkManagerCliTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mSdkHandler
-                .getSdkManager(progress)
+                .getRepoManager(progress)
                 .loadSynchronously(
                         0,
                         new FakeProgressIndicator(),
@@ -728,13 +727,13 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertEquals(2,
                 mSdkHandler.getLocalPackage("upgrade", progress).getVersion().getMajor());
         assertEquals(2,
                 mSdkHandler.getLocalPackage("obsolete", progress).getVersion().getMajor());
         assertEquals(3,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
     }
 
     /**
@@ -749,14 +748,14 @@ public class SdkManagerCliTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mSdkHandler
-                .getSdkManager(progress)
+                .getRepoManager(progress)
                 .loadSynchronously(
                         0,
                         new FakeProgressIndicator(),
                         mDownloader,
                         new FakeSettingsController(false));
         assertEquals(3,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
         assertNotNull(mSdkHandler.getLocalPackage("obsolete", progress));
         assertNotNull("Arguments should be valid", settings);
         SdkManagerCli downloader = new SdkManagerCli(settings,
@@ -765,10 +764,10 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNull(mSdkHandler.getLocalPackage("obsolete", progress));
         assertEquals(2,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
     }
 
     /**
@@ -784,14 +783,14 @@ public class SdkManagerCliTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FakeProgressIndicator progress = new FakeProgressIndicator(true);
         mSdkHandler
-                .getSdkManager(progress)
+                .getRepoManager(progress)
                 .loadSynchronously(
                         0,
                         new FakeProgressIndicator(),
                         mDownloader,
                         new FakeSettingsController(false));
         assertEquals(3,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
         assertNotNull("Arguments should be valid", settings);
         SdkManagerCli downloader = new SdkManagerCli(settings,
                 new PrintStream(out),
@@ -799,12 +798,12 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator(true));
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
-        assertNull(mSdkHandler.getLocalPackage("obsolete", progress));
-        assertNull(mSdkHandler.getLocalPackage("upgrade", progress));
-        assertNotNull(mSdkHandler.getLocalPackage("test;p1", progress));
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
+        assertNull(mSdkHandler.getLocalPackage("obsolete", new FakeProgressIndicator()));
+        assertNull(mSdkHandler.getLocalPackage("upgrade", new FakeProgressIndicator()));
+        assertNotNull(mSdkHandler.getLocalPackage("test;p1", new FakeProgressIndicator()));
         assertEquals(1,
-                mSdkHandler.getSdkManager(progress).getPackages().getLocalPackages().size());
+                mSdkHandler.getRepoManager(progress).getPackages().getLocalPackages().size());
 
     }
 
@@ -827,7 +826,7 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNull(mSdkHandler.getLocalPackage("depended_on",
                 progress));
 
@@ -837,7 +836,7 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNotNull(mSdkHandler.getLocalPackage("depended_on",
                 progress));
     }
@@ -1028,7 +1027,7 @@ public class SdkManagerCliTest {
         CommonFactory factory = RepoManager.getCommonModule().createLatestFactory();
         RemotePackage obsoletePackage =
                 mSdkHandler
-                        .getSdkManager(new FakeProgressIndicator())
+                        .getRepoManagerAndLoadSynchronously(new FakeProgressIndicator())
                         .getPackages()
                         .getRemotePackages()
                         .get("obsolete");
@@ -1077,7 +1076,7 @@ public class SdkManagerCliTest {
                 mDownloader,
                 mSdkHandler);
         downloader.run(new FakeProgressIndicator());
-        mSdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress);
+        mSdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress);
         assertNull(mSdkHandler.getLocalPackage("depended_on",
                 progress));
         assertNull(mSdkHandler.getLocalPackage("depends_on",

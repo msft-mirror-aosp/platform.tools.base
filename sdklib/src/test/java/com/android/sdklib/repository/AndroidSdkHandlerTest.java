@@ -190,7 +190,7 @@ public class AndroidSdkHandlerTest extends TestCase {
             List<RepositorySourceProvider> providers =
                     AndroidSdkHandler.getInstance(
                                     AndroidLocationsSingleton.INSTANCE, TestUtils.getSdk())
-                            .getSdkManager(new FakeProgressIndicator())
+                            .getRepoManagerAndLoadSynchronously(new FakeProgressIndicator())
                             .getSourceProviders();
             boolean found = false;
             StringBuilder urls = new StringBuilder();

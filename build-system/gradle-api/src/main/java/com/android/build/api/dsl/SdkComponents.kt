@@ -61,7 +61,7 @@ interface SdkComponents {
      *  Provides access to aidl tools
      *
      *  The returned [Provider] can be used by tasks requiring aidl tools as input
-     *  with [org.gradle.api.tasks.Nested]
+     *  with [org.gradle.api.tasks.Nested]. See [Aidl] for more details.
      */
     val aidl: Provider<Aidl>
 
@@ -69,7 +69,7 @@ interface SdkComponents {
      *  Provides access to AAPT2
      *
      *  The returned [Provider] can be used by tasks requiring AAPT2 as input
-     *  with [org.gradle.api.tasks.Nested]
+     *  with [org.gradle.api.tasks.Nested]. See [Aapt2] for more details.
      */
     @get:Incubating
     val aapt2: Provider<Aapt2>

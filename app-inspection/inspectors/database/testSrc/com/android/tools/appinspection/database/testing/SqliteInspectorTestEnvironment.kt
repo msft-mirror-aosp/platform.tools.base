@@ -200,9 +200,12 @@ class SqliteInspectorTestEnvironment(
     }
   }
 
-  fun openDatabase(path: String?) = openDatabase(Database(path))
+  fun openDatabase(path: String?) = openDatabase(DatabaseModel(path))
 
-  fun openDatabase(database: Database, writeAheadLoggingEnabled: Boolean = false): SQLiteDatabase {
+  fun openDatabase(
+    database: DatabaseModel,
+    writeAheadLoggingEnabled: Boolean = false,
+  ): SQLiteDatabase {
     if (database.name != null) {
       // If database.name is null, this is an inMemory database, and we don't hook entry
       triggerOnOpenedEntry(database.name)
@@ -346,7 +349,7 @@ val Hook.asEntryHook
 val Hook.asExitHook
   get() = (this as Hook.ExitHook).exitHook
 
-private fun Database.createInstance(
+private fun DatabaseModel.createInstance(
   temporaryFolder: TemporaryFolder,
   writeAheadLoggingEnabled: Boolean? = null,
 ): SQLiteDatabase {

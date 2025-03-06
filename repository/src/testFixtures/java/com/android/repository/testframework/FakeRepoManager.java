@@ -65,11 +65,6 @@ public class FakeRepoManager extends RepoManager {
         return mModules;
     }
 
-    @Override
-    public void setLocalPath(@Nullable Path path) {
-        mLocalPath = path;
-    }
-
     @Nullable
     @Override
     public Path getLocalPath() {

@@ -130,6 +130,10 @@ internal abstract class LazyManifestParserBaseTest :
             Truth.assertThat(actual.useEmbeddedDex).named("useEmbeddedDex").isEqualTo(it)
         }
 
+        expected.isolatedSplits?.let {
+            Truth.assertThat(actual.isolatedSplits).named("isolatedSplits").isEqualTo(it)
+        }
+
         // finally check for errors
         issueChecker?.invoke(actualMaybe.issues) ?: run {
             // conver the normal SyncIssue returned into fake ones in order to compare them.

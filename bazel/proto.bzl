@@ -1,6 +1,7 @@
 load(":android.bzl", "select_android")
 load(":functions.bzl", "label_workspace_path")
 load(":maven.bzl", "maven_library")
+load(":merge_archives.bzl", "merge_jars")
 load(":utils.bzl", "java_jarjar")
 load(":kotlin.bzl", "kotlin_library")
 
@@ -459,7 +460,7 @@ def kotlin_proto_library(
     if grpc_support and not protoc_kotlin_grpc_version:
         fail("grpc support was requested, but the version of grpc kotlin protoc plugin was not specified")
 
-    java_proto_name = name.removesuffix("_kt_proto") + "_java_proto"
+    java_proto_name = "%s_partial_java_internal" % name
     java_proto_label = ":" + java_proto_name
 
     # Generate a java_proto_library target implicitly as a dependency of the kotlin target.
@@ -475,12 +476,13 @@ def kotlin_proto_library(
         proto_java_runtime_library = proto_java_runtime_library,
     )
 
-    srcs_name = name + "_srcs"
-    srcs_label = ":" + srcs_name
+    kt_proto_name = "%s_partial_kt_internal" % name
+    kt_srcs_name = kt_proto_name + "_srcs"
+    kt_srcs_label = ":" + kt_srcs_name
 
     # Generate kotlin wrapper source code on top of the java_proto_library.
     _gen_proto_rule(
-        name = srcs_name,
+        name = kt_srcs_name,
         srcs = srcs,
         deps = proto_deps + ([] if skip_default_includes else ["@//tools/base/bazel:common-java_proto_srcs"]),
         outs = [],
@@ -502,10 +504,17 @@ def kotlin_proto_library(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ]
     deps = list(deps) + (grpc_extra_deps if grpc_support else []) + proto_kotlin_runtime_library
+
     kotlin_library(
-        name = name,
-        srcs = [srcs_label],
+        name = kt_proto_name,
+        srcs = [kt_srcs_label],
         deps = deps + [java_proto_label],
         visibility = visibility,
         **kwargs
+    )
+
+    merge_jars(
+        name = name,
+        out = name + ".jar",
+        jars = [":lib%s.jar" % java_proto_name, ":lib%s.jar" % kt_proto_name],
     )

@@ -2260,15 +2260,15 @@ package com.android.build.api.dsl {
   }
 
   public interface TestedExtension {
-    method public String getTestBuildType();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String getTestBuildType();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.TestFixtures getTestFixtures();
-    method public String? getTestNamespace();
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTestNamespace();
     method public void setTestBuildType(String);
     method public void setTestNamespace(String?);
     method @org.gradle.api.Incubating public void testFixtures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestFixtures,kotlin.Unit> action);
-    property public abstract String testBuildType;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String testBuildType;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.TestFixtures testFixtures;
-    property public abstract String? testNamespace;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? testNamespace;
   }
 
   public interface UnitTestOptions {
@@ -2563,7 +2563,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.dsl.SdkComponents sdkComponents;
   }
 
-  public interface AndroidComponentsExtension<DslExtensionT extends com.android.build.api.dsl.CommonExtension<?, ?, ?, ?, ?, ?>, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
+  public interface AndroidComponentsExtension<DslExtensionT, VariantBuilderT extends com.android.build.api.variant.VariantBuilder, VariantT extends com.android.build.api.variant.Variant> extends com.android.build.api.variant.DslLifecycle<DslExtensionT> com.android.build.api.variant.AndroidComponents {
     method @org.gradle.api.Incubating public void addSourceSetConfigurations(String suffix);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantBuilderT,kotlin.Unit> callback);
     method public void beforeVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantBuilderT> callback);
@@ -3174,7 +3174,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.SetProperty<java.lang.String> testOnly;
   }
 
-  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension> com.android.build.api.variant.AndroidComponents {
+  @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension,com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder,com.android.build.api.variant.KotlinMultiplatformAndroidVariant> {
     method public void onVariant(kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant,kotlin.Unit> callback);
     method public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }
@@ -3196,9 +3196,9 @@ package com.android.build.api.variant {
   public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
-  @org.gradle.api.Incubating public interface LifecycleTasks {
-    method public void registerApkInstallation(java.lang.Object... objects);
+  public interface LifecycleTasks {
     method public void registerPreBuild(java.lang.Object... objects);
+    method public void registerPreInstallation(java.lang.Object... objects);
   }
 
   public interface LintLifecycleExtension extends com.android.build.api.variant.DslLifecycle<com.android.build.api.dsl.Lint> {

@@ -15,6 +15,7 @@ lint check authors, see the API Guide.
   `UnnecessaryArrayInit`      | Unnecessary array initialization
   `CoreLibDesugaringV1`       | Android 15 requires `desugar_jdk_libs` 2.+
   `RequiresWindowSdk`         | API requires a `WindowSdkExtensions.extensionVersion` check
+  `WrongGradleKtsMethod`      | Wrong Gradle method invoked
 
 * Normally, when analyzing test sources, lint only runs a
   small set of lint checks -- those that specifically apply to tests,
@@ -28,6 +29,20 @@ lint check authors, see the API Guide.
   <lint>
       <issue id="NewApi" tests="true" />
   </lint>
+  ```
+
+* Lint now warns when there are newer versions of Gradle available for the
+  gradle wrapper properties file.
+
+* Lint now applies the same checks for `minSdkVersion`, `targetSdkVersion` and
+  `compileSdkVersion` that it already provides for `build.gradle` and `build.gradle.kts`
+  files to definitions of these values in version catalogs (`libs.versions.toml`),
+  provided they're using one of a few standard key names, such as
+  ```toml
+  [versions]
+  compileSdk = "34"
+  minSdk = "15"
+  targetSdk = "34"
   ```
 
 **8.9**

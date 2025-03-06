@@ -163,17 +163,17 @@ class DatabaseRegistryTest {
     registry.notifyDatabaseOpenAndClose(readOnlyDb)
     val id = events.first().id
 
-    assertThat(readOnlyDb.isOpen).isTrue()
+    assertThat(readOnlyDb.isOpen()).isTrue()
     assertThat(registry.getConnection(id)).isEqualTo(readOnlyDb)
     assertThat(registry.getDatabases(id)).containsExactly(readOnlyDb)
 
     // Open and close a read-write database
     registry.notifyDatabaseOpenAndClose(readWriteDb)
 
-    assertThat(readOnlyDb.isOpen).isFalse()
+    assertThat(readOnlyDb.isOpen()).isFalse()
     //    // simulate hook called when readWriteDb was closed
     //    registry.notifyAllDatabaseReferencesReleased(readOnlyDb)
-    assertThat(readWriteDb.isOpen).isTrue()
+    assertThat(readWriteDb.isOpen()).isTrue()
     assertThat(registry.getConnection(id)).isEqualTo(readWriteDb)
     assertThat(registry.getDatabases(id)).containsExactly(readWriteDb)
   }
@@ -266,22 +266,22 @@ class DatabaseRegistryTest {
 
     override fun onUpgrade(db: SQLiteDatabase, fromVersion: Int, toVersion: Int) {}
 
-    fun getReadOnlyDb(autoClose: Boolean = true): SQLiteDatabase {
+    fun getReadOnlyDb(autoClose: Boolean = true): AndroidDatabase {
       val db = readableDatabase
       if (autoClose) {
         closeablesRule.register(db)
       }
       val mock = spy(db)
       whenever(mock.isReadOnly).thenReturn(true)
-      return mock
+      return AndroidDatabase(mock)
     }
 
-    fun getReadWriteDb(autoClose: Boolean = true): SQLiteDatabase {
+    fun getReadWriteDb(autoClose: Boolean = true): AndroidDatabase {
       val db = writableDatabase
       if (autoClose) {
         closeablesRule.register(db)
       }
-      return db
+      return AndroidDatabase(db)
     }
 
     fun createAndClose() {
@@ -290,7 +290,7 @@ class DatabaseRegistryTest {
   }
 }
 
-private fun DatabaseRegistry.notifyDatabaseOpenAndClose(db: SQLiteDatabase) {
+private fun DatabaseRegistry.notifyDatabaseOpenAndClose(db: Database) {
   notifyDatabaseOpened(db)
   notifyReleaseReference(db)
   // call close() only after calling notifyReleaseReference() so the registry can secure a reference

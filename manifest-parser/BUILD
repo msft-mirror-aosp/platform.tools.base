@@ -11,11 +11,11 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[module]",
-        "//tools/base/common:studio.android.sdktools.common[module]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//prebuilts/tools/common/m2:junit-4.12[test]",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources[module]",
+        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
     ],
 )
 

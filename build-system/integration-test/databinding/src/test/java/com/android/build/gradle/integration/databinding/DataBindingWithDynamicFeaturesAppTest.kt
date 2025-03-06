@@ -41,6 +41,12 @@ class DataBindingWithDynamicFeaturesAppTest(useAndroidX: Boolean) {
         .addGradleProperties(
             BooleanOption.USE_ANDROID_X.propertyName
                     + "=" + useAndroidX
+        )
+        // b/116109681 - Enforce unique package names disabled in this test due to test project
+        // containing violation.
+        .addGradleProperties(
+            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName
+                    + "=false"
         ).also {
             if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
                 it.withCompileSdkVersion("28")

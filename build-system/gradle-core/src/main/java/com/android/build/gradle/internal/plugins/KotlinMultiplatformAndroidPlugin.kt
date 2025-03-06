@@ -734,9 +734,11 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             KotlinMultiplatformAndroidComponentsExtension::class.java,
             "androidComponents",
             KotlinMultiplatformAndroidComponentsExtensionImpl::class.java,
+            dslServices,
             sdkComponents,
             managedDeviceRegistry,
-            variantApiOperationsRegistrar
+            variantApiOperationsRegistrar,
+            androidExtension
         )
     }
 

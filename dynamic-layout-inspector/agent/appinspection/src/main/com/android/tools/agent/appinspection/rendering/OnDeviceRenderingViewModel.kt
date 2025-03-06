@@ -119,6 +119,10 @@ class OnDeviceRenderingViewModel(
         sendInputEvent(rootId, point, UserInputEvent.Type.HOVER)
     }
 
+    fun onRightClick(rootId: Long, point: PointF) {
+        sendInputEvent(rootId, point, UserInputEvent.Type.RIGHT_CLICK)
+    }
+
     suspend fun dispose() {
         setEnableOnDeviceRendering(false)
         setRoots(emptyMap())

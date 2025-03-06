@@ -46953,26 +46953,26 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-resources_15.0.7",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/15.0.7/layoutlib-resources-15.0.7.pom",
+    name = "com.android.tools.layoutlib.layoutlib-resources_15.1.3",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/15.1.3/layoutlib-resources-15.1.3.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-resources/15.0.7",
+    repo_path = "com/android/tools/layoutlib/layoutlib-resources/15.1.3",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-runtime_15.0.7",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/15.0.7/layoutlib-runtime-15.0.7.pom",
+    name = "com.android.tools.layoutlib.layoutlib-runtime_15.1.3",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/15.1.3/layoutlib-runtime-15.1.3.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/15.0.7",
+    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/15.1.3",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib_15.0.7",
-    pom = "repository/com/android/tools/layoutlib/layoutlib/15.0.7/layoutlib-15.0.7.pom",
+    name = "com.android.tools.layoutlib.layoutlib_15.1.3",
+    pom = "repository/com/android/tools/layoutlib/layoutlib/15.1.3/layoutlib-15.1.3.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib/15.0.7",
+    repo_path = "com/android/tools/layoutlib/layoutlib/15.1.3",
     visibility = ["//visibility:public"],
 )
 
@@ -66612,12 +66612,56 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.jewel.jewel-foundation-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-foundation-241/0.27.0/jewel-foundation-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-foundation-241/0.27.0",
+    deps = [
+        "org.jetbrains.compose.foundation.foundation-desktop_1.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-foundation-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-foundation-242/0.27.0/jewel-foundation-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-foundation-242/0.27.0",
+    deps = [
+        "org.jetbrains.compose.foundation.foundation-desktop_1.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.jewel.jewel-foundation-243_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-foundation-243/0.27.0/jewel-foundation-243-0.27.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/jewel/jewel-foundation-243/0.27.0",
     deps = [
         "org.jetbrains.compose.foundation.foundation-desktop_1.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-ide-laf-bridge-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-ide-laf-bridge-241/0.27.0/jewel-ide-laf-bridge-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-ide-laf-bridge-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-241_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-ide-laf-bridge-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-ide-laf-bridge-242/0.27.0/jewel-ide-laf-bridge-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-ide-laf-bridge-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-242_0.27.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66634,12 +66678,58 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.jewel.jewel-int-ui-standalone-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone-241/0.27.0/jewel-int-ui-standalone-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-241_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-int-ui-standalone-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone-242/0.27.0/jewel-int-ui-standalone-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-242_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.jewel.jewel-int-ui-standalone-243_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone-243/0.27.0/jewel-int-ui-standalone-243-0.27.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone-243/0.27.0",
     deps = [
         "org.jetbrains.jewel.jewel-ui-243_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-core-241/0.27.0/jewel-markdown-core-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-core-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-241_0.27.0",
+        "org.commonmark.commonmark_0.24.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-core-242/0.27.0/jewel-markdown-core-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-core-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-ui-242_0.27.0",
+        "org.commonmark.commonmark_0.24.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66657,6 +66747,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-extension-autolink-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-autolink-241/0.27.0/jewel-markdown-extension-autolink-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-extension-autolink-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
+        "org.commonmark.commonmark-ext-autolink_0.24.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-extension-autolink-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-autolink-242/0.27.0/jewel-markdown-extension-autolink-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-extension-autolink-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
+        "org.commonmark.commonmark-ext-autolink_0.24.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.jewel.jewel-markdown-extension-autolink-243_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-autolink-243/0.27.0/jewel-markdown-extension-autolink-243-0.27.0.pom",
     repo_root_path = "repository",
@@ -66669,12 +66783,58 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-extension-gfm-alerts-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-241/0.27.0/jewel-markdown-extension-gfm-alerts-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-extension-gfm-alerts-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-242/0.27.0/jewel-markdown-extension-gfm-alerts-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.jewel.jewel-markdown-extension-gfm-alerts-243_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-243/0.27.0/jewel-markdown-extension-gfm-alerts-243-0.27.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/jewel/jewel-markdown-extension-gfm-alerts-243/0.27.0",
     deps = [
         "org.jetbrains.jewel.jewel-markdown-core-243_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-ide-laf-bridge-styling-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-ide-laf-bridge-styling-241/0.27.0/jewel-markdown-ide-laf-bridge-styling-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-ide-laf-bridge-styling-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
+        "org.jetbrains.jewel.jewel-ide-laf-bridge-241_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-ide-laf-bridge-styling-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-ide-laf-bridge-styling-242/0.27.0/jewel-markdown-ide-laf-bridge-styling-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-ide-laf-bridge-styling-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
+        "org.jetbrains.jewel.jewel-ide-laf-bridge-242_0.27.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -66692,6 +66852,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-241/0.27.0/jewel-markdown-int-ui-standalone-styling-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
+        "org.jetbrains.jewel.jewel-int-ui-standalone-241_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-242/0.27.0/jewel-markdown-int-ui-standalone-styling-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
+        "org.jetbrains.jewel.jewel-int-ui-standalone-242_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling-243_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-243/0.27.0/jewel-markdown-int-ui-standalone-styling-243-0.27.0.pom",
     repo_root_path = "repository",
@@ -66699,6 +66883,30 @@ maven_artifact(
     deps = [
         "org.jetbrains.jewel.jewel-markdown-core-243_0.27.0",
         "org.jetbrains.jewel.jewel-int-ui-standalone-243_0.27.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-ui-241_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-ui-241/0.27.0/jewel-ui-241-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-ui-241/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-foundation-241_0.27.0",
+        "org.jetbrains.compose.components.components-resources-desktop_1.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.jewel.jewel-ui-242_0.27.0",
+    pom = "repository/org/jetbrains/jewel/jewel-ui-242/0.27.0/jewel-ui-242-0.27.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/jewel/jewel-ui-242/0.27.0",
+    deps = [
+        "org.jetbrains.jewel.jewel-foundation-242_0.27.0",
+        "org.jetbrains.compose.components.components-resources-desktop_1.7.1",
     ],
     visibility = ["//visibility:public"],
 )

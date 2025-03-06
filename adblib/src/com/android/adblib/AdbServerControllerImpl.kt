@@ -205,8 +205,12 @@ internal class AdbServerControllerImpl(
             return configurationFlow.first { it.serverPort != null }
         }
 
-        suspend fun runKillServerProcess(path: Path, envVars: Map<String, String>): Boolean {
-            val commandArgs = getAdbStopCommandArgs()
+        suspend fun runKillServerProcess(
+            path: Path,
+            port: Int,
+            envVars: Map<String, String>
+        ): Boolean {
+            val commandArgs = getAdbStopCommandArgs(port)
             return try {
                 processRunner.runProcess(path, commandArgs, envVars)
                 true
@@ -239,8 +243,12 @@ internal class AdbServerControllerImpl(
             }
         }
 
-        private fun getAdbStopCommandArgs(): List<String> {
-            return listOf("kill-server")
+        private fun getAdbStopCommandArgs(adbPort: Int): List<String> {
+            return if (adbPort == DEFAULT_ADB_HOST_PORT) {
+                listOf("kill-server")
+            } else {
+                listOf("-P", adbPort.toString(), "kill-server")
+            }
         }
 
         /**
@@ -334,10 +342,8 @@ internal class AdbServerControllerImpl(
             val port = config.serverPort
             val isUserManaged = config.isUserManaged
             val isUnitTest = config.isUnitTest
-            if (isUserManaged) {
-                throw IllegalStateException("Start adb triggered for user-managed adb mode")
-            }
-            if (!isUnitTest) {
+
+            if (!isUserManaged && !isUnitTest) {
                 if (path == null) {
                     throw IllegalStateException("adb path must be provided")
                 }
@@ -399,15 +405,12 @@ internal class AdbServerControllerImpl(
 
             val config = waitForServerConfigurationAvailable()
             val adbFilePath = config.adbPath
-            if (config.isUserManaged) {
-                throw IllegalStateException("Stop adb triggered for user-managed adb mode")
-            }
-            if (!config.isUnitTest) {
+            if (!config.isUserManaged && !config.isUnitTest) {
                 if (adbFilePath == null) {
                     throw IllegalStateException("adb path must be provided")
                 }
                 if (config.serverPort != null) {
-                    runKillServerProcess(adbFilePath, config.envVars)
+                    runKillServerProcess(adbFilePath, config.serverPort, config.envVars)
                 }
             }
             params.isStartedFlow.update { false }
@@ -454,9 +457,9 @@ internal class AdbServerControllerImpl(
 
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
-            val path = config.adbPath
+            val adbFilePath = config.adbPath
             val port = config.serverPort!!
-            if (path == null) {
+            if (config.isUserManaged || config.isUnitTest) {
                 // This is a non-restartable channel, but still try using `port` from the config the next
                 // time we try to create a channel
                 params.lastUsedConfig.update { config }
@@ -465,8 +468,11 @@ internal class AdbServerControllerImpl(
 
             // TODO: Revisit the code below to match `AndroidDebugBridgeImpl` behavior. E.g. should we
             //  be updating `isStarted` value if `server-kill` succeeds and `server-start` fails
-            runKillServerProcess(path, config.envVars)
-            runStartServerProcess(path, port, config.envVars)
+            if (adbFilePath == null) {
+                throw IllegalStateException("adb path must be provided")
+            }
+            runKillServerProcess(adbFilePath, port, config.envVars)
+            runStartServerProcess(adbFilePath, port, config.envVars)
 
             params.lastUsedConfig.update { config }
         }

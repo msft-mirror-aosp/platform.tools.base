@@ -14,9 +14,9 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/adt/idea/.idea/libraries:jimfs[test]",
         "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/adblib:studio.android.sdktools.adblib[module]",
-        "//tools/base/common:studio.android.sdktools.common[module]",
-        "//tools/base/environment-services:studio.intellij.android.environment-services[module]",
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/environment-services:studio.intellij.android.environment-services",
     ],
 )
 
@@ -29,11 +29,11 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
-        "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools[module]",
-        "//tools/base/adblib:studio.android.sdktools.adblib[module]",
-        "//tools/base/common:studio.android.sdktools.common[module]",
-        "//tools/base/environment-services:studio.intellij.android.environment-services[module]",
-        "//tools/base/backup:studio.android.sdktools.backup[module]",
+        "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
+        "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/environment-services:studio.intellij.android.environment-services",
+        "//tools/base/backup:studio.android.sdktools.backup",
     ],
 )
 

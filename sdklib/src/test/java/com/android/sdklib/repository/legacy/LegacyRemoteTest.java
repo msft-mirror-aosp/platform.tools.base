@@ -44,7 +44,7 @@ public class LegacyRemoteTest extends TestCase {
         MockFileOp fop = new MockFileOp();
         final AndroidSdkHandler handler = new AndroidSdkHandler(null, fop.toPath(ANDROID_FOLDER));
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = handler.getSdkManager(progress);
+        RepoManager mgr = handler.getRepoManagerAndLoadSynchronously(progress);
         progress.assertNoErrorsOrWarnings();
         mgr.getSourceProviders().clear();
         progress.assertNoErrorsOrWarnings();

@@ -99,7 +99,7 @@ class KotlinMultiplatformAndroidPluginNativeTest {
                 }
 
                 androidComponents {
-                    onVariant {
+                    onVariants {
                         val taskProvider = project.tasks.register("repackageAar", PackagingTask::class.java)
 
                         it.artifacts.use(
@@ -138,12 +138,10 @@ class KotlinMultiplatformAndroidPluginNativeTest {
 
     @Test
     fun testKmpLibraryAarContents() {
-        executor()
-            .run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         val aarPath = project.getSubproject("kmpFirstLib")
             .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
 
         AarSubject.assertThat(aarPath) {
             mainJar {

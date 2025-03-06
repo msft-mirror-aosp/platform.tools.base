@@ -183,7 +183,6 @@ public class BytecodeGenerationHooksTest {
                                             mainJar.containsResource("META-INF/lib.kotlin_module");
                                             mainJar.containsResource(
                                                     "META-INF/post-lib.kotlin_module");
-                                            return null;
                                         }));
     }
 

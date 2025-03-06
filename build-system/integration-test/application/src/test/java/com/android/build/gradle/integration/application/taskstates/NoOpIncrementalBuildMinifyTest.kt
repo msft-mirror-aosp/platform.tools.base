@@ -102,6 +102,7 @@ class NoOpIncrementalBuildMinifyTest {
                 ":mergeReleaseResources",
                 ":mergeReleaseShaders",
                 ":mergeReleaseStartupProfile",
+                ":mergeReleaseUnitTestJavaResource",
                 ":mapReleaseSourceSetPaths",
                 ":minifyReleaseWithR8",
                 ":optimizeReleaseResources",

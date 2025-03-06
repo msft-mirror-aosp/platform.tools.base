@@ -20,7 +20,7 @@ import android.os.Build
 import com.android.tools.appinspection.common.testing.LogPrinterRule
 import com.android.tools.appinspection.database.CountingDelegatingExecutorService.Event.FINISHED
 import com.android.tools.appinspection.database.CountingDelegatingExecutorService.Event.STARTED
-import com.android.tools.appinspection.database.testing.Database
+import com.android.tools.appinspection.database.testing.DatabaseModel
 import com.android.tools.appinspection.database.testing.SqliteInspectorTestEnvironment
 import com.android.tools.appinspection.database.testing.issueQuery
 import com.google.common.truth.Truth.assertThat
@@ -61,7 +61,10 @@ class CancellationQueryTest {
   @Test
   fun test_query_cancellations() = runBlocking {
     val db =
-      testEnvironment.openDatabase(Database("db", emptyList()), writeAheadLoggingEnabled = true)
+      testEnvironment.openDatabase(
+        DatabaseModel("db", emptyList()),
+        writeAheadLoggingEnabled = true,
+      )
     val databaseId = testEnvironment.inspectDatabase(db)
     // very long-running query
     val job =

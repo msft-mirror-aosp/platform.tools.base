@@ -1177,6 +1177,10 @@ constructor(
           Component.tryParse(value)?.let { updateModelVersion(it.version.toString()) }
         } // else ignore other class paths
       }
+      key.startsWith("plugins.id 'com.android.application' version ") -> {
+        val value = getUnquotedValue(key.substringAfter("version "))
+        updateModelVersion(Version.parse(value).toString())
+      }
       key.startsWith("android.defaultConfig.testInstrumentationRunner ") ||
         key.contains(".proguardFiles") ||
         key.contains("getDefaultProguardFile") ||
@@ -1569,7 +1573,24 @@ constructor(
     updateDefaultConfig { it.copy(useSupportLibrary = f(it.useSupportLibrary)) }
   }
 
+  fun String.getContainerName(): String {
+    if (
+      this.contains('"') &&
+        this.endsWith("\")") &&
+        (this.startsWith("getByName(\"") ||
+          this.startsWith("create(\"") ||
+          this.startsWith("named(\"") ||
+          this.startsWith("maybeCreate(\"") ||
+          this.startsWith("register(\""))
+    ) {
+      // KTS
+      return this.substringAfter("\"").substringBeforeLast("\"")
+    }
+    return this
+  }
+
   private fun updateBuildType(name: String, create: Boolean, f: (TestBuildType) -> TestBuildType) {
+    val name = name.getContainerName()
     val index = buildTypes.indexOfFirst { it.name == name }
     if (index >= 0) {
       val list = buildTypes.toMutableList()
@@ -1643,6 +1664,7 @@ constructor(
     create: Boolean,
     f: (TestProductFlavor) -> TestProductFlavor,
   ) {
+    val name = name.getContainerName()
     val index = productFlavors.indexOfFirst { it.name == name }
     if (index >= 0) {
       val list = productFlavors.toMutableList()
@@ -1685,8 +1707,10 @@ constructor(
       val codeName = getUnquotedValue(s)
       val sdkVersion = SdkVersionInfo.getVersion(codeName, null)
       if (sdkVersion != null) return sdkVersion
-    } else {
+    } else if (s[0].isDigit()) {
       return AndroidVersion(s.toInt(), null)
+    } else {
+      return AndroidVersion(s.toIntOrNull() ?: 0, null)
     }
     return AndroidVersion(0, "")
   }

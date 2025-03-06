@@ -32,9 +32,9 @@ open class AnalyticsEnabledLifecycleTasks @Inject constructor(
         delegate.registerPreBuild(*objects)
     }
 
-    override fun registerApkInstallation(vararg objects: Any) {
+    override fun registerPreInstallation(vararg objects: Any) {
         stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
             VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE
-        delegate.registerApkInstallation(*objects)
+        delegate.registerPreInstallation(*objects)
     }
 }

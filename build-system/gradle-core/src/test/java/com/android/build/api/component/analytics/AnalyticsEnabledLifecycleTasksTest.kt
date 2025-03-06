@@ -24,7 +24,6 @@ import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
@@ -57,7 +56,7 @@ class AnalyticsEnabledLifecycleTasksTest {
 
     @Test
     fun registerApkInstallation() {
-        proxy.registerApkInstallation()
+        proxy.registerPreInstallation()
 
 
         Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
@@ -66,6 +65,6 @@ class AnalyticsEnabledLifecycleTasksTest {
         ).isEqualTo(
             VariantPropertiesMethodType.REGISTER_APK_INSTALLATION_VALUE,
         )
-        verify(delegate, times(1)).registerApkInstallation()
+        verify(delegate, times(1)).registerPreInstallation()
     }
 }

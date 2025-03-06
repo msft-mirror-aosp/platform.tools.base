@@ -92,6 +92,7 @@ class CacheabilityTest {
             ":app:merge${DEBUG_RELEASE}JavaResource",
             ":app:merge${DEBUG_RELEASE}JniLibFolders",
             ":app:merge${DEBUG_RELEASE}Shaders",
+            ":app:merge${DEBUG_RELEASE}UnitTestJavaResource",
             ":app:mergeReleaseArtProfile",
             ":app:mergeReleaseStartupProfile",
             ":app:processApplicationManifest${DEBUG_RELEASE}ForBundle",

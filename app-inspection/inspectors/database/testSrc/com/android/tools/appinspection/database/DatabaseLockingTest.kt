@@ -29,7 +29,7 @@ import androidx.sqlite.inspection.SqliteInspectorProtocol.Response.OneOfCase.ERR
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Response.OneOfCase.RELEASE_DATABASE_LOCK
 import com.android.tools.appinspection.common.testing.LogPrinterRule
 import com.android.tools.appinspection.database.testing.Column
-import com.android.tools.appinspection.database.testing.Database
+import com.android.tools.appinspection.database.testing.DatabaseModel
 import com.android.tools.appinspection.database.testing.MessageFactory
 import com.android.tools.appinspection.database.testing.MessageFactory.createTrackDatabasesCommand
 import com.android.tools.appinspection.database.testing.SqliteInspectorTestEnvironment
@@ -73,7 +73,7 @@ class DatabaseLockingTest {
   val rule: RuleChain =
     RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
-  private val database = Database("db1", Table("t1", listOf(Column("c1", "int"))))
+  private val database = DatabaseModel("db1", Table("t1", listOf(Column("c1", "int"))))
   private val table = database.tables.single()
   private val column = table.columns.single()
 
@@ -129,7 +129,7 @@ class DatabaseLockingTest {
 
   @Test
   fun test_lockIdsUniquePerDb() = runBlocking {
-    val dbs = listOf("db1", "db2", "db3").map { testEnvironment.openDatabase(Database(it)) }
+    val dbs = listOf("db1", "db2", "db3").map { testEnvironment.openDatabase(DatabaseModel(it)) }
     val dbIds = testEnvironment.inspectDatabases(dbs)
     val lockIds =
       dbIds.map { testEnvironment.sendCommand(acquireLockCommand(it)).acquireDatabaseLock.lockId }
@@ -228,7 +228,7 @@ class DatabaseLockingTest {
       runBlocking {
         // create and inspect two databases
         val (db1, db2) =
-          listOf("db1", "db2").map { testEnvironment.openDatabase(Database(it, table)) }
+          listOf("db1", "db2").map { testEnvironment.openDatabase(DatabaseModel(it, table)) }
         val (id1, id2) = testEnvironment.inspectDatabases(db1, db2)
 
         // lock the first database (app thread)
@@ -263,7 +263,7 @@ class DatabaseLockingTest {
 
   @Test
   fun test_lockingPreventsOpen(): Unit = runBlocking {
-    val db = testEnvironment.openDatabase(Database("db", table))
+    val db = testEnvironment.openDatabase(DatabaseModel("db", table))
     val id = testEnvironment.inspectDatabase(db)
     val latch = CountDownLatch(1)
 

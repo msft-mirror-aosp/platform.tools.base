@@ -248,14 +248,35 @@ public final class AndroidSdkHandler {
     }
 
     /**
-     * Fetches a {@link RepoManager} set up to interact with android SDK repositories.
+     * Fetches a {@link RepoManager}, creating it if necessary, then loads local packages
+     * synchronously. This involves scanning the disk, and may be slow.
+     *
+     * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached
+     * for longer than this AndroidSdkHandler remains valid. For example, if the local SDK path in
+     * Studio is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
+     */
+    @Slow
+    @NonNull
+    public RepoManager getRepoManagerAndLoadSynchronously(@NonNull ProgressIndicator progress) {
+        RepoManager result = getRepoManager(progress);
+
+        if (mLocation != null) {
+            result.loadSynchronously(
+                    RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
+        }
+
+        return result;
+    }
+
+    /**
+     * Fetches a {@link RepoManager}, creating it if necessary.
      *
      * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached
      * for longer than this AndroidSdkHandler remains valid. For example, if the local SDK path in
      * Studio is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
      */
     @NonNull
-    public RepoManager getSdkManager(@NonNull ProgressIndicator progress) {
+    public RepoManager getRepoManager(@NonNull ProgressIndicator progress) {
         RepoManager result;
         synchronized (lock) {
             result = mRepoManager;
@@ -266,8 +287,8 @@ public final class AndroidSdkHandler {
 
                 result =
                         getRepoConfig(progress)
-                                .createRepoManager(
-                                        progress, mLocation, getUserSourceProvider(progress));
+                                .createRepoManager(mLocation, getUserSourceProvider(progress));
+
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
                 result.addLocalChangeListener(packages -> {
@@ -295,7 +316,7 @@ public final class AndroidSdkHandler {
         }
 
         // Initialize the repoManager outside of the lock, since it can be slow.
-        getSdkManager(progress);
+        getRepoManagerAndLoadSynchronously(progress);
 
         synchronized (lock) {
             if (mSystemImageManager == null) {
@@ -345,7 +366,7 @@ public final class AndroidSdkHandler {
      */
     @Nullable
     public LocalPackage getLocalPackage(@NonNull String path, @NonNull ProgressIndicator progress) {
-        return getSdkManager(progress).getPackages().getLocalPackages().get(path);
+        return getRepoManagerAndLoadSynchronously(progress).getPackages().getLocalPackages().get(path);
     }
 
     /**
@@ -413,10 +434,10 @@ public final class AndroidSdkHandler {
             @NonNull Function<String, T> mapper,
             @NonNull ProgressIndicator progress) {
         return getLatestPackageFromPrefixCollection(
-                getSdkManager(progress).getPackages().getLocalPackagesForPrefix(prefix),
-                filter,
-                allowPreview,
-                mapper);
+          getRepoManagerAndLoadSynchronously(progress).getPackages().getLocalPackagesForPrefix(prefix),
+          filter,
+          allowPreview,
+          mapper);
     }
 
     /**
@@ -443,10 +464,10 @@ public final class AndroidSdkHandler {
             @NonNull Function<String, T> mapper,
             @NonNull ProgressIndicator progress) {
         return getLatestPackageFromPrefixCollection(
-                getSdkManager(progress).getPackages().getRemotePackagesForPrefix(prefix),
-                filter,
-                allowPreview,
-                mapper);
+          getRepoManager(progress).getPackages().getRemotePackagesForPrefix(prefix),
+          filter,
+          allowPreview,
+          mapper);
     }
 
     /**
@@ -659,10 +680,9 @@ public final class AndroidSdkHandler {
         @Slow
         @NonNull
         public RepoManager createRepoManager(
-                @NonNull ProgressIndicator progress,
                 @Nullable Path localLocation,
                 @Nullable LocalSourceProvider userProvider) {
-            RepoManager result = RepoManager.create();
+            RepoManager result = RepoManager.create(localLocation);
 
             // Create the schema modules etc. if they haven't been already.
             result.registerSchemaModule(ADDON_MODULE);
@@ -689,16 +709,10 @@ public final class AndroidSdkHandler {
             }
             result.setFallbackRemoteRepoLoader(new LegacyRemoteRepoLoader());
 
-            result.setLocalPath(localLocation);
-
             if (localLocation != null) {
                 // If we have a local sdk path set, set up the old-style loader so we can parse
                 // any legacy packages.
                 result.setFallbackLocalRepoLoader(new LegacyLocalRepoLoader(localLocation));
-
-                // If a location is set we'll always want at least the local packages loaded, so
-                // load them now.
-                result.loadSynchronously(0, progress, null, null);
             }
 
             return result;
@@ -769,7 +783,7 @@ public final class AndroidSdkHandler {
     @Nullable
     public BuildToolInfo getBuildToolInfo(
             @NonNull Revision revision, @NonNull ProgressIndicator progress) {
-        RepositoryPackages packages = getSdkManager(progress).getPackages();
+        RepositoryPackages packages = getRepoManagerAndLoadSynchronously(progress).getPackages();
         LocalPackage p = packages.getLocalPackages()
                 .get(DetailsTypes.getBuildToolsPath(revision));
 
@@ -782,12 +796,8 @@ public final class AndroidSdkHandler {
     /** Converts a {@code File} into a {@code Path} on the {@code FileSystem} used by this SDK. */
     @NonNull
     public Path toCompatiblePath(@NonNull File file) {
-        Path localPath;
-        synchronized (lock) {
-            localPath = mRepoManager == null ? mLocation : mRepoManager.getLocalPath();
-        }
-        if (localPath != null) {
-            return localPath.getFileSystem().getPath(file.getPath());
+        if (mLocation != null) {
+            return mLocation.getFileSystem().getPath(file.getPath());
         }
         return file.toPath();
     }
@@ -795,12 +805,8 @@ public final class AndroidSdkHandler {
     /** Converts a {@code String} into a {@code Path} on the {@code FileSystem} used by this SDK. */
     @NonNull
     public Path toCompatiblePath(@NonNull String file) {
-        Path localPath;
-        synchronized (lock) {
-            localPath = mRepoManager == null ? mLocation : mRepoManager.getLocalPath();
-        }
-        if (localPath != null) {
-            return localPath.getFileSystem().getPath(file);
+        if (mLocation != null) {
+            return mLocation.getFileSystem().getPath(file);
         }
         return Paths.get(file);
     }

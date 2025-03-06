@@ -30,6 +30,7 @@ import com.android.ide.common.repository.AgpVersion
 import com.android.ide.common.repository.GoogleMavenRepository
 import com.android.ide.common.repository.GoogleMavenRepository.Companion.MAVEN_GOOGLE_CACHE_DIR_KEY
 import com.android.ide.common.repository.MavenRepositories
+import com.android.ide.common.repository.NetworkCache
 import com.android.io.CancellableFileIo
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
@@ -81,24 +82,28 @@ import com.android.utils.XmlUtils
 import com.android.utils.appendCapitalized
 import com.android.utils.iterator
 import com.android.utils.usLocaleCapitalize
-import com.google.common.base.Joiner
 import com.google.common.base.Splitter
-import com.google.common.collect.ArrayListMultimap
 import com.intellij.pom.java.LanguageLevel.JDK_1_7
 import com.intellij.pom.java.LanguageLevel.JDK_1_8
+import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Calendar
 import java.util.Collections
 import java.util.EnumSet
 import java.util.function.Predicate
 import kotlin.text.Charsets.UTF_8
+import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.uast.UCallExpression
+import org.kxml2.io.KXmlParser
 import org.w3c.dom.Attr
 import org.w3c.dom.Element
+import org.xmlpull.v1.XmlPullParser
 
 /** Checks Gradle files for potential errors. */
 open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
@@ -118,13 +123,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
 
   private var artifactCacheHome: File? = null
-
-  /**
-   * If incrementally editing a single build.gradle file, tracks whether we've already transitively
-   * checked GMS versions such that we don't flag the same error on every single dependency
-   * declaration.
-   */
-  private var mCheckedGms: Boolean = false
 
   /**
    * If incrementally editing a single build.gradle file, tracks whether we've already transitively
@@ -301,73 +299,41 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     ) {
       if (property == "targetSdkVersion" || property == "targetSdk") {
         val version = getSdkVersion(value, valueCookie)
-        if (version > 0 && version < context.client.highestKnownApiLevel) {
-          when (val tsdk = checkTargetSdk(context, calendar ?: Calendar.getInstance(), version)) {
-            is TargetSdkCheckResult.Expired -> {
-              // Don't report if already suppressed with EXPIRING
-              val alreadySuppressed =
-                context.containsCommentSuppress() &&
-                  context.isSuppressedWithComment(statementCookie, EXPIRED_TARGET_SDK_VERSION)
-
-              if (!alreadySuppressed) {
-                report(
-                  context,
-                  statementCookie,
-                  EXPIRED_TARGET_SDK_VERSION,
-                  tsdk.message,
-                  fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
-                )
-              }
-            }
-            is TargetSdkCheckResult.Expiring -> {
-              report(
+        if (version == -1 && isTomlVersionKey(value)) {
+          val tomlValue = findCorrespondingTomlKey(context, value)
+          if (tomlValue != null) {
+            val version =
+              tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
+            if (version != -1) {
+              checkTargetSdkVersion(
                 context,
+                version,
+                tomlValue.getText(),
                 statementCookie,
-                EXPIRING_TARGET_SDK_VERSION,
-                tsdk.message,
-                fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
-              )
-            }
-            is TargetSdkCheckResult.NotLatest -> {
-              val highest = tsdk.highestVersion
-              val label = "Update targetSdkVersion to $highest"
-              val fix =
-                if (LintClient.isStudio) {
-                  fix().data("currentTargetSdkVersion", version)
-                } else {
-                  fix().name(label).replace().text(value).with(highest.toString()).build()
-                }
-              report(context, statementCookie, TARGET_NEWER, tsdk.message, fix)
-            }
-            is TargetSdkCheckResult.NoIssue -> {}
-          }
-        }
-        if (version > 0) {
-          if (LintClient.isStudio) {
-            //noinspection FileComparisons
-            if (lastTargetSdkVersion == -1 || lastTargetSdkVersionFile != context.file) {
-              lastTargetSdkVersion = version
-              lastTargetSdkVersionFile = context.file
-            } else if (version > lastTargetSdkVersion) {
-              val message =
-                "It looks like you just edited the `targetSdkVersion` from $lastTargetSdkVersion to $version in the editor. " +
-                  "Be sure to consult the documentation on the behaviors that change as result of this. " +
-                  "The Android SDK Upgrade Assistant can help with safely migrating."
-              report(
-                context,
-                statementCookie,
-                EDITED_TARGET_SDK_VERSION,
-                message,
-                fix().data("currentTargetSdkVersion", version),
+                valueCookie,
+                false,
               )
             }
           }
-        } else {
+        } else if (version < 0) {
           checkIntegerAsString(context, value, statementCookie, valueCookie)
+        } else {
+          checkTargetSdkVersion(context, version, value, statementCookie, valueCookie)
         }
       } else if (property == "minSdkVersion" || property == "minSdk") {
         val version = getSdkVersion(value, valueCookie)
-        if (version > 0) {
+        if (version == -1 && isTomlVersionKey(value)) {
+          val tomlValue = findCorrespondingTomlKey(context, value)
+          if (tomlValue != null) {
+            val version =
+              tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
+            if (version != -1) {
+              val includeFix =
+                context.driver.isIsolated() || !isMinSdkTomlVersionKey(tomlValue.getKey()!!)
+              checkMinSdkVersion(context, version, statementCookie, includeFix, tomlValue)
+            }
+          }
+        } else if (version > 0) {
           checkMinSdkVersion(context, version, statementCookie)
         } else {
           checkIntegerAsString(context, value, statementCookie, valueCookie)
@@ -436,31 +402,26 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             version = platformVersion.featureLevel
           }
         }
+      } else if (isTomlVersionKey(value)) {
+        val tomlValue = findCorrespondingTomlKey(context, value)
+        if (tomlValue != null) {
+          val level =
+            tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
+          // Only add quickfix if we're editing the current file, or it's for a key
+          // we don't already directly handle in the TOML file itself
+          if (level != -1) {
+            val includeFix =
+              context.driver.isIsolated() || !isCompileSdkTomlVersionKey(tomlValue.getKey()!!)
+            checkCompileSdkVersionLatest(context, level, statementCookie, includeFix, tomlValue)
+          }
+        }
       } else {
         version = getIntLiteralValue(value, -1)
       }
       if (version <= 0) {
         checkIntegerAsString(context, value, statementCookie, valueCookie)
-      } else if (version < HIGHEST_KNOWN_STABLE_API) {
-        val message =
-          "A newer version of `compileSdkVersion` than $version is available: $HIGHEST_KNOWN_STABLE_API"
-        val fix =
-          fix()
-            .name("Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API")
-            .replace()
-            .text(version.toString())
-            .with(HIGHEST_KNOWN_STABLE_API.toString())
-            .build()
-        val clientProperties =
-          getClientProperties()?.apply { put(KEY_COORDINATE, "compileSdkVersion") }
-        report(
-          context,
-          statementCookie,
-          DEPENDENCY,
-          message,
-          fix,
-          clientProperties = clientProperties,
-        )
+      } else {
+        checkCompileSdkVersionLatest(context, version, statementCookie)
       }
     } else if (parent == "plugins") {
       val plugin =
@@ -711,6 +672,137 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
   }
 
+  private fun isTomlVersionKey(value: String): Boolean {
+    return value.startsWith("libs.versions.") && value.endsWith(".get().toInt()")
+  }
+
+  private fun findCorrespondingTomlKey(context: GradleContext, value: String): LintTomlValue? {
+    if (isTomlVersionKey(value)) {
+      val key = value.removeSurrounding("libs.versions.", ".get().toInt()")
+      // Find current library declaration in catalog, accounting for the declaration
+      // possibly using - and _ characters in the name
+      return (context.getTomlValue(VC_VERSIONS) as? LintTomlMapValue)
+        ?.getMappedValues()
+        ?.asIterable()
+        ?.find { it.key.replace('-', '.').replace('_', '.') == key }
+        ?.value
+    }
+    return null
+  }
+
+  private fun checkTargetSdkVersion(
+    context: Context,
+    version: Int,
+    versionString: String,
+    statementCookie: Any,
+    valueCookie: Any,
+    includeFix: Boolean = true,
+  ) {
+    if (version > 0 && version < context.client.highestKnownApiLevel) {
+      when (val tsdk = checkTargetSdk(context, calendar ?: Calendar.getInstance(), version)) {
+        is TargetSdkCheckResult.Expired -> {
+          // Don't report if already suppressed with EXPIRING
+          val alreadySuppressed =
+            when (context) {
+              is GradleContext ->
+                context.containsCommentSuppress() &&
+                  context.isSuppressedWithComment(statementCookie, EXPIRING_TARGET_SDK_VERSION)
+              is TomlContext ->
+                context.containsCommentSuppress() &&
+                  context.isSuppressedWithComment(statementCookie, EXPIRING_TARGET_SDK_VERSION)
+              else -> false
+            }
+
+          if (!alreadySuppressed) {
+            report(
+              context,
+              statementCookie,
+              EXPIRED_TARGET_SDK_VERSION,
+              tsdk.message,
+              fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
+            )
+          }
+        }
+        is TargetSdkCheckResult.Expiring -> {
+          report(
+            context,
+            statementCookie,
+            EXPIRING_TARGET_SDK_VERSION,
+            tsdk.message,
+            fix().data("currentTargetSdkVersion", version).takeIf { LintClient.isStudio },
+          )
+        }
+        is TargetSdkCheckResult.NotLatest -> {
+          val highest = tsdk.highestVersion
+          val label = "Update targetSdkVersion to $highest"
+          val fix =
+            if (LintClient.isStudio) {
+              fix().data("currentTargetSdkVersion", version)
+            } else if (includeFix) {
+              fix().name(label).replace().text(versionString).with(highest.toString()).build()
+            } else {
+              null
+            }
+          report(context, statementCookie, TARGET_NEWER, tsdk.message, fix)
+        }
+        is TargetSdkCheckResult.NoIssue -> {}
+      }
+    }
+    if (version > 0) {
+      if (LintClient.isStudio) {
+        //noinspection FileComparisons
+        if (lastTargetSdkVersion == -1 || lastTargetSdkVersionFile != context.file) {
+          lastTargetSdkVersion = version
+          lastTargetSdkVersionFile = context.file
+        } else if (version > lastTargetSdkVersion) {
+          val message =
+            "It looks like you just edited the `targetSdkVersion` from $lastTargetSdkVersion to $version in the editor. " +
+              "Be sure to consult the documentation on the behaviors that change as result of this. " +
+              "The Android SDK Upgrade Assistant can help with safely migrating."
+          report(
+            context,
+            statementCookie,
+            EDITED_TARGET_SDK_VERSION,
+            message,
+            fix().data("currentTargetSdkVersion", version),
+          )
+        }
+      }
+    }
+  }
+
+  private fun checkCompileSdkVersionLatest(
+    context: Context,
+    version: Int,
+    cookie: Any,
+    includeFix: Boolean = true,
+    fixCookie: Any? = null,
+  ) {
+    if (version < HIGHEST_KNOWN_STABLE_API) {
+      val message =
+        "A newer version of `compileSdkVersion` than $version is available: $HIGHEST_KNOWN_STABLE_API"
+      val fix =
+        if (includeFix) {
+          fix()
+            .name("Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API")
+            .replace()
+            .text(version.toString())
+            .with(HIGHEST_KNOWN_STABLE_API.toString())
+            .apply {
+              if (fixCookie is LintTomlValue) {
+                range(fixCookie.getLocation())
+              }
+            }
+            .build()
+        } else {
+          null
+        }
+      val clientProperties =
+        getClientProperties()?.apply { put(KEY_COORDINATE, "compileSdkVersion") }
+      report(context, cookie, DEPENDENCY, message, fix, clientProperties = clientProperties)
+    }
+  }
+
   /**
    * Given a dependency string, returns the name of the version variable, if any, assuming it's a
    * single variable which represents the whole revision. For example, for `foo:bar:$version` and
@@ -802,7 +894,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return
     }
 
-    for (deprecatedConfiguration in DeprecatedConfiguration.values()) {
+    for (deprecatedConfiguration in DeprecatedConfiguration.entries) {
       if (deprecatedConfiguration.matches(configuration)) {
         // Compile was replaced by API and Implementation, but only suggest API if it was used
         if (
@@ -878,7 +970,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     context: GradleContext,
     propertyCookie: Any,
   ) {
-    for (compileConfiguration in CompileConfiguration.values()) {
+    for (compileConfiguration in CompileConfiguration.entries) {
       if (compileConfiguration.matches(configuration) && isCommonAnnotationProcessor(dependency)) {
         val replacement: String = compileConfiguration.replacement(configuration)
         val fix =
@@ -898,7 +990,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
   }
 
-  private fun checkMinSdkVersion(context: GradleContext, version: Int, valueCookie: Any) {
+  private fun checkMinSdkVersion(
+    context: Context,
+    version: Int,
+    valueCookie: Any,
+    includeFix: Boolean = true,
+    fixCookie: Any? = null,
+  ) {
     if (version in 1 until LOWEST_ACTIVE_API) {
       val message =
         "The value of minSdkVersion is too low. It can be incremented " +
@@ -906,12 +1004,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
       val label = "Update minSdkVersion to $LOWEST_ACTIVE_API"
       val fix =
-        fix()
-          .name(label)
-          .replace()
-          .text(version.toString())
-          .with(LOWEST_ACTIVE_API.toString())
-          .build()
+        if (includeFix) {
+          fix()
+            .name(label)
+            .replace()
+            .text(version.toString())
+            .with(LOWEST_ACTIVE_API.toString())
+            .apply {
+              if (fixCookie is LintTomlValue) {
+                range(fixCookie.getLocation())
+              }
+            }
+            .build()
+        } else {
+          null
+        }
       report(context, valueCookie, MIN_SDK_TOO_LOW, message, fix)
     }
   }
@@ -1842,33 +1949,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return
     }
 
-    if (GMS_GROUP_ID == groupId || FIREBASE_GROUP_ID == groupId) {
-      if (!mCheckedGms) {
-        mCheckedGms = true
-        // Incremental analysis only? If so, tie the check to
-        // a specific GMS play dependency if only, such that it's highlighted
-        // in the editor
-        if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
-          // Incremental editing: try flagging them in this file!
-          checkConsistentPlayServices(context, cookie)
-        }
-      }
-    } else {
-      if (!mCheckedWearableLibs) {
-        mCheckedWearableLibs = true
-        // Incremental analysis only? If so, tie the check to
-        // a specific GMS play dependency if only, such that it's highlighted
-        // in the editor
-        if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
-          // Incremental editing: try flagging them in this file!
-          checkConsistentWearableLibraries(context, cookie, statementCookie)
-        }
+    if (!mCheckedWearableLibs) {
+      mCheckedWearableLibs = true
+      // Incremental analysis only? If so, tie the check to
+      // a specific GMS play dependency if only, such that it's highlighted
+      // in the editor
+      if (!context.scope.contains(Scope.ALL_RESOURCE_FILES) && context.isGlobalAnalysis()) {
+        // Incremental editing: try flagging them in this file!
+        checkConsistentWearableLibraries(context, cookie, statementCookie)
       }
     }
-  }
-
-  private fun checkConsistentPlayServices(context: Context, cookie: Any?) {
-    checkConsistentLibraries(context, cookie, GMS_GROUP_ID, FIREBASE_GROUP_ID)
   }
 
   private fun checkConsistentWearableLibraries(
@@ -1971,86 +2061,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun getAllLibraries(project: Project): List<LintModelLibrary> {
-    return project.buildVariant?.mainArtifact?.dependencies?.getAll() ?: emptyList()
-  }
-
-  private fun checkConsistentLibraries(
-    context: Context,
-    cookie: Any?,
-    groupId: String,
-    groupId2: String?,
-  ) {
-    // Make sure we're using a consistent version across all play services libraries
-    // (b/22709708)
-
-    val project = context.mainProject
-    val versionToCoordinate = ArrayListMultimap.create<String, LintModelMavenName>()
-    val allLibraries = getAllLibraries(project).filterIsInstance<LintModelExternalLibrary>()
-    for (library in allLibraries) {
-      val coordinates = library.resolvedCoordinates
-      if (
-        (coordinates.groupId == groupId || coordinates.groupId == groupId2) &&
-          // Historically the multidex library ended up in the support package but
-          // decided to do its own numbering (and isn't tied to the rest in terms
-          // of implementation dependencies)
-          !coordinates.artifactId.startsWith("multidex") &&
-          // Renderscript has stated in b/37630182 that they are built and
-          // distributed separate from the rest and do not have any version
-          // dependencies
-          !coordinates.artifactId.startsWith("renderscript") &&
-          // Similarly firebase job dispatcher doesn't follow normal firebase version
-          // numbering
-          !coordinates.artifactId.startsWith("firebase-jobdispatcher") &&
-          // The Android annotations library is decoupled from the rest and doesn't
-          // need to be matched to the other exact support library versions
-          coordinates.artifactId != "support-annotations"
-      ) {
-        versionToCoordinate.put(coordinates.version, coordinates)
-      }
-    }
-
-    val versions = versionToCoordinate.keySet()
-    if (versions.size > 1) {
-      val sortedVersions = ArrayList(versions)
-      sortedVersions.sortWith(Collections.reverseOrder())
-      val c1 = findFirst(versionToCoordinate.get(sortedVersions[0]))
-      val c2 = findFirst(versionToCoordinate.get(sortedVersions[1]))
-
-      // For GMS, the synced version requirement ends at version 14
-      if (groupId == GMS_GROUP_ID || groupId == FIREBASE_GROUP_ID) {
-        // c2 is the smallest of all the versions; if it is at least 14,
-        // they all are
-        val version = Version.parse(c2.version)
-        if (version.major?.let { it >= 14 } != false) {
-          return
-        }
-      }
-
-      // Not using toString because in the IDE, these are model proxies which display garbage output
-      val example1 = c1.groupId + ":" + c1.artifactId + ":" + c1.version
-      val example2 = c2.groupId + ":" + c2.artifactId + ":" + c2.version
-      val groupDesc = if (GMS_GROUP_ID == groupId) "gms/firebase" else groupId
-      val message =
-        "All " +
-          groupDesc +
-          " libraries must use the exact same " +
-          "version specification (mixing versions can lead to runtime crashes). " +
-          "Found versions " +
-          Joiner.on(", ").join(sortedVersions) +
-          ". " +
-          "Examples include `" +
-          example1 +
-          "` and `" +
-          example2 +
-          "`"
-
-      if (cookie != null) {
-        reportNonFatalCompatibilityIssue(context, cookie, message)
-      } else {
-        val location = getDependencyLocation(context, c1, c2)
-        reportNonFatalCompatibilityIssue(context, location, message)
-      }
-    }
+    return project.buildVariant?.artifact?.dependencies?.getAll() ?: emptyList()
   }
 
   override fun beforeCheckRootProject(context: Context) {
@@ -2072,16 +2083,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun checkLibraryConsistency(context: Context) {
-    checkConsistentPlayServices(context, null)
     checkConsistentWearableLibraries(context, null, null)
   }
 
   override fun visitTomlDocument(context: TomlContext, document: LintTomlDocument) {
+    val versions = document.getValue(VC_VERSIONS) as? LintTomlMapValue
+
     // Look for version catalogs
     val versionNodeDependencySet = mutableSetOf<Pair<LintTomlValue, Dependency>>()
     val libraries = document.getValue(VC_LIBRARIES) as? LintTomlMapValue
     if (libraries != null) {
-      val versions = document.getValue(VC_VERSIONS) as? LintTomlMapValue
       val dependencyToElement = mutableMapOf<LintTomlValue, Dependency>()
       for ((_, library) in libraries.getMappedValues()) {
         val (coordinate, versionNode) = getLibraryFromTomlEntry(versions, library) ?: continue
@@ -2103,7 +2114,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     val plugins = document.getValue(VC_PLUGINS) as? LintTomlMapValue
     if (plugins != null) {
-      val versions = document.getValue(VC_VERSIONS) as? LintTomlMapValue
       val dependencyToElement = mutableMapOf<LintTomlValue, Dependency>()
       for ((_, plugin) in plugins.getMappedValues()) {
         val (coordinate, versionNode) = getPluginFromTomlEntry(versions, plugin) ?: continue
@@ -2121,6 +2131,31 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
       }
       checkDuplication(context, dependencyToElement) { dep: Dependency -> dep.group ?: "" }
+    }
+
+    // Look for well known version keys
+    if (versions != null) {
+      for ((key: String, value: LintTomlValue) in versions.getMappedValues()) {
+        if (isCompileSdkTomlVersionKey(key)) {
+          val compileSdkString = value.getActualValue()?.toString() ?: continue
+          val compileSdk = getSdkVersion(compileSdkString, value)
+          // >= 30: Since we're guessing purpose based on name, validate that
+          // it's in the neighborhood of a valid compileSdkVersion to make sure
+          if (compileSdk >= 30) {
+            checkCompileSdkVersionLatest(context, compileSdk, value)
+          }
+        } else if (isMinSdkTomlVersionKey(key)) {
+          val minSdkString = value.getActualValue()?.toString() ?: continue
+          val minSdk = getSdkVersion(minSdkString, value)
+          checkMinSdkVersion(context, minSdk, value)
+        } else if (isTargetSdkTomlVersionKey(key)) {
+          val targetSdkString = value.getActualValue()?.toString() ?: continue
+          val targetSdk = getSdkVersion(targetSdkString, value)
+          if (targetSdk != -1) {
+            checkTargetSdkVersion(context, targetSdk, targetSdkString, value, value)
+          }
+        }
+      }
     }
   }
 
@@ -2194,7 +2229,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 it.safeReplacement,
               )
           }
-        report(context, it.cookie, AGP_DEPENDENCY, message, fix)
+        val clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "com.android.application") }
+        report(
+          context,
+          it.cookie,
+          AGP_DEPENDENCY,
+          message,
+          fix,
+          clientProperties = clientProperties,
+        )
       }
     }
   }
@@ -2542,7 +2586,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           property.startsWith("androidTest") -> variant.androidTestArtifact
           property.startsWith("testFixtures") -> variant.testFixturesArtifact
           property.startsWith("test") -> variant.testArtifact
-          else -> variant.mainArtifact
+          else -> variant.artifact
         } ?: return null
       for (library in artifact.dependencies.getAll()) {
         if (library is LintModelExternalLibrary) {
@@ -2771,6 +2815,80 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
   }
 
+  /** Check property file (in particular, the gradle wrapper) */
+  override fun run(context: Context) {
+    if (!context.file.path.endsWith("gradle-wrapper.properties")) {
+      return
+    }
+    val contents = context.getContents() ?: return
+    var offset = 0
+    val iterator = Splitter.on('\n').split(contents).iterator()
+    var line: String
+    while (iterator.hasNext()) {
+      line = iterator.next()
+      if (line.startsWith("#") || line.startsWith(" ")) {
+        offset += line.length + 1
+        continue
+      }
+
+      val valueStart = line.indexOf('=') + 1
+      if (valueStart == 0) {
+        offset += line.length + 1
+        continue
+      }
+
+      if (line.startsWith("distributionUrl") && line.endsWith(".zip")) {
+        checkGradleWrapperDistribution(context, contents, offset, line, valueStart)
+      }
+      offset += line.length + 1
+    }
+  }
+
+  private fun checkGradleWrapperDistribution(
+    context: Context,
+    contents: CharSequence,
+    offset: Int,
+    line: String,
+    valueStart: Int,
+  ) {
+    val prefix = "/distributions/gradle-"
+    val index = line.indexOf(prefix)
+    if (index == -1) {
+      return
+    }
+    val versionStart = index + prefix.length
+    val versionEnd = line.lastIndexOf('-')
+    val versionString = line.substring(versionStart, versionEnd)
+    val currentVersion = Version.parse(versionString)
+
+    val agpVersion = context.project.buildModule?.agpVersion
+    val filter =
+      if (agpVersion != null && agpVersion.major >= 7) {
+        "${agpVersion.major}."
+      } else {
+        null
+      }
+    val (_, newVersion) =
+      getGradleVersion(context.client, filter, currentVersion, allowCache = true) ?: return
+
+    val location =
+      Location.create(context.file, contents, offset + valueStart, offset + line.length)
+    val message = "A newer version of Gradle than $currentVersion is available: $newVersion"
+    val fix =
+      fix()
+        .name("Update to $newVersion")
+        .replace()
+        .text(currentVersion.toString())
+        .with(newVersion.toString())
+        .build()
+    val incident =
+      Incident(AGP_DEPENDENCY, location, message, fix).apply {
+        clientProperties =
+          getClientProperties()?.apply { put(KEY_COORDINATE, "gradle-wrapper.properties") }
+      }
+    context.report(incident)
+  }
+
   companion object {
     private var lastTargetSdkVersion: Int = -1
     private var lastTargetSdkVersionFile: File? = null
@@ -2805,12 +2923,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         Scope.GRADLE_SCOPE,
         Scope.TOML_SCOPE,
       )
-    private val IMPLEMENTATION_WITH_MANIFEST =
+    private val IMPLEMENTATION_WITH_TOML_AND_PROPERTIES =
       Implementation(
         GradleDetector::class.java,
-        EnumSet.of(Scope.GRADLE_FILE, Scope.MANIFEST),
+        EnumSet.of(Scope.GRADLE_FILE, Scope.TOML_FILE, Scope.PROPERTY_FILE),
+        Scope.GRADLE_SCOPE,
+        Scope.TOML_SCOPE,
+        Scope.PROPERTY_SCOPE,
+      )
+    private val IMPLEMENTATION_WITH_TOML_AND_MANIFEST =
+      Implementation(
+        GradleDetector::class.java,
+        EnumSet.of(Scope.GRADLE_FILE, Scope.MANIFEST, Scope.TOML_FILE),
         Scope.GRADLE_SCOPE,
         Scope.MANIFEST_SCOPE,
+        Scope.TOML_SCOPE,
       )
 
     /** Obsolete dependencies. */
@@ -2909,7 +3036,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         priority = 4,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation = IMPLEMENTATION_WITH_TOML,
+        implementation = IMPLEMENTATION_WITH_TOML_AND_PROPERTIES,
       )
 
     /** Deprecated Gradle constructs. */
@@ -3291,7 +3418,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           priority = 8,
           severity = Severity.WARNING,
           androidSpecific = true,
-          implementation = IMPLEMENTATION_WITH_MANIFEST,
+          implementation = IMPLEMENTATION_WITH_TOML_AND_MANIFEST,
         )
         .addMoreInfo(
           "https://support.google.com/googleplay/android-developer/answer/113469#targetsdk"
@@ -3322,7 +3449,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           priority = 8,
           severity = Severity.FATAL,
           androidSpecific = true,
-          implementation = IMPLEMENTATION_WITH_MANIFEST,
+          implementation = IMPLEMENTATION_WITH_TOML_AND_MANIFEST,
         )
         .addMoreInfo(
           "https://developer.android.com/distribute/best-practices/develop/target-sdk.html"
@@ -3352,7 +3479,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           category = Category.CORRECTNESS,
           priority = 6,
           severity = Severity.WARNING,
-          implementation = IMPLEMENTATION_WITH_MANIFEST,
+          implementation = IMPLEMENTATION_WITH_TOML_AND_MANIFEST,
         )
         .addMoreInfo(
           "https://developer.android.com/distribute/best-practices/develop/target-sdk.html"
@@ -3964,6 +4091,125 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         .maxOrNull()
     }
 
+    /**
+     * Returns the latest stable and preview versions of Gradle, respectively. The
+     * [versionPrefixFilter] can be used to filter down to a specific version prefix, typically a
+     * major version to limit compatibility between Gradle and AGP.
+     *
+     * If a current version is specified, the upgrade will be limited to a suggested compatible
+     * update. In particular, if the current version is a stable version, only stable versions will
+     * be returned. If the current version is a preview, it will return the latest *stable* version
+     * that is higher than the preview version, unless no such version exists, in which case it will
+     * return the latest preview version.
+     *
+     * In other words, if we have these possible versions:
+     * * 7.0-alpha
+     * * 7.0-beta
+     * * 7.0
+     * * 8.0-alpha
+     * * 8.0
+     * * 8.1-alpha
+     * * 8.1-beta *
+     *
+     * Here, if we update from 7.0-alpha, it will return 8.0 (the latest stable version). From 7.0
+     * the update is also to 8.0. From 8.0 there is no suggestion. And from 8.1-alpha, it will
+     * suggest 8.1-beta.
+     */
+    fun getGradleVersion(
+      client: LintClient,
+      versionPrefixFilter: String?,
+      currentVersion: Version? = null,
+      allowCache: Boolean = false,
+    ): Pair<Version, Version>? {
+      val inputStream =
+        if (allowCache) {
+          val cacheDir = client.getCacheDir(GRADLE_CACHE_KEY, true)?.toPath()
+          val cache =
+            object : NetworkCache(GRADLE_MAVEN_URL, GRADLE_CACHE_KEY, cacheDir) {
+              override fun readUrlData(
+                url: String,
+                timeout: Int,
+                lastModified: Long,
+              ): ReadUrlDataResult {
+                return readUrlData(client, url, timeout, lastModified)
+              }
+
+              override fun readDefaultData(relative: String): InputStream? = null
+
+              override fun error(throwable: Throwable, message: String?) {}
+
+              fun getMetadata(): InputStream? {
+                return findData(GRADLE_METADATA)
+              }
+            }
+          cache.getMetadata()
+        } else {
+          readUrlData(client, GRADLE_MAVEN_METADATA_URL, 10000, 0L).data?.let {
+            ByteArrayInputStream(it)
+          }
+        }
+
+      inputStream ?: return null
+
+      return getMavenMetadataVersions(inputStream, versionPrefixFilter, currentVersion)
+    }
+
+    private const val GRADLE_CACHE_KEY = "gradle-versions"
+    private const val GRADLE_MAVEN_URL =
+      "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/"
+    private const val GRADLE_METADATA = "maven-metadata.xml"
+    private const val GRADLE_MAVEN_METADATA_URL = "$GRADLE_MAVEN_URL$GRADLE_METADATA"
+
+    private fun getMavenMetadataVersions(
+      inputStream: InputStream,
+      versionPrefixFilter: String?,
+      currentVersion: Version?,
+    ): Pair<Version, Version>? {
+      var stable: Version? = null
+      var preview: Version? = null
+      val parser = KXmlParser()
+      parser.setInput(inputStream, StandardCharsets.UTF_8.name())
+      while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
+          val versionString = parser.nextText()
+          if (versionPrefixFilter != null && !versionString.startsWith(versionPrefixFilter)) {
+            continue
+          }
+          val version = Version.parse(versionString.trim())
+          if (version.isPreview) {
+            if (preview == null || version > preview) {
+              preview = version
+            }
+          } else {
+            if (stable == null || version > stable) {
+              stable = version
+            }
+            if (preview == null || version > preview) {
+              preview = version
+            }
+          }
+        }
+      }
+
+      if (stable != null && preview != null) {
+        if (currentVersion != null) {
+          if (currentVersion.isPreview && currentVersion < stable) {
+            return Pair(stable, stable)
+          } else if (currentVersion.isPreview && currentVersion < preview) {
+            return Pair(stable, preview)
+          } else if (currentVersion < stable) {
+            return Pair(stable, stable)
+          } else {
+            return null
+          }
+        }
+
+        return Pair(stable, preview)
+      } else {
+        return null
+      }
+    }
+
     private data class VersionCatalogDependency(
       val coordinates: String,
       val tomlValue: LintTomlValue,
@@ -4290,6 +4536,51 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         index.initialize()
         index
       }
+
+    /**
+     * Returns true if this String matches a TOML key or Gradle reference.
+     *
+     * The key can be a match at the end, and `-`, `_` and `.` are considered identical. We also
+     * allow case differences. (Note that TOML keys are normally sensitive, and that TOML keys match
+     * the full contents, not just the suffix, so this method is only intended to be used to guess
+     * the intent of a key based on a partial match, such as "does this key refer to a compile SDK
+     * version?".)
+     */
+    private fun String.tomlKeyMatches(key: String): Boolean {
+      var ki = key.length - 1
+      var ti = this.length - 1
+      if (ti < ki || ti == -1 || ki == -1) {
+        return false
+      }
+      while (ki >= 0) {
+        val kc = Character.toLowerCase(key[ki])
+        val tc = Character.toLowerCase(this[ti])
+        if (kc != tc && !(kc.isTomlSeparator() && tc.isTomlSeparator())) {
+          return false
+        }
+        ki--
+        ti--
+      }
+      return ti == -1 || this[ti].isTomlSeparator()
+    }
+
+    private fun Char.isTomlSeparator(): Boolean = this == '.' || this == '_' || this == '-'
+
+    @VisibleForTesting
+    fun isCompileSdkTomlVersionKey(key: String): Boolean =
+      key.tomlKeyMatches("compileSdk") ||
+        key.tomlKeyMatches("compileSdkVersion") ||
+        key.tomlKeyMatches("compile_sdk_version")
+
+    private fun isMinSdkTomlVersionKey(key: String): Boolean =
+      key.tomlKeyMatches("minSdk") ||
+        key.tomlKeyMatches("minSdkVersion") ||
+        key.tomlKeyMatches("min_sdk_version")
+
+    private fun isTargetSdkTomlVersionKey(key: String): Boolean =
+      key.tomlKeyMatches("targetSdk") ||
+        key.tomlKeyMatches("targetSdkVersion") ||
+        key.tomlKeyMatches("target_sdk_version")
   }
 }
 

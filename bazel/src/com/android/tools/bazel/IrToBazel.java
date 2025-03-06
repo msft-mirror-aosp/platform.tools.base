@@ -310,7 +310,6 @@ public class IrToBazel {
                     }
 
                 } else if (dependency.dependency instanceof IrModule) {
-                    scopes.add(0, ImlModule.Tag.MODULE);
                     imlModule.addDependency(
                             moduleRefs.get(dependency.dependency), dependency.exported, scopes);
                 }

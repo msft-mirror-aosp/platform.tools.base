@@ -44,7 +44,8 @@ internal class LazyManifestParserPropertiesTest : LazyManifestParserBaseTest() {
                      android:targetProcesses="*" />
     <application android:label="app_name" android:icon="icon"
                  android:extractNativeLibs="true"
-                 android:useEmbeddedDex="true">
+                 android:useEmbeddedDex="true"
+                 android:isolatedSplits="true">
         <activity android:name=".Main"
                   android:label="app_name">
             <intent-filter>
@@ -53,7 +54,7 @@ internal class LazyManifestParserPropertiesTest : LazyManifestParserBaseTest() {
             </intent-filter>
         </activity>
     </application>
-</manifest> 
+</manifest>
 """.trimIndent()
         }
 
@@ -69,6 +70,7 @@ internal class LazyManifestParserPropertiesTest : LazyManifestParserBaseTest() {
                 handleProfiling = false
                 extractNativeLibs = true
                 useEmbeddedDex = true
+                isolatedSplits = true
             }
         }
     }
@@ -82,7 +84,7 @@ internal class LazyManifestParserPropertiesTest : LazyManifestParserBaseTest() {
           package="com.android.tests.builder.core">
     <uses-sdk android:minSdkVersion="Q"
               android:targetSdkVersion="25"/>
-</manifest> 
+</manifest>
 """.trimIndent()
         }
 
@@ -102,7 +104,7 @@ internal class LazyManifestParserPropertiesTest : LazyManifestParserBaseTest() {
           package="com.android.tests.builder.core">
     <uses-sdk android:minSdkVersion="21"
               android:targetSdkVersion="Q"/>
-</manifest> 
+</manifest>
 """.trimIndent()
         }
 

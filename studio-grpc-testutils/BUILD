@@ -25,7 +25,7 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/android-test-framework:intellij.android.testFramework[module, test]",
+        "//tools/adt/idea/android-test-framework:intellij.android.testFramework[test]",
         "@intellij//:intellij.libraries.grpc",
         "//prebuilts/tools/common/m2:grpc-inprocess-1.69.1",
     ],

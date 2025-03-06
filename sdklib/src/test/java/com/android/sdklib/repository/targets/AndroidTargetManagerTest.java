@@ -130,7 +130,7 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(sdkRoot.resolve("platforms/android-23/sources").toString(), sourcesPath);
 
         recordSources23(sdkRoot);
-        handler.getSdkManager(progress).loadSynchronously(0, progress, null, null);
+        handler.getRepoManager(progress).loadSynchronously(0, progress, null, null);
         mgr = handler.getAndroidTargetManager(progress);
         target = mgr.getTargets(progress).iterator().next();
         progress.assertNoErrorsOrWarnings();

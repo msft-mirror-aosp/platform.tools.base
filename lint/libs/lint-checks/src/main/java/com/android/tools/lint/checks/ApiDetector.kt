@@ -3202,7 +3202,8 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
                 } else {
                   ""
                 }
-              "Unnecessary; `$source` is never true here$suffix"
+              val frequency = if (always && !never) "always" else "never"
+              "Unnecessary; `$source` is $frequency true here$suffix"
             }
             always -> "Unnecessary; `$sdkInt` is always >= ${environmentConstraint.minString()}"
             else -> "Unnecessary; `$sdkInt` is never < ${environmentConstraint.minString()}"

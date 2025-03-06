@@ -58,8 +58,7 @@ public class AbstractInstallerTest {
                                 + "    </localPackage>\n"
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
 
@@ -89,8 +88,7 @@ public class AbstractInstallerTest {
                                 + "    </localPackage>\n"
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
 
@@ -122,8 +120,7 @@ public class AbstractInstallerTest {
                                 + "    </localPackage>\n"
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
 
@@ -163,8 +160,7 @@ public class AbstractInstallerTest {
                                 + "    </localPackage>\n"
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.loadSynchronously(0, progress, null, null);
 
@@ -182,8 +178,7 @@ public class AbstractInstallerTest {
     @Test
     public void deleteUnusedDirs() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         FakeRemotePackage remote = new FakeRemotePackage("foo;bar");
         remote.setCompleteUrl("http://www.example.com/package.zip");
         FakeDownloader downloader = new FakeDownloader(sdkRoot.getRoot().resolve("tmp"));
@@ -217,8 +212,7 @@ public class AbstractInstallerTest {
     @Test
     public void installerProperties() {
         Path sdkRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("sdk");
-        RepoManager mgr = new RepoManagerImpl();
-        mgr.setLocalPath(sdkRoot);
+        RepoManager mgr = new RepoManagerImpl(sdkRoot);
         RemotePackage remote = new FakeRemotePackage("foo;bar");
         FakeDownloader downloader = new FakeDownloader(sdkRoot.getRoot().resolve("tmp"));
         AbstractInstaller installer = new TestInstaller(remote, mgr, downloader);

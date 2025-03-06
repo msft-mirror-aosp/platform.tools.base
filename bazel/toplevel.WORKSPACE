@@ -70,13 +70,3 @@ new_local_repository(
 load("//tools/base/intellij-bazel:platforms.bzl", "setup_intellij_platforms")
 
 setup_intellij_platforms()
-
-vendor_repository(
-    name = "aswb_test_deps",
-    bzl = "@//tools/adt/idea/aswb/testing/test_deps:deps.bzl",
-    function = "aswb_test_deps_dependencies",
-)
-
-load("@aswb_test_deps//:vendor.bzl", "aswb_test_deps_dependencies")
-
-aswb_test_deps_dependencies()

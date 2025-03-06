@@ -83,6 +83,10 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals(29, getApiByBuildCode("Q", true));
         assertEquals(30, getApiByBuildCode("R", true));
         assertEquals(32, getApiByBuildCode("S_V2", true));
+        assertEquals(33, getApiByBuildCode("TIRAMISU", true));
+        assertEquals(34, getApiByBuildCode("UPSIDE_DOWN_CAKE", true));
+        assertEquals(35, getApiByBuildCode("VANILLA_ICE_CREAM", true));
+        assertEquals(36, getApiByBuildCode("BAKLAVA", true));
 
         for (int api = 1; api <= HIGHEST_KNOWN_API; api++) {
             assertEquals(api, getApiByBuildCode(getBuildCode(api), false));
@@ -102,6 +106,15 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("Oreo", getCodeName(26));
         assertEquals("Oreo", getCodeName(27));
         assertEquals("Pie", getCodeName(28));
+        assertEquals("Q", getCodeName(29));
+        assertEquals("R", getCodeName(30));
+        assertEquals("S", getCodeName(31));
+        assertEquals("Sv2", getCodeName(32));
+        assertEquals("Tiramisu", getCodeName(33));
+        assertEquals("UpsideDownCake", getCodeName(34));
+        assertEquals("VanillaIceCream", getCodeName(35));
+        assertEquals("Baklava", getCodeName(36));
+        assertNull("getCodeName for future versions should return null", getCodeName(37)); // Deliberately hardcoded to ensure this test gets looked at when adding new codenames.
 
         // make sure all known codenames are non-null
         for (int i = 3; i <= HIGHEST_KNOWN_API; i++) {

@@ -96,6 +96,9 @@ interface DeviceProperties {
   /** If true, the device allows debugging. */
   val isDebuggable: Boolean?
 
+  /** If true, the device's screen can be resized dynamically. */
+  val isResizable: Boolean?
+
   /** Icon used to represent this device in UIs */
   val icon: Icon
 
@@ -177,6 +180,7 @@ interface DeviceProperties {
     var isVirtual: Boolean? = null
     var isRemote: Boolean? = null
     var isDebuggable: Boolean? = null
+    var isResizable: Boolean? = null
     var wearPairingId: String? = null
     var resolution: Resolution? = null
     var density: Int? = null
@@ -196,6 +200,7 @@ interface DeviceProperties {
       isVirtual = properties.isVirtual
       isRemote = properties.isRemote
       isDebuggable = properties.isDebuggable
+      isResizable = properties.isResizable
       wearPairingId = properties.wearPairingId
       resolution = properties.resolution
       density = properties.density
@@ -308,6 +313,7 @@ interface DeviceProperties {
         isVirtual = isVirtual,
         isRemote = isRemote,
         isDebuggable = isDebuggable,
+        isResizable = isResizable,
         wearPairingId = wearPairingId,
         resolution = resolution,
         density = density,
@@ -331,6 +337,7 @@ data class BaseDeviceProperties(
   override val isVirtual: Boolean?,
   override val isRemote: Boolean?,
   override val isDebuggable: Boolean?,
+  override val isResizable: Boolean?,
   override val wearPairingId: String?,
   override val resolution: Resolution?,
   override val density: Int?,

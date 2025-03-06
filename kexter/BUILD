@@ -96,6 +96,6 @@ iml_module(
     deps = [
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:intellij-sdk",
-        "//tools/base/zipflinger:studio.android.sdktools.zipflinger[module]",
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
     ],
 )

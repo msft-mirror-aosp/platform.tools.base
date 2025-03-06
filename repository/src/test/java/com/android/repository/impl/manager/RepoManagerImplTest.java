@@ -65,8 +65,7 @@ public class RepoManagerImplTest extends TestCase {
         Runnable errorCallback = Assert::fail;
 
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        RepoManagerImpl mgr = new RepoManagerImpl(localFactory, remoteFactory);
-        mgr.setLocalPath(repoRoot);
+        RepoManagerImpl mgr = new RepoManagerImpl(repoRoot, localFactory, remoteFactory);
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(ImmutableList.of()));
         FakeProgressRunner runner = new FakeProgressRunner();
         mgr.loadSynchronously(
@@ -93,9 +92,8 @@ public class RepoManagerImplTest extends TestCase {
         RepoManager.RepoLoadedListener remoteCallback = packages -> fail();
         Runnable errorCallback = () -> assertEquals(4, counter.addAndGet(1));
 
-        RepoManagerImpl mgr = new RepoManagerImpl(localFactory, remoteFactory);
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(repoRoot);
+        RepoManagerImpl mgr = new RepoManagerImpl(repoRoot, localFactory, remoteFactory);
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(
                 ImmutableList.of()));
         FakeProgressRunner runner = new FakeProgressRunner();
@@ -125,9 +123,8 @@ public class RepoManagerImplTest extends TestCase {
         RepoManager.RepoLoadedListener remoteCallback = packages -> fail();
         Runnable errorCallback = () -> assertEquals(2, counter.addAndGet(1));
 
-        RepoManagerImpl mgr = new RepoManagerImpl(localFactory, remoteFactory);
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(repoRoot);
+        RepoManagerImpl mgr = new RepoManagerImpl(repoRoot, localFactory, remoteFactory);
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(
                 ImmutableList.of()));
         FakeProgressRunner runner = new FakeProgressRunner();
@@ -190,9 +187,8 @@ public class RepoManagerImplTest extends TestCase {
 
         Runnable errorCallback = Assert::fail;
 
-        RepoManagerImpl mgr = new RepoManagerImpl(localFactory, new TestLoaderFactory());
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(repoRoot);
+        RepoManagerImpl mgr = new RepoManagerImpl(repoRoot, localFactory, new TestLoaderFactory());
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(
                 ImmutableList.of()));
         FakeProgressRunner runner = new FakeProgressRunner();
@@ -238,9 +234,8 @@ public class RepoManagerImplTest extends TestCase {
         TestLoaderFactory<RemotePackage> remoteRunningFactory = new TestLoaderFactory<>(
                 new RunningLoader<>(remoteDidRun));
 
-        RepoManagerImpl mgr = new RepoManagerImpl(localRunningFactory, remoteRunningFactory);
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(repoRoot);
+        RepoManagerImpl mgr = new RepoManagerImpl(repoRoot, localRunningFactory, remoteRunningFactory);
         mgr.registerSourceProvider(new FakeRepositorySourceProvider(
                 ImmutableList.of()));
         FakeProgressRunner runner = new FakeProgressRunner();
@@ -304,9 +299,8 @@ public class RepoManagerImplTest extends TestCase {
             }
         };
 
-        RepoManager mgr = new RepoManagerImpl(new TestLoaderFactory<>(loader), null);
         Path repoRoot = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        mgr.setLocalPath(repoRoot);
+        RepoManager mgr = new RepoManagerImpl(repoRoot, new TestLoaderFactory<>(loader), null);
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // First time we should load, despite not being out of date
@@ -359,8 +353,7 @@ public class RepoManagerImplTest extends TestCase {
 
         TestLoaderFactory localFactory = new TestLoaderFactory<>(localLoader);
         TestLoaderFactory remoteFactory = new TestLoaderFactory<>(remoteLoader);
-        RepoManager mgr = new RepoManagerImpl(localFactory, remoteFactory);
-        mgr.setLocalPath(repoRoot);
+        RepoManager mgr = new RepoManagerImpl(repoRoot, localFactory, remoteFactory);
 
         FakeProgressRunner runner = new FakeProgressRunner();
         FakeDownloader downloader = new FakeDownloader(repoRoot.getRoot().resolve("tmp"));

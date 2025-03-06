@@ -225,7 +225,7 @@ public class AgentTest {
         Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();
 
-        ApplicationManager.getApplication().invokeLater(() -> {
+        ApplicationManager.getApplication().invokeAndWait(() -> {
             try {
                 callMethod(transformedClass, instance, "requiresEdtMethod1", false);
             }

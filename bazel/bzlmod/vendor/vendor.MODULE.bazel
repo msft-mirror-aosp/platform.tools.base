@@ -23,3 +23,6 @@ local_repository(
     name = "skia_user_config",
     path = "tools/vendor/google/skia/external/skia-user-config",
 )
+
+# ASwB test deps are in a different directory for ownership.
+include("//tools/adt/idea/aswb/testing/test_deps:test_deps.MODULE.bazel")

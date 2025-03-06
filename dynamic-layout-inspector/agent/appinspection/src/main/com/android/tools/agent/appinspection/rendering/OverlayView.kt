@@ -39,7 +39,7 @@ const val SELECTION_COLOR = 0xFF1886F7.toInt()
 @VisibleForTesting
 const val HOVER_COLOR = 0xFF6AA0D3.toInt()
 @VisibleForTesting
-const val BASE_COLOR = 0x80000000.toInt()
+const val BASE_COLOR = 0x80FFFFFF.toInt()
 @VisibleForTesting
 // TODO(next CL): receive color from studio
 val RECOMPOSITION_COLOR = 0x20FFA9A9.toInt()
@@ -149,8 +149,16 @@ class OverlayView(
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val point = PointF(ev.x, ev.y)
-        Log.w(SPAM_LOG_TAG, "OverlayView $rootId touch event: $point")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point")
+
+        if (ev.action == MotionEvent.ACTION_DOWN && ev.buttonState == MotionEvent.BUTTON_SECONDARY) {
+            viewModel.onRightClick(rootId, point)
+            Log.w(SPAM_LOG_TAG, "OverlayView $rootId right click")
+        }
+
+        // Always select the view.
         viewModel.onTouchEvent(rootId, point)
+
         return interceptTouchEvents || super.onTouchEvent(ev)
     }
 

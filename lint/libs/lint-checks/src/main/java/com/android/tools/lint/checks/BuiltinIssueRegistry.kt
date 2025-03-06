@@ -529,6 +529,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           WrongCaseDetector.WRONG_CASE,
           WrongCommentTypeDetector.ISSUE,
           WrongConstructorDetector.ISSUE,
+          WrongGradleMethodDetector.ISSUE,
           WrongIdDetector.INVALID,
           WrongIdDetector.NOT_SIBLING,
           WrongIdDetector.UNKNOWN_ID,
@@ -623,7 +624,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
     return if (scope == Scope.ALL) {
       issues.size
     } else {
-      var initialSize = 15
+      var initialSize = 20
       when {
         scope.contains(Scope.RESOURCE_FILE) -> initialSize += 117
         scope.contains(Scope.ALL_RESOURCE_FILES) -> initialSize += 12

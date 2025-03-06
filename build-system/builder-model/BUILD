@@ -26,7 +26,7 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[module]",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
     ],
 )
 
@@ -102,8 +102,8 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[module, test]",
-        "//tools/base/build-system/builder-model:studio.android.sdktools.builder-model[module, test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[module, test]",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations[test]",
+        "//tools/base/build-system/builder-model:studio.android.sdktools.builder-model[test]",
+        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )

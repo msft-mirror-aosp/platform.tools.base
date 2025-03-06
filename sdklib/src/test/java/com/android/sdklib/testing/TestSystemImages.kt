@@ -54,14 +54,14 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
       if (needsWrite) {
         with(PathContext(path)) { definition() }
         // Force a rescan of the packages
-        sdkHandler.getSdkManager(progress).markInvalid()
+        sdkHandler.getRepoManager(progress).markInvalid()
       }
       return needsWrite
     }
 
     val image: SystemImage by lazy {
       write()
-      sdkHandler.getSdkManager(progress).reloadLocalIfNeeded(progress)
+      sdkHandler.getRepoManager(progress).reloadLocalIfNeeded(progress)
       // Images that are in add-ons or platform are in subdirectories of the package
       sdkHandler.getSystemImageManager(progress).getImageAt(path) as? SystemImage
         ?: sdkHandler.getSystemImageManager(progress).images.find { it.location.startsWith(path) }

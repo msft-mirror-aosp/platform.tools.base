@@ -280,6 +280,45 @@ class OverlayViewTest {
     }
 
     @Test
+    fun testTouchEventsRightClick() = runTest {
+        val receivedEvents = mutableListOf<ByteArray>()
+        val connection = object : Connection() {
+            override fun sendEvent(data: ByteArray) {
+                receivedEvents.add(data)
+            }
+        }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
+        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        overlayView.onAttachedToWindow()
+
+        assertThat(overlayView.onTouchEvent(rightClick(1f, 1f))).isFalse()
+
+        viewModel.setInterceptTouchEvents(true)
+        testScheduler.advanceUntilIdle()
+
+        assertThat(overlayView.onTouchEvent(rightClick(2f, 2f))).isTrue()
+
+        viewModel.setInterceptTouchEvents(false)
+        testScheduler.advanceUntilIdle()
+
+        assertThat(overlayView.onTouchEvent(rightClick(3f, 3f))).isFalse()
+
+        val expectedSelectionEvent = buildUserInputEventProto(
+            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
+        ).toByteArray()
+        val expectedRightClickEvent = buildUserInputEventProto(
+            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.RIGHT_CLICK
+        ).toByteArray()
+        assertThat(receivedEvents).hasSize(2)
+        assertThat(receivedEvents[0]).isEqualTo(expectedRightClickEvent)
+        assertThat(receivedEvents[1]).isEqualTo(expectedSelectionEvent)
+    }
+
+    @Test
     fun testHoverEvents() = runTest {
         val receivedEvents = mutableListOf<ByteArray>()
         val connection = object : Connection() {
@@ -313,4 +352,10 @@ class OverlayViewTest {
         assertThat(receivedEvents).hasSize(1)
         assertThat(receivedEvents.first()).isEqualTo(expectedHoverEvent)
     }
+}
+
+private fun rightClick(x: Float, y: Float): MotionEvent {
+    val action = MotionEvent.ACTION_DOWN
+    val buttonState = MotionEvent.BUTTON_SECONDARY
+    return MotionEvent(x, y, action, buttonState)
 }
