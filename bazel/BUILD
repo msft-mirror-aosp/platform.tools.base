@@ -2,6 +2,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin_common.bzl", "kt_java_toolchain_bundle")
 load("//tools/base/bazel:maven/artifacts.bzl", "ARTIFACTS", "DATA", "REMOTE_REPOS")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
@@ -594,4 +595,8 @@ copy_file(
     out = "librunfiles.jar",
     allow_symlink = True,
     visibility = ["//visibility:public"],
+)
+
+kt_java_toolchain_bundle(
+    name = "default_java_toolchain_bundle",
 )
