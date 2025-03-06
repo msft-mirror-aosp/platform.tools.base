@@ -1106,13 +1106,15 @@ fun UExpression.isUnconditionalReturn(): Boolean {
   fun check(statement: UExpression?): Boolean =
     @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
     when (statement) {
-      is UBlockExpression -> check(statement.expressions.lastOrNull())
-      is UExpressionList -> check(statement.expressions.lastOrNull())
+      is UBlockExpression -> statement.expressions.any(::check)
+      is UExpressionList -> statement.expressions.any(::check)
       // (Kotlin when statements will sometimes be represented using yields in the UAST
       // representation)
       is UYieldExpression -> check(statement.expression)
       is UParenthesizedExpression -> check(statement.expression)
-      is UIfExpression -> check(statement.thenExpression) && check(statement.elseExpression)
+      is UIfExpression ->
+        check(statement.condition) ||
+          check(statement.thenExpression) && check(statement.elseExpression)
       is USwitchExpression ->
         statement.isExhaustive() &&
           statement.body.expressions.all { case ->
@@ -1121,7 +1123,10 @@ fun UExpression.isUnconditionalReturn(): Boolean {
       is UQualifiedReferenceExpression -> check(statement.findSelector() as? UExpression)
       is UReturnExpression,
       is UThrowExpression -> true
-      is UCallExpression -> callNeverReturns(statement)
+      is UCallExpression ->
+        callNeverReturns(statement) ||
+          check(statement.receiver) ||
+          statement.valueArguments.any(::check)
       else -> false
     }
 

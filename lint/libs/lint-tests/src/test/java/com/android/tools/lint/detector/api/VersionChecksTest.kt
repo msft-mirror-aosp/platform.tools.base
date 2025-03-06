@@ -3863,6 +3863,32 @@ class VersionChecksTest : AbstractCheckTest() {
                             return null
                         }
                     }
+
+                    fun testSequence() {
+                        if (SDK_INT < 11) {
+                            willThrow()
+                            println()
+                        }
+                        val actionBar = getActionBar() // OK 5
+                    }
+
+                    fun testConditional() {
+                        if (SDK_INT < 11) {
+                            if (willThrow()) {} else {}
+                        }
+                        val actionBar = getActionBar() // OK 6
+                    }
+
+                    fun testCall() {
+                        if (SDK_INT < 11) {
+                            neverThrow(willThrow(), mayThrow())
+                        }
+                        val actionBar = getActionBar() // OK 7
+                    }
+
+                    private fun neverThrow(x: Int, y: String): Int {
+                        return 42
+                    }
                 }
                 """
           )
