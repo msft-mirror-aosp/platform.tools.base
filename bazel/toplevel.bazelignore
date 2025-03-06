@@ -2,7 +2,7 @@
 tools/out/
 tools/adt/idea/out
 tools/adt/idea/studio/monobuild/out
-tools/vendor/intellij/cidr/cidr-common/tests/testData
+tools/vendor/intellij/cidr
 tools/adt/idea/aswb/testing/test_deps/projects
 prebuilts/rust
 
