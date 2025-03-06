@@ -524,9 +524,7 @@ class ScreenshotTest {
 
         // Validation is skipped when there are no source files
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
-        assertThat(result.skippedTasks).containsAtLeastElementsIn(
-            listOf(":app:validateDebugScreenshotTest", ":app:debugScreenshotReport")
-        )
+        assertThat(result.skippedTasks).contains(":app:validateDebugScreenshotTest")
 
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
         assertThat(indexHtmlReport).doesNotExist()

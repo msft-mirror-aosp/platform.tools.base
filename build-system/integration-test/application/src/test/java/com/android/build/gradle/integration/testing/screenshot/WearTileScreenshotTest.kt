@@ -28,8 +28,6 @@ import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

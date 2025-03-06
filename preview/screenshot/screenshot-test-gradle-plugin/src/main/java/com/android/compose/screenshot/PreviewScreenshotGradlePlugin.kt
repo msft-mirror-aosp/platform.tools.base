@@ -33,7 +33,6 @@ import com.android.compose.screenshot.gradle.ScreenshotTestOptionsImpl
 import com.android.compose.screenshot.layoutlibExtractor.LayoutlibDataFromMaven
 import com.android.compose.screenshot.services.AnalyticsService
 import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
-import com.android.compose.screenshot.tasks.ScreenshotTestReportTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -243,6 +242,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         task.referenceImageDir.set(project.layout.projectDirectory.dir("src/${variantName}ScreenshotTest/reference"))
                         task.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                         task.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
+                        task.reportOutputDir.set(buildDir.dir("$PREVIEW_REPORTS/${variant.computePathSegments()}"))
                     }
 
                     variant.artifacts
@@ -278,19 +278,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             PreviewScreenshotValidationTask::testProjectClassDirs,
                         )
 
-                    val screenshotHtmlTask = project.tasks.register(
-                        "${variantName}ScreenshotReport",
-                        ScreenshotTestReportTask::class.java
-                    ) { task ->
-                        val variantSegments = variant.computePathSegments()
-                        task.outputDir.set(buildDir.dir("$PREVIEW_REPORTS/$variantSegments"))
-                        task.resultsDir.set(previewScreenshotTestTask.map { it.reports.junitXml.outputLocation.get() })
-                        task.analyticsService.set(analyticsServiceProvider)
-                        task.usesService(analyticsServiceProvider)
-                    }
-                    previewScreenshotTestTask.configure {
-                        it.finalizedBy(screenshotHtmlTask)
-                    }
                     validateAllTask.configure { it.dependsOn(previewScreenshotTestTask) }
                 }
             }

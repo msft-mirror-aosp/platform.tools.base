@@ -16,6 +16,7 @@
 
 package com.android.compose.screenshot.tasks
 
+import com.android.compose.screenshot.report.TestReport
 import com.android.compose.screenshot.services.AnalyticsService
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -112,6 +113,9 @@ abstract class PreviewScreenshotValidationTask : Test() {
     @get:OutputDirectory
     abstract val diffImageOutputDir: DirectoryProperty
 
+    @get:OutputDirectory
+    abstract val reportOutputDir: DirectoryProperty
+
     @get:Internal
     abstract val analyticsService: Property<AnalyticsService>
 
@@ -175,6 +179,11 @@ abstract class PreviewScreenshotValidationTask : Test() {
                 analyticsService.get().recordPreviewScreenshotTestRun(
                     totalTestCount = testCount,
                 )
+
+                TestReport(
+                    reports.junitXml.outputLocation.get().asFile,
+                    reportOutputDir.get().asFile
+                ).generateScreenshotTestReport()
             }
         }
     }
