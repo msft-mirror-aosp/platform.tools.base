@@ -31,6 +31,7 @@ import com.intellij.pom.java.LanguageLevel
 import com.intellij.psi.PsiAnnotation.TargetType
 import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -40,6 +41,8 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
+import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.psi.impl.source.PsiImmediateClassType
 import junit.framework.TestCase
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
@@ -5534,6 +5537,108 @@ class UastTest : TestCase() {
             assertEquals("java.lang.Class<T>", resolved?.returnType?.canonicalText)
 
             return super.visitSimpleNameReferenceExpression(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testTypeParameterFromClassObjectAccessExpression() {
+    // b/400467070
+    val testFiles =
+      arrayOf(
+        kotlin(
+          """
+            import my.dagger.hilt.android.AndroidEntryPoint
+            import my.lib.BaseController
+
+            @AndroidEntryPoint(BaseController::class)
+            class Foo
+          """
+        ),
+        bytecode(
+          "libs/anno.jar",
+          java(
+              """
+              package my.dagger.hilt.android;
+
+              import java.lang.annotation.ElementType;
+              import java.lang.annotation.Target;
+
+              @Target({ElementType.TYPE})
+              public @interface AndroidEntryPoint {
+                  Class<?> value() default Void.class;
+              }
+            """
+            )
+            .indented(),
+          0x2e407322,
+          """
+                my/dagger/hilt/android/AndroidEntryPoint.class:
+                H4sIAAAAAAAA/22QzUrDQBDH/9sPY+tXa0HwIIIHqR7cB/ADROOpYLGhIJ62
+                yRi3bDYl2RTyah58AB9KnCgSoT0M85/Z38zszOfX+weAaww8NASGSSkjFceU
+                yTdtnFQ2ylIdydtf71uXleNUW+ehJdCbq6WSRtlYPs7mFHJ2Q+C4ziprU6ec
+                Ti13+JMC7aUyBQkMhmejGr4zKs8vBfo1ek+vqjCOJ/3jpvwRxjoTHVvliowb
+                Haw2ujq/Yag7SYsspAdtKmpli4uqSODwqbBOJzTVuZ4ZqufnAkejtesEKovJ
+                8YST9e++oYSsC8oFMdQKnsf+qYBAk63NBxd8Pg+baKDDUTNEF1ssGthm2/lR
+                u9hj3+OCyrwXCEIf+99uTI+xsgEAAA==
+                """,
+        ),
+        bytecode(
+          "libs/lib.jar",
+          kotlin(
+              """
+              package my.lib
+
+              abstract class BaseController<T>
+            """
+            )
+            .indented(),
+          0x8e7c4b31,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBihQYtBiAAD1Iry9GAAAAA==
+                """,
+          """
+                my/lib/BaseController.class:
+                H4sIAAAAAAAA/21Qy0ojQRQ9Vd15tXHsOD6ijvPYiGZhqwjCKIIKQqB1YAzZ
+                ZFVJCqdMpxq6KuLs+lv8A1eCC2lczkcNc7t1M+rm3HNOnbp16/75+/AIYBdf
+                GebHv4NI9YNjYeRJrG0SR5FMKmAM6wed7+GVuBZBJPRl8KN/JQd2//CtxeC/
+                9ipwGcoHSit7yOCsb3TrKKPioYQqg2t/KcOwGL77OPVrhKPYRkoHZ9KKobCC
+                PD6+dmhqlkMtBzCwEfk3KldbxIbbDK0srXu8yb0s9bhPkKXVtWaWttxqlvps
+                h2/x49LTbZn7Tn5jh5p0WN6r8f8UmyNLg57EQ8kwEyotzyfjvkw6oh+RMxvG
+                AxF1RaJy/WLWLtSlFnaSEPcu4kkykKcqP1j6OdFWjWVXGUXJI61jK6yKtXG/
+                gdNOXn6Tr4hwmVRQaKDUukftjgjHCmG5MB18Iqw/B+BhqvBWi5SDz0Vdwheq
+                e5SpU2a6B6eND23MtOGjQRSzbXzEXA/MYB4LPbgGUwaLBk2Dyj/PJN6VIwIA
+                AA==
+                """,
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitClass(node: UClass): Boolean {
+            val anno = node.javaPsi.annotations.single()
+            val v = anno.findAttributeValue("value")
+            val t = (v as? PsiClassObjectAccessExpression)?.type
+            val baseClass =
+              when (t) {
+                is PsiImmediateClassType -> {
+                  // When the call-site is Java, i.e., Java UClass, this could be
+                  // java.lang.Class<android.support.v4.app.Fragment>
+                  // where we want to retrieve the type parameter on the reflective class
+                  // For Kotlin, that class for the attribute is already retrieved, but
+                  // it can be either [PsiImmediateClassType] (with underlying resolved [PsiClass])
+                  // or (not-yet-resolved) [PsiClassReferenceType].
+                  if (t.parameterCount == 1) t.parameters.first() else t
+                }
+                is PsiClassReferenceType -> t
+                else -> return super.visitClass(node)
+              }
+            assertEquals("my.lib.BaseController", baseClass.canonicalText)
+
+            return super.visitClass(node)
           }
         }
       )
