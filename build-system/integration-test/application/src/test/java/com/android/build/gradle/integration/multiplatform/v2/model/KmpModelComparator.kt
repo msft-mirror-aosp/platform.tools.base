@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2.model
 import com.android.SdkConstants.DOT_JSON
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.FileNormalizerImpl
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
 import com.android.build.gradle.integration.common.fixture.model.BasicComparator
@@ -43,9 +44,9 @@ class KmpModelComparator(
 
     private fun fetchModels(
         projectPath: String,
+        executor: GradleTaskExecutor,
         printModelToStdout: Boolean = true
     ): Map<String, String> {
-        val executor = project.executor().withConfigurationCaching(configCacheMode)
         executor.run("$projectPath:$modelSnapshotTask")
 
         val outputs = taskOutputsLocator(projectPath)
@@ -113,11 +114,12 @@ class KmpModelComparator(
     ) {
         // Generate project structure metadata json file for all subproject
         // They are needed in order to resolve project dependencies
-        val executor = project.executor().withConfigurationCaching(configCacheMode)
+        // TODO: https://b.corp.google.com/issues/401235596
+        val executor = project.executor().withFailOnWarning(false).withConfigurationCaching(configCacheMode)
         executor.run("generateProjectStructureMetadata")
 
         projects.forEach { projectPath ->
-            fetchModels(projectPath).forEach { (reportName, content) ->
+            fetchModels(projectPath, executor).forEach { (reportName, content) ->
                 runComparison(
                     name = projectPath.substringAfterLast(":") + "/" + reportName,
                     actualContent = content,

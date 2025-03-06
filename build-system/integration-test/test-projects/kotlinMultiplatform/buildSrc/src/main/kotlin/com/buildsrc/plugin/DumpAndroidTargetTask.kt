@@ -13,29 +13,34 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.protobuf.util.JsonFormat
 import org.gradle.api.DefaultTask
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeMultiplatformImport
 import org.jetbrains.kotlin.tooling.core.Extras
 import java.lang.reflect.Type
 
+@DisableCachingByDefault(because = "Used for testing purpose.")
+@OptIn(ExternalKotlinTargetApi::class)
 abstract class DumpAndroidTargetTask: DefaultTask() {
+    private val outputDirectory = project.layout.buildDirectory.dir("ide/targets")
+    private val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+    private val kotlinIdeMultiplatformImport = IdeMultiplatformImport.instance(project)
 
-    @OptIn(ExternalKotlinTargetApi::class)
     @TaskAction
     fun dump() {
-        val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
-
-        val out = project.buildDir.resolve("ide/targets/androidTarget.json")
-        out.parentFile.mkdirs()
+        val outputDirectory = outputDirectory.get().asFile
+        outputDirectory.deleteRecursively()
 
         val gson = GsonBuilder().setLenient().setPrettyPrinting()
             .registerTypeHierarchyAdapter(Extras::class.java, ExtrasAdapter)
             .create()
 
         kotlinExtension.sourceSets.forEach { sourceSet ->
-            IdeMultiplatformImport.instance(project).resolveDependencies(sourceSet)
+            kotlinIdeMultiplatformImport.resolveDependencies(sourceSet)
         }
 
         kotlinExtension.targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java) { target ->
@@ -63,7 +68,9 @@ abstract class DumpAndroidTargetTask: DefaultTask() {
                 )
             )
 
-            out.writeText(json)
+            val jsonOutput = outputDirectory.resolve("androidTarget.json")
+            jsonOutput.parentFile.mkdirs()
+            jsonOutput.writeText(json)
         }
     }
 

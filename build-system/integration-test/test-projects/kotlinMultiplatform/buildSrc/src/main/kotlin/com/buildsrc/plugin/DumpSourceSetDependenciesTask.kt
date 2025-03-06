@@ -26,8 +26,10 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.protobuf.util.JsonFormat
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeMultiplatformImport
@@ -36,27 +38,33 @@ import org.jetbrains.kotlin.tooling.core.Extras
 import java.io.File
 import java.lang.reflect.Type
 
+/**
+ * Task intended to be use for testing purposes.
+ * This will invoke the [IdeMultiplatformImport] to resolve all dependencies (like the IDE would).
+ */
+@DisableCachingByDefault(because = "Used for testing purpose.")
 @OptIn(ExternalKotlinTargetApi::class)
 abstract class DumpSourceSetDependenciesTask: DefaultTask() {
+    private val outputDirectory = project.layout.buildDirectory.dir("ide/dependencies/json")
+    private val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+    private val kotlinIdeMultiplatformImport = IdeMultiplatformImport.instance(project)
 
     @TaskAction
     fun dump() {
-        val kotlinExtension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
-
-        val outDir = project.buildDir.resolve("ide/dependencies/json")
-        outDir.mkdirs()
+        val outputDirectory = outputDirectory.get().asFile
+        outputDirectory.deleteRecursively()
 
         val gson = GsonBuilder().setLenient().setPrettyPrinting()
             .registerTypeHierarchyAdapter(Extras::class.java, ExtrasAdapter)
             .registerTypeHierarchyAdapter(IdeDependencyResolver::class.java, IdeDependencyResolverAdapter)
             .registerTypeHierarchyAdapter(Map::class.java, MapAdapter())
-            .registerTypeAdapter(File::class.java, FileAdapter(project))
+            .registerTypeAdapter(File::class.java, FileAdapter())
             .create()
 
         kotlinExtension.sourceSets.forEach { sourceSet ->
-            val ideImportService = IdeMultiplatformImport.instance(project)
-            val dependencies = ideImportService.resolveDependencies(sourceSet)
-            val jsonOutput = outDir.resolve("${sourceSet.name}.json")
+            val dependencies = kotlinIdeMultiplatformImport.resolveDependencies(sourceSet)
+            val jsonOutput = outputDirectory.resolve("${sourceSet.name}.json")
+            jsonOutput.parentFile.mkdirs()
             jsonOutput.writeText(gson.toJson(dependencies))
         }
     }
@@ -99,7 +107,7 @@ abstract class DumpSourceSetDependenciesTask: DefaultTask() {
         }
     }
 
-    private class FileAdapter(private val project: Project) : JsonSerializer<File> {
+    private class FileAdapter() : JsonSerializer<File> {
         override fun serialize(src: File, typeOfSrc: Type?, context: JsonSerializationContext?): JsonElement {
             return JsonPrimitive(src.path)
         }
