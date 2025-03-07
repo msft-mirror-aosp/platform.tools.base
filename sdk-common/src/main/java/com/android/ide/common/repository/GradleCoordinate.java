@@ -23,8 +23,10 @@ import com.android.ide.common.gradle.Component;
 import com.android.ide.common.gradle.RichVersion;
 import com.android.ide.common.gradle.Version;
 import com.android.ide.common.gradle.VersionRange;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.Range;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -37,29 +39,24 @@ import java.util.regex.Pattern;
 
 /**
  * This class represents a maven coordinate and allows for comparison at any level.
- * <p>
  *
- * Maven coordinates take the following form: groupId:artifactId:packaging:classifier:version
- * where
- *   groupId is dot-notated alphanumeric
- *   artifactId is the name of the project
- *   packaging is optional and is jar/war/pom/aar/etc
- *   classifier is optional and provides filtering context
- *   version uniquely identifies a version.
+ * <p>Maven coordinates take the following form: groupId:artifactId:packaging:classifier:version
+ * where groupId is dot-notated alphanumeric artifactId is the name of the project packaging is
+ * optional and is jar/war/pom/aar/etc classifier is optional and provides filtering context version
+ * uniquely identifies a version.
  *
- * We only care about coordinates of the following form: groupId:artifactId:revision
- * where revision is a series of '.' separated numbers optionally terminated by a '+' character.
- * <p>
+ * <p>We only care about coordinates of the following form: groupId:artifactId:revision where
+ * revision is a series of '.' separated numbers optionally terminated by a '+' character.
  *
- * This class does not directly implement {@link Comparable}; instead,
- * you should use one of the specific {@link Comparator} constants based
- * on what type of ordering you need.
+ * <p>This class does not directly implement {@link Comparable}; instead, you should use one of the
+ * specific {@link Comparator} constants based on what type of ordering you need.
  */
 public final class GradleCoordinate {
     private static final String NONE = "NONE";
 
     /**
-     * List taken from <a href="http://maven.apache.org/pom.html#Maven_Coordinates">http://maven.apache.org/pom.html#Maven_Coordinates</a>
+     * List taken from <a
+     * href="http://maven.apache.org/pom.html#Maven_Coordinates">http://maven.apache.org/pom.html#Maven_Coordinates</a>
      */
     public enum ArtifactType {
         POM("pom"),
@@ -99,11 +96,12 @@ public final class GradleCoordinate {
     public static final String PREVIEW_ID = "rc";
 
     /**
-     * A single component of a revision number: either a number, a string or a list of
-     * components separated by dashes.
+     * A single component of a revision number: either a number, a string or a list of components
+     * separated by dashes.
      */
     public abstract static class RevisionComponent implements Comparable<RevisionComponent> {
         public abstract int asInteger();
+
         public abstract boolean isPreview();
     }
 
@@ -155,8 +153,8 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Like NumberComponent, but used for numeric strings that have leading zeroes which
-     * we must preserve
+     * Like NumberComponent, but used for numeric strings that have leading zeroes which we must
+     * preserve
      */
     public static class PaddedNumberComponent extends NumberComponent {
         private final String mString;
@@ -203,9 +201,9 @@ public final class GradleCoordinate {
         @Override
         public boolean isPreview() {
             return mString.startsWith(PREVIEW_ID)
-                   || mString.startsWith("alpha")
-                   || mString.startsWith("beta")
-                   || mString.equals("SNAPSHOT");
+                    || mString.startsWith("alpha")
+                    || mString.startsWith("beta")
+                    || mString.equals("SNAPSHOT");
         }
 
         @Override
@@ -227,7 +225,7 @@ public final class GradleCoordinate {
                 return mString.compareTo(((StringComponent) o).mString);
             }
             if (o instanceof ListComponent) {
-                return -1;  // 1-sp < 1-1
+                return -1; // 1-sp < 1-1
             }
             return 0;
         }
@@ -256,9 +254,7 @@ public final class GradleCoordinate {
         }
     }
 
-    /**
-     * A list of components separated by dashes.
-     */
+    /** A list of components separated by dashes. */
     public static class ListComponent extends RevisionComponent {
         private final List<RevisionComponent> mItems = new ArrayList<>();
         private boolean mClosed = false;
@@ -288,10 +284,10 @@ public final class GradleCoordinate {
         @Override
         public int compareTo(RevisionComponent o) {
             if (o instanceof NumberComponent) {
-                return -1;  // 1-1 < 1.0.x
+                return -1; // 1-1 < 1.0.x
             }
             if (o instanceof StringComponent) {
-                return 1;  // 1-1 > 1-sp
+                return 1; // 1-1 > 1-sp
             }
             if (o instanceof ListComponent) {
                 ListComponent rhs = (ListComponent) o;
@@ -334,24 +330,22 @@ public final class GradleCoordinate {
     private static final Pattern MAVEN_PATTERN =
             Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):([^:@]+)(@[\\w-]+)?");
 
-    /**
-     * Constructor
-     */
-    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
+    /** Constructor */
+    public GradleCoordinate(
+            @NonNull String groupId,
+            @NonNull String artifactId,
             @NonNull RevisionComponent... revisions) {
         this(groupId, artifactId, Arrays.asList(revisions), null);
     }
 
-    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-            @NonNull String revision) {
+    public GradleCoordinate(
+            @NonNull String groupId, @NonNull String artifactId, @NonNull String revision) {
         this(groupId, artifactId, parseRevisionNumber(revision), null);
     }
 
-    /**
-     * Constructor
-     */
-    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-            @NonNull int... revisions) {
+    /** Constructor */
+    public GradleCoordinate(
+            @NonNull String groupId, @NonNull String artifactId, @NonNull int... revisions) {
         this(groupId, artifactId, createComponents(revisions), null);
     }
 
@@ -367,11 +361,12 @@ public final class GradleCoordinate {
         return result;
     }
 
-    /**
-     * Constructor
-     */
-    public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-            @NonNull List<RevisionComponent> revisions, @Nullable ArtifactType type) {
+    /** Constructor */
+    public GradleCoordinate(
+            @NonNull String groupId,
+            @NonNull String artifactId,
+            @NonNull List<RevisionComponent> revisions,
+            @Nullable ArtifactType type) {
         mGroupId = groupId;
         mArtifactId = artifactId;
         mRevisions.addAll(revisions);
@@ -380,7 +375,8 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Create a GradleCoordinate from a string of the form groupId:artifactId:MajorRevision.MinorRevision.(MicroRevision|+)
+     * Create a GradleCoordinate from a string of the form
+     * groupId:artifactId:MajorRevision.MinorRevision.(MicroRevision|+)
      *
      * @param coordinateString the string to parse
      * @return a coordinate object or null if the given string was malformed.
@@ -409,14 +405,13 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Parse a String into a GradleCoordinate with empty groupId and artifactId, null type,
-     * and the revision denoted by the String.
+     * Parse a String into a GradleCoordinate with empty groupId and artifactId, null type, and the
+     * revision denoted by the String.
      *
      * @param revision a String identifying a specific software revision
-     *
-     * @deprecated use {@link Version.Companion#parse(String)} if dealing with single versions
-     *             of software artifacts, or {@link RichVersion.Companion#parse(String)} when
-     *             dealing with user-provided Gradle dependency specifiers.
+     * @deprecated use {@link Version.Companion#parse(String)} if dealing with single versions of
+     *     software artifacts, or {@link RichVersion.Companion#parse(String)} when dealing with
+     *     user-provided Gradle dependency specifiers.
      */
     @Deprecated
     public static GradleCoordinate parseVersionOnly(@NonNull String revision) {
@@ -455,8 +450,8 @@ public final class GradleCoordinate {
         return components;
     }
 
-    private static void flushBuffer(List<RevisionComponent> components, StringBuilder buffer,
-            boolean closeList) {
+    private static void flushBuffer(
+            List<RevisionComponent> components, StringBuilder buffer, boolean closeList) {
         RevisionComponent newComponent;
         if (buffer.length() == 0) {
             newComponent = new NumberComponent(0);
@@ -474,8 +469,8 @@ public final class GradleCoordinate {
             }
         }
         buffer.setLength(0);
-        if (!components.isEmpty() &&
-                components.get(components.size() - 1) instanceof ListComponent) {
+        if (!components.isEmpty()
+                && components.get(components.size() - 1) instanceof ListComponent) {
             ListComponent component = (ListComponent) components.get(components.size() - 1);
             if (!component.mClosed) {
                 component.add(newComponent);
@@ -562,16 +557,16 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Returns the lower-bound version of this coordinate.  If this coordinate indicates a
-     * prefix range (by ending with a +), the lower-bound is the infimum of the prefix; otherwise,
-     * the lower-bound is the version itself.
-     * <p>
-     * Note that using this on a user-supplied coordinate is almost certainly a mistake, as the
+     * Returns the lower-bound version of this coordinate. If this coordinate indicates a prefix
+     * range (by ending with a +), the lower-bound is the infimum of the prefix; otherwise, the
+     * lower-bound is the version itself.
+     *
+     * <p>Note that using this on a user-supplied coordinate is almost certainly a mistake, as the
      * syntax for user-supplied coordinates is richer than single versions (see for a start the
      * contortions here around {@link GradleCoordinate#acceptsGreaterRevisions()}, and the
-     * contradictions within this file about whether we support rich versions or not (mostly not
-     * but apparently we do support prefix matching).  Compromise for now by returning a
-     * {@link Version} representing the earliest possible matching version.
+     * contradictions within this file about whether we support rich versions or not (mostly not but
+     * apparently we do support prefix matching). Compromise for now by returning a {@link Version}
+     * representing the earliest possible matching version.
      */
     @NonNull
     public Version getLowerBoundVersion() {
@@ -582,16 +577,16 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Returns the upper-bound version of this coordinate.  If this coordinate indicates a
-     * prefix range (by ending with a +), the upper-bound is the infimum of the next prefix;
-     * otherwise, the upper-bound is the version itself.
-     * <p>
-     * Note that using this on a user-supplied coordinate is almost certainly a mistake, as the
+     * Returns the upper-bound version of this coordinate. If this coordinate indicates a prefix
+     * range (by ending with a +), the upper-bound is the infimum of the next prefix; otherwise, the
+     * upper-bound is the version itself.
+     *
+     * <p>Note that using this on a user-supplied coordinate is almost certainly a mistake, as the
      * syntax for user-supplied coordinates is richer than single versions (see for a start the
      * contortions here around {@link GradleCoordinate#acceptsGreaterRevisions()}, and the
-     * contradictions within this file about whether we support rich versions or not (mostly not
-     * but apparently we do support prefix matching).  Compromise for now by returning a
-     * {@link Version} representing the latest possible matching version.
+     * contradictions within this file about whether we support rich versions or not (mostly not but
+     * apparently we do support prefix matching). Compromise for now by returning a {@link Version}
+     * representing the latest possible matching version.
      */
     @NonNull
     public Version getUpperBoundVersion() {
@@ -663,7 +658,7 @@ public final class GradleCoordinate {
      *
      * @param o the coordinate to compare with
      * @return true iff the other group and artifact match the group and artifact of this
-     * coordinate.
+     *     coordinate.
      */
     public boolean isSameArtifact(@NonNull GradleCoordinate o) {
         return o.mGroupId.equals(mGroupId) && o.mArtifactId.equals(mArtifactId);
@@ -738,18 +733,18 @@ public final class GradleCoordinate {
     }
 
     /**
-     * Comparator which compares Gradle versions - and treats a + version as lower
-     * than a specific number in the same place. This is typically useful when trying
-     * to for example order coordinates by "most specific".
+     * Comparator which compares Gradle versions - and treats a + version as lower than a specific
+     * number in the same place. This is typically useful when trying to for example order
+     * coordinates by "most specific".
      */
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_LOWER =
             new GradleCoordinateComparator(-1);
 
     /**
-     * Comparator which compares Gradle versions - and treats a + version as higher
-     * than a specific number. This is typically useful when seeing if a dependency
-     * is met, e.g. if you require version 0.7.3, comparing it with 0.7.+ would consider
-     * 0.7.+ higher and therefore satisfying the version requirement.
+     * Comparator which compares Gradle versions - and treats a + version as higher than a specific
+     * number. This is typically useful when seeing if a dependency is met, e.g. if you require
+     * version 0.7.3, comparing it with 0.7.+ would consider 0.7.+ higher and therefore satisfying
+     * the version requirement.
      */
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_HIGHER =
             new GradleCoordinateComparator(1);
