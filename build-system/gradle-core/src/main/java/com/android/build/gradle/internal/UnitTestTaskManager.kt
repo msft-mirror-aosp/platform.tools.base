@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.internal
 
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
@@ -75,10 +75,7 @@ class UnitTestTaskManager(
 
         setupLintTasks(hostTestCreationConfig)
 
-        taskFactory.register(
-            MergeJavaResourceTask.CreationAction(hostTestCreationConfig, javaResMergingScopes)
-        )
-
+        // TODO: use merged java res for unit tests (bug 118690729)
         super.createRunHostTestTask(
             hostTestCreationConfig,
             globalConfig.taskNames.test,
