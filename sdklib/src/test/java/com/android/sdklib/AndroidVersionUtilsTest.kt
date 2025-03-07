@@ -15,6 +15,7 @@
  */
 package com.android.sdklib
 
+import com.google.common.truth.Truth.assertThat
 import junit.framework.TestCase
 
 class AndroidVersionUtilsTest : TestCase() {
@@ -90,6 +91,22 @@ class AndroidVersionUtilsTest : TestCase() {
         )
 
         assertEquals(
+            NameDetails("API 36.0", "\"Baklava\"; Android 16.0"),
+            AndroidVersion(36, 0).getApiNameAndDetails(
+                includeReleaseName = true,
+                includeCodeName = true,
+            )
+        )
+
+        assertEquals(
+            NameDetails("API 36.0 ext. 31", "\"Baklava\"; Android 16.0"),
+            AndroidVersion(36, 0).withExtensionLevel(31).getApiNameAndDetails(
+                includeReleaseName = true,
+                includeCodeName = true,
+            )
+        )
+
+        assertEquals(
             NameDetails("API 36.1", null),
             AndroidVersion(36, 1).getApiNameAndDetails(
                 includeReleaseName = false,
@@ -129,7 +146,7 @@ class AndroidVersionUtilsTest : TestCase() {
             includeCodeName = false,
         ))
 
-        assertEquals("API 36", AndroidVersion(36).getFullApiName())
+        assertEquals("API 36.0", AndroidVersion(36).getFullApiName())
         assertEquals("API 36.1", AndroidVersion(36, 1).getFullApiName())
         assertEquals("API 37.0", AndroidVersion(37).getFullApiName())
         assertEquals("API 37.1", AndroidVersion(37, 1).getFullApiName())
@@ -310,7 +327,14 @@ class AndroidVersionUtilsTest : TestCase() {
             "Android 14.0 (\"UpsideDownCake\"; API 34.1)",
             AndroidVersion(34, 1).getFullReleaseName(includeApiLevel = true, includeCodeName = true)
         )
-
+        assertThat(AndroidVersion(36, 0).getFullReleaseName(includeApiLevel = true, includeCodeName = true))
+            .isEqualTo("Android 16.0 (\"Baklava\"; API 36)")
+        assertThat(AndroidVersion(36, 0).withExtensionLevel(50).getFullReleaseName(includeApiLevel = true, includeCodeName = true))
+            .isEqualTo("Android 16.0 (\"Baklava\"; API 36 ext. 50)")
+        assertThat(AndroidVersion(36, 1).getFullReleaseName(includeApiLevel = true, includeCodeName = true))
+            .isEqualTo("Android 16.0 (\"Baklava\"; API 36.1)")
+        assertThat(AndroidVersion(36, 1).withExtensionLevel(50).getFullReleaseName(includeApiLevel = true, includeCodeName = true))
+            .isEqualTo("Android 16.0 (\"Baklava\"; API 36.1 ext. 50)")
         assertEquals(
             "Android API 99.1",
             AndroidVersion(99, 1).getFullReleaseName(includeApiLevel = true, includeCodeName = true)
@@ -323,5 +347,18 @@ class AndroidVersionUtilsTest : TestCase() {
                 includeCodeName = true,
             )
         )
+    }
+
+    fun testDisplayApiString() {
+        assertThat(AndroidVersion(35).displayApiString).isEqualTo("35")
+        assertThat(AndroidVersion(36).displayApiString).isEqualTo("36.0")
+        assertThat(AndroidVersion(36, 1).displayApiString).isEqualTo("36.1")
+        assertThat(AndroidVersion(36, 1).displayApiString).isEqualTo("36.1")
+        assertThat(AndroidVersion(36, 1, null, 18, false).displayApiString).isEqualTo("36.1-ext18")
+        assertThat(AndroidVersion(37).displayApiString).isEqualTo("37.0")
+        assertThat(AndroidVersion(37, 1).displayApiString).isEqualTo("37.1")
+        assertThat(AndroidVersion(35, "Baklava").displayApiString).isEqualTo("Baklava")
+        assertThat(AndroidVersion(36, "BaklavaSomething").displayApiString).isEqualTo("BaklavaSomething")
+        assertThat(AndroidVersion(36, 1, "BaklavaSomethingElse", null, true).displayApiString).isEqualTo("BaklavaSomethingElse")
     }
 }
