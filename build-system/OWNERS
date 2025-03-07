@@ -14,17 +14,11 @@ karimai@google.com
 lukeedgar@google.com
 micahjo@google.com
 mlazeba@google.com
-spollom@google.com
 srmurguia@google.com
 vmadalin@google.com
+wfijolek@google.com
 xav@google.com
 xof@google.com
-
-# Infrastructure team
-file:/bazel/OWNERS
-
-# For android studio merges
-file:platform/tools/idea:/OWNERS
 
 # Except to the owners file itself.
 per-file OWNERS = set noparent
