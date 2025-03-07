@@ -13,712 +13,543 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.repository.impl.manager
 
-package com.android.repository.impl.manager;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Slow;
-import com.android.repository.api.ConsoleProgressIndicator;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.FallbackLocalRepoLoader;
-import com.android.repository.api.FallbackRemoteRepoLoader;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.PackageOperation;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.ProgressRunner;
-import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
-import com.android.repository.api.RepositorySource;
-import com.android.repository.api.RepositorySourceProvider;
-import com.android.repository.api.SchemaModule;
-import com.android.repository.api.SettingsController;
-import com.android.repository.impl.meta.RepositoryPackages;
-import com.android.repository.impl.meta.SchemaModuleUtil;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import org.w3c.dom.ls.LSResourceResolver;
+import com.android.annotations.concurrency.GuardedBy
+import com.android.annotations.concurrency.Slow
+import com.android.repository.api.ConsoleProgressIndicator
+import com.android.repository.api.Downloader
+import com.android.repository.api.FallbackLocalRepoLoader
+import com.android.repository.api.FallbackRemoteRepoLoader
+import com.android.repository.api.PackageOperation
+import com.android.repository.api.ProgressIndicator
+import com.android.repository.api.ProgressRunner
+import com.android.repository.api.ProgressRunner.ProgressRunnable
+import com.android.repository.api.RepoManager
+import com.android.repository.api.RepoPackage
+import com.android.repository.api.RepositorySource
+import com.android.repository.api.RepositorySourceProvider
+import com.android.repository.api.SchemaModule
+import com.android.repository.api.SettingsController
+import com.android.repository.impl.meta.RepositoryPackages
+import com.android.repository.impl.meta.SchemaModuleUtil
+import com.google.common.annotations.VisibleForTesting
+import java.nio.file.Path
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.util.Queue
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import org.w3c.dom.ls.LSResourceResolver
 
 /**
- * Main implementation of {@link RepoManager}. Loads local and remote {@link RepoPackage}s
- * synchronously and asynchronously into a {@link RepositoryPackages} instance from the given local
- * path and from the registered {@link RepositorySourceProvider}s, using the registered {@link
- * SchemaModule}s.
+ * Main implementation of [RepoManager]. Loads local and remote [RepoPackage]s synchronously and
+ * asynchronously into a [RepositoryPackages] instance from the given local path and from the
+ * registered [RepositorySourceProvider]s, using the registered [SchemaModule]s.
  */
-public class RepoManagerImpl extends RepoManager {
+class RepoManagerImpl
+@VisibleForTesting
+internal constructor(
+  /** The path under which to look for installed packages. */
+  override val localPath: Path?,
+  localFactory: LocalRepoLoaderFactory?,
+  remoteFactory: RemoteRepoLoaderFactory?,
+) : RepoManager() {
+  /** The registered [SchemaModule]s. */
+  override val schemaModules = mutableListOf<SchemaModule<*>>()
 
-    /**
-     * The registered {@link SchemaModule}s.
-     */
-    private final List<SchemaModule<?>> mModules = new ArrayList<>();
+  /** The [FallbackLocalRepoLoader] to use when loading local packages. */
+  private var fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null
 
-    /**
-     * The {@link FallbackLocalRepoLoader} to use when loading local packages.
-     */
-    @Nullable
-    private FallbackLocalRepoLoader mFallbackLocalRepoLoader;
+  /**
+   * The [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
+   * downloaded repository xml file.
+   */
+  private var fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null
 
-    /** The path under which to look for installed packages. */
-    @Nullable private final Path mLocalPath;
+  /** The [RepositorySourceProvider]s from which to get [RepositorySource]s to load from. */
+  override val sourceProviders = mutableListOf<RepositorySourceProvider>()
 
-    /**
-     * The {@link FallbackRemoteRepoLoader} to use if the normal {@link RemoteRepoLoaderImpl} can't
-     * understand a downloaded repository xml file.
-     */
-    @Nullable
-    private FallbackRemoteRepoLoader mFallbackRemoteRepoLoader;
+  /** The loaded packages. */
+  override val packages = RepositoryPackages()
 
-    /**
-     * The {@link RepositorySourceProvider}s from which to get {@link RepositorySource}s to load
-     * from.
-     */
-    private final List<RepositorySourceProvider> mSourceProviders = new ArrayList<>();
+  /** When we last loaded the remote packages. */
+  private var lastRemoteRefreshMs: Long = 0
 
-    /** The loaded packages. */
-    private final RepositoryPackages mPackages = new RepositoryPackages();
+  /** When we last loaded the local packages. */
+  private var lastLocalRefreshMs: Long = 0
 
-    /**
-     * When we last loaded the remote packages.
-     */
-    private long mLastRemoteRefreshMs;
+  /** The task used to load packages. If non-null, a load is currently in progress. */
+  @GuardedBy("taskLock") private var task: LoadTask? = null
 
-    /**
-     * When we last loaded the local packages.
-     */
-    private long mLastLocalRefreshMs;
+  /** The time at which our current [LoadTask] was created. */
+  @GuardedBy("taskLock") private var taskCreateTime: Instant = Instant.EPOCH
 
-    /**
-     * The task used to load packages. If non-null, a load is currently in progress.
-     */
-    private LoadTask mTask;
+  /** Lock used when setting [.task]. */
+  private val taskLock = Any()
 
-    /**
-     * The time at which our current {@link LoadTask} was created.
-     */
-    private long mTaskCreateTime;
+  /** Listeners that will be called when the known local packages change. */
+  private val localListeners = CopyOnWriteArrayList<RepoLoadedListener>()
 
-    /**
-     * Lock used when setting {@link #mTask}.
-     */
-    private final Object mTaskLock = new Object();
+  /** Listeners that will be called when the known remote packages change. */
+  private val remoteListeners = CopyOnWriteArrayList<RepoLoadedListener>()
 
-    /**
-     * Listeners that will be called when the known local packages change.
-     */
-    private final List<RepoLoadedListener> mLocalListeners = new CopyOnWriteArrayList<>();
+  /** Install/uninstall operations that are currently running. */
+  private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
 
-    /**
-     * Listeners that will be called when the known remote packages change.
-     */
-    private final List<RepoLoadedListener> mRemoteListeners = new CopyOnWriteArrayList<>();
+  /** A facility for creating [LocalRepoLoader]s. By default, [LocalRepoLoaderFactoryImpl]. */
+  private val localRepoLoaderFactory: LocalRepoLoaderFactory
 
-    /**
-     * How long we should let a load task run before assuming that it's dead.
-     */
-    private static final long TASK_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
+  /** A facility for creating [RemoteRepoLoader]s. By default, [RemoteRepoLoaderFactoryImpl]. */
+  private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory
 
-    /**
-     * Install/uninstall operations that are currently running.
-     */
-    private final Map<RepoPackage, PackageOperation> mInProgressInstalls = Maps.newHashMap();
+  /**
+   * Create a new `RepoManagerImpl`. Before anything can be loaded, at least a local path and/or at
+   * least one [RepositorySourceProvider] must be set.
+   */
+  constructor(localPath: Path?) : this(localPath, localFactory = null, remoteFactory = null)
 
-    /**
-     * A facility for creating {@link LocalRepoLoader}s. By default, {@link
-     * LocalRepoLoaderFactoryImpl}.
-     */
-    private final LocalRepoLoaderFactory mLocalRepoLoaderFactory;
+  /**
+   * @param localPath The base directory of the SDK.
+   * @param localFactory If `null`, [LocalRepoLoaderFactoryImpl] will be used. Can be non-null for
+   *   testing.
+   * @param remoteFactory If `null`, [RemoteRepoLoaderFactoryImpl] will be used. Can be non-null for
+   *   testing.
+   */
+  init {
+    registerSchemaModule(commonModule)
+    registerSchemaModule(genericModule)
+    localRepoLoaderFactory = localFactory ?: LocalRepoLoaderFactoryImpl()
+    remoteRepoLoaderFactory = remoteFactory ?: RemoteRepoLoaderFactoryImpl()
+  }
 
-    /**
-     * A facility for creating {@link RemoteRepoLoader}s. By default, {@link
-     * RemoteRepoLoaderFactoryImpl}.
-     */
-    private final RemoteRepoLoaderFactory mRemoteRepoLoaderFactory;
+  /**
+   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
+   * called.
+   */
+  override fun setFallbackLocalRepoLoader(fallback: FallbackLocalRepoLoader?) {
+    fallbackLocalRepoLoader = fallback
+    markInvalid()
+  }
 
-    /**
-     * Create a new {@code RepoManagerImpl}. Before anything can be loaded, at least a local path
-     * and/or at least one {@link RepositorySourceProvider} must be set.
-     */
-    public RepoManagerImpl(@Nullable Path localPath) {
-        this(localPath, null, null);
-    }
+  /**
+   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
+   * called.
+   */
+  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {
+    fallbackRemoteRepoLoader = remote
+    markInvalid()
+  }
 
-    /**
-     * @param localPath The base directory of the SDK.
-     * @param localFactory If {@code null}, {@link LocalRepoLoaderFactoryImpl} will be used. Can be
-     *     non-null for testing.
-     * @param remoteFactory If {@code null}, {@link RemoteRepoLoaderFactoryImpl} will be used. Can
-     *     be non-null for testing.
-     */
-    @VisibleForTesting
-    public RepoManagerImpl(
-            @Nullable Path localPath,
-            @Nullable LocalRepoLoaderFactory localFactory,
-            @Nullable RemoteRepoLoaderFactory remoteFactory) {
-        mLocalPath = localPath;
-        registerSchemaModule(getCommonModule());
-        registerSchemaModule(getGenericModule());
-        mLocalRepoLoaderFactory = localFactory == null ? new LocalRepoLoaderFactoryImpl()
-                : localFactory;
-        mRemoteRepoLoaderFactory = remoteFactory == null ? new RemoteRepoLoaderFactoryImpl()
-                : remoteFactory;
-    }
+  /**
+   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
+   * called.
+   */
+  override fun registerSourceProvider(provider: RepositorySourceProvider) {
+    sourceProviders.add(provider)
+    markInvalid()
+  }
 
-    @Nullable
-    @Override
-    public Path getLocalPath() {
-        return mLocalPath;
-    }
+  override fun getSources(
+    downloader: Downloader?,
+    progress: ProgressIndicator,
+    forceRefresh: Boolean,
+  ): List<RepositorySource> =
+    sourceProviders.flatMap { it.getSources(downloader, progress, forceRefresh) }
 
-    /**
-     * {@inheritDoc} This calls {@link #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController)} is
-     * called.
-     */
-    @Override
-    public void setFallbackLocalRepoLoader(@Nullable FallbackLocalRepoLoader fallback) {
-        mFallbackLocalRepoLoader = fallback;
-        markInvalid();
-    }
+  /**
+   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
+   * called.
+   */
+  override fun registerSchemaModule(module: SchemaModule<*>) {
+    schemaModules.add(module)
+    markInvalid()
+  }
 
-    /**
-     * {@inheritDoc} This calls {@link #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController)} is
-     * called.
-     */
-    @Override
-    public void setFallbackRemoteRepoLoader(@Nullable FallbackRemoteRepoLoader remote) {
-        mFallbackRemoteRepoLoader = remote;
-        markInvalid();
-    }
+  override fun markInvalid() {
+    lastRemoteRefreshMs = 0
+    lastLocalRefreshMs = 0
+  }
 
-    /**
-     * {@inheritDoc} This calls {@link #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController)} is
-     * called.
-     */
-    @Override
-    public void registerSourceProvider(@NonNull RepositorySourceProvider provider) {
-        mSourceProviders.add(provider);
-        markInvalid();
-    }
+  override fun markLocalCacheInvalid() {
+    lastLocalRefreshMs = 0
+  }
 
-    @VisibleForTesting
-    @Override
-    @NonNull
-    public List<RepositorySourceProvider> getSourceProviders() {
-        return mSourceProviders;
-    }
+  override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? {
+    val allModules = (schemaModules + commonModule + genericModule).toSet()
+    return SchemaModuleUtil.createResourceResolver(allModules, progress)
+  }
 
-    @Override
-    @NonNull
-    public List<RepositorySource> getSources(
-            @Nullable Downloader downloader,
-            @NonNull ProgressIndicator progress,
-            boolean forceRefresh) {
-        List<RepositorySource> result = new ArrayList<>();
-        for (RepositorySourceProvider provider : mSourceProviders) {
-            result.addAll(provider.getSources(downloader, progress, forceRefresh));
+  override fun loadSynchronously(
+    cacheExpirationMs: Long,
+    onLocalComplete: List<RepoLoadedListener>?,
+    onSuccess: List<RepoLoadedListener>?,
+    onError: List<Runnable>?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    load(cacheExpirationMs, onLocalComplete, onSuccess, onError, runner, downloader, settings, true)
+  }
+
+  override fun load(
+    cacheExpirationMs: Long,
+    onLocalComplete: List<RepoLoadedListener>?,
+    onSuccess: List<RepoLoadedListener>?,
+    onError: List<Runnable>?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    load(
+      cacheExpirationMs,
+      onLocalComplete,
+      onSuccess,
+      onError,
+      runner,
+      downloader,
+      settings,
+      false,
+    )
+  }
+
+  /**
+   * Loads the local and remote repositories.
+   *
+   * @param cacheExpirationMs How long must have passed since the last load for us to reload.
+   *   Specify `0` to reload immediately.
+   * @param onLocalComplete When loading, the local repo load happens first, and should be
+   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener]s are run. Will be
+   *   called with a [RepositoryPackages] that contains only the local packages.
+   * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
+   *   successfully. Called with an [RepositoryPackages] containing both the local and remote
+   *   packages.
+   * @param onError Callbacks that are run when there's an error at some point during the load.
+   * @param runner The [ProgressRunner] to use for any tasks started during the load, including
+   *   running the callbacks.
+   * @param downloader The [Downloader] to use for downloading remote files, including any remote
+   *   list of repo sources and the remote repositories themselves.
+   * @param settings The settings to use during the load, including for example proxy settings used
+   *   when fetching remote files.
+   * @param sync If true, load synchronously. If false, load asynchronously (this method should
+   *   return quickly, and the `onSuccess` callbacks can be used to process the completed results).
+   */
+  // TODO: fix up invalidation. It's annoying that you have to manually reload.
+  // TODO: Maybe: when you load, instead of load as now, you get back a loader, which knows how
+  //       to reload with same settings, and contains current valid or invalid packages as they
+  //       are cached here.
+  private fun load(
+    cacheExpirationMs: Long,
+    onLocalComplete: List<RepoLoadedListener>?,
+    onSuccess: List<RepoLoadedListener>?,
+    onError: List<Runnable>?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+    sync: Boolean,
+  ) {
+    val onLocalComplete = onLocalComplete ?: emptyList()
+    val onSuccess = onSuccess ?: emptyList()
+    val onError = onError ?: emptyList()
+
+    // So we can block until complete in the synchronous case.
+    val completed = CountDownLatch(1)
+
+    // If we created the currently running task, we need to clean it up at the end.
+    val createNewTask: Boolean
+    val task: LoadTask
+    synchronized(taskLock) {
+      val currentTask =
+        this.task?.takeIf { Clock.systemUTC().instant() < taskCreateTime + TASK_TIMEOUT }
+      createNewTask = currentTask == null
+      if (createNewTask) {
+        task = LoadTask(cacheExpirationMs, downloader, settings)
+        task.addCallbacks(onLocalComplete, onSuccess, onError, null)
+        this.task = task
+        taskCreateTime = Clock.systemUTC().instant()
+      } else {
+        task = currentTask
+        // If there's a task running already, just add our callbacks to it.
+        task.addCallbacks(onLocalComplete, onSuccess, onError, runner)
+        if (sync) {
+          // If we're running synchronously, signal completion after the run completes.
+          // Use a fake runner to ensure we don't try to run on a different thread and
+          // then block trying to release the latch.
+          task.addCallbacks(
+            onLocalComplete = emptyList(),
+            onSuccess = listOf(RepoLoadedListener { completed.countDown() }),
+            onError = listOf(Runnable { completed.countDown() }),
+            runner = DirectProgressRunner(ConsoleProgressIndicator()),
+          )
         }
-        return result;
+      }
     }
 
-    @Override
-    @NonNull
-    public List<SchemaModule<?>> getSchemaModules() {
-        return mModules;
+    if (createNewTask) {
+      // If we created a task, run it.
+      if (sync) {
+        runner.runSyncWithProgress(task)
+      } else {
+        runner.runAsyncWithProgress(task)
+      }
+    } else if (sync) {
+      // Otherwise wait for the callback to complete if we're running synchronously.
+      runner.runSyncWithProgress(
+        ProgressRunnable { _, _ ->
+          try {
+            completed.await()
+          } catch (_: InterruptedException) {
+            /* shouldn't happen*/
+          }
+        }
+      )
     }
+  }
+
+  @Slow
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean {
+    // TODO: there should be a nice interface whereby we can do this check without creating a
+    // new LocalRepoLoader instance.
+    val local = localRepoLoaderFactory.createLocalRepoLoader()
+    if (local == null) {
+      return false
+    }
+
+    if (local.needsUpdate(lastLocalRefreshMs, true)) {
+      lastLocalRefreshMs = 0
+    }
+    return loadSynchronously(DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
+  }
+
+  override fun addLocalChangeListener(listener: RepoLoadedListener) {
+    localListeners.add(listener)
+  }
+
+  override fun removeLocalChangeListener(listener: RepoLoadedListener) {
+    localListeners.remove(listener)
+  }
+
+  override fun addRemoteChangeListener(listener: RepoLoadedListener) {
+    remoteListeners.add(listener)
+  }
+
+  override fun removeRemoteChangeListener(listener: RepoLoadedListener) {
+    remoteListeners.remove(listener)
+  }
+
+  override fun installBeginning(remotePackage: RepoPackage, installer: PackageOperation) {
+    inProgressInstalls.put(remotePackage, installer)
+  }
+
+  override fun installEnded(remotePackage: RepoPackage) {
+    inProgressInstalls.remove(remotePackage)
+  }
+
+  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? {
+    return inProgressInstalls[remotePackage]
+  }
+
+  /** A task to load the local and remote repos. */
+  private inner class LoadTask(
+    private val cacheExpirationMs: Long,
+    private val downloader: Downloader?,
+    private val settings: SettingsController?,
+  ) : ProgressRunnable {
+    @GuardedBy("taskLock") private val onSuccesses = mutableListOf<Callback>()
+    @GuardedBy("taskLock") private val onErrors = mutableListOf<Runnable>()
+    // Must be synchronized since new elements can be added while the task is still in progress
+    // (that is, before task is set to null).
+    private val onLocalCompletes: Queue<Callback> = ConcurrentLinkedQueue<Callback>()
 
     /**
-     * {@inheritDoc} This calls {@link #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController)} is
-     * called.
+     * If callbacks get added to an already-running task, they might have a different
+     * [ProgressRunner] than the one used to run the task. Here we keep the callback along with the
+     * runner so the callback can be invoked correctly.
      */
-    @Override
-    public void registerSchemaModule(@NonNull SchemaModule<?> module) {
-        mModules.add(module);
-        markInvalid();
-    }
-
-    @Override
-    public void markInvalid() {
-        mLastRemoteRefreshMs = 0;
-        mLastLocalRefreshMs = 0;
-    }
-
-    @Override
-    public void markLocalCacheInvalid() {
-        mLastLocalRefreshMs = 0;
-    }
-
-    @Override
-    @Nullable
-    public LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress) {
-        Set<SchemaModule<?>> allModules = ImmutableSet.<SchemaModule<?>>builder().addAll(
-                getSchemaModules()).add(
-                getCommonModule()).add(
-                getGenericModule()).build();
-        return SchemaModuleUtil.createResourceResolver(allModules, progress);
-    }
-
-    @Override
-    @NonNull
-    public RepositoryPackages getPackages() {
-        return mPackages;
-    }
-
-    @Override
-    public void loadSynchronously(
-            long cacheExpirationMs,
-            @Nullable List<RepoLoadedListener> onLocalComplete,
-            @Nullable List<RepoLoadedListener> onSuccess,
-            @Nullable List<Runnable> onError,
-            @NonNull ProgressRunner runner,
-            @Nullable Downloader downloader,
-            @Nullable SettingsController settings) {
-        load(
-                cacheExpirationMs,
-                onLocalComplete,
-                onSuccess,
-                onError,
-                runner,
-                downloader,
-                settings,
-                true);
-    }
-
-    @Override
-    public void load(
-            long cacheExpirationMs,
-            @Nullable List<RepoLoadedListener> onLocalComplete,
-            @Nullable List<RepoLoadedListener> onSuccess,
-            @Nullable List<Runnable> onError,
-            @NonNull ProgressRunner runner,
-            @Nullable Downloader downloader,
-            @Nullable SettingsController settings) {
-        load(
-                cacheExpirationMs,
-                onLocalComplete,
-                onSuccess,
-                onError,
-                runner,
-                downloader,
-                settings,
-                false);
+    private inner class Callback(
+      val callback: RepoLoadedListener,
+      private val runner: ProgressRunner?,
+    ) {
+      fun getRunner(defaultRunner: ProgressRunner): ProgressRunner {
+        return runner ?: defaultRunner
+      }
     }
 
     /**
-     * Loads the local and remote repositories.
+     * Add callbacks to this task (if e.g. [.load] is called again while a task is already running).
+     */
+    fun addCallbacks(
+      onLocalComplete: List<RepoLoadedListener>,
+      onSuccess: List<RepoLoadedListener>,
+      onError: List<Runnable>,
+      runner: ProgressRunner?,
+    ) {
+      for (local in onLocalComplete) {
+        onLocalCompletes.add(Callback(local, runner))
+      }
+      for (success in onSuccess) {
+        onSuccesses.add(Callback(success, runner))
+      }
+      onErrors.addAll(onError)
+    }
+
+    /**
+     * Do the actual load.
      *
-     * @param cacheExpirationMs How long must have passed since the last load for us to reload.
-     *     Specify {@code 0} to reload immediately.
-     * @param onLocalComplete When loading, the local repo load happens first, and should be
-     *     relatively fast. When complete, the {@code onLocalComplete} {@link RepoLoadedListener }s
-     *     are run. Will be called with a {@link RepositoryPackages} that contains only the local
-     *     packages.
-     * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
-     *     successfully. Called with an {@link RepositoryPackages} containing both the local and
-     *     remote packages.
-     * @param onError Callbacks that are run when there's an error at some point during the load.
-     * @param runner The {@link ProgressRunner} to use for any tasks started during the load,
-     *     including running the callbacks.
-     * @param downloader The {@link Downloader} to use for downloading remote files, including any
-     *     remote list of repo sources and the remote repositories themselves.
-     * @param settings The settings to use during the load, including for example proxy settings
-     *     used when fetching remote files.
-     * @param sync If true, load synchronously. If false, load asynchronously (this method should
-     *     return quickly, and the {@code onSuccess} callbacks can be used to process the completed
-     *     results).
+     * @param indicator [ProgressIndicator] for logging and showing actual progress
+     * @param runner [ProgressRunner] for running asynchronous tasks and callbacks.
      */
-    // TODO: fix up invalidation. It's annoying that you have to manually reload.
-    // TODO: Maybe: when you load, instead of load as now, you get back a loader, which knows how
-    //       to reload with same settings, and contains current valid or invalid packages as they
-    //       are cached here.
-    private void load(
-            long cacheExpirationMs,
-            @Nullable List<RepoLoadedListener> onLocalComplete,
-            @Nullable List<RepoLoadedListener> onSuccess,
-            @Nullable List<Runnable> onError,
-            @NonNull ProgressRunner runner,
-            @Nullable Downloader downloader,
-            @Nullable SettingsController settings,
-            boolean sync) {
-        if (onLocalComplete == null) {
-            onLocalComplete = ImmutableList.of();
-        }
-        if (onSuccess == null) {
-            onSuccess = ImmutableList.of();
-        }
-        if (onError == null) {
-            onError = ImmutableList.of();
-        }
-
-        // So we can block until complete in the synchronous case.
-        final Semaphore completed = new Semaphore(1);
-        try {
-            completed.acquire();
-        } catch (InterruptedException e) {
-            // shouldn't happen.
-        }
-
-        // If we created the currently running task, we need to clean it up at the end.
-        boolean createdTask = false;
-
-        synchronized (mTaskLock) {
-            long taskTimeout = System.currentTimeMillis() - TASK_TIMEOUT;
-            if (mTask != null && mTaskCreateTime > taskTimeout) {
-                // If there's a task running already, just add our callbacks to it.
-                mTask.addCallbacks(onLocalComplete, onSuccess, onError, runner);
-                if (sync) {
-                    // If we're running synchronously, release the semaphore after run complete.
-                    // Use a fake runner to ensure we don't try to run on a different thread and
-                    // then block trying to release the semaphore.
-                    mTask.addCallbacks(
-                            ImmutableList.of(),
-                            ImmutableList.of(packages -> completed.release()),
-                            ImmutableList.of(completed::release),
-                            new DummyProgressRunner(new ConsoleProgressIndicator()));
-                }
-            } else {
-                // Otherwise, create a new task.
-                mTask = new LoadTask(cacheExpirationMs, onLocalComplete, onSuccess, onError,
-                        downloader, settings);
-                mTaskCreateTime = System.currentTimeMillis();
-                createdTask = true;
+    override fun run(indicator: ProgressIndicator, runner: ProgressRunner) {
+      var success = false
+      var localSuccess = false
+      val wasIndeterminate = indicator.isIndeterminate()
+      indicator.setIndeterminate(false)
+      try {
+        val local = localRepoLoaderFactory.createLocalRepoLoader()
+        if (
+          local != null &&
+            (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
+              local.needsUpdate(lastLocalRefreshMs, false))
+        ) {
+          fallbackLocalRepoLoader?.refresh()
+          indicator.setText("Loading local repository...")
+          val newLocals = local.getPackages(indicator)
+          val fireListeners = newLocals != packages.localPackages
+          packages.setLocalPkgInfos(newLocals.values)
+          lastLocalRefreshMs = System.currentTimeMillis()
+          if (fireListeners) {
+            for (listener in localListeners) {
+              listener.loaded(packages)
             }
+          }
         }
+        indicator.setFraction(0.25)
+        if (indicator.isCanceled()) {
+          return
+        }
+        // Set to true even if we didn't reload locals: the no-op is complete.
+        localSuccess = true
 
-        if (createdTask) {
-            // If we created a task, run it.
-            if (sync) {
-                runner.runSyncWithProgress(mTask);
-            } else {
-                runner.runAsyncWithProgress(mTask);
+        // Access using the synchronized queue interface so we don't have to worry about
+        // more elements getting added while we're in the middle of processing.
+        var onLocalComplete = onLocalCompletes.poll()
+        while (onLocalComplete != null) {
+          onLocalComplete
+            .getRunner(runner)
+            .runSyncWithoutProgress(CallbackRunnable(onLocalComplete.callback, packages))
+          onLocalComplete = onLocalCompletes.poll()
+        }
+        indicator.setText("Fetch remote repository...")
+        indicator.setSecondaryText("")
+
+        if (
+          !sourceProviders.isEmpty() &&
+            downloader != null &&
+            lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()
+        ) {
+          val remoteLoader = remoteRepoLoaderFactory.createRemoteRepoLoader(indicator)
+          val remotes =
+            remoteLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
+          indicator.setText("Computing updates...")
+          indicator.setFraction(0.75)
+          val fireListeners = remotes != packages.remotePackages
+          packages.setRemotePkgInfos(remotes.values)
+          lastRemoteRefreshMs = System.currentTimeMillis()
+          if (fireListeners) {
+            for (callback in remoteListeners) {
+              callback.loaded(packages)
             }
-        } else if (sync) {
-            // Otherwise wait for the semaphore to be released by the callback if we're
-            // running synchronously.
-            runner.runSyncWithProgress(
-                    (indicator, runner2) -> {
-                        try {
-                            completed.acquire();
-                        } catch (InterruptedException e) {
-                            /* shouldn't happen*/
-                        }
-                    });
+          }
         }
 
-    }
+        if (indicator.isCanceled()) {
+          return
+        }
+        indicator.setSecondaryText("")
+        indicator.setFraction(1.0)
 
-    @Slow
-    @Override
-    public boolean reloadLocalIfNeeded(@NonNull ProgressIndicator progress) {
-        // TODO: there should be a nice interface whereby we can do this check without creating a
-        // new LocalRepoLoader instance.
-        LocalRepoLoader local = mLocalRepoLoaderFactory.createLocalRepoLoader();
-        if (local == null) {
-            return false;
+        if (indicator.isCanceled()) {
+          return
+        }
+        success = true
+      } finally {
+        indicator.setIndeterminate(wasIndeterminate)
+        val onSuccesses: List<Callback>
+        val onErrors: List<Runnable>
+        synchronized(taskLock) {
+          // The processing of the task is now complete.
+          // To ensure that no more callbacks are added, and to allow another task to be
+          // kicked off when needed, set task to null.
+          task = null
+          onSuccesses = this.onSuccesses
+          onErrors = this.onErrors
         }
 
-        if (local.needsUpdate(mLastLocalRefreshMs, true)) {
-            mLastLocalRefreshMs = 0;
+        // Note: in theory it's possible that another task could now be started and modify
+        // packages before the callbacks are run below, since we're out of the synchronized
+        // block. Since RepositoryPackages itself is synchronized, though, that should be
+        // ok.
+
+        // in case some were added by another call in the interim.
+        if (localSuccess) {
+          for (onLocalComplete in onLocalCompletes) {
+            onLocalComplete
+              .getRunner(runner)
+              .runSyncWithoutProgress(CallbackRunnable(onLocalComplete.callback, packages))
+          }
         }
-        return loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
+        if (success) {
+          for (onSuccess in onSuccesses) {
+            onSuccess
+              .getRunner(runner)
+              .runSyncWithoutProgress(CallbackRunnable(onSuccess.callback, packages))
+          }
+        } else {
+          for (onError in onErrors) {
+            onError.run()
+          }
+        }
+      }
     }
+  }
 
-    @Override
-    public void addLocalChangeListener(@NonNull RepoLoadedListener listener) {
-        mLocalListeners.add(listener);
-    }
+  internal interface LocalRepoLoaderFactory {
+    fun createLocalRepoLoader(): LocalRepoLoader?
+  }
 
-    @Override
-    public void removeLocalChangeListener(@NonNull RepoLoadedListener listener) {
-        mLocalListeners.remove(listener);
-    }
+  @VisibleForTesting
+  interface RemoteRepoLoaderFactory {
+    fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader
+  }
 
-    @Override
-    public void addRemoteChangeListener(@NonNull RepoLoadedListener listener) {
-        mRemoteListeners.add(listener);
-    }
-
-    @Override
-    public void removeRemoteChangeListener(@NonNull RepoLoadedListener listener) {
-        mRemoteListeners.remove(listener);
-    }
-
-    @Override
-    public void installBeginning(@NonNull RepoPackage remotePackage,
-            @NonNull PackageOperation installer) {
-        mInProgressInstalls.put(remotePackage, installer);
-    }
-
-    @Override
-    public void installEnded(@NonNull RepoPackage remotePackage) {
-        mInProgressInstalls.remove(remotePackage);
-    }
-
-    @Nullable
-    @Override
-    public PackageOperation getInProgressInstallOperation(@NonNull RepoPackage remotePackage) {
-        return mInProgressInstalls.get(remotePackage);
-    }
-
+  private inner class LocalRepoLoaderFactoryImpl : LocalRepoLoaderFactory {
     /**
-     * A task to load the local and remote repos.
+     * @return A new [LocalRepoLoaderImpl] with our settings, or `null` if we don't have a local
+     *   path set.
      */
-    private class LoadTask implements ProgressRunner.ProgressRunnable {
+    override fun createLocalRepoLoader(): LocalRepoLoader? =
+      localPath?.let { LocalRepoLoaderImpl(it, this@RepoManagerImpl, fallbackLocalRepoLoader) }
+  }
 
-        /**
-         * If callbacks get added to an already-running task, they might have a different {@link
-         * ProgressRunner} than the one used to run the task. Here we keep the callback along with
-         * the runner so the callback can be invoked correctly.
-         */
-        private class Callback {
+  private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
+    override fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader =
+      RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader)
+  }
 
-            private final RepoLoadedListener mCallback;
-
-            private final ProgressRunner mRunner;
-
-            public Callback(@NonNull RepoLoadedListener callback, @Nullable ProgressRunner runner) {
-                mCallback = callback;
-                mRunner = runner;
-            }
-
-            public ProgressRunner getRunner(ProgressRunner defaultRunner) {
-                return mRunner == null ? defaultRunner : mRunner;
-            }
-
-            public RepoLoadedListener getCallback() {
-                return mCallback;
-            }
-        }
-
-        private final List<Callback> mOnSuccesses = new ArrayList<>();
-
-        private final List<Runnable> mOnErrors = new ArrayList<>();
-
-        // Must be synchronized since new elements can be added while the task is still in progress
-        // (that is, before mTask is set to null).
-        private final Queue<Callback> mOnLocalCompletes = new ConcurrentLinkedQueue<>();
-
-        private final Downloader mDownloader;
-
-        private final SettingsController mSettings;
-
-        private final long mCacheExpirationMs;
-
-        public LoadTask(long cacheExpirationMs,
-                @NonNull List<RepoLoadedListener> onLocalComplete,
-                @NonNull List<RepoLoadedListener> onSuccess,
-                @NonNull List<Runnable> onError,
-                @Nullable Downloader downloader,
-                @Nullable SettingsController settings) {
-            addCallbacks(onLocalComplete, onSuccess, onError, null);
-            mDownloader = downloader;
-            mSettings = settings;
-            mCacheExpirationMs = cacheExpirationMs;
-        }
-
-        /**
-         * Add callbacks to this task (if e.g. {@link #load(long, List, List, List, ProgressRunner,
-         * Downloader, SettingsController)} is called again while a task is already running.
-         */
-        public void addCallbacks(
-                @NonNull List<RepoLoadedListener> onLocalComplete,
-                @NonNull List<RepoLoadedListener> onSuccess,
-                @NonNull List<Runnable> onError,
-                @Nullable ProgressRunner runner) {
-            for (RepoLoadedListener local : onLocalComplete) {
-                mOnLocalCompletes.add(new Callback(local, runner));
-            }
-            for (RepoLoadedListener success : onSuccess) {
-                mOnSuccesses.add(new Callback(success, runner));
-            }
-            mOnErrors.addAll(onError);
-        }
-
-        /**
-         * Do the actual load.
-         *
-         * @param indicator {@link ProgressIndicator} for logging and showing actual progress
-         * @param runner    {@link ProgressRunner} for running asynchronous tasks and callbacks.
-         */
-        @Override
-        public void run(@NonNull ProgressIndicator indicator, @NonNull ProgressRunner runner) {
-            boolean success = false;
-            boolean localSuccess = false;
-            boolean wasIndeterminate = indicator.isIndeterminate();
-            indicator.setIndeterminate(false);
-            try {
-                LocalRepoLoader local = mLocalRepoLoaderFactory.createLocalRepoLoader();
-                if (local != null &&
-                        (mLastLocalRefreshMs + mCacheExpirationMs <= System.currentTimeMillis() ||
-                                local.needsUpdate(mLastLocalRefreshMs, false))) {
-                    if (mFallbackLocalRepoLoader != null) {
-                        mFallbackLocalRepoLoader.refresh();
-                    }
-                    indicator.setText("Loading local repository...");
-                    Map<String, LocalPackage> newLocals = local.getPackages(indicator);
-                    boolean fireListeners = !newLocals.equals(mPackages.getLocalPackages());
-                    mPackages.setLocalPkgInfos(newLocals.values());
-                    mLastLocalRefreshMs = System.currentTimeMillis();
-                    if (fireListeners) {
-                        for (RepoLoadedListener listener : mLocalListeners) {
-                            listener.loaded(mPackages);
-                        }
-                    }
-                }
-                indicator.setFraction(0.25);
-                if (indicator.isCanceled()) {
-                    return;
-                }
-                // Set to true even if we didn't reload locals: the no-op is complete.
-                localSuccess = true;
-
-                // Access using the synchronized queue interface so we don't have to worry about
-                // more elements getting added while we're in the middle of processing.
-                Callback onLocalComplete = mOnLocalCompletes.poll();
-                while (onLocalComplete != null) {
-                    onLocalComplete.getRunner(runner).runSyncWithoutProgress(
-                            new CallbackRunnable(onLocalComplete.mCallback, mPackages));
-                    onLocalComplete = mOnLocalCompletes.poll();
-                }
-                indicator.setText("Fetch remote repository...");
-                indicator.setSecondaryText("");
-
-                if (!mSourceProviders.isEmpty() && mDownloader != null &&
-                        mLastRemoteRefreshMs + mCacheExpirationMs <= System.currentTimeMillis()) {
-                    RemoteRepoLoader remoteLoader = mRemoteRepoLoaderFactory
-                            .createRemoteRepoLoader(indicator);
-                    Map<String, RemotePackage> remotes =
-                            remoteLoader.fetchPackages(
-                                    indicator.createSubProgress(.75), mDownloader, mSettings);
-                    indicator.setText("Computing updates...");
-                    indicator.setFraction(0.75);
-                    boolean fireListeners = !remotes.equals(mPackages.getRemotePackages());
-                    mPackages.setRemotePkgInfos(remotes.values());
-                    mLastRemoteRefreshMs = System.currentTimeMillis();
-                    if (fireListeners) {
-                        for (RepoLoadedListener callback : mRemoteListeners) {
-                            callback.loaded(mPackages);
-                        }
-                    }
-                }
-
-                if (indicator.isCanceled()) {
-                    return;
-                }
-                indicator.setSecondaryText("");
-                indicator.setFraction(1.0);
-
-                if (indicator.isCanceled()) {
-                    return;
-                }
-                success = true;
-            } finally {
-                indicator.setIndeterminate(wasIndeterminate);
-                synchronized (mTaskLock) {
-                    // The processing of the task is now complete.
-                    // To ensure that no more callbacks are added, and to allow another task to be
-                    // kicked off when needed, set mTask to null.
-                    mTask = null;
-                }
-                // Note: in theory it's possible that another task could now be started and modify
-                // mPackages before the callbacks are run below, since we're out of the synchronized
-                // block. Since RepositoryPackages itself is synchronized, though, that should be
-                // ok.
-
-                // in case some were added by another call in the interim.
-                if (localSuccess) {
-                    for (Callback onLocalComplete : mOnLocalCompletes) {
-                        onLocalComplete.getRunner(runner).runSyncWithoutProgress(
-                                new CallbackRunnable(onLocalComplete.getCallback(), mPackages));
-                    }
-                }
-                if (success) {
-                    for (Callback onSuccess : mOnSuccesses) {
-                        onSuccess.getRunner(runner).runSyncWithoutProgress(
-                                new CallbackRunnable(onSuccess.getCallback(), mPackages));
-                    }
-                } else {
-                    for (final Runnable onError : mOnErrors) {
-                        onError.run();
-                    }
-                }
-            }
-        }
+  /** A [Runnable] that wraps a [RepoLoadedListener] and calls it with the appropriate args. */
+  private class CallbackRunnable(
+    var callback: RepoLoadedListener,
+    var packages: RepositoryPackages,
+  ) : Runnable {
+    override fun run() {
+      callback.loaded(packages)
     }
+  }
 
-    interface LocalRepoLoaderFactory {
-
-        @Nullable
-        LocalRepoLoader createLocalRepoLoader();
-    }
-
-    @VisibleForTesting
-    public interface RemoteRepoLoaderFactory {
-
-        @NonNull
-        RemoteRepoLoader createRemoteRepoLoader(@NonNull ProgressIndicator progress);
-    }
-
-    private class LocalRepoLoaderFactoryImpl implements LocalRepoLoaderFactory {
-
-        /**
-         * @return A new {@link LocalRepoLoaderImpl} with our settings, or {@code null} if we don't
-         * have a local path set.
-         */
-        @Override
-        @Nullable
-        public LocalRepoLoader createLocalRepoLoader() {
-            if (mLocalPath != null) {
-                return new LocalRepoLoaderImpl(
-                        mLocalPath, RepoManagerImpl.this, mFallbackLocalRepoLoader);
-            }
-            return null;
-        }
-    }
-
-    private class RemoteRepoLoaderFactoryImpl implements RemoteRepoLoaderFactory {
-
-        @Override
-        @NonNull
-        public RemoteRepoLoader createRemoteRepoLoader(@NonNull ProgressIndicator progress) {
-            return new RemoteRepoLoaderImpl(mSourceProviders, mFallbackRemoteRepoLoader);
-        }
-    }
-
-    /**
-     * A {@link Runnable} that wraps a {@link RepoLoadedListener} and calls it with the appropriate
-     * args.
-     */
-    private static class CallbackRunnable implements Runnable {
-
-        RepoLoadedListener mCallback;
-
-        RepositoryPackages mPackages;
-
-        public CallbackRunnable(@NonNull RepoLoadedListener callback,
-                @NonNull RepositoryPackages packages) {
-            mCallback = callback;
-            mPackages = packages;
-        }
-
-        @Override
-        public void run() {
-            mCallback.loaded(mPackages);
-        }
-    }
+  companion object {
+    /** How long we should let a load task run before assuming that it's dead. */
+    private val TASK_TIMEOUT = Duration.ofMinutes(3)
+  }
 }
