@@ -73,8 +73,6 @@ internal class AdbServerControllerImpl(
      * * Returns `false` after the [stop] method has successfully completed, i.e. after ADB server
      * was successfully stopped.
      *
-     * Note: If [isStarted] is `false`, the [channelProvider] throws exception
-     *
      * Note: If ADB server is killed manually, e.g. by running adb `kill-server` this value still
      * returns `true`
      */
@@ -177,7 +175,7 @@ internal class AdbServerControllerImpl(
         return try {
             connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
         } catch (e: IOException) {
-            logger.debug(e) { "Failed `createChannel` on port ${currentState.params.lastUsedConfig}" }
+            logger.debug(e) { "Failed `createChannel` on port ${currentState.params.lastUsedConfig.value?.serverPort}" }
             // Failed to create channel. Try to restart adb server / update configuration and try again.
             host.timeProvider.withErrorTimeout(tracker.remainingMills) {
                 try {
@@ -206,6 +204,10 @@ internal class AdbServerControllerImpl(
      * to establish connections (channels) to it.
      *
      * This server provider can also restart the adb server if the server process dies.
+     *
+     * If the controller has not yet been started `createChannel` will attempt to wait
+     * for it to get started before trying to establish the connection, except for when the
+     * controller is in a stopped/stopping state in which case it immediately throws `IOException`.
      */
     private inner class AdbServerControllerProvider : AdbServerChannelProvider {
 
@@ -269,9 +271,7 @@ internal class AdbServerControllerImpl(
             scope.cancel("${this::class.simpleName} has been closed")
         }
 
-        suspend fun waitIsStarted() {
-            params.isStartedFlow.first { it }
-        }
+        abstract suspend fun waitIsStarted()
 
         /**
          * Waits for the adb server configuration to be set so that we could start adb server if needed,
@@ -371,6 +371,10 @@ internal class AdbServerControllerImpl(
      */
     private class InitialState(params: StateParams) : State(params) {
 
+        override suspend fun waitIsStarted() {
+            params.isStartedFlow.first { it }
+        }
+
         override fun start(currentTransitionStatus: TransitionStatus): State {
             return StartingState(params)
         }
@@ -392,6 +396,10 @@ internal class AdbServerControllerImpl(
      * by this [StartingState] with a completed job.
      */
     private class StartingState(params: StateParams) : State(params) {
+
+        override suspend fun waitIsStarted() {
+            params.isStartedFlow.first { it }
+        }
 
         override fun start(currentTransitionStatus: TransitionStatus): State {
             return if (currentTransitionStatus == TransitionStatus.COMPLETED_FAILURE) {
@@ -450,6 +458,10 @@ internal class AdbServerControllerImpl(
      */
     private class StoppingState(params: StateParams) : State(params) {
 
+        override suspend fun waitIsStarted() {
+            throw IOException("`AdbServerController` is in a stopping/stopped state")
+        }
+
         override fun start(currentTransitionStatus: TransitionStatus): State {
             // We are stopping (or stopped) => Cancel stop operation and start again
             return StartingState(params)
@@ -490,6 +502,10 @@ internal class AdbServerControllerImpl(
      * The "restarting" state, i.e. [State.restart] has been called and is not finished yet.
      */
     private class RestartingState(params: StateParams) : State(params) {
+
+        override suspend fun waitIsStarted() {
+            params.isStartedFlow.first { it }
+        }
 
         override fun start(currentTransitionStatus: TransitionStatus): State {
             // We are restarting => cancel restart and start normally
