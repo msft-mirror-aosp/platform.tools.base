@@ -23,7 +23,6 @@ import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.adbLogger
 import com.android.adblib.isTrackerConnecting
 import com.android.adblib.isTrackerDisconnected
-import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.trackDevices
 import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbDelegateUsageTracker
@@ -887,7 +886,6 @@ class AdbLibAndroidDebugBridge(
                     adbServerController.stop()
                     true
                 } catch (t: Throwable) {
-                    t.rethrowCancellation()
                     logger.warn(t, "Failed to stop adb server")
                     false
                 }
