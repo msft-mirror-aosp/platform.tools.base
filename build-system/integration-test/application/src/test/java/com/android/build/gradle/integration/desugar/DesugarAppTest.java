@@ -24,12 +24,10 @@ import static com.android.build.gradle.internal.scope.Java8LangSupport.D8;
 import static com.android.build.gradle.internal.scope.Java8LangSupport.R8;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
-import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.desugar.resources.TestClass;
 import com.android.build.gradle.internal.scope.Java8LangSupport;
@@ -38,23 +36,25 @@ import com.android.testutils.TestInputsGenerator;
 import com.android.testutils.apk.Apk;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
 import com.android.utils.FileUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
+
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 
 /** Tests use of Java 8 language in the application module, for D8 and R8 tools. */
 @RunWith(Parameterized.class)
@@ -130,12 +130,12 @@ public class DesugarAppTest {
                         + "    api fileTree(dir: 'libs', include: ['*.jar'])\n"
                         + "}");
         createLibToDesugarAndGetClasses();
-        GradleBuildResult result = getProjectExecutor().expectFailure().run("assembleDebug");
-        try (Scanner scanner = result.getStderr()) {
-            ScannerSubject.assertThat(scanner)
-                    .contains(
-                            "The dependency contains Java 8 bytecode. Please enable desugaring by adding the following to build.gradle\n");
-        }
+        getProjectExecutor()
+                .expectFailure()
+                .run("assembleDebug")
+                .assertErrorContains(
+                        "The dependency contains Java 8 bytecode. Please enable"
+                                + " desugaring by adding the following to build.gradle\n");
     }
 
     @Test
@@ -180,7 +180,9 @@ public class DesugarAppTest {
             throws IOException, InterruptedException, ProcessException {
         enableJava8();
         // using at least android-27 as ServiceConnection has a default method
-        TestFileUtils.appendToFile(project.getBuildFile(), "\nandroid.compileSdkVersion = " + DEFAULT_COMPILE_SDK_VERSION);
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\nandroid.compileSdkVersion = " + DEFAULT_COMPILE_SDK_VERSION);
 
         Path newSource = project.getMainSrcDir().toPath().resolve("test").resolve("MyService.java");
         Files.createDirectories(newSource.getParent());

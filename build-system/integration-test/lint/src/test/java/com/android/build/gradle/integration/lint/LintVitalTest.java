@@ -79,11 +79,7 @@ public class LintVitalTest {
     public void runningLintSkipsLintVital() throws Exception {
         GradleBuildResult result =
                 project.executor().expectFailure().run("lintVitalRelease", "lint");
-        result.assertStdErr(
-                stderr -> {
-                    stderr.contains("Lint found errors in the project; aborting build.");
-                });
-
+        result.assertErrorContains("Lint found errors in the project; aborting build.");
         result.assertTask(":lintVitalRelease").wasSkipped();
 
         // We make this assertion to ensure that lint is actually run and runs as expected. Without

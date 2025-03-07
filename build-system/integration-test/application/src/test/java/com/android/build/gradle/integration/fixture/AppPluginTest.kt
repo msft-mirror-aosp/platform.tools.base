@@ -53,9 +53,10 @@ class AppPluginTest {
     fun testReleaseVariantIsDisabled() {
         val build = rule.build
 
-        val result = build.executor.expectFailure().run(":app:assembleRelease")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("Cannot locate tasks that match ':app:assembleRelease' as task 'assembleRelease' not found in project ':app'.")
+        build.executor.expectFailure().run(":app:assembleRelease")
+            .assertErrorContains(
+                "Cannot locate tasks that match ':app:assembleRelease' as task 'assembleRelease' not found in project ':app'."
+            )
     }
 
     @Test

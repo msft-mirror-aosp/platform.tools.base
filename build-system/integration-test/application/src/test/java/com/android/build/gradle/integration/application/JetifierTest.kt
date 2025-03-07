@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.base.Throwables
@@ -201,16 +200,14 @@ class JetifierTest(private val withKotlin: Boolean) {
         )
 
         // We created doNotJetifyLib such that Jetifier would fail to jetify it.
-        val result = project.executor()
+        project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .expectFailure()
             .run("assembleDebug")
-        result.stderr.use {
-            assertThat(it).contains(
+            .assertErrorContains(
                 "Failed to transform doNotJetifyLib-1.0.jar (com.example.javalib:doNotJetifyLib:1.0)"
             )
-        }
 
         // Add doNotJetifyLib to ignorelist, the build should succeed
         TestFileUtils.appendToFile(

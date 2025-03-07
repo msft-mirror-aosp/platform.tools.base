@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
@@ -134,11 +133,9 @@ class Java11CompileTest {
                 android.compileSdkVersion 29
             """.trimIndent()
         )
-        val result = executor().expectFailure().run("assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above")
-        }
+        executor().expectFailure().run("assembleDebug").assertErrorContains(
+            "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"
+        )
     }
 
     @Test
@@ -182,13 +179,11 @@ class Java11CompileTest {
                 }
             """.trimIndent()
         )
-        val result = executor().expectFailure().run("assembleDebug")
         val gLink = if (OsType.getHostOs() == OsType.WINDOWS) "jlink.exe" else "jlink"
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "$gLink does not exist"
-            )
-        }
+        executor().expectFailure().run("assembleDebug").assertErrorContains(
+            "$gLink does not exist"
+        )
+
         TestFileUtils.searchAndReplace(
             project.buildFile,
             "JavaLanguageVersion.of(8)",

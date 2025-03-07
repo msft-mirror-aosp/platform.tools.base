@@ -72,11 +72,9 @@ class DisabledSrcResGenTest {
             }
         """.trimIndent())
 
-        val failure = rootProject.executor().expectFailure().run("app:assembleDebug")
-        failure.stderr.use {
-            ScannerSubject.assertThat(it)
-                .contains("defaultConfig contains custom resource values, but the feature is disabled.")
-        }
+        rootProject.executor().expectFailure().run("app:assembleDebug").assertErrorContains(
+            "defaultConfig contains custom resource values, but the feature is disabled."
+        )
     }
 
     private fun checkViaGradleProperties(

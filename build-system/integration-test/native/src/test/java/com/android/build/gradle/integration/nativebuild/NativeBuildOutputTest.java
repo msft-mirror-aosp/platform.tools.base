@@ -33,8 +33,14 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion;
 import com.android.testutils.apk.Apk;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,9 +48,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Tests expected build output */
 public class NativeBuildOutputTest {
@@ -132,7 +135,8 @@ public class NativeBuildOutputTest {
                 project.file("CMakeLists.txt"),
                 cmakeLists
                         + "\n"
-                        + "set_target_properties(hello-jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../../../custom-output/debug/${ANDROID_ABI})");
+                        + "set_target_properties(hello-jni PROPERTIES LIBRARY_OUTPUT_DIRECTORY"
+                        + " ../../../custom-output/debug/${ANDROID_ABI})");
 
         checkSucceeded(
                 ImmutableList.of("external build set its own library output location"),
@@ -226,9 +230,11 @@ public class NativeBuildOutputTest {
 
         checkFailed(
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["),
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["),
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["));
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["));
     }
 
     @Test
@@ -243,9 +249,11 @@ public class NativeBuildOutputTest {
 
         checkFailed(
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["),
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["),
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["));
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["));
     }
 
     // In this test, ndk.abiFilters and ndkBuild.abiFilters only have "x86" in common.
@@ -298,9 +306,11 @@ public class NativeBuildOutputTest {
 
         checkFailed(
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["),
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["),
                 ImmutableList.of(
-                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs are ["));
+                        "ABIs [-unrecognized-abi-] are not supported for platform. Supported ABIs"
+                                + " are ["));
     }
 
     @Test
@@ -377,7 +387,8 @@ public class NativeBuildOutputTest {
                         + "add_library(lib_gmath STATIC IMPORTED )\n"
                         + "set_target_properties(lib_gmath PROPERTIES IMPORTED_LOCATION\n"
                         + "    ./gmath/lib/${ANDROID_ABI}/libgmath.a)\n"
-                        + "file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++ src/*.C)\n"
+                        + "file(GLOB_RECURSE SRC src/*.c src/*.cpp src/*.cc src/*.cxx src/*.c++"
+                        + " src/*.C)\n"
                         + "message(${SRC})\n"
                         + "set(CMAKE_VERBOSE_MAKEFILE ON)\n"
                         + "add_library(hello-jni SHARED ${SRC})\n"
@@ -400,29 +411,37 @@ public class NativeBuildOutputTest {
         assertThat(dump(result))
                 .isEqualTo(
                         "[:]\n"
-                                + "> NativeModule:\n"
-                                + "   - name                    = \"project\"\n"
-                                + "   > variants:\n"
-                                + "      - debug:\n"
-                                + "         - abis:\n"
-                                + "            - x86_64:\n"
-                                + "               - sourceFlagsFile                 = {PROJECT}/.cxx/{DEBUG}/x86_64/compile_commands.json.bin{!}\n"
-                                + "               - symbolFolderIndexFile           = {PROJECT}/.cxx/{DEBUG}/x86_64/symbol_folder_index.txt{!}\n"
-                                + "               - buildFileIndexFile              = {PROJECT}/.cxx/{DEBUG}/x86_64/build_file_index.txt{!}\n"
-                                + "               - additionalProjectFilesIndexFile = {PROJECT}/.cxx/{DEBUG}/x86_64/additional_project_files.txt{!}\n"
-                                + "      - release:\n"
-                                + "         - abis:\n"
-                                + "            - x86_64:\n"
-                                + "               - sourceFlagsFile                 = {PROJECT}/.cxx/{RELEASE}/x86_64/compile_commands.json.bin{!}\n"
-                                + "               - symbolFolderIndexFile           = {PROJECT}/.cxx/{RELEASE}/x86_64/symbol_folder_index.txt{!}\n"
-                                + "               - buildFileIndexFile              = {PROJECT}/.cxx/{RELEASE}/x86_64/build_file_index.txt{!}\n"
-                                + "               - additionalProjectFilesIndexFile = {PROJECT}/.cxx/{RELEASE}/x86_64/additional_project_files.txt{!}\n"
-                                + "   < variants\n"
-                                + "   - nativeBuildSystem       = CMAKE\n"
-                                + "   - ndkVersion              = \"{DEFAULT_NDK_VERSION}\"\n"
-                                + "   - defaultNdkVersion       = \"{DEFAULT_NDK_VERSION}\"\n"
-                                + "   - externalNativeBuildFile = {PROJECT}/CMakeLists.txt{F}\n"
-                                + "< NativeModule");
+                            + "> NativeModule:\n"
+                            + "   - name                    = \"project\"\n"
+                            + "   > variants:\n"
+                            + "      - debug:\n"
+                            + "         - abis:\n"
+                            + "            - x86_64:\n"
+                            + "               - sourceFlagsFile                 ="
+                            + " {PROJECT}/.cxx/{DEBUG}/x86_64/compile_commands.json.bin{!}\n"
+                            + "               - symbolFolderIndexFile           ="
+                            + " {PROJECT}/.cxx/{DEBUG}/x86_64/symbol_folder_index.txt{!}\n"
+                            + "               - buildFileIndexFile              ="
+                            + " {PROJECT}/.cxx/{DEBUG}/x86_64/build_file_index.txt{!}\n"
+                            + "               - additionalProjectFilesIndexFile ="
+                            + " {PROJECT}/.cxx/{DEBUG}/x86_64/additional_project_files.txt{!}\n"
+                            + "      - release:\n"
+                            + "         - abis:\n"
+                            + "            - x86_64:\n"
+                            + "               - sourceFlagsFile                 ="
+                            + " {PROJECT}/.cxx/{RELEASE}/x86_64/compile_commands.json.bin{!}\n"
+                            + "               - symbolFolderIndexFile           ="
+                            + " {PROJECT}/.cxx/{RELEASE}/x86_64/symbol_folder_index.txt{!}\n"
+                            + "               - buildFileIndexFile              ="
+                            + " {PROJECT}/.cxx/{RELEASE}/x86_64/build_file_index.txt{!}\n"
+                            + "               - additionalProjectFilesIndexFile ="
+                            + " {PROJECT}/.cxx/{RELEASE}/x86_64/additional_project_files.txt{!}\n"
+                            + "   < variants\n"
+                            + "   - nativeBuildSystem       = CMAKE\n"
+                            + "   - ndkVersion              = \"{DEFAULT_NDK_VERSION}\"\n"
+                            + "   - defaultNdkVersion       = \"{DEFAULT_NDK_VERSION}\"\n"
+                            + "   - externalNativeBuildFile = {PROJECT}/CMakeLists.txt{F}\n"
+                            + "< NativeModule");
     }
 
     @Test
@@ -464,17 +483,15 @@ public class NativeBuildOutputTest {
         }
     }
 
-    private void checkFailed(List<String> expectInStderr, List<String> expectInExceptionRootCause)
-            throws IOException, InterruptedException {
+    private void checkFailed(List<String> expectInStderr, List<String> expectInExceptionRootCause) {
         GradleBuildResult result =
                 project.executor()
                         .expectFailure()
                         .withEnableInfoLogging(false)
                         .run("assembleDebug");
+
         for (String expect : expectInStderr) {
-            try (Scanner stderr = result.getStderr()) {
-                ScannerSubject.assertThat(stderr).contains(expect);
-            }
+            result.assertErrorContains(expect);
         }
 
         String rootCause = Throwables.getRootCause(result.getException()).getMessage();

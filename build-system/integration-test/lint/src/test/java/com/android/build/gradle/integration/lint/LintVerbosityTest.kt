@@ -64,8 +64,8 @@ class LintVerbosityTest {
     @Test
     fun testErrorMessage() {
         TestFileUtils.searchAndReplace(project.buildFile, "abortOnError = false", "abortOnError true")
-        project.executor().expectFailure().run("lintDebug")
-        ScannerSubject.assertThat(project.buildResult.stderr)
-            .contains("Lint found errors in the project; aborting build.")
+        project.executor().expectFailure().run("lintDebug").apply {
+            assertErrorContains("Lint found errors in the project; aborting build.")
+        }
     }
 }

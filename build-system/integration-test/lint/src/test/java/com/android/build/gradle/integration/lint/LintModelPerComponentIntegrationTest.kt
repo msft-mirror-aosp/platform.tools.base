@@ -257,10 +257,11 @@ class LintModelPerComponentIntegrationTest {
                 }
             """.trimIndent()
         )
-        val result = executor().expectFailure().run(":app:tasks")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("lint.targetSdk (15) for non library is smaller than android.targetSdk (16) for variants debug, release. "
-                    + "Please change the values such that lint.targetSdk is greater than or equal to android.targetSdk.")
+        executor().expectFailure().run(":app:tasks")
+            .assertErrorContains(
+                "lint.targetSdk (15) for non library is smaller than android.targetSdk (16) for variants debug, release. "
+                    + "Please change the values such that lint.targetSdk is greater than or equal to android.targetSdk."
+            )
     }
 
     @Test

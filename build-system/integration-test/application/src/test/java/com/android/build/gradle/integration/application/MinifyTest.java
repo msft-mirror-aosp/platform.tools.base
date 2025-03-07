@@ -302,10 +302,7 @@ public class MinifyTest {
         TestFileUtils.appendToFile(project.file("proguard-rules.pro"), "\n-printconfiguration");
         project.executor()
                 .run("assembleMinified")
-                .assertStdOut(
-                        stdout -> {
-                            stdout.contains(
-                                    "-keepclasseswithmembernames,includedescriptorclasses class *");
-                        });
+                .assertOutputContains(
+                        "-keepclasseswithmembernames,includedescriptorclasses class *");
     }
 }

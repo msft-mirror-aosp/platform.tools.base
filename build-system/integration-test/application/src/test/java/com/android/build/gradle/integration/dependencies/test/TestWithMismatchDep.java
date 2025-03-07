@@ -21,13 +21,10 @@ import static com.android.build.gradle.integration.common.utils.TestFileUtils.ap
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.ScannerSubject;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import java.util.Scanner;
 
 /**
  * Tests the handling of test dependencies.
@@ -88,9 +85,7 @@ public class TestWithMismatchDep {
         assertThat(t.getMessage()).isEqualTo(EXCEPTION_MSG);
 
         // check there is a version of the error, after the task name:
-        try (Scanner scanner = result.getStderr()) {
-            ScannerSubject.assertThat(scanner).contains(ERROR_MSG);
-        }
+        result.assertErrorContains(ERROR_MSG);
     }
 
     @Test

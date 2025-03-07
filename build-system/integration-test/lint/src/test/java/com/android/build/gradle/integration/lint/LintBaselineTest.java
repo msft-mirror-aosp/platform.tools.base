@@ -26,7 +26,6 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
-import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
@@ -81,10 +80,7 @@ public class LintBaselineTest {
         }
 
         final GradleBuildResult result = executor.run(":app:lint");
-        result.assertStdErr(
-                stderr -> {
-                    stderr.contains("Created baseline file");
-                });
+        result.assertErrorContains("Created baseline file");
         result.assertTask(":app:lintReportDebug").didWork();
         if (lintBaselinesContinue) {
             result.assertTask(":app:lintDebug").didWork();
@@ -109,10 +105,7 @@ public class LintBaselineTest {
         }
         // The Analysis task doesn't need to run again if its inputs are unchanged.
         result2.assertTask(":app:lintAnalyzeDebug").wasUpToDate();
-        result2.assertStdErr(
-                stderr -> {
-                    stderr.contains("Created baseline file");
-                });
+        result2.assertErrorContains("Created baseline file");
         assertThat(baselineFile).exists();
     }
 
@@ -128,7 +121,7 @@ public class LintBaselineTest {
             result = getExecutor().expectFailure().run(":app:lint");
         }
 
-        ScannerSubject.assertThat(result.getStderr()).contains("Created baseline file");
+        result.assertErrorContains("Created baseline file");
 
         File baselineFile =
                 new File(project.getSubproject("app").getProjectDir(), "lint-baseline.xml");
@@ -209,9 +202,8 @@ public class LintBaselineTest {
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
                 "\n\nandroid.lintOptions.textOutput = file(\"lint-report.txt\")\n\n");
-        final GradleBuildResult result = executor.run(":app:lint");
 
-        ScannerSubject.assertThat(result.getStderr()).contains("Created baseline file");
+        executor.run(":app:lint").assertErrorContains("Created baseline file");
 
         File baselineFile =
                 new File(project.getSubproject("app").getProjectDir(), "lint-baseline.xml");

@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
@@ -62,34 +61,26 @@ class AppAndLibNoBuildConfigTest {
     fun `ensure defaultConfig-buildConfigField fails`() {
         project.getSubproject(":app")
             .buildFile.appendText("\nandroid.defaultConfig.buildConfigField(\"boolean\", \"foo\", \"true\")")
-        val failure = project.executor().expectFailure().run("project")
-        failure.stderr.use {
-            ScannerSubject.assertThat(it)
-                .contains(
-                    """
-                        defaultConfig contains custom BuildConfig fields, but the feature is disabled.
-                        To enable the feature, add the following to your module-level build.gradle:
-                        `android.buildFeatures.buildConfig = true`
-                    """.trimIndent()
-                )
-        }
+        project.executor().expectFailure().run("project").assertErrorContains(
+            """
+                defaultConfig contains custom BuildConfig fields, but the feature is disabled.
+                To enable the feature, add the following to your module-level build.gradle:
+                `android.buildFeatures.buildConfig = true`
+            """.trimIndent()
+        )
     }
 
     @Test
     fun `ensure buildtypes-buildConfigField fails`() {
         project.getSubproject(":app")
             .buildFile.appendText("\nandroid.buildTypes.debug.buildConfigField(\"boolean\", \"foo\", \"true\")")
-        val failure = project.executor().expectFailure().run("project")
-        failure.stderr.use {
-            ScannerSubject.assertThat(it)
-                .contains(
-                    """
-                        Build Type 'debug' contains custom BuildConfig fields, but the feature is disabled.
-                        To enable the feature, add the following to your module-level build.gradle:
-                        `android.buildFeatures.buildConfig = true`
-                    """.trimIndent()
-                )
-        }
+        project.executor().expectFailure().run("project").assertErrorContains(
+            """
+                Build Type 'debug' contains custom BuildConfig fields, but the feature is disabled.
+                To enable the feature, add the following to your module-level build.gradle:
+                `android.buildFeatures.buildConfig = true`
+            """.trimIndent()
+        )
     }
 
     @Test

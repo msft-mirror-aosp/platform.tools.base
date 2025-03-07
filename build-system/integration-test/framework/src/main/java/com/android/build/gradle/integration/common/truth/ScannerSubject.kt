@@ -24,65 +24,107 @@ import com.google.common.truth.Subject
 import com.google.common.truth.Truth
 import java.util.Scanner
 
-class ScannerSubject(failureMetadata: FailureMetadata,
-    private val subject: Scanner) : Subject<ScannerSubject, Scanner>(failureMetadata, subject) {
+class ScannerSubject(
+    failureMetadata: FailureMetadata,
+    actual: Scanner,
+    private val name: String? = null
+) : Subject<ScannerSubject, Scanner>(failureMetadata, actual) {
 
     companion object {
-
-        fun scanners(): Subject.Factory<ScannerSubject, Scanner> {
-            return Subject.Factory<ScannerSubject, Scanner> { failureMetadata, subject ->
+        internal fun scanners(name: String? = null): Factory<ScannerSubject, Scanner> {
+            return Factory<ScannerSubject, Scanner> { failureMetadata, subject ->
                 ScannerSubject(
                     failureMetadata,
-                    subject
+                    subject,
+                    name
                 )
             }
         }
 
         @JvmStatic
-        fun assertThat(scanner: Scanner): ScannerSubject {
-            return Truth.assertAbout(scanners()).that(scanner)
+        @JvmOverloads
+        fun assertThat(scanner: Scanner, name: String? = null): ScannerSubject {
+            return Truth.assertAbout(scanners(name)).that(scanner)
         }
     }
 
     fun contains(string: String) {
-        val requestedLines = string.split("\n").iterator()
-        if (!requestedLines.hasNext()) {
-            failWithActual(Fact.simpleFact("empty or null parameter"))
-        }
         if (string.contains("\r\n")) {
-            failWithActual(Fact.simpleFact("parameter contains windows-style line separator"))
+            fail(Fact.simpleFact("expected string contains windows-style line separator"))
         }
-        var nextString = requestedLines.next()
-        while(subject.hasNextLine()) {
-            val nextLine = subject.nextLine()
+
+        val requestedLines = string.split("\n")
+        if (requestedLines.isEmpty()) {
+            fail(Fact.simpleFact("expected string is empty"))
+        }
+
+        val expectedIterator = requestedLines.iterator()
+        var nextString = expectedIterator.next()
+        while (actual().hasNextLine()) {
+            val nextLine = actual().nextLine()
             while (nextLine.contains(nextString)) {
-                if (requestedLines.hasNext()) {
-                    nextString = requestedLines.next()
+                if (expectedIterator.hasNext()) {
+                    nextString = expectedIterator.next()
                 } else {
                     return
                 }
             }
         }
-        failWithoutActual("contains $string")
+
+        if (requestedLines.isEmpty()) {
+            fail(Fact.simpleFact("expected to contain '$string'"))
+        } else {
+            // build a message with the expected content on multi line with an offset
+            val message = buildString {
+                appendLine("expected to contain:")
+                for (line in requestedLines) {
+                    appendLine("|$line")
+                }
+            }
+            fail(Fact.simpleFact(message))
+        }
     }
 
     fun doesNotContain(string: String) {
-        val requestedLines = string.split("\n").iterator()
-        if (!requestedLines.hasNext()) {
-            failWithActual(Fact.simpleFact("empty or null parameter"))
-        }
         if (string.contains("\r\n")) {
-            failWithActual(Fact.simpleFact("parameter contains windows-style line separator"))
+            fail(Fact.simpleFact("expected string contains windows-style line separator"))
         }
-        var nextString = requestedLines.next()
-        while(subject.hasNextLine()) {
-            if (subject.nextLine().contains(nextString)) {
-                if (requestedLines.hasNext()) {
-                    nextString = requestedLines.next()
+
+        val requestedLines = string.split("\n")
+        if (requestedLines.isEmpty()) {
+            fail(Fact.simpleFact("expected string is empty"))
+        }
+
+        val expectedIterator = requestedLines.iterator()
+        var nextExpectedString = expectedIterator.next()
+        while (actual().hasNextLine()) {
+            if (actual().nextLine().contains(nextExpectedString)) {
+                if (expectedIterator.hasNext()) {
+                    nextExpectedString = expectedIterator.next()
                 } else {
-                    failWithoutActual("does not contain $string")
+
+                    if (requestedLines.isEmpty()) {
+                        fail(Fact.simpleFact("expected to not contain '$string'"))
+                    } else {
+                        // build a message with the expected content on multi line with an offset
+                        val message = buildString {
+                            appendLine("expected to not contain:")
+                            for (line in requestedLines) {
+                                appendLine("|$line")
+                            }
+                        }
+                        fail(Fact.simpleFact(message))
+                    }
                 }
             }
+        }
+    }
+
+    private fun fail(fact: Fact) {
+        if (name != null) {
+            failWithoutActual(Fact.fact("value of", name), fact)
+        } else {
+            failWithoutActual(fact)
         }
     }
 }
