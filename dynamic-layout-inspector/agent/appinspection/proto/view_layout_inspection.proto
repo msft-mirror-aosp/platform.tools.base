@@ -258,6 +258,9 @@ message DrawInstruction {
     // The uniqueDrawId of the root view containing the OverlayView that needs to draw the bounds.
     int64 root_id = 1;
     Rect bounds = 2;
+    // TODO(b/402148436): consider moving color out of draw instruction
+    // Color used to render these bounds, in ARGB format.
+    int32 color = 3;
 }
 
 // User input detected by on-device rendering.
