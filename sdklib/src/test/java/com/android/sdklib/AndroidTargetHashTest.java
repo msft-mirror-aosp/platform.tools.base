@@ -16,6 +16,8 @@
 
 package com.android.sdklib;
 
+import static com.android.sdklib.AndroidTargetHash.getPlatformHashString;
+
 import com.android.sdklib.internal.androidTarget.MockAddonTarget;
 import com.android.sdklib.internal.androidTarget.MockPlatformTarget;
 
@@ -147,5 +149,12 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals(
             new AndroidVersion(36, 1, null, 21, false),
             AndroidTargetHash.getPlatformVersion("android-36.1-ext21"));
+    }
+
+    public final void testExtensionHashStrings() {
+        assertEquals("android-36", getPlatformHashString(new AndroidVersion(36, 0)));
+        assertEquals("android-36.1", getPlatformHashString(new AndroidVersion(36, 1)));
+        assertEquals("android-37.0", getPlatformHashString(new AndroidVersion(37, 0)));
+        assertEquals("android-37.1", getPlatformHashString(new AndroidVersion(37, 1)));
     }
 }

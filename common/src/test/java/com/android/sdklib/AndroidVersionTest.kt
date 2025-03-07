@@ -63,4 +63,30 @@ class AndroidVersionTest {
         assertAndroidVersionNormalized("37.1").isEqualTo("37.1")
         assertAndroidVersionNormalized("37.01").isEqualTo("37.1")
     }
+
+    @Test
+    fun testToStringWithMinorVersions() {
+        fun assertAndroidVersionToString(from: String) =
+            assertThat(AndroidVersion.fromString(from).toString())
+                .named("AndroidVersion.fromString(\"%s\").toString()", from)
+        assertAndroidVersionToString("36").isEqualTo("API 36")
+        assertAndroidVersionToString("36.1").isEqualTo("API 36.1")
+        assertAndroidVersionToString("37").isEqualTo("API 37.0")
+        assertAndroidVersionToString("37.1").isEqualTo("API 37.1")
+    }
+
+    @Test
+    fun testBaseExtensionLevel() {
+        fun assertBaseExtensionLevel(api: Int) =
+            assertThat(AndroidVersion.getBaseExtensionLevel(api))
+                .named("AndroidVersion.getBaseExtensionLevel(\"%s\")", api)
+        assertBaseExtensionLevel(30).isEqualTo(0)
+        assertBaseExtensionLevel(31).isEqualTo(1)
+        assertBaseExtensionLevel(32).isEqualTo(1)
+        assertBaseExtensionLevel(33).isEqualTo(3)
+        assertBaseExtensionLevel(34).isEqualTo(7)
+        assertBaseExtensionLevel(35).isEqualTo(13)
+        assertBaseExtensionLevel(36).isEqualTo(17)
+    }
+
 }
