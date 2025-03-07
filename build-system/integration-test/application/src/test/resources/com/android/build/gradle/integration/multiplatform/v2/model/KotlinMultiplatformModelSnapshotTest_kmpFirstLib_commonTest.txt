@@ -30,36 +30,6 @@
     }
   },
   {
-    "type": "Regular",
-    "coordinates": {
-      "project": {
-        "buildName": ":",
-        "buildPath": ":",
-        "projectPath": ":kmpSecondLib",
-        "projectName": "kmpSecondLib"
-      },
-      "sourceSetName": "commonMain"
-    },
-    "extras": {
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeVisibleMultiplatformSourceDependencyResolver"
-    }
-  },
-  {
-    "type": "Regular",
-    "coordinates": {
-      "project": {
-        "buildName": ":",
-        "buildPath": ":",
-        "projectPath": ":kmpJvmOnly",
-        "projectName": "kmpJvmOnly"
-      },
-      "sourceSetName": "commonMain"
-    },
-    "extras": {
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeVisibleMultiplatformSourceDependencyResolver"
-    }
-  },
-  {
     "binaryType": "KOTLIN_COMPILE",
     "classpath": [
       "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/libs/local.aar"

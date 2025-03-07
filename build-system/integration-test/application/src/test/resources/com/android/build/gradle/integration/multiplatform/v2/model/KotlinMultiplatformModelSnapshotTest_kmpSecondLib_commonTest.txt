@@ -32,21 +32,6 @@
   {
     "type": "Regular",
     "coordinates": {
-      "project": {
-        "buildName": ":",
-        "buildPath": ":",
-        "projectPath": ":kmpLibraryPlugin",
-        "projectName": "kmpLibraryPlugin"
-      },
-      "sourceSetName": "commonMain"
-    },
-    "extras": {
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeVisibleMultiplatformSourceDependencyResolver"
-    }
-  },
-  {
-    "type": "Regular",
-    "coordinates": {
       "buildName": ":",
       "buildPath": ":",
       "projectPath": ":kmpLibraryPlugin",
