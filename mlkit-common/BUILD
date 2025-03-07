@@ -16,10 +16,10 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//prebuilts/tools/common/m2:flatbuffers-java",
         "//prebuilts/tools/common/m2:tensorflow-lite-metadata",
+        "//tools/base/common:studio.android.sdktools.common",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/base/common:studio.android.sdktools.common",
     ],
 )
 

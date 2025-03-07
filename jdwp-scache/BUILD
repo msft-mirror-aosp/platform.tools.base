@@ -11,11 +11,11 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
+        "//tools/adt/idea/.idea/libraries:junit4[test]",
     ],
 )
 

@@ -23,13 +23,13 @@ iml_module(
         "//prebuilts/tools/common/archive-patcher:shared",
         "//tools/adt/idea/.idea/libraries:google-dexlib2",
         "//tools/adt/idea/.idea/libraries:google-baksmali",
+        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
-        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
     ],
 )
 

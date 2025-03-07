@@ -143,12 +143,12 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/common:studio.android.sdktools.common",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/common:studio.android.sdktools.common",
         "//tools/adt/idea/.idea/libraries:gson[test]",
     ],
 )

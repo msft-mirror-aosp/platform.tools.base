@@ -35,14 +35,14 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
+        "//tools/analytics-library/shared:analytics-shared",
+        "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
+        "//tools/base/repository:schema-generated",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/adt/idea/.idea/libraries:jimfs[test]",
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/analytics-library/shared:analytics-shared",
-        "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
-        "//tools/base/repository:schema-generated",
     ],
 )
 

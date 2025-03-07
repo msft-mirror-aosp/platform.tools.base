@@ -16,10 +16,10 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/adt/idea/.idea/libraries:libadblib-tools-proto",
+        "//tools/adt/idea/.idea/libraries:junit4[test]",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
     ],
 )
 

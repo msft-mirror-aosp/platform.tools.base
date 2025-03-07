@@ -34,13 +34,13 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/adt/idea/.idea/libraries:aapt-proto",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
+        "//tools/adt/idea/.idea/libraries:junit4[test]",
+        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
+        "//tools/adt/idea/.idea/libraries:truth[test]",
     ],
 )
 

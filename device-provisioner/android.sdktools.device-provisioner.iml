@@ -13,15 +13,15 @@
     <orderEntry type="module" module-name="android.sdktools.adblib" />
     <orderEntry type="module" module-name="android.sdktools.adblib.tools" />
     <orderEntry type="module" module-name="android.sdktools.sdklib" />
+    <orderEntry type="library" name="studio-analytics-proto" level="project" />
+    <orderEntry type="library" name="studio-proto" level="project" />
+    <orderEntry type="module" module-name="analytics-shared" />
+    <orderEntry type="library" name="emulator-proto" level="project" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
     <orderEntry type="library" scope="TEST" name="jetbrains.kotlinx.coroutines.test" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="module" module-name="android.sdktools.fakeadbserver" scope="TEST" />
-    <orderEntry type="library" name="studio-analytics-proto" level="project" />
-    <orderEntry type="library" name="studio-proto" level="project" />
-    <orderEntry type="module" module-name="analytics-shared" />
-    <orderEntry type="library" name="emulator-proto" level="project" />
     <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
   </component>
 </module>

@@ -28,13 +28,13 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/adt/idea/.idea/libraries:kxml2",
+        "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
+        "//tools/adt/idea/.idea/libraries:libadb-server-proto",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
-        "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
-        "//tools/adt/idea/.idea/libraries:libadb-server-proto",
     ],
 )
 
@@ -236,6 +236,7 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
+        "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/base/common:studio.android.sdktools.common[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
@@ -243,6 +244,5 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/base/ddmlib:studio.android.sdktools.ddmlib[test]",
         "@intellij//:intellij-sdk[test]",
-        "@intellij//:com.intellij.java",
     ],
 )

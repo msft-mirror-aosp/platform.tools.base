@@ -13,9 +13,9 @@ iml_module(
     deps = [
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//prebuilts/tools/common/m2:junit-4.12[test]",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
     ],
 )
 

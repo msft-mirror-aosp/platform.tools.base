@@ -19,10 +19,10 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/adt/idea/.idea/libraries:google-dexlib2",
         "//tools/base/apkparser:studio.android.sdktools.binary-resources",
+        "//prebuilts/tools/common/m2:jopt-simple-4.9",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//prebuilts/tools/common/m2:jopt-simple-4.9",
     ],
 )
 
