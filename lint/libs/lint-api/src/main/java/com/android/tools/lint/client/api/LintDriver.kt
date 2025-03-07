@@ -2446,6 +2446,8 @@ class LintDriver(
       return delegate.getXmlDocument(file, contents)
     }
 
+    override fun fileExists(file: File): Boolean = delegate.fileExists(file)
+
     private fun inSameFile(element1: PsiElement?, element2: PsiFile?): Boolean {
       return getContainingFile(element1) == getContainingFile(element2)
     }

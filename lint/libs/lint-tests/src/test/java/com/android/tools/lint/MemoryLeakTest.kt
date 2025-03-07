@@ -178,9 +178,9 @@ class MemoryLeakTest {
       // Needed to allow PrivateResourceDetector to run.
       // Needed to allow GradleDetector to run.
       .networkData(
-        "https://search.maven.org/solrsearch/select" +
-          "?q=g:%22androidx.appcompat%22+AND+a:%22appcompat%22&core=gav&wt=json",
-        "", // Response doesn't matter for this test.
+        "https://repo1.maven.org/maven2/androidx/appcompat/appcompat/maven-metadata.xml",
+        // Response doesn't matter for this test.
+        "<metadata modelVersion=\"1.1.0\"/>",
       )
       .issues(*BuiltinIssueRegistry().issues.toTypedArray())
       .run()
