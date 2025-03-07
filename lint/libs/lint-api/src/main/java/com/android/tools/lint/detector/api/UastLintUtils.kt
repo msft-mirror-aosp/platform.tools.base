@@ -1087,55 +1087,28 @@ private fun UFile.acceptMultiFileClass(visitor: UastVisitor) {
  * a return or exception throw or yield.
  */
 fun UExpression.isUnconditionalReturn(): Boolean {
-  val statement = this
-  @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
-  if (statement is UBlockExpression) {
-    statement.expressions.lastOrNull()?.let {
-      return it.isUnconditionalReturn()
-    }
-  } else if (statement is UExpressionList) {
-    statement.expressions.lastOrNull()?.let {
-      return it.isUnconditionalReturn()
-    }
-  } else if (statement is UYieldExpression) {
-    // (Kotlin when statements will sometimes be represented using yields in the UAST
-    // representation)
-    val yieldExpression = statement.expression
-    if (yieldExpression != null) {
-      return yieldExpression.isUnconditionalReturn()
-    }
-  } else if (statement is UParenthesizedExpression) {
-    return statement.expression.isUnconditionalReturn()
-  } else if (statement is UIfExpression) {
-    val thenExpression = statement.thenExpression
-    val elseExpression = statement.elseExpression
-    if (thenExpression != null && elseExpression != null) {
-      return thenExpression.isUnconditionalReturn() && elseExpression.isUnconditionalReturn()
-    }
-    return false
-  } else if (statement is USwitchExpression) {
-    for (case in statement.body.expressions) {
-      if (case is USwitchClauseExpressionWithBody) {
-        if (!case.body.isUnconditionalReturn()) {
-          return false
+  fun check(statement: UExpression?): Boolean =
+    @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
+    when (statement) {
+      is UBlockExpression -> check(statement.expressions.lastOrNull())
+      is UExpressionList -> check(statement.expressions.lastOrNull())
+      // (Kotlin when statements will sometimes be represented using yields in the UAST
+      // representation)
+      is UYieldExpression -> check(statement.expression)
+      is UParenthesizedExpression -> check(statement.expression)
+      is UIfExpression -> check(statement.thenExpression) && check(statement.elseExpression)
+      is USwitchExpression ->
+        statement.body.expressions.all { case ->
+          case !is USwitchClauseExpressionWithBody || check(case.body)
         }
-      }
+      is UQualifiedReferenceExpression -> check(statement.findSelector() as? UExpression)
+      is UReturnExpression,
+      is UThrowExpression -> true
+      is UCallExpression -> callNeverReturns(statement)
+      else -> false
     }
-    return true
-  } else if (statement is UQualifiedReferenceExpression) {
-    val selector = statement.findSelector()
-    if (selector is UExpression) {
-      return selector.isUnconditionalReturn()
-    }
-  }
 
-  if (statement is UReturnExpression || statement is UThrowExpression) {
-    return true
-  } else if (statement is UCallExpression && callNeverReturns(statement)) {
-    return true
-  }
-
-  return false
+  return check(this)
 }
 
 /**
