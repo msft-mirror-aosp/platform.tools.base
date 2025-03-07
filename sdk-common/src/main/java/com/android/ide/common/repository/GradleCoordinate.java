@@ -51,6 +51,7 @@ import java.util.regex.Pattern;
  * <p>This class does not directly implement {@link Comparable}; instead, you should use one of the
  * specific {@link Comparator} constants based on what type of ordering you need.
  */
+@Deprecated
 public final class GradleCoordinate {
     private static final String NONE = "NONE";
 
@@ -58,6 +59,7 @@ public final class GradleCoordinate {
      * List taken from <a
      * href="http://maven.apache.org/pom.html#Maven_Coordinates">http://maven.apache.org/pom.html#Maven_Coordinates</a>
      */
+    @Deprecated
     public enum ArtifactType {
         POM("pom"),
         JAR("jar"),
@@ -76,6 +78,7 @@ public final class GradleCoordinate {
         }
 
         @Nullable
+        @Deprecated
         public static ArtifactType getArtifactType(@Nullable String name) {
             if (name != null) {
                 for (ArtifactType type : ArtifactType.values()) {
@@ -93,18 +96,20 @@ public final class GradleCoordinate {
         }
     }
 
-    public static final String PREVIEW_ID = "rc";
+    @Deprecated public static final String PREVIEW_ID = "rc";
 
     /**
      * A single component of a revision number: either a number, a string or a list of components
      * separated by dashes.
      */
+    @Deprecated
     public abstract static class RevisionComponent implements Comparable<RevisionComponent> {
         public abstract int asInteger();
 
         public abstract boolean isPreview();
     }
 
+    @Deprecated
     public static class NumberComponent extends RevisionComponent {
         private final int mNumber;
 
@@ -156,6 +161,7 @@ public final class GradleCoordinate {
      * Like NumberComponent, but used for numeric strings that have leading zeroes which we must
      * preserve
      */
+    @Deprecated
     public static class PaddedNumberComponent extends NumberComponent {
         private final String mString;
 
@@ -181,6 +187,7 @@ public final class GradleCoordinate {
         }
     }
 
+    @Deprecated
     public static class StringComponent extends RevisionComponent {
         private final String mString;
 
@@ -231,6 +238,7 @@ public final class GradleCoordinate {
         }
     }
 
+    @Deprecated
     private static class PlusComponent extends RevisionComponent {
         @Override
         public String toString() {
@@ -255,6 +263,7 @@ public final class GradleCoordinate {
     }
 
     /** A list of components separated by dashes. */
+    @Deprecated
     public static class ListComponent extends RevisionComponent {
         private final List<RevisionComponent> mItems = new ArrayList<>();
         private boolean mClosed = false;
@@ -316,8 +325,8 @@ public final class GradleCoordinate {
         }
     }
 
-    public static final PlusComponent PLUS_REV = new PlusComponent();
-    public static final int PLUS_REV_VALUE = -1;
+    @Deprecated public static final PlusComponent PLUS_REV = new PlusComponent();
+    @Deprecated public static final int PLUS_REV_VALUE = -1;
 
     private final String mGroupId;
 
@@ -331,6 +340,7 @@ public final class GradleCoordinate {
             Pattern.compile("([\\w\\d\\.-]+):([\\w\\d\\.-]+):([^:@]+)(@[\\w-]+)?");
 
     /** Constructor */
+    @Deprecated
     public GradleCoordinate(
             @NonNull String groupId,
             @NonNull String artifactId,
@@ -338,17 +348,20 @@ public final class GradleCoordinate {
         this(groupId, artifactId, Arrays.asList(revisions), null);
     }
 
+    @Deprecated
     public GradleCoordinate(
             @NonNull String groupId, @NonNull String artifactId, @NonNull String revision) {
         this(groupId, artifactId, parseRevisionNumber(revision), null);
     }
 
     /** Constructor */
+    @Deprecated
     public GradleCoordinate(
             @NonNull String groupId, @NonNull String artifactId, @NonNull int... revisions) {
         this(groupId, artifactId, createComponents(revisions), null);
     }
 
+    @Deprecated
     private static List<RevisionComponent> createComponents(int[] revisions) {
         List<RevisionComponent> result = new ArrayList<>(revisions.length);
         for (int revision : revisions) {
@@ -362,6 +375,7 @@ public final class GradleCoordinate {
     }
 
     /** Constructor */
+    @Deprecated
     public GradleCoordinate(
             @NonNull String groupId,
             @NonNull String artifactId,
@@ -382,6 +396,7 @@ public final class GradleCoordinate {
      * @return a coordinate object or null if the given string was malformed.
      */
     @Nullable
+    @Deprecated
     public static GradleCoordinate parseCoordinateString(@NonNull String coordinateString) {
         Matcher matcher = MAVEN_PATTERN.matcher(coordinateString);
         if (!matcher.matches()) {
@@ -419,6 +434,7 @@ public final class GradleCoordinate {
     }
 
     @NonNull
+    @Deprecated
     public static List<RevisionComponent> parseRevisionNumber(@NonNull String revision) {
         List<RevisionComponent> components = new ArrayList<>();
         StringBuilder buffer = new StringBuilder();
@@ -503,11 +519,13 @@ public final class GradleCoordinate {
     }
 
     @Nullable
+    @Deprecated
     public ArtifactType getArtifactType() {
         return mArtifactType;
     }
 
     @Nullable
+    @Deprecated
     public String getId() {
         if (mGroupId == null || mArtifactId == null) {
             return null;
@@ -517,15 +535,18 @@ public final class GradleCoordinate {
     }
 
     @Nullable
+    @Deprecated
     public ArtifactType getType() {
         return mArtifactType;
     }
 
+    @Deprecated
     public boolean acceptsGreaterRevisions() {
         return !mRevisions.isEmpty() && mRevisions.get(mRevisions.size() - 1) == PLUS_REV;
     }
 
     @NonNull
+    @Deprecated
     public String getRevision() {
         StringBuilder revision = new StringBuilder();
         for (RevisionComponent component : mRevisions) {
@@ -625,6 +646,7 @@ public final class GradleCoordinate {
         }
     }
 
+    @Deprecated
     public boolean isPreview() {
         return !mRevisions.isEmpty() && mRevisions.get(mRevisions.size() - 1).isPreview();
     }
@@ -633,6 +655,7 @@ public final class GradleCoordinate {
      * Returns the major version (X in X.2.3), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
      * if it is not available
      */
+    @Deprecated
     public int getMajorVersion() {
         return mRevisions.isEmpty() ? Integer.MIN_VALUE : mRevisions.get(0).asInteger();
     }
@@ -641,6 +664,7 @@ public final class GradleCoordinate {
      * Returns the minor version (X in 1.X.3), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
      * if it is not available
      */
+    @Deprecated
     public int getMinorVersion() {
         return mRevisions.size() < 2 ? Integer.MIN_VALUE : mRevisions.get(1).asInteger();
     }
@@ -649,6 +673,7 @@ public final class GradleCoordinate {
      * Returns the major version (X in 1.2.X), which can be {@link #PLUS_REV}, or Integer.MIN_VALUE
      * if it is not available
      */
+    @Deprecated
     public int getMicroVersion() {
         return mRevisions.size() < 3 ? Integer.MIN_VALUE : mRevisions.get(2).asInteger();
     }
@@ -660,6 +685,7 @@ public final class GradleCoordinate {
      * @return true iff the other group and artifact match the group and artifact of this
      *     coordinate.
      */
+    @Deprecated
     public boolean isSameArtifact(@NonNull GradleCoordinate o) {
         return o.mGroupId.equals(mGroupId) && o.mArtifactId.equals(mArtifactId);
     }
@@ -737,6 +763,7 @@ public final class GradleCoordinate {
      * number in the same place. This is typically useful when trying to for example order
      * coordinates by "most specific".
      */
+    @Deprecated
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_LOWER =
             new GradleCoordinateComparator(-1);
 
@@ -746,6 +773,7 @@ public final class GradleCoordinate {
      * version 0.7.3, comparing it with 0.7.+ would consider 0.7.+ higher and therefore satisfying
      * the version requirement.
      */
+    @Deprecated
     public static final Comparator<GradleCoordinate> COMPARE_PLUS_HIGHER =
             new GradleCoordinateComparator(1);
 
