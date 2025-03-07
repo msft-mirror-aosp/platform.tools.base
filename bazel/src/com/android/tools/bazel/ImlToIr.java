@@ -149,6 +149,7 @@ public class ImlToIr {
                 }
             }
 
+            boolean hasTestDependencies = false;
             for (JpsDependencyElement dependency : jpsModule.getDependenciesList().getDependencies()) {
                 JpsJavaDependencyExtension extension = JpsJavaExtensionService.getInstance()
                         .getDependencyExtension(dependency);
@@ -165,6 +166,28 @@ public class ImlToIr {
                 else if (isRuntime) scope = IrModule.Scope.RUNTIME;
                 else if (isProvided) scope = IrModule.Scope.PROVIDED;
                 else scope = IrModule.Scope.COMPILE;
+
+                boolean isDependency = dependency instanceof JpsLibraryDependency
+                        || dependency instanceof JpsModuleDependency
+                        || dependency instanceof JpsSdkDependency;
+
+                if (isDependency) {
+                    if (scope != IrModule.Scope.TEST) {
+                        if (hasTestDependencies) {
+                            File base
+                                    = JpsModelSerializationDataService.getBaseDirectory(jpsModule);
+                            Path file = base.toPath().resolve(jpsModule.getName() + ".iml");
+                            System.err.println("\nERROR: " + file + "\n"
+                                    + "The module \"" + jpsModule.getName() + "\" "
+                                    + "has out of order test dependencies.\n"
+                                    + "Please move all test dependencies to the end.\n"
+                                    + "For more information see go/iml_to_build");
+                            System.exit(1);
+                        }
+                    } else {
+                        hasTestDependencies = true;
+                    }
+                }
 
                 if (dependency instanceof JpsLibraryDependency) {
                     // A dependency to a jar file
