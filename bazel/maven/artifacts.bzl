@@ -506,6 +506,7 @@ DATA = [
     "androidx.slice:slice-builders:1.0.0",
     "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
+    "androidx.sqlite:sqlite-bundled-jvm:2.5.0-beta01",  # Database Inspector
     "androidx.startup:startup-runtime:1.1.1",
     "androidx.test:core:1.3.0",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test:core:1.4.0-alpha06",
