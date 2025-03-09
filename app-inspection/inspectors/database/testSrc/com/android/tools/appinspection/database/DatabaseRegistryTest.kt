@@ -25,6 +25,7 @@ import com.android.tools.appinspection.database.DatabaseRegistry.OnDatabaseClose
 import com.android.tools.appinspection.database.DatabaseRegistry.OnDatabaseOpenedCallback
 import com.android.tools.appinspection.database.DatabaseRegistryTest.DbEvent.DbClosedEvent
 import com.android.tools.appinspection.database.DatabaseRegistryTest.DbEvent.DbOpenedEvent
+import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
 import org.junit.Rule
@@ -266,22 +267,22 @@ class DatabaseRegistryTest {
 
     override fun onUpgrade(db: SQLiteDatabase, fromVersion: Int, toVersion: Int) {}
 
-    fun getReadOnlyDb(autoClose: Boolean = true): AndroidDatabase {
+    fun getReadOnlyDb(autoClose: Boolean = true): FrameworkDatabase {
       val db = readableDatabase
       if (autoClose) {
         closeablesRule.register(db)
       }
       val mock = spy(db)
       whenever(mock.isReadOnly).thenReturn(true)
-      return AndroidDatabase(mock)
+      return FrameworkDatabase(mock)
     }
 
-    fun getReadWriteDb(autoClose: Boolean = true): AndroidDatabase {
+    fun getReadWriteDb(autoClose: Boolean = true): FrameworkDatabase {
       val db = writableDatabase
       if (autoClose) {
         closeablesRule.register(db)
       }
-      return AndroidDatabase(db)
+      return FrameworkDatabase(db)
     }
 
     fun createAndClose() {

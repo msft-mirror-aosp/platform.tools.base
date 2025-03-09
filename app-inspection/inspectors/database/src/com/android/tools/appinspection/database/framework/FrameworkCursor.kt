@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.tools.appinspection.database
+package com.android.tools.appinspection.database.framework
+
+import com.android.tools.appinspection.database.Cursor
 
 /** A [Cursor] that wraps the Android Framework [android.database.Cursor] */
-class AndroidCursor(private val cursor: android.database.Cursor) : Cursor {
+class FrameworkCursor(private val cursor: android.database.Cursor) : Cursor {
   override fun moveToNext() = cursor.moveToNext()
 
   override fun getString(column: Int): String? = cursor.getString(column)

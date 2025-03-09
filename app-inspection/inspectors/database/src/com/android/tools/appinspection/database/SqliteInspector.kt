@@ -80,6 +80,7 @@ import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.On
 import com.android.tools.appinspection.database.SqliteInspectionExecutors.submit
 import com.android.tools.appinspection.database.androidx.AndroidXDatabase
 import com.android.tools.appinspection.database.androidx.SQLiteConnectionWrapper
+import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
 import java.io.File
 import java.io.PrintWriter
@@ -264,7 +265,7 @@ internal class SqliteInspector(
 
     // Check for database instances in memory
     for (instance in environment.artTooling().findInstances(SQLiteDatabase::class.java)) {
-      val database = AndroidDatabase(instance)
+      val database = FrameworkDatabase(instance)
       /* the race condition here will be handled by mDatabaseRegistry */
       if (instance.isOpen) {
         onDatabaseOpened(database)
@@ -403,7 +404,7 @@ internal class SqliteInspector(
     val exitHook =
       ExitHook<SQLiteDatabase> { database ->
         try {
-          onDatabaseOpened(AndroidDatabase(database))
+          onDatabaseOpened(FrameworkDatabase(database))
         } catch (exception: Throwable) {
           connection.sendEvent(
             createErrorOccurredEvent(
@@ -475,7 +476,7 @@ internal class SqliteInspector(
       _,
       _ ->
       if (thisObject is SQLiteDatabase) {
-        onDatabaseClosed(AndroidDatabase(thisObject))
+        onDatabaseClosed(FrameworkDatabase(thisObject))
       }
     }
   }
@@ -485,7 +486,7 @@ internal class SqliteInspector(
       thisObject,
       _ ->
       if (thisObject is SQLiteDatabase) {
-        databaseRegistry.notifyReleaseReference(AndroidDatabase(thisObject))
+        databaseRegistry.notifyReleaseReference(FrameworkDatabase(thisObject))
       }
     }
   }

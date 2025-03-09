@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.appinspection.database
+package com.android.tools.appinspection.database.framework
 
 import android.database.sqlite.SQLiteCursor
 import android.database.sqlite.SQLiteDatabase
 import android.os.CancellationSignal
+import com.android.tools.appinspection.database.AbstractDatabase
+import com.android.tools.appinspection.database.Cursor
 
 /** A [Database] wrapping the Android Framework [SQLiteDatabase] */
-internal class AndroidDatabase(database: SQLiteDatabase) :
+internal class FrameworkDatabase(database: SQLiteDatabase) :
   AbstractDatabase<SQLiteDatabase>(database, database.path) {
   override val isReadOnly = delegate.isReadOnly
 
@@ -62,7 +64,7 @@ internal class AndroidDatabase(database: SQLiteDatabase) :
         }
         SQLiteCursor(driver, editTable, query)
       }
-    return AndroidCursor(
+    return FrameworkCursor(
       delegate.rawQueryWithFactory(cursorFactory, sql, null, null, cancellationSignal)
     )
   }

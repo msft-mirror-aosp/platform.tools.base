@@ -20,6 +20,7 @@ import android.database.sqlite.SQLiteDatabase.OPEN_READWRITE
 import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
+import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val SCORE_READ_ONLY = 0
@@ -155,7 +156,7 @@ internal class DatabaseRegistry(
         // We just need to open the database. Our hook will call notifyDatabaseOpened()
         isForceOpenInProgress = true
         try {
-          val db = AndroidDatabase(SQLiteDatabase.openDatabase(path, null, OPEN_READWRITE))
+          val db = FrameworkDatabase(SQLiteDatabase.openDatabase(path, null, OPEN_READWRITE))
           if (testMode) {
             // During tests, ART Tooling hooks are not activated so this, so we need to trigger it
             // manually.
