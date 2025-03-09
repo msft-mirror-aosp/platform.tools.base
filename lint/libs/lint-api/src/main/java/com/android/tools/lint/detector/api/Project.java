@@ -1698,4 +1698,9 @@ public class Project {
     public DependencyKind getDependencyKind(@NonNull Project lib) {
         return dependencyKind.getOrDefault(lib, DependencyKind.Regular);
     }
+
+    public static boolean isDesignatedRootProject(LintClient client, Project project) {
+        File rootDir = client.getRootDir();
+        return rootDir != null && project.isDesignatedTomlModule(rootDir);
+    }
 }

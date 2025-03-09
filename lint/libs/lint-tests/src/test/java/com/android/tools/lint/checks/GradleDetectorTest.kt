@@ -77,6 +77,7 @@ import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -8798,6 +8799,79 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
     assertEquals(2, networkHitCount)
     tempFolder.delete()
+  }
+
+  fun testIncludedFiles() {
+    // Make sure we handle including files -- from kts to groovy and back.
+    lint()
+      .files(
+        gradle(
+            "../common.gradle",
+            """
+            android {
+                compileSdk 30 // ERROR 1
+            }
+            apply from: "common2.gradle"
+            apply from: "common3.gradle.kts"
+            """,
+          )
+          .indented(),
+        gradle(
+            "../common2.gradle",
+            """
+            android {
+                compileSdk 32 // ERROR 2
+            }
+            """,
+          )
+          .indented(),
+        kts(
+            "../common3.gradle.kts",
+            """
+            android {
+                compileSdk = 33 // ERROR 3
+            }
+            """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "../common.gradle")
+            apply(from = "../common3.gradle.kts")
+            apply(from = "../common3.gradle.kts")
+            """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        if (useFirUast()) {
+          """
+          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+              compileSdk 30 // ERROR 1
+              ~~~~~~~~~~~~~
+          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: 35 [GradleDependency]
+              compileSdk 32 // ERROR 2
+              ~~~~~~~~~~~~~
+          0 errors, 2 warnings
+          """
+        } else {
+          """
+          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+              compileSdk 30 // ERROR 1
+              ~~~~~~~~~~~~~
+          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: 35 [GradleDependency]
+              compileSdk 32 // ERROR 2
+              ~~~~~~~~~~~~~
+          ../common3.gradle.kts:2: Warning: A newer version of compileSdkVersion than 33 is available: 35 [GradleDependency]
+              compileSdk = 33 // ERROR 3
+              ~~~~~~~~~~~~~~~
+          0 errors, 3 warnings
+          """
+        }
+      )
   }
 
   // -------------------------------------------------------------------------------------------

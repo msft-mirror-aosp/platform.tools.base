@@ -16,10 +16,16 @@
 
 package com.android.tools.lint.client.api
 
+import com.android.SdkConstants.DOT_GRADLE
+import com.android.SdkConstants.DOT_GRADLE_KTS
+import com.android.SdkConstants.DOT_KTS
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.GradleContext
 import com.android.tools.lint.detector.api.GradleScanner
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.Project
+import java.io.File
 
 /**
  * Visitor which can traverse a Gradle file and invoke the various methods on a [GradleScanner].
@@ -55,4 +61,47 @@ open class GradleVisitor {
   open fun getStartOffset(context: GradleContext, cookie: Any): Int = -1
 
   open fun createLocation(context: GradleContext, cookie: Any): Location = error("Not supported")
+
+  /**
+   * During processing of this script we may discover references to other build scripts that are
+   * included; the lint infrastructure will call this method after processing this script to also
+   * process these other files (unless you're in isolated mode, e.g. directly editing the file in
+   * the editor)
+   */
+  open fun getIncludedScripts(): List<File> = includedScripts ?: emptyList()
+
+  private var includedScripts: MutableList<File>? = null
+
+  /** Invoked when we come across an `apply from $relative` build script reference. */
+  protected fun addIncludedScript(context: Context, relative: String?) {
+    relative ?: return
+    if (relative.endsWith(DOT_GRADLE) || relative.endsWith(DOT_GRADLE_KTS)) {
+      val parentFile = context.file.parentFile
+      if (parentFile != null) {
+        val includedFile = File(parentFile, relative)
+        if (
+          relative.startsWith("..") &&
+            !Project.isDesignatedRootProject(context.client, context.project)
+        ) {
+          // We'll encounter root files from all the including projects, but we
+          // only want to report issues here once; pick a designated project
+          // to report them from. This project is not it.
+          return
+        }
+        if (
+          relative.endsWith(DOT_KTS) &&
+            System.getProperty("lint.use.fir.uast", "false").toBoolean() &&
+            !context.project.dir.path.startsWith(includedFile.path)
+        ) {
+          // We currently can't access kts files outside the project root from the
+          // CLI setup when using K2
+          return
+        }
+        if (includedFile.isFile) {
+          val scripts = includedScripts ?: mutableListOf<File>().also { includedScripts = it }
+          scripts.add(includedFile)
+        }
+      }
+    }
+  }
 }

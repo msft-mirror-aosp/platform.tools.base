@@ -23,6 +23,7 @@ import com.android.SdkConstants.CONSTRUCTOR_NAME
 import com.android.SdkConstants.DOT_CLASS
 import com.android.SdkConstants.DOT_DECLARATIVE
 import com.android.SdkConstants.DOT_GRADLE
+import com.android.SdkConstants.DOT_GRADLE_KTS
 import com.android.SdkConstants.DOT_JAR
 import com.android.SdkConstants.DOT_JAVA
 import com.android.SdkConstants.DOT_KT
@@ -1411,49 +1412,80 @@ class LintDriver(
       if (gradleScanners.isEmpty() && customVisitedGradleScanners.isEmpty()) {
         return
       }
+
+      val visited = mutableSetOf<File>()
+      val queue = ArrayDeque<File>()
+      queue.addAll(files)
+
       val gradleKtsContexts = uastSourceList?.gradleKtsContexts ?: emptyList()
-      for (context in gradleKtsContexts) {
-        client.runReadAction {
-          // Gradle Kotlin Script? Use Java parsing mechanism.
-          //
-          // TODO: Inject Gradle Project as the implicit receiver. Figure out how.
-          //    Possibly related:
-          //
-          // platforms/core-configuration/kotlin-dsl/src/main/kotlin/org/gradle/kotlin/dsl/support/KotlinCompiler.kt
-          //    in the Gradle repo. Also need to pass it in the Gradle build
-          //    classpath rather than the project class path. The below really only
-          //    works for simpler AST checks not relying on real API resolve.
-          val uFile = context.uastParser.parse(context)
-          if (uFile != null) {
-            context.setJavaFile(uFile.sourcePsi) // needed for getLocation
-            context.uastFile = uFile
-            fireEvent(EventType.SCANNING_FILE, context)
 
-            val uastVisitor = UastGradleVisitor(context)
-            val gradleContext =
-              createGradleContext(uastVisitor, project, main, context.file, tomlDocument, context)
-            fireEvent(EventType.SCANNING_FILE, context)
-            for (detector in detectors) {
-              detector.beforeCheckFile(gradleContext)
-            }
-
-            uastVisitor.visitBuildScript(gradleContext, gradleScanners)
-            for (scanner in customVisitedGradleScanners) {
-              scanner.visitBuildScript(gradleContext)
-            }
-            for (detector in detectors) {
-              detector.afterCheckFile(gradleContext)
-            }
-
-            context.setJavaFile(null)
-            context.uastFile = null
-          }
-
-          fileCount++
-        }
+      val fileToKts = gradleKtsContexts.associateBy { it.file }
+      if (fileToKts.isNotEmpty()) {
+        queue.addAll(fileToKts.keys.filter { !files.contains(it) })
       }
-      for (file in files) {
-        if (file.path.endsWith(DOT_GRADLE)) {
+
+      while (queue.isNotEmpty()) {
+        val file = queue.removeFirst()
+        val path = file.path
+        if (path.endsWith(DOT_GRADLE_KTS) || path.endsWith(DOT_DECLARATIVE)) {
+          val context =
+            fileToKts[file]
+              ?: run {
+                val newContext = JavaContext(this, project, main, file)
+                val parser = uastSourceList?.parser ?: client.getUastParser(project)
+                // Dynamically discovered KTS file (referenced from other Groovy or KTS script)
+                newContext.uastParser = parser
+                parser.prepare(listOf(newContext))
+                newContext
+              }
+          client.runReadAction {
+            visited.add(context.file)
+
+            // Gradle Kotlin Script? Use Java parsing mechanism.
+            //
+            // TODO: Inject Gradle Project as the implicit receiver. Figure out how.
+            //    Possibly related:
+            //
+            // platforms/core-configuration/kotlin-dsl/src/main/kotlin/org/gradle/kotlin/dsl/support/KotlinCompiler.kt
+            //    in the Gradle repo. Also need to pass it in the Gradle build
+            //    classpath rather than the project class path. The below really only
+            //    works for simpler AST checks not relying on real API resolve.
+            val uFile = context.uastParser.parse(context)
+            if (uFile != null) {
+              context.setJavaFile(uFile.sourcePsi) // needed for getLocation
+              context.uastFile = uFile
+              fireEvent(EventType.SCANNING_FILE, context)
+
+              val uastVisitor = UastGradleVisitor(context)
+              val gradleContext =
+                createGradleContext(uastVisitor, project, main, context.file, tomlDocument, context)
+              fireEvent(EventType.SCANNING_FILE, context)
+              for (detector in detectors) {
+                detector.beforeCheckFile(gradleContext)
+              }
+
+              uastVisitor.visitBuildScript(gradleContext, gradleScanners)
+              for (scanner in customVisitedGradleScanners) {
+                scanner.visitBuildScript(gradleContext)
+              }
+              for (detector in detectors) {
+                detector.afterCheckFile(gradleContext)
+              }
+
+              for (file in uastVisitor.getIncludedScripts()) {
+                if (!visited.contains(file) && !queue.contains(file)) {
+                  queue.add(file)
+                }
+              }
+
+              context.setJavaFile(null)
+              context.uastFile = null
+            }
+
+            fileCount++
+          }
+        } else if (path.endsWith(DOT_GRADLE)) {
+          visited.add(file)
           val fileAnalyzed =
             client.runReadAction<Boolean> {
               val gradleVisitor =
@@ -1474,6 +1506,11 @@ class LintDriver(
               }
               for (detector in detectors) {
                 detector.afterCheckFile(context)
+              }
+              for (file in gradleVisitor.getIncludedScripts()) {
+                if (!visited.contains(file) && !queue.contains(file)) {
+                  queue.add(file)
+                }
               }
               fileCount++
               return@runReadAction (true)

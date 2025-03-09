@@ -160,6 +160,17 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
           }
         }
       }
+      if (
+        propertyName == "apply" &&
+          node.receiver == null &&
+          parentName == null &&
+          parentParentName == null &&
+          valueArguments.isNotEmpty() &&
+          !context.driver.isIsolated()
+      ) {
+        val relative = valueArguments.first().evaluate()?.toString()
+        addIncludedScript(context, relative)
+      }
     }
   }
 

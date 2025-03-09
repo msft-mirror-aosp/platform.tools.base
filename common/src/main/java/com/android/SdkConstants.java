@@ -2169,6 +2169,7 @@ public final class SdkConstants {
     public static final String DOT_SRCJAR = ".srcjar";
     public static final String DOT_KLIB = ".klib";
     public static final String DOT_GRADLE = ".gradle";
+    public static final String DOT_GRADLE_KTS = ".gradle.kts";
     public static final String DOT_DECLARATIVE = ".dcl";
     public static final String DOT_PROPERTIES = ".properties";
     public static final String DOT_JSON = ".json";

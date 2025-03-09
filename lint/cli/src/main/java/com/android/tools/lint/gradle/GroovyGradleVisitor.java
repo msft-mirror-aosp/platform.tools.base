@@ -27,10 +27,7 @@ import com.android.tools.lint.detector.api.GradleContext;
 import com.android.tools.lint.detector.api.GradleScanner;
 import com.android.tools.lint.detector.api.Location;
 import com.android.utils.Pair;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -45,6 +42,11 @@ import org.codehaus.groovy.ast.expr.NamedArgumentListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of the {@link GradleDetector} using a real Groovy AST, which the Gradle plugin has
@@ -76,7 +78,7 @@ public class GroovyGradleVisitor extends GradleVisitor {
         }
     }
 
-    private static void visitQuietly(
+    private void visitQuietly(
             @NonNull final GradleContext context,
             @NonNull final List<? extends GradleScanner> detectors) {
         CharSequence sequence = context.getContents();
@@ -425,6 +427,14 @@ public class GroovyGradleVisitor extends GradleVisitor {
                                         namedArguments,
                                         unnamedArguments,
                                         call);
+                            }
+
+                            if (methodName.equals("apply")
+                                    && parent == null
+                                    && parentParent == null
+                                    && !context.getDriver().isIsolated()) {
+                                String relative = namedArguments.get("from");
+                                addIncludedScript(context, relative);
                             }
                         }
                     }
