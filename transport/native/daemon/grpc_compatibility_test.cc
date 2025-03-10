@@ -36,7 +36,6 @@ using std::unique_ptr;
 namespace profiler {
 
 const char* const kUnixPrefix = "unix:";
-const char* const kUnixAbstractPrefix = "unix-abstract:";
 
 class GrpcCompatibilityTest : public ::testing::Test {
  public:
@@ -61,15 +60,6 @@ class GrpcCompatibilityTest : public ::testing::Test {
   void SetUpClient(const string& target) {
     std::shared_ptr<grpc::ChannelInterface> channel =
         grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
-    stub_ = proto::AgentService::NewStub(channel);
-  }
-
-  void SetUpClientWithFd(int fd) {
-    // Create channel args that match those used in transport/native/agent/agent.cc
-    grpc::ChannelArguments channel_args;
-    channel_args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000);
-    std::shared_ptr<grpc::ChannelInterface> channel =
-        grpc::CreateCustomInsecureChannelFromFd("transport-fd-grpc", fd, channel_args);
     stub_ = proto::AgentService::NewStub(channel);
   }
 
@@ -114,13 +104,20 @@ TEST_F(GrpcCompatibilityTest, GrpcWorksForRegularDomainSocket) {
   VerifyConnectionIsOk();
 }
 
+// This test depends on gRPC customizations (commit
+// a5a763290cf4c4510bba6a290eee964f5f6465bb) in
+//   src/core/lib/iomgr/unix_sockets_posix.cc
+//   src/core/lib/iomgr/tcp_client_posix.cc
 TEST_F(GrpcCompatibilityTest, GrpcWorksForAbstractDomainSocket) {
-  string abstract_domain_socket{"AbstractSocket"};
-  SetUpServer(kUnixAbstractPrefix + abstract_domain_socket);
-  SetUpClient(kUnixAbstractPrefix + abstract_domain_socket);
+  string abstract_domain_socket{"@AbstractSocket"};
+  SetUpServer(kUnixPrefix + abstract_domain_socket);
+  SetUpClient(kUnixPrefix + abstract_domain_socket);
   VerifyConnectionIsOk();
 }
 
+// This test depends on gRPC customizations (commit
+// a5a763290cf4c4510bba6a290eee964f5f6465bb) in
+//   src/core/lib/iomgr/socket_utils_common_posix.cc
 TEST_F(GrpcCompatibilityTest, GrpcWorksForConnectedFd) {
   string regular_domain_socket{"/tmp/regular_socket"};
   SetUpServer(kUnixPrefix + regular_domain_socket);
@@ -140,14 +137,20 @@ TEST_F(GrpcCompatibilityTest, GrpcWorksForConnectedFd) {
   }
 
   // Pass the connected fd to the client.
-  SetUpClientWithFd(fd);
+  std::ostringstream oss;
+  oss << kUnixPrefix << "&" << fd;
+  SetUpClient(oss.str());
   VerifyConnectionIsOk();
 }
 
+// This test is most similar to the setup of transport pipeline.
+// This test depends on gRPC customizations (commit
+// a5a763290cf4c4510bba6a290eee964f5f6465bb) in
+//   src/core/lib/iomgr/socket_utils_common_posix.cc
+//   src/core/lib/iomgr/unix_sockets_posix.cc
 TEST_F(GrpcCompatibilityTest, GrpcWorksForAbstractSocketAndConnectedFd) {
-  string abstract_domain_socket{"AbstractSocket"};
-
-  SetUpServer(kUnixAbstractPrefix + abstract_domain_socket);
+  string abstract_domain_socket{"@AbstractSocket"};
+  SetUpServer(kUnixPrefix + abstract_domain_socket);
 
   // Open a socket connected to the server.
   int fd;  // The client socket that's connected to daemon.
@@ -157,14 +160,16 @@ TEST_F(GrpcCompatibilityTest, GrpcWorksForAbstractSocketAndConnectedFd) {
   }
   struct sockaddr_un addr_un;
   socklen_t addr_len;
-  SetUnixSocketAddr("@AbstractSocket", &addr_un, &addr_len);
+  SetUnixSocketAddr(abstract_domain_socket.c_str(), &addr_un, &addr_len);
   if (connect(fd, (struct sockaddr*)&addr_un, addr_len) == -1) {
     perror("connect error");
     ASSERT_TRUE(false);
   }
 
   // Pass the connected fd to the client.
-  SetUpClientWithFd(fd);
+  std::ostringstream oss;
+  oss << kUnixPrefix << "&" << fd;
+  SetUpClient(oss.str());
   VerifyConnectionIsOk();
 }
 

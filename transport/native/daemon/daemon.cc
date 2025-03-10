@@ -283,10 +283,6 @@ bool Daemon::TryAttachAppAgent(int32_t app_pid, const string& app_name,
     } else if (fork_pid == 0) {
       // child process
       string socket_name;
-      if (config_->GetConfig().common().socket_type() ==
-          profiler::proto::CommonConfig::ABSTRACT_SOCKET) {
-        socket_name.append("@");
-      }
       socket_name.append(config_->GetConfig().common().service_socket_name());
       RunConnector(app_pid, package_name, user, socket_name);
       // RunConnector calls execl() at the end. It returns only if an error

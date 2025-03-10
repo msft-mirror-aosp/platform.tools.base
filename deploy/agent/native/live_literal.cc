@@ -16,7 +16,6 @@
  */
 #include "tools/base/deploy/agent/native/live_literal.h"
 
-#include <unordered_set>
 #include "tools/base/deploy/agent/native/instrumenter.h"
 #include "tools/base/deploy/agent/native/jni/jni_class.h"
 #include "tools/base/deploy/agent/native/jni/jni_util.h"

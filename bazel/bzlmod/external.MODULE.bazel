@@ -22,6 +22,12 @@ local_repository(
 
 # TODO(b/340640065): Replace with bazel_dep.
 local_repository(
+    name = "grpc_repo",
+    path = "external/grpc-grpc",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
     name = "gflags_repo",
     path = "external/gflags",
 )
@@ -30,6 +36,12 @@ local_repository(
 local_repository(
     name = "io_bazel_rules_kotlin",
     path = "tools/external/bazelbuild-rules-kotlin",
+)
+
+# TODO(b/340640065): Replace with bazel_dep.
+local_repository(
+    name = "absl-py",
+    path = "external/python/absl-py",
 )
 
 new_local_repository(
@@ -48,6 +60,18 @@ new_local_repository(
     name = "slicer",
     build_file = "//tools/base/profiler:native/external/slicer.BUILD",
     path = "external/dexter/slicer",
+)
+
+new_local_repository(
+    name = "zlib",
+    build_file = "//tools/base/bazel:external/zlib.BUILD",
+    path = "external/zlib",
+)
+
+local_archive(
+    name = "com_google_absl",
+    archive = "//prebuilts/tools/common/external-src-archives/google_absl/LTS_2021_11_02:20211102.0.zip",
+    strip_prefix = "abseil-cpp-20211102.0",
 )
 
 local_archive(

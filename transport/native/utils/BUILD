@@ -107,6 +107,9 @@ cc_library(
         "trie.h",
         "uid_fetcher.h",
     ],
+    copts = [
+        "-std=c++11",
+    ],
     include_prefix = "utils",
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],

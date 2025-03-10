@@ -41,6 +41,14 @@ _git = [
 
 # Bazel repository mapped to archive files, containing the sources.
 _archives = [
+    {
+        # Offical proto rules relies on a hardcoded "@com_google_protobuf", so we cannot
+        # name this as protobuf-3.9.0 or similar.
+        "name": "com_google_protobuf",
+        "archive": "//prebuilts/tools/common/external-src-archives/protobuf/3.9.0:protobuf-3.9.0.tar.gz",
+        "strip_prefix": "protobuf-3.9.0",
+        "build_file" : "//tools/base/bazel:protobuf-3.9-patched.BUILD"
+    },
     # Perfetto Dependencies:
     # These are external dependencies to build Perfetto (from external/perfetto)
     {
@@ -75,6 +83,17 @@ _archives = [
     },
     # End Perfetto Dependencies.
 ]
+
+# Needed for grpc.
+# TODO(b/340640065): These binds currently use canonical repository names, which is not recommended.
+# Binds should be removed entirely.
+_binds = {
+    "protobuf_clib": "@com_google_protobuf//:protoc_lib",
+    "nanopb": "@@_main~_repo_rules~nanopb_repo//:nanopb",
+    "madler_zlib": "@@_main~_repo_rules~zlib//:zlib",
+    "protobuf_headers": "@com_google_protobuf//:protobuf_headers",
+    "protoc": "@com_google_protobuf//:protoc",
+}
 
 def _local_archive_impl(ctx):
     """Implementation of local_archive rule."""
@@ -144,6 +163,7 @@ vendor_repository = repository_rule(
 def setup_external_repositories(prefix = ""):
     _setup_git_repos(_git, prefix)
     _setup_archive_repos(prefix)
+    _setup_binds()
 
 def _setup_git_repos(repos, prefix = ""):
     for _repo in repos:
@@ -161,3 +181,7 @@ def _setup_archive_repos(prefix = ""):
     for _repo in _archives:
         repo = dict(_repo)
         local_archive(**repo)
+
+def _setup_binds():
+    for name, actual in _binds.items():
+        native.bind(name = name, actual = actual)
