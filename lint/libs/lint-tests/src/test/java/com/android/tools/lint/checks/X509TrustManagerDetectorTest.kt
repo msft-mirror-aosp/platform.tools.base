@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 class X509TrustManagerDetectorTest : AbstractCheckTest() {
@@ -234,19 +235,19 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
           "libs/library.jar",
           java(
               """
-            package test.pkg;
+              package test.pkg;
 
-            import java.util.List;
+              import java.util.List;
 
-            import javax.net.ssl.X509TrustManager;
-            import javax.security.cert.CertificateException;
-            import javax.security.cert.X509Certificate;
+              import javax.net.ssl.X509TrustManager;
+              import javax.security.cert.CertificateException;
+              import javax.security.cert.X509Certificate;
 
-            public interface ExtendedX509TrustManager extends X509TrustManager {
-                List<X509Certificate> checkServerTrusted(X509Certificate[] chain, String authType, String host)
-                        throws CertificateException;
-            }
-            """
+              public interface ExtendedX509TrustManager extends X509TrustManager {
+                  List<X509Certificate> checkServerTrusted(X509Certificate[] chain, String authType, String host)
+                          throws CertificateException;
+              }
+              """
             )
             .indented(),
           0x2a622729,
@@ -263,6 +264,100 @@ class X509TrustManagerDetectorTest : AbstractCheckTest() {
         )
       )
       .issues(X509TrustManagerDetector.TRUSTS_ALL)
+      .run()
+      .expectClean()
+  }
+
+  @Suppress("RedundantThrows")
+  fun testBytecodeSuppress() {
+    lint()
+      .files(
+        bytecode(
+          "libs/library.jar",
+          java(
+              """
+              package test.pkg;
+
+              import javax.net.ssl.X509TrustManager;
+              import java.security.cert.CertificateException;
+              import java.security.cert.X509Certificate;
+
+              public class MyTestX509TrustManager implements X509TrustManager {
+
+                  @SuppressLint("TrustAllX509TrustManager")
+                  @Override
+                  public void checkClientTrusted(X509Certificate[] chain, String authType)
+                      throws CertificateException {}
+
+                  @SuppressLint("TrustAllX509TrustManager")
+                  @Override
+                  public void checkServerTrusted(X509Certificate[] chain, String authType)
+                      throws CertificateException {}
+
+                  @Override
+                  public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                  }
+              }
+              """
+            )
+            .indented(),
+          0x6b722ea6,
+          """
+          test/pkg/MyTestX509TrustManager.class:
+          H4sIAAAAAAAA/41STW8TMRB9k6+FEPqRAi2NAPXUhAPLhQMEIUURSJVSkEhU
+          IfXkOMPidutEtjdq/1U5VeqBH8CPQswuoaBQqRw882w9v5nn8fcfl98A9NCq
+          o4RyhEoDVdQIa0dqruJU2ST+MD5iHQi118aa8IZQbncOItwiPAnsQzw7TuL9
+          s5HATy+evxy5zId9ZVXCLkKd8DhXOo0th9j7NF7mECr96YQJqwNj+X12MmY3
+          UuNUTpr6C+vjfmrYhuIKTwiv2oeDojfPOnMmnMWaXShk+wLMZ6NV4O7gT//D
+          4IxNup0DQv3tqeZZMFPrI6wTdq9R+kvlik1ofcxsMCe8Z+fGG2mvZ+00qEKK
+          sDm4eolhNps59l7chC6hOldpJl62CgO9NP3X/y+bQ3Zzcf7bZjPh0NN5eZ7s
+          eZ+xkzK77c5/mRejw2nmNL8z+Tu2rp/Os1wJO4hk8oTb8g0qkmX6Eu/I7pFk
+          klx9egH6KoDQkFgrDiOJd7GCckF9KKucM5ZpDawudNfQFLQiaEPWvUOQx31B
+          D24WWb9RZBNbi6a3F02X6HxJJeflJUrY/glTTopv9gIAAA==
+          """,
+        ),
+        bytecode(
+          "libs/library.jar",
+          java(
+              """
+              package test.pkg;
+
+              import static java.lang.annotation.ElementType.CONSTRUCTOR;
+              import static java.lang.annotation.ElementType.FIELD;
+              import static java.lang.annotation.ElementType.LOCAL_VARIABLE;
+              import static java.lang.annotation.ElementType.METHOD;
+              import static java.lang.annotation.ElementType.PARAMETER;
+              import static java.lang.annotation.ElementType.TYPE;
+
+              import java.lang.annotation.Retention;
+              import java.lang.annotation.RetentionPolicy;
+              import java.lang.annotation.Target;
+
+              @Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE})
+              @Retention(RetentionPolicy.CLASS)
+              public @interface SuppressLint {
+                  String[] value();
+              }
+              """
+            )
+            .indented(),
+          0xecef59c8,
+          """
+          test/pkg/SuppressLint.class:
+          H4sIAAAAAAAA/4WRQU/CMBTHXxGYgCKoaDwYjQeiF3fx5qnOEUmqI9skMRzM
+          IC9LcXTL1pHw1Tz4AfxQxlcP4oHEQ//9v/bX92/az6/3DwDgcGxBhUFPY6Ht
+          7C22gzLLciwKIZW2oMqgM4+WkZ1EKra96RxntFpncLZejZRKdaRlqmz+axnU
+          llFSIrW+vJqINR3oXKr4lkEzSMt8hgOZENT9G3ttaAYnfqm0XOBYFnKa4Lp3
+          weBUbMwPozxGTc0vNu+7CS5Q6XCVIUHV8GXk0kUHQ1fcM6g/uuGDR6Yx4j6n
+          wvUZtBzvKQj9Zyf0qGoLz+Hidcz9Ib8TdPZ8c46PmmLIUUr/H2SUJnK2IrDm
+          CB4EfQYMtmjU6HsYvb8F2+Qq0PjRJrRoviG3Q4w1gTrCLrSN7BnpGOka2Tdy
+          AIcGQ+jB0Td2Z2BM8wEAAA==
+          """,
+        ),
+      )
+      .issues(X509TrustManagerDetector.TRUSTS_ALL)
+      .skipTestModes(TestMode.PARTIAL)
       .run()
       .expectClean()
   }
