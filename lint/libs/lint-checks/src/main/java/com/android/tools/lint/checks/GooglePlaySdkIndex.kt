@@ -56,7 +56,6 @@ import org.jetbrains.annotations.VisibleForTesting
 abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   NetworkCache(
     GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_URL,
-    GOOGLE_PLAY_SDK_INDEX_KEY,
     cacheDir,
     cacheExpiryHours = TimeUnit.DAYS.toHours(GOOGLE_PLAY_SDK_CACHE_EXPIRY_INTERVAL_DAYS).toInt(),
   ) {

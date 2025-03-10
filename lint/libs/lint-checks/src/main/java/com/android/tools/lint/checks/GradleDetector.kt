@@ -18,6 +18,9 @@ package com.android.tools.lint.checks
 import com.android.SdkConstants
 import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_TARGET_SDK_VERSION
+import com.android.SdkConstants.DOT_KTS
+import com.android.SdkConstants.FN_SETTINGS_GRADLE
+import com.android.SdkConstants.FN_SETTINGS_GRADLE_KTS
 import com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION
 import com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION
 import com.android.ide.common.gradle.Component
@@ -45,6 +48,7 @@ import com.android.tools.lint.client.api.LintTomlValue
 import com.android.tools.lint.client.api.TomlContext
 import com.android.tools.lint.client.api.TomlScanner
 import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Constraint
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -91,6 +95,8 @@ import java.util.Collections
 import java.util.EnumSet
 import java.util.function.Predicate
 import org.jetbrains.annotations.VisibleForTesting
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UCallExpression
 import org.kxml2.io.KXmlParser
 import org.w3c.dom.Attr
@@ -234,7 +240,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
         is TargetSdkCheckResult.NoIssue -> {}
       }
-    } catch (ignore: NumberFormatException) {
+    } catch (_: NumberFormatException) {
       // Ignore: AAPT will enforce this.
     }
   }
@@ -266,7 +272,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         try {
           val numericValue = java.lang.Long.decode(value)
           " (interpreted as $numericValue)"
-        } catch (exception: NumberFormatException) {
+        } catch (_: NumberFormatException) {
           " (and it is not a valid octal number)"
         }
 
@@ -293,15 +299,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         if (version == -1 && isTomlVersionKey(value)) {
           val tomlValue = findCorrespondingTomlKey(context, value)
           if (tomlValue != null) {
-            val version =
+            val tomlVersion =
               tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
-            if (version != -1) {
+            if (tomlVersion != -1) {
               checkTargetSdkVersion(
                 context,
-                version,
+                tomlVersion,
                 tomlValue.getText(),
                 statementCookie,
-                valueCookie,
                 false,
               )
             }
@@ -309,19 +314,19 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         } else if (version < 0) {
           checkIntegerAsString(context, value, statementCookie, valueCookie)
         } else {
-          checkTargetSdkVersion(context, version, value, statementCookie, valueCookie)
+          checkTargetSdkVersion(context, version, value, statementCookie)
         }
       } else if (property == "minSdkVersion" || property == "minSdk") {
         val version = getSdkVersion(value, valueCookie)
         if (version == -1 && isTomlVersionKey(value)) {
           val tomlValue = findCorrespondingTomlKey(context, value)
           if (tomlValue != null) {
-            val version =
+            val tomlVersion =
               tomlValue.getActualValue()?.toString()?.let { getSdkVersion(it, valueCookie) } ?: -1
-            if (version != -1) {
+            if (tomlVersion != -1) {
               val includeFix =
                 context.driver.isIsolated() || !isMinSdkTomlVersionKey(tomlValue.getKey()!!)
-              checkMinSdkVersion(context, version, statementCookie, includeFix, tomlValue)
+              checkMinSdkVersion(context, tomlVersion, statementCookie, includeFix, tomlValue)
             }
           }
         } else if (version > 0) {
@@ -460,7 +465,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     } else if (parentParent == "plugins" && property == "version") {
       val version = getStringLiteralValue(value, valueCookie)
       if (version != null) {
-        val gradleCoordinate = "$parent:$parent.gradle.plugin:$version"
+        val gradleCoordinate = "$parent:$parent$GRADLE_PLUGIN_ARTIFACT_SUFFIX:$version"
         val dependency = Dependency.parse(gradleCoordinate)
         // Check dependencies without the PSI read lock, because we
         // may need to make network requests to retrieve version info.
@@ -686,7 +691,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     version: Int,
     versionString: String,
     statementCookie: Any,
-    valueCookie: Any,
     includeFix: Boolean = true,
   ) {
     if (version > 0 && version < context.client.highestKnownApiLevel) {
@@ -1099,6 +1103,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         message,
         fix().alternatives(replaceFix, deleteFix),
       )
+    } else if (parent == "dependencies" || parent == "declarativeDependencies") {
+      if (statement != "files" && cookie is UCallExpression && cookie.valueArgumentCount >= 3) {
+        val (dependency, versionElement) = getKtsDependency(cookie) ?: return
+        context.driver.runLaterOutsideReadAction {
+          checkDependency(context, dependency, false, versionElement, cookie)
+        }
+      }
     }
   }
 
@@ -1122,7 +1133,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val versionFilter = getUpgradeVersionFilter(context, groupId, artifactId, version)
     val recommendedVersions = sdkIndex.recommendedVersions(groupId, artifactId, version.toString())
     val sdkIndexFilter =
-      getGooglePlaySdkIndexFilter(context, groupId, artifactId, recommendedVersions, sdkIndex)
+      getGooglePlaySdkIndexFilter(groupId, artifactId, recommendedVersions, sdkIndex)
     fun Predicate<Version>?.and(other: Predicate<Version>?): Predicate<Version>? =
       when {
         this != null && other != null -> this.and(other)
@@ -1155,7 +1166,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       "com.android.privacy-sandbox-sdk",
       "com.android.kotlin.multiplatform.library",
       "com.android.tools.build" -> {
-        if ("gradle" == artifactId || "$groupId.gradle.plugin" == artifactId) {
+        if ("gradle" == artifactId || "$groupId$GRADLE_PLUGIN_ARTIFACT_SUFFIX" == artifactId) {
           if (checkGradlePluginDependency(context, dependency, statementCookie)) {
             return
           }
@@ -1227,44 +1238,18 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     }
 
-    // Network check for really up to date libraries? Only done in batch mode.
+    // Network check for really up-to-date libraries? Only done in batch mode.
     var issue = DEPENDENCY
     if (
-      // !Scope.checkSingleFile(context.scope) &&
       context.isEnabled(REMOTE_VERSION) &&
         // Common but served from maven.google.com so no point to
         // ping other maven repositories about these
         !getGoogleMavenRepository(context.client).hasGroupId(groupId)
     ) {
-      if (dependency.isGradlePlugin()) {
-        val pluginVersion =
-          getGradlePluginVersion(
-              context.client,
-              groupId,
-              dependency.version?.lowerBound,
-              allowCache = true,
-              filter = versionFilter,
-            )
-            ?.suggested
-        if (pluginVersion != null && version < pluginVersion) {
-          newerVersion = pluginVersion
-          issue = REMOTE_VERSION
-        }
-      } else {
-        val latest =
-          getMavenCentralVersions(
-              context.client,
-              groupId,
-              artifactId,
-              version,
-              filter,
-              allowCache = true,
-            )
-            ?.suggested
-        if (latest != null) {
-          newerVersion = latest
-          issue = REMOTE_VERSION
-        }
+      val latest = getMavenVersion(context, groupId, artifactId, version, filter)
+      if (latest != null) {
+        newerVersion = latest
+        issue = REMOTE_VERSION
       }
     }
 
@@ -1342,6 +1327,74 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     }
   }
+
+  /**
+   * Looks up Maven dependencies that are *not* on gmaven. (For gmaven dependencies, use
+   * [googleMavenRepository].)
+   */
+  private fun getMavenVersion(
+    context: Context,
+    groupId: String,
+    artifactId: String,
+    version: Version,
+    filter: Predicate<Version>?,
+  ): Version? {
+    return getMavenVersion(
+      context.client,
+      groupId,
+      artifactId,
+      version,
+      filter,
+      true,
+      if (groupId.startsWith("com.github.")) isUsingJitpackRepository(context) else false,
+      // gmaven already checked (with a custom filter etc)
+      null,
+    )
+  }
+
+  /** Is jitpack one of the repositories used by this project? */
+  private fun isUsingJitpackRepository(context: Context): Boolean {
+    if (usingJitpackRepository != null) {
+      return usingJitpackRepository!!
+    }
+
+    val settings = findSettingsFile(context)
+    usingJitpackRepository =
+      if (settings != null) {
+        val text = settings.readText()
+        text.contains("https://jitpack.io")
+      } else {
+        false
+      }
+    return usingJitpackRepository!!
+  }
+
+  /** In Gradle projects, tries to return the settings file */
+  private fun findSettingsFile(context: Context): File? {
+    if (context.project.isGradleProject) {
+      val first: String
+      val second: String
+      if (context.file.path.endsWith(DOT_KTS)) {
+        first = FN_SETTINGS_GRADLE_KTS
+        second = FN_SETTINGS_GRADLE
+      } else {
+        first = FN_SETTINGS_GRADLE
+        second = FN_SETTINGS_GRADLE_KTS
+      }
+      val parent = context.project.dir.parentFile ?: return null
+      val firstFile = File(parent, first)
+      if (firstFile.isFile) {
+        return firstFile
+      }
+      val secondFile = File(parent, second)
+      if (secondFile.isFile) {
+        return secondFile
+      }
+    }
+    return null
+  }
+
+  private var usingJitpackRepository: Boolean? = null
 
   private fun getClientProperties(): LintMap? =
     if (recordClientProperties) {
@@ -1561,7 +1614,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun getGooglePlaySdkIndexFilter(
-    context: Context,
     groupId: String,
     artifactId: String,
     recommendedVersions: Collection<LibraryVersionRange>,
@@ -2032,7 +2084,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       for ((_, plugin) in plugins.getMappedValues()) {
         val (coordinate, versionNode) = getPluginFromTomlEntry(versions, plugin) ?: continue
         val group = coordinate.substringBefore(':')
-        val gradleCoordinate = "$group:$group.gradle.plugin:${coordinate.substringAfterLast(':')}"
+        val gradleCoordinate =
+          "$group:$group$GRADLE_PLUGIN_ARTIFACT_SUFFIX:${coordinate.substringAfterLast(':')}"
         val dependency = Dependency.parse(gradleCoordinate)
         dependencyToElement[plugin] = dependency
         if (!versionNodeDependencySet.contains(versionNode to dependency)) {
@@ -2066,7 +2119,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val targetSdkString = value.getActualValue()?.toString() ?: continue
           val targetSdk = getSdkVersion(targetSdkString, value)
           if (targetSdk != -1) {
-            checkTargetSdkVersion(context, targetSdk, targetSdkString, value, value)
+            checkTargetSdkVersion(context, targetSdk, targetSdkString, value)
           }
         }
       }
@@ -2416,9 +2469,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
    * severity fatal, which has the same visual appearance in the IDE as the previous severity,
    * "error".) However, if we're in a "fatal-only" build, then we'll stop reporting the issues that
    * aren't meant to be treated as fatal. That's what this method does; issues reported to it should
-   * always be reported as fatal. There is a corresponding method,
-   * [reportNonFatalCompatibilityIssue] which can be used to report errors that shouldn't break the
-   * build; those are ignored in fatal-only mode.
+   * always be reported as fatal.
    */
   private fun reportFatalCompatibilityIssue(context: Context, cookie: Any, message: String) {
     report(context, cookie, COMPATIBILITY, message)
@@ -2433,36 +2484,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     report(context, cookie, COMPATIBILITY, message, fix)
   }
 
-  /** See [reportFatalCompatibilityIssue] for an explanation. */
-  private fun reportNonFatalCompatibilityIssue(
-    context: Context,
-    cookie: Any,
-    message: String,
-    lintFix: LintFix? = null,
-  ) {
-    if (context.driver.fatalOnlyMode) {
-      return
-    }
-
-    report(context, cookie, COMPATIBILITY, message, lintFix)
-  }
-
   private fun reportFatalCompatibilityIssue(context: Context, location: Location, message: String) {
-    // Some methods in GradleDetector are run without the PSI read lock in order
-    // to accommodate network requests, so we grab the read lock here.
-    context.client.runReadAction { context.report(COMPATIBILITY, location, message) }
-  }
-
-  /** See [reportFatalCompatibilityIssue] for an explanation. */
-  private fun reportNonFatalCompatibilityIssue(
-    context: Context,
-    location: Location,
-    message: String,
-  ) {
-    if (context.driver.fatalOnlyMode) {
-      return
-    }
-
     // Some methods in GradleDetector are run without the PSI read lock in order
     // to accommodate network requests, so we grab the read lock here.
     context.client.runReadAction { context.report(COMPATIBILITY, location, message) }
@@ -2595,7 +2617,9 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private fun Dependency.isGradlePlugin(): Boolean =
-    group != null && name.endsWith(".gradle.plugin") && name == "$group.gradle.plugin"
+    group != null &&
+      name.endsWith(GRADLE_PLUGIN_ARTIFACT_SUFFIX) &&
+      name == "$group$GRADLE_PLUGIN_ARTIFACT_SUFFIX"
 
   private fun getNewerVersionAvailableMessage(
     dependency: Dependency,
@@ -2624,10 +2648,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     }
     return message.toString()
-  }
-
-  private fun findFirst(coordinates: Collection<LintModelMavenName>): LintModelMavenName {
-    return Collections.min(coordinates) { o1, o2 -> o1.toString().compareTo(o2.toString()) }
   }
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
@@ -2682,25 +2702,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     return message
   }
 
-  private fun getNewerVersion(version1: Version, major: Int, minor: Int, micro: Int): Version? =
-    Version.parse("$major.$minor.$micro").takeIf {
-      version1 > Version.prefixInfimum("0") && version1 < it
-    }
-
-  private fun getNewerVersion(version1: Version, major: Int, minor: Int): Version? =
-    Version.parse("$major.$minor").takeIf { version1 > Version.prefixInfimum("0") && version1 < it }
-
   private var googleMavenRepository: GoogleMavenRepository? = null
   private var googlePlaySdkIndex: GooglePlaySdkIndex? = null
-
-  private fun getGoogleMavenRepoVersionOld(
-    context: Context,
-    dependency: Dependency,
-    filter: Predicate<Version>?,
-  ): Version? {
-    val repository = getGoogleMavenRepository(context.client)
-    return repository.findVersion(dependency, filter, dependency.explicitlyIncludesPreview)
-  }
 
   private fun getGoogleMavenRepoVersion(
     context: Context,
@@ -2715,11 +2718,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     return getMavenMetadataVersions(versions, currentVersion, group, artifact)
   }
-
-  private fun getSnapshotVersionFilter(filter: ((Version) -> Boolean)?): (Version) -> Boolean =
-    { candidate ->
-      !candidate.isSnapshot && (filter == null || filter(candidate))
-    }
 
   private fun getSdkIndexVersion(
     sdkIndex: GooglePlaySdkIndex,
@@ -2873,6 +2871,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null
 
+    const val GRADLE_PLUGIN_ARTIFACT_SUFFIX = ".gradle.plugin"
     const val KEY_COORDINATE = "coordinate"
     const val KEY_REVISION = "revision"
     const val KEY_IDE_AGP_VERSION = "ideAgpVersion"
@@ -3874,23 +3873,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     /** Returns the best guess for where two dependencies are declared in a project. */
     fun getDependencyLocation(
       context: Context,
-      address1: LintModelMavenName,
-      address2: LintModelMavenName,
-    ): Location {
-      return getDependencyLocation(
-        context,
-        address1.groupId,
-        address1.artifactId,
-        address1.version,
-        address2.groupId,
-        address2.artifactId,
-        address2.version,
-      )
-    }
-
-    /** Returns the best guess for where two dependencies are declared in a project. */
-    fun getDependencyLocation(
-      context: Context,
       groupId1: String,
       artifactId1: String,
       version1: String,
@@ -3919,12 +3901,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return getAvailableVersions(
         client = client,
         groupId = pluginId,
-        artifactId = "$pluginId.gradle.plugin",
+        artifactId = "$pluginId$GRADLE_PLUGIN_ARTIFACT_SUFFIX",
         currentVersion = currentVersion,
         filter = filter,
         allowCache = allowCache,
+        repositoryCacheKey = "plugins.gradle.org",
         baseUrl = "https://plugins.gradle.org/m2/",
-        relative = "${pluginId.replace(".", "/")}/$pluginId.gradle.plugin/maven-metadata.xml",
+        relative =
+          "${pluginId.replace(".", "/")}/$pluginId$GRADLE_PLUGIN_ARTIFACT_SUFFIX/maven-metadata.xml",
       )
     }
 
@@ -3933,7 +3917,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       client: LintClient,
       dependency: Dependency,
       filter: Predicate<Version>?,
-      allowPreview: Boolean,
+      @Suppress("unused", "UNUSED_PARAMETER") allowPreview: Boolean,
     ): Version? {
       val group = dependency.group ?: return null
       val name = dependency.name
@@ -3979,6 +3963,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         currentVersion = currentVersion,
         filter = filter,
         allowCache = allowCache,
+        repositoryCacheKey = "repo.gradle.org",
         baseUrl =
           "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/",
         relative = "maven-metadata.xml",
@@ -4000,6 +3985,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         currentVersion = currentVersion,
         filter = filter,
         allowCache = allowCache,
+        repositoryCacheKey = "repo1.maven.org",
         baseUrl = "https://repo1.maven.org/maven2/",
         relative = "${group.replace(".", "/")}/$artifact/maven-metadata.xml",
       )
@@ -4034,6 +4020,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val suggested: Version?,
     )
 
+    private fun getNetworkCacheDirectory(client: LintClient, repositoryKey: String): File {
+      val root = client.getCacheDir("maven-versions", true)
+      val repositoryDir = File(root, repositoryKey)
+      repositoryDir.mkdirs()
+      return repositoryDir
+    }
+
     private fun getAvailableVersions(
       client: LintClient,
       groupId: String,
@@ -4041,15 +4034,15 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       currentVersion: Version?,
       filter: Predicate<Version>?,
       allowCache: Boolean,
+      repositoryCacheKey: String,
       baseUrl: String,
       relative: String,
     ): AvailableVersions? {
       val inputStream =
         if (allowCache) {
-          val cacheKey = "gradle-versions"
-          val cacheDir = client.getCacheDir(cacheKey, true)?.toPath()
+          val cacheDir = getNetworkCacheDirectory(client, repositoryCacheKey).toPath()
           val cache =
-            object : NetworkCache(baseUrl, cacheKey, cacheDir) {
+            object : NetworkCache(baseUrl, cacheDir) {
               override fun readUrlData(
                 url: String,
                 timeout: Int,
@@ -4057,7 +4050,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
               ): ReadUrlDataResult {
                 return try {
                   readUrlData(client, url, timeout, lastModified)
-                } catch (exception: IOException) {
+                } catch (_: IOException) {
                   // Remember that this resource doesn't exist.
                   ReadUrlDataResult(byteArrayOf(), true)
                 }
@@ -4103,7 +4096,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return getMavenMetadataVersions(sequence, currentVersion, group, artifact, filter)
     }
 
-    private fun getMavenMetadataVersions(
+    fun getMavenMetadataVersions(
       versions: Sequence<Version>,
       currentVersion: Version?,
       group: String,
@@ -4177,6 +4170,118 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       } else {
         return null
       }
+    }
+
+    /**
+     * Looks up the available versions to use as a replacement for the current version, consulting
+     * various maven repositories.
+     */
+    fun getMavenVersions(
+      client: LintClient,
+      groupId: String,
+      artifactId: String,
+      version: Version?,
+      filter: Predicate<Version>?,
+      allowCache: Boolean = false,
+      gmavenRepository: GoogleMavenRepository? = null,
+      includeJitpack: Boolean = true,
+    ): AvailableVersions? {
+      if (gmavenRepository != null && gmavenRepository.hasGroupId(groupId)) {
+        val versions = gmavenRepository.getVersions(groupId, artifactId).asSequence()
+        val mavenVersions = getMavenMetadataVersions(versions, version, groupId, artifactId)
+        if (mavenVersions != null) {
+          return mavenVersions
+        }
+      }
+
+      if (artifactId.endsWith(GRADLE_PLUGIN_ARTIFACT_SUFFIX)) {
+        val mavenVersions =
+          getGradlePluginVersion(
+            client,
+            artifactId.removeSuffix(GRADLE_PLUGIN_ARTIFACT_SUFFIX),
+            version,
+            true,
+          )
+        if (mavenVersions != null) {
+          return mavenVersions
+        }
+      }
+
+      val mavenVersions =
+        getMavenCentralVersions(client, groupId, artifactId, version, filter, allowCache)
+      if (mavenVersions != null) {
+        return mavenVersions
+      }
+
+      if (groupId.startsWith("com.github.") && includeJitpack) {
+        val jitpackVersions =
+          getAvailableVersions(
+            client = client,
+            groupId = groupId,
+            artifactId = artifactId,
+            currentVersion = version,
+            filter = filter,
+            allowCache = allowCache,
+            repositoryCacheKey = "jitpack.io",
+            baseUrl = "https://jitpack.io/",
+            relative = "${groupId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+          )
+        if (jitpackVersions != null) {
+          return jitpackVersions
+        }
+      }
+
+      if (groupId.startsWith("io.fabric")) {
+        val fabricVersions =
+          getAvailableVersions(
+            client = client,
+            groupId = groupId,
+            artifactId = artifactId,
+            currentVersion = version,
+            filter = filter,
+            allowCache = allowCache,
+            repositoryCacheKey = "io.fabric",
+            baseUrl = "https://maven.fabric.io/public/",
+            relative = "${groupId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+          )
+        if (fabricVersions != null) {
+          return fabricVersions
+        }
+      }
+
+      return null
+    }
+
+    /**
+     * Looks up the suggested version to use as a replacement for the current version, consulting
+     * various maven repositories.
+     */
+    fun getMavenVersion(
+      client: LintClient,
+      groupId: String,
+      artifactId: String,
+      version: Version?,
+      filter: Predicate<Version>?,
+      allowCache: Boolean = false,
+      includeJitpack: Boolean = true,
+      gmavenRepository: GoogleMavenRepository? = null,
+    ): Version? {
+      val versions =
+        getMavenVersions(
+          client,
+          groupId,
+          artifactId,
+          version,
+          filter,
+          allowCache,
+          gmavenRepository,
+          includeJitpack,
+        )
+      if (versions != null) {
+        return versions.suggested
+          ?: if (version == null) versions.latestStable ?: versions.latestPreview else null
+      }
+      return null
     }
 
     private data class VersionCatalogDependency(
@@ -4290,6 +4395,65 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
       }
 
+      return null
+    }
+
+    /**
+     * Given a KTS dependency declaration with named arguments, returns the corresponding
+     * declaration
+     */
+    fun getKtsDependency(expression: UCallExpression): Pair<Dependency, KtElement>? {
+      val sourcePsi = expression.sourcePsi
+      if (sourcePsi is KtCallExpression) {
+        val arguments = sourcePsi.valueArguments
+        if (arguments.size == 1) {
+          val string =
+            arguments[0].getArgumentExpression()?.let {
+              ConstantEvaluator.evaluateString(null, it, false)
+            } ?: return null
+          return Dependency.parse(string) to arguments[0]
+        }
+        if (arguments.size < 3) {
+          return null
+        }
+        var group: String? = null
+        var artifact: String? = null
+        var version: String? = null
+        var index = 0
+        var versionElement: KtElement = sourcePsi
+        for (argument in arguments) {
+          val name = argument.getArgumentName()?.asName?.identifier
+          val value =
+            argument.getArgumentExpression()?.let {
+              ConstantEvaluator.evaluateString(null, it, false)
+            } ?: argument.text.removeSurrounding("\"")
+          val target =
+            when (name) {
+              null -> index
+              "group" -> 0
+              "name" -> 1
+              "version" -> 2
+              else -> index
+            }
+          when (target) {
+            0 -> group = value
+            1 -> artifact = value
+            2 -> {
+              version = value
+              versionElement = argument
+            }
+          }
+          index++
+          if (index == 3) {
+            break
+          }
+        }
+        return if (group != null && artifact != null && version != null) {
+          Dependency.parse("$group:$artifact:$version") to versionElement
+        } else {
+          null
+        }
+      }
       return null
     }
 

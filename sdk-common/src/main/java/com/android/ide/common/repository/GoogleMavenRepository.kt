@@ -56,10 +56,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
 
     /** If false, this repository won't make network requests */
     useNetwork: Boolean = true
-) : NetworkCache(
-    GMAVEN_BASE_URL, MAVEN_GOOGLE_CACHE_DIR_KEY, cacheDir, networkTimeoutMs,
-    cacheExpiryHours, useNetwork
-) {
+) : NetworkCache(GMAVEN_BASE_URL, cacheDir, networkTimeoutMs, cacheExpiryHours, useNetwork) {
 
     private var packageMap: MutableMap<String, PackageInfo>? = null
 

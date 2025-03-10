@@ -263,63 +263,32 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .issues(AGP_DEPENDENCY, DEPENDENCY, REMOTE_VERSION)
       .sdkHome(mockSupportLibraryInstallation)
-      .networkData(
-        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-          <versioning>
-            <latest>33.4.0-jre</latest>
-            <release>33.4.0-jre</release>
-            <versions>
-              <version>28.1-android</version>
-              <version>28.1-jre</version>
-              <version>28.2-android</version>
-              <version>28.2-jre</version>
-              <version>29.0-android</version>
-              <version>29.0-jre</version>
-              <version>30.0-android</version>
-              <version>30.0-jre</version>
-              <version>30.1-android</version>
-              <version>30.1-jre</version>
-            </versions>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata(
+        "com.google.guava:guava",
+        "28.1-android",
+        "28.1-jre",
+        "28.2-android",
+        "28.2-jre",
+        "29.0-android",
+        "29.0-jre",
+        "30.0-android",
+        "30.0-jre",
+        "30.1-android",
+        "30.1-jre",
       )
-      .networkData(
-        "https://plugins.gradle.org/m2/com/autonomousapps/dependency-analysis/com.autonomousapps.dependency-analysis.gradle.plugin/maven-metadata.xml",
-        // language=XML
-        """
-              <metadata>
-                <groupId>com.autonomousapps.dependency-analysis</groupId>
-                <artifactId>com.autonomousapps.dependency-analysis.gradle.plugin</artifactId>
-                <version>1.20.0</version>
-                <versioning>
-                  <latest>1.20.0</latest>
-                  <release>1.20.0</release>
-                  <versions>
-                    <version>0.1</version>
-                    <version>0.10.0</version>
-                    <version>0.11.0</version>
-                    <version>0.11.1</version>
-                    ... truncated ...
-                    <version>1.18.0</version>
-                    <version>1.19.0</version>
-                    <version>1.2.0</version>
-                    <version>1.2.1</version>
-                    <version>1.20.0</version>
-                    <version>1.3.0</version>
-                    <version>1.9.0</version>
-                  </versions>
-                  <lastUpdated>20230421150929</lastUpdated>
-                </versioning>
-              </metadata>
-              """
-          .trimIndent(),
+      .mavenMetadata(
+        "com.autonomousapps.dependency-analysis",
+        "0.1",
+        "0.10.0",
+        "0.11.0",
+        "0.11.1",
+        "1.18.0",
+        "1.19.0",
+        "1.2.0",
+        "1.2.1",
+        "1.20.0",
+        "1.3.0",
+        "1.9.0",
       )
       .run()
       .expect(
@@ -400,55 +369,18 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <versioning>
-          <latest>2.9.9</latest>
-          <release>2.9.9</release>
-          <versions>
-            <version>0.95</version>
-            <version>1.0</version>
-            <version>2.9.7</version>
-            <version>2.9.8</version>
-            <version>2.9.9</version>
-          </versions>
-          <lastUpdated>20250203142911</lastUpdated>
-        </versioning>
-        </metadata>
-        """
-          .trimIndent(),
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/squareup/dagger/dagger/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata>
-          <groupId>com.squareup.dagger</groupId>
-          <artifactId>dagger</artifactId>
-          <versioning>
-            <latest>1.2.5</latest>
-            <release>1.2.5</release>
-            <versions>
-              <version>1.0.0</version>
-              <version>1.0.1</version>
-              <version>1.1.0</version>
-              <version>1.2.0</version>
-              <version>1.2.1</version>
-              <version>1.2.2</version>
-              <version>1.2.3</version>
-              <version>1.2.4</version>
-              <version>1.2.5</version>
-            </versions>
-            <lastUpdated>20160510041018</lastUpdated>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
+      .mavenMetadata(
+        "com.squareup.dagger:dagger",
+        "1.0.0",
+        "1.0.1",
+        "1.1.0",
+        "1.2.0",
+        "1.2.1",
+        "1.2.2",
+        "1.2.3",
+        "1.2.4",
+        "1.2.5",
       )
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
@@ -2670,32 +2602,18 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .issues(REMOTE_VERSION, DEPENDENCY)
-      .networkData(
-        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-          <versioning>
-            <latest>33.4.0-jre</latest>
-            <release>33.4.0-jre</release>
-            <versions>
-              <version>28.1-android</version>
-              <version>28.1-jre</version>
-              <version>28.2-android</version>
-              <version>28.2-jre</version>
-              <version>29.0-android</version>
-              <version>29.0-jre</version>
-              <version>30.0-android</version>
-              <version>30.0-jre</version>
-              <version>30.1-android</version>
-              <version>30.1-jre</version>
-            </versions>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata(
+        "com.google.guava:guava",
+        "28.1-android",
+        "28.1-jre",
+        "28.2-android",
+        "28.2-jre",
+        "29.0-android",
+        "29.0-jre",
+        "30.0-android",
+        "30.0-jre",
+        "30.1-android",
+        "30.1-jre",
       )
       .run()
       .expect(
@@ -2770,26 +2688,17 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .issues(REMOTE_VERSION, DEPENDENCY)
-      .networkData(
-        "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/maven-metadata.xml",
-        "<metadata>\n" +
-          "<groupId>org.jetbrains.kotlinx</groupId>\n" +
-          "<artifactId>kotlinx-coroutines-core</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>1.3.9</version>\n" +
-          "<version>1.3.9-native-mt</version>\n" +
-          "<version>1.3.9-native-mt-2</version>\n" +
-          "<version>1.4.0-M1</version>\n" +
-          "<version>1.4.0</version>\n" +
-          "<version>1.4.1</version>\n" +
-          "<version>1.4.1-native-mt</version>\n" +
-          "<version>1.4.2</version>\n" +
-          "<version>1.4.2-native-mt</version>\n" +
-          "</versions>\n" +
-          "<lastUpdated>20241220152809</lastUpdated>\n" +
-          "</versioning>\n" +
-          "</metadata>",
+      .mavenMetadata(
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+        "1.3.9",
+        "1.3.9-native-mt",
+        "1.3.9-native-mt-2",
+        "1.4.0-M1",
+        "1.4.0",
+        "1.4.1",
+        "1.4.1-native-mt",
+        "1.4.2",
+        "1.4.2-native-mt",
       )
       .run()
       .expect(
@@ -2813,14 +2722,14 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testMinSdkVersion() {
     val expected =
-      ("" +
+      "" +
         "build.gradle:8: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdkVersion 7\n" +
         "        ~~~~~~~~~~~~~~~\n" +
         "build.gradle:9: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdk 7\n" +
         "        ~~~~~~~~\n" +
-        "0 errors, 2 warnings")
+        "0 errors, 2 warnings"
 
     lint()
       .files(
@@ -3250,32 +3159,67 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testLongHandDependencies() {
-    val expected =
-      "" +
-        "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: 25.3.1 [GradleDependency]\n" +
-        "    compile group: 'com.android.support', name: 'support-v4', version: '19.0'\n" +
-        "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 1 warnings\n"
-
     lint()
       .files(
         gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion $HIGHEST_KNOWN_STABLE_API\n" +
-            "    buildToolsVersion \"21.1.2\"\n" +
-            "}\n" +
-            "\n" +
-            "dependencies {\n" +
-            "    compile group: 'com.android.support', name: 'support-v4', version: '19.0'\n" +
-            "}\n"
-        )
+            """
+            dependencies {
+                compile group: 'com.android.support', name: 'support-v4', version: '19.0' // ERROR 1
+            }
+            """
+          )
+          .indented(),
+        kts(
+            """
+            dependencies {
+                implementation("com.google.guava", "guava", "19.0") // ERROR 2
+                implementation(group = "com.google.guava", name = "guava", version = "19.0") // ERROR 3
+                implementation(version = "19.0", name = "guava", group = "com.google.guava") // ERROR 4
+            }
+            """
+          )
+          .indented(),
       )
-      .issues(DEPENDENCY)
+      .mavenMetadata("com.google.guava:guava", "28.1-android", "28.1-jre")
+      .issues(DEPENDENCY, REMOTE_VERSION)
       .run()
-      .expect(expected)
+      .expect(
+        """
+        build.gradle:2: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: 25.3.1 [GradleDependency]
+            compile group: 'com.android.support', name: 'support-v4', version: '19.0' // ERROR 1
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:2: Warning: A newer version of com.google.guava:guava than 19.0 is available: 28.1-android [NewerVersionAvailable]
+            implementation("com.google.guava", "guava", "19.0") // ERROR 2
+                                                        ~~~~~~
+        build.gradle.kts:3: Warning: A newer version of com.google.guava:guava than 19.0 is available: 28.1-android [NewerVersionAvailable]
+            implementation(group = "com.google.guava", name = "guava", version = "19.0") // ERROR 3
+                                                                       ~~~~~~~~~~~~~~~~
+        build.gradle.kts:4: Warning: A newer version of com.google.guava:guava than 19.0 is available: 28.1-android [NewerVersionAvailable]
+            implementation(version = "19.0", name = "guava", group = "com.google.guava") // ERROR 4
+                           ~~~~~~~~~~~~~~~~
+        0 errors, 4 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 2: Change to 25.3.1:
+        @@ -2 +2
+        -     compile group: 'com.android.support', name: 'support-v4', version: '19.0' // ERROR 1
+        +     compile group: 'com.android.support', name: 'support-v4', version: '25.3.1' // ERROR 1
+        Fix for build.gradle.kts line 2: Change to 28.1-android:
+        @@ -2 +2
+        -     implementation("com.google.guava", "guava", "19.0") // ERROR 2
+        +     implementation("com.google.guava", "guava", "28.1-android") // ERROR 2
+        Fix for build.gradle.kts line 3: Change to 28.1-android:
+        @@ -3 +3
+        -     implementation(group = "com.google.guava", name = "guava", version = "19.0") // ERROR 3
+        +     implementation(group = "com.google.guava", name = "guava", version = "28.1-android") // ERROR 3
+        Fix for build.gradle.kts line 4: Change to 28.1-android:
+        @@ -4 +4
+        -     implementation(version = "19.0", name = "guava", group = "com.google.guava") // ERROR 4
+        +     implementation(version = "28.1-android", name = "guava", group = "com.google.guava") // ERROR 4
+        """
+      )
   }
 
   fun testChromeOSAbiFilters() {
@@ -3520,27 +3464,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/google/code/gson/gson/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-          <groupId>com.google.code.gson</groupId>
-          <artifactId>gson</artifactId>
-          <versioning>
-            <latest>2.12.1</latest>
-            <release>2.12.1</release>
-            <versions>
-              <version>2.0</version>
-              <version>2.1</version>
-              <version>2.2</version>
-              <version>2.8.2</version>
-            </versions>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
-      )
+      .mavenMetadata("com.google.code.gson:gson", "2.0", "2.1", "2.2", "2.8.2")
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(expected)
@@ -4008,55 +3932,18 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <versioning>
-          <latest>2.9.9</latest>
-          <release>2.9.9</release>
-          <versions>
-            <version>0.95</version>
-            <version>1.0</version>
-            <version>2.9.7</version>
-            <version>2.9.8</version>
-            <version>2.9.9</version>
-          </versions>
-          <lastUpdated>20250203142911</lastUpdated>
-        </versioning>
-        </metadata>
-        """
-          .trimIndent(),
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/squareup/dagger/dagger/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata>
-          <groupId>com.squareup.dagger</groupId>
-          <artifactId>dagger</artifactId>
-          <versioning>
-            <latest>1.2.5</latest>
-            <release>1.2.5</release>
-            <versions>
-              <version>1.0.0</version>
-              <version>1.0.1</version>
-              <version>1.1.0</version>
-              <version>1.2.0</version>
-              <version>1.2.1</version>
-              <version>1.2.2</version>
-              <version>1.2.3</version>
-              <version>1.2.4</version>
-              <version>1.2.5</version>
-            </versions>
-            <lastUpdated>20160510041018</lastUpdated>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
+      .mavenMetadata(
+        "com.squareup.dagger:dagger",
+        "1.0.0",
+        "1.0.1",
+        "1.1.0",
+        "1.2.0",
+        "1.2.1",
+        "1.2.2",
+        "1.2.3",
+        "1.2.4",
+        "1.2.5",
       )
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
@@ -4065,23 +3952,17 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testRemoteDisabledWithGradleDependency() {
     lint()
-      .files(gradle("" + "dependencies {\n" + "    compile 'joda-time:joda-time:2.1'\n" + "}\n"))
-      .networkData(
-        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <versioning>
-          <versions>
-            <version>2.9.9</version>
-          </versions>
-        </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .files(
+        gradle(
+            """
+            dependencies {
+                compile 'joda-time:joda-time:2.1'
+            }
+            """
+          )
+          .indented()
       )
+      .mavenMetadata("joda-time:joda-time", "2.9.9")
       .issues(REMOTE_VERSION) // Note: No DEPENDENCY
       .run()
       .expectClean()
@@ -4102,36 +3983,21 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .issues(REMOTE_VERSION, DEPENDENCY)
-      .networkData(
-        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-          <versioning>
-            <latest>33.4.0-jre</latest>
-            <release>33.4.0-jre</release>
-            <versions>
-              <version>18.0-rc1</version>
-              <version>18.0-rc2</version>
-              <version>18.0</version>
-              <version>23.2-android</version>
-              <version>23.2-jre</version>
-              <version>23.3-android</version>
-              <version>23.3-jre</version>
-              <version>23.4-android</version>
-              <version>23.4-jre</version>
-              <version>23.5-android</version>
-              <version>23.5-jre</version>
-              <version>23.6-android</version>
-              <version>23.6-jre</version>
-            </versions>
-            <lastUpdated>20241216222210</lastUpdated>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata(
+        "com.google.guava:guava",
+        "18.0-rc1",
+        "18.0-rc2",
+        "18.0",
+        "23.2-android",
+        "23.2-jre",
+        "23.3-android",
+        "23.3-jre",
+        "23.4-android",
+        "23.4-jre",
+        "23.5-android",
+        "23.5-jre",
+        "23.6-android",
+        "23.6-jre",
       )
       .run()
       .expect(
@@ -5055,7 +4921,7 @@ class GradleDetectorTest : AbstractCheckTest() {
               )
               .indented()
           )
-          .issues(GradleDetector.EDITED_TARGET_SDK_VERSION)
+          .issues(EDITED_TARGET_SDK_VERSION)
           .incremental(name)
           .clientFactory {
             com.android.tools.lint.checks.infrastructure
@@ -6107,80 +5973,11 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/ads/third/party/example/maven-metadata.xml",
-        // language=XML
-        "<metadata>\n" +
-          "<groupId>com.example.ads.third.party</groupId>\n" +
-          "<artifactId>example</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>7.2.0</version>\n" +
-          "<version>7.2.1</version>\n" +
-          "<version>7.2.2</version>\n" +
-          "<version>8.0.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/log4j/log4j/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>log4j</groupId>\n" +
-          "<artifactId>log4j</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>1.2.9</version>\n" +
-          "<version>1.2.10</version>\n" +
-          "<version>1.2.11</version>\n" +
-          "<version>1.2.12</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/issues-on-latest/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>issues-on-latest</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>2.0.0</version>\n" +
-          "<version>1.9.0</version>\n" +
-          "<version>1.8.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/latest-is-preview/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>latest-is-preview</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>1.0.0</version>\n" +
-          "<version>1.1.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/deprecated/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>deprecated</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>2.0.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
+      .mavenMetadata("com.example.ads.third.party:example", "7.2.0", "7.2.1", "7.2.2", "8.0.0")
+      .mavenMetadata("log4j:log4j", "1.2.9", "1.2.10", "1.2.11", "1.2.12")
+      .mavenMetadata("com.example.issues:issues-on-latest", "2.0.0", "1.9.0", "1.8.0")
+      .mavenMetadata("com.example.issues:latest-is-preview", "1.0.0", "1.1.0")
+      .mavenMetadata("com.example.issues:deprecated", "2.0.0")
       .issues(
         REMOTE_VERSION,
         RISKY_LIBRARY,
@@ -6325,80 +6122,11 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/log4j/log4j/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>log4j</groupId>\n" +
-          "<artifactId>log4j</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>1.2.9</version>\n" +
-          "<version>1.2.10</version>\n" +
-          "<version>1.2.11</version>\n" +
-          "<version>1.2.15</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/ads/third/party/example/maven-metadata.xml",
-        // language=XML
-        "<metadata>\n" +
-          "<groupId>com.example.ads.third.party</groupId>\n" +
-          "<artifactId>example</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>7.2.0</version>\n" +
-          "<version>7.2.1</version>\n" +
-          "<version>7.2.2</version>\n" +
-          "<version>8.0.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/issues-on-latest/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>issues-on-latest</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>2.0.0</version>\n" +
-          "<version>1.9.0</version>\n" +
-          "<version>1.8.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/latest-is-preview/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>latest-is-preview</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>1.0.0</version>\n" +
-          "<version>1.1.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/example/issues/deprecated/maven-metadata.xml",
-        // language=XML
-        "<metadata modelVersion=\"1.1.0\">\n" +
-          "<groupId>com.example.issues</groupId>\n" +
-          "<artifactId>deprecated</artifactId>\n" +
-          "<versioning>\n" +
-          "<versions>\n" +
-          "<version>3.0.0</version>\n" +
-          "</versions>\n" +
-          "</versioning>\n" +
-          "</metadata>",
-      )
+      .mavenMetadata("log4j:log4j", "1.2.9", "1.2.10", "1.2.11", "1.2.15")
+      .mavenMetadata("com.example.ads.third.party:example", "7.2.0", "7.2.1", "7.2.2", "8.0.0")
+      .mavenMetadata("com.example.issues:issues-on-latest", "2.0.0", "1.9.0", "1.8.0")
+      .mavenMetadata("com.example.issues:latest-is-preview", "1.0.0", "1.1.0")
+      .mavenMetadata("com.example.issues:deprecated", "3.0.0")
       .issues(
         REMOTE_VERSION,
         RISKY_LIBRARY,
@@ -8568,8 +8296,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7"
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
-      """
-          .trimIndent()
+        """
       )
       .expectFixDiffs(
         """
@@ -8577,8 +8304,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -2 +2
         -   implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7"
         +   implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7-2"
-      """
-          .trimIndent()
+        """
       )
   }
 
@@ -8792,51 +8518,14 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(DEPENDENCY, REMOTE_VERSION)
-      .networkData(
-        "https://plugins.gradle.org/m2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/maven-metadata.xml",
-        // language=XML
-        """
-              <metadata>
-                <groupId>org.jetbrains.kotlin.android</groupId>
-                <artifactId>org.jetbrains.kotlin.android.gradle.plugin</artifactId>
-                <version>1.9.0</version>
-                <versioning>
-                  <latest>1.9.0</latest>
-                  <release>1.9.0</release>
-                  <versions>
-                    <version>1.7.0</version>
-                    <version>1.7.10</version>
-                    <version>1.8.0</version>
-                    <version>1.8.10</version>
-                    <version>1.9.0</version>
-                  </versions>
-                  <lastUpdated>20230421150929</lastUpdated>
-                </versioning>
-              </metadata>
-              """
-          .trimIndent(),
-      )
-      .networkData(
-        "https://repo1.maven.org/maven2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata>
-          <groupId>org.jetbrains.kotlin.android</groupId>
-          <artifactId>org.jetbrains.kotlin.android.gradle.plugin</artifactId>
-          <versioning>
-            <versions>
-              <version>1.7.0</version>
-              <version>1.7.10</version>
-              <version>1.7.20-Beta</version>
-              <version>1.8.0</version>
-              <version>1.8.10</version>
-              <version>1.9.0</version>
-            </versions>
-            <lastUpdated>20250306132608</lastUpdated>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata(
+        "org.jetbrains.kotlin.android",
+        "1.7.0",
+        "1.7.10",
+        "1.7.20-Beta",
+        "1.8.0",
+        "1.8.10",
+        "1.9.0",
       )
       .run()
       .expect(
@@ -8846,7 +8535,6 @@ class GradleDetectorTest : AbstractCheckTest() {
                  ~~~~~~~~
         0 errors, 1 warnings
         """
-          .trimIndent()
       )
       .expectFixDiffs(
         """
@@ -8855,7 +8543,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         - kotlin = "1.7.10"
         + kotlin = "1.9.0"
         """
-          .trimIndent()
       )
   }
 
@@ -8877,31 +8564,18 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .issues(DEPENDENCY, REMOTE_VERSION)
-      .networkData(
-        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
-        // language=XML
-        """
-        <metadata modelVersion="1.1.0">
-        <groupId>joda-time</groupId>
-        <artifactId>joda-time</artifactId>
-        <versioning>
-          <versions>
-            <version>0.95</version>
-            <version>1.0</version>
-            <version>2.9.7</version>
-            <version>2.9.8</version>
-            <version>2.9.9</version>
-            <version>2.9.9</version>
-            <version>2.10.0</version>
-            <version>2.10.1-alpha01</version>
-            <version>2.10.1-alpha05</version>
-            <version>2.10.2</version>
-            <version>2.11.1-alpha01</version>
-          </versions>
-        </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      .mavenMetadata(
+        "joda-time:joda-time",
+        "0.95",
+        "1.0",
+        "2.9.7",
+        "2.9.8",
+        "2.9.9",
+        "2.10.0",
+        "2.10.1-alpha01",
+        "2.10.1-alpha05",
+        "2.10.2",
+        "2.11.1-alpha01",
       )
       .run()
       .expect(
@@ -8911,7 +8585,6 @@ class GradleDetectorTest : AbstractCheckTest() {
                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
-          .trimIndent()
       )
       .expectFixDiffs(
         """
@@ -8920,8 +8593,105 @@ class GradleDetectorTest : AbstractCheckTest() {
         -   implementation("joda-time:joda-time:2.9.+") // WARN 1
         +   implementation("joda-time:joda-time:2.10.2") // WARN 1
         """
-          .trimIndent()
       )
+  }
+
+  fun testGithubOnMavenCentral() {
+    lint()
+      .files(
+        gradle(
+            """
+            dependencies {
+              // (not a real artifact)
+              implementation("com.github.android-lint:android-lint:1.0")
+              implementation("com.github.android-lint-jitpack:android-lint:1.0")
+            }
+            """
+          )
+          .indented(),
+        gradle(
+            "../settings.gradle",
+            """
+            dependencyResolutionManagement {
+                repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+                repositories {
+                    google()
+                    mavenCentral()
+                    maven(url = "https://jitpack.io")
+                }
+            }
+            """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY, REMOTE_VERSION)
+      .mavenMetadata(
+        // not a real artifact
+        "com.github.android-lint:android-lint",
+        "1.0",
+        "1.5",
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
+        404,
+      )
+      .networkData(
+        "https://jitpack.io/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+            <groupId>com.github.android-lint</groupId>
+            <artifactId>android-lint</artifactId>
+            <version>1.0</version>
+            <versioning>
+                <latest>1.0</latest>
+                <release>1.0</release>
+                <versions>
+                    <version>1.0</version>
+                    <version>2.0</version>
+                </versions>
+            </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
+      .run()
+      .expect(
+        """
+        build.gradle:3: Warning: A newer version of com.github.android-lint:android-lint than 1.0 is available: 1.5 [NewerVersionAvailable]
+          implementation("com.github.android-lint:android-lint:1.0")
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:4: Warning: A newer version of com.github.android-lint-jitpack:android-lint than 1.0 is available: 2.0 [NewerVersionAvailable]
+          implementation("com.github.android-lint-jitpack:android-lint:1.0")
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
+      )
+  }
+
+  fun testNoJitpackCheckWithoutRepositoryReference() {
+    lint()
+      .files(
+        gradle(
+            """
+            dependencies {
+              // (not a real artifact)
+              implementation("com.github.android-lint-jitpack:android-lint:1.0")
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(DEPENDENCY, REMOTE_VERSION)
+      // No response from maven central for this unknown URL; make sure
+      // we don't access jitpack (if we did, this would throw an exception that
+      // the test client is accessing a URL without prepared URL results
+      .networkData(
+        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
+        404,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMavenCentralNetworkFailureCaching() {
@@ -9070,15 +8840,55 @@ class GradleDetectorTest : AbstractCheckTest() {
         val parent = file.parentFile
         if (!parent.exists()) {
           val ok = parent.mkdirs()
-          TestCase.assertTrue(parent.path, ok)
+          assertTrue(parent.path, ok)
         }
         try {
           val created = file.createNewFile()
-          TestCase.assertTrue(file.path, created)
+          assertTrue(file.path, created)
         } catch (e: IOException) {
-          TestCase.fail(e.toString())
+          fail(e.toString())
         }
       }
+    }
+
+    private fun TestLintTask.mavenMetadata(
+      coordinate: String,
+      vararg versions: String,
+    ): TestLintTask {
+      val group: String
+      val artifact: String
+      if (coordinate.contains(":")) {
+        group = coordinate.substringBefore(":")
+        artifact = coordinate.substringAfter(":")
+      } else {
+        group = coordinate
+        artifact = "$coordinate.gradle.plugin"
+      }
+      val base =
+        if (artifact.endsWith(".gradle.plugin")) {
+          "plugins.gradle.org/m2"
+        } else {
+          "repo1.maven.org/maven2"
+        }
+      val latest = versions.maxOfOrNull { Version.parse(it) }.toString()
+      networkData(
+        "https://$base/${group.replace(".", "/")}/$artifact/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "  <groupId>$group</groupId>\n" +
+          "  <artifactId>$artifact</artifactId>\n" +
+          "  <version>$latest</version>\n" +
+          "  <versioning>\n" +
+          "    <latest>$latest</latest>\n" +
+          "    <release>$latest</release>\n" +
+          "    <versions>\n" +
+          versions.joinToString("") { "      <version>$it</version>\n" } +
+          "    </versions>\n" +
+          "  </versioning>\n" +
+          "</metadata>\n",
+      )
+
+      return this
     }
 
     private fun initializeMockSdkDirs() {

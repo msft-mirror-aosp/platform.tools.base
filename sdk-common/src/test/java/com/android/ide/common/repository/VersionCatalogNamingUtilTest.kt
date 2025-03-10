@@ -347,7 +347,10 @@ class VersionCatalogNamingUtilTest {
             "com-google-foo-bar",
             "com-google-foo-bar2"
         )
+
+        versionName("fooV10", "com.google:foo:1.0", includeVersions = true)
     }
+
     @Test
     fun testPickAndroidXKebabCaseVersionName() {
         versionName(
@@ -520,7 +523,7 @@ class VersionCatalogNamingUtilTest {
             expected,
             coordinateString,
             { dependency, set, _ ->
-                pickVersionVariableName(dependency, set)
+                pickVersionVariableName(dependency, set, includeVersions)
             },
             includeVersions,
             *variableNames
