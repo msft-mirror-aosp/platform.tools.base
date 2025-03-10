@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.output
 import com.android.testutils.apk.Dex
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
 import org.objectweb.asm.ClassReader
@@ -31,13 +30,7 @@ import java.util.regex.Pattern
  * An object that can validate the content of code.
  */
 @SubjectDsl
-interface ClassesSubject {
-
-    /**
-     * Returns a [IterableSubject] of all the classes in the jar (as [String] for binary names)
-     */
-    @Deprecated("Use ClassesSubject.containsExactly directly")
-    fun classes(): IterableSubject
+interface ClassesSubject: FileArchiveSubject {
 
     /**
      * Validates that the class list matches exactly with the provided list.
@@ -53,7 +46,7 @@ interface ClassesSubject {
      *   archive that are in that package.
      * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun containsExactly(classNames: Iterable<String>)
+    override fun containsExactly(items: Collection<String>)
 
     /**
      * Validates that the class list matches exactly with the provided list.
@@ -69,8 +62,9 @@ interface ClassesSubject {
      *   archive that are in that package.
      * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun containsExactly(className: String) {
-        containsExactly(listOf(className))
+    override fun containsExactly(item: String) {
+        // mostly there to override javadoc
+        super.containsExactly(item)
     }
 
     /**
@@ -87,19 +81,64 @@ interface ClassesSubject {
      *   archive that are in that package.
      * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun containsExactly(vararg classNames: String) {
-        containsExactly(classNames.toList())
+    override fun containsExactly(vararg items: String) {
+        // mostly there to override javadoc
+        super.containsExactly(*items)
     }
 
     /**
-     * Checks that the list of classes is empty
+     * Validates that the archive file list contains at least the provided elements
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun isEmpty()
+    override fun containsAtLeast(items: Collection<String>)
 
     /**
-     * Checks that the list of classes has the given size
+     * Validates that the archive file list contains at least the provided element
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun hasSize(size: Int)
+    override fun containsAtLeast(vararg items: String) {
+        // mostly there to override javadoc
+        super.containsAtLeast(*items)
+    }
+
+    /**
+     * Validates that the archive file list contains at least the provided elements
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
+     */
+    override fun contains(item: String) {
+        // mostly there to override javadoc
+        super.contains(item)
+    }
 
     /**
      * Returns a [ClassDefinitionSubject] for the class with the given binary name
@@ -119,6 +158,13 @@ interface ClassesSubject {
      * given binary name.
      */
     fun classAsBytes(binaryName: String): BinarySubject
+
+    /**
+     * Returns a [ClassesSubject] representing the content of the provided sub-package
+     *
+     * @param name the name of the package. Format can be com/example/foo or com.example.foo
+     */
+    fun subPackage(name: String): ClassesSubject
 }
 
 /**
@@ -129,16 +175,11 @@ abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
     actual: T
 ): Subject<S, T>(metadata, actual), ClassesSubject {
 
-    @Deprecated("Use ClassesSubject.containsExactly directly")
-    override fun classes(): IterableSubject {
-        return check("classes()").that(allClasses.keys)
-    }
-
-    override fun containsExactly(classNames: Iterable<String>) {
+    override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.lists())
+            .about(ComparatorSubject.classes())
             .that(allClasses.keys)
-            .containsExactly(classNames)
+            .containsExactly(items)
     }
 
     override fun isEmpty() {
@@ -147,6 +188,13 @@ abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
 
     override fun hasSize(size: Int) {
         check("size()").that(allClasses.keys.size).isEqualTo(size)
+    }
+
+    override fun containsAtLeast(items: Collection<String>) {
+        check("entries()")
+            .about(ComparatorSubject.classes())
+            .that(allClasses.keys)
+            .containsAtLeast(items)
     }
 
     override fun classDefinition(binaryName: String): ClassDefinitionSubject {
@@ -179,18 +227,31 @@ abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
  */
 internal class DexSubject(
     metadata: FailureMetadata,
-    actual: List<Dex>
+    actual: List<Dex>,
+    /**
+     * The root package to ignore from the classes. Must end with a / or be empty
+     */
+    private val rootPackage: String,
 ): BaseDexSubject<DexSubject, List<Dex>>(metadata, actual), ClassesSubject {
 
     companion object {
         /**
          * Method for getting the subject factory (for use with assertAbout())
          */
-        internal fun dexFiles(): Factory<DexSubject, List<Dex>> {
+        internal fun dexFiles(rootPackage: String = ""): Factory<DexSubject, List<Dex>> {
             return Factory<DexSubject, List<Dex>> { metadata, actual ->
-                DexSubject(metadata, actual)
+                DexSubject(metadata, actual, rootPackage)
             }
         }
+    }
+
+    override fun subPackage(name: String): ClassesSubject {
+        // the actual is a list of dex files, so we keep them but influence how the classes are read
+        // from them
+        val name = name.replace('.', '/').run {
+            if (endsWith('/')) this else "$this/"
+        }
+        return check("subPackage($name)").about(dexFiles(rootPackage + name)).that(actual())
     }
 
     /**
@@ -200,28 +261,45 @@ internal class DexSubject(
      */
     override val allClasses: Map<String, DexBackedClassDef> by lazy(LazyThreadSafetyMode.NONE) {
         actual().flatMap {
-            it.classes.entries.map { entry ->
-                entry.key.substring(1, entry.key.length - 1) to entry.value
+            it.classes.entries.mapNotNull { entry ->
+                val key = entry.key.substring(1, entry.key.length - 1)
+                when {
+                    rootPackage.isEmpty() -> key to entry.value
+                    key.startsWith(rootPackage) -> key.substring(rootPackage.length) to entry.value
+                    else -> null
+                }
             }
         }.associateBy({ it.first }) { it.second }
     }
-
 }
 
 internal class DexClassesFromApkSubject(
     metadata: FailureMetadata,
-    actual: Zip
+    actual: Zip,
+    /**
+     * The root package to ignore from the classes. Must end with a / or be empty
+     */
+    private val rootPackage: String,
 ): BaseDexSubject<DexClassesFromApkSubject, Zip>(metadata, actual), ClassesSubject {
 
     companion object {
         /**
          * Method for getting the subject factory (for use with assertAbout())
          */
-        internal fun apk(): Factory<DexClassesFromApkSubject, Zip> {
+        internal fun apk(rootPackage: String = ""): Factory<DexClassesFromApkSubject, Zip> {
             return Factory<DexClassesFromApkSubject, Zip> { metadata, actual ->
-                DexClassesFromApkSubject(metadata, actual)
+                DexClassesFromApkSubject(metadata, actual, rootPackage)
             }
         }
+    }
+
+    override fun subPackage(name: String): ClassesSubject {
+        // the zip is the APK, so we keep the same zip but influence how the classes are read
+        // from it
+        val name = name.replace('.', '/').run {
+            if (endsWith('/')) this else "$this/"
+        }
+        return check("subPackage($name)").about(apk(rootPackage + name)).that(actual())
     }
 
     override val allClasses: Map<String, DexBackedClassDef> by lazy(LazyThreadSafetyMode.NONE) {
@@ -240,8 +318,13 @@ internal class DexClassesFromApkSubject(
         }
 
         dexList.flatMap {
-            it.classes.entries.map { entry ->
-                entry.key.substring(1, entry.key.length - 1) to entry.value
+            it.classes.entries.mapNotNull { entry ->
+                val key = entry.key.substring(1, entry.key.length - 1)
+                when {
+                    rootPackage.isEmpty() -> key to entry.value
+                    key.startsWith(rootPackage) -> key.substring(rootPackage.length) to entry.value
+                    else -> null
+                }
             }
         }.associateBy({ it.first }) { it.second }
     }
@@ -269,19 +352,11 @@ internal class JarWithClassesSubject(
         }
     }
 
-    /**
-     * Returns a [IterableSubject] of all the classes in the jar (as [String] for binary names)
-     */
-    @Deprecated("Use ClassesSubject.containsExactly directly")
-    override fun classes(): IterableSubject {
-        return check("classes()").that(classNames)
-    }
-
-    override fun containsExactly(classNames: Iterable<String>) {
+    override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.lists())
+            .about(ComparatorSubject.classes())
             .that(this.classNames)
-            .containsExactly(classNames)
+            .containsExactly(items)
     }
 
     override fun isEmpty() {
@@ -290,6 +365,13 @@ internal class JarWithClassesSubject(
 
     override fun hasSize(size: Int) {
         check("size()").that(classNames.size).isEqualTo(size)
+    }
+
+    override fun containsAtLeast(items: Collection<String>) {
+        check("entries()")
+            .about(ComparatorSubject.classes())
+            .that(this.classNames)
+            .containsAtLeast(classNames)
     }
 
     /**
@@ -317,6 +399,11 @@ internal class JarWithClassesSubject(
         return check("classAsBytes($binaryName)")
             .about(BinarySubject.bytes())
             .that(content)
+    }
+
+    override fun subPackage(name: String): ClassesSubject {
+        val view = ZipFolderView(actual(), name.replace('.', '/'))
+        return check("subPackage($name)").about(jars()).that(view)
     }
 
     /**

@@ -32,8 +32,8 @@ import org.junit.rules.Timeout
 import java.io.File
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.createDirectories
 
 /**
  * test for packaging of android asset files.
@@ -338,52 +338,29 @@ class ResPackagingTest {
         //                  f3
         //                  f4
         //                  f5
-        val raw = appProject.file("src/main/res/raw")
-        Files.createDirectories(raw.toPath())
+        val raw = appProject.file("src/main/res/raw").also { it.toPath().createDirectories() }
+        val raw26 = appProject.file("src/main/res/raw-v26").also { it.toPath().createDirectories() }
+        val raw27 = appProject.file("src/main/res/raw-v27").also { it.toPath().createDirectories() }
 
-        val raw26 = appProject.file("src/main/res/raw-v26")
-        Files.createDirectories(raw26.toPath())
+        val f1NoneC = "f1NoneC"
+        val f2NoneC = "f2NoneC"
+        val f2v26C = "f2v26C"
+        val f3NoneC = "f3NoneC"
+        val f3v26C = "f3v26C"
+        val f3v27C = "f3v27C"
+        val f4v26C = "f4v26C"
+        val f4v27C = "f4v27C"
+        val f5v27C = "f5v27C"
 
-        val raw27 = appProject.file("src/main/res/raw-v27")
-        Files.createDirectories(raw27.toPath())
-
-        val f1NoneC = byteArrayOf(0)
-        val f2NoneC = byteArrayOf(1)
-        val f2v26C = byteArrayOf(2)
-        val f3NoneC = byteArrayOf(3)
-        val f3v26C = byteArrayOf(4)
-        val f3v27C = byteArrayOf(5)
-        val f4v26C = byteArrayOf(6)
-        val f4v27C = byteArrayOf(7)
-        val f5v27C = byteArrayOf(8)
-
-        val f1None = File(raw, "f1")
-        com.google.common.io.Files.write(f1NoneC, f1None)
-
-        val f2None = File(raw, "f2")
-        com.google.common.io.Files.write(f2NoneC, f2None)
-
-        val f2v26 = File(raw26, "f2")
-        com.google.common.io.Files.write(f2v26C, f2v26)
-
-        val f3None = File(raw, "f3")
-        com.google.common.io.Files.write(f3NoneC, f3None)
-
-        val f3v26 = File(raw26, "f3")
-        com.google.common.io.Files.write(f3v26C, f3v26)
-
-        val f3v27 = File(raw27, "f3")
-        com.google.common.io.Files.write(f3v27C, f3v27)
-
-        val f4v26 = File(raw26, "f4")
-        com.google.common.io.Files.write(f4v26C, f4v26)
-
-        val f4v27 = File(raw27, "f4")
-        com.google.common.io.Files.write(f4v27C, f4v27)
-
-        val f5v27 = File(raw27, "f5")
-        com.google.common.io.Files.write(f5v27C, f5v27)
-
+        File(raw, "f1").writeText(f1NoneC)
+        File(raw, "f2").writeText(f2NoneC)
+        File(raw26, "f2").writeText(f2v26C)
+        File(raw, "f3").writeText(f3NoneC)
+        File(raw26, "f3").writeText(f3v26C)
+        File(raw27, "f3").writeText(f3v27C)
+        File(raw26, "f4").writeText(f4v26C)
+        File(raw27, "f4").writeText(f4v27C)
+        File(raw27, "f5").writeText(f5v27C)
 
         val appGradleFile = appProject.file("build.gradle")
         val appGradleFileContents =
@@ -396,15 +373,27 @@ class ResPackagingTest {
         com.google.common.io.Files.asCharSink(appGradleFile, Charset.defaultCharset()).write(newBuild)
         execute("clean", ":app:assembleDebug")
 
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw/f2")
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw/f3")
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f2", f2v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f3", f3v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f4", f4v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f3", f3v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f4", f4v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f5", f5v27C)
+        appProject.assertApk(ApkSelector.DEBUG) {
+            checkResources(
+                resFolder = "raw",
+                "f1".withContent("f1NoneC"),
+                "file.txt",
+                "filelib.txt",
+                "filelib2.txt"
+            )
+            checkResources(
+                resFolder = "raw-v26",
+                "f2".withContent(f2v26C),
+                "f3".withContent(f3v26C),
+                "f4".withContent(f4v26C)
+            )
+            checkResources(
+                resFolder = "raw-v27",
+                "f3".withContent(f3v27C),
+                "f4".withContent(f4v27C),
+                "f5".withContent(f5v27C)
+            )
+        }
 
         // Set lower min SDK version and generate the APK. Incremental update!
         newBuild = appGradleFileContents.replace("minSdkVersion".toRegex(), "minSdkVersion 25 //")
@@ -416,16 +405,29 @@ class ResPackagingTest {
             execute("clean", ":app:assembleDebug")
         }
 
-        assertThat(appProject.getApk("debug"))
-            .containsFileWithContent("res/raw/f1", f1NoneC)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw/f2", f2NoneC)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw/f3", f3NoneC)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f2", f2v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f3", f3v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f4", f4v26C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f3", f3v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f4", f4v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f5", f5v27C)
+        appProject.assertApk(ApkSelector.DEBUG) {
+            checkResources(
+                resFolder = "raw",
+                "f1".withContent("f1NoneC"),
+                "f2".withContent("f2NoneC"),
+                "f3".withContent("f3NoneC"),
+                "file.txt",
+                "filelib.txt",
+                "filelib2.txt"
+            )
+            checkResources(
+                resFolder = "raw-v26",
+                "f2".withContent(f2v26C),
+                "f3".withContent(f3v26C),
+                "f4".withContent(f4v26C)
+            )
+            checkResources(
+                resFolder = "raw-v27",
+                "f3".withContent(f3v27C),
+                "f4".withContent(f4v27C),
+                "f5".withContent(f5v27C)
+            )
+        }
 
         // Set min SDK version 27 and generate the APK. Incremental update!
         newBuild = appGradleFileContents.replace("minSdkVersion".toRegex(), "minSdkVersion 27 //")
@@ -437,15 +439,25 @@ class ResPackagingTest {
             execute("clean", ":app:assembleDebug")
         }
 
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw/f1", f1NoneC)
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw/f2")
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw/f3")
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v26/f2", f2v26C)
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw-v26/f3")
-        assertThat(appProject.getApk("debug")).doesNotContain("res/raw-v26/f4")
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f3", f3v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f4", f4v27C)
-        assertThat(appProject.getApk("debug")).containsFileWithContent("res/raw-v27/f5", f5v27C)
+        appProject.assertApk(ApkSelector.DEBUG) {
+            checkResources(
+                resFolder = "raw",
+                "f1".withContent("f1NoneC"),
+                "file.txt",
+                "filelib.txt",
+                "filelib2.txt"
+            )
+            checkResources(
+                resFolder = "raw-v26",
+                "f2".withContent(f2v26C),
+            )
+            checkResources(
+                resFolder = "raw-v27",
+                "f3".withContent(f3v27C),
+                "f4".withContent(f4v27C),
+                "f5".withContent(f5v27C)
+            )
+        }
     }
 
     // ---- APP TEST ---
@@ -765,7 +777,13 @@ class ResPackagingTest {
         }
 
         private fun AbstractAndroidArchiveSubject<*,*>.checkRawResources(vararg itemList: Any) {
-            androidResources().folder("raw").apply {
+            checkResources(resFolder = "raw", itemList = itemList)
+        }
+
+        private fun AbstractAndroidArchiveSubject<*,*>.checkResources(
+            resFolder: String,
+            vararg itemList: Any) {
+            androidResources().folder(resFolder).apply {
                 if (itemList.isEmpty()) {
                     isEmpty()
                 } else {

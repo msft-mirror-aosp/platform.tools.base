@@ -26,50 +26,7 @@ import java.nio.file.Files
  * An object that can validate the content of a folder of jni libraries.
  */
 @SubjectDsl
-interface JniSubject {
-    /**
-     * Validates that the jni library list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(libraryPaths: Iterable<String>)
-
-    /**
-     * Validates that the jni library list matches exactly with the provided item.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(libraryPath: String) {
-        containsExactly(listOf(libraryPath))
-    }
-
-    /**
-     * Validates that the jni library list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(vararg libraryPaths: String) {
-        containsExactly(libraryPaths.toList())
-    }
-
-    /**
-     * Checks that the list of classes is empty
-     */
-    fun isEmpty()
-
-    /**
-     * Checks that the list of classes has the given size
-     */
-    fun hasSize(size: Int)
+interface JniSubject: FileArchiveSubject {
 
     /**
      * Returns a [JniSubject] representing the given ABI folder inside the current Jni folder
@@ -113,11 +70,11 @@ internal class JniSubjectImpl(
         }
     }
 
-    override fun containsExactly(libraryPaths: Iterable<String>) {
+    override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.lists())
+            .about(ComparatorSubject.files())
             .that(actual().getEntries())
-            .containsExactly(libraryPaths)
+            .containsExactly(items)
     }
 
     override fun isEmpty() {
@@ -126,6 +83,13 @@ internal class JniSubjectImpl(
 
     override fun hasSize(size: Int) {
         check("size()").that(actual().getEntries().size).isEqualTo(size)
+    }
+
+    override fun containsAtLeast(items: Collection<String>) {
+        check("entries()")
+            .about(ComparatorSubject.files())
+            .that(actual().getEntries())
+            .containsAtLeast(items)
     }
 
     override fun abi(abiName: String): JniSubject {

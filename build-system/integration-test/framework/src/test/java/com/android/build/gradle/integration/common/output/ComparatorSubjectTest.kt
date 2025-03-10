@@ -16,187 +16,407 @@
 
 package com.android.build.gradle.integration.common.output
 
-import com.android.build.gradle.integration.common.output.ZipSubject.Companion.zips
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.Truth
 import com.google.common.truth.TruthFailureSubject
 import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
-import kotlin.io.path.deleteExisting
 
 @Suppress("UnstableApiUsage")
-class ComparatorSubjectTest: BaseZipSubjectTest() {
+class ComparatorSubjectTest {
     @Test
     fun exactFileMatch() {
-        withArchive(
+        withActual(
             "com/foo/foo.txt",
             "com/bar/bar.txt"
-        ).expectSuccessWhenComparingTo(
+        ).expectExactMatchWith(
             "com/foo/foo.txt",
             "com/bar/bar.txt"
         )
     }
 
     @Test
-    fun unexpected_single_file() {
-        withArchive(
-            "com/foo/foo.txt",
-            "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/bar/bar.txt"
-        ).andValidateFailure {
-            factKeys().containsExactly("value of", "unexpected", "zip was")
-            factValue("value of").isEqualTo("zip.entries()")
-            factValue("unexpected").isEqualTo("com/foo/foo.txt")
-            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
-        }
-    }
-
-    @Test
-    fun unexpected_multi_files() {
-        withArchive(
+    fun exactFolderMatch() {
+        withActual(
             "com/foo/foo.txt",
             "com/foo/bar.txt",
             "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/bar/bar.txt"
-        ).andValidateFailure {
-            factKeys().contains("unexpected (2)")
-            factValue("unexpected (2)").isEqualTo("[com/foo/bar.txt, com/foo/foo.txt]")
-        }
-    }
-
-    @Test
-    fun missing_single_file() {
-        withArchive(
-            "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/foo/foo.txt",
-            "com/bar/bar.txt"
-        ).andValidateFailure {
-            factKeys().containsExactly("value of", "missing", "zip was")
-            factValue("value of").isEqualTo("zip.entries()")
-            factValue("missing").isEqualTo("com/foo/foo.txt")
-            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
-        }
-    }
-
-    @Test
-    fun missing_multi_files() {
-        withArchive(
-            "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/foo/foo.txt",
-            "com/foo/bar.txt",
-            "com/bar/bar.txt"
-        ).andValidateFailure {
-            factKeys().contains("missing (2)")
-            factValue("missing (2)").isEqualTo("[com/foo/bar.txt, com/foo/foo.txt]")
-        }
-    }
-
-    @Test
-    fun folderMatch() {
-        withArchive(
-            "com/foo/foo.txt",
-            "com/foo/bar.txt",
-            "com/bar/bar.txt"
-        ).expectSuccessWhenComparingTo(
+        ).expectExactMatchWith(
             "com/foo/",
             "com/bar/"
         )
     }
 
     @Test
-    fun missing_single_folder() {
-        withArchive(
-            "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/bar/",
-            "com/foo/"
-        ).andValidateFailure {
-            factKeys().containsExactly("value of", "missing", "zip was")
-            factValue("value of").isEqualTo("zip.entries()")
-            factValue("missing").isEqualTo("com/foo/")
-            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
-        }
-    }
-
-    @Test
-    fun missing_multi_folders() {
-        withArchive(
-            "com/bar/bar.txt"
-        ).expectFailureWhenComparingTo(
-            "com/bar/",
-            "com/foo/",
-            "com/foo2/"
-        ).andValidateFailure {
-            factKeys().contains("missing (2)")
-            factValue("missing (2)").isEqualTo("[com/foo/, com/foo2/]")
-        }
-    }
-
-    @Test
-    fun validate_file_and_parent_folder() {
-        withArchive(
+    fun fileAndParentFolder() {
+        withActual(
             "com/foo/foo.txt",
-        ).expectSuccessWhenComparingTo(
+        ).expectExactMatchWith(
             "com/foo/foo.txt",
             "com/foo/",
         )
     }
 
     @Test
-    fun missing_file_in_present_folder() {
-        withArchive(
+    fun exactClassMatchWithInnerClass() {
+        withActual(
+            "com/foo/Foo",
+        ).expectExactClassMatchWith(
+            "com/foo/Foo$"
+        )
+    }
+
+    @Test
+    fun classAndInnerClass() {
+        withActual(
+            "com/foo/Foo",
+            "com/foo/Foo\$bar",
+        ).expectExactClassMatchWith(
+            "com/foo/Foo$"
+        )
+    }
+
+    @Test
+    fun exactClassMatchWithoutInnerClass() {
+        withActual(
+            "com/foo/Foo",
+        ).expectExactClassMatchWith(
+            "com/foo/Foo$"
+        )
+    }
+
+    @Test
+    fun wrongSingleFile() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
             "com/foo/foo.txt",
-        ).expectFailureWhenComparingTo(
-            "com/foo/bar.txt",
-            "com/foo/",
         ).andValidateFailure {
-            factKeys().contains("missing")
-            factValue("missing").isEqualTo("com/foo/bar.txt")
+            factKeys().containsExactly("expected", "but was").inOrder()
+            factValue("expected").isEqualTo("com/foo/foo.txt")
         }
     }
 
+    @Test
+    fun wrongSingleFolder() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/foo/",
+        ).andValidateFailure {
+            factKeys().containsExactly("expected", "but was").inOrder()
+            factValue("expected").isEqualTo("com/foo/")
+        }
+    }
+
+    @Test
+    fun wrongSingleClass() {
+        withActual(
+            "com/bar/Bar"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/foo/Foo$",
+        ).andValidateFailure {
+            factKeys().containsExactly("expected", "but was").inOrder()
+            factValue("expected").isEqualTo("com/foo/Foo$")
+        }
+    }
+
+
+    @Test
+    fun unexpected_single_file() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/bar/bar.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("unexpected", "---", "expected", "but was").inOrder()
+            factValue("unexpected").isEqualTo("com/foo/foo.txt")
+            factValue("expected").isEqualTo("com/bar/bar.txt")
+        }
+    }
+
+    @Test
+    fun unexpected_multi_files() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/foo/bar.txt",
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/bar/bar.txt",
+        ).andValidateFailure {
+            factKeys().containsExactly("unexpected (2)", "---", "expected", "but was").inOrder()
+            factValue("unexpected (2)").isEqualTo("[com/foo/bar.txt, com/foo/foo.txt]")
+            factValue("expected").isEqualTo("com/bar/bar.txt")
+        }
+    }
+
+    @Test
+    fun multiple_unexpected_and_missing() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/foo/foo2.txt",
+        ).expectFailureWhenComparingExactlyTo(
+            "com/bar/bar.txt",
+            "com/bar/bar2.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing (2)", "unexpected (2)", "---", "expected", "but was").inOrder()
+            factValue("missing (2)").isEqualTo("[com/bar/bar.txt, com/bar/bar2.txt]")
+            factValue("unexpected (2)").isEqualTo("[com/foo/foo.txt, com/foo/foo2.txt]")
+            factValue("expected").isEqualTo("[com/bar/bar.txt, com/bar/bar2.txt]")
+        }
+    }
+
+    @Test
+    fun missing_single_file() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing", "---", "expected", "but was").inOrder()
+            factValue("missing").isEqualTo("com/foo/foo.txt")
+            factValue("expected").isEqualTo("[com/bar/bar.txt, com/foo/foo.txt]")
+        }
+    }
+
+    @Test
+    fun missing_multi_files() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/foo/foo.txt",
+            "com/foo/bar.txt",
+            "com/bar/bar.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing (2)", "---", "expected", "but was").inOrder()
+            factValue("missing (2)").isEqualTo("[com/foo/bar.txt, com/foo/foo.txt]")
+            factValue("expected").isEqualTo("[com/bar/bar.txt, com/foo/bar.txt, com/foo/foo.txt]")
+        }
+    }
+
+    @Test
+    fun missing_single_folder() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/bar/",
+            "com/foo/"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing", "---", "expected", "but was").inOrder()
+            factValue("missing").isEqualTo("com/foo/")
+            factValue("expected").isEqualTo("[com/bar/, com/foo/]")
+        }
+    }
+
+    @Test
+    fun missing_multi_folders() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingExactlyTo(
+            "com/bar/",
+            "com/foo/",
+            "com/foo2/"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing (2)", "---", "expected", "but was").inOrder()
+            factValue("missing (2)").isEqualTo("[com/foo/, com/foo2/]")
+            factValue("expected").isEqualTo("[com/bar/, com/foo/, com/foo2/]")
+        }
+    }
+
+    @Test
+    fun missing_file_in_present_folder() {
+        withActual(
+            "com/foo/foo.txt",
+        ).expectFailureWhenComparingExactlyTo(
+            "com/foo/bar.txt",
+            "com/foo/",
+        ).andValidateFailure {
+            factKeys().containsExactly("missing", "---", "expected", "but was").inOrder()
+            factValue("missing").isEqualTo("com/foo/bar.txt")
+            factValue("expected").isEqualTo("[com/foo/, com/foo/bar.txt]")
+        }
+    }
+
+    @Test
+    fun partialFileMatch() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).expectPartialMatchWith(
+            "com/foo/foo.txt",
+        )
+    }
+
+    @Test
+    fun partialExactFileMatch() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).expectPartialMatchWith(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        )
+    }
+
+    @Test
+    fun partialFolderMatch() {
+        withActual(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).expectPartialMatchWith(
+            "com/foo/",
+        )
+    }
+
+    @Test
+    fun partialClassMatch() {
+        withActual(
+            "com/foo/Foo",
+            "com/bar/Bar",
+        ).expectPartialClassMatchWith(
+            "com/foo/Foo$"
+        )
+    }
+
+    @Test
+    fun partial_multiple_missings() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingPartiallyTo(
+            "com/foo/foo.txt",
+            "com/foo/bar.txt",
+            "com/bar/bar.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing (2)", "---", "expected at least", "but was").inOrder()
+            factValue("missing (2)").isEqualTo("[com/foo/bar.txt, com/foo/foo.txt]")
+            factValue("expected at least").isEqualTo("[com/bar/bar.txt, com/foo/bar.txt, com/foo/foo.txt]")
+        }
+    }
+
+    @Test
+    fun partial_single_missing() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingPartiallyTo(
+            "com/foo/foo.txt",
+            "com/bar/bar.txt"
+        ).andValidateFailure {
+            factKeys().containsExactly("missing", "---", "expected at least", "but was").inOrder()
+            factValue("missing").isEqualTo("com/foo/foo.txt")
+            factValue("expected at least").isEqualTo("[com/bar/bar.txt, com/foo/foo.txt]")
+        }
+    }
+
+    @Test
+    fun partial_missing_single_expected() {
+        withActual(
+            "com/bar/foo.txt",
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingPartiallyTo(
+            "com/foo/foo.txt",
+        ).andValidateFailure {
+            factKeys().containsExactly("missing", "---", "expected to contain", "but was").inOrder()
+            factValue("missing").isEqualTo("com/foo/foo.txt")
+            factValue("expected to contain").isEqualTo("com/foo/foo.txt")
+        }
+    }
+
+    @Test
+    fun partial_wrong_single_item() {
+        withActual(
+            "com/bar/bar.txt"
+        ).expectFailureWhenComparingPartiallyTo(
+            "com/foo/foo.txt",
+        ).andValidateFailure {
+            factKeys().containsExactly("expected to contain", "but was").inOrder()
+            factValue("expected to contain").isEqualTo("com/foo/foo.txt")
+        }
+    }
+
+
     // ---------------------------
 
-    private class ArchiveTester(
-        private val zip: SimpleZip
+    private class StringListTester(
+        private val actual: Collection<String>
     ) {
-        fun expectSuccessWhenComparingTo(vararg items: String) {
-            zip.use {
-                Truth.assertAbout(zips()).that(it).containsExactly(*items)
-            }
-            zip.archivePath!!.deleteExisting()
+        fun expectExactMatchWith(vararg items: String) {
+            Truth.assertAbout(ComparatorSubject.files())
+                .that(actual)
+                .containsExactly(items.toList())
+        }
+
+        fun expectPartialMatchWith(vararg items: String) {
+            Truth.assertAbout(ComparatorSubject.files())
+                .that(actual)
+                .containsAtLeast(items.toList())
+        }
+
+        fun expectExactClassMatchWith(vararg items: String) {
+            Truth.assertAbout(ComparatorSubject.classes())
+                .that(actual)
+                .containsExactly(items.toList())
+        }
+
+        fun expectPartialClassMatchWith(vararg items: String) {
+            Truth.assertAbout(ComparatorSubject.classes())
+                .that(actual)
+                .containsAtLeast(items.toList())
         }
 
         @CheckReturnValue
-        fun expectFailureWhenComparingTo(vararg items: String): AssertionError {
-            val error = zip.use { zip ->
-                ExpectFailure.expectFailureAbout(zips()) { subjectBuilder ->
-                    subjectBuilder.that(zip).containsExactly(*items)
-                }
+        fun expectFailureWhenComparingExactlyTo(vararg items: String): TestError {
+            return expectFailure(
+                mode = ComparatorSubject.Mode.FILES,
+                items = items
+            ) {
+                containsExactly(it)
             }
-            zip.archivePath!!.deleteExisting()
+        }
 
-            return error
+        @CheckReturnValue
+        fun expectFailureWhenComparingPartiallyTo(vararg items: String): TestError {
+            return expectFailure(
+                mode = ComparatorSubject.Mode.FILES,
+                items = items
+            ) {
+                containsAtLeast(it)
+            }
+        }
+
+        @CheckReturnValue
+        private fun expectFailure(
+            mode: ComparatorSubject.Mode = ComparatorSubject.Mode.FILES,
+            vararg items: String,
+            action: ComparatorSubject.(Collection<String>) -> Unit
+        ): TestError {
+            val factory = if (mode == ComparatorSubject.Mode.FILES)
+                ComparatorSubject.files()
+            else
+                ComparatorSubject.classes()
+
+            return TestError(
+                error = ExpectFailure.expectFailureAbout(factory) { subjectBuilder ->
+                    action(subjectBuilder.that(actual), items.toList())
+                },
+                actual = actual
+            )
         }
     }
 
     @CheckReturnValue
-    private fun withArchive(
-        vararg items: String,
-    ): ArchiveTester {
-        return ArchiveTester(createJar("temp.zip") {
-            for (item in items) {
-                // the content does not matter, we just validate file list
-                addTextFile("/$item", "a")
-            }
-        })
+    private fun withActual(vararg items: String): StringListTester {
+        return StringListTester(items.toList())
     }
 
-    fun AssertionError.andValidateFailure(action: TruthFailureSubject.() -> Unit) {
-        action(ExpectFailure.assertThat(this))
+    class TestError(val error: AssertionError, val actual: Collection<String>)
+
+    fun TestError.andValidateFailure(action: TruthFailureSubject.() -> Unit) {
+        val failureSubject = ExpectFailure.assertThat(this.error)
+        action(failureSubject)
+
+        // automatically validate "but was"
+        failureSubject.factValue("but was").isEqualTo(actual.sorted().toString())
     }
 }

@@ -161,6 +161,30 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
         }
     }
 
+    @Test
+    fun containExactly() {
+        val jar = createJar("temp.zip") {
+            addTextFile("com/foo/foo.txt", "foo")
+            addTextFile("com/bar/bar.txt", "bar")
+        }
+
+        assertThat(jar).containsExactly("com/foo/foo.txt", "com/bar/bar.txt")
+
+        expectFailure {
+            it.that(jar).containsExactly("com/bar/foo.txt", "com/bar/bar.txt")
+        }.assert {
+            factKeys()
+                .containsExactly("value of", "missing", "unexpected", "---", "expected", "but was", "zip was")
+                .inOrder()
+            factValue("value of").isEqualTo("zip.entries()")
+            factValue("missing").isEqualTo("com/bar/foo.txt")
+            factValue("unexpected").isEqualTo("com/foo/foo.txt")
+            factValue("expected").isEqualTo("[com/bar/bar.txt, com/bar/foo.txt]")
+            factValue("but was").isEqualTo("[com/bar/bar.txt, com/foo/foo.txt]")
+            factValue("zip was").isEqualTo("Zip(name='temp.zip', status=EXISTS)")
+        }
+    }
+
     @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<ZipSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(ZipSubject.zips(), action)
