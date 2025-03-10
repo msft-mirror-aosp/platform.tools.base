@@ -38,7 +38,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -148,16 +147,13 @@ public class IrToBazel {
 
             for (IrModule.Dependency<? extends IrNode> dependency : module
                     .getDependencies()) {
-                List<ImlModule.Tag> scopes = new LinkedList<>();
+                ImlModule.Tag scope = ImlModule.Tag.PROD;
                 if (dependency.scope == IrModule.Scope.TEST) {
-                    scopes.add(ImlModule.Tag.TEST);
-                }
-                if (dependency.scope == IrModule.Scope.RUNTIME) {
-                    scopes.add(ImlModule.Tag.RUNTIME);
-                }
-                if (dependency.scope == IrModule.Scope.TEST_RUNTIME) {
-                    scopes.add(ImlModule.Tag.TEST);
-                    scopes.add(ImlModule.Tag.RUNTIME);
+                    scope = ImlModule.Tag.TEST;
+                } else if (dependency.scope == IrModule.Scope.RUNTIME) {
+                    scope = ImlModule.Tag.PROD_RUNTIME;
+                } else if (dependency.scope == IrModule.Scope.TEST_RUNTIME) {
+                    scope = ImlModule.Tag.TEST_RUNTIME;
                 }
                 if (dependency.dependency instanceof IrLibrary) {
                     // TODO: Update iml files to have the right names.
@@ -201,7 +197,7 @@ public class IrToBazel {
                                 }
                                 unmanaged.put(newName, rule);
                             }
-                            imlModule.addDependency(rule, dependency.exported, scopes);
+                            imlModule.addDependency(rule, dependency.exported, scope);
                             continue;
                         }
                         if (library.owner != null && library.owner != module) {
@@ -304,14 +300,14 @@ public class IrToBazel {
                         }
                         imports.put(library, javaImport);
                     }
-                    imlModule.addDependency(javaImport, dependency.exported, scopes);
+                    imlModule.addDependency(javaImport, dependency.exported, scope);
                     if (isArtifact) {
                         artifacts.add(javaImport.getLabel());
                     }
 
                 } else if (dependency.dependency instanceof IrModule) {
                     imlModule.addDependency(
-                            moduleRefs.get(dependency.dependency), dependency.exported, scopes);
+                            moduleRefs.get(dependency.dependency), dependency.exported, scope);
                 }
             }
         }
