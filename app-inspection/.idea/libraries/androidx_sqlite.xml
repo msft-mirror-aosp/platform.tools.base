@@ -2,7 +2,7 @@
   <library name="androidx-sqlite">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/m2/_aar/androidx-sqlite-2.5.0-beta01/classes_and_libs_merged.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/m2/_aar/androidx-sqlite-bundled-2.5.0-beta01/classes_and_libs_merged.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/sqlite/sqlite-bundled-jvm/2.5.0-beta01/sqlite-bundled-jvm-2.5.0-beta01.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
