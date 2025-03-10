@@ -1,4 +1,5 @@
 load("//tools/base/bazel/jarjar:jarjar.bzl", "jarjar")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def _fileset_impl(ctx):
     srcs = depset(order = "postorder", transitive = [src.files for src in ctx.attr.srcs])
@@ -176,10 +177,14 @@ def _dir_archive_impl(ctx):
 
     prefix = ctx.attr.dir
     for file in ctx.files.files:
-        if not file.short_path.startswith(prefix):
-            fail(file.short_path + "is not in " + prefix)
+        path = file.short_path
+        if ctx.attr.dir_relative_to_repository and path.startswith("../"):
+            # Paths in an external repository start with "../<canonical repository name>/".
+            path = path[path.find("/", 3) + 1:]
+        if not path.startswith(prefix):
+            fail(path + "is not in " + prefix)
         else:
-            zipper_args.add("{}={}".format(file.short_path[len(prefix) + 1:], file.path))
+            zipper_args.add("{}={}".format(paths.relativize(path, prefix), file.path))
     files = []
     files += ctx.files.files
     if ctx.attr.stamp:
@@ -210,6 +215,7 @@ dir_archive = rule(
             allow_files = True,
         ),
         "dir": attr.string(mandatory = True),
+        "dir_relative_to_repository": attr.bool(default = False),
         "stamp": attr.string(),
         "ext": attr.string(default = "zip"),
         "_status_reader": attr.label(

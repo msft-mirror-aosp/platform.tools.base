@@ -1,0 +1,42 @@
+intellij = use_extension("//tools/base/intellij-bazel:extensions.bzl", "intellij")
+
+# IntelliJ platforms. To add support:
+# The URLs have to point to full IDEs. While there are some versions
+# of the IDEs in https://www.jetbrains.com/intellij-repository,
+# they do not contain the bundled JBRs. These IDEs are used to run
+# integration tests, so they have to be fully functional. This means we are
+# not able to compile against snapshot builds that have not been released.
+#
+# To calculate the sha256, download the file and run sha256sum on it.
+intellij.local_platform(
+    name = "studio-sdk",
+    spec = "@//prebuilts/studio/intellij-sdk:AI/spec.bzl",
+    target = "@//prebuilts/studio/intellij-sdk:studio-sdk",
+)
+intellij.remote_platform(
+    name = "intellij_ce_2024_1",
+    sha256 = "7d5e4cdb5a7cb1c376ca66957481350571561edadc3f45e6fce422e14af0fc16",
+    top_level_dir = "idea-IC-241.18034.62",
+    url = "https://download.jetbrains.com/idea/ideaIC-2024.1.4.tar.gz",
+)
+intellij.remote_platform(
+    name = "intellij_ce_2024_2",
+    sha256 = "781cc03526d5811061c6ffd211942698b3d18ed2f055a04f384956686a7aa0a6",
+    top_level_dir = "idea-IC-242.21829.142",
+    url = "https://download.jetbrains.com/idea/ideaIC-2024.2.1.tar.gz",
+)
+intellij.remote_platform(
+    name = "intellij_ce_2024_3",
+    sha256 = "b183b126de2cd457475eea184874b5da2fa33ba5ae2ff874bdc8c1d534156428",
+    top_level_dir = "idea-IC-243.22562.218",
+    url = "https://download.jetbrains.com/idea/ideaIC-2024.3.1.1.tar.gz",
+)
+intellij.remote_platform(
+    name = "intellij_ce_2025_1",
+    sha256 = "007e780b9505ab646923799acfbba10ee269d91d2a06ef92cbdcb2558a35e744",
+    top_level_dir = "idea-IC-251.23774.16",
+    url = "https://download.jetbrains.com/idea/ideaIC-251.23774.16.tar.gz",
+)
+
+# IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
+use_repo(intellij, "intellij", "intellij_ce_2024_1", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1")
