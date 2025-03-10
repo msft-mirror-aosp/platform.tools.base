@@ -28,16 +28,13 @@ import com.android.adblib.tools.debugging.ProfilerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.allocationTracker
 import com.android.adblib.tools.debugging.executeGarbageCollector
-import com.android.adblib.tools.debugging.handleDdmsCaptureView
-import com.android.adblib.tools.debugging.handleDdmsDumpViewHierarchy
-import com.android.adblib.tools.debugging.handleDdmsListViewRoots
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
+import com.android.adblib.tools.debugging.viewHierarchy
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withErrorTimeout
 import com.android.adblib.withPrefix
@@ -444,35 +441,30 @@ internal class AdblibClientWrapper(
 
     override fun listViewRoots(replyHandler: DebugViewDumpHandler) {
         launchLegacyWithJdwpSession("listViewRoots") {
-            val buffer = handleDdmsListViewRoots { chunkReply ->
+            jdwpProcess.viewHierarchy.listViewRoots { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                replyHandler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            replyHandler.handleChunkData(buffer)
         }
     }
 
     override fun captureView(
-        viewRoot: String,
-        view: String,
-        replyHandler: DebugViewDumpHandler
+        viewRoot: String, view: String, replyHandler: DebugViewDumpHandler
     ) {
         launchLegacyWithJdwpSession("captureView($viewRoot, $view)") {
-            val buffer = handleDdmsCaptureView(viewRoot, view) { chunkReply ->
+            jdwpProcess.viewHierarchy.captureView(
+                viewRoot,
+                view
+            ) { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                replyHandler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            replyHandler.handleChunkData(buffer)
         }
     }
 
@@ -484,21 +476,18 @@ internal class AdblibClientWrapper(
         handler: DebugViewDumpHandler
     ) {
         launchLegacyWithJdwpSession("dumpViewHierarchy($viewRoot, $skipChildren, $includeProperties, $useV2)") {
-            val buffer = handleDdmsDumpViewHierarchy(
+            jdwpProcess.viewHierarchy.dumpViewHierarchy(
                 viewRoot = viewRoot,
                 skipChildren = skipChildren,
                 includeProperties = includeProperties,
                 useV2 = useV2
-            ) { chunkReply ->
+            ) { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                handler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            handler.handleChunkData(buffer)
         }
     }
 
