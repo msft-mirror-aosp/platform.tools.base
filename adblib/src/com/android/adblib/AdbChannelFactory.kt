@@ -20,6 +20,7 @@ import com.android.adblib.impl.channels.ByteBufferAdbInputChannelImpl
 import com.android.adblib.impl.channels.ByteBufferAdbOutputChannelImpl
 import com.android.adblib.impl.channels.DEFAULT_CHANNEL_BUFFER_SIZE
 import com.android.adblib.impl.channels.EmptyAdbInputChannelImpl
+import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.utils.ResizableBuffer
 import java.io.BufferedInputStream
 import java.io.IOException
@@ -29,6 +30,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
+import java.nio.charset.Charset
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
@@ -148,6 +150,27 @@ interface AdbChannelFactory {
         output: AdbOutputChannel,
         bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
     ): AdbBufferedOutputChannel
+
+    /**
+     * Creates a [SuspendingWriter] that allows writing text to an [AdbOutputChannel] with
+     * a given [charset] encoding.
+     */
+    fun createOutputChannelWriter(
+        output: AdbOutputChannel,
+        autoFlush: Boolean = true,
+        throwsOnMalformed: Boolean = false,
+        bufferCapacity: Int = 256,
+        charset: Charset = AdbProtocolUtils.ADB_CHARSET
+    ): SuspendingWriter {
+        return AdbOutputChannelWriter(
+            channel = output,
+            autoFlush = autoFlush,
+            throwsOnMalformed = throwsOnMalformed,
+            bufferCapacity = bufferCapacity,
+            charset = charset
+        )
+    }
+
 
     /**
      * Creates an [AdbInputChannel] that wraps the provided [InputStream] to read from it.
