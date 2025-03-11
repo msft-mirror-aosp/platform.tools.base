@@ -23,22 +23,6 @@ ImlModuleInfo = provider(
     ],
 )
 
-# This is a custom implementation of label "tags".
-# A label of the form:
-#   "//package/directory:rule[tag1, tag2]"
-# Gets split up into a tuple containing the label, and the array of tags:
-#   ("//package/directory:rule", ["tag1", "tag2"])
-# Returns the split up tuple.
-def _get_label_and_tags(label):
-    if not label.endswith("]"):
-        return label, []
-    rfind = label.rfind("[")
-    if rfind == -1:
-        # buildifier: disable=print
-        print("Malformed tagged label: " + label)
-        return label, []
-    return label[:rfind], [tag.strip() for tag in label[rfind + 1:-1].split(",")]
-
 def relative_paths(ctx, files, roots):
     """Returns paths of the given files relative to the roots.
 
@@ -501,6 +485,7 @@ def iml_module(
         kotlinc_opts = [],
         enable_tests = True,
         test_data = [],
+        test_deps = [],
         test_flaky = False,
         test_jvm_flags = [],
         test_timeout = "moderate",
@@ -588,22 +573,6 @@ def iml_module(
         kotlin_use_compose: See impl.
         generate_k1_tests: Creates an additional test target to use the kotlin K1 plugin.
     """
-    prod_deps = []
-    test_deps = []
-    has_test_deps = False
-    for dep in deps:
-        label, label_tags = _get_label_and_tags(dep)
-        for label_tag in label_tags:
-            if label_tag not in ["test"]:
-                fail("Invalid label tag: " + label_tag)
-        if "test" not in label_tags:
-            prod_deps.append(label)
-            if has_test_deps:
-                fail("[test] dependencies must be at the end")
-        else:
-            has_test_deps = True
-        test_deps.append(label)
-
     srcs = split_srcs(srcs, resources, exclude)
     split_test_srcs = split_srcs(test_srcs, test_resources, exclude)
 
@@ -638,9 +607,9 @@ def iml_module(
         module_visibility = module_visibility,
         iml_files = iml_files,
         exports = exports,
-        deps = prod_deps,
+        deps = deps,
         runtime_deps = runtime_deps,
-        test_deps = test_deps,
+        test_deps = deps + test_deps,
         test_friends = test_friends,
         data = data,
         test_class = test_class,
@@ -679,7 +648,7 @@ def iml_module(
             name = name + "_lint_test",
             srcs = lint_srcs,
             baseline = lint_baseline,
-            deps = prod_deps,
+            deps = deps,
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"],
             external_annotations = ["//tools/base/external-annotations:annotations.zip"],
             tags = lint_tags,

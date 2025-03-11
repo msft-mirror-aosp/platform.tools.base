@@ -58,7 +58,8 @@ public class ImlModule extends BazelRule {
         call.setArgument("exclude", exclude);
         call.setArgument("resources", resources);
         call.setArgument("test_resources", testResources);
-        call.setArgument("deps", tagDependencies(dependencies, testDeps));
+        call.setArgument("deps", dependencies);
+        call.setArgument("test_deps", testDeps);
         call.setArgument("exports", exported);
         call.setArgument("iml_files", imlFiles);
         call.setArgument("jvm_target", jvmTarget);
@@ -76,22 +77,12 @@ public class ImlModule extends BazelRule {
         call.setDoNotSort("resources", reason);
         call.setDoNotSort("exports", reason);
         call.setDoNotSort("deps", reason);
+        call.setDoNotSort("test_deps", reason);
         call.setDoNotSort("runtime_deps", reason);
         call.setDoNotSort("test_runtime_deps", reason);
         call.setDoNotSort("test_friends", reason);
 
         statement.setIsManaged();
-    }
-
-    private List<String> tagDependencies(Set<BazelRule> dependencies, Set<BazelRule> testDeps) {
-        List<String> deps = new LinkedList<>();
-        for (BazelRule dependency : dependencies) {
-            deps.add(dependency.getLabel());
-        }
-        for (BazelRule dependency : testDeps) {
-            deps.add(dependency.getLabel() + "[test]");
-        }
-        return deps;
     }
 
     public void addRuntimeDependency(BazelRule rule) {
