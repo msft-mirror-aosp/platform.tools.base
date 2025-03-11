@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.library
+package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.dependencies.AarBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
@@ -22,13 +22,15 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
+import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryReport
+import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.truth.PathSubject
 import org.gradle.api.JavaVersion
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -54,6 +56,16 @@ class FusedLibraryClassesVerificationTest {
 
             jar("this.dependency:has-a-dependency-that-does-not-exist:1.0")
                 .withDependencies("this.dependency:doesnotexist:1.0")
+
+            library(
+                MavenRepoGenerator.Library(
+                    mavenCoordinate = "bom:external-lib-bom:1.0",
+                    packaging = "pom",
+                    artifact = byteArrayOf(),
+                    dependencies = emptyList<String>(),
+                    dependencyManagementDependencies = listOf("com.externaldep:depwithdep:1.0")
+                )
+            )
         }.from {
             androidLibrary(":androidLib1") {
                 applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
@@ -229,7 +241,7 @@ class FusedLibraryClassesVerificationTest {
                 androidFusedLibrary {
                     namespace = "com.example.fusedLib1"
                     minSdk = 34
-                    experimentalProperties[BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = true
+                    experimentalProperties[ModulePropertyKey.BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = true
                 }
                 // Use addDependenciesToFusedLibProject() for setting dependencies.
                 dependencies {}
@@ -273,8 +285,8 @@ class FusedLibraryClassesVerificationTest {
 
         build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
         build.checkFusedLibReportContents(
-            listOf("project :androidLib1", "project :androidLib2"),
-            listOf(
+            include = listOf("project :androidLib1", "project :androidLib2"),
+            dependencies = listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
                 "org.jetbrains:annotations:<version>"
             ),
@@ -332,8 +344,8 @@ class FusedLibraryClassesVerificationTest {
         )
         build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
         build.checkFusedLibReportContents(
-            listOf("project :androidLib2"),
-            listOf(
+            include = listOf("project :androidLib2"),
+            dependencies = listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
                 "org.jetbrains:annotations:<version>",
                 "project.:androidLib1:unspecified"
@@ -360,8 +372,8 @@ class FusedLibraryClassesVerificationTest {
         build.assertFusedLibAarContainsExpectedClasses(classesFromDirectDependencies)
 
         build.checkFusedLibReportContents(
-            listOf("com.externaldep.externalaar:externalaar:1.0", "project :androidLib1"),
-            listOf(
+            include = listOf("com.externaldep.externalaar:externalaar:1.0", "project :androidLib1"),
+            dependencies = listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
                 "org.jetbrains:annotations:<version>"
             )
@@ -403,7 +415,7 @@ class FusedLibraryClassesVerificationTest {
 
         appProject.assertApk(ApkSelector.DEBUG) {
             classes().containsExactly(
-                "com/android/build/gradle/integration/library/TestClass",
+                TestClass::class.qualifiedName?.replace(".", "/").toString(),
                 "com/example/myapp/R",
                 "com/example/fusedLib1/R",
                 "kotlin/",
@@ -428,22 +440,26 @@ class FusedLibraryClassesVerificationTest {
             val failureExecutor = build.executor
                     .with(BooleanOption.USE_ANDROID_X, enableAndroidx)
 
-            val expectedFailure = "Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
-                    "   [Databinding is not supported by Fused Library modules]:\n" +
-                    "    * androidx.databinding:databinding-common is not a permitted dependency."
-
             listOf(
                 "generatePomFileForMavenPublication",
                 "publish",
-                "publishToMavenLocal"
             ).forEach {
                 val publicationFailure =
                     failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
-                publicationFailure.assertErrorContains(expectedFailure)
+                publicationFailure.assertErrorContains("Validation failed due to 2 issue(s) with :fusedLib1 dependencies:\n" +
+                        "   [Unresolved Dependencies]:\n" +
+                        "    * Could not find androidx.databinding:databinding-adapters")
+                publicationFailure.assertErrorContains(
+                    "[Databinding is not supported by Fused Library modules]:\n" +
+                        "    * androidx.databinding:databinding-adapters")
             }
 
-            val buildFailure = failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:bundle")
-            buildFailure.assertErrorContains(expectedFailure)
+            listOf("publishToMavenLocal", "bundle").forEach {
+                val buildFailure = failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
+                buildFailure.assertErrorContains(
+                    "> Could not resolve all files for configuration ':androidLibWithDatabinding:debugCompileClasspath'.\n" +
+                            "   > Could not find androidx.databinding:viewbinding:")
+            }
         }
     }
 
@@ -492,7 +508,7 @@ class FusedLibraryClassesVerificationTest {
         // Check validation can be disabled.
         build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").reconfigure {
             androidFusedLibrary {
-                experimentalProperties[BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = false
+                experimentalProperties[ModulePropertyKey.BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = false
             }
         }
         build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
@@ -513,8 +529,8 @@ class FusedLibraryClassesVerificationTest {
         failure.assertErrorContains(
             "> Validation failed due to 1 issue(s) with :fusedLib1 dependencies:\n" +
                     "   [Unresolved Dependencies]:\n" +
-                    "    * Could not find this.dependency:doesnotexist:1.0.\n" +
-                    "  Searched in the following locations:")
+                    "    * Could not find this.dependency:doesnotexist:1.0."
+        )
         failure.assertErrorContains(
             "  The following checks did not finish:\n" +
                     "   [Databinding is not supported by Fused Library modules]:\n" +
@@ -524,8 +540,143 @@ class FusedLibraryClassesVerificationTest {
         )
     }
 
+    @Test
+    fun checkPlatformBomDependenciesInLibraryDependencies() {
+        val build = rule.build {
+            genericProject(":my-platform") {
+                applyPlugin(PluginType.JAVA_PLATFORM)
+                dependencies {
+                    constraints {
+                        api("com.externaldep.externalaar:externalaar:1.0")
+                    }
+                }
+            }
+            androidLibrary {
+                dependencies {
+                    implementation(platform(project(":my-platform")))
+                    implementation("com.externaldep.externalaar:externalaar") // version from :my-platform
+                }
+            }
+            fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+                androidFusedLibrary {
+                    namespace = "com.example.fusedlib"
+                }
+                dependencies {
+                    include(project(":lib"))
+                }
+            }
+        }
+
+        // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        build.checkFusedLibReportContents(
+            include = listOf("project :lib"),
+            dependencies = listOf(
+                "project.:my-platform:unspecified",
+                "com.externaldep.externalaar:externalaar:1.0",
+            )
+        )
+
+        // Check publication
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
+        assertExpectedPomDependencies(
+            build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir
+                .resolve("publications/maven/pom-default.xml"),
+            listOf(
+                "project.:my-platform:unspecified scope:runtime",
+                "com.externaldep.externalaar:externalaar:1.0 scope:runtime",
+            )
+        )
+    }
+
+    @Test
+    @Ignore("This case does not work yet - b/399879853")
+    fun checkExternalLibraryBomDependenciesInLibraryDependencies() {
+        val build = rule.build {
+            androidLibrary {
+                dependencies {
+                    implementation(platform("bom:external-lib-bom:1.0"))
+                    implementation("com.externaldep:depwithdep") // version from bom:external-lib-bom:1.0
+                }
+            }
+            fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+                androidFusedLibrary {
+                    namespace = "com.example.fusedlib"
+                }
+                dependencies {
+                    include(project(":lib"))
+                }
+            }
+        }
+
+        // Checks that including a platform/BOM in a transitive dependency doesn't impact build.
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        build.checkFusedLibReportContents(
+            include = listOf("project :lib"),
+            dependencies = listOf(
+                "bom:external-lib-bom:1.0",
+                "com.externaldep:depwithdep:1.0"
+            )
+        )
+
+        // Check publication
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
+        assertExpectedPomDependencies(
+            build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir
+                .resolve("publications/maven/pom-default.xml"),
+            listOf(
+                "bom:external-lib-bom:1.0 scope:runtime",
+                "com.externaldep:depwithdep:1.0"
+            )
+        )
+    }
+
+    @Test
+    fun checkPlatformBomDependenciesInDirectDependencies() {
+        val build = rule.build {
+            genericProject(":my-platform") {
+                applyPlugin(PluginType.JAVA_PLATFORM)
+                dependencies {
+                    constraints {
+                        api("com.externaldep.externalaar:externalaar:1.0")
+                        api("com.externaldep:depwithdep:1.0")
+                    }
+                }
+            }
+            fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+                androidFusedLibrary {
+                    namespace = "com.example.fusedlib"
+                }
+                dependencies {
+                    include(platform(project(":my-platform")))
+                    include("bom:external-lib-bom:1.0")
+                    // Omit version for platform version resolution
+                    include("com.externaldep.externalaar:externalaar")
+                    include("com.externaldep:depwithdep")
+                }
+            }
+        }
+
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+        build.checkFusedLibReportContents(
+            include = listOf(
+                "project :my-platform",
+                "bom:external-lib-bom:1.0",
+                "com.externaldep.externalaar:externalaar:1.0",
+                "com.externaldep:depwithdep:1.0"
+            ),
+            dependencies = listOf()
+        )
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:generatePomFileForMavenPublication")
+        assertExpectedPomDependencies(
+            build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir
+                .resolve("publications/maven/pom-default.xml"),
+            emptyList()
+        )
+    }
+
     private fun GradleBuild.checkFusedLibReportContents(
-        included: List<String>,
+        include: List<String>,
         dependencies: List<String>
     ) {
         executor.run(":$FUSED_LIBRARY_PROJECT_NAME:report")
@@ -537,12 +688,12 @@ class FusedLibraryClassesVerificationTest {
 
         val fusedLibReport = FusedLibraryReport.readFromFile(reportFile.toFile())
 
-        assertThat(fusedLibReport.included).containsExactlyElementsIn(included)
+        TruthHelper.assertThat(fusedLibReport.included).containsExactlyElementsIn(include)
         val idWithoutVersionPlaceholder =
             { str: String -> str.substringBeforeLast(":<version>") }
-        assertThat(dependencies.count()).isEqualTo(fusedLibReport.dependencies.count())
+        TruthHelper.assertThat(fusedLibReport.dependencies.count()).isEqualTo(dependencies.count())
         dependencies.map(idWithoutVersionPlaceholder).zip(fusedLibReport.dependencies).forEach() {
-            assertThat(it.first).isEqualTo(it.second.substring(0, it.first.length))
+            TruthHelper.assertThat(it.first).isEqualTo(it.second.substring(0, it.first.length))
         }
     }
 

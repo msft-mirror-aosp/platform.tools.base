@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.library
+package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
@@ -26,10 +26,8 @@ import com.google.common.truth.Truth
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.internal.impldep.org.apache.maven.model.io.xpp3.MavenXpp3Reader
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
 class FusedLibraryTest {
@@ -151,7 +149,14 @@ class FusedLibraryTest {
         fusedLibrary.buildDir.resolve("publications/maven")
             .also { publicationDir ->
                 val pom = publicationDir.resolve("pom-default.xml")
-                assertExpectedPomDependencies(pom)
+                assertExpectedPomDependencies(
+                    pom, listOf(
+                        "junit:junit:4.12 scope:runtime",
+                        "org.hamcrest:hamcrest-core:1.3 scope:runtime",
+                        "fusedlib:androidLib3:1.0.0 scope:runtime",
+                        "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
+                    )
+                )
                 Truth.assertThat(publicationDir.resolve("module.json").isRegularFile()).isTrue()
             }
 
@@ -167,25 +172,14 @@ class FusedLibraryTest {
 
             assertExpectedPomDependencies(
                 publishedLibRepoDir.resolve(
-                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom")
-            )
-        }
-    }
-
-    private fun assertExpectedPomDependencies(pom: Path) {
-        Truth.assertThat(pom.isRegularFile()).isTrue()
-        val xmlMavenPomReader = MavenXpp3Reader()
-        pom.toFile().inputStream().use { inStream ->
-            val parsedPom = xmlMavenPomReader.read(inStream)
-            assertThat(parsedPom.dependencies.map {
-                "${it.groupId}:${it.artifactId}:${it.version} scope:${it.scope}"
-            })
-                .containsExactly(
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom"),
+                listOf(
                     "junit:junit:4.12 scope:runtime",
                     "org.hamcrest:hamcrest-core:1.3 scope:runtime",
                     "fusedlib:androidLib3:1.0.0 scope:runtime",
                     "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
                 )
+            )
         }
     }
 

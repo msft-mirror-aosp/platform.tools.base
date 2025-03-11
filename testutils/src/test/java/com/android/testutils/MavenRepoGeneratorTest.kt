@@ -80,6 +80,8 @@ class MavenRepoGeneratorTest {
                           <groupId>com.example</groupId>
                           <artifactId>liba</artifactId>
                           <version>1</version>
+                          <dependencyManagement>
+                          </dependencyManagement>
                           <dependencies>
                           </dependencies>
                         </project>
@@ -95,6 +97,8 @@ class MavenRepoGeneratorTest {
                           <groupId>com.example</groupId>
                           <artifactId>libb</artifactId>
                           <version>1</version>
+                          <dependencyManagement>
+                          </dependencyManagement>
                           <dependencies>
                           </dependencies>
                         </project>
@@ -110,6 +114,8 @@ class MavenRepoGeneratorTest {
                           <groupId>com.example</groupId>
                           <artifactId>libc</artifactId>
                           <version>1</version>
+                          <dependencyManagement>
+                          </dependencyManagement>
                           <dependencies>
                             <dependency>
                               <groupId>com.example</groupId>
@@ -138,6 +144,8 @@ class MavenRepoGeneratorTest {
                           <artifactId>libaar</artifactId>
                           <version>1</version>
                           <packaging>aar</packaging>
+                          <dependencyManagement>
+                          </dependencyManagement>
                           <dependencies>
                           </dependencies>
                         </project>
