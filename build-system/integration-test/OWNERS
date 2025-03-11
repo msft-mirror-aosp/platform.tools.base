@@ -1,0 +1,8 @@
+# Bug component: 1127272
+
+# Additional owners from the feature dev teams
+hummer@google.com  # From testing tools team
+
+# Except to the owners file itself.
+per-file OWNERS = set noparent
+per-file OWNERS = file: platform/tools/base:/build-system/gradle-api/OWNERS
