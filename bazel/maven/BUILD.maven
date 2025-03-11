@@ -8341,6 +8341,27 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.apiguardian.apiguardian-api_1.1.2",
+    pom = "repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apiguardian/apiguardian-api/1.1.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apiguardian.apiguardian-api",
+    classifiers = [],
+    jars = [
+        "repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apiguardian/apiguardian-api/1.1.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.bitbucket.b_c.jose4j_0.9.5",
     pom = "repository/org/bitbucket/b_c/jose4j/0.9.5/jose4j-0.9.5.pom",
     repo_root_path = "repository",
@@ -12106,12 +12127,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-commons_1.9.2",
-    pom = "repository/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.pom",
+    name = "org.junit.platform.junit-platform-commons_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.12.0/junit-platform-commons-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-commons/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-commons/1.12.0",
     deps = [
-        "org.junit.junit-bom_5.9.2",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12120,26 +12142,31 @@ maven_import(
     name = "org.junit.platform.junit-platform-commons",
     classifiers = [],
     jars = [
-        "repository/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.jar"
+        "repository/org/junit/platform/junit-platform-commons/1.12.0/junit-platform-commons-1.12.0.jar"
+    ],
+    exports = [
+        "org.apiguardian.apiguardian-api",
     ],
     original_deps = [
-        "org.junit.junit-bom_5.9.2",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
-    pom = "repository/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.pom",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.12.0/junit-platform-commons-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-commons/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-commons/1.12.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-engine_1.9.2",
-    pom = "repository/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.pom",
+    name = "org.junit.platform.junit-platform-engine_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.12.0/junit-platform-engine-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-engine/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-engine/1.12.0",
     deps = [
-        "org.opentest4j.opentest4j_1.2.0",
-        "org.junit.platform.junit-platform-commons_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12148,31 +12175,34 @@ maven_import(
     name = "org.junit.platform.junit-platform-engine",
     classifiers = [],
     jars = [
-        "repository/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.jar"
+        "repository/org/junit/platform/junit-platform-engine/1.12.0/junit-platform-engine-1.12.0.jar"
     ],
     exports = [
         "org.opentest4j.opentest4j",
         "org.junit.platform.junit-platform-commons",
+        "org.apiguardian.apiguardian-api",
     ],
     original_deps = [
-        "org.opentest4j.opentest4j_1.2.0",
-        "org.junit.platform.junit-platform-commons_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
-    pom = "repository/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.pom",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.12.0/junit-platform-engine-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-engine/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-engine/1.12.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-launcher_1.9.2",
-    pom = "repository/org/junit/platform/junit-platform-launcher/1.9.2/junit-platform-launcher-1.9.2.pom",
+    name = "org.junit.platform.junit-platform-launcher_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.12.0/junit-platform-launcher-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-launcher/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.12.0",
     deps = [
-        "org.junit.platform.junit-platform-engine_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12181,18 +12211,20 @@ maven_import(
     name = "org.junit.platform.junit-platform-launcher",
     classifiers = [],
     jars = [
-        "repository/org/junit/platform/junit-platform-launcher/1.9.2/junit-platform-launcher-1.9.2.jar"
+        "repository/org/junit/platform/junit-platform-launcher/1.12.0/junit-platform-launcher-1.12.0.jar"
     ],
-    deps = [
+    exports = [
         "org.junit.platform.junit-platform-engine",
+        "org.apiguardian.apiguardian-api",
     ],
     original_deps = [
-        "org.junit.platform.junit-platform-engine_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
-    pom = "repository/org/junit/platform/junit-platform-launcher/1.9.2/junit-platform-launcher-1.9.2.pom",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.12.0/junit-platform-launcher-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-launcher/1.9.2",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.12.0",
     exclusions_for_parents = {
         "org.codehaus.groovy.groovy-test-junit5": [
             "org.apiguardian.apiguardian-api",
@@ -12202,10 +12234,47 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.junit.junit-bom_5.9.2",
-    pom = "repository/org/junit/junit-bom/5.9.2/junit-bom-5.9.2.pom",
+    name = "org.junit.platform.junit-platform-reporting_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/junit-bom/5.9.2",
+    repo_path = "org/junit/platform/junit-platform-reporting/1.12.0",
+    deps = [
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.junit.platform.junit-platform-reporting",
+    classifiers = [],
+    jars = [
+        "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.jar"
+    ],
+    exports = [
+        "org.junit.platform.junit-platform-launcher",
+        "org.apiguardian.apiguardian-api",
+        "org.opentest4j.reporting.open-test-reporting-tooling-spi",
+    ],
+    original_deps = [
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    pom = "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-reporting/1.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.12.0",
+    pom = "repository/org/junit/junit-bom/5.12.0/junit-bom-5.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.12.0",
     visibility = ["//visibility:public"],
 )
 
@@ -12215,9 +12284,9 @@ maven_import(
     jars = [
     ],
     original_deps = [],
-    pom = "repository/org/junit/junit-bom/5.9.2/junit-bom-5.9.2.pom",
+    pom = "repository/org/junit/junit-bom/5.12.0/junit-bom-5.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/junit-bom/5.9.2",
+    repo_path = "org/junit/junit-bom/5.12.0",
     visibility = ["//visibility:public"],
 )
 
@@ -12431,10 +12500,39 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.opentest4j.opentest4j_1.2.0",
-    pom = "repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.pom",
+    name = "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
+    pom = "repository/org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0/open-test-reporting-tooling-spi-0.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/opentest4j/opentest4j/1.2.0",
+    repo_path = "org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0",
+    deps = [
+        "org.apiguardian.apiguardian-api_1.1.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.opentest4j.reporting.open-test-reporting-tooling-spi",
+    classifiers = [],
+    jars = [
+        "repository/org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0/open-test-reporting-tooling-spi-0.2.0.jar"
+    ],
+    exports = [
+        "org.apiguardian.apiguardian-api",
+    ],
+    original_deps = [
+        "org.apiguardian.apiguardian-api_1.1.2",
+    ],
+    pom = "repository/org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0/open-test-reporting-tooling-spi-0.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.opentest4j.opentest4j_1.3.0",
+    pom = "repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/opentest4j/opentest4j/1.3.0",
     visibility = ["//visibility:public"],
 )
 
@@ -12442,12 +12540,12 @@ maven_import(
     name = "org.opentest4j.opentest4j",
     classifiers = [],
     jars = [
-        "repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar"
+        "repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar"
     ],
     original_deps = [],
-    pom = "repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.pom",
+    pom = "repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/opentest4j/opentest4j/1.2.0",
+    repo_path = "org/opentest4j/opentest4j/1.3.0",
     visibility = ["//visibility:public"],
 )
 
@@ -64122,14 +64220,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.apiguardian.apiguardian-api_1.1.2",
-    pom = "repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/apiguardian/apiguardian-api/1.1.2",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.atteo.evo-inflector_1.3",
     pom = "repository/org/atteo/evo-inflector/1.3/evo-inflector-1.3.pom",
     repo_root_path = "repository",
@@ -76754,18 +76844,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-commons_1.12.0",
-    pom = "repository/org/junit/platform/junit-platform-commons/1.12.0/junit-platform-commons-1.12.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-commons/1.12.0",
-    deps = [
-        "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.12.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.junit.platform.junit-platform-commons_1.7.0",
     pom = "repository/org/junit/platform/junit-platform-commons/1.7.0/junit-platform-commons-1.7.0.pom",
     repo_root_path = "repository",
@@ -76777,15 +76855,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-engine_1.12.0",
-    pom = "repository/org/junit/platform/junit-platform-engine/1.12.0/junit-platform-engine-1.12.0.pom",
+    name = "org.junit.platform.junit-platform-commons_1.9.2",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-engine/1.12.0",
+    repo_path = "org/junit/platform/junit-platform-commons/1.9.2",
     deps = [
-        "org.opentest4j.opentest4j_1.3.0",
-        "org.junit.platform.junit-platform-commons_1.12.0",
-        "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.12.0",
+        "org.junit.junit-bom_5.9.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76804,14 +76879,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-launcher_1.12.0",
-    pom = "repository/org/junit/platform/junit-platform-launcher/1.12.0/junit-platform-launcher-1.12.0.pom",
+    name = "org.junit.platform.junit-platform-engine_1.9.2",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-launcher/1.12.0",
+    repo_path = "org/junit/platform/junit-platform-engine/1.9.2",
     deps = [
-        "org.junit.platform.junit-platform-engine_1.12.0",
-        "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.12.0",
+        "org.opentest4j.opentest4j_1.2.0",
+        "org.junit.platform.junit-platform-commons_1.9.2",
+        "org.junit.junit-bom_5.9.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76829,15 +76904,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-reporting_1.12.0",
-    pom = "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.pom",
+    name = "org.junit.platform.junit-platform-launcher_1.9.2",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.9.2/junit-platform-launcher-1.9.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-reporting/1.12.0",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.9.2",
     deps = [
-        "org.junit.platform.junit-platform-launcher_1.12.0",
-        "org.apiguardian.apiguardian-api_1.1.2",
-        "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
-        "org.junit.junit-bom_5.12.0",
+        "org.junit.platform.junit-platform-engine_1.9.2",
+        "org.junit.junit-bom_5.9.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76859,18 +76932,18 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.junit-bom_5.12.0",
-    pom = "repository/org/junit/junit-bom/5.12.0/junit-bom-5.12.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/junit/junit-bom/5.12.0",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.junit.junit-bom_5.7.0",
     pom = "repository/org/junit/junit-bom/5.7.0/junit-bom-5.7.0.pom",
     repo_root_path = "repository",
     repo_path = "org/junit/junit-bom/5.7.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.9.2",
+    pom = "repository/org/junit/junit-bom/5.9.2/junit-bom-5.9.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.9.2",
     visibility = ["//visibility:public"],
 )
 
@@ -76959,21 +77032,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
-    pom = "repository/org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0/open-test-reporting-tooling-spi-0.2.0.pom",
+    name = "org.opentest4j.opentest4j_1.2.0",
+    pom = "repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0",
-    deps = [
-        "org.apiguardian.apiguardian-api_1.1.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.opentest4j.opentest4j_1.3.0",
-    pom = "repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/opentest4j/opentest4j/1.3.0",
+    repo_path = "org/opentest4j/opentest4j/1.2.0",
     visibility = ["//visibility:public"],
 )
 
