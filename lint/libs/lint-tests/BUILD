@@ -80,9 +80,7 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
-        "//prebuilts/tools/common/m2:groovy-3.0.9",
-        "@intellij//:com.intellij.java",
-        "//tools/base/lint/libs/lint-tests:liblint-checks-proto",
+        "//prebuilts/tools/common/m2:groovy-3.0.9[test]",
         "//tools/adt/idea/.idea/libraries:junit4[test]",
         "//tools/base/lint/cli:studio.android.sdktools.lint.cli[test]",
         "//tools/base/lint:studio.android.sdktools.lint-api[test]",
@@ -100,6 +98,8 @@ iml_module(
         "//tools/base/common:studio.android.sdktools.common.testfixtures[test]",
         "//tools/base/lint:studio.android.sdktools.lint-checks[test]",
         "@intellij//:intellij-sdk[test]",
+        "@intellij//:com.intellij.java[test]",
+        "//tools/base/lint/libs/lint-tests:liblint-checks-proto[test]",
         "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
         "//tools/adt/idea/.idea/libraries:agp-version[test]",
     ],
