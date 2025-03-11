@@ -3,13 +3,48 @@ module(
 )
 
 bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+single_version_override(
+    module_name = "zlib",
+    version = "1.3.1.bcr.5",
+    patches = [
+        "//tools/base/bazel/bzlmod:zlib_copy_file.patch",
+        "//tools/base/bazel/bzlmod:zlib_use_copy_file.patch",
+    ],
+    patch_strip = 1,
+)
 bazel_dep(name = "rules_cc", version = "0.0.15")
 bazel_dep(name = "rules_python", version = "1.1.0")
 bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "protobuf", version = "29.2", repo_name = "com_google_protobuf")
+single_version_override(
+    module_name = "protobuf",
+    patches = [
+        # b/392548175 - failure in upb aspect when using '-c opt'.
+        "//tools/base/bazel/bzlmod:protobuf-upb-proto-disable.patch",
+    ],
+    patch_strip = 1,
+)
+bazel_dep(name = "rules_jvm_external", version = "6.6")
 bazel_dep(name = "rules_java", version = "8.6.3")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "rules_robolectric", version = "4.14.1.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "grpc", version = "1.69.0")
+single_version_override(
+    module_name = "grpc",
+    version = "1.69.0",
+    patches = [
+        "//tools/base/bazel/bzlmod:grpc_use_android_platforms.patch",
+        "//tools/base/bazel/bzlmod:grpc_fix_windows_platforms.patch",
+    ],
+    patch_strip = 1,
+)
+
+# grpc depends on 1.0.4, which uses a python.pip extension with an incompatible attribute.
+bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
+bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "absl-py")
+bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
 

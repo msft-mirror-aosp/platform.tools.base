@@ -1,0 +1,100 @@
+commit 9af9341a37907c79693e7d990d1d618ebd4fd856
+Author: Keith Smiley <keithbsmiley@gmail.com>
+Date:   Wed Jan 29 11:36:45 2025 -0800
+
+    [bazel] Remove deprecated config_setting usage (#38319)
+
+    In a future version of bazel using `cpu` in `config_setting` is
+    deprecated, for these cases we can instead use platform constraints,
+    which actually simplifies this use case as well. Fixes:
+
+    ```
+    WARNING: /.../external/grpc+/BUILD:192:15: in config_setting rule @@grpc+//:mac_arm64: select() on cpu is deprecated. Use platform constraints instead: https://bazel.build/docs/configurable-attributes#platforms.
+    ```
+
+    Closes #38319
+
+    COPYBARA_INTEGRATE_REVIEW=https://github.com/grpc/grpc/pull/38319 from keith:ks/bazel-remove-deprecated-config_setting-usage c65334555dfeeab368b2203f17a40b6702f996e1
+    PiperOrigin-RevId: 721052251
+
+diff --git a/BUILD b/BUILD
+index 6a23c6c354..e3f0d16716 100644
+--- a/BUILD
++++ b/BUILD
+@@ -176,27 +176,12 @@ config_setting(
+
+ config_setting(
+     name = "windows",
+-    values = {"cpu": "x64_windows"},
+-)
+-
+-config_setting(
+-    name = "windows_msvc",
+-    values = {"cpu": "x64_windows_msvc"},
++    constraint_values = ["@platforms//os:windows"],
+ )
+
+ config_setting(
+     name = "mac",
+-    values = {"cpu": "darwin"},
+-)
+-
+-config_setting(
+-    name = "mac_x86_64",
+-    values = {"cpu": "darwin_x86_64"},
+-)
+-
+-config_setting(
+-    name = "mac_arm64",
+-    values = {"cpu": "darwin_arm64"},
++    constraint_values = ["@platforms//os:macos"],
+ )
+
+ config_setting(
+diff --git a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
+index ff0566b80c..2792aaa78d 100644
+--- a/bazel/grpc_build_system.bzl
++++ b/bazel/grpc_build_system.bzl
+@@ -45,7 +45,6 @@ EVENT_ENGINES = {"default": {"tags": []}}
+ def if_not_windows(a):
+     return select({
+         "//:windows": [],
+-        "//:windows_msvc": [],
+         "//:windows_clang": [],
+         "//conditions:default": a,
+     })
+@@ -53,7 +52,6 @@ def if_not_windows(a):
+ def if_windows(a):
+     return select({
+         "//:windows": a,
+-        "//:windows_msvc": a,
+         "//:windows_clang": a,
+         "//conditions:default": [],
+     })
+diff --git a/src/core/BUILD b/src/core/BUILD
+index f65a41fbe3..f91847dbca 100644
+--- a/src/core/BUILD
++++ b/src/core/BUILD
+@@ -2817,22 +2817,10 @@ grpc_cc_library(
+     select_deps = [
+         {
+             "//:windows": ["windows_event_engine"],
+-            "//:windows_os": ["windows_event_engine"],
+-            "//:windows_msvc": ["windows_event_engine"],
+-            "//:windows_clang": ["windows_event_engine"],
+-            "//:windows_other": ["windows_event_engine"],
+             "//:mac": [
+                 "posix_event_engine",
+                 "cf_event_engine",
+             ],
+-            "//:mac_x86_64": [
+-                "posix_event_engine",
+-                "cf_event_engine",
+-            ],
+-            "//:mac_arm64": [
+-                "posix_event_engine",
+-                "cf_event_engine",
+-            ],
+             "//:ios": ["cf_event_engine"],
+             "//:tvos": ["cf_event_engine"],
+             "//:visionos": ["cf_event_engine"],

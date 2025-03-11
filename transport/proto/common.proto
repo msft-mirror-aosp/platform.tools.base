@@ -478,6 +478,7 @@ message CommonConfig {
   // address used for legacy devices (Nougat or older).
   string service_address = 2;
   // address used for jvmti devices that use unix sockets.
+  // Must be the name of an abstract socket.
   string service_socket_name = 3;
   // Deprecated. Do not use.
   // bool energy_profiler_enabled = 4;

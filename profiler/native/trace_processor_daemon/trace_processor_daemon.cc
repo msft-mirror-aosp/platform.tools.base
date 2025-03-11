@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include <grpc++/grpc++.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <chrono>
 #include <thread>
 
@@ -32,7 +33,7 @@ ABSL_FLAG(std::string, llvm_symbolizer_path, "",
           "Path to llvm symbolizer, used to symbolize traces that contain "
           "callstacks");
 
-class GRPC_GlobalCallback : public grpc_impl::Server::GlobalCallbacks {
+class GRPC_GlobalCallback : public grpc::Server::GlobalCallbacks {
  public:
   GRPC_GlobalCallback(std::chrono::steady_clock::time_point* last_activity)
       : last_activity_(last_activity) {}
@@ -41,12 +42,12 @@ class GRPC_GlobalCallback : public grpc_impl::Server::GlobalCallbacks {
   // Called before server is started.
   void PreServerStart(grpc::Server* server) override { UpdateLastActivity(); }
   // Called before application callback for each synchronous server request
-  void PreSynchronousRequest(grpc_impl::ServerContext* context) override {
+  void PreSynchronousRequest(grpc::ServerContext* context) override {
     UpdateLastActivity();
   }
   // Called after application callback for each synchronous server request
   // We do nothing here, we just need to override it 'cause it's pure-virtual.
-  void PostSynchronousRequest(grpc_impl::ServerContext* context) override {}
+  void PostSynchronousRequest(grpc::ServerContext* context) override {}
 
  private:
   std::chrono::steady_clock::time_point* last_activity_;
@@ -78,7 +79,7 @@ void check_last_activity(grpc::Server* server,
 
 void RunServer(GRPC_GlobalCallback* callback,
                std::chrono::steady_clock::time_point* start_time) {
-  grpc_impl::Server::SetGlobalCallbacks(callback);
+  grpc::Server::SetGlobalCallbacks(callback);
 
   ServerBuilder builder;
 
