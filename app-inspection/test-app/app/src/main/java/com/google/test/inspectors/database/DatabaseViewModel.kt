@@ -273,10 +273,11 @@ internal class DatabaseViewModel @Inject constructor(private val application: Ap
   private fun openBundledDatabase(isReadOnly: Boolean): SQLiteConnection {
     val flags = if (isReadOnly) SQLITE_OPEN_READONLY else SQLITE_OPEN_READWRITE
     val path = application.getDatabasePath("bundled-database.db").path
-    // Open a writeable database and create table if needed, then close it
-    bundledSQLiteDriver.open(path).use { it.execSQL(NATIVE_DATABASE_CREATE) }
-
-    return bundledSQLiteDriver.open(path, flags)
+    return bundledSQLiteDriver.open(path, flags).apply {
+      if (!isReadOnly) {
+        execSQL(NATIVE_DATABASE_CREATE)
+      }
+    }
   }
 }
 

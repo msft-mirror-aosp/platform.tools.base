@@ -443,7 +443,11 @@ internal class SqliteInspector(
         val flags = args[1] as Int
 
         val onClose: (SQLiteConnectionWrapper) -> Unit = {
-          databaseRegistry.notifyAllDatabaseReferencesReleased(AndroidXDatabase(it, path, flags))
+          val database = AndroidXDatabase(it, path, flags)
+          when (it.isOpen()) {
+            true -> databaseRegistry.notifyReleaseReference(database)
+            false -> databaseRegistry.notifyAllDatabaseReferencesReleased(database)
+          }
         }
         val invalidate = { throttler.submitRequest() }
         val wrapper = SQLiteConnectionWrapper(sqliteConnection, onClose, invalidate)

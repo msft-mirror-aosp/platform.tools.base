@@ -19,6 +19,7 @@ import android.database.DatabaseUtils
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A wrapper for [SQLiteConnection]
@@ -32,12 +33,21 @@ internal class SQLiteConnectionWrapper(
   private val onClose: (SQLiteConnectionWrapper) -> Unit,
   private val onInvalidate: () -> Unit,
 ) : SQLiteConnection by delegate {
+  private val references = AtomicInteger(0)
   private val isOpened = AtomicBoolean(true)
 
   override fun close() {
-    if (isOpened.compareAndSet(true, false)) {
-      delegate.close()
-      onClose(this)
+    // onClose() is called twice. Once when close() is called and again when delegate.close() is
+    // called. The first call may trigger an `acquireReference()` call if `keep-alive` is
+    // enabled. This will prevent closing the delegate from closing. If no references are held,
+    // onClose() is called a second time. The caller can check `isOpen` to see if the delegate
+    // is open or not.
+    onClose(this)
+    if (references.get() == 0) {
+      if (isOpened.compareAndSet(true, false)) {
+        delegate.close()
+        onClose(this)
+      }
     }
   }
 
@@ -50,4 +60,16 @@ internal class SQLiteConnectionWrapper(
   }
 
   fun isOpen() = isOpened.get()
+
+  fun acquireReference() {
+    references.incrementAndGet()
+  }
+
+  fun releaseReference() {
+    val n = references.decrementAndGet()
+    when {
+      n == 0 -> close()
+      n < 0 -> throw IllegalStateException("Reference released when no references were held")
+    }
+  }
 }

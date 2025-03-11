@@ -39,9 +39,13 @@ internal class AndroidXDatabase(connection: SQLiteConnectionWrapper, path: Strin
     return getJournalMode() == "wal"
   }
 
-  override fun acquireReference() {}
+  override fun acquireReference() {
+    delegate.acquireReference()
+  }
 
-  override fun releaseReference() {}
+  override fun releaseReference() {
+    delegate.releaseReference()
+  }
 
   override fun execSql(
     sql: String,
