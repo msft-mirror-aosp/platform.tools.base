@@ -10,6 +10,12 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.adblib.iml"],
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+    ],
     test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -17,9 +23,6 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
     ],
 )
 

@@ -86,6 +86,7 @@ iml_module(
         ":dex_kexter_test_resources",
         ":dex_kexter_test_resources_second_dex",
     ],
+    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = [
         "test/src",
         "test/resources/src",
@@ -96,6 +97,5 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
     ],
 )

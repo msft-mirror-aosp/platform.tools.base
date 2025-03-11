@@ -9,6 +9,12 @@ load("//tools/base/bazel:proto.bzl", "java_proto_library")
 iml_module(
     name = "studio.android.sdktools.fakeadbserver",
     iml_files = ["android.sdktools.fakeadbserver.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_srcs = [
         "src/main/java",
         "src/test/java",
@@ -19,9 +25,6 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )
 

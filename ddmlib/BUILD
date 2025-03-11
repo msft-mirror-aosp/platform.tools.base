@@ -14,6 +14,14 @@ iml_module(
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     test_data = ["//prebuilts/studio/sdk:platform-tools"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -30,11 +38,6 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:kxml2",
         "//tools/adt/idea/.idea/libraries:libam-instrumentation-data-proto",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
     ],
 )
 
@@ -232,17 +235,18 @@ iml_module(
         ":avd",
         "//prebuilts/studio/sdk:platform-tools",
     ],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/bazel/avd:studio.android.sdktools.base.bazel.avd",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "@intellij//:intellij-sdk",
+    ],
     test_srcs = ["src/integration/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
-    deps = [
-        "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/base/bazel/avd:studio.android.sdktools.base.bazel.avd[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib[test]",
-        "@intellij//:intellij-sdk[test]",
-    ],
+    deps = ["@intellij//:com.intellij.java"],
 )

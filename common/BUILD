@@ -135,6 +135,14 @@ iml_module(
         ":TestData",
     ],
     iml_files = ["android.sdktools.common.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:gson",
+    ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -145,11 +153,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:gson[test]",
     ],
 )
 

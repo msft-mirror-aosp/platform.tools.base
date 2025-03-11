@@ -9,6 +9,13 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.analyzer.iml"],
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -26,10 +33,6 @@ iml_module(
         "//tools/base/apkparser:studio.android.sdktools.binary-resources",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
     ],
 )
 

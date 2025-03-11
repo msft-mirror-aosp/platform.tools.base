@@ -14,6 +14,16 @@ iml_module(
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:equalsverifier",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -43,13 +53,6 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:aapt-proto",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
         "//tools/adt/idea/.idea/libraries:studio-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/adt/idea/.idea/libraries:equalsverifier[test]",
     ],
 )
 

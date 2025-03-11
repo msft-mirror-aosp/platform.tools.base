@@ -7,6 +7,16 @@ load("//tools/base/common:version.bzl", "BASE_VERSION")
 iml_module(
     name = "studio.android.sdktools.testutils",
     iml_files = ["android.sdktools.testutils.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:google-dexlib2",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:asm-tools",
+    ],
     test_srcs = ["src/main/java"],
     test_tags = ["manual"],  # src/main/java is TEST scoped but contains no runnable tests
     visibility = ["//visibility:public"],
@@ -14,13 +24,6 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:google-dexlib2[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/adt/idea/.idea/libraries:asm-tools[test]",
     ],
 )
 
@@ -29,6 +32,17 @@ iml_module(
     name = "studio.testutils-tests",
     iml_files = ["testutils-tests.iml"],
     test_data = ["//prebuilts/studio/sdk:platforms/latest"] + glob(["src/test/data/**"]),
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/common:studio.android.sdktools.common",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:google-dexlib2",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -37,14 +51,6 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:truth-java8-extension",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:kotlin-test[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:google-dexlib2[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
     ],
 )
 

@@ -123,6 +123,14 @@ iml_module(
     srcs = ["src"],
     iml_files = ["debugger-tests.iml"],
     tags = tags,
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/as-driver:as-driver.utils",
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = [
         "resources/src",
         "testSrc",
@@ -135,10 +143,5 @@ iml_module(
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
         "//prebuilts/tools/common/m2:kotlinx-cli-jvm-0.3.1",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/as-driver:as-driver.utils[test]",
-        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
     ],
 )

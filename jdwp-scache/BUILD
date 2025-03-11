@@ -7,6 +7,7 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.jdwpscache.iml"],
     jvm_target = "8",
+    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -15,7 +16,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/jdwp-packet:studio.android.sdktools.jdwppacket",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
     ],
 )
 

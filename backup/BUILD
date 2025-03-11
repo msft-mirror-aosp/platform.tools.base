@@ -6,6 +6,12 @@ iml_module(
     name = "studio.android.sdktools.backup",
     srcs = ["src/main"],
     iml_files = ["android.sdktools.backup.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = ["src/test"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -14,9 +20,6 @@ iml_module(
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
     ],
 )
 

@@ -5,6 +5,15 @@ iml_module(
     name = "studio.android.sdktools.device-provisioner",
     srcs = ["src/main"],
     iml_files = ["android.sdktools.device-provisioner.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_srcs = ["src/test"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -18,11 +27,5 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:studio-proto",
         "//tools/analytics-library/shared:analytics-shared",
         "//tools/adt/idea/.idea/libraries:emulator-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )

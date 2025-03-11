@@ -10,6 +10,7 @@ iml_module(
     iml_files = ["android.sdktools.layoutlib-api.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
+    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -23,7 +24,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:kxml2",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
     ],
 )
 

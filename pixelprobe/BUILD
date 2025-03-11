@@ -16,6 +16,7 @@ iml_module(
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
+    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -24,7 +25,6 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/chunkio:studio.android.sdktools.chunkio",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
     ],
 )
 

@@ -7,6 +7,11 @@ iml_module(
     iml_files = ["usb-devices.iml"],
     lint_baseline = "lint_baseline.xml",
     test_data = glob(["testData/**"]),
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_resources = ["testData"],
     test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
@@ -14,7 +19,5 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )

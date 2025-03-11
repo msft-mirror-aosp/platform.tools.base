@@ -23,6 +23,15 @@ iml_module(
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
     test_data = ["//prebuilts/studio/sdk:platforms/latest"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:guava-testlib",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = [
         "src/integrationTest/java",
@@ -47,12 +56,6 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/repository:studio.android.sdktools.repository",
         "//tools/base/sdklib:schema-generated",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:guava-testlib[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
     ],
 )
 

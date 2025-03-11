@@ -13,6 +13,14 @@ iml_module(
     srcs = ["manifest-merger/src/main/java"],
     iml_files = ["manifest-merger/android.sdktools.manifest-merger.iml"],
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+    ],
     test_srcs = ["manifest-merger/src/test/java"],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
@@ -22,11 +30,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin[test]",
     ],
 )
 

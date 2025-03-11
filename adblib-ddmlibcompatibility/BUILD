@@ -8,6 +8,11 @@ iml_module(
     name = "studio.android.sdktools.adblib.ddmlibcompatibility",
     srcs = ["src"],
     iml_files = ["android.sdktools.adblib.ddmlibcompatibility.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+    ],
     test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -17,8 +22,6 @@ iml_module(
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
     ],
 )
 
