@@ -38,6 +38,7 @@ ARTIFACTS = [
     "com.google.apis:google-api-services-cloudresourcemanager:v3-rev20230416-2.0.0",
     "com.google.apis:google-api-services-monitoring:v3-rev20230806-2.0.0",
     "com.google.apis:google-api-services-oauth2:v2-rev20200213-2.0.0",
+    "com.google.apis:google-api-services-serviceusage:v1-rev20240220-2.0.0",
     "com.google.apis:google-api-services-sourcerepo:v1-rev20230123-2.0.0",
     "com.google.apis:google-api-services-storage:v1-rev20230301-2.0.0",
     "com.google.apis:google-api-services-testing:v1-rev20240213-2.0.0",
@@ -1091,8 +1092,8 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.1.10",
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.20-RC2",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72",
