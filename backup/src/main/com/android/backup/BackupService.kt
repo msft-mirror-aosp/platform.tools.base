@@ -55,10 +55,10 @@ interface BackupService {
     const val TOKEN_FILE = "restore_token_file"
     const val PM_DATA_FILE = "pm_backup"
     const val APP_DATA_FILE = "app_backup"
+    const val AUTH_DATA_FILE = "auth_backup"
     const val METADATA_FILE = "metadata.txt"
     const val PROPERTY_APPLICATION_ID = "application-id"
     const val PROPERTY_BACKUP_TYPE = "backup-type"
-    val BACKUP_FILES = setOf(PM_DATA_FILE, TOKEN_FILE, APP_DATA_FILE)
 
     fun getInstance(adbSession: AdbSession, logger: Logger, minGmsVersion: Int): BackupService =
       BackupServiceImpl(AdbServicesFactoryImpl(adbSession, logger, minGmsVersion))
@@ -79,7 +79,7 @@ interface BackupService {
           val metadata = zip.getMetaData()
           zip.getRestoreToken()
           val filenames = zip.entries().asSequence().mapTo(mutableSetOf()) { it.name }
-          if (!filenames.containsAll(BACKUP_FILES)) {
+          if (!filenames.containsAll(listOf(PM_DATA_FILE, TOKEN_FILE, APP_DATA_FILE))) {
             throw BackupException(
               INVALID_BACKUP_FILE,
               "File is not a valid backup file: ${backupFile.pathString} ($filenames)",

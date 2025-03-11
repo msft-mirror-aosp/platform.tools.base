@@ -27,20 +27,34 @@ import org.junit.rules.TemporaryFolder
 class BackupFileHelper(private val temporaryFolder: TemporaryFolder) {
   class FileInfo(val name: String, val contents: String)
 
-  fun createBackupFile(applicationId: String, token: String, backupType: BackupType = CLOUD) =
-    createZipFile(
-      FileInfo("pm_backup", ""),
-      FileInfo("app_backup", ""),
-      FileInfo("restore_token_file", token),
-      FileInfo(
-        "metadata.txt",
-        """
-          application-id=$applicationId
-          backup-type=${backupType.name}
-      """
-          .trimIndent(),
-      ),
-    )
+  fun createBackupFile(
+    applicationId: String,
+    token: String,
+    backupType: BackupType = CLOUD,
+    withAuth: Boolean = true,
+  ): Path {
+    val files =
+      buildList {
+          add(FileInfo("pm_backup", ""))
+          add(FileInfo("app_backup", ""))
+          add(FileInfo("restore_token_file", token))
+          add(
+            FileInfo(
+              "metadata.txt",
+              """
+                application-id=$applicationId
+                backup-type=${backupType.name}
+              """
+                .trimIndent(),
+            )
+          )
+          if (withAuth) {
+            add(FileInfo("auth_backup", ""))
+          }
+        }
+        .toTypedArray()
+    return createZipFile(*files)
+  }
 
   @Suppress("SameParameterValue")
   fun createZipFile(vararg files: FileInfo): Path {

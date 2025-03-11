@@ -18,7 +18,7 @@ package com.android.backup
 
 import com.android.backup.BackupResult.Success
 import com.android.backup.BackupService.Companion.APP_DATA_FILE
-import com.android.backup.BackupService.Companion.BACKUP_FILES
+import com.android.backup.BackupService.Companion.AUTH_DATA_FILE
 import com.android.backup.BackupService.Companion.METADATA_FILE
 import com.android.backup.BackupService.Companion.PM_DATA_FILE
 import com.android.backup.BackupService.Companion.PROPERTY_APPLICATION_ID
@@ -28,6 +28,7 @@ import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
+import com.android.backup.ErrorCode.READ_CONTENT_FAILED
 import java.io.IOException
 import java.nio.file.Path
 import java.util.Properties
@@ -107,7 +108,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               setTransport(TRANSPORT_CLOUD, true)
               val token = zip.getRestoreToken()
               reportProgress("Pushing backup file")
-              zip.pushBackup(adbServices)
+              pushBackup(zip)
               reportProgress("Clearing app data")
               clearAppData(applicationId)
               reportProgress("Restoring $applicationId")
@@ -157,22 +158,41 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   ) {
     backupFile.parent.createDirectories()
     ZipOutputStream(backupFile.outputStream()).use { zip ->
-      zip.putContent(adbServices, TOKEN_FILE)
-      zip.putContent(adbServices, PM_DATA_FILE)
-      zip.putContent(adbServices, APP_DATA_FILE)
+      adbServices.pullFileIntoZip(zip, TOKEN_FILE)
+      adbServices.pullFileIntoZip(zip, PM_DATA_FILE)
+      adbServices.pullFileIntoZip(zip, APP_DATA_FILE)
+      try {
+        adbServices.pullFileIntoZip(zip, AUTH_DATA_FILE)
+      } catch (e: BackupException) {
+        // older versions of GmsCore may not have AUTH backup support
+        if (e.errorCode != READ_CONTENT_FAILED) {
+          throw e
+        }
+      }
       zip.putMetadata(adbServices, metadata)
     }
   }
 
-  private suspend fun ZipFile.pushBackup(adbServices: AdbServices) {
-    with(adbServices) {
-      BACKUP_FILES.forEach { writeContent(getInputStream(getEntry(it)), CONTENT_URI + it) }
+  private suspend fun AdbServices.pushBackup(zip: ZipFile) {
+    pushFileFromZip(zip, TOKEN_FILE)
+    pushFileFromZip(zip, PM_DATA_FILE)
+    pushFileFromZip(zip, APP_DATA_FILE)
+    val authEntry: ZipEntry? = zip.getEntry(AUTH_DATA_FILE)
+    if (authEntry != null) {
+      // Backup files from older version will not have the auth file and backups
+      pushFileFromZip(zip, AUTH_DATA_FILE)
     }
   }
 
-  private suspend fun ZipOutputStream.putContent(adbServices: AdbServices, name: String) {
-    withContext(adbServices.ioContext) { putNextEntry(ZipEntry(name)) }
-    adbServices.readContent(this@putContent, CONTENT_URI + name)
+  private suspend fun AdbServices.pullFileIntoZip(zip: ZipOutputStream, name: String) {
+    withContext(ioContext) { zip.putNextEntry(ZipEntry(name)) }
+    readContent(zip, CONTENT_URI + name)
+  }
+
+  private suspend fun AdbServices.pushFileFromZip(zip: ZipFile, name: String) {
+    withContext(ioContext) {
+      writeContent(zip.getInputStream(zip.getEntry(name)), "$CONTENT_URI$name")
+    }
   }
 
   private suspend fun ZipOutputStream.putMetadata(
