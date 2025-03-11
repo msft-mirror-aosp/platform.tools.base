@@ -25,9 +25,14 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.options.IntegerOption
+import com.android.build.gradle.options.ProjectOptions
 
-/** Build service to manage R8 parallelism and shared thread pool. */
-abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Parameters>, AutoCloseable {
+/**
+ * Build service to manage R8/D8 shared thread pool. Thread pool size can be adjusted using the
+ * [com.android.build.gradle.options.IntegerOption.R8_THREAD_POOL_SIZE] integer option.
+ */
+abstract class R8D8ThreadPoolBuildService : BuildService<R8D8ThreadPoolBuildService.Parameters>, AutoCloseable {
 
     abstract class Parameters : BuildServiceParameters {
 
@@ -36,31 +41,29 @@ abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Para
     }
 
     /**
-     * Shared thread pool used by all R8 tasks.
-     *
-     * Note: If [com.android.build.gradle.internal.core.ToolExecutionOptions.runInSeparateProcess]
-     * == true, this shared thread pool will not be used, so it will not be created. (Each launched
-     * process will have its own thread pool.)
+     * Shared thread pool used by R8 and D8 tasks.
      */
-    val r8ThreadPool: ExecutorService by lazy {
-        r8ThreadPoolCreated = true
-        newR8ThreadPool(parameters.threadPoolSize.get())
+    val threadPool: ExecutorService by lazy {
+        threadPoolCreated = true
+        newThreadPool(parameters.threadPoolSize.get())
     }
 
-    private var r8ThreadPoolCreated = false
+    private var threadPoolCreated = false
 
     override fun close() {
-        if (r8ThreadPoolCreated) {
-            r8ThreadPool.doClose()
+        if (threadPoolCreated) {
+            threadPool.doClose()
         }
     }
 
-    class RegistrationAction(project: Project, maxParallelUsages: Int, private val r8ThreadPoolSize: Int) :
-        ServiceRegistrationAction<R8ParallelBuildService, Parameters>(
+    class RegistrationAction(project: Project, projectOptions: ProjectOptions) :
+        ServiceRegistrationAction<R8D8ThreadPoolBuildService, Parameters>(
             project,
-            R8ParallelBuildService::class.java,
-            maxParallelUsages
+            R8D8ThreadPoolBuildService::class.java
         ) {
+
+        // This `IntegerOption` has default value so get() should return not-null
+        private val r8ThreadPoolSize = projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
 
         override fun configure(parameters: Parameters) {
             parameters.threadPoolSize.set(r8ThreadPoolSize)
@@ -69,12 +72,12 @@ abstract class R8ParallelBuildService : BuildService<R8ParallelBuildService.Para
 
     companion object {
 
-        fun newR8ThreadPool(threadPoolSize: Int): ExecutorService {
+        fun newThreadPool(threadPoolSize: Int): ExecutorService {
             // Use the same type of thread pool that R8 is using (see b/375394051#comment7)
             return Executors.newWorkStealingPool(threadPoolSize)
         }
 
-        fun defaultR8ThreadPoolSize(): Int {
+        fun defaultThreadPoolSize(): Int {
             // Use the same thread pool size that R8 is using
             // (see https://r8.googlesource.com/r8/+/fedff04/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#232)
             val processors = Runtime.getRuntime().availableProcessors()
@@ -98,7 +101,7 @@ fun ExecutorService.doClose() {
     // In the unexpected case that it returns `false`, we'll ask users to file a bug.
     shutdown()
     while (!awaitTermination(60, TimeUnit.SECONDS)) {
-        LoggerWrapper.getLogger(R8ParallelBuildService::class.java)
+        LoggerWrapper.getLogger(R8D8ThreadPoolBuildService::class.java)
             .warning(
                 "Unable to shut down ExecutorService after 60 seconds: ${toString()}.\n" +
                         "Waiting for another 60 seconds.\n" +

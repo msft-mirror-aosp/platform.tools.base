@@ -76,7 +76,6 @@ import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.KotlinServices
-import com.android.build.gradle.internal.services.R8ParallelBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
@@ -120,6 +119,8 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
+import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
+import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -1409,6 +1410,10 @@ abstract class TaskManager(
         // Resource Shrinking
         maybeCreateResourcesShrinkerTasks(creationConfig)
 
+        R8D8ThreadPoolBuildService.RegistrationAction(
+            project,
+            creationConfig.services.projectOptions
+        ).execute()
         // Code Shrinking
         // Since the shrinker (R8) also dexes the class files, if we have minifedEnabled we stop
         // the flow and don't set-up dexing.
@@ -1954,11 +1959,9 @@ abstract class TaskManager(
             )
         }
 
-        R8ParallelBuildService.RegistrationAction(
+        R8MaxParallelTasksBuildService.RegistrationAction(
             project,
-            // These `IntegerOption`s have default values so get() should return not-null
-            creationConfig.services.projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!,
-            creationConfig.services.projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
+            creationConfig.services.projectOptions
         ).execute()
         return taskFactory.register(
                 R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
