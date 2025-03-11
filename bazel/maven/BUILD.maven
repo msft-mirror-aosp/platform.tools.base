@@ -76754,13 +76754,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-commons_1.10.1",
-    pom = "repository/org/junit/platform/junit-platform-commons/1.10.1/junit-platform-commons-1.10.1.pom",
+    name = "org.junit.platform.junit-platform-commons_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.12.0/junit-platform-commons-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-commons/1.10.1",
+    repo_path = "org/junit/platform/junit-platform-commons/1.12.0",
     deps = [
         "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.10.1",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76777,15 +76777,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-engine_1.10.1",
-    pom = "repository/org/junit/platform/junit-platform-engine/1.10.1/junit-platform-engine-1.10.1.pom",
+    name = "org.junit.platform.junit-platform-engine_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.12.0/junit-platform-engine-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-engine/1.10.1",
+    repo_path = "org/junit/platform/junit-platform-engine/1.12.0",
     deps = [
         "org.opentest4j.opentest4j_1.3.0",
-        "org.junit.platform.junit-platform-commons_1.10.1",
+        "org.junit.platform.junit-platform-commons_1.12.0",
         "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.10.1",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76804,14 +76804,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.platform.junit-platform-launcher_1.10.1",
-    pom = "repository/org/junit/platform/junit-platform-launcher/1.10.1/junit-platform-launcher-1.10.1.pom",
+    name = "org.junit.platform.junit-platform-launcher_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.12.0/junit-platform-launcher-1.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/platform/junit-platform-launcher/1.10.1",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.12.0",
     deps = [
-        "org.junit.platform.junit-platform-engine_1.10.1",
+        "org.junit.platform.junit-platform-engine_1.12.0",
         "org.apiguardian.apiguardian-api_1.1.2",
-        "org.junit.junit-bom_5.10.1",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76829,6 +76829,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.platform.junit-platform-reporting_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-reporting/1.12.0",
+    deps = [
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.junit-bom_5.10.0",
     pom = "repository/org/junit/junit-bom/5.10.0/junit-bom-5.10.0.pom",
     repo_root_path = "repository",
@@ -76837,18 +76851,18 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.junit.junit-bom_5.10.1",
-    pom = "repository/org/junit/junit-bom/5.10.1/junit-bom-5.10.1.pom",
-    repo_root_path = "repository",
-    repo_path = "org/junit/junit-bom/5.10.1",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.junit.junit-bom_5.10.2",
     pom = "repository/org/junit/junit-bom/5.10.2/junit-bom-5.10.2.pom",
     repo_root_path = "repository",
     repo_path = "org/junit/junit-bom/5.10.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.12.0",
+    pom = "repository/org/junit/junit-bom/5.12.0/junit-bom-5.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.12.0",
     visibility = ["//visibility:public"],
 )
 
@@ -76941,6 +76955,17 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/objenesis/objenesis/3.2",
     parent = "org.objenesis.objenesis-parent_3.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.opentest4j.reporting.open-test-reporting-tooling-spi_0.2.0",
+    pom = "repository/org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0/open-test-reporting-tooling-spi-0.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/opentest4j/reporting/open-test-reporting-tooling-spi/0.2.0",
+    deps = [
+        "org.apiguardian.apiguardian-api_1.1.2",
+    ],
     visibility = ["//visibility:public"],
 )
 

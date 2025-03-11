@@ -32,7 +32,7 @@ if (findProperty('release')?.toBoolean()) {
 }
 
 dependencies {
-    implementation 'org.junit.platform:junit-platform-engine:1.10.1'
+    implementation libs.junit_platform_engine
     implementation "com.android.tools.compose:compose-preview-detector:${rootProject.ext.baseVersion}"
     implementation("com.android.tools.compose:compose-preview-renderer:$version")
     implementation("com.android.tools.compose:compose-preview-renderer-model:$version")
