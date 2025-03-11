@@ -147,14 +147,6 @@ public class IrToBazel {
 
             for (IrModule.Dependency<? extends IrNode> dependency : module
                     .getDependencies()) {
-                ImlModule.Tag scope = ImlModule.Tag.PROD;
-                if (dependency.scope == IrModule.Scope.TEST) {
-                    scope = ImlModule.Tag.TEST;
-                } else if (dependency.scope == IrModule.Scope.RUNTIME) {
-                    scope = ImlModule.Tag.PROD_RUNTIME;
-                } else if (dependency.scope == IrModule.Scope.TEST_RUNTIME) {
-                    scope = ImlModule.Tag.TEST_RUNTIME;
-                }
                 if (dependency.dependency instanceof IrLibrary) {
                     // TODO: Update iml files to have the right names.
                     Map<String, String> UNMANAGED = ImmutableMap.of(
@@ -197,7 +189,7 @@ public class IrToBazel {
                                 }
                                 unmanaged.put(newName, rule);
                             }
-                            imlModule.addDependency(rule, dependency.exported, scope);
+                            addDependency(imlModule, rule, dependency);
                             continue;
                         }
                         if (library.owner != null && library.owner != module) {
@@ -300,14 +292,14 @@ public class IrToBazel {
                         }
                         imports.put(library, javaImport);
                     }
-                    imlModule.addDependency(javaImport, dependency.exported, scope);
+
+                    addDependency(imlModule, javaImport, dependency);
                     if (isArtifact) {
                         artifacts.add(javaImport.getLabel());
                     }
 
                 } else if (dependency.dependency instanceof IrModule) {
-                    imlModule.addDependency(
-                            moduleRefs.get(dependency.dependency), dependency.exported, scope);
+                    addDependency(imlModule, moduleRefs.get(dependency.dependency), dependency);
                 }
             }
         }
@@ -325,6 +317,18 @@ public class IrToBazel {
 
         logger.info("%d BUILD file(s) updated.", listener.getUpdatedPackages());
         return listener.getUpdatedPackages();
+    }
+
+    private static void addDependency(ImlModule module, BazelRule rule, IrModule.Dependency<? extends IrNode> dependency) {
+        if (dependency.scope == IrModule.Scope.TEST_RUNTIME) {
+            module.addTestRuntimeDependency(rule);
+        } else if (dependency.scope == IrModule.Scope.RUNTIME) {
+            module.addRuntimeDependency(rule);
+        } else if (dependency.scope == IrModule.Scope.TEST) {
+            module.addTestDependency(rule, dependency.exported);
+        } else {
+            module.addDependency(rule, dependency.exported);
+        }
     }
 
     private static boolean isBinFile(String relJar) {

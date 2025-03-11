@@ -66,15 +66,6 @@ public abstract class BazelRule {
         }
     }
 
-    public void setExport() {
-        if (export) return;
-
-        export = true;
-        for (BazelRule dependency : dependencies) {
-            dependency.setExport();
-        }
-    }
-
     public void suppress() {
         export = false;
     }

@@ -27,13 +27,6 @@ import java.util.*;
 
 public class ImlModule extends BazelRule {
 
-    public enum Tag {
-        TEST_RUNTIME,
-        PROD_RUNTIME,
-        TEST,
-        PROD,
-    }
-
     private List<String> sources = new LinkedList<>();
     private List<String> testSources = new LinkedList<>();
     private List<String> testResources = new LinkedList<>();
@@ -43,7 +36,7 @@ public class ImlModule extends BazelRule {
     private String jvmTarget = "";
     private List<String> javacOpts = new LinkedList<>();
     private Map<String, String> prefixes = new LinkedHashMap<>();
-    private Map<BazelRule, Tag> dependencyTag = new HashMap<>();
+    private Set<BazelRule> testDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> runtimeDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> testRuntimeDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> testFriends = Sets.newLinkedHashSet();
@@ -65,7 +58,7 @@ public class ImlModule extends BazelRule {
         call.setArgument("exclude", exclude);
         call.setArgument("resources", resources);
         call.setArgument("test_resources", testResources);
-        call.setArgument("deps", tagDependencies(dependencies));
+        call.setArgument("deps", tagDependencies(dependencies, testDeps));
         call.setArgument("exports", exported);
         call.setArgument("iml_files", imlFiles);
         call.setArgument("jvm_target", jvmTarget);
@@ -90,31 +83,31 @@ public class ImlModule extends BazelRule {
         statement.setIsManaged();
     }
 
-    private List<String> tagDependencies(Set<BazelRule> dependencies) {
+    private List<String> tagDependencies(Set<BazelRule> dependencies, Set<BazelRule> testDeps) {
         List<String> deps = new LinkedList<>();
         for (BazelRule dependency : dependencies) {
-            Tag tag = dependencyTag.get(dependency);
-            String suffix = "";
-            if (tag != null && tag != Tag.PROD) {
-                suffix = "[" + tag.name().toLowerCase() + "]";
-            }
-            deps.add(dependency.getLabel() + suffix);
+            deps.add(dependency.getLabel());
+        }
+        for (BazelRule dependency : testDeps) {
+            deps.add(dependency.getLabel() + "[test]");
         }
         return deps;
     }
 
-    public void addDependency(BazelRule rule, boolean isExported, Tag tag) {
-        if (tag == Tag.TEST_RUNTIME) {
-            // Export is ignored it doesn't make sense for runtime deps
-            testRuntimeDeps.add(rule);
-            return;
-        } else if (tag == Tag.PROD_RUNTIME) {
-            // Export is ignored it doesn't make sense for runtime deps
-            runtimeDeps.add(rule);
-            return;
+    public void addRuntimeDependency(BazelRule rule) {
+        runtimeDeps.add(rule);
+    }
+
+
+    public void addTestRuntimeDependency(BazelRule rule) {
+        testRuntimeDeps.add(rule);
+    }
+
+    public void addTestDependency(BazelRule rule, boolean isExported) {
+        testDeps.add(rule);
+        if (isExported) {
+            exported.add(rule);
         }
-        super.addDependency(rule, isExported);
-        dependencyTag.put(rule, tag);
     }
 
     public void addTestFriend(BazelRule rule) {
