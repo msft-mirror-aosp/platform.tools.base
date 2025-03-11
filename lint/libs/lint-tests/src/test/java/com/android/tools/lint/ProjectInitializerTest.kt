@@ -41,17 +41,14 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.xml
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.checks.infrastructure.dos2unix
-import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.LintListener
 import com.android.tools.lint.client.api.LintListener.EventType.REGISTERED_PROJECT
 import com.android.tools.lint.client.api.LintListener.EventType.STARTING
 import com.android.tools.lint.detector.api.Category
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
-import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
@@ -61,9 +58,9 @@ import com.google.common.truth.Truth.assertThat
 import com.intellij.psi.PsiField
 import java.io.File
 import kotlin.io.path.isRegularFile
-import kotlin.io.path.readText
 import kotlin.streams.toList
 import kotlin.text.Charsets
+import kotlin.io.path.readText
 import org.intellij.lang.annotations.Language
 import org.jetbrains.uast.UClass
 import org.junit.After
@@ -314,51 +311,43 @@ class ProjectInitializerTest {
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     var assertionsChecked = 0
-    val listener: LintListener =
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {
-          val client = driver.client
-          when (type) {
-            REGISTERED_PROJECT -> {
-              assertThat(project).isNotNull()
-              project!!
-              assertThat(project.name).isEqualTo("$appProjectPath:App")
-              assertThat(project.buildSdk).isEqualTo(18)
-              assertionsChecked++
+    val listener = LintListener { driver, type, project, _ ->
+      val client = driver.client
+      when (type) {
+        REGISTERED_PROJECT -> {
+          assertThat(project).isNotNull()
+          project!!
+          assertThat(project.name).isEqualTo("$appProjectPath:App")
+          assertThat(project.buildSdk).isEqualTo(18)
+          assertionsChecked++
 
-              // Lib project
-              val libProject = project.directLibraries[0]
-              assertThat(libProject.name).isEqualTo("Library")
+          // Lib project
+          val libProject = project.directLibraries[0]
+          assertThat(libProject.name).isEqualTo("Library")
 
-              val manifest = client.getMergedManifest(libProject)
-              assertThat(manifest).isNotNull()
-              manifest!!
-              val permission = getFirstSubTagByName(manifest.documentElement, "permission")!!
-              assertThat(permission.getAttributeNS(ANDROID_URI, ATTR_NAME))
-                .isEqualTo("foo.permission.SEND_SMS")
-              assertionsChecked++
+          val manifest = client.getMergedManifest(libProject)
+          assertThat(manifest).isNotNull()
+          manifest!!
+          val permission = getFirstSubTagByName(manifest.documentElement, "permission")!!
+          assertThat(permission.getAttributeNS(ANDROID_URI, ATTR_NAME))
+            .isEqualTo("foo.permission.SEND_SMS")
+          assertionsChecked++
 
-              // compileSdkVersion=android-M -> build API=23
-              assertThat(libProject.buildSdk).isEqualTo(23)
-              assertionsChecked++
-            }
-            STARTING -> {
-              // Check extra metadata is handled right
-              assertThat(client.getSdkHome()).isEqualTo(sdk)
-              assertThat(client.getCacheDir(null, false)).isEqualTo(cacheDir)
-              assertionsChecked += 2
-            }
-            else -> {
-              // Ignored
-            }
-          }
+          // compileSdkVersion=android-M -> build API=23
+          assertThat(libProject.buildSdk).isEqualTo(23)
+          assertionsChecked++
+        }
+        STARTING -> {
+          // Check extra metadata is handled right
+          assertThat(client.getSdkHome()).isEqualTo(sdk)
+          assertThat(client.getCacheDir(null, false)).isEqualTo(cacheDir)
+          assertionsChecked += 2
+        }
+        else -> {
+          // Ignored
         }
       }
+    }
 
     val canonicalRoot = root.canonicalPath
 
@@ -2864,14 +2853,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       ERRNO_SUCCESS,
       arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {}
-      },
+      { _, _, _, _ -> },
     )
   }
 
@@ -3283,14 +3265,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       ERRNO_SUCCESS,
       arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {}
-      },
+      { _, _, _, _ -> },
     )
   }
 
@@ -3572,14 +3547,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       ERRNO_SUCCESS,
       arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {}
-      },
+      { _, _, _, _ -> },
     )
 
     task

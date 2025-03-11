@@ -61,7 +61,6 @@ import com.android.tools.lint.client.api.LintBaseline.Companion.sameWithAbsolute
 import com.android.tools.lint.client.api.LintBaseline.Companion.stringsEquivalent
 import com.android.tools.lint.client.api.LintBaseline.Companion.suffixMatchLength
 import com.android.tools.lint.client.api.LintBaseline.Companion.tokenPrecededBy
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.DefaultPosition
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -1393,24 +1392,17 @@ class LintBaselineTest {
       ),
       { it.replace(root.path, "ROOT") },
       // Make sure we don't hold on to any instance state in the baseline
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {
-          if (type == LintListener.EventType.COMPLETED) {
-            val clientField = driver.javaClass.getDeclaredField("realClient")
-            clientField.isAccessible = true
-            val client = clientField.get(driver) as LintCliClient
-            val incidents = client.getBaselineIncidents()
-            for (incident in incidents) {
-              assertNull(incident.scope)
-              assertNull(incident.clientProperties)
-              assertNull(incident.location.originalSource)
-              assertNull(incident.fix?.range?.originalSource)
-            }
+      { driver, type, _, _ ->
+        if (type == LintListener.EventType.COMPLETED) {
+          val clientField = driver.javaClass.getDeclaredField("realClient")
+          clientField.isAccessible = true
+          val client = clientField.get(driver) as LintCliClient
+          val incidents = client.getBaselineIncidents()
+          for (incident in incidents) {
+            assertNull(incident.scope)
+            assertNull(incident.clientProperties)
+            assertNull(incident.location.originalSource)
+            assertNull(incident.fix?.range?.originalSource)
           }
         }
       },

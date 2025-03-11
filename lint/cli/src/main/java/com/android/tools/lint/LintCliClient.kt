@@ -894,26 +894,17 @@ open class LintCliClient : LintClient {
   }
 
   protected fun validateIssueIds() {
-    driver.addLintListener(
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {
-          if (
-            !validatedIds &&
-              (type === LintListener.EventType.SCANNING_PROJECT ||
-                type === LintListener.EventType.MERGING)
-          ) {
-            // Make sure all the id's are valid once the driver is all set up and
-            // ready to run (such that custom rules are available in the registry etc)
-            validateIssueIds(project)
-          }
-        }
+    driver.addLintListener { _, type, project, _ ->
+      if (
+        !validatedIds &&
+          (type === LintListener.EventType.SCANNING_PROJECT ||
+            type === LintListener.EventType.MERGING)
+      ) {
+        // Make sure all the id's are valid once the driver is all set up and
+        // ready to run (such that custom rules are available in the registry etc)
+        validateIssueIds(project)
       }
-    )
+    }
   }
 
   protected open fun createDriver(registry: IssueRegistry, request: LintRequest): LintDriver {
@@ -947,21 +938,12 @@ open class LintCliClient : LintClient {
   }
 
   protected open fun addCancellationChecker() {
-    driver.addLintListener(
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {
-          // Some build systems such as Gradle use Thread.interrupt() to cancel workers.
-          if (Thread.currentThread().isInterrupted) {
-            throw InterruptedException()
-          }
-        }
+    driver.addLintListener { _, _, _, _ ->
+      // Some build systems such as Gradle use Thread.interrupt() to cancel workers.
+      if (Thread.currentThread().isInterrupted) {
+        throw InterruptedException()
       }
-    )
+    }
   }
 
   /** Creates a lint request. */

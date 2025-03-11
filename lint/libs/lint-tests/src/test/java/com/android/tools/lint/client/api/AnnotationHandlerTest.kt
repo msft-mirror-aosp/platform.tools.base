@@ -33,13 +33,11 @@ import com.android.tools.lint.detector.api.AnnotationOrigin
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.LocationType
-import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.useFirUast
@@ -2136,14 +2134,7 @@ class AnnotationHandlerTest {
       ERRNO_SUCCESS,
       arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {}
-      },
+      { _, _, _, _ -> },
     )
   }
 

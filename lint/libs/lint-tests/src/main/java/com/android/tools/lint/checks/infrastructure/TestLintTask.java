@@ -776,8 +776,7 @@ public class TestLintTask {
     }
 
     /**
-     * Configures the lint task to notify the given {@link LintListener during
-     * execution.
+     * Configures the lint task to notify the given {@link LintListener} during execution.
      *
      * @param listener the listener to register
      * @return this, for constructor chaining

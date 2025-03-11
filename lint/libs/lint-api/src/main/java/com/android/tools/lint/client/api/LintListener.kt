@@ -20,7 +20,7 @@ import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Project
 
 /** Interface implemented by listeners to be notified of lint events. */
-interface LintListener {
+fun interface LintListener {
   /** The various types of events provided to lint listeners. */
   enum class EventType {
     REGISTERED_PROJECT,
@@ -58,10 +58,5 @@ interface LintListener {
    * @param project the applicable project, if any
    * @param context the context providing additional information
    */
-  fun update(
-    driver: LintDriver,
-    type: EventType,
-    project: Project? = null,
-    context: Context? = null,
-  )
+  fun update(driver: LintDriver, type: EventType, project: Project?, context: Context?)
 }

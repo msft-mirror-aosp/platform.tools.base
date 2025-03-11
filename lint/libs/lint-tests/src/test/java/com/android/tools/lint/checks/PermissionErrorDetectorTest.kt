@@ -43,13 +43,12 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
 
   override fun lint(): TestLintTask {
     return super.lint()
-      // When switching to merging, clear out the platform cache (to simulate running lint where the
-      // analysis
-      // tasks have been cached so have not run in the current process. It would be better if the
-      // lint testing
-      // infrastructure did this automatically (e.g. loading everything into separate class loaders
-      // to enforce
-      // true separation) but that's hard to set up now.
+      // When switching to merging, clear out the platform cache (to simulate
+      // running lint where the analysis tasks have been cached so have not
+      // run in the current process. It would be better if the lint testing
+      // infrastructure did this automatically (e.g. loading everything into
+      // separate class loaders to enforce true separation) but that's hard to
+      // set up now.
       .listener(
         object : LintListener {
           private var mode: LintDriver.DriverMode? = null
