@@ -2,33 +2,6 @@ load("//tools/base/bazel:repositories.bzl", "setup_external_repositories", "vend
 
 setup_external_repositories()
 
-# BEGIN Cc toolchain dependencies
-# TODO(b/340640065): Symlinks fail due to existing file when moved to bzlmod.
-new_local_repository(
-    name = "clang_linux_x64",
-    build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
-    path = "prebuilts/clang/host/linux-x86/clang-r536225",
-)
-
-new_local_repository(
-    name = "clang_mac_all",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:clang.BUILD",
-    path = "prebuilts/clang/host/darwin-x86/clang-r536225",
-)
-
-new_local_repository(
-    name = "clang_win_x64",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:clang.BUILD",
-    path = "prebuilts/clang/host/windows-x86/clang-r536225",
-)
-
-new_local_repository(
-    name = "gcc_lib",
-    build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
-    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
-)
-# END Cc toolchain dependencies
-
 # rules_android_ndk must come before loading vendor.bzl, because it is
 # configured as a vendor dependency and can only be configured with a valid
 # ANDROID_NDK path.

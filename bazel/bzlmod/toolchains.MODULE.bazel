@@ -6,6 +6,8 @@ windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_r
 
 local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
 rbe = use_extension("//tools/base/bazel/rbe:extensions.bzl", "rbe")
 
 macos_sdk_repository(
@@ -66,6 +68,31 @@ register_toolchains(
     # https://github.com/bazelbuild/rules_java/blob/master/toolchains/BUILD#L75
     "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_definition",
     "//prebuilts/studio/jdk/jbr-next:bootstrap_runtime_toolchain_definition",
+)
+
+# CC toolchain dependencies
+new_local_repository(
+    name = "clang_linux_x64",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
+    path = "prebuilts/clang/host/linux-x86/clang-r536225",
+)
+
+new_local_repository(
+    name = "clang_mac_all",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:clang.BUILD",
+    path = "prebuilts/clang/host/darwin-x86/clang-r536225",
+)
+
+new_local_repository(
+    name = "clang_win_x64",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:clang.BUILD",
+    path = "prebuilts/clang/host/windows-x86/clang-r536225",
+)
+
+new_local_repository(
+    name = "gcc_lib",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
+    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
 
 rbe.constant(
