@@ -54,7 +54,13 @@ internal class AdbServerControllerImpl(
 
     private var currentJob: Deferred<Unit>? = null
 
-    private var currentJobIsCompletedAndHadNotThrownException = false
+    /**
+     *  Job [TransitionStatus] is volatile because it's updated from `invokeOnCompletion`.
+     *  It is OK to use it, because the important aspect is that TransitionStatus is only
+     *  set to `IN_PROGRESS` after the previous job is completed (with or without an exception).
+     */
+    @Volatile
+    private var currentJobTransitionStatus = TransitionStatus.COMPLETED_OK
 
     private var lastKnownRemoteAddressStateFlow = MutableStateFlow<InetSocketAddress?>(null)
 
@@ -76,11 +82,11 @@ internal class AdbServerControllerImpl(
     override val channelProvider: AdbServerChannelProvider = AdbServerControllerProvider()
 
     override suspend fun start() {
-        transitionCurrentState { start() }
+        transitionCurrentState(State::start)
     }
 
     override suspend fun stop() {
-        transitionCurrentState { stop() }
+        transitionCurrentState(State::stop)
     }
 
     override val lastKnownRemoteAddress: InetSocketAddress?
@@ -90,19 +96,16 @@ internal class AdbServerControllerImpl(
         currentState.scope.cancel("${this::class.simpleName} has been closed")
     }
 
-    private suspend inline fun transitionCurrentState(transition: State.() -> State) {
-        val newTransitionJob = stateLock.withLock {
+    private suspend inline fun transitionCurrentState(transition: State.(TransitionStatus) -> State) {
+        val transitionJob = stateLock.withLock {
             // Throw if [closed] was called
             currentState.scope.ensureActive()
 
-            val newState = currentState.transition()
-            // `currentJobIsCompletedAndHadNotThrownException` is false if currentJob is not yet
-            // completed, or if it is completed but is completed with an error (e.g. you are in a
-            // StartingState which was completed with an error, and so we redo the start operation)
-            if (currentState == newState && currentJobIsCompletedAndHadNotThrownException) {
-                // Join the existing job if transitioning to the same state
-                currentJob?.join()
-                return
+            val newState = currentState.transition(currentJobTransitionStatus)
+
+            // Await on the same job if we are transitioning to the same state
+            if (currentState == newState) {
+                return@withLock currentJob
             }
 
             currentJob?.cancelAndJoin()
@@ -115,11 +118,12 @@ internal class AdbServerControllerImpl(
                     is RestartingState -> newState.performRestart()
                 }
             }.also {
-                currentJobIsCompletedAndHadNotThrownException = false
+                currentJobTransitionStatus = TransitionStatus.IN_PROGRESS
             }
 
             newTransitionJob.invokeOnCompletion { e ->
-                currentJobIsCompletedAndHadNotThrownException = e == null
+                currentJobTransitionStatus =
+                    if (e == null) TransitionStatus.COMPLETED_OK else TransitionStatus.COMPLETED_FAILURE
             }
 
             currentState = newState
@@ -128,7 +132,7 @@ internal class AdbServerControllerImpl(
         }
 
         try {
-            newTransitionJob.await()
+            transitionJob?.await()
         } finally {
             lastKnownRemoteAddressStateFlow.update { null }
         }
@@ -161,7 +165,7 @@ internal class AdbServerControllerImpl(
      * This will attempt to restart adb server if we previously detected a dropped connection.
      */
     internal suspend fun restart() {
-        transitionCurrentState { restart() }
+        transitionCurrentState(State::restart)
     }
 
     /**
@@ -189,6 +193,16 @@ internal class AdbServerControllerImpl(
                 }
             }
         }
+    }
+
+    /**
+     * This enum class is used to keep track of current transition state.
+     */
+    private enum class TransitionStatus {
+
+        IN_PROGRESS,
+        COMPLETED_OK,
+        COMPLETED_FAILURE,
     }
 
     /**
@@ -285,17 +299,17 @@ internal class AdbServerControllerImpl(
         /**
          * Initiates the `Start` transition and returns the new [State]
          */
-        abstract fun start(): State
+        abstract fun start(currentTransitionStatus: TransitionStatus): State
 
         /**
          * Initiates the `Stop` transition and returns the new [State]
          */
-        abstract fun stop(): State
+        abstract fun stop(currentTransitionStatus: TransitionStatus): State
 
         /**
          * Initiates the `restart` transition and returns the new [State]
          */
-        abstract fun restart(): State
+        abstract fun restart(currentTransitionStatus: TransitionStatus): State
 
         companion object {
 
@@ -326,16 +340,16 @@ internal class AdbServerControllerImpl(
      */
     private class InitialState(params: StateParams) : State(params) {
 
-        override fun start(): State {
+        override fun start(currentTransitionStatus: TransitionStatus): State {
             return StartingState(params)
         }
 
-        override fun stop(): State {
+        override fun stop(currentTransitionStatus: TransitionStatus): State {
             // We are stopped => no-op
             return this
         }
 
-        override fun restart(): State {
+        override fun restart(currentTransitionStatus: TransitionStatus): State {
             // We are stopped => no-op
             return this
         }
@@ -348,22 +362,34 @@ internal class AdbServerControllerImpl(
      */
     private class StartingState(params: StateParams) : State(params) {
 
-        override fun start(): State {
-            return this
+        override fun start(currentTransitionStatus: TransitionStatus): State {
+            return if (currentTransitionStatus == TransitionStatus.COMPLETED_FAILURE) {
+                // Retry starting the server
+                StartingState(params)
+            } else {
+                // Already starting or started
+                this
+            }
         }
 
-        override fun stop(): State {
+        override fun stop(currentTransitionStatus: TransitionStatus): State {
             // We are starting (or started) => stop the server
             return StoppingState(params)
         }
 
-        override fun restart(): State {
-            return if (params.isStartedFlow.value) {
-                // We are started => restart the server
-                RestartingState(params)
-            } else {
-                // We are not fully started => no-op
-                this
+        override fun restart(currentTransitionStatus: TransitionStatus): State {
+            return when (currentTransitionStatus) {
+                TransitionStatus.IN_PROGRESS ->
+                    // We are not fully started => no-op
+                    this
+
+                TransitionStatus.COMPLETED_OK ->
+                    // We are successfully started => restart the server
+                    RestartingState(params)
+
+                TransitionStatus.COMPLETED_FAILURE ->
+                    // We are not succussfully started => try again
+                    StartingState(params)
             }
         }
 
@@ -393,17 +419,22 @@ internal class AdbServerControllerImpl(
      */
     private class StoppingState(params: StateParams) : State(params) {
 
-        override fun start(): State {
+        override fun start(currentTransitionStatus: TransitionStatus): State {
             // We are stopping (or stopped) => Cancel stop operation and start again
             return StartingState(params)
         }
 
-        override fun stop(): State {
-            // We are stopping (or stopped)
-            return this
+        override fun stop(currentTransitionStatus: TransitionStatus): State {
+            return if (currentTransitionStatus == TransitionStatus.COMPLETED_FAILURE) {
+                // Retry stopping the server
+                StoppingState(params)
+            } else {
+                // We are already stopping (or stopped)
+                this
+            }
         }
 
-        override fun restart(): State {
+        override fun restart(currentTransitionStatus: TransitionStatus): State {
             // We are stopping (or stopped) => no-op, as we should only when started
             return this
         }
@@ -429,24 +460,23 @@ internal class AdbServerControllerImpl(
      */
     private class RestartingState(params: StateParams) : State(params) {
 
-        override fun start(): State {
+        override fun start(currentTransitionStatus: TransitionStatus): State {
             // We are restarting => cancel restart and start normally
             return StartingState(params)
         }
 
-        override fun stop(): State {
+        override fun stop(currentTransitionStatus: TransitionStatus): State {
             // We are restarting => cancel restart and stop normally
             return StoppingState(params)
         }
 
-        override fun restart(): State {
+        override fun restart(currentTransitionStatus: TransitionStatus): State {
 
-            return if (params.isStartedFlow.value) {
-                // We are started => cancel job and restart the server
-                RestartingState(params)
-            } else {
-                // We are not fully started => no-op
+            return if (currentTransitionStatus == TransitionStatus.IN_PROGRESS) {
+                // Current restart operation has not completed => no-op
                 this
+            } else {
+                RestartingState(params)
             }
         }
 

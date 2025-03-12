@@ -434,6 +434,73 @@ class AdbServerControllerImplTest {
     }
 
     @Test
+    fun testTransition_fromSuccessfulRestart_toSuccessfulStop(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        controller.start()
+        controller.restart()
+        processRunner.reset()
+        assertTrue(controller.isStarted)
+
+        // Act
+        controller.stop()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+    }
+
+    @Test
+    fun testTransition_fromFailedRestart_toSuccessfulStop(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        controller.start()
+        processRunner.throwOnNextCommand =
+                IllegalStateException("Exception in a call to `controller.restart()`")
+        try {
+            controller.restart()
+        } catch (_: IllegalStateException) {
+            // Ignore: This exception is expected
+        }
+        processRunner.reset()
+        assertTrue(controller.isStarted)
+
+        // Act
+        processRunner.throwOnNextCommand = null
+        controller.stop()
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+    }
+
+    @Test
     fun testRestartIsNoop_whenInUserManagedMode(): Unit = runBlockingWithTimeout {
         // Prepare
         val controller =
@@ -502,6 +569,59 @@ class AdbServerControllerImplTest {
         // Assert
         assertFalse(controller.isStarted)
         assertTrue(processRunner.allCommands.isEmpty())
+    }
+
+    @Test
+    fun testRestarting_afterFailedStart(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
+        processRunner.throwOnNextCommand =
+                IllegalStateException("Exception in a call to `controller.start()`")
+
+        // Act: put controller into a failed started state
+        try {
+            controller.start()
+        } catch (_: IllegalStateException) {
+            // Ignore: This exception is expected
+        }
+
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+
+        // Prepare: Try restart from a failed start state and make it fail
+        processRunner.throwOnNextCommand =
+                IllegalStateException("Exception in a call to `controller.restart()`")
+        // Act: Try restart from a failed start state
+        try {
+            controller.restart()
+        } catch (_: IllegalStateException) {
+            // Ignore: This exception is expected
+        }
+        // Assert
+        assertFalse(controller.isStarted)
+        assertTrue(processRunner.allCommands.isEmpty())
+
+        // Prepare: Try restart from a failed start state and this time make it succeed
+        processRunner.throwOnNextCommand = null
+        // Act
+        controller.restart()
+        // Assert
+        assertTrue(controller.isStarted)
+        assertContentEquals(listOf(START_COMMAND), processRunner.allCommands)
     }
 
     @Test
