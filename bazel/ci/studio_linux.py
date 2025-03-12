@@ -97,6 +97,7 @@ _ARTIFACTS = [
     ('tools/base/layoutlib-api/tools.layoutlib-api.src.jar', 'artifacts'),
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
+    ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
 ]
 
 
