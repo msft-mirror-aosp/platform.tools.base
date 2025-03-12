@@ -64,24 +64,26 @@ class PreviewScreenshotDescriptor(
             System.err.println(it)
         }
 
-        ImageVerifier(ImageDiffer.PixelPerfect(ImageDifferInput.threshold)).verify(
-            newImagePath, refImagePath, diffImagePath
-        )
-
-        if (File(newImagePath).exists()) {
-            context.executionRequest.engineExecutionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
+        try {
+            ImageVerifier(ImageDiffer.PixelPerfect(ImageDifferInput.threshold)).verify(
+                newImagePath, refImagePath, diffImagePath
             )
-        }
-        if (File(refImagePath).exists()) {
-            context.executionRequest.engineExecutionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
-            )
-        }
-        if (File(diffImagePath).exists()) {
-            context.executionRequest.engineExecutionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath)
-            )
+        } finally {
+            if (File(newImagePath).exists()) {
+                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                    this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
+                )
+            }
+            if (File(refImagePath).exists()) {
+                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                    this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
+                )
+            }
+            if (File(diffImagePath).exists()) {
+                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                    this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath)
+                )
+            }
         }
 
         return context

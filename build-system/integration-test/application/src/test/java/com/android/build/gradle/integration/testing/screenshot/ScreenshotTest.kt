@@ -441,7 +441,12 @@ class ScreenshotTest {
         )
         classHtmlReportText = classHtmlReport.readText()
         expectedOutputAfterChangingPreviews.forEach { assertThat(classHtmlReportText).contains(it) }
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="failures">simpleComposableTest_3</h3>""")
+        class2HtmlReport.readText().let {
+            assertThat(it).contains("""<h3 class="failures">simpleComposableTest_3</h3>""")
+            assertThat(it).contains("rendered/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
+            assertThat(it).contains("reference/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
+            assertThat(it).contains("diffs/pkg/name/TopLevelPreviewTestKt/simpleComposableTest_3_748aa731_0.png")
+        }
         assertThat(packageHtmlReport).exists()
 
         assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
