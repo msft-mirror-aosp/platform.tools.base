@@ -282,7 +282,7 @@ class ScreenshotTest {
             .searchAndReplace("Hello World", "Hello Worid")
 
         val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        result.assertErrorContains("There were failing tests. See the results at: ")
+        result.assertErrorContains("There were failing tests. See the report at: ")
 
         //set high threshold - tests pass
         appProject.reconfigure {
@@ -311,7 +311,7 @@ class ScreenshotTest {
         }
 
         val resultLowThreshold = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
-        resultLowThreshold.assertErrorContains("There were failing tests. See the results at: ")
+        resultLowThreshold.assertErrorContains("There were failing tests. See the report at: ")
     }
 
     private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
@@ -402,7 +402,10 @@ class ScreenshotTest {
         )
         var classHtmlReportText = classHtmlReport.readText()
         expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
-        assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+        class2HtmlReport.readText().let {
+            assertThat(it).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+            assertThat(it).contains("simpleComposableTest_3_748aa731_0.png")
+        }
         assertThat(packageHtmlReport).exists()
 
         // Assert that no diff images were generated because screenshot matched the reference image

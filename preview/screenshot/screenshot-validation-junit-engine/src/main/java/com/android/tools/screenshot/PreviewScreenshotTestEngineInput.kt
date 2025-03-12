@@ -43,6 +43,10 @@ object PreviewScreenshotTestEngineInput {
     object ImageDifferInput {
         val threshold: Float = getSystemProperty("ImageDiffer.threshold").toFloatOrNull() ?: 0.0f
     }
+
+    object XmlReportInput {
+        val outputDirectory: File = getFileFromSystemProperty("XmlReportInput.outputDirectory")
+    }
 }
 
 private fun getSystemProperty(propertyName: String): String {

@@ -18,6 +18,7 @@ package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.report.TestReport
 import com.android.compose.screenshot.services.AnalyticsService
+import com.android.utils.FileUtils
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.ConfigurableFileCollection
@@ -113,9 +114,6 @@ abstract class PreviewScreenshotValidationTask : Test() {
     @get:OutputDirectory
     abstract val diffImageOutputDir: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val reportOutputDir: DirectoryProperty
-
     @get:Internal
     abstract val analyticsService: Property<AnalyticsService>
 
@@ -167,6 +165,9 @@ abstract class PreviewScreenshotValidationTask : Test() {
             setTestEngineParam("Renderer.screenshotAllClassPath", (testRuntimeClassDirs.get() + testRuntimeJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
             setTestEngineParam("Renderer.screenshotProjectClassPath", (testProjectClassDirs.get() + testProjectJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath })
             setTestEngineParam("Renderer.layoutlibDataDir", layoutlibDataDir.singleFile.absolutePath)
+            setTestEngineParam("XmlReportInput.outputDirectory", reports.junitXml.outputLocation.get().asFile.absolutePath)
+
+            FileUtils.cleanOutputDir(reports.junitXml.outputLocation.get().asFile)
 
             threshold.orNull?.let {
                 validateFloat(it)
@@ -180,9 +181,11 @@ abstract class PreviewScreenshotValidationTask : Test() {
                     totalTestCount = testCount,
                 )
 
+                // Delete html files which Gradle's Test task generates.
+                FileUtils.cleanOutputDir(reports.html.outputLocation.get().asFile)
                 TestReport(
                     reports.junitXml.outputLocation.get().asFile,
-                    reportOutputDir.get().asFile
+                    reports.html.outputLocation.get().asFile
                 ).generateScreenshotTestReport()
             }
         }

@@ -28,6 +28,7 @@ import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
+import java.io.File
 import java.util.Optional
 
 class PreviewScreenshotDescriptor(
@@ -59,13 +60,6 @@ class PreviewScreenshotDescriptor(
         val refImagePath = "${context.referenceImageDir.absolutePath}/${previewScreenshotResult.imagePath}"
         val diffImagePath = "${context.previewDiffImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
 
-        context.executionRequest.engineExecutionListener.reportingEntryPublished(
-            this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath))
-        context.executionRequest.engineExecutionListener.reportingEntryPublished(
-            this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath))
-        context.executionRequest.engineExecutionListener.reportingEntryPublished(
-            this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath))
-
         previewScreenshotResult.error?.let {
             System.err.println(it)
         }
@@ -73,6 +67,22 @@ class PreviewScreenshotDescriptor(
         ImageVerifier(ImageDiffer.PixelPerfect(ImageDifferInput.threshold)).verify(
             newImagePath, refImagePath, diffImagePath
         )
+
+        if (File(newImagePath).exists()) {
+            context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
+            )
+        }
+        if (File(refImagePath).exists()) {
+            context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
+            )
+        }
+        if (File(diffImagePath).exists()) {
+            context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath)
+            )
+        }
 
         return context
     }

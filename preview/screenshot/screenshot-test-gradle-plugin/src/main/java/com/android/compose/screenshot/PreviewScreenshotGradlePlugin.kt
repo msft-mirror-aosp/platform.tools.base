@@ -210,10 +210,16 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         }
                         task.isScanForTestClasses = false
                         task.reports {
-                            it.junitXml.required.set(true)
                             // TODO(b/325320710): Use the standard test report when extension points
-                            //  for adding custom information become available
-                            it.html.required.set(false)
+                            //  for adding custom information become available. As a short-term
+                            //  solution, we register XmlReportGeneratingListener to JUnit5 launcher
+                            //  using service loader.
+                            it.junitXml.required.set(false)
+                            // Set html to true so that Gradle's error message contains clickable
+                            // link to the html file.
+                            it.html.required.set(true)
+                            it.html.outputLocation.set(
+                                buildDir.dir("$PREVIEW_REPORTS/${variant.computePathSegments()}"))
                         }
 
                         task.classpath.from(
@@ -242,7 +248,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         task.referenceImageDir.set(project.layout.projectDirectory.dir("src/${variantName}ScreenshotTest/reference"))
                         task.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                         task.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
-                        task.reportOutputDir.set(buildDir.dir("$PREVIEW_REPORTS/${variant.computePathSegments()}"))
                     }
 
                     variant.artifacts
