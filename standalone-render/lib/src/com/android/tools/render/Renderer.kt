@@ -191,11 +191,11 @@ class Renderer(
     }
 
     private fun render(configuration: Configuration, xmlLayout: String): RenderResult {
-        val disposable = Disposer.newDisposable()
+        val disposable = Disposer.newCheckedDisposable()
         val logger = RenderLogger()
         return try {
             val renderTask =
-                renderService.taskBuilder(module, configuration, logger).build().get()
+                renderService.taskBuilder(module, configuration, logger).build(disposable).get()
                     ?: return RenderResult.createRenderTaskErrorResult(
                         module,
                         { throw NotImplementedError("PsiFile supplier is not supported") },
@@ -203,9 +203,6 @@ class Renderer(
                         logger
                     )
 
-            Disposer.register(disposable) {
-                renderTask.dispose()
-            }
 
             val xmlFile =
                 RenderXmlFileSnapshot(
