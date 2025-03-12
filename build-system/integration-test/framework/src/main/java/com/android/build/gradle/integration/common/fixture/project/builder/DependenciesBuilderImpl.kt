@@ -24,132 +24,8 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
 
-class DependenciesBuilderImpl : DependenciesBuilder {
-
-    private val dependencies = mutableListOf<Pair<String, DependencyData>>()
-
-    private data class DependencyData(
-        val dependency: Any,
-        val capability: String? = null
-    )
-
-    private class DependencyBuilderImpl : DependencyBuilder {
-
-        internal var capability: String? = null
-
-        override fun requireCapability(capability: String) {
-            this.capability = capability
-        }
-    }
-
-    val externalLibraries: List<MavenRepoGenerator.Library>
-        get() = dependencies
-            .map { it.second.dependency }
-            .filterIsInstance<MavenRepoGenerator.Library>()
-
-    override fun clear() {
-        dependencies.clear()
-    }
-
-    override fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        val data = action?.let {
-            val builder = DependencyBuilderImpl()
-            action(builder)
-            DependencyData(dependency, builder.capability)
-        } ?: DependencyData(dependency)
-
-        if (!dependencies.remove(scope to data)) {
-            throw RuntimeException("Could not find dependency scope: $scope, dependency: $dependency")
-        }
-    }
-
-    override fun add(
-        configurationName: String,
-        dependency: Any,
-        action: (DependencyBuilder.() -> Unit)?
-    ) {
-        val data = action?.let {
-            val builder = DependencyBuilderImpl()
-            action(builder)
-            DependencyData(dependency, builder.capability)
-        } ?: DependencyData(dependency)
-
-        dependencies.add(configurationName to data)
-    }
-
-    override fun implementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("implementation", dependency, action)
-    }
-
-    override fun api(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("api", dependency, action)
-    }
-
-    override fun compileOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("compileOnly", dependency, action)
-    }
-
-    override fun compileOnlyApi(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("compileOnlyApi", dependency, action)
-    }
-
-    override fun runtimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("runtimeOnly", dependency, action)
-    }
-
-    override fun testImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("testImplementation", dependency, action)
-    }
-
-    override fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("testRuntimeOnly", dependency, action)
-    }
-
-    override fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("testFixturesImplementation", dependency, action)
-    }
-
-    override fun androidTestImplementation(
-        dependency: Any,
-        action: (DependencyBuilder.() -> Unit)?
-    ) {
-        add("androidTestImplementation", dependency, action)
-    }
-
-    override fun include(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("include", dependency, action)
-    }
-
-    override fun requiredSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("requiredSdk", dependency, action)
-    }
-
-    override fun optionalSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("optionalSdk", dependency, action)
-    }
-
-    override fun lintPublish(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("lintPublish", dependency, action)
-    }
-
-    override fun lintChecks(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("lintChecks", dependency, action)
-    }
-
-    override fun screenshotTestImplementation(
-        dependency: Any,
-        action: (DependencyBuilder.() -> Unit)?
-    ) {
-        add("screenshotTestImplementation", dependency, action)
-    }
-
-    override fun coreLibraryDesugaring(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("coreLibraryDesugaring", dependency, action)
-    }
-
-    override fun ksp(dependency: Any, action: (DependencyBuilder.() -> Unit)?) {
-        add("ksp", dependency, action)
-    }
+internal class DependenciesBuilderImpl(
+) : DependenciesConfigurationsBuilder by DependencyConfigurationsBuilderImpl(), DependenciesBuilder {
 
     override fun localJar(name: String, action: JarBuilder.() -> Unit): LocalJarDependency {
         val builder = JarBuilderImpl().also {
@@ -175,11 +51,23 @@ class DependenciesBuilderImpl : DependenciesBuilder {
     override fun externalLibrary(path: String, testFixtures: Boolean): ExternalDependencyBuilder =
         ExternalDependencyBuilderImpl(path, testFixtures)
 
+    override val constraints: ConstraintsBuilderImpl by lazy(LazyThreadSafetyMode.NONE) {
+        ConstraintsBuilderImpl()
+    }
+
+    override fun constraints(action: ConstraintsBuilder.() -> Unit) {
+        action(constraints)
+    }
+
+    val externalLibraries: List<MavenRepoGenerator.Library>
+        get() = getDependenciesData()
+            .map { it.dependency }
+            .filterIsInstance<MavenRepoGenerator.Library>()
+
     fun writeBuildFile(sb: StringBuilder, projectDir: File) {
         sb.append("\ndependencies {\n")
-        for ((scope, dependencyData) in dependencies) {
-            val dependency = dependencyData.dependency
-            if (dependencyData.capability != null) throw RuntimeException("Capability is not support in fixtures other than GradleRule")
+        for ((scope, dependency, capability) in getDependenciesData()) {
+            if (capability != null) throw RuntimeException("Capability is not support in fixtures other than GradleRule")
             when (dependency) {
                 is String -> sb.append("$scope '$dependency'\n")
                 is ExternalDependencyBuilder -> {
@@ -222,31 +110,30 @@ class DependenciesBuilderImpl : DependenciesBuilder {
     }
 
     fun write(buildWriter: BuildWriter, projectLocation: Path) {
-        if (dependencies.isEmpty()) return
+        if (isEmpty() && constraints.isEmpty()) return
 
         buildWriter.apply {
             block("dependencies") {
-                for ((scope, dependencyData) in dependencies) {
-                    val dependency = dependencyData.dependency
-                    val capability = dependencyData.capability
+                constraints.write(this, projectLocation)
+                for ((configurationName, dependency, capability) in getDependenciesData()) {
                     when (dependency) {
-                        is String -> dependency(scope, dependency, capability)
+                        is String -> dependency(configurationName, dependency, capability)
                         is ExternalDependencyBuilder -> {
                             if (dependency.testFixtures) {
                                 dependency(
-                                    scope,
+                                    configurationName,
                                     rawMethod("testFixtures", dependency.coordinate),
                                     capability
                                 )
                             } else {
-                                dependency(scope, dependency.coordinate, capability)
+                                dependency(configurationName, dependency.coordinate, capability)
                             }
                         }
 
                         is ProjectDependencyBuilder -> {
                             val dep = getDependencyNotationForProject(dependency)
 
-                            dependency(scope, dep, capability)
+                            dependency(configurationName, dep, capability)
                         }
 
                         is PlatformDependency -> {
@@ -255,29 +142,29 @@ class DependenciesBuilderImpl : DependenciesBuilder {
                             } ?: dependency.path
 
                             val dep = rawMethod("platform", path)
-                            dependency(scope, dep, capability)
+                            dependency(configurationName, dep, capability)
                         }
 
                         is MavenRepoGenerator.Library -> dependency(
-                            scope,
+                            configurationName,
                             dependency.mavenCoordinate.toString(),
                             capability
                         )
 
                         is LocalJarDependency -> {
                             val path = createLocalJar(dependency, projectLocation)
-                            dependency(scope, rawMethod("files", path), capability)
+                            dependency(configurationName, rawMethod("files", path), capability)
                         }
 
                         is LocalFiles -> {
                             dependency(
-                                scope,
+                                configurationName,
                                 rawMethod("files", dependency.path.toFile().toFormatted()),
                                 capability
                             )
                         }
 
-                        else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
+                        else -> throw RuntimeException("unsupported dependency type: ${(dependency as Any).javaClass}")
                     }
                 }
             }
@@ -285,35 +172,44 @@ class DependenciesBuilderImpl : DependenciesBuilder {
             emptyLine()
         }
     }
+}
 
-    private fun File.toFormatted(): String {
-        return if (this.isAbsolute) {
-            toURI().toString()
-        } else {
-            // in this case, we want to make sure this is using / even on window as the
-            // gradle (groovy) API requires this
-            toString().replace('\\', '/')
-        }
+internal class DependencyBuilderImpl : DependencyBuilder {
+
+    internal var capability: String? = null
+
+    override fun requireCapability(capability: String) {
+        this.capability = capability
     }
+}
 
-    private fun BuildWriter.getDependencyNotationForProject(
-        dependency: ProjectDependencyBuilder
-    ): BuildWriter.RawString {
-        val projectNotation = dependency.configuration?.let { configName ->
-            rawMethod(
-                "project", listOf(
-                    "path" to dependency.path,
-                    "configuration" to configName
-                )
+internal fun BuildWriter.getDependencyNotationForProject(
+    dependency: ProjectDependencyBuilder
+): BuildWriter.RawString {
+    val projectNotation = dependency.configuration?.let { configName ->
+        rawMethod(
+            "project", listOf(
+                "path" to dependency.path,
+                "configuration" to configName
             )
-        } ?: rawMethod("project", dependency.path)
+        )
+    } ?: rawMethod("project", dependency.path)
 
-        val dep = if (dependency.testFixtures) {
-            rawMethod("testFixtures", projectNotation)
-        } else {
-            projectNotation
-        }
-        return dep
+    val dep = if (dependency.testFixtures) {
+        rawMethod("testFixtures", projectNotation)
+    } else {
+        projectNotation
+    }
+    return dep
+}
+
+internal fun File.toFormatted(): String {
+    return if (this.isAbsolute) {
+        toURI().toString()
+    } else {
+        // in this case, we want to make sure this is using / even on window as the
+        // gradle (groovy) API requires this
+        toString().replace('\\', '/')
     }
 }
 
