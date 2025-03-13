@@ -85,7 +85,6 @@ class KotlinMultiplatformModelSnapshotTest: BaseModelComparator {
                     "json"
                 ).listFiles()!!.toList()
             },
-            configCacheMode = BaseGradleExecutor.ConfigurationCaching.ON
         ).fetchAndCompareModels(
             listOf(":kmpFirstLib", ":kmpSecondLib")
         )
