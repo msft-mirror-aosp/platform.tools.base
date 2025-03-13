@@ -17,6 +17,39 @@
 package com.android.sdklib
 
 /**
+ * This is deliberately different from AndroidVersion.MIN_API_FOR_EXPLICIT_MINOR as we want
+ * 36 to have different treatment for internal use and user display
+ *
+ * For example, for 36.0-ext18
+ *  - AndroidVersion.getApiStringWithExtension → 36-ext18
+ *  - AndroidTargetHash.getPlatformHashString → android-36-ext18
+ *  - AndroidVersionUtils displayApiString → 36.0-ext18
+ *  - AndroidVersionUtils getFullApiName → API 36.0 ext. 18
+ *  - AndroidVersionUtils getFullApiName(true, true)
+ *        → API 36.0 ext. 18 ("Baklava", Android 16.0)
+ */
+private const val MIN_API_FOR_DISPLAY_MINOR_VERSION = 36
+
+private fun StringBuilder.appendDisplayApiLevelString(androidVersion: AndroidVersion, includeExtension: Boolean = true) {
+    androidVersion.codename?.let { codename -> append(codename); return }
+    append(androidVersion.apiLevel)
+    if (androidVersion.apiLevel >= MIN_API_FOR_DISPLAY_MINOR_VERSION || androidVersion.apiMinorLevel > 0) {
+        append(".").append(androidVersion.apiMinorLevel)
+    }
+    if (includeExtension && !androidVersion.isBaseExtension) {
+        append("-ext").append(androidVersion.extensionLevel)
+    }
+}
+
+/**
+ * A short summary string of the API level of the given android version.
+ *
+ * Generally the same as [AndroidVersion.getApiStringWithExtension] but with explicit minor for 36.
+ */
+val AndroidVersion.displayApiString: String get() = buildString { appendDisplayApiLevelString(this@displayApiString, includeExtension = true) }
+
+
+/**
  * A pair of strings describing an Android version.
  *
  * - [name] is the main name as returned by the various methods. This can be release-focused
@@ -80,6 +113,7 @@ fun AndroidVersion.getFullApiName(
  * - API 33        / Android 13.0             (includeReleaseName == true, includeCodeName == false)
  * - API 33        / "Tiramisu"               (includeReleaseName == false, includeCodeName == true)
  * - API 33        / "Tiramisu"; Android 13.0 (includeReleaseName == true, includeCodeName == true)
+ * - API 36.0      / "Baklava"; Android 16.0  (includeReleaseName == true, includeCodeName == true)
  *
  * If the release name or codename are unknown, they will be omitted.
  *
@@ -101,9 +135,10 @@ fun AndroidVersion.getApiNameAndDetails(
         return NameDetails("API $codename Preview", null)
     }
 
-    val name = StringBuilder("API $apiStringWithoutExtension")
+    val name = StringBuilder("API ")
+    name.appendDisplayApiLevelString(this, includeExtension = false)
     if (!isBaseExtension) {
-        name.append(" ext. $extensionLevel")
+        name.append(" ext. ").append(extensionLevel)
     }
 
     var useCodeName = includeCodeName
@@ -141,14 +176,14 @@ fun AndroidVersion.getApiNameAndDetails(
     val details = StringBuilder()
 
     if (codeName != null) {
-        details.append("\"$codeName\"")
+        details.append("\"").append(codeName).append("\"")
         if (releaseName != null) {
             details.append("; ")
         }
     }
 
     if (releaseName != null) {
-        details.append("Android $releaseName")
+        details.append("Android ").append(releaseName)
     }
 
     return NameDetails(name.toString(), details.toString())
