@@ -203,6 +203,15 @@ enum class TextFormat {
             sb.append("* ")
           }
           if (tag.equals("pre", ignoreCase = true)) {
+            if (this == RAW) {
+              sb.append("```")
+              if (end < html.length - 2 && !html[end + 1].isWhitespace()) {
+                sb.append("\n")
+              }
+              if (inPre) {
+                sb.append("\n")
+              }
+            }
             inPre = !isEndTag
           }
         } else if (this == RAW) {

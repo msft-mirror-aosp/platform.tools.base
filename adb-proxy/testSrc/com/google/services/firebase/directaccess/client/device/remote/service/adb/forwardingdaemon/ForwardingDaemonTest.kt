@@ -74,12 +74,11 @@ class ForwardingDaemonTest {
       private val job = Job()
       private val myStream =
         object : Stream {
-
-          override fun sendWrite(command: WriteCommand) {
+          override suspend fun sendWrite(command: WriteCommand) {
             assertThat(String(command.payload)).isEqualTo("test")
           }
 
-          override fun sendClose() = delayUntilStreamOpenerClose()
+          override suspend fun sendClose() = delayUntilStreamOpenerClose()
 
           override suspend fun receiveCommand(command: StreamCommand) = Unit
 
@@ -96,15 +95,18 @@ class ForwardingDaemonTest {
           }
         }
 
-      override fun connect(forwardingDaemon: ForwardingDaemon) {
+      override suspend fun connect(forwardingDaemon: ForwardingDaemon) {
         fakeAdbSession.scope.launch {
           forwardingDaemon.onStateChanged(DeviceState.MISSING)
           forwardingDaemon.onStateChanged(DeviceState.DEVICE)
         }
       }
 
-      override fun open(service: String, streamId: Int, adbOutputChannel: AdbOutputChannel) =
-        myStream
+      override suspend fun open(
+        service: String,
+        streamId: Int,
+        adbOutputChannel: AdbOutputChannel,
+      ) = myStream
 
       override fun close() {
         job.cancel()

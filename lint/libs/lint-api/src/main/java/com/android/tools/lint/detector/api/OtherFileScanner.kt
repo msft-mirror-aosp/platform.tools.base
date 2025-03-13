@@ -27,7 +27,7 @@ interface OtherFileScanner : FileScanner {
    * [Scope.JAVA_FILE] will not just return `.java` files, but also other resource files such as
    * `.html` and other files found within the Java source folders.
    *
-   * Lint will call the [.run]} method when the file should be checked.
+   * Lint will call the [run] method when the file should be checked.
    *
    * @return set of scopes that define the types of source files the detector wants to consider
    */

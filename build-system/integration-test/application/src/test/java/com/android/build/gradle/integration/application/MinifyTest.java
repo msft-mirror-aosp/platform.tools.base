@@ -35,7 +35,13 @@ import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
+
 import com.google.common.collect.Sets;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,9 +49,6 @@ import java.nio.file.Path;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 /** Assemble tests for minify. */
 public class MinifyTest {
@@ -287,19 +290,22 @@ public class MinifyTest {
     public void testAndroidTestIsNotUpToDate() throws IOException, InterruptedException {
         project.executor().run("assembleMinified", "assembleMinifiedAndroidTest");
         TestFileUtils.appendToFile(project.file("proguard-rules.pro"), "\n-keep class **");
-        GradleBuildResult minifiedAndroidTest =
-                project.executor().run("assembleMinifiedAndroidTest");
 
-        assertThat(minifiedAndroidTest.findTask(":minifyMinifiedAndroidTestWithR8")).didWork();
+        project.executor()
+                .run("assembleMinifiedAndroidTest")
+                .assertTask(":minifyMinifiedAndroidTestWithR8")
+                .didWork();
     }
 
     @Test
     public void testProguardRuleForNativeMethods() throws Exception {
         TestFileUtils.appendToFile(project.file("proguard-rules.pro"), "\n-printconfiguration");
-        GradleBuildResult result = project.executor().run("assembleMinified");
-        try (Scanner stdout = result.getStdout()) {
-            ScannerSubject.assertThat(stdout)
-                    .contains("-keepclasseswithmembernames,includedescriptorclasses class *");
-        }
+        project.executor()
+                .run("assembleMinified")
+                .assertStdOut(
+                        stdout -> {
+                            stdout.contains(
+                                    "-keepclasseswithmembernames,includedescriptorclasses class *");
+                        });
     }
 }

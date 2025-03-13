@@ -139,7 +139,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
         assertThat(project.getSubproject("lib").mainSrcDir.resolve("emptyDir").mkdirs()).isTrue()
         val result = project.executor().run("assembleDebug")
 
-        TaskStateAssertionHelper(result.taskStates)
+        TaskStateAssertionHelper(result)
             .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
     }
 }

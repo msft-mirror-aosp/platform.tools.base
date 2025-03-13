@@ -89,7 +89,13 @@ class BackupServiceImplTest {
       .inOrder()
     val files = backupFile.unzip()
     assertThat(files.keys)
-      .containsExactly("pm_backup", "restore_token_file", "app_backup", "metadata.txt")
+      .containsExactly(
+        "pm_backup",
+        "restore_token_file",
+        "app_backup",
+        "auth_backup",
+        "metadata.txt",
+      )
     assertThat(adbServices.testMode).isEqualTo(0)
     assertThat(backupFile.exists()).isTrue()
     assertThat(files["pm_backup"])
@@ -134,7 +140,13 @@ class BackupServiceImplTest {
     assertThat(backupFile.exists()).isTrue()
     val files = backupFile.unzip()
     assertThat(files.keys)
-      .containsExactly("pm_backup", "restore_token_file", "app_backup", "metadata.txt")
+      .containsExactly(
+        "pm_backup",
+        "restore_token_file",
+        "app_backup",
+        "auth_backup",
+        "metadata.txt",
+      )
     assertThat(files["pm_backup"])
       .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/pm_backup")
     assertThat(files["restore_token_file"])
@@ -177,7 +189,13 @@ class BackupServiceImplTest {
     assertThat(backupFile.exists()).isTrue()
     val files = backupFile.unzip()
     assertThat(files.keys)
-      .containsExactly("pm_backup", "restore_token_file", "app_backup", "metadata.txt")
+      .containsExactly(
+        "pm_backup",
+        "restore_token_file",
+        "app_backup",
+        "auth_backup",
+        "metadata.txt",
+      )
     assertThat(files["pm_backup"])
       .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/pm_backup")
     assertThat(files["restore_token_file"])
@@ -571,6 +589,18 @@ class BackupServiceImplTest {
         "13/13: Done",
       )
       .inOrder()
+  }
+
+  @Test
+  fun restore_withoutAuth(): Unit = runBlocking {
+    val backupFile =
+      backupFileHelper.createBackupFile("com.app", "11223344556677889900", CLOUD, withAuth = false)
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    assertThat(result).isEqualTo(Success)
   }
 
   @Test

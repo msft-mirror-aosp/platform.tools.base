@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.mlkit
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject.Companion.lib
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.ZipFileSubject
@@ -40,7 +41,7 @@ class MlModelBindingInLibTest {
     @Throws(IOException::class)
     fun setUp() {
         val buildFile = project.buildFile
-        TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding true")
+        TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding = true")
         TestFileUtils.appendToFile(
             buildFile,
             """
@@ -64,8 +65,8 @@ class MlModelBindingInLibTest {
         )
 
         project.executor().run(":assembleDebug")
-        project.assertThatAar("debug") {
-            mainJar().containsClass("com/example/lib/ml/Model")
+        project.assertAar(AarSelector.DEBUG) {
+            mainJar().classes().containsExactly("com/example/lib/ml/Model\$")
         }
     }
 }

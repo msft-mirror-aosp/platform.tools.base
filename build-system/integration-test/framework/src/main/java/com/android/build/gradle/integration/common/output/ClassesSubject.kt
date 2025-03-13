@@ -30,23 +30,66 @@ import java.util.regex.Pattern
 /**
  * An object that can validate the content of code.
  */
+@SubjectDsl
 interface ClassesSubject {
 
     /**
      * Returns a [IterableSubject] of all the classes in the jar (as [String] for binary names)
      */
-    @Deprecated("Use containsExactly directly")
+    @Deprecated("Use ClassesSubject.containsExactly directly")
     fun classes(): IterableSubject
 
     /**
-     * Checks that the list of classes contains a single entry matching the one provided
+     * Validates that the class list matches exactly with the provided list.
+     *
+     * The class list contains classes only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun containsExactly(className: String)
+    fun containsExactly(classNames: Iterable<String>)
 
     /**
-     * Checks that the list of classes contains exactly the list provided
+     * Validates that the class list matches exactly with the provided list.
+     *
+     * The class list contains classes only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    fun containsExactly(vararg classNames: String)
+    fun containsExactly(className: String) {
+        containsExactly(listOf(className))
+    }
+
+    /**
+     * Validates that the class list matches exactly with the provided list.
+     *
+     * The class list contains classes only. There are no folders in it.
+     *
+     * The format of the class names is using the binary format. For example:
+     *   com/example/Foo$InnerClass
+     *
+     * The possible format of the items in the provided list includes
+     * - normal binary class names
+     * - packages/folders (ending with /), in which case it will match against any classes in the
+     *   archive that are in that package.
+     * - binary class names ending with `$` to match against a class and all its inner classes.
+     */
+    fun containsExactly(vararg classNames: String) {
+        containsExactly(classNames.toList())
+    }
 
     /**
      * Checks that the list of classes is empty
@@ -61,13 +104,13 @@ interface ClassesSubject {
     /**
      * Returns a [ClassDefinitionSubject] for the class with the given binary name
      */
-    fun classDefinition(binaryName: String): ClassSubject
+    fun classDefinition(binaryName: String): ClassDefinitionSubject
 
     /**
      * creates a [ClassDefinitionSubject] for the class with the given binary name, and configures
      * it with the given action
      */
-    fun classDefinition(binaryName: String, action: ClassSubject.() -> Unit) {
+    fun classDefinition(binaryName: String, action: ClassDefinitionSubject.() -> Unit) {
         action(classDefinition(binaryName))
     }
 
@@ -79,115 +122,40 @@ interface ClassesSubject {
 }
 
 /**
- * Implementation of CodeSubject over a Dex file
+ * Base Implementation of CodeSubject over dex files
  */
-@SubjectDsl
-internal class SingleDexSubject(
+abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
     metadata: FailureMetadata,
-    actual: Dex
-): Subject<SingleDexSubject, Dex>(metadata, actual), ClassesSubject {
+    actual: T
+): Subject<S, T>(metadata, actual), ClassesSubject {
 
-    companion object {
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun dexes(): Factory<SingleDexSubject, Dex> {
-            return Factory<SingleDexSubject, Dex> { metadata, actual ->
-                SingleDexSubject(metadata, actual)
-            }
-        }
-    }
-
-    @Deprecated("Use containsExactly directly")
-    override fun classes(): IterableSubject {
-        return check("classes()").that(classNames)
-    }
-
-    override fun containsExactly(className: String) {
-        check("classes()").that(classNames).containsExactly(className)
-    }
-
-    override fun containsExactly(vararg classNames: String) {
-        check("classes()").that(this.classNames).containsExactly(*classNames)
-    }
-
-    override fun isEmpty() {
-        check("classes()").that(classNames).isEmpty()
-    }
-
-    override fun hasSize(size: Int) {
-        check("classes()").that(classNames).hasSize(size)
-    }
-
-    override fun classDefinition(binaryName: String): ClassSubject {
-        classes().contains(binaryName)
-        val classDef = actual().classes["L$binaryName;"]!!
-
-        return check("classByName($binaryName)")
-            .about(ClassSubject.classNodes())
-            .that(ClassDefinitionFromDex(classDef))
-    }
-
-    override fun classAsBytes(binaryName: String): BinarySubject {
-        throw RuntimeException("classAsBytes not supported for dex files")
-    }
-
-    /**
-     * Cached copy of all the class names.
-     *
-     * The names have been sanitized to not contain the L; wrapper.
-     */
-    private val classNames by lazy(LazyThreadSafetyMode.NONE) {
-        // have to remove the L; wrapper from the name.
-        actual().classes.keys.map { it.substring(1, it.length - 1) }
-    }
-}
-
-@SubjectDsl
-internal class MultiDexClassesSubject(
-    metadata: FailureMetadata,
-    actual: Zip
-): Subject<MultiDexClassesSubject, Zip>(metadata, actual), ClassesSubject {
-
-    companion object {
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun multiDexes(): Factory<MultiDexClassesSubject, Zip> {
-            return Factory<MultiDexClassesSubject, Zip> { metadata, actual ->
-                MultiDexClassesSubject(metadata, actual)
-            }
-        }
-    }
-
-    @Deprecated("Use containsExactly directly")
+    @Deprecated("Use ClassesSubject.containsExactly directly")
     override fun classes(): IterableSubject {
         return check("classes()").that(allClasses.keys)
     }
 
-    override fun containsExactly(className: String) {
-        check("classes()").that(allClasses.keys).containsExactly(className)
-    }
-
-    override fun containsExactly(vararg classNames: String) {
-        check("classes()").that(allClasses.keys).containsExactly(*classNames)
+    override fun containsExactly(classNames: Iterable<String>) {
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(allClasses.keys)
+            .containsExactly(classNames)
     }
 
     override fun isEmpty() {
-        check("classes()").that(allClasses.keys).isEmpty()
+        check("entries()").that(allClasses.keys).isEmpty()
     }
 
     override fun hasSize(size: Int) {
-        check("classes()").that(allClasses.keys).hasSize(size)
+        check("size()").that(allClasses.keys.size).isEqualTo(size)
     }
 
-    override fun classDefinition(binaryName: String): ClassSubject {
-        classes().contains(binaryName)
+    override fun classDefinition(binaryName: String): ClassDefinitionSubject {
+        check("classes()").that(allClasses.keys).contains(binaryName)
 
         val classDef = allClasses[binaryName]!!
 
-        return check("classByName($binaryName)")
-            .about(ClassSubject.classNodes())
+        return check("classDefinition($binaryName)")
+            .about(ClassDefinitionSubject.classes())
             .that(ClassDefinitionFromDex(classDef))
     }
 
@@ -198,7 +166,65 @@ internal class MultiDexClassesSubject(
         throw RuntimeException("classAsBytes not supported for dex files")
     }
 
-    private val allClasses: Map<String, DexBackedClassDef> by lazy(LazyThreadSafetyMode.NONE) {
+    /**
+     * Cached copy of all the class coming from dex files
+     *
+     * The names have been sanitized to not contain the L; wrapper.
+     */
+    protected abstract val allClasses: Map<String, DexBackedClassDef>
+}
+
+/**
+ * Implementation of CodeSubject over one of more Dex files
+ */
+internal class DexSubject(
+    metadata: FailureMetadata,
+    actual: List<Dex>
+): BaseDexSubject<DexSubject, List<Dex>>(metadata, actual), ClassesSubject {
+
+    companion object {
+        /**
+         * Method for getting the subject factory (for use with assertAbout())
+         */
+        internal fun dexFiles(): Factory<DexSubject, List<Dex>> {
+            return Factory<DexSubject, List<Dex>> { metadata, actual ->
+                DexSubject(metadata, actual)
+            }
+        }
+    }
+
+    /**
+     * Cached copy of all the class names.
+     *
+     * The names have been sanitized to not contain the L; wrapper.
+     */
+    override val allClasses: Map<String, DexBackedClassDef> by lazy(LazyThreadSafetyMode.NONE) {
+        actual().flatMap {
+            it.classes.entries.map { entry ->
+                entry.key.substring(1, entry.key.length - 1) to entry.value
+            }
+        }.associateBy({ it.first }) { it.second }
+    }
+
+}
+
+internal class DexClassesFromApkSubject(
+    metadata: FailureMetadata,
+    actual: Zip
+): BaseDexSubject<DexClassesFromApkSubject, Zip>(metadata, actual), ClassesSubject {
+
+    companion object {
+        /**
+         * Method for getting the subject factory (for use with assertAbout())
+         */
+        internal fun apk(): Factory<DexClassesFromApkSubject, Zip> {
+            return Factory<DexClassesFromApkSubject, Zip> { metadata, actual ->
+                DexClassesFromApkSubject(metadata, actual)
+            }
+        }
+    }
+
+    override val allClasses: Map<String, DexBackedClassDef> by lazy(LazyThreadSafetyMode.NONE) {
         val dexList = buildList {
             actual().getEntry("classes.dex")?.let { add(Dex(it)) }
 
@@ -224,7 +250,6 @@ internal class MultiDexClassesSubject(
 /**
  * Implementation of [ClassesSubject] over a jar file
  */
-@SubjectDsl
 internal class JarWithClassesSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -247,32 +272,31 @@ internal class JarWithClassesSubject(
     /**
      * Returns a [IterableSubject] of all the classes in the jar (as [String] for binary names)
      */
-    @Deprecated("Use containsExactly directly")
+    @Deprecated("Use ClassesSubject.containsExactly directly")
     override fun classes(): IterableSubject {
         return check("classes()").that(classNames)
     }
 
-    override fun containsExactly(className: String) {
-        check("classes()").that(classNames).containsExactly(className)
-    }
-
-    override fun containsExactly(vararg classNames: String) {
-        check("classes()").that(this.classNames).containsExactly(*classNames)
+    override fun containsExactly(classNames: Iterable<String>) {
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(this.classNames)
+            .containsExactly(classNames)
     }
 
     override fun isEmpty() {
-        check("classes()").that(classNames).isEmpty()
+         check("entries()").that(classNames).isEmpty()
     }
 
     override fun hasSize(size: Int) {
-        check("classes()").that(classNames).hasSize(size)
+        check("size()").that(classNames.size).isEqualTo(size)
     }
 
     /**
      * Returns a [ClassDefinitionSubject] for the class with the given binary name
      */
-    override fun classDefinition(binaryName: String): ClassSubject {
-        classes().contains(binaryName)
+    override fun classDefinition(binaryName: String): ClassDefinitionSubject {
+        check("classes()").that(classNames).contains(binaryName)
 
         val classNode = ClassNode(Opcodes.ASM9)
 
@@ -283,12 +307,12 @@ internal class JarWithClassesSubject(
         }
 
         return check("classDefinition($binaryName)")
-            .about(ClassSubject.classNodes())
+            .about(ClassDefinitionSubject.classes())
             .that(ClassDefinitionFromAsm(classNode))
     }
 
     override fun classAsBytes(binaryName: String): BinarySubject {
-        classes().contains(binaryName)
+        check("classes()").that(classNames).contains(binaryName)
         val content = actual().binaryFile(binaryName.toPath())
         return check("classAsBytes($binaryName)")
             .about(BinarySubject.bytes())
@@ -308,7 +332,6 @@ internal class JarWithClassesSubject(
     private val classNames by lazy(LazyThreadSafetyMode.NONE) {
         actual().getEntries(PATTERN_CLASS_FILE).map { it.removeSuffix(".class") }
     }
-
 }
 
 private val PATTERN_CLASS_FILE: Pattern = Pattern.compile("^.+\\.class$")

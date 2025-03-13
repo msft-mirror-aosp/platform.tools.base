@@ -82,40 +82,39 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
             }.artifacts.artifactFiles
             return LayoutlibDataFromMaven(layoutlibDataDirectory)
         }
+    }
 
-        abstract class LayoutLibDataExtractor : TransformAction<LayoutLibDataExtractor.Parameters> {
+    abstract class LayoutLibDataExtractor : TransformAction<LayoutLibDataExtractor.Parameters> {
 
-            abstract class Parameters: TransformParameters {
-
-                @get:Classpath
-                abstract val frameworkRes: ConfigurableFileCollection
-            }
+        abstract class Parameters: TransformParameters {
 
             @get:Classpath
-            @get:InputArtifact
-            abstract val inputArtifact: Provider<FileSystemLocation>
-
-            override fun transform(transformOutputs: TransformOutputs) {
-                val input = inputArtifact.get().asFile
-                val outDir = transformOutputs.dir("layoutlib").toPath()
-                Files.createDirectories(outDir)
-                ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
-                    while (true) {
-                        val entry = zipInputStream.nextEntry ?: break
-                        if (entry.name.contains("../") || entry.isDirectory) {
-                            continue
-                        }
-                        val destinationFile = outDir.resolve(entry.name)
-                        Files.createDirectories(destinationFile.parent)
-                        Files.newOutputStream(destinationFile).buffered().use { output ->
-                            ByteStreams.copy(zipInputStream, output)
-                        }
-                    }
-                }
-                val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
-                FileUtils.copyFile(parameters.frameworkRes.singleFile, resJar)
-            }
+            abstract val frameworkRes: ConfigurableFileCollection
         }
 
+        @get:Classpath
+        @get:InputArtifact
+        abstract val inputArtifact: Provider<FileSystemLocation>
+
+        override fun transform(transformOutputs: TransformOutputs) {
+            val input = inputArtifact.get().asFile
+            val outDir = transformOutputs.dir("layoutlib").toPath()
+            Files.createDirectories(outDir)
+            ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
+                while (true) {
+                    val entry = zipInputStream.nextEntry ?: break
+                    if (entry.name.contains("../") || entry.isDirectory) {
+                        continue
+                    }
+                    val destinationFile = outDir.resolve(entry.name)
+                    Files.createDirectories(destinationFile.parent)
+                    Files.newOutputStream(destinationFile).buffered().use { output ->
+                        ByteStreams.copy(zipInputStream, output)
+                    }
+                }
+            }
+            val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
+            FileUtils.copyFile(parameters.frameworkRes.singleFile, resJar)
+        }
     }
 }

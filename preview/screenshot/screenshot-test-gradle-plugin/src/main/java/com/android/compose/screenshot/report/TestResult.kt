@@ -24,7 +24,7 @@ class TestResult(
     override val duration: Long,
     val project: String,
     private val flavor: String,
-    var screenshotImages: ScreenshotTestImages?,
+    val screenshotImages: ScreenshotTestImages?,
     val classResults: ClassTestResults
 ) : TestResultModel(), Comparable<TestResult> {
 

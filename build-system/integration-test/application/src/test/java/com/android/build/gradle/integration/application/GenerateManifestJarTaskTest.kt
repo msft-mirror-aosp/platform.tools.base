@@ -145,7 +145,7 @@ class GenerateManifestJarTaskTest(private val enableManifestClass : Boolean) {
         assertThat(intermediateCompiledManifest).hasSize(if (enableManifestClass) 1 else 0)
         intermediateCompiledManifest.forEach { manifestJar ->
             ZipSubject.assertThat(manifestJar) {
-                entries().isEmpty()
+                isEmpty()
             }
         }
     }

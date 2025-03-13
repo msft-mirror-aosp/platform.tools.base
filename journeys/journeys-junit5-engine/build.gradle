@@ -28,7 +28,7 @@ project.ext.pomName = 'JUnit5 Test Engine for running Journeys test'
 project.ext.pomDesc = 'Provides JUnit5 Test Engine for running Journeys test'
 
 dependencies {
-    implementation 'org.junit.platform:junit-platform-engine:1.9.2'
+    implementation libs.junit_platform_engine
 }
 
 tasks.register('zipRepo', Zip) {

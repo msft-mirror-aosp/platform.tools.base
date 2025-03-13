@@ -28,7 +28,7 @@ internal class ScreenshotClassPageRenderer: PageRenderer<ClassTestResults>() {
             .attribute("href", "index.html")
             .characters("all")
             .endElement()
-            .characters(" > ")
+            .characters(" >")
             .startElement("a")
             .attribute(
                 "href",
@@ -54,7 +54,7 @@ internal class ScreenshotClassPageRenderer: PageRenderer<ClassTestResults>() {
                 .characters(testName)
                 .endElement()
             if (test.screenshotImages != null) {
-                imagePanelRenderer.render(test.screenshotImages!!, htmlWriter)
+                imagePanelRenderer.render(test.screenshotImages, htmlWriter)
             }
             htmlWriter.endElement()
         }
@@ -74,7 +74,7 @@ internal class ScreenshotClassPageRenderer: PageRenderer<ClassTestResults>() {
                 .characters(testName)
                 .endElement()
             if (test.screenshotImages != null) {
-                imagePanelRenderer.render(test.screenshotImages!!, htmlWriter)
+                imagePanelRenderer.render(test.screenshotImages, htmlWriter)
             }
             htmlWriter.endElement()
         }

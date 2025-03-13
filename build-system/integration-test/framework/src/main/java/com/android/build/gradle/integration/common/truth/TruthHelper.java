@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.testutils.apk.Apk;
+
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Optional;
 import com.google.common.collect.ListMultimap;
@@ -58,6 +59,7 @@ import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
 import com.google.common.truth.TableSubject;
 import com.google.common.truth.ThrowableSubject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -93,11 +95,6 @@ public class TruthHelper {
     @NonNull
     public static ApkSubject assertThat(@Nullable Apk apk) {
         return assertAbout(ApkSubject.apks()).that(apk);
-    }
-
-    @NonNull
-    public static GradleTaskSubject assertThat(@NonNull TaskStateList.TaskInfo taskInfo) {
-        return GradleTaskSubject.assertThat(taskInfo);
     }
 
     public static LogCatMessagesSubject assertThat(Logcat logcat) {

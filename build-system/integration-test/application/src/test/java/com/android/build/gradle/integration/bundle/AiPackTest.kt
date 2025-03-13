@@ -40,12 +40,6 @@ class AiPackTest {
                     ":customModelFastFollow",
                     ":modelAdaptationOnDemand"
                 )
-                bundle {
-                    aiModelVersion {
-                        enableSplit = true
-                        defaultVersion = "1"
-                    }
-                }
             }
         }
 
@@ -121,20 +115,6 @@ class AiPackTest {
         }
 
         app.withAppBundle(AabSelector.DEBUG) {
-            val splitsConfigBuilder = Config.SplitsConfig.newBuilder()
-            splitsConfigBuilder
-                .addSplitDimension(
-                    Config.SplitDimension.newBuilder().setValue(Config.SplitDimension.Value.AI_MODEL_VERSION)
-                        .setSuffixStripping(
-                            Config.SuffixStripping.newBuilder()
-                                .setEnabled(true)
-                                .setDefaultSuffix("1")
-                        )
-                        .setNegate(false)
-                )
-                .build()
-            assertThat(bundleConfig.optimizations.splitsConfig)
-                .isEqualTo(splitsConfigBuilder.build())
 
             // Bundletool treats AI packs as special types of asset packs.
             val moduleNames = assetModules.keys.map { it.name }

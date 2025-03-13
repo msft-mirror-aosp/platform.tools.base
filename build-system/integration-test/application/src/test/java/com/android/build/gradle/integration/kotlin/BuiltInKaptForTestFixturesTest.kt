@@ -124,11 +124,11 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             .run("app:assembleDebugTestFixtures")
         val aar = app.outputDir.resolve("aar").listFiles()!!.single()
         AarSubject.assertThat(aar.toPath()) {
-            mainJar {
-                containsClass("com/example/FooStringValue")
-                containsClass("com/example/Foo\$\$InnerClass")
-            }
-
+            mainJar().classes().containsExactly(
+                "com/example/FooStringValue",
+                "com/example/Foo\$\$InnerClass",
+                "com/example/Foo"
+            )
         }
     }
 
@@ -155,10 +155,11 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             .run("app:assembleDebugTestFixtures")
         val aar = app.outputDir.resolve("aar").listFiles()!!.single()
         AarSubject.assertThat(aar.toPath()) {
-            mainJar {
-                containsClass("com/example/FooStringValue")
-                containsClass("com/example/Foo\$\$InnerClass")
-            }
+            mainJar().classes().containsExactly(
+                "com/example/FooStringValue",
+                "com/example/Foo\$\$InnerClass",
+                "com/example/Foo"
+            )
         }
     }
 

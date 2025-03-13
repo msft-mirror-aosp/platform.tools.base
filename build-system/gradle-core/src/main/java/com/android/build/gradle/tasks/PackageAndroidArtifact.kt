@@ -644,7 +644,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                 packageAndroidArtifact.featureDexFolder.from(featureDexFolder)
             }
             packageAndroidArtifact.javaResourceFiles.from(
-                creationConfig.artifacts.get(MERGED_JAVA_RES))
+                    creationConfig.artifacts.get(InternalArtifactType.MERGED_JAVA_RES))
             packageAndroidArtifact.javaResourceFiles.disallowChanges()
             val featureJavaResources = getFeatureJavaResources(creationConfig, projectPath)
             if (featureJavaResources != null) {

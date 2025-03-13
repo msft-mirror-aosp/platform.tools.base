@@ -1773,6 +1773,9 @@ abstract class LintClient {
    */
   open fun getClientDisplayRevision(): String? = getClientRevision()
 
+  /** Returns client-specific properties, if defined. */
+  open fun getClientProperty(key: String): Any? = null
+
   /**
    * Runs the given runnable under a read lock such that it can access the PSI
    *

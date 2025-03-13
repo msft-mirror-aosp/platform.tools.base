@@ -94,16 +94,17 @@ filegroup(
 iml_module(
     name = "studio.android.sdktools.builder-model.tests",
     iml_files = ["android.sdktools.builder-model.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "@intellij//:intellij-sdk",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/build-system/builder-model:studio.android.sdktools.builder-model",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
-    deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "@intellij//:intellij-sdk[test]",
-        "@intellij//:com.intellij.java",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[test]",
-        "//tools/base/build-system/builder-model:studio.android.sdktools.builder-model[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-    ],
+    deps = ["@intellij//:com.intellij.java"],
 )

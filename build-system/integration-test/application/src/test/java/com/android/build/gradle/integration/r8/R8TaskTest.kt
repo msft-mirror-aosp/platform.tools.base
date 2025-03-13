@@ -22,10 +22,8 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -56,8 +54,9 @@ class R8TaskTest {
     fun testCheckDuplicateClassesTaskDidWork() {
         val build = rule.build
 
-        val buildResult = build.executor.run(":app:minifyReleaseWithR8")
-        assertThat(buildResult.getTask(":app:checkReleaseDuplicateClasses")).didWork()
+        build.executor.run(":app:minifyReleaseWithR8").apply {
+            assertTask(":app:checkReleaseDuplicateClasses").didWork()
+        }
     }
 
     @Test
@@ -173,12 +172,19 @@ class R8TaskTest {
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
-            doesNotContainClass("Lexample/MyInterface$-CC;")
+            classes().containsExactly(
+                "example/MyInterface",
+                "pkg/name/app/HelloWorld"
+            )
         }
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23).run(":app:assembleRelease")
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
-            hasClass("Lexample/MyInterface$-CC;")
+            classes().containsExactly(
+                "example/MyInterface",
+                "pkg/name/app/HelloWorld",
+                "example/MyInterface\$-CC"
+            )
         }
     }
 
@@ -202,8 +208,9 @@ class R8TaskTest {
             }
         }
 
-        val result = build.executor.run(":app:assembleRelease")
-        assertThat(result.getTask(":app:minifyReleaseWithR8")).didWork()
+        build.executor.run(":app:assembleRelease").apply {
+            assertTask(":app:minifyReleaseWithR8").didWork()
+        }
     }
 
     /** Regression test for b/380110863. */

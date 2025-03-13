@@ -9,6 +9,7 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.ninepatch.iml"],
     lint_baseline = "lint_baseline.xml",
+    test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = [
         "src/test/java",
         "src/test/resources",
@@ -16,7 +17,6 @@ iml_module(
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
     ],

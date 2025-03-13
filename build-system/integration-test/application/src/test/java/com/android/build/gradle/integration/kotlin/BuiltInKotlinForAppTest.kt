@@ -62,8 +62,15 @@ class BuiltInKotlinForAppTest {
 
         build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            hasClass("Lcom/foo/application/AppFoo;")
-            hasClass("Lcom/foo/application/KotlinAppFoo;")
+            classes().containsExactly(
+                "com/foo/application/AppFoo",
+                "com/foo/application/KotlinAppFoo",
+                "pkg/name/app/HelloWorld",
+                "pkg/name/app/R\$",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
         }
     }
 
@@ -90,9 +97,12 @@ class BuiltInKotlinForAppTest {
         }
 
         build.executor.run(":app:assembleDebugAndroidTest")
-        build.androidApplication().assertApk(ApkSelector.DEBUG.forTestSuite("androidTest")) {
-            hasClass("Lcom/foo/application/AppFooTest;")
-            hasClass("Lcom/foo/application/KotlinAppFooTest;")
+        build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            classes().containsExactly(
+                "com/foo/application/AppFooTest",
+                "com/foo/application/KotlinAppFooTest",
+                "pkg/name/app/test/R",
+            )
         }
     }
 
@@ -235,8 +245,17 @@ class BuiltInKotlinForAppTest {
 
         build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            hasClass("Lcom/foo/application/AppFoo;")
-            hasClass("Lcom/foo/library/LibFoo;")
+            classes().containsExactly(
+                "com/foo/application/AppFoo",
+                "com/foo/library/LibFoo",
+                "pkg/name/app/HelloWorld",
+                "pkg/name/app/R\$",
+                "pkg/name/lib/HelloWorld",
+                "pkg/name/lib/R\$",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
         }
     }
 
@@ -276,9 +295,16 @@ class BuiltInKotlinForAppTest {
 
         build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            hasClass("Lcom/foo/application/AppJavaFoo;")
-            hasClass("Lcom/foo/application/AppKotlinFoo;")
-            hasClass("Lcom/foo/application/AppKotlinBar;")
+            classes().containsExactly(
+                "com/foo/application/AppJavaFoo",
+                "com/foo/application/AppKotlinFoo",
+                "com/foo/application/AppKotlinBar",
+                "pkg/name/app/HelloWorld",
+                "pkg/name/app/R\$",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
         }
     }
 

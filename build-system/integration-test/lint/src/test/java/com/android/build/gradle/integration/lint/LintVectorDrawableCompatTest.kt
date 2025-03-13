@@ -38,7 +38,7 @@ class LintVectorDrawableCompatTest {
                         """
                             android {
                                 defaultConfig {
-                                    vectorDrawables.useSupportLibrary false
+                                    vectorDrawables.useSupportLibrary = false
                                 }
 
                                 lintOptions {
@@ -88,7 +88,7 @@ class LintVectorDrawableCompatTest {
         )
         TestFileUtils.searchAndReplace(
             project.buildFile,
-            "vectorDrawables.useSupportLibrary false",
+            "vectorDrawables.useSupportLibrary = false",
             "vectorDrawables.useSupportLibrary = true"
         )
         project.executor().run("lintDebug")

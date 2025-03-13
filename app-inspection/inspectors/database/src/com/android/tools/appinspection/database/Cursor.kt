@@ -31,7 +31,7 @@ interface Cursor : AutoCloseable {
 
   fun getType(column: Int): Int
 
-  fun getBlob(column: Int): ByteArray
+  fun getBlob(column: Int): ByteArray?
 
   fun getLong(column: Int): Long
 

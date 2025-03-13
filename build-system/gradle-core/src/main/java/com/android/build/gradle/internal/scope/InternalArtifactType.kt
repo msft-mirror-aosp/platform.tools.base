@@ -267,7 +267,7 @@ InternalArtifactType<T : FileSystemLocation>(
     // The R class jar generated from R.txt for application and tests
     object COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR: InternalArtifactType<RegularFile>(FILE), Replaceable
 
-    // Information neeeded to resolve included navigation graphs into intent filters
+    // Information needed to resolve included navigation graphs into intent filters
     object NAVIGATION_JSON: InternalArtifactType<RegularFile>(FILE), Replaceable
     // Similar to [NAVIGATION_JSON], but it lacks the source file information, which shouldn't be in
     // the AAR.

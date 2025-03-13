@@ -162,8 +162,8 @@ public class MinifyLibTest {
                 "androidTestImplementation project\\(':lib'\\)");
         GradleBuildResult result = project.executor().run(":app:assembleAndroidTest");
 
-        assertThat(result.getTask(":app:minifyDebugWithR8")).didWork();
-        assertThat(result.getTask(":app:minifyDebugAndroidTestWithR8")).didWork();
+        result.assertTask(":app:minifyDebugWithR8").didWork();
+        result.assertTask(":app:minifyDebugAndroidTestWithR8").didWork();
 
         Apk apk = project.getSubproject(":app").getApk(ANDROIDTEST_DEBUG);
         assertThat(apk).exists();
@@ -212,14 +212,19 @@ public class MinifyLibTest {
     @Test
     public void checkManifestChangesTriggersLibraryProguardRules() throws Exception {
         enableLibShrinking(DEBUG_BUILD);
-        GradleBuildResult result = project.executor().run(":lib:assembleDebug");
-        assertThat(result.getTask(":lib:generateDebugLibraryProguardRules")).didWork();
+        project.executor()
+                .run(":lib:assembleDebug")
+                .assertTask(":lib:generateDebugLibraryProguardRules")
+                .didWork();
+
         TestFileUtils.searchAndReplace(
                 project.getSubproject(":lib").file("./src/main/AndroidManifest.xml"),
                 "</manifest>",
                 "<application /></manifest>");
-        result = project.executor().run(":lib:assembleDebug");
-        assertThat(result.getTask(":lib:generateDebugLibraryProguardRules")).didWork();
+        project.executor()
+                .run(":lib:assembleDebug")
+                .assertTask(":lib:generateDebugLibraryProguardRules")
+                .didWork();
     }
 
     private static final String RELEASE_BUILD = "release";

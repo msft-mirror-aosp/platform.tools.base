@@ -21,6 +21,7 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
 
@@ -52,7 +53,7 @@ public class NativeSoPackagingDirectSubprojectAarTest {
         File buildFile = project.file("directLib/build.gradle");
         FileUtils.mkdirs(buildFile.getParentFile());
 
-        Path aarPath = lib.getAarLocationForCopy("debug");
+        Path aarPath = lib.getAarLocationForCopy(AarSelector.DEBUG);
 
         Files.write(
                 buildFile.toPath(),

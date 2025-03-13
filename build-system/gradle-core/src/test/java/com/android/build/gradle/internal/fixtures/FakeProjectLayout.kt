@@ -34,6 +34,10 @@ class FakeProjectLayout : ProjectLayout {
         TODO("Not yet implemented")
     }
 
+    override fun getSettingsDirectory(): Directory {
+        TODO("Not yet implemented")
+    }
+
     override fun file(file: Provider<File>): Provider<RegularFile> {
         return FakeGradleProvider(FakeGradleRegularFile(file.get()))
     }

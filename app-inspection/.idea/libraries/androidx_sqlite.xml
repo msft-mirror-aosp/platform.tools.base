@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="androidx-sqlite">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../../bazel-bin/prebuilts/tools/common/m2/_aar/androidx-sqlite-2.5.0-beta01/classes_and_libs_merged.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/sqlite/sqlite-bundled-jvm/2.5.0-beta01/sqlite-bundled-jvm-2.5.0-beta01.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/sqlite/sqlite-bundled-jvm/2.5.0-beta01/sqlite-bundled-jvm-2.5.0-beta01-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/sqlite/sqlite-jvm/2.5.0-beta01/sqlite-jvm-2.5.0-beta01-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

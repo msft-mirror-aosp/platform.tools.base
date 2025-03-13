@@ -37,7 +37,7 @@ interface Database : AutoCloseable {
 
   fun execSql(
     sql: String,
-    selectionArgs: Array<String?>? = emptyArray(),
+    selectionArgs: Array<String?> = emptyArray(),
     cancellationSignal: CancellationSignal? = null,
   )
 

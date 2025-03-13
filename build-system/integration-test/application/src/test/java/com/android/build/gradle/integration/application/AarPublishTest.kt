@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.output.ZipSubject
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -71,7 +72,7 @@ class AarPublishTest {
 
         librarySubproject.assertAar(AarSelector.DEBUG) {
             mainJar {
-                classData("com/example/library/BuildConfig") {
+                classes().classDefinition("com/example/library/BuildConfig") {
                     methods().containsExactly("<init>", "<clinit>")
                     fields().containsExactly(
                         "DEBUG",
@@ -128,12 +129,14 @@ class AarPublishTest {
 
         build.androidLibrary(":library").assertAar(AarSelector.RELEASE) {
             mainJar {
-                classData("com/example/Foo") {
-                    methods().containsExactly("<init>")
-                    fields().isEmpty()
-                }
+                classes {
+                    classDefinition("com/example/Foo") {
+                        methods().containsExactly("<init>")
+                        fields().isEmpty()
+                    }
 
-                doesNotContainClass("com/example/Bar")
+                    containsExactly("com/example/Foo")
+                }
             }
         }
     }
@@ -143,15 +146,14 @@ class AarPublishTest {
         val build = rule.build
         build.executor.run(":library:assembleDebug")
         build.androidLibrary(":library").assertAar(AarSelector.DEBUG) {
-            entries().apply {
-                contains("AndroidManifest.xml")
-                contains("R.txt")
-                contains("classes.jar")
-                contains("res/values/values.xml")
-                contains("META-INF/com/android/build/gradle/aar-metadata.properties")
-                // Regression test for b/232117952
-                doesNotContain("values/")
-            }
+            // Regression test for b/232117952 : this should not contain values/
+            containsExactly(
+                "AndroidManifest.xml",
+                "R.txt",
+                "classes.jar",
+                "res/",
+                "META-INF/"
+            )
         }
     }
 }

@@ -368,13 +368,15 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                         artifacts.get(InternalArtifactType.UNIT_TEST_CONFIG_DIRECTORY.INSTANCE));
             }
 
-            // 2. the test creationConfig classes and merged_java_res
+            // 2. the test creationConfig classes and java_res
             collection.from(
                     artifacts
                             .forScope(ScopedArtifacts.Scope.PROJECT)
                             .getFinalArtifacts$gradle_core(ScopedArtifact.CLASSES.INSTANCE));
 
-            collection.from(artifacts.get(InternalArtifactType.MERGED_JAVA_RES.INSTANCE));
+            // TODO is this the right thing? this doesn't include the res merging via transform
+            // AFAIK
+            collection.from(artifacts.get(InternalArtifactType.JAVA_RES.INSTANCE));
 
             // 3. the runtime dependencies for both CLASSES and JAVA_RES type
             if (creationConfig.getInstrumentationCreationConfig() != null) {

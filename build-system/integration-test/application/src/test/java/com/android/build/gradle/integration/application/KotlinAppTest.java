@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.category.SmokeTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.builder.model.v2.ide.ProjectType;
 import com.android.testutils.apk.Apk;
 
@@ -75,10 +76,11 @@ public class KotlinAppTest {
         project.executor().run("clean", "library:assembleDebug");
 
         project.getSubproject("library")
-                .testAar(
-                        "debug",
-                        aar ->
-                                aar.allJars()
-                                        .containsResource("META-INF/library_debug.kotlin_module"));
+                .assertAar(
+                        AarSelector.DEBUG,
+                        aar -> {
+                            aar.javaResources()
+                                    .containsExactly("META-INF/library_debug.kotlin_module");
+                        });
     }
 }

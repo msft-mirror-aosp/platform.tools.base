@@ -15,6 +15,8 @@ agent_deps = [
     ":database_inspector_java_proto",
     "//prebuilts/studio/sdk:platforms/latest_jar",
     "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+    "//prebuilts/tools/common/m2:androidx-sqlite-2.5.0-beta01",
+    "//prebuilts/tools/common/m2:androidx-sqlite-bundled-2.5.0-beta01",
     "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common",
     "//tools/base/bazel:studio-proto",
     "@maven//:androidx.annotation.annotation",
@@ -53,19 +55,27 @@ app_inspection_jar(
     deps = agent_deps,
 )
 
+# Robolectric test needs to use androidx-sqlite-bundled-jvm instead of androidx-sqlite-bundled so
+# we can't depend on agent-jar target. Rather, we recompile the prod sources with the different dep.
 robolectric_test(
     name = "agent_tests",
-    srcs = glob(["testSrc/**/*.kt"]),
+    srcs = glob([
+        "src/**/*.kt",
+        "testSrc/**/*.kt",
+    ]),
     friends = [":agent-jar"],
     deps = [
-        ":agent-jar",
         ":database_inspector_java_proto",
         "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+        "//prebuilts/tools/common/m2:androidx-sqlite-2.5.0-beta01",
+        "//prebuilts/tools/common/m2:androidx-sqlite-bundled-jvm-2.5.0-beta01",
+        "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common",
         "//tools/base/app-inspection/inspectors/common:app-inspection.inspectors.common.testing",
         "//tools/base/app-inspection/inspectors/lib:inspection-testing",
         "//tools/base/bazel:studio-proto",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:androidx.annotation.annotation",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

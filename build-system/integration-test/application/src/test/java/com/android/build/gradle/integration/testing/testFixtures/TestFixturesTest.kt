@@ -450,7 +450,7 @@ class TestFixturesTest {
                         enable('StopShip')
                         textOutput = file("lint-results.txt")
                         checkDependencies = true
-                        ignoreTestFixturesSources $ignoreTestFixturesSourcesInApp
+                        ignoreTestFixturesSources = $ignoreTestFixturesSourcesInApp
                     }
                 }
             """.trimIndent()

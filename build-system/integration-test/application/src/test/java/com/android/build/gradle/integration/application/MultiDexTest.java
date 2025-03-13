@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.ApkSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -35,9 +36,15 @@ import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -49,9 +56,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 /** Assemble tests for multiDex. */
 public class MultiDexTest {
@@ -65,7 +69,7 @@ public class MultiDexTest {
     @Test
     public void checkBuildWithoutKeepRuntimeAnnotatedClasses() throws Exception {
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "\nandroid.dexOptions.keepRuntimeAnnotatedClasses false");
+                project.getBuildFile(), "\nandroid.dexOptions.keepRuntimeAnnotatedClasses = false");
 
         project.executor()
                 .run("assembleDebug", "makeApkFromBundleForIcsDebug", "assembleAndroidTest");

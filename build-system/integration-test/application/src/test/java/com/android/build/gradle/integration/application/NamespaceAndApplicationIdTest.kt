@@ -131,10 +131,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run("app:assembleDebug", "app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.app")
+            applicationId().isEqualTo("com.example.app")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.app.test")
+            applicationId().isEqualTo("com.example.app.test")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -147,7 +147,7 @@ class NamespaceAndApplicationIdTest {
         val build = rule.build
         build.executor.run(":test:assembleDebug")
         build.androidTest().assertApk(DEBUG) {
-            hasApplicationId("com.example.test")
+            applicationId().isEqualTo("com.example.test")
         }
     }
 
@@ -163,10 +163,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.applicationId")
+            applicationId().isEqualTo("com.example.applicationId")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.applicationId.test")
+            applicationId().isEqualTo("com.example.applicationId.test")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -186,10 +186,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.app")
+            applicationId().isEqualTo("com.example.app")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.testApplicationId")
+            applicationId().isEqualTo("com.example.testApplicationId")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -214,10 +214,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.applicationId")
+            applicationId().isEqualTo("com.example.applicationId")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.testApplicationId")
+            applicationId().isEqualTo("com.example.testApplicationId")
         }
 
         assertThat(
@@ -248,10 +248,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.namespace")
+            applicationId().isEqualTo("com.example.namespace")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.namespace.test")
+            applicationId().isEqualTo("com.example.namespace.test")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -275,7 +275,7 @@ class NamespaceAndApplicationIdTest {
 
         build.executor.run(":test:assembleDebug")
         build.androidTest().assertApk(DEBUG) {
-            hasApplicationId("com.example.namespace")
+            applicationId().isEqualTo("com.example.namespace")
         }
     }
 
@@ -296,10 +296,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.app")
+            applicationId().isEqualTo("com.example.app")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.app.test")
+            applicationId().isEqualTo("com.example.app.test")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -333,10 +333,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.namespace")
+            applicationId().isEqualTo("com.example.namespace")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.namespace.test")
+            applicationId().isEqualTo("com.example.namespace.test")
         }
         assertThat(
             app.resolve(JAVAC)
@@ -375,10 +375,10 @@ class NamespaceAndApplicationIdTest {
         build.executor.run(":app:assembleDebug", ":app:assembleAndroidTest")
 
         app.assertApk(DEBUG) {
-            hasApplicationId("com.example.applicationId")
+            applicationId().isEqualTo("com.example.applicationId")
         }
         app.assertApk(ANDROIDTEST_DEBUG) {
-            hasApplicationId("com.example.testApplicationId")
+            applicationId().isEqualTo("com.example.testApplicationId")
         }
         assertThat(
             app.resolve(JAVAC)

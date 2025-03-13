@@ -17,13 +17,9 @@
 package com.android.build.gradle.integration.databinding
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
-import com.google.common.truth.Truth.assertThat
-import com.google.common.base.Throwables
-import org.gradle.tooling.BuildException
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 
@@ -67,14 +63,29 @@ class DataBindingJetifierTest {
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .run("assembleDebug")
-        val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
-        // 1. Check that the old support library has been replaced with a new one
-        assertThat(apk).doesNotContainClass("Landroid/support/v7/preference/Preference;")
-        assertThat(apk).containsClass("Landroidx/preference/Preference;")
+        project.getSubproject(":app").assertApk(ApkSelector.DEBUG) {
+            classes {
+                // 1. Check that the old support library has been replaced with a new one
+                // we basically want androidx/preference/Preference instead of
+                // android/support/v7/preference/Preference
+                containsExactly(
+                    "com/example/",
+                    "androidx/preference/Preference", // exact match we want
+                    "androidx/", // the rest of androidx
+                    "android/support/v4/", // precise(ish) test on old support to ensure we don't have anything unexpected.
+                    "kotlin/",
+                    "kotlinx/",
+                    "org/intellij/",
+                    "org/jetbrains/",
+                    "com/google/common/"
+                )
 
-        // 2. Check that the library to refactor has been refactored
-        assertThat(apk).hasClass("Lcom/example/androidlib/MyPreference;")
-            .that().hasSuperclass("Landroidx/preference/Preference;")
+                // 2. Check that the library to refactor has been refactored
+                classDefinition("com/example/androidlib/MyPreference")
+                    .superClass()
+                    .isEqualTo("androidx/preference/Preference")
+            }
+        }
     }
 }

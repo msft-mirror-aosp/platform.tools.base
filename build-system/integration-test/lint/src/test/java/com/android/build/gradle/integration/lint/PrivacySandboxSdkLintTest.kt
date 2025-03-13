@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
@@ -48,8 +47,9 @@ class PrivacySandboxSdkLintTest {
         }
         val sdkProject = build.privacySandboxSdk(":privacy-sandbox-sdk")
 
-        val buildResult = executor().expectFailure().run(":privacy-sandbox-sdk:lint")
-        GradleTaskSubject.assertThat(buildResult.getTask(":privacy-sandbox-sdk:lintAnalyze")).didWork()
+        executor().expectFailure().run(":privacy-sandbox-sdk:lint").apply {
+            assertTask(":privacy-sandbox-sdk:lintAnalyze").didWork()
+        }
         val lintTextReport = sdkProject.buildDir.resolve("reports/lint-results-main.txt")
         assertThat(lintTextReport).exists()
         assertThat(lintTextReport).contains("""
@@ -95,10 +95,11 @@ sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.str
         // First test the case when there is no existing baseline.
         val baselineFile = sdkProject.resolve("lint-baseline.xml")
         assertThat(baselineFile).doesNotExist()
-        val result = executor().run(":privacy-sandbox-sdk:updateLintBaseline")
-        GradleTaskSubject.assertThat(result.getTask(":android-lib:lintAnalyzeDebug")).didWork()
-        GradleTaskSubject.assertThat(result.getTask(":sdk-impl-a:lintAnalyzeDebug")).didWork()
-        GradleTaskSubject.assertThat(result.getTask(":privacy-sandbox-sdk:updateLintBaseline")).didWork()
+        executor().run(":privacy-sandbox-sdk:updateLintBaseline").apply {
+            assertTask(":android-lib:lintAnalyzeDebug").didWork()
+            assertTask(":sdk-impl-a:lintAnalyzeDebug").didWork()
+            assertTask(":privacy-sandbox-sdk:updateLintBaseline").didWork()
+        }
         assertThat(baselineFile).exists()
         // Check if the baseline contains an existing lint issue.
         assertThat(baselineFile).contains("""The resource `R.string.string_from_sdk_impl_a` appears to be unused""")
@@ -114,10 +115,11 @@ sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.str
     fun checkLintVital() {
         val build = rule.build
 
-        val result = executor().run(":privacy-sandbox-sdk:assemble")
-        GradleTaskSubject.assertThat(result.getTask(":android-lib:lintVitalAnalyzeDebug")).didWork()
-        GradleTaskSubject.assertThat(result.getTask(":sdk-impl-a:lintVitalAnalyzeDebug")).didWork()
-        GradleTaskSubject.assertThat(result.getTask(":privacy-sandbox-sdk:lintVital")).didWork()
+        executor().run(":privacy-sandbox-sdk:assemble").apply {
+            assertTask(":android-lib:lintVitalAnalyzeDebug").didWork()
+            assertTask(":sdk-impl-a:lintVitalAnalyzeDebug").didWork()
+            assertTask(":privacy-sandbox-sdk:lintVital").didWork()
+        }
         val lintVitalReport = build
             .privacySandboxSdk(":privacy-sandbox-sdk")
             .intermediatesDir

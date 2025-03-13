@@ -22,6 +22,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper
@@ -545,10 +547,12 @@ class LocaleConfigGenerationTest {
             lib2Locales = listOf(DEFAULT)
         ).execute("assembleDebug")
 
-        ZipSubject.assertThat(
-            project.getSubproject("app").file("build/outputs/apk/debug/app-debug.apk").toPath()
-        ) {
-            contains("res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            androidResources().containsExactly(
+                "xml/user_locale_config.xml",
+                "xml/$LOCALE_CONFIG_FILE_NAME.xml",
+                "xml-v22/$LOCALE_CONFIG_FILE_NAME.xml"
+            )
         }
     }
 
@@ -565,7 +569,7 @@ class LocaleConfigGenerationTest {
         ZipSubject.assertThat(
             project.getSubproject("app").file("build/outputs/bundle/debug/app-debug.aab").toPath()
         ) {
-            contains("base/res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
+            entries().contains("base/res/xml/$LOCALE_CONFIG_FILE_NAME.xml")
         }
     }
 
@@ -621,7 +625,7 @@ class LocaleConfigGenerationTest {
             lib2Locales = listOf(PT)
         ).executor().run(":lib1:assembleDebug")
 
-        val aarPath = project.getSubproject("lib1").getAarLocationForCopy("debug")
+        val aarPath = project.getSubproject("lib1").getAarLocationForCopy(AarSelector.DEBUG)
         FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib1.aar"))
 
         TestFileUtils.searchAndReplace(

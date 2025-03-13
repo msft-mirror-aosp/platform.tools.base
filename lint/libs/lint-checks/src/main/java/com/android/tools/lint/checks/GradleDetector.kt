@@ -20,8 +20,6 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_TARGET_SDK_VERSION
 import com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION
 import com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION
-import com.android.SdkConstants.PLATFORM_WINDOWS
-import com.android.SdkConstants.currentPlatform
 import com.android.ide.common.gradle.Component
 import com.android.ide.common.gradle.Dependency
 import com.android.ide.common.gradle.RichVersion
@@ -71,16 +69,13 @@ import com.android.tools.lint.detector.api.getLanguageLevel
 import com.android.tools.lint.detector.api.guessGradleLocation
 import com.android.tools.lint.detector.api.isNumberString
 import com.android.tools.lint.detector.api.readUrlData
-import com.android.tools.lint.detector.api.readUrlDataAsString
 import com.android.tools.lint.model.LintModelArtifactType
 import com.android.tools.lint.model.LintModelDependency
 import com.android.tools.lint.model.LintModelExternalLibrary
 import com.android.tools.lint.model.LintModelLibrary
 import com.android.tools.lint.model.LintModelMavenName
 import com.android.tools.lint.model.LintModelModuleType
-import com.android.utils.XmlUtils
 import com.android.utils.appendCapitalized
-import com.android.utils.iterator
 import com.android.utils.usLocaleCapitalize
 import com.google.common.base.Splitter
 import com.intellij.pom.java.LanguageLevel.JDK_1_7
@@ -89,20 +84,16 @@ import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.io.UnsupportedEncodingException
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.util.Calendar
 import java.util.Collections
 import java.util.EnumSet
 import java.util.function.Predicate
-import kotlin.text.Charsets.UTF_8
 import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.uast.UCallExpression
 import org.kxml2.io.KXmlParser
 import org.w3c.dom.Attr
-import org.w3c.dom.Element
 import org.xmlpull.v1.XmlPullParser
 
 /** Checks Gradle files for potential errors. */
@@ -163,18 +154,18 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   private var mDeclaredTargetCompatibility: Boolean = false
 
   /**
-   * If incrementally editing a single build.gradle file, tracks whether we have declared the google
+   * If incrementally editing a single build.gradle file, tracks whether we have declared the Google
    * maven repository in the buildscript block.
    *
    * Because there are many ways to declare repositories for plugin resolution (including e.g. in
    * pluginManagement declarations in settings files), we track whether we have seen anything at all
-   * in buildscript repositories; if we haven't, we don't know whether the google maven repository
+   * in buildscript repositories; if we haven't, we don't know whether the Google maven repository
    * is actually visible to the project.
    */
   private var mDeclaredGoogleMavenRepository: Boolean = false
   private var mDeclaredBuildscriptRepository: Boolean = false
 
-  data class AgpVersionCheckInfo(
+  private class AgpVersionCheckInfo(
     val newerVersion: Version,
     val newerVersionIsSafe: Boolean,
     val safeReplacement: Version?,
@@ -750,7 +741,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
     if (version > 0) {
       if (LintClient.isStudio) {
-        //noinspection FileComparisons
+        @Suppress("FileEqualsUsage", "FileComparisons")
         if (lastTargetSdkVersion == -1 || lastTargetSdkVersionFile != context.file) {
           lastTargetSdkVersion = version
           lastTargetSdkVersionFile = context.file
@@ -810,11 +801,11 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
    * or `foo:bar:${version}-alpha` it would return null.
    */
   private fun getVersionVariable(dependency: String): String? {
-    if (!dependency.contains("\$")) {
+    if (!dependency.contains("$")) {
       return null
     }
     var value = dependency.removeSurrounding("'").removeSurrounding("\"").substringAfterLast(':')
-    if (value.startsWith("\$")) {
+    if (value.startsWith("$")) {
       if (value.startsWith("\${")) {
         val end = value.indexOf('}')
         if (end == -1 || end < value.length - 1 && value[end + 1] != '@') {
@@ -822,15 +813,15 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
         value = value.removePrefix("\${").removeSuffix("}")
       } else {
-        value = value.removePrefix("\$")
+        value = value.removePrefix("$")
       }
     } else {
       return null
     }
-    if (value.all { it.isLetter() }) {
-      return value
+    return if (value.all { it.isLetter() }) {
+      value
     } else {
-      return null
+      null
     }
   }
 
@@ -1156,6 +1147,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       "com.android.feature",
       "com.android.dynamic-feature",
       "com.android.settings",
+      "com.android.asset-pack",
+      "com.android.asset-pack-bundle",
+      "com.android.ai-pack",
+      "com.android.lint",
+      "com.android.fused-library",
+      "com.android.privacy-sandbox-sdk",
+      "com.android.kotlin.multiplatform.library",
       "com.android.tools.build" -> {
         if ("gradle" == artifactId || "$groupId.gradle.plugin" == artifactId) {
           if (checkGradlePluginDependency(context, dependency, statementCookie)) {
@@ -1163,8 +1161,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           }
 
           // If it's available in maven.google.com, fetch latest available version
-          newerVersion =
-            newerVersion maxAgpOrNull getGoogleMavenRepoVersion(context, dependency, filter)
+          val gmavenVersions = getGoogleMavenRepoVersion(context, dependency, filter)
+          newerVersion = gmavenVersions?.suggested
 
           // Compare with what's in the Gradle cache, except when lint is invoked from
           // Gradle (because checking the Gradle cache is incompatible with Gradle task
@@ -1177,23 +1175,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // a micro-level different, and there is a newer micro version of the
           // version that the user is currently using, offer that one as well as it
           // may be easier to upgrade to.
-          if (
-            newerVersion != null &&
-              !version.isPreview &&
-              newerVersion != version &&
-              (version.major != newerVersion.major || version.minor != newerVersion.minor)
-          ) {
-            safeReplacement =
-              getGoogleMavenRepoVersion(context, dependency) { filterVersion ->
-                filterVersion.major != null &&
-                  filterVersion.major == version.major &&
-                  filterVersion.minor != null &&
-                  filterVersion.minor == version.minor &&
-                  filterVersion.micro?.let { m -> version.micro?.let { m > it } } == true &&
-                  !filterVersion.isPreview &&
-                  filterVersion < newerVersion!! &&
-                  !filterVersion.isSnapshot
-              }
+          if (!offerLatestGradleVersions && gmavenVersions?.latestPatch != newerVersion) {
+            safeReplacement = gmavenVersions?.latestPatch
           }
           if (newerVersion != null && newerVersion.isAgpNewerThan(dependency)) {
             agpVersionCheckInfo =
@@ -1218,87 +1201,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             checkCoreLibraryDesugaringCompatibility(context, dependency, cookie)
         ) {
           return
-        }
-      }
-      "com.google.guava" -> {
-        // TODO: 24.0-android
-        if ("guava" == artifactId) {
-          newerVersion = getNewerVersion(version, 21, 0)
-        }
-      }
-      "com.google.code.gson" -> {
-        if ("gson" == artifactId) {
-          newerVersion = getNewerVersion(version, 2, 8, 2)
-        }
-      }
-      "org.apache.httpcomponents" -> {
-        if ("httpclient" == artifactId) {
-          newerVersion = getNewerVersion(version, 4, 5, 5)
-        }
-      }
-      "com.squareup.okhttp3" -> {
-        if ("okhttp" == artifactId) {
-          newerVersion = getNewerVersion(version, 3, 10, 0)
-        }
-      }
-      "com.github.bumptech.glide" -> {
-        if ("glide" == artifactId) {
-          newerVersion = getNewerVersion(version, 3, 7, 0)
-        }
-      }
-      "io.fabric.tools" -> {
-        if ("gradle" == artifactId) {
-          if (Version.parse("1.21.6").isNewerThan(dependency)) {
-            val fix = getUpdateDependencyFix(richVersionIdentifier, "1.22.1")
-            report(
-              context,
-              statementCookie,
-              DEPENDENCY,
-              "Use Fabric Gradle plugin version 1.21.6 or later to " +
-                "improve Instant Run performance (was $richVersionIdentifier)",
-              fix,
-            )
-          } else {
-            // From
-            // https://s3.amazonaws.com/fabric-artifacts/public/io/fabric/tools/gradle/maven-metadata.xml
-            newerVersion = getNewerVersion(version, 1, 25, 1)
-          }
-        }
-      }
-      "com.bugsnag" -> {
-        if ("bugsnag-android-gradle-plugin" == artifactId) {
-          if (version < Version.parse("2.1.2")) {
-            val fix = getUpdateDependencyFix(richVersionIdentifier, "2.4.1")
-            report(
-              context,
-              statementCookie,
-              DEPENDENCY,
-              "Use BugSnag Gradle plugin version 2.1.2 or later to " +
-                "improve Instant Run performance (was $richVersionIdentifier)",
-              fix,
-            )
-          } else {
-            // From http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.bugsnag%22%20AND
-            // %20a%3A%22bugsnag-android-gradle-plugin%22
-            newerVersion = getNewerVersion(version, 3, 2, 5)
-          }
-        }
-      }
-
-      // https://issuetracker.google.com/120098460
-      "org.robolectric" -> {
-        if ("robolectric" == artifactId && currentPlatform() == PLATFORM_WINDOWS) {
-          if (version < Version.parse("4.2.1")) {
-            val fix = getUpdateDependencyFix(richVersionIdentifier, "4.2.1")
-            report(
-              context,
-              cookie,
-              DEPENDENCY,
-              "Use robolectric version 4.2.1 or later to " +
-                "fix issues with parsing of Windows paths",
-              fix,
-            )
-          }
         }
       }
 
@@ -1328,35 +1230,39 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     // Network check for really up to date libraries? Only done in batch mode.
     var issue = DEPENDENCY
     if (
-      !Scope.checkSingleFile(context.scope) &&
-        context.isEnabled(REMOTE_VERSION) &&
+      // !Scope.checkSingleFile(context.scope) &&
+      context.isEnabled(REMOTE_VERSION) &&
         // Common but served from maven.google.com so no point to
         // ping other maven repositories about these
         !getGoogleMavenRepository(context.client).hasGroupId(groupId)
     ) {
-      val latest =
-        getLatestVersionFromRemoteRepo(
-          context.client,
-          dependency,
-          filter,
-          dependency.version?.lowerBound?.isPreview ?: true,
-        )
-      if (latest != null && version < latest) {
-        newerVersion = latest
-        issue = REMOTE_VERSION
-      }
-
-      val group = dependency.group
-      if (group != null && dependency.isGradlePlugin()) {
+      if (dependency.isGradlePlugin()) {
         val pluginVersion =
-          getLatestVersionFromGradlePluginPortal(
-            context.client,
-            group,
-            filter,
-            dependency.version?.lowerBound?.isPreview ?: true,
-          )
+          getGradlePluginVersion(
+              context.client,
+              groupId,
+              dependency.version?.lowerBound,
+              allowCache = true,
+              filter = versionFilter,
+            )
+            ?.suggested
         if (pluginVersion != null && version < pluginVersion) {
           newerVersion = pluginVersion
+          issue = REMOTE_VERSION
+        }
+      } else {
+        val latest =
+          getMavenCentralVersions(
+              context.client,
+              groupId,
+              artifactId,
+              version,
+              filter,
+              allowCache = true,
+            )
+            ?.suggested
+        if (latest != null) {
+          newerVersion = latest
           issue = REMOTE_VERSION
         }
       }
@@ -1366,7 +1272,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     newerVersion = newerVersion maxOrNull findCachedNewerVersion(dependency, filter)
 
     // If it's available in maven.google.com, fetch latest available version.
-    newerVersion = newerVersion maxOrNull getGoogleMavenRepoVersion(context, dependency, filter)
+    newerVersion =
+      newerVersion maxOrNull getGoogleMavenRepoVersion(context, dependency, filter)?.suggested
 
     // And also consider what is in the SDK Index
     newerVersion = newerVersion maxOrNull getSdkIndexVersion(sdkIndex, groupId, artifactId, filter)
@@ -1425,7 +1332,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         // issues, no need to repeat that fix
         val fix =
           if (!isResolved && !hasSdkIndexIssues)
-            getUpdateDependencyFix(richVersionIdentifier, versionString)
+            getUpdateDependencyFix(richVersionIdentifier, versionString, groupId)
           else null
 
         val clientProperties =
@@ -1491,7 +1398,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             message,
             fix,
             overrideSeverity = severity,
-          ) || reported
+          )
       }
       if (sdkIndex.isLibraryNonCompliant(groupId, artifactId, versionString, buildFile)) {
         val fix =
@@ -1605,7 +1512,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val fixes = fix().group()
     var empty = true
     if ((newerVersion != null) && (newerVersion > currentVersion)) {
-      fixes.add(getUpdateDependencyFix(currentVersionIdentifier, newerVersion.toString()))
+      fixes.add(getUpdateDependencyFix(currentVersionIdentifier, newerVersion.toString(), groupId))
       empty = false
     }
     val vulnerabilityLink = vulnerabilityMessage?.link
@@ -1707,16 +1614,20 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       (groupId == "com.android.tools.build" || ALL_PLUGIN_IDS.contains(groupId)) &&
         LintClient.isStudio
     ) {
-      val clientRevision = context.client.getClientRevision() ?: return null
-      val ideVersion = Version.parse(clientRevision)
-      // TODO(b/145606749): this assumes that the IDE version and the AGP version are directly
-      //  comparable
+      val agpVersion =
+        context.client.getClientProperty(KEY_IDE_AGP_VERSION) as? String ?: return null
+      val ideGradleCompatibleVersion = Version.parse(agpVersion)
+      val ideMajor = ideGradleCompatibleVersion.major ?: return null
+      val ideMinor = ideGradleCompatibleVersion.minor ?: return null
       return Predicate { v ->
         // Any higher IDE version that matches major and minor
         // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
-        ((v.major == ideVersion.major && v.minor == ideVersion.minor) ||
+        val major = v.major ?: Integer.MAX_VALUE
+        val minor = v.major ?: Integer.MAX_VALUE
+        major < ideMajor ||
+          major == ideMajor && minor <= ideMinor ||
           // Also allow matching latest current existing major/minor version
-          (v.major == version.major && v.minor == version.minor))
+          (v.major == version.major && v.minor == version.minor)
       }
     }
 
@@ -1792,7 +1703,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val f =
       when {
         dependency.group?.startsWith("commons-") == true &&
-          dependency.name?.startsWith("commons-") == true &&
+          dependency.name.startsWith("commons-") &&
           dependency.name == dependency.group -> {
           // For a (long) while, users could get this spurious recommendation of an "upgrade" to
           // commons-io, commons-codec etc to this very old version (with a very high version
@@ -1837,12 +1748,15 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         val group = dependency.group!!
         val query = Dependency(group, artifact, minimum)
         val filter = getUpgradeVersionFilter(context, group, query.name, minimum.lowerBound)
-        val suggestedVersion = getGoogleMavenRepoVersion(context, query, filter)
+        val suggestedVersion =
+          getGoogleMavenRepoVersion(context, query, filter)?.suggested ?: return false
         val message =
           "Core library desugaring runtime library version ${version.lowerBound} does not " +
             "support `compileSdk=35` or later; please upgrade to version $suggestedVersion"
         val fix =
-          version.toIdentifier()?.let { getUpdateDependencyFix(it, suggestedVersion.toString()) }
+          version.toIdentifier()?.let {
+            getUpdateDependencyFix(it, suggestedVersion.toString(), group)
+          }
         report(context, cookie, CORE_LIB_DESUGARING_V2, message, fix)
         return true
       }
@@ -1864,7 +1778,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val query = Dependency("com.android.tools.build", "gradle", RichVersion.require(minimum))
       val recommended =
         Version.parse(GRADLE_PLUGIN_RECOMMENDED_VERSION).let { recommended ->
-          getGoogleMavenRepoVersion(context, query, null)?.takeIf { it > recommended }
+          getGoogleMavenRepoVersion(context, query, null)?.suggested?.takeIf { it > recommended }
             ?: recommended
         }
       val message =
@@ -1897,9 +1811,9 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       // not be used (https://code.google.com/p/android/issues/detail?id=75292)
       val maxVersion =
         Version.parse("10.2.1").let { v ->
-          getGoogleMavenRepoVersion(context, dependency, null)?.takeIf { it > v } ?: v
+          getGoogleMavenRepoVersion(context, dependency, null)?.suggested?.takeIf { it > v } ?: v
         }
-      val fix = getUpdateDependencyFix(richVersionIdentifier, maxVersion.toString())
+      val fix = getUpdateDependencyFix(richVersionIdentifier, maxVersion.toString(), groupId)
       val message =
         "Version `5.2.08` should not be used; the app " +
           "can not be published with this version. Use version `$maxVersion` " +
@@ -2225,12 +2139,19 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
               getUpdateDependencyFix(
                 currentIdentifier,
                 versionString,
+                "com.android.tools.build",
                 it.newerVersionIsSafe,
                 it.safeReplacement,
               )
           }
         val clientProperties =
-          getClientProperties()?.apply { put(KEY_COORDINATE, "com.android.application") }
+          LintMap().apply {
+            // Record metadata for the IDE quickfix such that
+            // it can link the AGP Upgrade Assistant to the suggested
+            // recent version
+            put(KEY_COORDINATE, APP_PLUGIN_ID)
+            put(KEY_REVISION, versionString)
+          }
         report(
           context,
           it.cookie,
@@ -2434,6 +2355,12 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     constraint: Constraint? = null,
     clientProperties: LintMap? = null,
   ): Boolean {
+    if (issue == REMOTE_VERSION && !context.isEnabled(DEPENDENCY)) {
+      // We've recently turned on NewerVersionAvailable by default. If users
+      // have already disabled GradleDependency, they probably intend for
+      // NewerVersionAvailable to be disabled as well.
+      return false
+    }
     // Some methods in GradleDetector are run without the PSI read lock in order
     // to accommodate network requests, so we grab the read lock here.
     var reportCreated = false
@@ -2619,12 +2546,19 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   private fun getUpdateDependencyFix(
     currentVersion: String,
     suggestedVersion: String,
+    group: String,
     suggestedVersionIsSafe: Boolean = false,
     safeReplacement: Version? = null,
   ): LintFix {
+    // Pick a label which comes alphabetically later than "Invoke AGP Upgrade Refactoring"
+    val action = if (group == "com.android.tools.build") "Replace with" else "Change to"
+    var displayName = "$action $suggestedVersion"
+    if (safeReplacement != null && LintClient.isStudio) {
+      displayName += " (Risky; prefer Upgrade Assistant)"
+    }
     val fix =
       fix()
-        .name("Change to $suggestedVersion")
+        .name(displayName)
         .sharedName("Update versions")
         .replace()
         .text(currentVersion)
@@ -2635,14 +2569,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val stableVersion = safeReplacement.toString()
       val stableFix =
         fix()
-          .name("Change to $stableVersion")
+          .name("$action $stableVersion")
           .sharedName("Update versions")
           .replace()
           .text(currentVersion)
           .with(stableVersion)
           .autoFix()
           .build()
-      fix().alternatives(fix, stableFix)
+      fix().alternatives(stableFix, fix)
     } else {
       fix
     }
@@ -2759,7 +2693,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   private var googleMavenRepository: GoogleMavenRepository? = null
   private var googlePlaySdkIndex: GooglePlaySdkIndex? = null
 
-  private fun getGoogleMavenRepoVersion(
+  private fun getGoogleMavenRepoVersionOld(
     context: Context,
     dependency: Dependency,
     filter: Predicate<Version>?,
@@ -2767,6 +2701,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     val repository = getGoogleMavenRepository(context.client)
     return repository.findVersion(dependency, filter, dependency.explicitlyIncludesPreview)
   }
+
+  private fun getGoogleMavenRepoVersion(
+    context: Context,
+    dependency: Dependency,
+    predicate: Predicate<Version>?,
+  ): AvailableVersions? {
+    val group = dependency.group ?: return null
+    val artifact = dependency.name
+    val repository = getGoogleMavenRepository(context.client)
+    val versions = repository.getVersions(dependency, predicate)
+    val currentVersion = dependency.version?.lowerBound
+
+    return getMavenMetadataVersions(versions, currentVersion, group, artifact)
+  }
+
+  private fun getSnapshotVersionFilter(filter: ((Version) -> Boolean)?): (Version) -> Boolean =
+    { candidate ->
+      !candidate.isSnapshot && (filter == null || filter(candidate))
+    }
 
   private fun getSdkIndexVersion(
     sdkIndex: GooglePlaySdkIndex,
@@ -2863,13 +2816,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     val agpVersion = context.project.buildModule?.agpVersion
     val filter =
-      if (agpVersion != null && agpVersion.major >= 7) {
-        "${agpVersion.major}."
+      if (agpVersion != null && agpVersion.major >= 7 && !offerLatestGradleVersions) {
+        Predicate<Version> { version -> version.major == agpVersion.major }
       } else {
         null
       }
-    val (_, newVersion) =
-      getGradleVersion(context.client, filter, currentVersion, allowCache = true) ?: return
+    val newVersion =
+      getGradleVersion(context.client, currentVersion, filter = filter, allowCache = true)
+        ?.suggested ?: return
 
     val location =
       Location.create(context.file, contents, offset + valueStart, offset + line.length)
@@ -2906,11 +2860,22 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
      */
     var recordClientProperties = false
 
+    /**
+     * For AGP and Gradle we constrain the offers a bit -- for example, the Gradle wrapper
+     * suggestion is limited to be compatible with the *current* version of AGP, and for AGP
+     * versions we try to offer it in multiple jumps in the IDE, e.g. if you're currently at version
+     * "7.1.0", and the latest is "8.8.0", we don't offer "8.8.0" immediately, we first offer the
+     * latest stable version of 7.1, say 7.1.4. This is to make it easier to make gradual updates.
+     * But if you want to do it all in one jump, that's not helpful.
+     */
+    var offerLatestGradleVersions = false
+
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null
 
     const val KEY_COORDINATE = "coordinate"
     const val KEY_REVISION = "revision"
+    const val KEY_IDE_AGP_VERSION = "ideAgpVersion"
 
     private const val VC_LIBRARY_PREFIX = "libs."
     private const val VC_PLUGIN_PREFIX = "libs.plugins."
@@ -3246,17 +3211,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         briefDescription = "Newer Library Versions Available",
         explanation =
           """
-                This detector checks with a central repository to see if there are newer \
-                versions available for the dependencies used by this project. This is \
-                similar to the `GradleDependency` check, which checks for newer versions \
-                available in the Android SDK tools and libraries, but this works with any \
-                MavenCentral dependency, and connects to the library every time, which \
-                makes it more flexible but also **much** slower.""",
+          This detector checks with a central repository to see if there are newer \
+          versions available for the dependencies used by this project. This is \
+          similar to the `GradleDependency` check, which checks for newer versions \
+          available in the Android SDK tools and libraries, but this works with any \
+          MavenCentral dependency, and connects to the library every time, which \
+          makes it more flexible but also **much** slower.""",
         category = Category.CORRECTNESS,
         priority = 4,
         severity = Severity.WARNING,
         implementation = IMPLEMENTATION_WITH_TOML,
-        enabledByDefault = false,
       )
 
     /** The API version is set too low. */
@@ -3838,14 +3802,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     /** All the plugin ids from the Android Gradle Plugin */
     val ALL_PLUGIN_IDS =
       setOf(
-        "com.android.base",
+        // From build-system/gradle-core/build.gradle
         "com.android.application",
         "com.android.library",
-        "com.android.test",
-        "com.android.instant-app",
-        "com.android.feature",
         "com.android.dynamic-feature",
+        "com.android.asset-pack",
+        "com.android.asset-pack-bundle",
+        "com.android.ai-pack",
+        "com.android.lint",
+        "com.android.test",
+        "com.android.fused-library",
+        "com.android.privacy-sandbox-sdk",
+        "com.android.kotlin.multiplatform.library",
+        // from build-system/gradle-settings/build.gradle
         "com.android.settings",
+        // older and deleted
+        "android",
+        "android-library",
+        "com.android.feature",
+        "com.android.instant-app",
       )
 
     /** Group ID for GMS. */
@@ -3926,7 +3901,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     ): Location {
       val location1 = getDependencyLocation(context, groupId1, artifactId1, version1)
       val location2 = getDependencyLocation(context, groupId2, artifactId2, version2)
-      //noinspection FileComparisons
+      @Suppress("FileEqualsUsage", "FileComparisons")
       if (location2.start != null || location1.file != location2.file) {
         location1.secondary = location2
         message?.let { location2.message = it }
@@ -3934,59 +3909,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return location1
     }
 
-    fun getLatestVersionFromGradlePluginPortal(
+    fun getGradlePluginVersion(
       client: LintClient,
       pluginId: String,
-      filter: Predicate<Version>?,
-      allowPreview: Boolean,
-    ): Version? {
-      val pluginPath = pluginId.replace(".", "/")
-      val url =
-        "https://plugins.gradle.org/m2/$pluginPath/$pluginId.gradle.plugin/maven-metadata.xml"
-      val updates =
-        try {
-          readUrlDataAsString(client, url, 20000)
-        } catch (e: IOException) {
-          client.log(
-            null,
-            "Could not connect to %1\$s to get the latest available version for plugin %2\$s",
-            url,
-            pluginId,
-          )
-          null
-        }
-      if (
-        // for missing dependencies it answers with a json document
-        updates != null && !updates.startsWith("{")
-      ) {
-        val document = XmlUtils.parseDocumentSilently(updates, false)
-        if (document != null) {
-          val versionsList = document.getElementsByTagName("versions")
-          val versions = mutableListOf<Version>()
-
-          for (i in 0 until versionsList.length) {
-            val element = versionsList.item(i) as Element
-            for (child in element) {
-              if (child.tagName == "version") {
-                val s = child.textContent
-                if (s.isNotBlank()) {
-                  val revision = Version.parse(s)
-                  versions.add(revision)
-                }
-              }
-            }
-          }
-
-          return versions
-            .filter { filter == null || filter.test(it) }
-            .filter { allowPreview || !it.isPreview }
-            .maxOrNull()
-        }
-      }
-      return null
+      currentVersion: Version? = null,
+      allowCache: Boolean = false,
+      filter: Predicate<Version>? = null,
+    ): AvailableVersions? {
+      return getAvailableVersions(
+        client = client,
+        groupId = pluginId,
+        artifactId = "$pluginId.gradle.plugin",
+        currentVersion = currentVersion,
+        filter = filter,
+        allowCache = allowCache,
+        baseUrl = "https://plugins.gradle.org/m2/",
+        relative = "${pluginId.replace(".", "/")}/$pluginId.gradle.plugin/maven-metadata.xml",
+      )
     }
 
-    /** TODO: Cache these results somewhere! */
     @JvmStatic
     fun getLatestVersionFromRemoteRepo(
       client: LintClient,
@@ -3996,105 +3937,15 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     ): Version? {
       val group = dependency.group ?: return null
       val name = dependency.name
-      val richVersion = dependency.version ?: return null
-      val query = StringBuilder()
-      val encoding = UTF_8.name()
-      var allowPreview = allowPreview
-      try {
-        query.append("https://search.maven.org/solrsearch/select?q=g:%22")
-        query.append(URLEncoder.encode(group, encoding))
-        query.append("%22+AND+a:%22")
-        query.append(URLEncoder.encode(name, encoding))
-      } catch (e: UnsupportedEncodingException) {
-        return null
-      }
-
-      query.append("%22&core=gav")
-      if (group == "com.google.guava" || name == "kotlinx-coroutines-core") {
-        // These libraries aren't releasing previews in their version strings;
-        // instead, the suffix is used to indicate different variants (JRE vs Android,
-        // JVM vs Kotlin Native).  Turn on allowPreview for the search.
-        allowPreview = true
-      } else if (filter == null && allowPreview) {
-        query.append("&rows=1")
-      }
-      query.append("&wt=json")
-
-      val response: String?
-      try {
-        response = readUrlDataAsString(client, query.toString(), 20000)
-        if (response == null) {
-          return null
-        }
-      } catch (e: IOException) {
-        client.log(
-          null,
-          "Could not connect to maven central to look up the latest " +
-            "available version for %1\$s",
-          dependency,
-        )
-        return null
-      }
-
-      // Sample response:
-      //    {
-      //        "responseHeader": {
-      //            "status": 0,
-      //            "QTime": 0,
-      //            "params": {
-      //                "fl": "id,g,a,v,p,ec,timestamp,tags",
-      //                "sort": "score desc,timestamp desc,g asc,a asc,v desc",
-      //                "indent": "off",
-      //                "q": "g:\"com.google.guava\" AND a:\"guava\"",
-      //                "core": "gav",
-      //                "wt": "json",
-      //                "rows": "1",
-      //                "version": "2.2"
-      //            }
-      //        },
-      //        "response": {
-      //            "numFound": 37,
-      //            "start": 0,
-      //            "docs": [{
-      //                "id": "com.google.guava:guava:17.0",
-      //                "g": "com.google.guava",
-      //                "a": "guava",
-      //                "v": "17.0",
-      //                "p": "bundle",
-      //                "timestamp": 1398199666000,
-      //                "tags": ["spec", "libraries", "classes", "google", "code"],
-      //                "ec": ["-javadoc.jar", "-sources.jar", ".jar", "-site.jar", ".pom"]
-      //            }]
-      //        }
-      //    }
-
-      // Look for version info:  This is just a cheap skim of the above JSON results.
-      var index = response.indexOf("\"response\"")
-      val versions = mutableListOf<Version>()
-      while (index != -1) {
-        index = response.indexOf("\"v\":", index)
-        if (index != -1) {
-          index += 4
-          val start = response.indexOf('"', index) + 1
-          val end = response.indexOf('"', start + 1)
-          if (start in 0 until end) {
-            val substring = response.substring(start, end)
-            val revision = Version.parse(substring)
-            versions.add(revision)
-          }
-        }
-      }
-
-      return versions
-        .filter { filter == null || filter.test(it) }
-        .filter { allowPreview || !it.isPreview }
-        .maxOrNull()
+      val currentVersion = dependency.version?.lowerBound
+      return getMavenCentralVersions(client, group, name, currentVersion, filter, allowCache = true)
+        ?.suggested
     }
 
     /**
-     * Returns the latest stable and preview versions of Gradle, respectively. The
-     * [versionPrefixFilter] can be used to filter down to a specific version prefix, typically a
-     * major version to limit compatibility between Gradle and AGP.
+     * Returns the latest stable and preview versions of Gradle, respectively. The [filter] can be
+     * used to filter down to a specific version prefix, typically a major version to limit
+     * compatibility between Gradle and AGP.
      *
      * If a current version is specified, the upgrade will be limited to a suggested compatible
      * update. In particular, if the current version is a stable version, only stable versions will
@@ -4117,21 +3968,99 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
      */
     fun getGradleVersion(
       client: LintClient,
-      versionPrefixFilter: String?,
       currentVersion: Version? = null,
+      filter: Predicate<Version>? = null,
       allowCache: Boolean = false,
-    ): Pair<Version, Version>? {
+    ): AvailableVersions? {
+      return getAvailableVersions(
+        client = client,
+        groupId = "org.gradle",
+        artifactId = "gradle-tooling-api",
+        currentVersion = currentVersion,
+        filter = filter,
+        allowCache = allowCache,
+        baseUrl =
+          "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/",
+        relative = "maven-metadata.xml",
+      )
+    }
+
+    fun getMavenCentralVersions(
+      client: LintClient,
+      group: String,
+      artifact: String,
+      currentVersion: Version? = null,
+      filter: Predicate<Version>? = null,
+      allowCache: Boolean = false,
+    ): AvailableVersions? {
+      return getAvailableVersions(
+        client = client,
+        groupId = group,
+        artifactId = artifact,
+        currentVersion = currentVersion,
+        filter = filter,
+        allowCache = allowCache,
+        baseUrl = "https://repo1.maven.org/maven2/",
+        relative = "${group.replace(".", "/")}/$artifact/maven-metadata.xml",
+      )
+    }
+
+    /** Information about the most recent available versions of a given library. */
+    class AvailableVersions(
+      /**
+       * If a current version was provided to the version request, this is the latest version that
+       * has the same major and minor version, or null if no newer patch version is available (or no
+       * current version was provided).
+       */
+      val latestPatch: Version?,
+      /**
+       * The latest stable version of this library, or null if no stable version is available yet.
+       */
+      val latestStable: Version?,
+      /**
+       * The latest preview version of this library (or stable, if the most recent version is
+       * stable).
+       */
+      val latestPreview: Version,
+
+      /**
+       * If a current version was provided to the version request, this is the suggested version to
+       * propose. This will be null if no newer version is available.
+       *
+       * This will normally the most recent *stable* version available that is higher than the
+       * current version, but if the current version is a preview, and there is a newer preview
+       * available, the latest preview version will be proposed.
+       */
+      val suggested: Version?,
+    )
+
+    private fun getAvailableVersions(
+      client: LintClient,
+      groupId: String,
+      artifactId: String,
+      currentVersion: Version?,
+      filter: Predicate<Version>?,
+      allowCache: Boolean,
+      baseUrl: String,
+      relative: String,
+    ): AvailableVersions? {
       val inputStream =
         if (allowCache) {
-          val cacheDir = client.getCacheDir(GRADLE_CACHE_KEY, true)?.toPath()
+          val cacheKey = "gradle-versions"
+          val cacheDir = client.getCacheDir(cacheKey, true)?.toPath()
           val cache =
-            object : NetworkCache(GRADLE_MAVEN_URL, GRADLE_CACHE_KEY, cacheDir) {
+            object : NetworkCache(baseUrl, cacheKey, cacheDir) {
               override fun readUrlData(
                 url: String,
                 timeout: Int,
                 lastModified: Long,
               ): ReadUrlDataResult {
-                return readUrlData(client, url, timeout, lastModified)
+                return try {
+                  readUrlData(client, url, timeout, lastModified)
+                } catch (exception: IOException) {
+                  // Remember that this resource doesn't exist.
+                  ReadUrlDataResult(byteArrayOf(), true)
+                }
               }
 
               override fun readDefaultData(relative: String): InputStream? = null
@@ -4139,72 +4068,112 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
               override fun error(throwable: Throwable, message: String?) {}
 
               fun getMetadata(): InputStream? {
-                return findData(GRADLE_METADATA)
+                return findData(relative)
               }
             }
           cache.getMetadata()
         } else {
-          readUrlData(client, GRADLE_MAVEN_METADATA_URL, 10000, 0L).data?.let {
-            ByteArrayInputStream(it)
-          }
+          readUrlData(client, baseUrl + relative, 10000, 0L).data?.let { ByteArrayInputStream(it) }
         }
 
       inputStream ?: return null
 
-      return getMavenMetadataVersions(inputStream, versionPrefixFilter, currentVersion)
+      return getMavenMetadataVersions(inputStream, currentVersion, groupId, artifactId, filter)
     }
-
-    private const val GRADLE_CACHE_KEY = "gradle-versions"
-    private const val GRADLE_MAVEN_URL =
-      "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/"
-    private const val GRADLE_METADATA = "maven-metadata.xml"
-    private const val GRADLE_MAVEN_METADATA_URL = "$GRADLE_MAVEN_URL$GRADLE_METADATA"
 
     private fun getMavenMetadataVersions(
       inputStream: InputStream,
-      versionPrefixFilter: String?,
       currentVersion: Version?,
-    ): Pair<Version, Version>? {
-      var stable: Version? = null
-      var preview: Version? = null
-      val parser = KXmlParser()
-      parser.setInput(inputStream, StandardCharsets.UTF_8.name())
-      while (parser.next() != XmlPullParser.END_DOCUMENT) {
-        if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
-          val versionString = parser.nextText()
-          if (versionPrefixFilter != null && !versionString.startsWith(versionPrefixFilter)) {
-            continue
-          }
-          val version = Version.parse(versionString.trim())
-          if (version.isPreview) {
-            if (preview == null || version > preview) {
-              preview = version
-            }
-          } else {
-            if (stable == null || version > stable) {
-              stable = version
-            }
-            if (preview == null || version > preview) {
-              preview = version
+      group: String,
+      artifact: String,
+      filter: Predicate<Version>? = null,
+    ): AvailableVersions? {
+      val sequence = sequence {
+        val parser = KXmlParser()
+        parser.setInput(inputStream, StandardCharsets.UTF_8.name())
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+          if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
+            val versionString = parser.nextText().trim()
+            if (versionString.isNotEmpty()) {
+              yield(Version.parse(versionString))
             }
           }
         }
       }
+      return getMavenMetadataVersions(sequence, currentVersion, group, artifact, filter)
+    }
 
-      if (stable != null && preview != null) {
+    private fun getMavenMetadataVersions(
+      versions: Sequence<Version>,
+      currentVersion: Version?,
+      group: String,
+      artifact: String,
+      filter: Predicate<Version>? = null,
+    ): AvailableVersions? {
+      // These libraries aren't releasing previews in their version strings;
+      // instead, the suffix is used to indicate different variants (JRE vs Android,
+      // JVM vs Kotlin Native).  Turn on allowPreview for the search.
+      var stable: Version? = null
+      var preview: Version? = null
+      var patch: Version? = null
+      var suggested: Version? = null
+
+      for (version in versions) {
+        if (filter != null && !filter.test(version)) {
+          continue
+        }
+        if (version.isSnapshot) {
+          continue
+        }
+        val isPreview = version.isPreview
+        if (isPreview) {
+          if (preview == null || version > preview) {
+            preview = version
+          }
+        } else {
+          if (
+            currentVersion != null &&
+              version.major == currentVersion.major &&
+              version.minor == currentVersion.minor &&
+              version > currentVersion &&
+              (patch == null || version > patch)
+          ) {
+            patch = version
+          }
+          if (stable == null || version > stable) {
+            stable = version
+          }
+          if (preview == null || version > preview) {
+            preview = version
+          }
+        }
+      }
+
+      if (preview != null) {
+        // These libraries aren't releasing previews in their version strings;
+        // instead, the suffix is used to indicate different variants (JRE vs Android,
+        // JVM vs Kotlin Native).
+        if (
+          group == "com.google.guava" ||
+            // The version suffix shenanigans seem to have stopped with 1.6.4
+            artifact == "kotlinx-coroutines-core" && preview < Version.parse("1.6.4")
+        ) {
+          stable = preview
+        }
         if (currentVersion != null) {
-          if (currentVersion.isPreview && currentVersion < stable) {
-            return Pair(stable, stable)
+          if (stable != null && currentVersion < stable) {
+            suggested = stable
           } else if (currentVersion.isPreview && currentVersion < preview) {
-            return Pair(stable, preview)
-          } else if (currentVersion < stable) {
-            return Pair(stable, stable)
-          } else {
-            return null
+            suggested = preview
           }
         }
 
-        return Pair(stable, preview)
+        return AvailableVersions(
+          latestPatch = patch,
+          latestStable = stable,
+          latestPreview = preview,
+          suggested = suggested,
+        )
       } else {
         return null
       }
@@ -4600,7 +4569,7 @@ private infix fun Version?.maxAgpOrNull(other: Version?): Version? =
  * This exists to smooth over the fact that we represent the Version of a prefix matcher as the
  * least possible version that would match, but we want here to find newer versions that would not
  * match (e.g. if [dependency] has a version specification of 1.0.+ we should return false for a
- * [Version] of 1.0.2, but true for a [Version] of 1.1.0.
+ * [Version] of 1.0.2, but true for a [Version] of 1.1.0.)
  *
  * A clearer implementation fix for this is to have two Version getters for GradleCoordinate:
  * getLowerBoundVersion and getUpperBoundVersion (both of which are computable) and to use the

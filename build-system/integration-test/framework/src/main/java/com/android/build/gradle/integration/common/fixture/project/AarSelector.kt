@@ -28,6 +28,9 @@ import com.android.SdkConstants.DOT_AAR
  */
 sealed interface AarSelector: OutputSelector {
 
+    /** Returns a new instance with a new project name */
+    override fun withName(name: String): AarSelector
+
     /** returns a new instance with the added flavor. */
     fun withFlavor(name: String): AarSelector
 
@@ -66,23 +69,27 @@ sealed interface AarSelector: OutputSelector {
 }
 
 internal data class AarSelectorImp(
+    override val name: String? = null,
     private val buildType: String?,
     private val flavors: List<String>,
     private val filter: String? = null,
     private val suffix: String? = null,
 ): AarSelector {
 
+    override fun withName(name: String): AarSelector =
+        AarSelectorImp(name, buildType, flavors, filter, suffix)
+
     override fun withFlavor(name: String): AarSelector =
-        AarSelectorImp(buildType, flavors + name, filter, suffix)
+        AarSelectorImp(this.name, buildType, flavors + name, filter, suffix)
 
     override fun withFilter(newFilter: String): AarSelector =
-        AarSelectorImp(buildType, flavors, newFilter, suffix)
+        AarSelectorImp(this.name, buildType, flavors, newFilter, suffix)
 
     override fun withSuffix(newSuffix: String): AarSelector =
-        AarSelectorImp(buildType, flavors, filter, newSuffix)
+        AarSelectorImp(this.name, buildType, flavors, filter, newSuffix)
 
     override fun forTestFixtures(): AarSelector {
-        return AarSelectorImp(buildType, flavors, filter, "testFixtures")
+        return AarSelectorImp(this.name, buildType, flavors, filter, "testFixtures")
     }
 
     override fun getFileName(projectName: String): String {

@@ -18,11 +18,14 @@ package com.google.services.firebase.directaccess.client.device.remote.service.a
 
 /** A stream of data opened from the local ADB server to the forwarding daemon. */
 interface Stream {
+
+  suspend fun init() = Unit
+
   /** Send a write message from the local ADB server to the remote device. */
-  fun sendWrite(command: WriteCommand)
+  suspend fun sendWrite(command: WriteCommand)
 
   /** Send a close message from the local ADB server to the remote device. */
-  fun sendClose()
+  suspend fun sendClose()
 
   /**
    * Receive a command from the remote device, to either be handled internally in this stream or

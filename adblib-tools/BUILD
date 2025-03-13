@@ -10,14 +10,17 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.adblib.tools.iml"],
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+    ],
     test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver[test]",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/adt/idea/.idea/libraries:libadblib-tools-proto",
     ],

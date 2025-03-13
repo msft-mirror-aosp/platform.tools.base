@@ -88,7 +88,7 @@ class MergeJavaResourceIncrementalTest {
 
         build.executor.run(":app:assembleDebug")
         app.assertApk(ApkSelector.DEBUG) {
-            containsJavaResourceWithContent("res1.txt", "res 1 from foo")
+            javaResources().resourceAsText("res1.txt").isEqualTo("res 1 from foo")
         }
 
         fooLib.files.remove("src/main/resources/res1.txt")
@@ -96,7 +96,7 @@ class MergeJavaResourceIncrementalTest {
 
         build.executor.run(":app:assembleDebug")
         app.assertApk(ApkSelector.DEBUG) {
-            containsJavaResourceWithContent("res1.txt", "res 1 from bar edited")
+            javaResources().resourceAsText("res1.txt").isEqualTo("res 1 from bar edited")
         }
 
         fooLib.files.add("src/main/resources/res1.txt", "res 1 from foo added back")
@@ -104,7 +104,7 @@ class MergeJavaResourceIncrementalTest {
 
         build.executor.run(":app:assembleDebug")
         app.assertApk(ApkSelector.DEBUG) {
-            containsJavaResourceWithContent("res1.txt", "res 1 from foo added back")
+            javaResources().resourceAsText("res1.txt").isEqualTo("res 1 from foo added back")
         }
     }
 }

@@ -16,8 +16,6 @@
 
 package com.android.tools.appinspection.database
 
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
 import android.os.Build
 import com.android.testutils.CloseablesRule
 import com.android.tools.appinspection.common.testing.LogPrinterRule
@@ -25,30 +23,30 @@ import com.android.tools.appinspection.database.DatabaseRegistry.OnDatabaseClose
 import com.android.tools.appinspection.database.DatabaseRegistry.OnDatabaseOpenedCallback
 import com.android.tools.appinspection.database.DatabaseRegistryTest.DbEvent.DbClosedEvent
 import com.android.tools.appinspection.database.DatabaseRegistryTest.DbEvent.DbOpenedEvent
+import com.android.tools.appinspection.database.testing.DatabaseType
+import com.android.tools.appinspection.database.testing.DatabaseType.ANDROID_X
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.mockito.Mockito.spy
-import org.mockito.Mockito.`when` as whenever
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
+import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 /** Tests for [DatabaseRegistry] */
-@RunWith(RobolectricTestRunner::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(
   manifest = Config.NONE,
   minSdk = Build.VERSION_CODES.O,
   maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
 )
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
-class DatabaseRegistryTest {
+internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
   private val temporaryFolder = TemporaryFolder()
   private val closeablesRule = CloseablesRule()
 
@@ -63,9 +61,10 @@ class DatabaseRegistryTest {
 
   @Test
   fun getConnection_withReadOnly_returnsReadOnly() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events)
-    val readOnlyDb = openHelper.getReadOnlyDb()
+    val readOnlyDb = databaseProvider.getReadOnlyDb()
     registry.notifyDatabaseOpened(readOnlyDb)
 
     val connection = registry.getConnection(events.first().id)
@@ -75,12 +74,14 @@ class DatabaseRegistryTest {
 
   @Test
   fun getConnection_withReadWrite_returnsReadWrite() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events)
-    registry.notifyDatabaseOpened(openHelper.getReadOnlyDb())
-    val readWriteDb = openHelper.getReadWriteDb()
+    val readOnlyDb = databaseProvider.getReadOnlyDb()
+    registry.notifyDatabaseOpened(readOnlyDb)
+    val readWriteDb = databaseProvider.getReadWriteDb()
     registry.notifyDatabaseOpened(readWriteDb)
-    registry.notifyDatabaseOpened(openHelper.getReadOnlyDb())
+    registry.notifyDatabaseOpened(readOnlyDb)
 
     val connection = registry.getConnection(events.first().id)
 
@@ -89,10 +90,11 @@ class DatabaseRegistryTest {
 
   @Test
   fun getConnection_withForced_returnsForced() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
-    openHelper.createAndClose()
-    registry.notifyOnDiskDatabase(openHelper.databaseName)
+    databaseProvider.createAndClose()
+    registry.notifyOnDiskDatabase(databaseProvider.path)
 
     val connection = registry.getConnection(events.first().id) ?: fail("No database found")
 
@@ -101,11 +103,12 @@ class DatabaseRegistryTest {
 
   @Test
   fun getConnection_withForcedAndReadOnly_returnsForced() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
-    openHelper.createAndClose()
-    registry.notifyOnDiskDatabase(openHelper.databaseName)
-    registry.notifyDatabaseOpened(openHelper.getReadOnlyDb())
+    databaseProvider.createAndClose()
+    registry.notifyOnDiskDatabase(databaseProvider.path)
+    registry.notifyDatabaseOpened(databaseProvider.getReadOnlyDb())
 
     val connection = registry.getConnection(events.first().id) ?: fail("No database found")
 
@@ -114,11 +117,12 @@ class DatabaseRegistryTest {
 
   @Test
   fun getConnection_withForcedAndReadWrite_returnsForced() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
-    openHelper.createAndClose()
-    registry.notifyOnDiskDatabase(openHelper.databaseName)
-    val readWriteDb = openHelper.getReadWriteDb()
+    databaseProvider.createAndClose()
+    registry.notifyOnDiskDatabase(databaseProvider.path)
+    val readWriteDb = databaseProvider.getReadWriteDb()
     registry.notifyDatabaseOpened(readWriteDb)
 
     val connection = registry.getConnection(events.first().id) ?: fail("No database found")
@@ -129,10 +133,10 @@ class DatabaseRegistryTest {
   @Test
   fun getConnection_alreadyOpen_notForced() {
     val path = "${temporaryFolder.root}/db"
-    val openHelper = OpenHelper(path)
+    val databaseProvider = databaseType.getDatabaseProvider(path, closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
-    registry.notifyDatabaseOpened(openHelper.getReadWriteDb())
-    registry.notifyOnDiskDatabase(openHelper.databaseName)
+    registry.notifyDatabaseOpened(databaseProvider.getReadWriteDb())
+    registry.notifyOnDiskDatabase(databaseProvider.path)
 
     val id = registry.getIdForPath(path) ?: fail("No database found")
     val database = registry.getConnection(id) ?: fail("No database found")
@@ -141,10 +145,11 @@ class DatabaseRegistryTest {
 
   @Test
   fun notifyKeepOpenToggle_doNotKeepForcedConnections() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
     val registry = databaseRegistry(events, forceOpen = true)
-    openHelper.createAndClose()
-    registry.notifyOnDiskDatabase(openHelper.databaseName)
+    databaseProvider.createAndClose()
+    registry.notifyOnDiskDatabase(databaseProvider.path)
 
     registry.notifyKeepOpenToggle(true)
 
@@ -152,10 +157,14 @@ class DatabaseRegistryTest {
   }
 
   @Test
-  fun notifyKeepOpenToggle__replaceReadonlyWithWriteable() {
-    val openHelper = OpenHelper("${temporaryFolder.root}/db")
-    val readOnlyDb = openHelper.getReadOnlyDb(autoClose = false)
-    val readWriteDb = openHelper.getReadWriteDb(autoClose = false)
+  fun notifyKeepOpenToggle_replaceReadonlyWithWriteable() {
+    // ANDROID_X Database doesn't support keep-open yet
+    assumeTrue(databaseType != ANDROID_X)
+
+    val databaseProvider =
+      databaseType.getDatabaseProvider("${temporaryFolder.root}/db", closeablesRule)
+    val readOnlyDb = databaseProvider.getReadOnlyDb(autoClose = false)
+    val readWriteDb = databaseProvider.getReadWriteDb(autoClose = false)
     val registry = databaseRegistry(events)
     registry.notifyKeepOpenToggle(true)
 
@@ -181,12 +190,12 @@ class DatabaseRegistryTest {
   @Test
   fun notifyDatabaseOpened_sendsEventsWhenDatabaseChanges() {
     val path = "${temporaryFolder.root}/db"
-    val openHelper1 = OpenHelper(path)
-    val openHelper2 = OpenHelper(path)
-    val openHelper3 = OpenHelper(path)
-    val readOnlyDb = openHelper1.getReadOnlyDb(autoClose = false)
-    val readWriteDb1 = openHelper2.getReadWriteDb(autoClose = false)
-    val readWriteDb2 = openHelper3.getReadWriteDb(autoClose = false)
+    val databaseProvider1 = databaseType.getDatabaseProvider(path, closeablesRule)
+    val databaseProvider2 = databaseType.getDatabaseProvider(path, closeablesRule)
+    val databaseProvider3 = databaseType.getDatabaseProvider(path, closeablesRule)
+    val readOnlyDb = databaseProvider1.getReadOnlyDb(autoClose = false)
+    val readWriteDb1 = databaseProvider2.getReadWriteDb(autoClose = false)
+    val readWriteDb2 = databaseProvider3.getReadWriteDb(autoClose = false)
     val registry = databaseRegistry(events)
 
     // Transition from no db to a read-only db
@@ -259,34 +268,11 @@ class DatabaseRegistryTest {
       closeablesRule.register(AutoCloseable { dispose() })
     }
 
-  private inner class OpenHelper(path: String) :
-    SQLiteOpenHelper(RuntimeEnvironment.getApplication(), path, null, 1) {
-
-    override fun onCreate(db: SQLiteDatabase) {}
-
-    override fun onUpgrade(db: SQLiteDatabase, fromVersion: Int, toVersion: Int) {}
-
-    fun getReadOnlyDb(autoClose: Boolean = true): AndroidDatabase {
-      val db = readableDatabase
-      if (autoClose) {
-        closeablesRule.register(db)
-      }
-      val mock = spy(db)
-      whenever(mock.isReadOnly).thenReturn(true)
-      return AndroidDatabase(mock)
-    }
-
-    fun getReadWriteDb(autoClose: Boolean = true): AndroidDatabase {
-      val db = writableDatabase
-      if (autoClose) {
-        closeablesRule.register(db)
-      }
-      return AndroidDatabase(db)
-    }
-
-    fun createAndClose() {
-      readableDatabase.close()
-    }
+  companion object {
+    @JvmStatic
+    @ParameterizedRobolectricTestRunner.Parameters(name = "DatabaseType: {0}")
+    // parameters are provided as arrays, allowing more than one parameter
+    fun params() = listOf(arrayOf(DatabaseType.FRAMEWORK), arrayOf(ANDROID_X))
   }
 }
 

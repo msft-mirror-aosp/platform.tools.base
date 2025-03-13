@@ -26,10 +26,8 @@ import com.android.tools.lint.checks.JavaPerformanceDetector
 import com.android.tools.lint.checks.ManifestDetector
 import com.android.tools.lint.checks.SdCardDetector
 import com.android.tools.lint.checks.infrastructure.TestMode
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Location
-import com.android.tools.lint.detector.api.Project
 import java.io.File
 import org.junit.rules.TemporaryFolder
 
@@ -878,32 +876,21 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     val root = temp.root.canonicalFile
     val projectDir = lint().projects(main).createProjects(root).single { it.name == "app" }
 
-    val listener: LintListener =
-      object : LintListener {
-        override fun update(
-          driver: LintDriver,
-          type: LintListener.EventType,
-          project: Project?,
-          context: Context?,
-        ) {
-          // Make sure we have an associated location for the override configuration; in a Gradle
-          // project,
-          // this would be set from the lint model. There isn't an associated "location" for a flag
-          // configuration
-          // supplied from command line flags so here we're simulating what would happen in a gradle
-          // project
-          // (where the flags are associated with the build.gradle file) such that we can ensure we
-          // properly
-          // only pick up locations from the build.gradle file when the issue is actually configured
-          // by that
-          // build.gradle configuration
-          if (type == LintListener.EventType.STARTING) {
-            val overrides = driver.client.configurations.overrides as FlagConfiguration
-            val buildFile = File(projectDir, FN_BUILD_GRADLE)
-            overrides.associatedLocation = Location.create(buildFile)
-          }
-        }
+    val listener = LintListener { driver, type, _, _ ->
+      // Make sure we have an associated location for the override configuration;
+      // in a Gradle project, this would be set from the lint model. There
+      // isn't an associated "location" for a flag configuration supplied from
+      // command line flags so here we're simulating what would happen in a
+      // gradle project (where the flags are associated with the build.gradle
+      // file) such that we can ensure we properly only pick up locations from
+      // the build.gradle file when the issue is actually configured by that
+      // build.gradle configuration
+      if (type == LintListener.EventType.STARTING) {
+        val overrides = driver.client.configurations.overrides as FlagConfiguration
+        val buildFile = File(projectDir, FN_BUILD_GRADLE)
+        overrides.associatedLocation = Location.create(buildFile)
       }
+    }
     checkDriver(
       "" +
         "build.gradle: Warning: Unknown issue id \"SomeUnknownIssue2\" [UnknownIssueId]\n" +

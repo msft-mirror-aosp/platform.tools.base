@@ -19,8 +19,6 @@ package com.android.build.gradle.integration.lint
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Before
@@ -139,8 +137,9 @@ class LintCheckDependenciesTest {
     fun testCheckDependencies() {
         // First run with checkDependencies false and check that lib's STOPSHIP issue is not
         // included in app's lint report.
-        project.executor().run(":app:lintRelease")
-        assertThat(project.buildResult.getTask(":lib:lintAnalyzeRelease")).didWork()
+        project.executor().run(":app:lintRelease").apply {
+            assertTask(":lib:lintAnalyzeRelease").didWork()
+        }
         val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
         assertThat(reportFile).exists()
         assertThat(reportFile).contains("App.java:4: Error: STOPSHIP comment found")
@@ -172,12 +171,16 @@ class LintCheckDependenciesTest {
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
             "abortOnError = false",
-            "abortOnError true",
+            "abortOnError = true",
         )
         // First run with checkDependencies false
-        project.executor().run(":app:lintVitalRelease")
-        ScannerSubject.assertThat(project.buildResult.stdout).contains("BUILD SUCCESSFUL")
-        assertThat(project.buildResult.getTask(":lib:lintVitalAnalyzeRelease")).didWork()
+        project.executor().run(":app:lintVitalRelease").apply {
+            assertStdOut {
+                contains("BUILD SUCCESSFUL")
+            }
+            assertTask(":lib:lintVitalAnalyzeRelease").didWork()
+        }
+
         // Then run with checkDependencies true and check that lib's STOPSHIP issue *is* included
         // in app's lint report.
         TestFileUtils.searchAndReplace(
@@ -185,11 +188,12 @@ class LintCheckDependenciesTest {
             "checkDependencies = false",
             "checkDependencies = true",
         )
-        project.executor().expectFailure().run(":app:lintVitalRelease")
-        ScannerSubject.assertThat(project.buildResult.stderr)
-            .contains("Lib.java:4: Error: STOPSHIP comment found")
-        ScannerSubject.assertThat(project.buildResult.stderr)
-            .contains("LibTwo.java:4: Error: STOPSHIP comment found")
+        project.executor().expectFailure().run(":app:lintVitalRelease").apply {
+            assertStdErr {
+                contains("Lib.java:4: Error: STOPSHIP comment found")
+                contains("LibTwo.java:4: Error: STOPSHIP comment found")
+            }
+        }
     }
 
     @Test
@@ -197,15 +201,21 @@ class LintCheckDependenciesTest {
         val warning =
             "Warning: Lint will treat :javaLib as an external dependency and not analyze it."
         // We expect no warning when checkDependencies is false
-        project.executor().run(":app:lintDebug")
-        project.buildResult.stdout.use { ScannerSubject.assertThat(it).doesNotContain(warning) }
+        project.executor().run(":app:lintDebug").apply {
+            assertStdOut {
+                doesNotContain(warning)
+            }
+        }
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
             "checkDependencies = false",
             "checkDependencies = true",
         )
         // We expect the warning when checkDependencies is true
-        project.executor().run(":app:lintDebug")
-        project.buildResult.stdout.use { ScannerSubject.assertThat(it).contains(warning) }
+        project.executor().run(":app:lintDebug").apply {
+            assertStdOut {
+                contains(warning)
+            }
+        }
     }
 }

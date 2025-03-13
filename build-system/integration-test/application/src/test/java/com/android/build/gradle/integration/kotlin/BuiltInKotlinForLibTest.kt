@@ -56,10 +56,10 @@ class BuiltInKotlinForLibTest {
         build.executor.run(":lib:assembleDebug")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG) {
-            mainJar().classes().apply {
-                contains("com/foo/library/LibFoo")
-                contains("com/foo/library/KotlinLibFoo")
-            }
+            mainJar().classes().containsExactly(
+                "com/foo/library/LibFoo",
+                "com/foo/library/KotlinLibFoo"
+            )
         }
     }
 
@@ -90,10 +90,17 @@ class BuiltInKotlinForLibTest {
 
         build.executor.run(":lib:assembleDebugAndroidTest")
         build.androidLibrary().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            hasClass("Lcom/foo/library/LibFoo;")
-            hasClass("Lcom/foo/library/KotlinLibFoo;")
-            hasClass("Lcom/foo/library/LibFooTest;")
-            hasClass("Lcom/foo/library/KotlinLibFooTest;")
+            classes().containsExactly(
+                "com/foo/library/LibFoo",
+                "com/foo/library/KotlinLibFoo",
+                "com/foo/library/LibFooTest",
+                "com/foo/library/KotlinLibFooTest",
+                "pkg/name/lib/R",
+                "pkg/name/lib/test/R",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
         }
     }
 
@@ -128,7 +135,7 @@ class BuiltInKotlinForLibTest {
         build.executor.run(":lib:assembleDebugTestFixtures")
 
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
-            mainJar().containsClass("com/foo/library/LibFooTestFixture")
+            mainJar().classes().containsExactly("com/foo/library/LibFooTestFixture")
         }
 
         // Kotlin support for testFixtures should work with or without the gradle property when
@@ -139,7 +146,7 @@ class BuiltInKotlinForLibTest {
 
         build.executor.run(":lib:assembleDebugTestFixtures")
         build.androidLibrary().assertAar(AarSelector.DEBUG.forTestFixtures()) {
-            mainJar().containsClass("com/foo/library/LibFooTestFixture")
+            mainJar().classes().containsExactly("com/foo/library/LibFooTestFixture")
         }
     }
 }

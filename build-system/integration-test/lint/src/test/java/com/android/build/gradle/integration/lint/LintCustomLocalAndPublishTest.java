@@ -25,6 +25,8 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
+import com.android.build.gradle.integration.common.output.ZipSubject;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.v2.ide.UnresolvedDependency;
 import com.android.builder.model.v2.models.AndroidProject;
@@ -163,13 +165,26 @@ public class LintCustomLocalAndPublishTest {
         executor().withFailOnWarning(false).run(":library-publish-only:assembleDebug");
         executor().withFailOnWarning(false).run(":library-local-only:assembleDebug");
 
-        project.getSubproject("library").testAar("debug", it -> it.contains(FN_LINT_JAR));
+        project.getSubproject("library")
+                .assertAar(
+                        AarSelector.DEBUG,
+                        it -> {
+                            it.contains(FN_LINT_JAR);
+                        });
 
         project.getSubproject("library-publish-only")
-                .testAar("debug", it -> it.contains(FN_LINT_JAR));
+                .assertAar(
+                        AarSelector.DEBUG,
+                        it -> {
+                            it.contains(FN_LINT_JAR);
+                        });
 
-        project.getSubproject("library-local-only")
-                .testAar("debug", it -> it.doesNotContain(FN_LINT_JAR));
+        ZipSubject.assertThat(
+                project.getSubproject("library-local-only")
+                        .getAarLocationForCopy(AarSelector.DEBUG),
+                zip -> {
+                    zip.entries().doesNotContain(FN_LINT_JAR);
+                });
     }
 
     /** Check custom rules are included in the model */

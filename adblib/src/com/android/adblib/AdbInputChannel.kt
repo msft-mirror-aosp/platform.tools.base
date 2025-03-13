@@ -18,7 +18,10 @@ package com.android.adblib
 import com.android.adblib.impl.TimeoutTracker
 import com.android.adblib.impl.channels.AdbChannelReaderToReceiveChannel
 import com.android.adblib.impl.channels.AdbInputChannelReader
+import com.android.adblib.impl.channels.DEFAULT_CHANNEL_BUFFER_SIZE
+import com.android.adblib.utils.AdbBufferDecoder
 import com.android.adblib.utils.AdbProtocolUtils
+import com.android.adblib.utils.ResizableBuffer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.io.EOFException
@@ -140,4 +143,23 @@ fun AdbInputChannel.readLines(
 ): ReceiveChannel<String> {
     val reader = toChannelReader(charset, newLine, bufferCapacity)
     return AdbChannelReaderToReceiveChannel(scope, reader).start()
+}
+
+/**
+ * Reads the remaining contents of this [AdbInputChannel] as a single [String]
+ */
+suspend fun AdbInputChannel.readText(bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE): String {
+    val workBuffer = ResizableBuffer()
+    val decoder = AdbBufferDecoder(bufferSize)
+    val inputChannel = this
+    return buildString {
+        while (true) {
+            workBuffer.clear()
+            val byteCount = inputChannel.read(workBuffer.forChannelRead(bufferSize))
+            if (byteCount < 0) {
+                break
+            }
+            decoder.decodeBuffer(workBuffer.afterChannelRead()) { append(it) }
+        }
+    }
 }

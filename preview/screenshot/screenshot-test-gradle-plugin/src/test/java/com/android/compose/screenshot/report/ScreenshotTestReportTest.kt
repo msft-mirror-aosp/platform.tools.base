@@ -88,15 +88,10 @@ class ScreenshotTestReportTest {
             actual.absolutePath,
             getBase64SrcFromPath(diff.absolutePath),
             diff.absolutePath
-        )
+        ).lines().joinToString(System.lineSeparator())
         val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
         assertThat(classHtml).exists()
-        run checkClassHtml@{
-            classHtml.readLines().forEachIndexed { index, line ->
-                if (line.contains("footer")) return@checkClassHtml  // Ignore the footer from the generated report
-                assertThat(line.trim()).isEqualTo(expected.lines()[index])
-            }
-        }
+        assertThat(classHtml.readText().substringBefore("<div id=\"footer\">")).isEqualTo(expected)
     }
 
     @Test
@@ -115,14 +110,13 @@ class ScreenshotTestReportTest {
 
         val classFileContentExcludingFooter = javaClass.getResourceAsStream("classError.txt")!!
             .readBytes().toString(Charsets.UTF_8)
-        val expected = String.format(classFileContentExcludingFooter, getBase64SrcFromPath(reference.absolutePath), reference.absolutePath)
+        val expected = String.format(
+            classFileContentExcludingFooter,
+            getBase64SrcFromPath(reference.absolutePath),
+            reference.absolutePath
+        ).lines().joinToString(System.lineSeparator())
         val classHtml = File(reportOutDir, "com.example.myapplication.ExampleInstrumentedTest.html")
-        run checkClassHtml@{
-            classHtml.readLines().forEachIndexed { index, line ->
-                if (line.contains("footer")) return@checkClassHtml  // Ignore the footer from the generated report
-                assertThat(line.trim()).isEqualTo(expected.lines()[index])
-            }
-        }
+        assertThat(classHtml.readText().substringBefore("<div id=\"footer\">")).isEqualTo(expected)
     }
 
     @Test
@@ -162,33 +156,33 @@ class ScreenshotTestReportTest {
               <testcase name="useAppContext1" classname="com.example.myapplication.ExampleInstrumentedTest" time="3.272">
               <success>Reference Images saved</success>
               <properties>
-              <property name="reference" value="${reference.absolutePath}"/>
-              <property name="actual" value="${actual.absolutePath}"/>
-              <property name="diff" value="Images match"/>
+              <property name="PreviewScreenshot.refImagePath" value="${reference.absolutePath}"/>
+              <property name="PreviewScreenshot.newImagePath" value="${actual.absolutePath}"/>
+              <property name="PreviewScreenshot.diffImagePath" value="Images match"/>
               </properties>
               </testcase>
               <testcase name="useAppContext2" classname="com.example.myapplication.ExampleInstrumentedTest" time="1.551">
               <failure>Images don't match</failure>
               <properties>
-              <property name="reference" value="${reference.absolutePath}"/>
-              <property name="actual" value="${actual.absolutePath}"/>
-              <property name="diff" value="${diff.absolutePath}"/>
+              <property name="PreviewScreenshot.refImagePath" value="${reference.absolutePath}"/>
+              <property name="PreviewScreenshot.newImagePath" value="${actual.absolutePath}"/>
+              <property name="PreviewScreenshot.diffImagePath" value="${diff.absolutePath}"/>
               </properties>
               </testcase>
               <testcase name="useAppContext3" classname="com.example.myapplication.ExampleInstrumentedTest" time="2.112">
               <failure>Images don't match</failure>
               <properties>
-              <property name="reference" value="${reference.absolutePath}"/>
-              <property name="actual" value="${actual.absolutePath}"/>
-              <property name="diff" value="Size Mismatch. Reference image: 5x5 Actual image: 4x5"/>
+              <property name="PreviewScreenshot.refImagePath" value="${reference.absolutePath}"/>
+              <property name="PreviewScreenshot.newImagePath" value="${actual.absolutePath}"/>
+              <property name="PreviewScreenshot.diffImagePath" value="Size Mismatch. Reference image: 5x5 Actual image: 4x5"/>
               </properties>
               </testcase>
               <testcase name="useAppContext4" classname="com.example.myapplication.ExampleInstrumentedTest" time="0.234">
               <failure>No Reference Image</failure>
               <properties>
-              <property name="reference" value="Reference image does not exist"/>
-              <property name="actual" value="${actual.absolutePath}"/>
-              <property name="diff" value="No diff"/>
+              <property name="PreviewScreenshot.refImagePath" value="Reference image does not exist"/>
+              <property name="PreviewScreenshot.newImagePath" value="${actual.absolutePath}"/>
+              <property name="PreviewScreenshot.diffImagePath" value="No diff"/>
               </properties>
               </testcase>
             </testsuite>
@@ -219,17 +213,17 @@ class ScreenshotTestReportTest {
               <testcase name="useAppContext2" classname="com.example.myapplication.ExampleInstrumentedTest" time="1.551">
               <error>Render failure: ClassNotFoundException: com.xxx.example.Class</error>
               <properties>
-              <property name="reference" value="${reference.absolutePath}"/>
-              <property name="actual" value="Render failure: ClassNotFoundException: com.xxx.example.Class"/>
-              <property name="diff" value="No diff"/>
+              <property name="PreviewScreenshot.refImagePath" value="${reference.absolutePath}"/>
+              <property name="PreviewScreenshot.newImagePath" value="Render failure: ClassNotFoundException: com.xxx.example.Class"/>
+              <property name="PreviewScreenshot.diffImagePath" value="No diff"/>
               </properties>
               </testcase>
               <testcase name="useAppContext3" classname="com.example.myapplication.ExampleInstrumentedTest" time="2.112">
               <error>Timeout</error>
               <properties>
-              <property name="reference" value="Reference image missing"/>
-              <property name="actual" value="Timeout"/>
-              <property name="diff" value="No diff"/>
+              <property name="PreviewScreenshot.refImagePath" value="Reference image missing"/>
+              <property name="PreviewScreenshot.newImagePath" value="Timeout"/>
+              <property name="PreviewScreenshot.diffImagePath" value="No diff"/>
               </properties>
               </testcase>
             </testsuite>

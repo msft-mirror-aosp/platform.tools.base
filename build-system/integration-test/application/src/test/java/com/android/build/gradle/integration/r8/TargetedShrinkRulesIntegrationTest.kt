@@ -144,21 +144,19 @@ class TargetedShrinkRulesIntegrationTest {
 
         build.executor.run(":app:assembleRelease")
         build.androidApplication().assertApk(ApkSelector.RELEASE) {
-            hasClass("Lcom/example/androidlib/ClassInAndroidLib;").that().apply {
-                hasMethods("methodToKeep")
-                doesNotHaveMethod("methodToRemove")
-            }
-            hasClass("Lcom/example/javalib/ClassInJavaLib;").that().apply {
-                hasMethods("methodToKeep")
-                doesNotHaveMethod("methodToRemove")
-            }
-            hasClass(ClassInExternalAndroidLib::class.java).that().apply {
-                hasMethods("methodToKeep")
-                doesNotHaveMethod("methodToRemove")
-            }
-            hasClass(ClassInExternalJavaLib::class.java).that().apply {
-                hasMethods("methodToKeep")
-                doesNotHaveMethod("methodToRemove")
+            classes {
+                classDefinition("com/example/androidlib/ClassInAndroidLib")
+                    .methods()
+                    .containsExactly("methodToKeep")
+                classDefinition("com/example/javalib/ClassInJavaLib")
+                    .methods()
+                    .containsExactly("methodToKeep")
+                classDefinition(ClassInExternalAndroidLib::class.java.name.replace('.','/'))
+                    .methods()
+                    .containsExactly("methodToKeep")
+                classDefinition(ClassInExternalJavaLib::class.java.name.replace('.','/'))
+                    .methods()
+                    .containsExactly("methodToKeep")
             }
         }
     }

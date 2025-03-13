@@ -334,6 +334,31 @@ public class TextFormatTest extends TestCase {
                         + "</pre>\n"
                         + "This is after.",
                 html);
+     }
+
+    public void testConvertFencedBlockFromHtml() {
+        String html =
+                ""
+                        + "This is plain text.\n"
+                        + "<pre translate=\"no\" dir=\"ltr\">\n"
+                        + "   This is preformatted   text!\n"
+                        + "\n"
+                        + "\n"
+                        + "Bye!\n"
+                        + "</pre>\n"
+                        + "This is after.";
+        String text = HTML.convertTo(html, RAW);
+        assertEquals(
+                ""
+                        + "This is plain text. \n"
+                        + "```\n"
+                        + "   This is preformatted   text!\n"
+                        + "\n"
+                        + "\n"
+                        + "Bye!\n"
+                        + "```\n"
+                        + "This is after.",
+                text.trim());
     }
 
     public void testFencedBlockText() {
@@ -360,7 +385,7 @@ public class TextFormatTest extends TestCase {
                 html);
     }
 
-    public void testFencedBlockBegeinning() {
+    public void testFencedBlockBeginning() {
         String html =
                 RAW.convertTo(
                         "" + "```\n" + "This is preformatted   text!\n" + "```\n" + "Bye.", HTML);

@@ -22,16 +22,13 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.zip.ZipEntry.DEFLATED
 import java.util.zip.ZipEntry.STORED
-import java.util.zip.ZipFile
 
 /**
  * sourceManifestvalue and expectedMergedManifestValue refer to the value of
@@ -220,37 +217,21 @@ class ExtractNativeLibsPackagingTest(
             }
         }
 
-        val apkFile = project.withApk(apkSelector) {
-            this.file
-        }
-
-        // check merged manifest
-        val mergedManifestContents = ApkSubject.getManifestContent(apkFile)
-        when (expectedMergedManifestValue) {
-            null -> {
-                assertThat(
-                    mergedManifestContents.none {
-                        it.contains("android:extractNativeLibs")
+        project.assertApk(apkSelector) {
+            // check merged manifest
+            manifest().apply {
+                when (expectedMergedManifestValue) {
+                    null -> {
+                        doesNotContain("http://schemas.android.com/apk/res/android:extractNativeLibs")
                     }
-                ).isTrue()
-            }
-            else -> {
-                assertThat(
-                    mergedManifestContents.any {
-                        // check strings separately because there are extra characters between them
-                        // in this manifest.
-                        it.contains("android:extractNativeLibs")
-                                && it.contains("=${expectedMergedManifestValue}")
+                    else -> {
+                        contains("http://schemas.android.com/apk/res/android:extractNativeLibs=$expectedMergedManifestValue")
                     }
-                ).isTrue()
+                }
             }
-        }
 
-        // check compression
-        ZipFile(apkFile.toFile()).use {
-            val nativeLibEntry = it.getEntry("lib/x86/fake.so")
-            assertThat(nativeLibEntry).isNotNull()
-            assertThat(nativeLibEntry.method).isEqualTo(expectedCompression)
+            // check compression
+            zipEntry("lib/x86/fake.so").hasCompressionMethod(expectedCompression)
         }
     }
 }

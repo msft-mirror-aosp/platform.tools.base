@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static org.jetbrains.uast.util.UastExpressionUtils.isConstructorCall;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaEvaluator;
@@ -39,7 +41,9 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiVariable;
 
+import org.jetbrains.uast.UCallExpression;
 import org.jetbrains.uast.UElement;
+import org.jetbrains.uast.UIdentifier;
 import org.jetbrains.uast.UImportStatement;
 import org.jetbrains.uast.UQualifiedReferenceExpression;
 import org.jetbrains.uast.UReferenceExpression;
@@ -53,7 +57,8 @@ import java.util.List;
 public class ExifInterfaceDetector extends Detector implements SourceCodeScanner {
 
     public static final String EXIF_INTERFACE = "ExifInterface";
-    public static final String OLD_EXIF_INTERFACE = "android.media.ExifInterface";
+    public static final String OLD_EXIF_PACKAGE = "android.media";
+    public static final String OLD_EXIF_INTERFACE = OLD_EXIF_PACKAGE + "." + EXIF_INTERFACE;
 
     private static final Implementation IMPLEMENTATION =
             new Implementation(ExifInterfaceDetector.class, Scope.JAVA_FILE_SCOPE);
@@ -129,6 +134,7 @@ public class ExifInterfaceDetector extends Detector implements SourceCodeScanner
         types.add(UQualifiedReferenceExpression.class);
         types.add(UImportStatement.class);
         types.add(UVariable.class);
+        types.add(UCallExpression.class);
         return types;
     }
 
@@ -144,6 +150,18 @@ public class ExifInterfaceDetector extends Detector implements SourceCodeScanner
 
         private MyVisitor(JavaContext context) {
             this.context = context;
+        }
+
+        @Override
+        public void visitCallExpression(@NonNull UCallExpression node) {
+            if (!isConstructorCall(node)) return;
+            UIdentifier id = node.getMethodIdentifier();
+            if (id != null && EXIF_INTERFACE.equals(id.getName())) {
+                PsiElement resolved = node.resolve();
+                if (resolved != null) {
+                    fix(context, node, resolved);
+                }
+            }
         }
 
         @Override

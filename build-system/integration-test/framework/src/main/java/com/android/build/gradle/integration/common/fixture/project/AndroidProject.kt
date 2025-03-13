@@ -21,9 +21,9 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectAndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.AabSubject
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.testutils.apk.Aab
 import com.android.testutils.apk.Apk
 import com.android.tools.build.bundletool.model.AppBundle
@@ -53,29 +53,16 @@ interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition>
  */
 interface GeneratesApk {
     /**
-     * Runs the action with a provided instance of [Apk].
-     *
-     * It is possible to return a value from the action, but it should not be [Apk] as this
-     * may not be safe. [Apk] is a [AutoCloseable] and should be treated as such.
-     */
-    fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R
-
-    /**
      * Runs the action with a provided [ApkSubject]
      */
     fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit)
 
     /**
-     * Returns whether the APK exists.
+     * Returns a path to the APK, so that the file can be copied in other location.
      *
-     * To assert validity, prefer using
-     * ```
-     * project.assertApk(ApkSelector.DEBUG) {
-     *   exists()
-     * }
-     * ```
+     * This should not be used to validate the content of the file. Instead, use [assertAar].
      */
-    fun hasApk(apkSelector: ApkSelector): Boolean
+    fun getApkLocationForCopy(apkSelector: ApkSelector): Path
 }
 
 /**
@@ -152,33 +139,30 @@ open class BaseGenerateDelegate(protected val location: Path) {
             outputsDir
         }
 
-        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(location.name))
+        val name = outputSelector.name ?: location.name
+        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(name))
     }
 }
 
 /**
  * Delegate implementation for [GeneratesApk]
  */
-class GeneratesApkDelegate(location: Path): BaseGenerateDelegate(location), GeneratesApk {
-    override fun <T> withApk(apkSelector: ApkSelector, action: Apk.() -> T): T {
-        val path = computeOutputPath(apkSelector)
-        if (!path.isRegularFile()) error("APK file does not exist: $path")
-
-        return Apk(path.toFile()).use {
-            action(it)
-        }
-    }
-
+class GeneratesApkDelegate(
+    val gradlePath: String,
+    location: Path
+): BaseGenerateDelegate(location), GeneratesApk {
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        withApk(apkSelector) {
-            ApkSubject.assertThat(this).use {
-                action(it)
-            }
+        val path = computeOutputPath(apkSelector)
+
+        val name = apkSelector.name ?: location.name
+        SimpleZip(path, "$gradlePath(${apkSelector.getFileName(name)})").use {
+            ApkSubject.assertThat(it, action)
         }
     }
 
-    override fun hasApk(apkSelector: ApkSelector): Boolean =
-        computeOutputPath(apkSelector).isRegularFile()
+    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
+        return computeOutputPath(apkSelector)
+    }
 }
 
 /**
@@ -186,15 +170,12 @@ class GeneratesApkDelegate(location: Path): BaseGenerateDelegate(location), Gene
  */
 class GeneratesApkFromParentDelegate(private val parent: GeneratesApk): GeneratesApk {
 
-    override fun <R> withApk(apkSelector: ApkSelector, action: Apk.() -> R): R =
-        parent.withApk(apkSelector, action)
-
     override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
         parent.assertApk(apkSelector, action)
     }
 
-    override fun hasApk(apkSelector: ApkSelector): Boolean {
-        return parent.hasApk(apkSelector)
+    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
+        return parent.getApkLocationForCopy(apkSelector)
     }
 }
 
@@ -210,9 +191,9 @@ class GeneratesAarDelegate(
 
     override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
         val path = computeOutputPath(aarSelector)
-        if (!path.isRegularFile()) error("AAR file does not exist: $path")
 
-        SimpleZip(path, "$gradlePath(${aarSelector.getFileName(location.name)})").use {
+        val name = aarSelector.name ?: location.name
+        SimpleZip(path, "$gradlePath(${aarSelector.getFileName(name)})").use {
             AarSubject.assertThat(it, action)
         }
     }

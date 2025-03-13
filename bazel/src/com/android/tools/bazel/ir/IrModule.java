@@ -17,6 +17,7 @@
 package com.android.tools.bazel.ir;
 
 import com.google.common.base.Preconditions;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,10 +64,16 @@ public class IrModule extends IrNode {
         }
         for (Dependency<? extends IrNode> dep : dependencies) {
             if (dep.dependency == dependency.dependency) {
-                dep.exported = dep.exported || dependency.exported;
-                dep.scope = dependency.scope.compareTo(dep.scope) < 0 ? dependency.scope
-                        : dep.scope;
-                return;
+                System.err.println(
+                        "\nERROR: \n"
+                                + "Module: "
+                                + name
+                                + "\n"
+                                + "has duplicated dependencies: "
+                                + dependency.dependency
+                                + "\n"
+                                + "For more information see go/iml_to_build");
+                System.exit(1);
             }
         }
         dependencies.add(dependency);
@@ -179,5 +186,10 @@ public class IrModule extends IrNode {
             this.exported = exported;
             this.scope = scope;
         }
+    }
+
+    @Override
+    public String toString() {
+        return name + "[module]";
     }
 }

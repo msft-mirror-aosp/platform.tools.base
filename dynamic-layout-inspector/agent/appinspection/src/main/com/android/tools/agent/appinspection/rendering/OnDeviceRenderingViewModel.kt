@@ -40,7 +40,7 @@ import kotlinx.coroutines.withContext
  * @param rootId The id of the root view containing the [OverlayView] that needs to do the drawing.
  * @param bounds The rectangle to be rendered.
  */
-data class OverlayViewInstruction(val rootId: Long, val bounds: Rect)
+data class OverlayViewInstruction(val rootId: Long, val bounds: Rect, val color: Int)
 
 /** View model handling the logic for on-device rendering */
 class OnDeviceRenderingViewModel(
@@ -187,5 +187,5 @@ class OnDeviceRenderingViewModel(
     }
 }
 
-private fun DrawInstruction.toOverlayViewInstruction() = OverlayViewInstruction(rootId, bounds.toAndroidRect())
+private fun DrawInstruction.toOverlayViewInstruction() = OverlayViewInstruction(rootId, bounds.toAndroidRect(), color)
 private fun LayoutInspectorViewProtocol.Rect.toAndroidRect() = Rect(x, y, x + w, y + h)

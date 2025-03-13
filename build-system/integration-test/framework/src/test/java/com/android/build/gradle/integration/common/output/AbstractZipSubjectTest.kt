@@ -19,9 +19,11 @@ package com.android.build.gradle.integration.common.output
 import com.android.build.gradle.integration.common.output.ZipSubject.Companion.assertThat
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.SimpleSubjectBuilder
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 import java.io.File
 
+@Suppress("UnstableApiUsage")
 class AbstractZipSubjectTest: BaseZipSubjectTest() {
 
     @Test
@@ -159,6 +161,7 @@ class AbstractZipSubjectTest: BaseZipSubjectTest() {
         }
     }
 
+    @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<ZipSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(ZipSubject.zips(), action)
     }

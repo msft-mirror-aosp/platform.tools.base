@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -33,11 +34,11 @@ class LibProguardConsumerFilesTest {
     fun checkProguardDotTxtHasBeenCorrectlyMerged() {
         project.execute("assembleDebug", "assembleRelease")
 
-        project.assertThatAar("debug") {
+        project.assertAar(AarSelector.DEBUG) {
             textFile("proguard.txt").isEqualTo("A")
         }
 
-        project.assertThatAar("release") {
+        project.assertAar(AarSelector.RELEASE) {
             textFile("proguard.txt").isEqualTo("""
                 A
 

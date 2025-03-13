@@ -17,7 +17,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Before
@@ -48,16 +47,18 @@ class LintUpToDateTest {
 
     @Test
     fun checkLintUpToDate() {
-        val firstRun = getExecutor().run(":app:lintDebug")
+        getExecutor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").didWork()
+        }
 
-        assertThat(firstRun.getTask(":app:lintReportDebug")).didWork()
-        assertThat(firstRun.getTask(":app:lintAnalyzeDebug")).didWork()
         val lintResults = project.file("app/build/reports/lint-results.txt")
         assertThat(lintResults).contains("9 errors, 4 warnings")
 
-        val secondRun = getExecutor().run(":app:lintDebug")
-        assertThat(secondRun.getTask(":app:lintReportDebug")).wasUpToDate()
-        assertThat(secondRun.getTask(":app:lintAnalyzeDebug")).wasUpToDate()
+        getExecutor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").wasUpToDate()
+            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+        }
     }
 
     private fun getExecutor(): GradleTaskExecutor = project.executor()

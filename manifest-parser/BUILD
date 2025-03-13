@@ -7,14 +7,17 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.manifest-parser.iml"],
     resources = ["src/test/resources"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//prebuilts/tools/common/m2:junit-4.12",
+    ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//prebuilts/tools/common/m2:junit-4.12[test]",
         "//tools/base/apkparser:studio.android.sdktools.binary-resources",
     ],
 )

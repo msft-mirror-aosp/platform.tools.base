@@ -21,7 +21,8 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 
 fun buildDrawInstructionsProto(
     rootId: Long,
-    bounds: List<Rect>
+    bounds: List<Rect>,
+    color: Int
 ): List<LayoutInspectorViewProtocol.DrawInstruction> {
     return bounds.map {
             val rect =
@@ -38,6 +39,7 @@ fun buildDrawInstructionsProto(
                 .apply {
                     this.rootId = rootId
                     this.bounds = rect
+                    this.color = color
                 }
                 .build()
         }

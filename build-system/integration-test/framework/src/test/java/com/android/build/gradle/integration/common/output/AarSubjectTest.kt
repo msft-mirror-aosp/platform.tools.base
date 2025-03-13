@@ -21,145 +21,151 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.output.AarSubject.Companion.assertThat
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.SimpleSubjectBuilder
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
+import kotlin.use
 
+@Suppress("UnstableApiUsage")
 class AarSubjectTest: BaseZipSubjectTest() {
 
     @Test
-    fun allJars() {
-        createAar("valid.aar") {
-            withMainJar {
-                addEmptyClasses("com/example/SomeClass", "com/example/SomeOtherClass")
-                addTextFile("/somefile.txt", "foo")
-                addBinaryFile("/somefile.data", "foo".toByteArray())
-            }
-            addSecondaryJar("foo") {
-                addEmptyClasses("com/foo/SomeClass", "com/foo/SomeOtherClass")
-                addTextFile("/foo/file.txt", "foo")
-            }
-            addSecondaryJar("bar") {
-                addEmptyClasses("com/bar/SomeClass")
-                addClassWithEmptyMethods("com/bar/SomeOtherClass", "foo()V")
-                addBinaryFile("/bar/file.data", "bar".toByteArray())
-            }
-        }.use { aar ->
-
+    fun classes() {
+        createAarWithCodeAndJavaResources().use { aar ->
             assertThat(aar) {
-                allJars {
-                    classes().containsExactly(
-                        "com/example/SomeClass",
-                        "com/example/SomeOtherClass",
-                        "com/foo/SomeClass",
-                        "com/foo/SomeOtherClass",
-                        "com/bar/SomeClass",
-                        "com/bar/SomeOtherClass"
-                    )
-                    resources().containsExactly(
-                        "somefile.txt",
-                        "somefile.data",
-                        "foo/file.txt",
-                        "bar/file.data"
-                    )
-                    classData("com/bar/SomeOtherClass") {
+                classes().containsExactly(
+                    "com/example/SomeClass",
+                    "com/example/SomeOtherClass",
+                    "com/foo/SomeClass",
+                    "com/foo/SomeOtherClass",
+                    "com/bar/SomeClass",
+                    "com/bar/SomeOtherClass"
+                )
+
+                // test that you can call the same inner zip (possibly via a different API)
+                // multiple times
+                // (must actually read some content from the zip and not rely on cache.)
+                mainJar {
+                    classes().containsExactly("com/example/SomeClass", "com/example/SomeOtherClass")
+                }
+            }
+
+            // test negative results
+            expectFailure {
+                it.that(aar).classes().hasSize(5)
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was")
+                factValue("value of").isEqualTo("aar.classes().size()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+            expectFailure {
+                it.that(aar).classes().isEmpty()
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was", "expected to be empty")
+                factValue("value of").isEqualTo("aar.classes().entries()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+            expectFailure {
+                it.that(aar).classes().containsExactly("foo/bar")
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was")
+                factValue("value of").isEqualTo("aar.classes().entries()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+        }
+
+        // check on empty aars
+        createJar("empty.aar") { }.use { emptyAar ->
+            assertThat(emptyAar) {
+                this.classes().isEmpty()
+            }
+        }
+    }
+
+    @Test
+    fun classDefinition() {
+        createAarWithCodeAndJavaResources().use { aar ->
+            assertThat(aar) {
+                classes {
+                    // make sure we can read all classes from all jars
+                    classDefinition("com/example/SomeClass") {
                         methods().containsExactly("<init>", "foo")
                     }
-                    resourceAsText("foo/file.txt").isEqualTo("foo")
-                    resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
+                    classDefinition("com/foo/SomeClass") {
+                        methods().containsExactly("<init>", "foo")
+                    }
+                    classDefinition("com/bar/SomeClass") {
+                        methods().containsExactly("<init>", "foo")
+                    }
                 }
 
                 // test that you can call the same inner zip (possibly via a different API)
                 // multiple times
                 // (must actually read some content from the zip and not rely on cache.)
                 mainJar {
-                    resourceAsText("somefile.txt").isEqualTo("foo")
+                    classes().classDefinition("com/example/SomeClass") {
+                        methods().containsExactly("<init>", "foo")
+                    }
                 }
             }
 
             // test negative results
             expectFailure {
-                it.that(aar).allJars().classes().hasSize(5)
+                it.that(aar).classes().classDefinition("com/missing/MissingClass")
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.allJars().classes().size()")
+                factValue("value of").isEqualTo("aar.classes().classes()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
-            }
-
-            expectFailure {
-                it.that(aar).allJars().classData("com/missing/MissingClass")
-            }.assert {
-                // we don't care about testing the 'expected' and 'but was' facts
-                factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.allJars().classes()")
-                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
-            }
-        }
-
-            // check on empty aars
-        createJar("empty.aar") { }.use { emptyAar ->
-
-            assertThat(emptyAar) {
-                allJars().classes().isEmpty()
-                allJars().resources().isEmpty()
             }
         }
     }
 
     @Test
-    fun allSecondaryJars() {
-        createAar("valid.aar") {
-            withMainJar {
-                addEmptyClasses("com/example/SomeClass", "com/example/SomeOtherClass")
-                addTextFile("/somefile.txt", "foo")
-                addBinaryFile("/somefile.data", "foo".toByteArray())
-            }
-            addSecondaryJar("foo") {
-                addEmptyClasses("com/foo/SomeClass", "com/foo/SomeOtherClass")
-                addTextFile("/foo/file.txt", "foo")
-            }
-            addSecondaryJar("bar") {
-                addEmptyClasses("com/bar/SomeClass")
-                addClassWithEmptyMethods("com/bar/SomeOtherClass", "foo()V")
-                addBinaryFile("/bar/file.data", "bar".toByteArray())
-            }
-        }.use { aar ->
-
+    fun secondaryJars() {
+        createAarWithCodeAndJavaResources().use { aar ->
             assertThat(aar) {
-                allSecondaryJars {
-                    classes().containsExactly(
-                        "com/foo/SomeClass",
-                        "com/foo/SomeOtherClass",
-                        "com/bar/SomeClass",
-                        "com/bar/SomeOtherClass"
-                    )
-                    resources().containsExactly(
-                        "foo/file.txt",
-                        "bar/file.data"
-                    )
-                    classData("com/bar/SomeOtherClass") {
-                        methods().containsExactly("<init>", "foo")
+                secondaryJars {
+                    classes {
+                        containsExactly(
+                            "com/foo/SomeClass",
+                            "com/foo/SomeOtherClass",
+                            "com/bar/SomeClass",
+                            "com/bar/SomeOtherClass"
+                        )
+                        classDefinition("com/bar/SomeClass") {
+                            methods().containsExactly("<init>", "foo")
+                        }
                     }
-                    resourceAsText("foo/file.txt").isEqualTo("foo")
-                    resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
+                    resources {
+                        containsExactly(
+                            "foo/file.txt",
+                            "bar/file.data"
+                        )
+                        resourceAsText("foo/file.txt").isEqualTo("foo")
+                        resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
+                    }
                 }
             }
 
             // test negative results
             expectFailure {
-                it.that(aar).allSecondaryJars().classes().hasSize(5)
+                it.that(aar).secondaryJars().classes().hasSize(5)
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.allSecondaryJars().classes().size()")
+                factValue("value of").isEqualTo("aar.secondaryJars().size()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
 
             expectFailure {
-                it.that(aar).allSecondaryJars().classData("com/missing/MissingClass")
+                it.that(aar).secondaryJars().classes().classDefinition("com/missing/MissingClass")
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.allSecondaryJars().classes()")
+                factValue("value of").isEqualTo("aar.secondaryJars().classes()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
         }
@@ -168,11 +174,12 @@ class AarSubjectTest: BaseZipSubjectTest() {
         createJar("empty.aar") { }.use { emptyAar ->
 
             assertThat(emptyAar) {
-                allSecondaryJars().classes().isEmpty()
-                allSecondaryJars().resources().isEmpty()
+                secondaryJars().classes().isEmpty()
+                secondaryJars().resources().isEmpty()
             }
         }
     }
+
     @Test
     fun mainJar() {
         testJar(
@@ -185,12 +192,95 @@ class AarSubjectTest: BaseZipSubjectTest() {
 
     @Test
     fun apiJar() {
-        testJar(
-            methodName = "apiJar",
-            jarName = "api.jar",
-            jarConfigAction = { withApiJar(it) },
-            jarSubjectProvider = { apiJar() }
-        )
+        createAar("valid.aar") {
+            withApiJar {
+                addClassWithEmptyMethods("com/example/SomeClass", "foo()V")
+                addClassWithEmptyMethods("com/example/SomeOtherClass", "bar()V")
+            }
+        }.use { aar ->
+
+            assertThat(aar) {
+                apiJar().hasSize(2)
+            }
+
+            // test negative results
+            expectFailure {
+                it.that(aar).apiJar().hasSize(5)
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was")
+                factValue("value of").isEqualTo("aar.apiJar().size()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+        }
+
+        // check querying missing jar has right error.
+        // because AarBuilder always creates a manifest and main jar, using jar builder instead
+        // to get a truly empty aar
+        createJar("empty.aar") { }.use { emptyAar ->
+            expectFailure {
+                it.that(emptyAar).apiJar()
+            }.assert {
+                // we want to check for a specific expected/but was here as we want to validate
+                // which error is thrown
+                factKeys().containsAtLeast("value of", "aar was", "expected to contain", "but was")
+                factValue("value of").isEqualTo("aar.entries()")
+                factValue("expected to contain").isEqualTo("api.jar")
+                factValue("but was").isEqualTo("[]")
+                factValue("aar was").isEqualTo("Zip(name='empty.aar', status=EXISTS)")
+            }
+
+        }
+    }
+
+    @Test
+    fun javaResources() {
+        createAarWithCodeAndJavaResources().use { aar ->
+            assertThat(aar) {
+                javaResources().apply {
+                    containsExactly(
+                        "somefile.txt",
+                        "somefile.data",
+                        "foo/file.txt",
+                        "bar/file.data"
+                    )
+                    resourceAsText("foo/file.txt").isEqualTo("foo")
+                    resourceAsBytes("bar/file.data").isEqualTo("bar".toByteArray())
+                }
+
+                // test that you can call the same inner zip (possibly via a different API)
+                // multiple times
+                // (must actually read some content from the zip and not rely on cache.)
+                mainJar {
+                    resources().resourceAsText("somefile.txt").isEqualTo("foo")
+                }
+            }
+
+            // test negative results
+            expectFailure {
+                it.that(aar).javaResources().hasSize(5)
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was")
+                factValue("value of").isEqualTo("aar.javaResources().size()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+            expectFailure {
+                it.that(aar).javaResources().isEmpty()
+            }.assert {
+                // we don't care about testing the 'expected' and 'but was' facts
+                factKeys().containsAtLeast("value of", "aar was", "expected to be empty")
+                factValue("value of").isEqualTo("aar.javaResources().entries()")
+                factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
+            }
+        }
+
+        // check on empty aars
+        createJar("empty.aar") { }.use { emptyAar ->
+            assertThat(emptyAar) {
+                javaResources().isEmpty()
+            }
+        }
     }
 
     @Test
@@ -240,45 +330,45 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }.use { aar ->
 
             assertThat(aar) {
-                androidResources().entries().containsExactly("values/values.xml")
+                androidResources().containsExactly("values/values.xml")
             }
 
             // test negative results
             expectFailure {
-                it.that(aar).androidResources().entries().hasSize(5)
+                it.that(aar).androidResources().hasSize(5)
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.androidResources().entries().size()")
+                factValue("value of").isEqualTo("aar.androidResources().size()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
         }
     }
 
     @Test
-    fun androidResource_textFile() {
+    fun androidResource_resourceAsText() {
         createAar("valid.aar") {
             withManifest("foo")
             addResource("values/values.xml", "foo")
             addResource("drawable/foo.png", FAKE_CLASS)
         }.use { aar ->
             assertThat(aar) {
-                androidResources().textFile("values/values.xml").isEqualTo("foo")
+                androidResources().resourceAsText("values/values.xml").isEqualTo("foo")
             }
 
             // test negative results.
             expectFailure {
-                it.that(aar).androidResources().textFile("values/values.xml").contains("bar")
+                it.that(aar).androidResources().resourceAsText("values/values.xml").contains("bar")
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.androidResources().textFile(values/values.xml)")
+                factValue("value of").isEqualTo("aar.androidResources().resourceAsText(values/values.xml)")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
 
             // check querying missing file has right error.
             expectFailure {
-                it.that(aar).androidResources().textFile("values/missing.xml")
+                it.that(aar).androidResources().resourceAsText("values/missing.xml")
             }.assert {
                 // we want to check for a specific expected/but was here as we want to validate
                 // which error is thrown
@@ -294,7 +384,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
     }
 
     @Test
-    fun androidResource_binaryFile() {
+    fun androidResource_resourceAsBytes() {
         createAar("valid.aar") {
             withManifest("foo")
             addResource("values/values.xml", "foo")
@@ -302,22 +392,22 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }.use { aar ->
 
             assertThat(aar) {
-                androidResources().binaryFile("drawable/foo.png").isEqualTo(FAKE_CLASS)
+                androidResources().resourceAsBytes("drawable/foo.png").isEqualTo(FAKE_CLASS)
             }
 
             // test negative results.
             expectFailure {
-                it.that(aar).androidResources().binaryFile("drawable/foo.png").isEmpty()
+                it.that(aar).androidResources().resourceAsBytes("drawable/foo.png").isEmpty()
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.androidResources().binaryFile(drawable/foo.png)")
+                factValue("value of").isEqualTo("aar.androidResources().resourceAsBytes(drawable/foo.png)")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
 
             // check querying missing file has right error.
             expectFailure {
-                it.that(aar).androidResources().binaryFile("drawable/missing.png")
+                it.that(aar).androidResources().resourceAsBytes("drawable/missing.png")
             }.assert {
                 // we want to check for a specific expected/but was here as we want to validate
                 // which error is thrown
@@ -341,16 +431,16 @@ class AarSubjectTest: BaseZipSubjectTest() {
         }.use { aar ->
 
             assertThat(aar) {
-                assets().entries().containsExactly("foo.txt", "bar.txt", "bar.data")
+                assets().containsExactly("foo.txt", "bar.txt", "bar.data")
             }
 
             // test negative results
             expectFailure {
-                it.that(aar).assets().entries().hasSize(5)
+                it.that(aar).assets().hasSize(5)
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.assets().entries().size()")
+                factValue("value of").isEqualTo("aar.assets().size()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
         }
@@ -496,7 +586,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "aar was")
-                factValue("value of").isEqualTo("aar.$methodName().classes().size()")
+                factValue("value of").isEqualTo("aar.$methodName().size()")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
         }
@@ -512,13 +602,35 @@ class AarSubjectTest: BaseZipSubjectTest() {
                 // which error is thrown
                 factKeys().containsAtLeast("value of", "aar was", "expected to contain", "but was")
                 factValue("value of").isEqualTo("aar.entries()")
-                factValue("expected to contain").isEqualTo("$jarName")
+                factValue("expected to contain").isEqualTo(jarName)
                 factValue("but was").isEqualTo("[]")
                 factValue("aar was").isEqualTo("Zip(name='empty.aar', status=EXISTS)")
             }
         }
     }
 
+    private fun createAarWithCodeAndJavaResources(): SimpleZip {
+        return createAar("valid.aar") {
+            withMainJar {
+                addClassWithEmptyMethods("com/example/SomeClass", "foo()V")
+                addEmptyClasses("com/example/SomeOtherClass")
+                addTextFile("/somefile.txt", "foo")
+                addBinaryFile("/somefile.data", "foo".toByteArray())
+            }
+            addSecondaryJar("foo") {
+                addClassWithEmptyMethods("com/foo/SomeClass", "foo()V")
+                addEmptyClasses("com/foo/SomeOtherClass")
+                addTextFile("/foo/file.txt", "foo")
+            }
+            addSecondaryJar("bar") {
+                addClassWithEmptyMethods("com/bar/SomeClass", "foo()V")
+                addEmptyClasses("com/bar/SomeOtherClass")
+                addBinaryFile("/bar/file.data", "bar".toByteArray())
+            }
+        }
+    }
+
+    @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<AarSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(AarSubject.aars(), action)
     }

@@ -6,6 +6,13 @@ iml_module(
     srcs = ["src/main"],
     iml_files = ["dynamic-layout-inspector.common.iml"],
     jvm_target = "8",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//prebuilts/tools/common/m2:junit-4.12",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = ["src/test"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -13,11 +20,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:studio-proto",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//prebuilts/tools/common/m2:junit-4.12[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/adt/idea/.idea/libraries:layoutinspector-view-proto",
         "//tools/adt/idea/.idea/libraries:layoutinspector-skia-proto",
     ],

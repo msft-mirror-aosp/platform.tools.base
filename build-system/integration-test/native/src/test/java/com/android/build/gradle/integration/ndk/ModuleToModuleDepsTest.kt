@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.model.deleteExistingStructuredLogs
 import com.android.build.gradle.integration.common.fixture.model.readStructuredLogs
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.internal.cxx.configure.decodeConfigureInvalidationState
 import com.android.build.gradle.internal.cxx.configure.shouldConfigure
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage
@@ -187,8 +186,9 @@ class ModuleToModuleDepsTest(
         val buildTask = ":app:build${appBuildSystem.build}Debug[arm64-v8a]"
 
         executor.run(buildTask)
-        executor.run(buildTask)
-        assertThat(getTestProject().buildResult.getTask(":lib:prefabDebugPackage")).wasUpToDate()
+        executor.run(buildTask).apply {
+            assertTask(":lib:prefabDebugPackage").wasUpToDate()
+        }
 
         val cppSrc = getTestProject().getSubproject(":lib").buildFile.resolveSibling("src/main/cpp/foo.cpp")
         cppSrc.writeText("int foo() { return 6; }")

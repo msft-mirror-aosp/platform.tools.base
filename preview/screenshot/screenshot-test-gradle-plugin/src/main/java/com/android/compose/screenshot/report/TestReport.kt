@@ -110,9 +110,9 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
                 for (j in 0 until imagePropertyList.length) {
                     val image = imagePropertyList.item(j) as Element
                     val xPath = XPathFactory.newInstance().newXPath()
-                    val ref = xPath.evaluate("property[@name='reference']/@value", image)
-                    val actual = xPath.evaluate("property[@name='actual']/@value", image)
-                    val diff = xPath.evaluate("property[@name='diff']/@value", image)
+                    val ref = xPath.evaluate("property[@name='PreviewScreenshot.refImagePath']/@value", image)
+                    val actual = xPath.evaluate("property[@name='PreviewScreenshot.newImagePath']/@value", image)
+                    val diff = xPath.evaluate("property[@name='PreviewScreenshot.diffImagePath']/@value", image)
                     referenceImagePathOrMessage = if (isImage(ref)) {
                         ImagePathOrMessage.ImagePath(ref)
                     } else {
@@ -163,11 +163,6 @@ class TestReport(private val resultDir: File, private val reportDir: File) {
                 val testName = testCase.getAttribute("name")
                 model.addTest(className, testName, 0, projectName!!, flavorName!!, null)
                     .ignored(projectName, flavorName)
-            }
-            val suiteClassName = document.documentElement.getAttribute("name")
-            if (suiteClassName.isNotBlank()) {
-                model.addTestClass(suiteClassName)
-                // TODO handle tool failures
             }
         } catch (e: Exception) {
             throw GradleException(String.format("Could not load test results from '%s'.", file), e)

@@ -16,34 +16,21 @@
 
 package com.android.build.gradle.integration.testing.screenshot
 
-import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
-import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.forEachLine
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
+import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan.ExecutionType
-import org.gradle.api.Project
-import org.gradle.api.tasks.testing.TestDescriptor
-import org.gradle.api.tasks.testing.TestListener
-import org.gradle.api.tasks.testing.TestResult
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import java.util.UUID
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
@@ -213,61 +200,25 @@ class WearTileScreenshotTest {
             .with(BooleanOption.USE_ANDROID_X, true)
             .withLoggingLevel(LoggingLevel.LIFECYCLE)
 
-    @Test
-    fun discoverPreviews() {
+    private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
         val build = rule.build
-        val appProject = build.androidApplication()
+        val variantName = if (flavor.isEmpty()) {
+            buildType
+        } else {
+            flavor + buildType.usLocaleCapitalize()
+        }
+        val result = build.sstExecutor().expectFailure().run(
+            ":$projectName:validate${variantName.usLocaleCapitalize()}ScreenshotTest")
 
-        build.sstExecutor().run(":app:debugPreviewDiscovery")
-        val previewsDiscoveredFile  = appProject.buildDir.resolve("intermediates/preview/debug/previews_discovered.json")
-        assertThat(previewsDiscoveredFile).exists()
-        assertThat(previewsDiscoveredFile.readText()).isEqualTo("""
-            {
-              "screenshots": [
-                {
-                  "methodFQN": "pkg.name.ExampleTest.multiplePreviewsTest",
-                  "previewParams": {
-                    "device": "id:wearos_large_round",
-                    "name": "large"
-                  },
-                  "previewId": "pkg.name.ExampleTest.multiplePreviewsTest_large_f3ef1d95",
-                  "previewType": "WEAR_TILE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.multiplePreviewsTest",
-                  "previewParams": {
-                    "device": "id:wearos_small_round",
-                    "name": "small"
-                  },
-                  "previewId": "pkg.name.ExampleTest.multiplePreviewsTest_small_dfcc4c35",
-                  "previewType": "WEAR_TILE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.simpleTilePreview2",
-                  "previewParams": {
-                    "device": "id:wearos_large_round",
-                    "name": "simple tile 2"
-                  },
-                  "previewId": "pkg.name.ExampleTest.simpleTilePreview2_simple tile 2_7c408cfe",
-                  "previewType": "WEAR_TILE"
-                },
-                {
-                  "methodFQN": "pkg.name.ExampleTest.simpleTilePreview",
-                  "previewParams": {
-                    "name": "simple tile"
-                  },
-                  "previewId": "pkg.name.ExampleTest.simpleTilePreview_simple tile_7cfb9daa",
-                  "previewType": "WEAR_TILE"
-                },
-                {
-                  "methodFQN": "pkg.name.TopLevelPreviewTestKt.simpleTilePreview3",
-                  "previewParams": {},
-                  "previewId": "pkg.name.TopLevelPreviewTestKt.simpleTilePreview3",
-                  "previewType": "WEAR_TILE"
-                }
-              ]
-            }
-        """.trimIndent())
+        val previewDir = build.directory.resolve(
+            "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
+        val refDir = build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference").toFile()
+
+        assertTrue(
+            "Failed to update reference images",
+            previewDir.copyRecursively(refDir, overwrite = true))
+
+        return result
     }
 
     @Test
@@ -276,7 +227,7 @@ class WearTileScreenshotTest {
         val appProject = build.androidApplication()
 
         // Generate screenshots to be tested against
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
+        updateReferenceImage()
 
         val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
         val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
@@ -301,7 +252,8 @@ class WearTileScreenshotTest {
         assertThat(indexHtmlReport).exists()
         assertThat(classHtmlReport).exists()
         val expectedOutput = listOf(
-            """<h3 class="success">multiplePreviewsTest</h3>""",
+            """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+            """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
             """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
             """<h3 class="success">simpleTilePreview_simple tile</h3>""",
         )
@@ -316,19 +268,6 @@ class WearTileScreenshotTest {
         assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
         assert(topLevelTestDiffDir.listDirectoryEntries().isEmpty())
 
-        // Verify test result protos
-        val pbFile = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/results/test-result.pb")
-        assertThat(pbFile).exists()
-        var testSuiteResult = pbFile.toFile().inputStream().use { input ->
-            TestSuiteResult.parseFrom(input)
-        }
-        assertThat(testSuiteResult.testResultCount).isEqualTo(5)
-        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.PASSED)
-        var simpleTileTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleTilePreview_simple tile"}
-        // Verify two test artifacts - actual and reference images
-        assertThat(simpleTileTestMethodResult.outputArtifactCount).isEqualTo(2)
-        assertThat(simpleTileTestMethodResult.detailsList.single { it.key == "percentDifference" }.value).isEqualTo("0.00%")
-
         // Update previews to be different from the references
         appProject.files.apply {
             update("src/main/java/com/Example.kt")
@@ -342,7 +281,8 @@ class WearTileScreenshotTest {
         assertThat(classHtmlReport).exists()
         val expectedOutputAfterChangingPreviews = listOf(
             "Failed tests",
-            """<h3 class="failures">multiplePreviewsTest</h3>""",
+            """<h3 class="failures">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+            """<h3 class="failures">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
             """<h3 class="failures">simpleTilePreview2_simple tile 2</h3>""",
             """<h3 class="failures">simpleTilePreview_simple tile</h3>""",
         )
@@ -360,14 +300,6 @@ class WearTileScreenshotTest {
         assertThat(topLevelTestDiffDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleTilePreview3_0.png"
         )
-
-        testSuiteResult = pbFile.toFile().inputStream().use { input ->
-            TestSuiteResult.parseFrom(input)
-        }
-        assertThat(testSuiteResult.testStatus).isEqualTo(TestStatus.FAILED)
-        simpleTileTestMethodResult = testSuiteResult.testResultList.single {it.testCase.testMethod == "simpleTilePreview_simple tile"}
-        // Verify three test artifacts - actual, diff, and reference images
-        assertThat(simpleTileTestMethodResult.outputArtifactCount).isEqualTo(3)
     }
 
     @Test
@@ -388,8 +320,6 @@ class WearTileScreenshotTest {
             }
         }
 
-        build.sstExecutor().run(":app:updateDebugScreenshotTest")
-
         // Verify that exception is thrown when tiles-tooling dep is missing
         build.androidApplication().reconfigure {
             dependencies {
@@ -397,7 +327,7 @@ class WearTileScreenshotTest {
             }
         }
 
-        val result = build.sstExecutor().expectFailure().run(":app:updateDebugScreenshotTest")
+        val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
         result.assertErrorContains("Missing required runtime dependency. Please add androidx.wear.tiles:tiles-tooling as a screenshotTestImplementation dependency.")
     }
 

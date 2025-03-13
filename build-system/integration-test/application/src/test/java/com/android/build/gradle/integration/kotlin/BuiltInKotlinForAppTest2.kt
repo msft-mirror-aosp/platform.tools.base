@@ -75,8 +75,15 @@ class BuiltInKotlinForAppTest2 {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            hasClass("Lcom/foo/application/AppFooKt;")
-            hasClass("Lcom/foo/library/LibFoo;")
+            classes().containsExactly(
+                "com/foo/application/AppFooKt",
+                "com/foo/library/LibFoo",
+                "pkg/name/app/R",
+                "pkg/name/lib/R",
+                "kotlin/",
+                "org/intellij/",
+                "org/jetbrains/"
+            )
         }
     }
 

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies.lib
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
@@ -61,8 +62,11 @@ class LibWithPackageLocalJarTest : ModelComparator() {
     @Test
     fun `check provided local jar is packaged`() {
         project.execute("clean", "assembleDebug")
-        project.testAar(GradleTestProject.ApkType.DEBUG.buildType) { aar ->
-            aar.allSecondaryJars().containsClass("com/example/android/multiproject/person/People")
+        project.assertAar(AarSelector.DEBUG) {
+            secondaryJars().classes().containsExactly(
+                "com/example/android/multiproject/person/People",
+                "com/example/android/multiproject/person/Person"
+            )
         }
     }
 }

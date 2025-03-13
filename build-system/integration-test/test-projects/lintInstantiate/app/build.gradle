@@ -37,8 +37,8 @@ android {
         check "Instantiatable", "MissingRegistered"
         checkDependencies = true
         ignoreTestSources = true
-        abortOnError true
-        sarifOutput file("$buildDir/reports/lint-results.sarif")
+        abortOnError = true
+        sarifOutput = file("$buildDir/reports/lint-results.sarif")
     }
 
     kotlinOptions {

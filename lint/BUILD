@@ -369,6 +369,13 @@ iml_module(
 iml_module(
     name = "studio.android.sdktools.lint.studio-checks.tests",
     iml_files = ["studio-checks/android.sdktools.lint.studio-checks.tests.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/lint/libs/lint-tests:studio.android.sdktools.lint.testinfrastructure",
+        "//tools/base/lint:studio.android.sdktools.lint.studio-checks",
+        "@intellij//:intellij-sdk",
+    ],
     test_srcs = ["studio-checks/src/test/java"],
     # The canonical test target for this is :studio-checks-tests (//tools/base/lint:studio-checks-tests)
     # as that runs with the correct dependencies. This iml_module is only defined for development.
@@ -379,10 +386,6 @@ iml_module(
         "//tools/base/lint/cli:studio.android.sdktools.lint.cli",
         "//tools/base/lint:studio.android.sdktools.lint-api",
         "//tools/base/lint:studio.android.sdktools.lint-checks",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/lint/libs/lint-tests:studio.android.sdktools.lint.testinfrastructure[test]",
-        "//tools/base/lint:studio.android.sdktools.lint.studio-checks[test]",
-        "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
     ],
 )
@@ -416,21 +419,21 @@ iml_module(
         "//prebuilts/studio/sdk:platforms/latest",
         "//tools/adt/idea/android/annotations",
     ],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/lint/cli:studio.android.sdktools.lint.cli",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/lint:studio.android.sdktools.lint.gradle",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/base/lint/libs/lint-tests:studio.android.sdktools.lint.testinfrastructure",
+        "//tools/base/common:studio.android.sdktools.common",
+        "@intellij//:intellij-sdk",
+        "@intellij//:com.intellij.java",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = ["libs/lint-gradle/src/test/java"],
     visibility = ["//visibility:public"],
-    # do not sort: must match IML order
-    deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/lint/cli:studio.android.sdktools.lint.cli[test]",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[test]",
-        "//tools/base/lint:studio.android.sdktools.lint.gradle[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/base/lint/libs/lint-tests:studio.android.sdktools.lint.testinfrastructure[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
-        "@intellij//:intellij-sdk[test]",
-        "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-    ],
 )
 
 # managed by go/iml_to_build

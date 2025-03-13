@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.integration.testing.unit;
 
-import static com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
@@ -34,8 +35,17 @@ import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
 import com.android.tools.build.apkzlib.utils.IOExceptionFunction;
 import com.android.utils.SdkUtils;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -48,12 +58,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 /** Checks that the test_config.properties object is generated correctly. */
 @RunWith(Parameterized.class)
@@ -132,7 +136,7 @@ public class UnitTestingAndroidResourcesTest {
         Files.write(project.file("src/main/assets/foo.txt").toPath(), "CHANGE".getBytes());
         GradleBuildResult result = runGradleTasks.run("testDebugUnitTest");
 
-        assertThat(result.getTask(":testDebugUnitTest")).didWork();
+        result.assertTask(":testDebugUnitTest").didWork();
 
         // Sanity check: make sure we're actually executing Robolectric code.
         File xmlResults =

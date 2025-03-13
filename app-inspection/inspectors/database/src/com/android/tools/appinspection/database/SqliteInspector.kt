@@ -38,6 +38,8 @@ import androidx.inspection.ArtTooling.ExitHook
 import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockResponse
 import androidx.sqlite.inspection.SqliteInspectorProtocol.CellValue
@@ -74,7 +76,11 @@ import androidx.sqlite.inspection.SqliteInspectorProtocol.Row
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Table
 import androidx.sqlite.inspection.SqliteInspectorProtocol.TrackDatabasesCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.TrackDatabasesResponse
+import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.OnExitCallback
 import com.android.tools.appinspection.database.SqliteInspectionExecutors.submit
+import com.android.tools.appinspection.database.androidx.AndroidXDatabase
+import com.android.tools.appinspection.database.androidx.SQLiteConnectionWrapper
+import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
 import java.io.File
 import java.io.PrintWriter
@@ -118,6 +124,9 @@ private const val ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE = "onAllReferencesRel
 // SQLiteStatement methods
 private val SQLITE_STATEMENT_EXECUTE_METHODS_SIGNATURES: List<String> =
   mutableListOf("execute()V", "executeInsert()J", "executeUpdateDelete()I")
+
+private const val ANDROIDX_DRIVER_OPEN_SIG =
+  "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
 
 private val INVALIDATION_MIN_INTERVAL = 1.seconds
 
@@ -250,17 +259,13 @@ internal class SqliteInspector(
         .toByteArray()
     )
 
-    registerReleaseReferenceHooks()
-    registerDatabaseOpenedHooks()
-
     val hookRegistry = EntryExitMatchingHookRegistry(environment)
-
-    registerInvalidationHooks(hookRegistry)
-    registerDatabaseClosedHooks(hookRegistry)
+    registerFrameworkHooks(hookRegistry)
+    registerAndroidXHooks(hookRegistry)
 
     // Check for database instances in memory
     for (instance in environment.artTooling().findInstances(SQLiteDatabase::class.java)) {
-      val database = AndroidDatabase(instance)
+      val database = FrameworkDatabase(instance)
       /* the race condition here will be handled by mDatabaseRegistry */
       if (instance.isOpen) {
         onDatabaseOpened(database)
@@ -280,6 +285,30 @@ internal class SqliteInspector(
         }
       }
     }
+  }
+
+  private fun registerFrameworkHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    registerFrameworkOpenHooks()
+    registerFrameworkCloseHooks(hookRegistry)
+    registerFrameworkReleaseReferenceHooks()
+    registerFrameworkInvalidationHooks(hookRegistry)
+  }
+
+  /**
+   * With the AndroidX API's we only hook [BundledSQLiteDriver.open](String, Int).
+   *
+   * The rest is accomplished with [SQLiteConnectionWrapper] &
+   * [com.android.tools.appinspection.database.androidx.SQLiteStatementWrapper]. This is not only
+   * easier but using hooks is not actually possible because the AndroidX classes lack the
+   * information required for the hooks to work.
+   *
+   * For example, the [SQLiteConnection.close] hook needs access to the database file path which is
+   * not available in the hook context as it not provided by the [SQLiteConnection] object.
+   *
+   * TODO(b/399911644): Investigate using Wrappers instead of Hooks for Framework as well.
+   */
+  private fun registerAndroidXHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    registerAndroidXOpenHooks(hookRegistry)
   }
 
   /**
@@ -366,21 +395,7 @@ internal class SqliteInspector(
     )
   }
 
-  /**
-   * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
-   */
-  private fun registerDatabaseClosedHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook<SQLiteDatabase, Unit>(ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) {
-      thisObject,
-      _,
-      _ ->
-      if (thisObject is SQLiteDatabase) {
-        onDatabaseClosed(AndroidDatabase(thisObject))
-      }
-    }
-  }
-
-  private fun registerDatabaseOpenedHooks() {
+  private fun registerFrameworkOpenHooks() {
     val entryHook = EntryHook { _, args ->
       // args[0] is either a `String` or a `File`. Either way, `toString()` works
       databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
@@ -389,7 +404,7 @@ internal class SqliteInspector(
     val exitHook =
       ExitHook<SQLiteDatabase> { database ->
         try {
-          onDatabaseOpened(AndroidDatabase(database))
+          onDatabaseOpened(FrameworkDatabase(database))
         } catch (exception: Throwable) {
           connection.sendEvent(
             createErrorOccurredEvent(
@@ -417,17 +432,70 @@ internal class SqliteInspector(
     }
   }
 
-  private fun registerReleaseReferenceHooks() {
-    environment.artTooling().registerEntryHook(SQLiteClosable::class.java, "releaseReference()V") {
+  private fun registerAndroidXOpenHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    val entryHook = EntryHook { _, args ->
+      databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
+    }
+    val onExitCallback =
+      OnExitCallback<BundledSQLiteDriver, SQLiteConnection> { _, args, result ->
+        val sqliteConnection = result ?: return@OnExitCallback null
+        val path = args[0] as String
+        val flags = args[1] as Int
+
+        val onClose: (SQLiteConnectionWrapper) -> Unit = {
+          val database = AndroidXDatabase(it, path, flags)
+          when (it.isOpen()) {
+            true -> databaseRegistry.notifyReleaseReference(database)
+            false -> databaseRegistry.notifyAllDatabaseReferencesReleased(database)
+          }
+        }
+        val invalidate = { throttler.submitRequest() }
+        val wrapper = SQLiteConnectionWrapper(sqliteConnection, onClose, invalidate)
+        try {
+          onDatabaseOpened(AndroidXDatabase(wrapper, path, flags))
+        } catch (exception: Throwable) {
+          connection.sendEvent(
+            createErrorOccurredEvent(
+                "Unhandled Exception while processing an onDatabaseAdded " +
+                  "event: " +
+                  exception.message,
+                stackTraceFromException(exception),
+                null,
+                ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
+              )
+              .toByteArray()
+          )
+        }
+        wrapper
+      }
+    hookRegistry.registerHook(ANDROIDX_DRIVER_OPEN_SIG, entryHook, onExitCallback)
+  }
+
+  /**
+   * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
+   */
+  private fun registerFrameworkCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    hookRegistry.registerHook<SQLiteDatabase, Unit>(ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) {
       thisObject,
+      _,
       _ ->
       if (thisObject is SQLiteDatabase) {
-        databaseRegistry.notifyReleaseReference(AndroidDatabase(thisObject))
+        onDatabaseClosed(FrameworkDatabase(thisObject))
       }
     }
   }
 
-  private fun registerInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+  private fun registerFrameworkReleaseReferenceHooks() {
+    environment.artTooling().registerEntryHook(SQLiteClosable::class.java, "releaseReference()V") {
+      thisObject,
+      _ ->
+      if (thisObject is SQLiteDatabase) {
+        databaseRegistry.notifyReleaseReference(FrameworkDatabase(thisObject))
+      }
+    }
+  }
+
+  private fun registerFrameworkInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry) {
     registerInvalidationHooksSqliteStatement()
     registerInvalidationHooksTransaction()
     registerInvalidationHooksSQLiteCursor(hookRegistry)
@@ -962,8 +1030,12 @@ internal class SqliteInspector(
     }
 
     private fun isHelperSqliteFile(file: File): Boolean {
+      // TODO(b/399901633): Check file contents. See https://www.sqlite.org/fileformat.html
       val path = file.path
-      return path.endsWith("-journal") || path.endsWith("-shm") || path.endsWith("-wal")
+      return path.endsWith("-journal") ||
+        path.endsWith("-shm") ||
+        path.endsWith("-wal") ||
+        path.endsWith(".lck")
     }
   }
 }

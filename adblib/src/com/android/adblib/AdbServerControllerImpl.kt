@@ -16,7 +16,6 @@
 package com.android.adblib
 
 import com.android.adblib.impl.TimeoutTracker
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -28,14 +27,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 internal class AdbServerControllerImpl(
-  private val host: AdbSessionHost,
-  configurationFlow: StateFlow<AdbServerConfiguration>
+    private val host: AdbSessionHost,
+    configurationFlow: StateFlow<AdbServerConfiguration>
 ) : AdbServerController {
 
     private val logger = adbLogger(host)
@@ -43,13 +44,17 @@ internal class AdbServerControllerImpl(
     /**
      * Lock for accessing and updating [currentState]
      */
-    private val stateLock = Any()
+    private val stateLock = Mutex()
 
     /**
      * The current [State] of this instance. The [start], [stop] and [restart] methods can change
      * the [currentState] at any time.
      */
     private var currentState = State.initial(host, configurationFlow)
+
+    private var currentJob: Deferred<Unit>? = null
+
+    private var currentJobIsCompletedAndHadNotThrownException = false
 
     private var lastKnownRemoteAddressStateFlow = MutableStateFlow<InetSocketAddress?>(null)
 
@@ -82,22 +87,49 @@ internal class AdbServerControllerImpl(
         get() = lastKnownRemoteAddressStateFlow.value
 
     override fun close() {
-        synchronized(stateLock) {
-            currentState.close()
-        }
+        currentState.scope.cancel("${this::class.simpleName} has been closed")
     }
 
     private suspend inline fun transitionCurrentState(transition: State.() -> State) {
-        synchronized(stateLock) {
+        val newTransitionJob = stateLock.withLock {
             // Throw if [closed] was called
             currentState.scope.ensureActive()
 
-            // Apply transition and record new state
-            currentState = currentState.transition()
-            currentState
-        }.also {
-            // Wait for transition to complete (suspending)
-            it.await()
+            val newState = currentState.transition()
+            // `currentJobIsCompletedAndHadNotThrownException` is false if currentJob is not yet
+            // completed, or if it is completed but is completed with an error (e.g. you are in a
+            // StartingState which was completed with an error, and so we redo the start operation)
+            if (currentState == newState && currentJobIsCompletedAndHadNotThrownException) {
+                // Join the existing job if transitioning to the same state
+                currentJob?.join()
+                return
+            }
+
+            currentJob?.cancelAndJoin()
+
+            val newTransitionJob = currentState.scope.async {
+                when (newState) {
+                    is InitialState -> Unit // should not happen
+                    is StartingState -> newState.performStart()
+                    is StoppingState -> newState.performStop()
+                    is RestartingState -> newState.performRestart()
+                }
+            }.also {
+                currentJobIsCompletedAndHadNotThrownException = false
+            }
+
+            newTransitionJob.invokeOnCompletion { e ->
+                currentJobIsCompletedAndHadNotThrownException = e == null
+            }
+
+            currentState = newState
+            currentJob = newTransitionJob
+            newTransitionJob
+        }
+
+        try {
+            newTransitionJob.await()
+        } finally {
             lastKnownRemoteAddressStateFlow.update { null }
         }
     }
@@ -173,7 +205,6 @@ internal class AdbServerControllerImpl(
             val isStartedFlow: MutableStateFlow<Boolean>,
             val lastUsedConfig: MutableStateFlow<AdbServerConfiguration?>,
         )
-
 
         private val logger = adbLogger(params.host)
 
@@ -266,15 +297,7 @@ internal class AdbServerControllerImpl(
          */
         abstract fun restart(): State
 
-        /**
-         * Waits for the current transition (i.e. [start], [stop] or [restart]) of this
-         * state to complete
-         */
-        abstract suspend fun await()
-
         companion object {
-
-            fun completedJob(): Deferred<Unit> = CompletableDeferred(Unit)
 
             /**
              * Returns the initial [State], corresponding to no calls made to [start], [stop] or
@@ -304,7 +327,7 @@ internal class AdbServerControllerImpl(
     private class InitialState(params: StateParams) : State(params) {
 
         override fun start(): State {
-            return StartingState(params, previousJob = completedJob())
+            return StartingState(params)
         }
 
         override fun stop(): State {
@@ -316,10 +339,6 @@ internal class AdbServerControllerImpl(
             // We are stopped => no-op
             return this
         }
-
-        override suspend fun await() {
-            // We are stopped => no-op
-        }
     }
 
     /**
@@ -327,16 +346,29 @@ internal class AdbServerControllerImpl(
      * Note that we don't have an explicit `StartedState`, as this can be represented
      * by this [StartingState] with a completed job.
      */
-    private class StartingState(params: StateParams, previousJob: Deferred<Unit>) : State(params) {
-        // Job completed with exception (including a cancellation exception)
-        @Volatile
-        private var jobCompletedWithException = false
+    private class StartingState(params: StateParams) : State(params) {
 
-        private val startJob: Deferred<Unit> = scope.async {
-            // Cancel and wait for previously running job
-            previousJob.cancelAndJoin()
+        override fun start(): State {
+            return this
+        }
 
-            // Start ADB server after waiting for valid configuration
+        override fun stop(): State {
+            // We are starting (or started) => stop the server
+            return StoppingState(params)
+        }
+
+        override fun restart(): State {
+            return if (params.isStartedFlow.value) {
+                // We are started => restart the server
+                RestartingState(params)
+            } else {
+                // We are not fully started => no-op
+                this
+            }
+        }
+
+        suspend fun performStart() {
+
             val config = waitForServerConfigurationAvailable()
             val path = config.adbPath
             val port = config.serverPort
@@ -353,55 +385,30 @@ internal class AdbServerControllerImpl(
             }
             params.lastUsedConfig.update { config }
             params.isStartedFlow.update { true }
-        }.also {
-            it.invokeOnCompletion { e ->
-                jobCompletedWithException = e != null
-            }
-        }
-
-        override fun start(): State {
-            // NOTE: We could use `startJob.isCompleted && startJob.getCompletionExceptionOrNull() != null`
-            //  if the API was not experimental.
-            return if (jobCompletedWithException) {
-                // Previous start attempt failed => try again
-                StartingState(params, startJob)
-            } else {
-                // We are already starting (or started) => no-op
-                this
-            }
-        }
-
-        override fun stop(): State {
-            // We are starting (or started) => cancel job and stop the server
-            return StoppingState(params, startJob)
-        }
-
-        override fun restart(): State {
-            return if (startJob.isCompleted) {
-                // We are started => cancel job and restart the server
-                RestartingState(params, startJob)
-            } else {
-                // We are not fully started => no-op
-                this
-            }
-        }
-
-        override suspend fun await() {
-            startJob.await()
         }
     }
 
     /**
      * The "stopping" state, i.e. [State.stop] has been called.
      */
-    private class StoppingState(params: StateParams, previousJob: Deferred<Unit>) : State(params) {
-        // Job completed with exception (including a cancellation exception)
-        @Volatile
-        private var jobCompletedWithException = false
+    private class StoppingState(params: StateParams) : State(params) {
 
-        private val stopJob: Deferred<Unit> = scope.async {
-            // Cancel and wait for previously running job
-            previousJob.cancelAndJoin()
+        override fun start(): State {
+            // We are stopping (or stopped) => Cancel stop operation and start again
+            return StartingState(params)
+        }
+
+        override fun stop(): State {
+            // We are stopping (or stopped)
+            return this
+        }
+
+        override fun restart(): State {
+            // We are stopping (or stopped) => no-op, as we should only when started
+            return this
+        }
+
+        suspend fun performStop() {
 
             val config = waitForServerConfigurationAvailable()
             val adbFilePath = config.adbPath
@@ -414,47 +421,36 @@ internal class AdbServerControllerImpl(
                 }
             }
             params.isStartedFlow.update { false }
-        }.also {
-            it.invokeOnCompletion { e ->
-                jobCompletedWithException = e != null
-            }
-        }
-
-        override fun start(): State {
-            // We are stopping (or stopped) => Cancel stop operation and start again
-            return StartingState(params, stopJob)
-        }
-
-        override fun stop(): State {
-            // NOTE: We could use `stopJob.isCompleted && stopJob.getCompletionExceptionOrNull() != null`
-            //  if the API was not experimental.
-            return if (jobCompletedWithException) {
-                // Previous stop attempt failed => try again
-                StoppingState(params, stopJob)
-            } else {
-                // We are stopping (or stopped) => no-op
-                this
-            }
-        }
-
-        override fun restart(): State {
-            // We are stopping (or stopped) => no-op, as we should only when started
-            return this
-        }
-
-        override suspend fun await() {
-            stopJob.await()
         }
     }
 
     /**
      * The "starting" state, i.e. [State.start] has been called and is not finished yet.
      */
-    private class RestartingState(params: StateParams, previousJob: Deferred<Unit>) : State(params) {
-        private val restartJob: Deferred<Unit> = scope.async {
-            // Cancel and wait for previously running job
-            previousJob.cancelAndJoin()
+    private class RestartingState(params: StateParams) : State(params) {
 
+        override fun start(): State {
+            // We are restarting => cancel restart and start normally
+            return StartingState(params)
+        }
+
+        override fun stop(): State {
+            // We are restarting => cancel restart and stop normally
+            return StoppingState(params)
+        }
+
+        override fun restart(): State {
+
+            return if (params.isStartedFlow.value) {
+                // We are started => cancel job and restart the server
+                RestartingState(params)
+            } else {
+                // We are not fully started => no-op
+                this
+            }
+        }
+
+        suspend fun performRestart() {
             // Start ADB server after waiting for valid configuration
             val config = waitForServerConfigurationAvailable()
             val adbFilePath = config.adbPath
@@ -463,7 +459,7 @@ internal class AdbServerControllerImpl(
                 // This is a non-restartable channel, but still try using `port` from the config the next
                 // time we try to create a channel
                 params.lastUsedConfig.update { config }
-                return@async
+                return
             }
 
             // TODO: Revisit the code below to match `AndroidDebugBridgeImpl` behavior. E.g. should we
@@ -475,30 +471,6 @@ internal class AdbServerControllerImpl(
             runStartServerProcess(adbFilePath, port, config.envVars)
 
             params.lastUsedConfig.update { config }
-        }
-
-        override fun start(): State {
-            // We are restarting => cancel restart and start normally
-            return StartingState(params, restartJob)
-        }
-
-        override fun stop(): State {
-            // We are restarting => cancel restart and stop normally
-            return StoppingState(params, restartJob)
-        }
-
-        override fun restart(): State {
-            return if (restartJob.isCompleted) {
-                // Previous restart has completed, but now another restart is triggered => restart
-                RestartingState(params, restartJob)
-            } else {
-                // We are already restarting => no-op
-                this
-            }
-        }
-
-        override suspend fun await() {
-            restartJob.await()
         }
     }
 }

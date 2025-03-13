@@ -3,6 +3,7 @@
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_compile")
+load(":kotlin_common.bzl", "KtJvmToolchainInfo", "default_javac_opts", "default_kotlinc_opts", "select_java_compile_toolchain", "select_java_runtime")
 load(":lint.bzl", "lint_test")
 load(":merge_archives.bzl", "run_singlejar")
 
@@ -21,22 +22,6 @@ ImlModuleInfo = provider(
         "module_visibility",
     ],
 )
-
-# This is a custom implementation of label "tags".
-# A label of the form:
-#   "//package/directory:rule[tag1, tag2]"
-# Gets split up into a tuple containing the label, and the array of tags:
-#   ("//package/directory:rule", ["tag1", "tag2"])
-# Returns the split up tuple.
-def _get_label_and_tags(label):
-    if not label.endswith("]"):
-        return label, []
-    rfind = label.rfind("[")
-    if rfind == -1:
-        # buildifier: disable=print
-        print("Malformed tagged label: " + label)
-        return label, []
-    return label[:rfind], [tag.strip() for tag in label[rfind + 1:-1].split(",")]
 
 def relative_paths(ctx, files, roots):
     """Returns paths of the given files relative to the roots.
@@ -87,6 +72,8 @@ def resources_impl(ctx, name, roots, resources, resources_jar):
         mnemonic = "zipper",
     )
 
+# buildifier: disable=native-java-common
+# buildifier: disable=native-java-info
 def _iml_module_jar_impl(
         ctx,
         name,
@@ -114,26 +101,10 @@ def _iml_module_jar_impl(
     full_ijar = ctx.actions.declare_file(name + ".merged-ijar-iml.jar")
 
     # Compiler args and JVM target.
-    java_toolchain = ctx.attr.java_toolchain[java_common.JavaToolchainInfo]
-    jvm_target = ctx.attr.jvm_target if ctx.attr.jvm_target else java_toolchain.target_version
-    javac_opts = java_common.default_javac_opts(java_toolchain = java_toolchain) + ctx.attr.javacopts
-    kotlinc_opts = list(ctx.attr.kotlinc_opts)
-    if jvm_target == "8":
-        kotlinc_opts += ["-jvm-target", "1.8"]
-        kt_java_runtime = ctx.attr._kt_java_runtime_8[java_common.JavaRuntimeInfo]
-    elif jvm_target == "11":
-        # Ideally we use "--release 11" for javac too, but that is incompatible with "--add-exports".
-        kotlinc_opts += ["-jvm-target", "11"]
-        kt_java_runtime = ctx.attr._kt_java_runtime_11[java_common.JavaRuntimeInfo]
-    elif jvm_target == "17":
-        # Ideally we use "--release 17" for javac too, but that is incompatible with "--add-exports".
-        kotlinc_opts += ["-jvm-target", "17"]
-        kt_java_runtime = ctx.attr._kt_java_runtime_17[java_common.JavaRuntimeInfo]
-    elif jvm_target == "21":
-        kotlinc_opts += ["-jvm-target", "21"]
-        kt_java_runtime = ctx.attr._kt_java_runtime_21[java_common.JavaRuntimeInfo]
-    else:
-        fail("JVM target " + jvm_target + " is not currently supported in iml_module")
+    java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
+    java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
+    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts
+    kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
 
     # Kotlin
     kotlin_providers = []
@@ -150,7 +121,7 @@ def _iml_module_jar_impl(
             friend_jars = friend_jars,
             out = kotlin_jar,
             out_ijar = kotlin_ijar,
-            java_runtime = kt_java_runtime,
+            java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
         ))
         jars.append(kotlin_jar)
@@ -181,7 +152,7 @@ def _iml_module_jar_impl(
             output = compiled_java,
             deps = compile_deps,
             javac_opts = javac_opts,
-            java_toolchain = java_toolchain,
+            java_toolchain = java_compile_toolchain,
             sourcepath = sourcepath,
         )
 
@@ -201,7 +172,7 @@ def _iml_module_jar_impl(
             # Note: we explicitly include the bootclasspath from the current Java toolchain with
             # the classpath, because extracting it at runtime, when we are running in the
             # FormCompiler JVM, is not portable across JDKs (and made much harder on JDK9+).
-            form_classpath = depset(transitive = [form_dep_jars, java_toolchain.bootclasspath])
+            form_classpath = depset(transitive = [form_dep_jars, java_compile_toolchain.bootclasspath])
 
             args = ctx.actions.args()
             args.add_joined("-cp", form_classpath, join_with = ":")
@@ -265,6 +236,8 @@ def merge_runfiles(deps):
         if dep[DefaultInfo].default_runfiles
     ])
 
+# buildifier: disable=native-java-common
+# buildifier: disable=native-java-info
 def _iml_module_impl(ctx):
     names = [iml.basename[:-4] for iml in ctx.files.iml_files if iml.basename.endswith(".iml")]
 
@@ -388,6 +361,8 @@ def _iml_module_impl(ctx):
         DefaultInfo(runfiles = runfiles),
     ]
 
+# buildifier: disable=native-java-info
+# buildifier: disable=native-cc-info
 _iml_module_ = rule(
     toolchains = ["@bazel_tools//tools/jdk:toolchain_type"],
     attrs = {
@@ -423,29 +398,9 @@ _iml_module_ = rule(
         "test_deps": attr.label_list(providers = [[JavaInfo], [ImlModuleInfo], [CcInfo]]),
         "test_friends": attr.label_list(providers = [JavaInfo]),
         "data": attr.label_list(allow_files = True),
-        # Toolchain for compiling java sources
-        "java_toolchain": attr.label(),
-        # Java runtime, to be used for `-jdk-home` kotlinc option
-        # Kotlinc does not support the --release 8 Javac option, see https://youtrack.jetbrains.com/issue/KT-29974
-        # (and if it would, it would probably works similary - only when there is no --add-exports)
-        "_kt_java_runtime_8": attr.label(
-            default = Label("//prebuilts/studio/jdk/jdk8:java_runtime"),
-            providers = [java_common.JavaRuntimeInfo],
-            cfg = "exec",
-        ),
-        "_kt_java_runtime_11": attr.label(
-            default = Label("//prebuilts/studio/jdk/jdk11:java_runtime"),
-            providers = [java_common.JavaRuntimeInfo],
-            cfg = "exec",
-        ),
-        "_kt_java_runtime_17": attr.label(
-            default = Label("//prebuilts/studio/jdk/jdk17:java_runtime"),
-            providers = [java_common.JavaRuntimeInfo],
-            cfg = "exec",
-        ),
-        "_kt_java_runtime_21": attr.label(
-            default = Label("//prebuilts/studio/jdk/jbr-next:java_runtime"),
-            providers = [java_common.JavaRuntimeInfo],
+        "_java_toolchains": attr.label(
+            default = Label("//tools/base/bazel:default_java_toolchain_bundle"),
+            providers = [KtJvmToolchainInfo],
             cfg = "exec",
         ),
         "_zipper": attr.label(
@@ -527,6 +482,7 @@ def iml_module(
         kotlinc_opts = [],
         enable_tests = True,
         test_data = [],
+        test_deps = [],
         test_flaky = False,
         test_jvm_flags = [],
         test_timeout = "moderate",
@@ -545,7 +501,7 @@ def iml_module(
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,
-        generate_k2_tests = False,
+        generate_k1_tests = False,
         generate_coverage_baseline = True):
     """A macro corresponding to an IntelliJ module.
 
@@ -612,19 +568,8 @@ def iml_module(
         lint_timeout: See impl.
         exec_properties: See https://bazel.build/reference/be/common-definitions#common.exec_properties
         kotlin_use_compose: See impl.
-        generate_k2_tests: Creates an additional test target to use the kotlin k2 plugin.
+        generate_k1_tests: Creates an additional test target to use the kotlin K1 plugin.
     """
-    prod_deps = []
-    test_deps = []
-    for dep in deps:
-        label, label_tags = _get_label_and_tags(dep)
-        for label_tag in label_tags:
-            if label_tag not in ["test"]:
-                fail("Invalid label tag: " + label_tag)
-        if "test" not in label_tags:
-            prod_deps.append(label)
-        test_deps.append(label)
-
     srcs = split_srcs(srcs, resources, exclude)
     split_test_srcs = split_srcs(test_srcs, test_resources, exclude)
 
@@ -635,18 +580,6 @@ def iml_module(
         compatible_platforms = {"@intellij//:" + v: [] for v in compatible_intellij_platforms}
         compatible_platforms["//conditions:default"] = ["@platforms//:incompatible"]
         target_compatible_with = select(compatible_platforms)
-
-    # if jvm_target is specified, use JDK that compiles to that target
-    if jvm_target == "8":
-        java_toolchain = "//prebuilts/studio/jdk:java8_compile_toolchain"
-    elif jvm_target == "11":
-        java_toolchain = "//prebuilts/studio/jdk:java11_compile_toolchain"
-    elif jvm_target == "17":
-        java_toolchain = "//prebuilts/studio/jdk:java17_compile_toolchain"
-    elif jvm_target == "21":
-        java_toolchain = "//prebuilts/studio/jdk:java21_compile_toolchain"
-    else:
-        fail("JVM target " + jvm_target + " is not currently supported in iml_module")
 
     _iml_module_(
         name = name,
@@ -666,15 +599,14 @@ def iml_module(
         test_roots = split_test_srcs.roots,
         package_prefixes = package_prefixes,
         jvm_target = jvm_target,
-        java_toolchain = java_toolchain,
         javacopts = javacopts + javacopts_from_jps,
         kotlinc_opts = kotlinc_opts,
         module_visibility = module_visibility,
         iml_files = iml_files,
         exports = exports,
-        deps = prod_deps,
+        deps = deps,
         runtime_deps = runtime_deps,
-        test_deps = test_deps,
+        test_deps = deps + test_deps,
         test_friends = test_friends,
         data = data,
         test_class = test_class,
@@ -713,7 +645,7 @@ def iml_module(
             name = name + "_lint_test",
             srcs = lint_srcs,
             baseline = lint_baseline,
-            deps = prod_deps,
+            deps = deps,
             custom_rules = ["//tools/base/lint:studio-checks.lint-rules.jar", "//tools/base/lint/studio-checks/compose-desktop-checks"],
             external_annotations = ["//tools/base/external-annotations:annotations.zip"],
             tags = lint_tags,
@@ -751,18 +683,20 @@ def iml_module(
             target_compatible_with = target_compatible_with,
         )
 
-        if generate_k2_tests:
+        # Android Studio has switched to Kotlin K2 mode by default (b/373746515),
+        # but we still want to avoid regressions in K1 support for a little while.
+        if generate_k1_tests:
             _gen_tests(
-                name = name + "_k2",
+                name = name + "_k1",
                 split_test_targets = split_test_targets,
                 test_flaky = test_flaky,
                 test_shard_count = test_shard_count,
-                test_tags = (test_tags or []) + ["kotlin-plugin-k2"],
+                test_tags = (test_tags or []) + ["kotlin-plugin-k1"],
                 test_data = test_data,
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=true",
+                    "-Didea.kotlin.plugin.use.k2=false",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,
@@ -869,6 +803,7 @@ def iml_test(
         tests = test_names,
     )
 
+# buildifier: disable=native-java-test
 def _iml_test(
         name,
         module,

@@ -523,12 +523,47 @@ class AdbServerControllerImplTest {
             processRunner.reset()
 
             // Act: queue up multiple restarts at the same time
-            val restartJobs = List(5) { launch { controller.restart() } }
+            val restartJobs = List(20) { launch { controller.restart() } }
             restartJobs.joinAll()
 
             // Assert
             assertTrue(controller.isStarted)
             assertContentEquals(listOf(STOP_COMMAND, START_COMMAND), processRunner.allCommands)
+        }
+
+    @Test
+    fun testMultipleStateTransitions_properlyCancelled_whenPreempted(): Unit =
+        runBlockingWithTimeout {
+            // Prepare
+            processRunner.delayByMs = 100
+            val controller =
+                registerCloseable(
+                    AdbServerControllerImpl(
+                        host,
+                        configFlow
+                    )
+                )
+            configFlow.update {
+                it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
+            }
+
+            // Act: queue up a few start/stop pairs, and a final start
+            var index = 0
+            val startStopJobs = List(20) {
+                launch {
+                    if (index++ % 2 == 0) {
+                        controller.start()
+                    } else {
+                        controller.stop()
+                    }
+                }.also { delay(50) }
+            }
+
+            startStopJobs.joinAll()
+
+            // Assert
+            assertFalse(controller.isStarted)
+            assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
         }
 
     @Test

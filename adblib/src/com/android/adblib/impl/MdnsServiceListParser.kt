@@ -74,15 +74,26 @@ internal class MdnsServiceListParser {
                     val deviceAddress = DeviceAddress(matchResult.groupValues[3])
 
                     val mdnsServiceInfo = MdnsServiceInfo(instanceName, serviceName, deviceAddress)
-                    if (dedupedMdnsServiceInfos.add(mdnsServiceInfo)) {
-                        builder.addEntry(mdnsServiceInfo)
-                    } else {
+
+                    // Ignore erroneous IP address "0.0.0.0" (see b/390429989)
+                    if (mdnsServiceInfo.deviceAddress.address.startsWith("0.0.0.0:")) {
+                        val error = ErrorLine(
+                            "Invalid IP address `0.0.0.0` detected", lineIndex, line
+                        )
+                        builder.addError(error)
+                        return@forEachIndexed
+                    }
+
+                    if (!dedupedMdnsServiceInfos.add(mdnsServiceInfo)) {
                         val error = ErrorLine(
                             "Duplicate mDNS service entry detected", lineIndex, line
                         )
                         builder.addError(error)
+                        return@forEachIndexed
                     }
-                } catch (ignored: Exception) {
+
+                    builder.addEntry(mdnsServiceInfo)
+                } catch (_: Exception) {
                     val error =
                         ErrorLine(
                             "mDNS service entry ignored due do invalid characters",

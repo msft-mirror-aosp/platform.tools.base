@@ -63,7 +63,6 @@ class NoOpIncrementalBuildTaskStatesTest {
                 ":app:mapDebugSourceSetPaths",
                 ":app:mergeDebugAssets",
                 ":app:mergeDebugJavaResource",
-                ":app:mergeDebugUnitTestJavaResource",
                 ":app:mergeDebugJniLibFolders",
                 ":app:mergeDebugResources",
                 ":app:mergeDebugShaders",
@@ -109,7 +108,7 @@ class NoOpIncrementalBuildTaskStatesTest {
                 run(tasks)
                 run(tasks)
             }
-        TaskStateAssertionHelper(result.taskStates)
+        TaskStateAssertionHelper(result)
             .assertTaskStatesByGroups(EXPECTED_TASK_STATES, exhaustive = true)
     }
 }

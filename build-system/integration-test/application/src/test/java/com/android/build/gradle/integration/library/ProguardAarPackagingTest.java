@@ -6,6 +6,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.EmptyGradleProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
@@ -140,14 +141,14 @@ public class ProguardAarPackagingTest {
     public void checkDebugAarPackaging() throws Exception {
         androidProject.executor().run("assembleDebug");
 
-        androidProject.testAar(
-                "debug",
+        androidProject.assertAar(
+                AarSelector.DEBUG,
                 it -> {
                     // check that the classes from the local jars are still in a local jar
-                    it.allSecondaryJars().containsClass("com/example/libinjar/LibInJar");
+                    it.secondaryJars().classes().containsExactly("com/example/libinjar/LibInJar");
 
                     // check that it's not in the main class file.
-                    it.mainJar().doesNotContainClass("com/example/libinjar/LibInJar");
+                    it.mainJar().classes().containsExactly("com/example/helloworld/HelloWorld");
                 });
     }
 
@@ -155,12 +156,12 @@ public class ProguardAarPackagingTest {
     public void checkReleaseAarPackaging() throws Exception {
         androidProject.executor().run("assembleRelease");
 
-        androidProject.testAar(
-                "release",
+        androidProject.assertAar(
+                AarSelector.RELEASE,
                 it -> {
                     // check that the classes from the local jars are not minified and is included
                     // in the AAR
-                    it.allSecondaryJars().containsClass("com/example/libinjar/LibInJar");
+                    it.secondaryJars().classes().containsExactly("com/example/libinjar/LibInJar");
                 });
     }
 
@@ -171,14 +172,17 @@ public class ProguardAarPackagingTest {
                 .with(BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES, false)
                 .run("assembleRelease");
 
-        androidProject.testAar(
-                "release",
+        androidProject.assertAar(
+                AarSelector.RELEASE,
                 it -> {
                     // check that the classes from the local jars are in the main class file
-                    it.mainJar().containsClass("com/example/libinjar/a");
+                    it.mainJar()
+                            .classes()
+                            .containsExactly(
+                                    "com/example/helloworld/HelloWorld", "com/example/libinjar/a");
 
                     // check that it's not in any local jar
-                    it.allSecondaryJars().doesNotContainClass("com/example/libinjar/LibInJar");
+                    it.secondaryJars().classes().isEmpty();
                 });
     }
 }

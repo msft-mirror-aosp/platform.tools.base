@@ -161,4 +161,6 @@ private class UniqueDeque<T>(elements: Collection<T>) {
   }
 
   private fun removeBy(rem: Deque<T>.() -> T): T = rem(deque).also(elements::remove)
+
+  override fun toString() = deque.joinToString(separator = ",", prefix = "[", postfix = "]")
 }

@@ -109,7 +109,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         S_V2(32, 1),
         TIRAMISU(33, 3),
         UPSIDE_DOWN_CAKE(34, 7),
-        VANILLA_ICE_CREAM(35, 13);
+        VANILLA_ICE_CREAM(35, 13),
+        BAKLAVA(36, 17),
+        ;
 
         private final int myApi;
 
@@ -500,9 +502,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Returns a string with the API Level and optional codename. Intended for debugging.
-     * For display purposes, please use {@link #getApiStringWithExtension()} or
-     * {@link #getApiStringWithoutExtension()} instead.
+     * Returns a string with the API Level and optional codename. Intended for debugging. For
+     * display purposes, please use {@code AndroidVersionUtils.getDisplayApiString(AndroidVersion)}
+     * or {@code AndroidVersionUtils.getFullApiName}
      */
     @Override
     public String toString() {

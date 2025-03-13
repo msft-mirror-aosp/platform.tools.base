@@ -184,8 +184,7 @@ internal fun configureAnalysisApiProjectStructure(
 
     // NB: this walks through the entire directories as source roots and build scripts
     // Therefore, we call this only once here and use them with necessary filtering at use-site.
-    val sourceFilePaths =
-      getSourceFilePaths(m.sourceRoots + m.gradleBuildScripts, includeDirectoryRoot = true)
+    val sourceFilePaths = getSourceFilePaths(m.sourceRoots + m.gradleBuildScripts)
 
     // b/371220733: AGP library modules might refer to `out` directory w/o source files
     if (proj is LintModelModuleLibraryProject && !sourceFilePaths.hasFiles()) {

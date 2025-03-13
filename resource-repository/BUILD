@@ -14,6 +14,12 @@ iml_module(
         "//prebuilts/studio/sdk:platforms/latest",
         "//tools/base/resource-repository/test/resources",
     ],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = ["test/java"],
     test_tags = [
         "block-network",
@@ -34,12 +40,9 @@ iml_module(
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/adt/idea/.idea/libraries:aapt-proto",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
     ],
 )

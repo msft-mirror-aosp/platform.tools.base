@@ -19,7 +19,7 @@ android.libraryVariants.all { variant ->
     // create a task that copies some additional data in the library bundle
     def copyBlahTask = tasks.create(name: "copy${variant.name.capitalize()}Blah", type: Copy) {
         from           file("$project.projectDir/blah")
-        destinationDir file("${buildDir}/bundles/${variant.dirName}")
+        destinationDir = file("${buildDir}/bundles/${variant.dirName}")
     }
 
     variant.packageLibrary.dependsOn copyBlahTask

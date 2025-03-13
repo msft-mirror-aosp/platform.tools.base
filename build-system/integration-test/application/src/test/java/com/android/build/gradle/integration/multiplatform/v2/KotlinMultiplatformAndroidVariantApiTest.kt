@@ -105,7 +105,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
 
         val aarFile = project.getSubproject("kmpFirstLib").getOutputFile("aar", "kmpFirstLib.aar").toPath()
         AarSubject.assertThat(aarFile) {
-            assets().contains("asset.txt")
+            assets().containsExactly("asset.txt")
         }
 
         project.executor().run(":kmpFirstLib:assembleDeviceTest")

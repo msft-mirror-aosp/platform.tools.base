@@ -270,10 +270,10 @@ class LintModelPerComponentIntegrationTest {
             """
                 android {
                     defaultConfig {
-                        targetSdk 16
+                        targetSdk = 16
                     }
                     lint {
-                        targetSdk 17
+                        targetSdk = 17
                     }
                 }
             """.trimIndent()

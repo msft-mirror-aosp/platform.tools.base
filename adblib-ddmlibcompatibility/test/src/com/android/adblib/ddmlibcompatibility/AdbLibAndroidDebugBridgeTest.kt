@@ -38,6 +38,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.file.Paths
+import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
@@ -94,10 +95,38 @@ class AdbLibAndroidDebugBridgeTest {
     }
 
     @Test
+    fun startAdbReturnsFalse_whenAdbServerControllerThrowsCancellation() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStart = CancellationException("my cancellation exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.startAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
+    }
+
+    @Test
     fun stopAdbReturnsFalse_whenAdbServerControllerThrows() {
         val session = FakeAdbSession()
         val adbServerController = FakeAdbServerController()
         adbServerController.throwOnStop = IOException("my exception")
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val result = bridge.stopAdb(50, TimeUnit.MILLISECONDS)
+
+        // Assert
+        assertFalse(result)
+    }
+
+    @Test
+    fun stopAdbReturnsFalse_whenAdbServerControllerThrowsCancellation() {
+        val session = FakeAdbSession()
+        val adbServerController = FakeAdbServerController()
+        adbServerController.throwOnStop = CancellationException("my cancellation exception")
         val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
 
         // Act

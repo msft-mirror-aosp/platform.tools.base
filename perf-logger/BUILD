@@ -4,6 +4,14 @@ load("//tools/base/bazel:bazel.bzl", "iml_module")
 iml_module(
     name = "studio.perf-logger",
     iml_files = ["perf-logger.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/base/common:studio.android.sdktools.common",
+    ],
     test_srcs = [
         "src/main/java",
         "src/test/java",
@@ -13,10 +21,5 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations[test]",
-        "//tools/base/common:studio.android.sdktools.common[test]",
     ],
 )

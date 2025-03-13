@@ -22,15 +22,15 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import kotlin.io.path.name
 
 class NavigationIntentFilterTest {
     private val app =
@@ -143,10 +143,10 @@ class NavigationIntentFilterTest {
         // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
         project.executor().run(":lib:assembleDebug")
 
-        project.getSubproject("lib").assertThatAar("debug") {
-            contains(FN_NAVIGATION_JSON)
+        project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
+            textFile(FN_NAVIGATION_JSON).isNotEmpty()
         }
-        val aarPath = project.getSubproject("lib").getAarLocationForCopy("debug")
+        val aarPath = project.getSubproject("lib").getAarLocationForCopy(AarSelector.DEBUG)
         FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
 
         // Update the app's build.gradle and the settings.gradle.
@@ -194,6 +194,30 @@ class NavigationIntentFilterTest {
             "<data android:mimeType=\"app/image/jpg\" />")
         // Validate the APP_ACTION does not exist in merged manifest
         PathSubject.assertThat(mergedManifest).doesNotContain("APP_ACTION")
+    }
+
+    @Test
+    fun testFailureWhenNamespacedAndroidResourcesEnabled() {
+        val navAppFile =
+            project.getSubproject(":app").file("src/main/res/navigation/nav_app.xml")
+        FileUtils.writeToFile(
+            navAppFile,
+            """
+                <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
+                </navigation>
+            """.trimIndent()
+        )
+        TestFileUtils.appendToFile(
+            project.getSubproject(":app").buildFile,
+            """
+                android.androidResources.namespaced = true
+            """.trimIndent()
+        )
+        val result = project.executor().expectFailure().run(":app:assembleDebug")
+        ScannerSubject.assertThat(result.stderr).contains(
+            "Namespaced Android resources cannot be enabled when specifying navigation files in " +
+            "the manifest."
+        )
     }
 
     private val expectedMergedManifestContent: String =

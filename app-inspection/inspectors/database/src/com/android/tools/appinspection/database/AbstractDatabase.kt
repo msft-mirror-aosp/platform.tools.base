@@ -16,9 +16,8 @@
 package com.android.tools.appinspection.database
 
 import android.database.sqlite.SQLiteDatabase
+import com.android.tools.appinspection.database.AbstractDatabase.Companion.IN_MEMORY_DATABASE_PATH
 import java.io.File
-
-private const val IN_MEMORY_DATABASE_PATH = ":memory:"
 
 /** Placeholder `%x` is for database's hashcode */
 private const val IN_MEMORY_DATABASE_NAME_FORMAT = "$IN_MEMORY_DATABASE_PATH {hashcode=0x%x}"
@@ -29,7 +28,7 @@ internal abstract class AbstractDatabase<T : AutoCloseable>(
 ) : Database {
   final override val isInMemory = path == IN_MEMORY_DATABASE_PATH
 
-  override val key: String =
+  final override val key: String =
     when {
       isInMemory -> IN_MEMORY_DATABASE_NAME_FORMAT.format(hashCode())
       else -> File(path).absolutePath
@@ -42,13 +41,7 @@ internal abstract class AbstractDatabase<T : AutoCloseable>(
   /** Hash code is delegated to the [SQLiteDatabase] because this object is stored in a [Set] */
   final override fun hashCode(): Int = delegate.hashCode()
 
-  private fun getJournalMode(): String {
-    if (!isOpen()) {
-      return ""
-    }
-    rawQuery("PRAGMA journal_mode", emptyArray(), null).use {
-      it.moveToNext()
-      return it.getString(0)?.lowercase() ?: ""
-    }
+  companion object {
+    const val IN_MEMORY_DATABASE_PATH = ":memory:"
   }
 }

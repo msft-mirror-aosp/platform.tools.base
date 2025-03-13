@@ -11,12 +11,11 @@ iml_module(
 iml_module(
     name = "friends.tests",
     iml_files = ["friends.tests.iml"],
+    test_deps = [":friends.impl"],
     test_friends = [":friends.impl"],
     test_srcs = ["testSrc"],
     test_tags = ["manual"],  # There are no tests here---just checking that things build.
     visibility = ["//visibility:public"],
-    deps = [
-        ":friends.impl[test]",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
-    ],
+    # do not sort: test must be at the end
+    deps = ["@maven//:org.jetbrains.kotlin.kotlin-stdlib"],
 )

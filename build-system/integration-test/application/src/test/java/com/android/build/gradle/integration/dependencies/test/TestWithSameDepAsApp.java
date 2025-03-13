@@ -23,6 +23,7 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
@@ -180,13 +181,10 @@ public class TestWithSameDepAsApp {
             assertThat(project.getTestApk()).doesNotContainClass(this.className);
         } else {
             // External dependencies are not packaged in AARs.
-            project.testAar(
-                    "debug",
+            project.assertAar(
+                    AarSelector.DEBUG,
                     it -> {
-                        // have to remove the L; for AarSubject. APK migration will follow
-                        it.allJars()
-                                .doesNotContainClass(
-                                        this.className.substring(1, this.className.length() - 1));
+                        it.classes().containsExactly("com/example/helloworld/HelloWorld");
                     });
             // But should be in the test APK.
             assertThat(project.getTestApk()).containsClass(this.className);

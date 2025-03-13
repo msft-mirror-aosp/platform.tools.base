@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.resources
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.truth.PathSubject.assertThat
@@ -145,8 +147,8 @@ class NamespacedAarTest {
         assertThat(publishedLibData?.resStaticLibrary).exists()
 
         val subproject = project.getSubproject("publishedLib")
-        subproject.assertThatAar("release") {
-            entries().containsExactly(
+        subproject.assertAar(AarSelector.RELEASE) {
+            containsExactly(
                 "META-INF/com/android/build/gradle/aar-metadata.properties",
                 "res/values/values.xml",
                 "classes.jar",
@@ -154,7 +156,8 @@ class NamespacedAarTest {
                 "AndroidManifest.xml",
                 "R.txt"
             )
-
+        }
+        subproject.assertAar(AarSelector.RELEASE) {
             // Check that the AndroidManifest.xml in the AAR does not contain namespaces.
             manifest().apply {
                 contains("@string/my_version_name")
@@ -162,14 +165,14 @@ class NamespacedAarTest {
             }
         }
 
-        subproject.assertThatAar("release") {
+        subproject.assertAar(AarSelector.RELEASE) {
             textSymbolFile().isEqualTo(
                 """
                     int string foo 0x0
                     int string my_version_name 0x0
                 """.trimIndent()
             )
-            androidResources().textFile("values/values.xml").isEqualTo(
+            androidResources().resourceAsText("values/values.xml").isEqualTo(
                 """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>

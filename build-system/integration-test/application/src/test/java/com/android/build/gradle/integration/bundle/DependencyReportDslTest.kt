@@ -128,7 +128,11 @@ class DependenciesReportDslTest {
         project.executor().run(":app:bundleRelease")
         val bundle = project.locateBundleFileViaModel("release", ":app").toPath()
         ZipSubject.assertThat(bundle) {
-            doesNotContain("BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb")
+            // validate absence of com.android.tools.build.libraries/dependencies.pb
+            folder("BUNDLE-METADATA").containsExactly(
+                "com.android.tools/d8.json",
+                "com.android.tools.build.gradle/app-metadata.properties"
+            )
         }
     }
 }

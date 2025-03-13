@@ -30,10 +30,8 @@ import com.android.tools.lint.client.api.ConfigurationHierarchy
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.LintClient.Companion.clientName
 import com.android.tools.lint.client.api.LintClient.Companion.ensureClientNameInitialized
-import com.android.tools.lint.client.api.LintDriver
 import com.android.tools.lint.client.api.LintListener
 import com.android.tools.lint.client.api.LintXmlConfiguration.Companion.create
-import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Platform
 import com.android.tools.lint.detector.api.Project
@@ -257,28 +255,11 @@ class TestLintRunner(private val task: TestLintTask) {
     try {
       val lintClient: TestLintClient = createClient()
       mode.eventListener?.let {
-        listener =
-          object : LintListener {
-            override fun update(
-              driver: LintDriver,
-              type: LintListener.EventType,
-              project: Project?,
-              context: Context?,
-            ) {
-              val testContext =
-                TestModeContext(
-                  task,
-                  root,
-                  projectList,
-                  files,
-                  clientState,
-                  driver,
-                  context,
-                  results,
-                )
-              it.invoke(testContext, type, clientState)
-            }
-          }
+        listener = LintListener { driver, type, _, context ->
+          val testContext =
+            TestModeContext(task, root, projectList, files, clientState, driver, context, results)
+          it.invoke(testContext, type, clientState)
+        }
         listeners.add(listener)
       }
 
@@ -300,7 +281,7 @@ class TestLintRunner(private val task: TestLintTask) {
             for (nestedMode in mode.modes) {
               results[nestedMode] = testResult
             }
-          } catch (exception: Throwable) {
+          } catch (_: Throwable) {
             // The results are *not* consistent. Therefore, we'll run
             // each mode individually to pinpoint the problem
             for (nestedMode in mode.modes) {
@@ -539,7 +520,7 @@ class TestLintRunner(private val task: TestLintTask) {
       // Use canonical path to make sure we don't end up failing
       // to chop off the prefix from Project#getDisplayPath
       rootDir = rootDir.canonicalFile
-    } catch (ignore: IOException) {}
+    } catch (_: IOException) {}
     val projectDirs: List<File> = createProjects(rootDir)
     val lintClient = createClient()
     lintClient.setLintTask(task)

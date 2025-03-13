@@ -80,7 +80,7 @@ internal class AndroidApplicationImpl(
     namespace,
 ), AndroidApplicationProject,
     GeneratesAab by GeneratesAabDelegate(location),
-    GeneratesApk by GeneratesApkDelegate(location) {
+    GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
 
     override fun getApkFromBundleTaskName(variantName: String): String {
         val projectPath = projectDefinition.path

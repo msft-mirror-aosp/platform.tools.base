@@ -9,12 +9,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" name="studio-sdk" level="project" />
     <orderEntry type="library" name="studio-plugin-com.intellij.java" level="project" />
+    <orderEntry type="module" module-name="android.sdktools.android-annotations" exported="" />
+    <orderEntry type="module" module-name="android.sdktools.common" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
     <orderEntry type="library" scope="TEST" name="kotlin-test" level="project" />
     <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
-    <orderEntry type="module" module-name="android.sdktools.android-annotations" exported="" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
-    <orderEntry type="module" module-name="android.sdktools.common" />
     <orderEntry type="library" scope="TEST" name="gson" level="project" />
   </component>
 </module>

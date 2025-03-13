@@ -13,6 +13,14 @@ iml_module(
     srcs = ["manifest-merger/src/main/java"],
     iml_files = ["manifest-merger/android.sdktools.manifest-merger.iml"],
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+    ],
     test_srcs = ["manifest-merger/src/test/java"],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
@@ -21,12 +29,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin[test]",
     ],
 )
 
@@ -101,7 +104,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "8.11.1"
+GRADLE_VERSION = "8.13"
 
 filegroup(
     name = "gradle-distrib",
@@ -115,15 +118,41 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
+maven_repository(
+    name = "gradle-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-8.11.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.11.1"],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
+    name = "gradle-8.11.1-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "gradle-distrib-8.10.2",
     srcs = ["//tools/external/gradle:gradle-distrib-8.10.2"],
     visibility = ["//visibility:public"],
 )
 
-# See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
 maven_repository(
-    name = "gradle-runtime-maven",
+    name = "gradle-8.10.2-runtime-maven",
     # keep sorted
     artifacts = [
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
@@ -572,7 +601,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.0",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

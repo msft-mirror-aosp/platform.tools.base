@@ -46,7 +46,7 @@ class MlGeneratedClassTest {
     @Throws(IOException::class)
     fun setUp() {
         val buildFile = project.buildFile
-        TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding true")
+        TestFileUtils.appendToFile(buildFile, "android.buildFeatures.mlModelBinding = true")
         TestFileUtils.appendToFile(
             buildFile,
             """

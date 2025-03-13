@@ -18,8 +18,10 @@ package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.SimpleSubjectBuilder
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 
+@Suppress("UnstableApiUsage")
 class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
 
     @Test
@@ -31,23 +33,21 @@ class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
         }.use { jar ->
 
             assertThat(jar) {
-                resources().apply {
-                    hasSize(2)
-                    // should only show the classes and not the other files
-                    containsExactly(
-                        "somefile.txt",
-                        "somefile.data",
-                    )
-                }
+                hasSize(2)
+                // should only show the classes and not the other files
+                containsExactly(
+                    "somefile.txt",
+                    "somefile.data",
+                )
             }
 
             // test negative results
             expectFailure {
-                it.that(jar).resources().hasSize(5)
+                it.that(jar).hasSize(5)
             }.assert {
                 // we don't care about testing the 'expected' and 'but was' facts
                 factKeys().containsAtLeast("value of", "jarWithJavaResources was")
-                factValue("value of").isEqualTo("jarWithJavaResources.resources().size()")
+                factValue("value of").isEqualTo("jarWithJavaResources.size()")
                 factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
             }
         }
@@ -81,7 +81,7 @@ class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
                 // we want to check for a specific expected/but was here as we want to validate
                 // which error is thrown
                 factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
-                factValue("value of").isEqualTo("jarWithJavaResources.resources()")
+                factValue("value of").isEqualTo("jarWithJavaResources.entries()")
                 factValue("expected to contain").isEqualTo("missing.txt")
                 factValue("but was").isEqualTo("[path/to/foo.txt]")
                 factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
@@ -118,7 +118,7 @@ class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
                 // we want to check for a specific expected/but was here as we want to validate
                 // which error is thrown
                 factKeys().containsAtLeast("value of", "jarWithJavaResources was", "expected to contain", "but was")
-                factValue("value of").isEqualTo("jarWithJavaResources.resources()")
+                factValue("value of").isEqualTo("jarWithJavaResources.entries()")
                 factValue("expected to contain").isEqualTo("missing.txt")
                 factValue("but was").isEqualTo("[path/to/foo.txt]")
                 factValue("jarWithJavaResources was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
@@ -130,6 +130,7 @@ class JarWithJavaResourcesSubjectTest: BaseZipSubjectTest() {
         JarWithJavaResourcesSubject.assertThat(zip).apply(action)
     }
 
+    @CheckReturnValue
     private fun expectFailure(action: (SimpleSubjectBuilder<JarWithJavaResourcesSubject, Zip>) -> Unit): AssertionError {
         return ExpectFailure.expectFailureAbout(JarWithJavaResourcesSubject.jars(), action)
     }

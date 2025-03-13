@@ -18,7 +18,6 @@ package com.android.tools.agent.appinspection.rendering
 
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
@@ -31,18 +30,7 @@ import com.android.tools.agent.appinspection.SPAM_LOG_TAG
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-
-@VisibleForTesting
-const val SELECTION_COLOR = 0xFF1886F7.toInt()
-@VisibleForTesting
-const val HOVER_COLOR = 0xFF6AA0D3.toInt()
-@VisibleForTesting
-const val BASE_COLOR = 0x80FFFFFF.toInt()
-@VisibleForTesting
-// TODO(next CL): receive color from studio
-val RECOMPOSITION_COLOR = 0x20FFA9A9.toInt()
 
 /**
  * View responsible for drawing Layout Inspector overlay on-top the app's ui.
@@ -55,40 +43,44 @@ class OverlayView(
     private val scope: CoroutineScope,
     private val viewModel: OnDeviceRenderingViewModel
 ) : View(context) {
+
+    /**
+     * Drawing instructions for an [OverlayView].
+     * @param rect The rect to be drawn.
+     * @param color The color used to draw the [rect], in ARGB format.
+     */
+    private class DrawInstruction(val rect: Rect, val color: Int)
+
     private val selectedRectPaint = Paint().apply {
-        color = SELECTION_COLOR
         style = Paint.Style.STROKE
         strokeWidth = dpToPx(4f)
     }
     private val hoveredRectPaint = Paint().apply {
-        color = HOVER_COLOR
         style = Paint.Style.STROKE
         strokeWidth = dpToPx(4f)
     }
     private val visibleRectPaint = Paint().apply {
-        color = BASE_COLOR
         style = Paint.Style.STROKE
         strokeWidth = dpToPx(1f)
     }
     private val recomposingRectPaint = Paint().apply {
-        color = RECOMPOSITION_COLOR
         style = Paint.Style.FILL
     }
 
     /** Rendering instruction for the selected rectangles. */
-    private var selectedRectangles: List<Rect> = emptyList()
+    private var selectedRectangles: List<DrawInstruction> = emptyList()
 
     /** Rendering instruction for the hovered rectangles. */
-    private var hoveredRectangle: List<Rect> = emptyList()
+    private var hoveredRectangle: List<DrawInstruction> = emptyList()
 
     /**
      * Rendering instruction for the visible rectangles,
      * which include selected and hovered rectangles.
      */
-    private var visibleRectangles: List<Rect> = emptyList()
+    private var visibleRectangles: List<DrawInstruction> = emptyList()
 
     /** Rendering instructions for the recomposition highlights. */
-    private var recomposingRectangles: List<Rect> = emptyList()
+    private var recomposingRectangles: List<DrawInstruction> = emptyList()
 
     /** Set to true when the view should prevent other views from receiving touch events. */
     private var interceptTouchEvents = false
@@ -102,7 +94,7 @@ class OverlayView(
         viewScope = CoroutineScope(scope.coroutineContext + SupervisorJob()).apply {
             launch {
                 viewModel.selectedNodes.collect { drawInstructions ->
-                    selectedRectangles = drawInstructions.mapToRectangles(rootId)
+                    selectedRectangles = drawInstructions.mapToDrawInstructions(rootId)
                     Log.w(SPAM_LOG_TAG, "OverlayView $rootId selectedRectangles changed: $selectedRectangles")
                     postInvalidate()
                 }
@@ -110,7 +102,7 @@ class OverlayView(
 
             launch {
                 viewModel.hoveredNodes.collect { drawInstructions ->
-                    hoveredRectangle = drawInstructions.mapToRectangles(rootId)
+                    hoveredRectangle = drawInstructions.mapToDrawInstructions(rootId)
                     Log.w(SPAM_LOG_TAG, "OverlayView $rootId hoveredRectangle changed: $hoveredRectangle")
                     postInvalidate()
                 }
@@ -118,7 +110,7 @@ class OverlayView(
 
             launch {
                 viewModel.visibleNodes.collect { drawInstructions ->
-                    visibleRectangles = drawInstructions.mapToRectangles(rootId)
+                    visibleRectangles = drawInstructions.mapToDrawInstructions(rootId)
                     Log.w(SPAM_LOG_TAG, "OverlayView $rootId visibleRectangles changed: $visibleRectangles")
                     postInvalidate()
                 }
@@ -126,7 +118,7 @@ class OverlayView(
 
             launch {
                 viewModel.recomposingNodes.collect { drawInstructions ->
-                    recomposingRectangles = drawInstructions.mapToRectangles(rootId)
+                    recomposingRectangles = drawInstructions.mapToDrawInstructions(rootId)
                     Log.w(SPAM_LOG_TAG, "OverlayView $rootId recomposingRectangles changed: $recomposingRectangles")
                     postInvalidate()
                 }
@@ -172,10 +164,22 @@ class OverlayView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         // The rendering order matters.
-        recomposingRectangles.forEach { canvas.drawRect(it, recomposingRectPaint) }
-        visibleRectangles.forEach { canvas.drawRect(it, visibleRectPaint) }
-        hoveredRectangle.forEach { canvas.drawRect(it, hoveredRectPaint) }
-        selectedRectangles.forEach { canvas.drawRect(it, selectedRectPaint) }
+        recomposingRectangles.forEach {
+            recomposingRectPaint.color = it.color.setColorAlpha(64)
+            canvas.drawRect(it.rect, recomposingRectPaint)
+        }
+        visibleRectangles.forEach {
+            visibleRectPaint.color = it.color
+            canvas.drawRect(it.rect, visibleRectPaint)
+        }
+        hoveredRectangle.forEach {
+            hoveredRectPaint.color = it.color
+            canvas.drawRect(it.rect, hoveredRectPaint)
+        }
+        selectedRectangles.forEach {
+            selectedRectPaint.color = it.color
+            canvas.drawRect(it.rect, selectedRectPaint)
+        }
     }
 
     private fun dpToPx(dp: Float): Float {
@@ -185,9 +189,15 @@ class OverlayView(
             resources.displayMetrics
         )
     }
-}
 
-/** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
-private fun List<OverlayViewInstruction>.mapToRectangles(ownerRootId: Long): List<Rect> {
-    return filter { it.rootId == ownerRootId }.map { it.bounds }
+    /** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
+    private fun List<OverlayViewInstruction>.mapToDrawInstructions(ownerRootId: Long): List<DrawInstruction> {
+        return filter { it.rootId == ownerRootId }.map { DrawInstruction(it.bounds, it.color) }
+    }
+
+    /** Set the alpha for the int representation of a color. */
+    private fun Int.setColorAlpha(alpha: Int): Int {
+        val validAlpha = alpha.coerceIn(0, 255)
+        return (validAlpha shl 24) or (this and 0x00FFFFFF)
+    }
 }

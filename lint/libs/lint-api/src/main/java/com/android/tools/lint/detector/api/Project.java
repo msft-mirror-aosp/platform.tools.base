@@ -25,6 +25,7 @@ import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.DOT_PROPERTIES;
 import static com.android.SdkConstants.DOT_VERSIONS_DOT_TOML;
 import static com.android.SdkConstants.FD_GRADLE;
 import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
@@ -502,7 +503,7 @@ public class Project {
             return false;
         }
         Project other = (Project) obj;
-        //noinspection FileComparisons
+        //noinspection FileComparisons,FileEqualsUsage
         return dir.equals(other.dir);
     }
 
@@ -1014,7 +1015,7 @@ public class Project {
             // (This helps when there are feature modules inlined into the main project
             // with their own packages.)
             String packageAttribute = root.getAttribute(ATTR_PACKAGE);
-            if (!"".equals(packageAttribute)) {
+            if (!packageAttribute.isEmpty()) {
                 pkg = packageAttribute;
             }
         }
@@ -1277,7 +1278,12 @@ public class Project {
     public List<File> getPropertyFiles() {
         if (propertyFiles == null) {
             File propertyDir = this.dir;
-            if (isGradleProject()) {
+            if (files != null
+                    && files.size() == 1
+                    && files.get(0).getPath().endsWith(DOT_PROPERTIES)) {
+                propertyFiles = Collections.singletonList(files.get(0));
+                return propertyFiles;
+            } else if (isGradleProject()) {
                 // See the getTomlFiles method; like the version catalog, we want to
                 // pick up project-wide properties files here that don't belong to
                 // this specific project, without repeating them for each module.
@@ -1356,7 +1362,11 @@ public class Project {
     @NonNull
     public List<File> getTomlFiles() {
         if (tomlFiles == null) {
-            if (isGradleProject()) {
+            if (files != null
+                    && files.size() == 1
+                    && files.get(0).getPath().endsWith(DOT_VERSIONS_DOT_TOML)) {
+                tomlFiles = Collections.singletonList(files.get(0));
+            } else if (isGradleProject()) {
                 // Gradle version catalogs? These files don't belong to any one module (in fact
                 // they sit outside the individual modules), and we don't want to just go
                 // and include ../gradle from the projects since that means we'd repeat the

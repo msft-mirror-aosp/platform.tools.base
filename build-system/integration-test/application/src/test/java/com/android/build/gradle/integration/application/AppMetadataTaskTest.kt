@@ -21,6 +21,9 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.internal.tasks.AppMetadataTask
 import com.android.build.gradle.options.StringOption
 import com.android.builder.internal.packaging.IncrementalPackager.APP_METADATA_ENTRY_PATH
@@ -29,7 +32,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import java.util.Properties
-import java.util.function.Consumer
 import kotlin.io.path.bufferedReader
 
 /**
@@ -90,24 +92,28 @@ class AppMetadataTaskTest {
     @Test
     fun testNoAppMetadataInAar() {
         project.executor().run(":lib:assembleDebug")
-        project.getSubproject("lib").assertThatAar("debug") {
-            doesNotContain(APP_METADATA_ENTRY_PATH)
+        project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
+            folder("META-INF").containsExactly(AarMetadataTask.AAR_METADATA_RELATIVE_PATH)
         }
     }
 
     @Test
     fun testNoAppMetadataInDynamicFeatureApk() {
         project.executor().run(":feature:assembleDebug")
-        project.getSubproject("feature").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThat(it.getJavaResource(APP_METADATA_ENTRY_PATH)).isNull()
+        project.getSubproject("feature").assertApk(ApkSelector.DEBUG) {
+            folder("META-INF").containsExactly(
+                "MANIFEST.MF",
+                "CERT.RSA",
+                "CERT.SF"
+            )
         }
     }
 
     @Test
     fun testAppMetadataInApk() {
         project.executor().run(":app:assembleDebug")
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use {
-            assertThat(it.getJavaResource(APP_METADATA_ENTRY_PATH)).isNotNull()
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            textFile(APP_METADATA_ENTRY_PATH).isNotEmpty()
         }
     }
 
@@ -128,14 +134,8 @@ class AppMetadataTaskTest {
     @Test
     fun testAppMetadataWithAgdeVersionInApk() {
         project.executor().with(StringOption.IDE_AGDE_VERSION, "2.72").run(":app:assembleDebug")
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            val metadataFile = apk.getJavaResource(APP_METADATA_ENTRY_PATH)
-            assertThat(metadataFile).isNotNull()
-
-            // Load the App Metadata File as java Properties object
-            val properties = Properties().apply {metadataFile!!.bufferedReader().use {load(it)}}
-            assertThat(properties.getProperty(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY))
-                    .isEqualTo("2.72")
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            apkMetadata().property(ANDROID_GAME_DEVELOPMENT_EXTENSION_VERSION_PROPERTY).isEqualTo("2.72")
         }
     }
 

@@ -35,7 +35,7 @@ class BundleMetadataTest {
         val apksPath = generateApks()
         ZipSubject.assertThat(apksPath) { apks ->
             apks.innerZip("splits/base-master.apk") {
-                contains("META-INF/com/android/build/gradle/app-metadata.properties")
+                entries().contains("META-INF/com/android/build/gradle/app-metadata.properties")
             }
         }
     }

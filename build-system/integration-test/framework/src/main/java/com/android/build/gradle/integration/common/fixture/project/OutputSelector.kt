@@ -26,6 +26,14 @@ interface OutputSelector {
     val fromIntermediates: Boolean
         get() = false
 
+    /** Returns a new instance with a new project name */
+    fun withName(name: String): OutputSelector
+
+    /**
+     * The overridden project name
+     */
+    val name: String?
+
     /**
      * Returns the filename of the output file for the given selection.
      */

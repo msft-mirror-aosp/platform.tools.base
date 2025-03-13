@@ -78,7 +78,7 @@ class DynamicFeatureNamespaceTest {
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            hasApplicationId("com.example.test")
+            applicationId().isEqualTo("com.example.test")
         }
     }
 }

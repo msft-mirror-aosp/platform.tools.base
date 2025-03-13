@@ -18,10 +18,12 @@ package com.android.adblib
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.utils.ResizableBuffer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import java.nio.ByteBuffer
+import java.util.UUID
 
 class AdbChannelExtensionsTest {
 
@@ -113,6 +115,50 @@ class AdbChannelExtensionsTest {
         assertEquals(200, inputBuffer.capacity())
         assertEquals(inputBuffer.limit() - 20, outputBuffer.position)
         assertBufferEquals(inputBuffer, 20, outputBuffer, 0, 180)
+    }
+
+    @Test
+    fun adbInputChannel_readText_emptyChannel_ReadsNothing() = runBlockingWithTimeout {
+        // Prepare
+        val bufferSize = 12
+        val inputChannel = EmptyAdbInputChannel()
+
+        // Act
+        val actual = inputChannel.readText(bufferSize)
+
+        // Assert
+        assertTrue(actual.isEmpty())
+    }
+
+    @Test
+    fun adbInputChannel_readText_singleRead_ReadsAllText() = runBlockingWithTimeout {
+        // Prepare
+        val expected = UUID.randomUUID().toString()
+        val bufferSize = expected.length
+        val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
+        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+        // Act
+        val actual = inputChannel.readText(bufferSize)
+
+        // Assert
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun adbInputChannel_readText_multipleReads_ReadsAllText() = runBlockingWithTimeout {
+        // Prepare
+        val randomString = UUID.randomUUID().toString()
+        val expected = randomString.repeat(3)
+        val bufferSize = randomString.length
+        val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
+        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+        // Act
+        val actual = inputChannel.readText(bufferSize)
+
+        // Assert
+        assertEquals(expected, actual)
     }
 
     /**

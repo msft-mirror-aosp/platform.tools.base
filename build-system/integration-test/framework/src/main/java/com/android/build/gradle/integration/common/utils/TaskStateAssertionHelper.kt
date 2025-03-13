@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.integration.common.utils
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.truth.TaskStateList
+import com.google.common.truth.Truth
 
 /** Utility to assert actual task states against expected task states. */
 class TaskStateAssertionHelper(
-    private val actualTaskStates: Map<String, TaskStateList.ExecutionState>
+    private val result: GradleBuildResult,
 ) {
 
     /**
@@ -35,35 +37,18 @@ class TaskStateAssertionHelper(
         exhaustive: Boolean
     ): TaskStateAssertionHelper {
         val failedAssertions = mutableListOf<String>()
-        for (task in expectedTaskStates.keys) {
-            val expectedState = expectedTaskStates[task]
-
-            if (!actualTaskStates.containsKey(task)) {
-                failedAssertions.add(
-                    "Task `$task` has expected state `$expectedState`" +
-                            " but its actual state is not found (it was not executed)")
-                continue
-            }
-            val actualState = actualTaskStates[task]
-
-            if (expectedState != actualState) {
-                failedAssertions.add(
-                    "Task `$task` has expected state `$expectedState`" +
-                            " but its actual state is `$actualState`")
-            }
-        }
-        check(failedAssertions.isEmpty()) { failedAssertions.joinToString("\n") }
 
         if (exhaustive) {
-            check(expectedTaskStates.size == actualTaskStates.size) {
-                "The list of expected tasks is not exhaustive, the following tasks are missing:\n" +
-                        actualTaskStates
-                            .filter { it.key !in expectedTaskStates.keys}
-                            .toSortedMap()
-                            .map { "\"${it.key}\" to ${it.value}" }
-                            .joinToString(",\n")
-            }
+            Truth.assertThat(result.tasks).containsExactlyElementsIn(expectedTaskStates.keys)
+        } else {
+            Truth.assertThat(result.tasks).containsAtLeastElementsIn(expectedTaskStates.keys)
         }
+
+        for (task in expectedTaskStates.keys) {
+            result.assertTask(task).hasState(expectedTaskStates[task])
+        }
+
+        check(failedAssertions.isEmpty()) { failedAssertions.joinToString("\n") }
 
         return this
     }

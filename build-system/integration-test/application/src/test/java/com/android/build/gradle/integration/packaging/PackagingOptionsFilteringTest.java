@@ -23,6 +23,7 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.utils.FileUtils;
@@ -366,12 +367,12 @@ public class PackagingOptionsFilteringTest {
 
         lib.execute("assembleDebug");
 
-        lib.assertThatAar(
-                "debug",
+        lib.assertAar(
+                AarSelector.DEBUG,
                 aar -> {
-                    aar.allJars().doesNotContainResource("foo.exclude");
-                    aar.allJars().resourceAsBytes("foo.keep").isEqualTo(c0);
-                    return null;
+                    aar.javaResources()
+                            .containsExactly("foo.keep", "META-INF/library_debug.kotlin_module");
+                    aar.javaResources().resourceAsBytes("foo.keep").isEqualTo(c0);
                 });
     }
 
@@ -494,12 +495,12 @@ public class PackagingOptionsFilteringTest {
 
         lib.execute("assembleDebug", "assembleDebugAndroidTest");
 
-        lib.assertThatAar(
-                "debug",
+        lib.assertAar(
+                AarSelector.DEBUG,
                 aar -> {
-                    aar.allJars().doesNotContainResource("foo.libExclude");
-                    aar.allJars().resourceAsBytes("foo.libKeep").isEqualTo(c0);
-                    return null;
+                    aar.javaResources()
+                            .containsExactly("foo.libKeep", "META-INF/library_debug.kotlin_module");
+                    aar.javaResources().resourceAsBytes("foo.libKeep").isEqualTo(c0);
                 });
 
         assertThat(lib.getApk(ANDROIDTEST_DEBUG).getFile()).exists();

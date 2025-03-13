@@ -22,6 +22,14 @@ iml_module(
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:jimfs",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+    ],
     test_resources = ["src/test/resources"],
     test_srcs = [
         "src/test/java",
@@ -35,11 +43,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:jimfs[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
         "//tools/analytics-library/shared:analytics-shared",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
         "//tools/base/repository:schema-generated",

@@ -172,12 +172,15 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            textFile("assets/android_lib_one_asset.txt").isEqualTo("androidLib3")
-            entries().containsAtLeastElementsIn(listOf(
-                "assets/android_lib_one_asset.txt",
-                "assets/android_lib_two_asset.txt",
-                "assets/subdir/android_lib_one_asset_in_subdir.txt"
-            ))
+            assets {
+                resourceAsText("android_lib_one_asset.txt").isEqualTo("androidLib3")
+                containsExactly(
+                    "android_lib_one_asset.txt",
+                    "android_lib_two_asset.txt",
+                    "subdir/android_lib_one_asset_in_subdir.txt"
+                )
+
+            }
         }
     }
 
@@ -188,22 +191,22 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            entries().containsAtLeastElementsIn(listOf(
-                "jni/armeabi-v7a/librsjni_androidx.so",
-                "jni/armeabi-v7a/libRSSupport.so",
-                "jni/armeabi-v7a/librsjni.so",
-                "jni/armeabi-v7a/librs.copy.so",
-                "jni/x86_64/librsjni_androidx.so",
-                "jni/x86_64/libRSSupport.so",
-                "jni/x86_64/librsjni.so",
-                "jni/arm64-v8a/librsjni_androidx.so",
-                "jni/arm64-v8a/libRSSupport.so",
-                "jni/arm64-v8a/librsjni.so",
-                "jni/x86/librsjni_androidx.so",
-                "jni/x86/libRSSupport.so",
-                "jni/x86/librsjni.so",
-                "jni/x86/librs.copy.so"
-            ))
+            jniLibs().containsExactly(
+                "armeabi-v7a/librsjni_androidx.so",
+                "armeabi-v7a/libRSSupport.so",
+                "armeabi-v7a/librsjni.so",
+                "armeabi-v7a/librs.copy.so",
+                "x86_64/librsjni_androidx.so",
+                "x86_64/libRSSupport.so",
+                "x86_64/librsjni.so",
+                "arm64-v8a/librsjni_androidx.so",
+                "arm64-v8a/libRSSupport.so",
+                "arm64-v8a/librsjni.so",
+                "x86/librsjni_androidx.so",
+                "x86/libRSSupport.so",
+                "x86/librsjni.so",
+                "x86/librs.copy.so"
+            )
         }
     }
 
@@ -214,7 +217,7 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.run(":fusedLib1:assemble")
 
         fusedLib1.assertAar(AarSelector.NO_BUILD_TYPE) {
-            allJars().containsResource("my_java_resource.txt")
+            javaResources().containsExactly("my_java_resource.txt")
         }
 
         val androidLib2 = build.androidLibrary(":androidLib2")

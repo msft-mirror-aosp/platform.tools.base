@@ -107,9 +107,14 @@ class SourceSetsMixedApiUseTest {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFile("lib/armeabi-v7a/main-sourceset-generated.so")
-            containsFile("lib/armeabi-v7a/debug-sourceset-generated.so")
-            containsClass("Lcom/example/generated/Test;")
+            jniLibs().containsExactly(
+                "armeabi-v7a/main-sourceset-generated.so",
+                "armeabi-v7a/debug-sourceset-generated.so"
+            )
+            classes().containsExactly(
+                "com/example/api/use/R",
+                "com/example/generated/Test"
+            )
         }
     }
 }

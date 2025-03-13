@@ -67,9 +67,45 @@ public class ExifInterfaceDetectorTest extends AbstractCheckTest {
                                         + "            new android.media.ExifInterface(path);\n"
                                         + "    }\n"
                                         + "}\n"))
-                .testModes(TestMode.DEFAULT)
                 .run()
                 .expect(expected);
+    }
+
+    public void testKotlinAndroidX() {
+        String expected =
+            ""
+                    + "src/main/java/test/pkg/ExifUsage.kt:3: Warning: Avoid using android.media.ExifInterface; use androidx.exifinterface.media.ExifInterface instead [ExifInterface]\n"
+                    + "import android.media.ExifInterface\n"
+                    + "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "src/main/java/test/pkg/ExifUsage.kt:9: Warning: Avoid using android.media.ExifInterface; use androidx.exifinterface.media.ExifInterface instead [ExifInterface]\n"
+                    + "        val exif = ExifInterface(path)\n"
+                    + "                   ~~~~~~~~~~~~~~~~~~~\n"
+                    + "src/main/java/test/pkg/ExifUsage.kt:13: Warning: Avoid using android.media.ExifInterface; use androidx.exifinterface.media.ExifInterface instead [ExifInterface]\n"
+                    + "        val exif2 = android.media.ExifInterface(path)\n"
+                    + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "0 errors, 3 warnings";
+
+    //noinspection all
+    lint().files(
+            kotlin("src/main/java/test/pkg/ExifUsage.kt",
+                ""
+                    + "package test.pkg\n"
+                    + "\n"
+                    + "import android.media.ExifInterface\n"
+                    + "\n"
+                    + "@SuppressWarnings(\"unused\")\n"
+                    + "class ExifUsage {\n"
+                    + "    // platform usage\n"
+                    + "    fun setExifLatLong(path: String, lat: String, lon: String) {\n"
+                    + "        val exif = ExifInterface(path)\n"
+                    + "        exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, lat)\n"
+                    + "        exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, lon)\n"
+                    + "        exif.saveAttributes()\n"
+                    + "        val exif2 = android.media.ExifInterface(path)\n"
+                    + "    }\n"
+                    + "}\n"))
+        .run()
+        .expect(expected);
     }
 
     public void testAndroidSupportLibrary() {
@@ -118,7 +154,52 @@ public class ExifInterfaceDetectorTest extends AbstractCheckTest {
                 .expect(expected);
     }
 
-    public void testNonAndroidMediaUsage() {
+  public void testKotlinAndroidSupportLibrary() {
+    String expected =
+        ""
+            + "src/main/java/test/pkg/ExifUsage.kt:3: Warning: Avoid using android.media.ExifInterface; use android.support.media.ExifInterface instead [ExifInterface]\n"
+            + "import android.media.ExifInterface\n"
+            + "       ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "src/main/java/test/pkg/ExifUsage.kt:9: Warning: Avoid using android.media.ExifInterface; use android.support.media.ExifInterface instead [ExifInterface]\n"
+            + "        val exif = ExifInterface(path)\n"
+            + "                   ~~~~~~~~~~~~~~~~~~~\n"
+            + "src/main/java/test/pkg/ExifUsage.kt:13: Warning: Avoid using android.media.ExifInterface; use android.support.media.ExifInterface instead [ExifInterface]\n"
+            + "        val exif2 = android.media.ExifInterface(path)\n"
+            + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "0 errors, 3 warnings";
+
+    //noinspection all
+    lint().files(
+            kotlin("src/main/java/test/pkg/ExifUsage.kt",
+                ""
+                    + "package test.pkg\n"
+                    + "\n"
+                    + "import android.media.ExifInterface\n"
+                    + "\n"
+                    + "@SuppressWarnings(\"unused\")\n"
+                    + "class ExifUsage {\n"
+                    + "    // platform usage\n"
+                    + "    fun setExifLatLong(path: String, lat: String, lon: String) {\n"
+                    + "        val exif = ExifInterface(path)\n"
+                    + "        exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, lat)\n"
+                    + "        exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, lon)\n"
+                    + "        exif.saveAttributes()\n"
+                    + "        val exif2 = android.media.ExifInterface(path)\n"
+                    + "    }\n"
+                    + "}\n"),
+            java(
+            ""
+                + "package android.support.media;\n"
+                + "\n"
+                + "@SuppressWarnings(\"unused\")\n"
+                + "public class ExifInterface {\n"
+                + "    // Stub\n"
+                + "}\n"))
+        .run()
+        .expect(expected);
+  }
+
+  public void testNonAndroidMediaUsage() {
         //noinspection all
         lint().files(
                         java(
@@ -136,11 +217,30 @@ public class ExifInterfaceDetectorTest extends AbstractCheckTest {
                                         + "        }\n"
                                         + "    }\n"
                                         + "}\n"))
-                .testModes(TestMode.DEFAULT)
                 .run()
                 .expectClean();
     }
 
+  public void testKotlinNonAndroidMediaUsage() {
+    //noinspection all
+    lint().files(
+            kotlin(
+                ""
+                    + "package test.pkg\n"
+                    + "\n"
+                    + "class ExifUsage {\n"
+                    + "    // platform usage\n"
+                    + "    fun setExifLatLong(path: String, lat: String, lon: String)  {\n"
+                    + "        val exif = ExifInterface(path)\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    private class ExifInterface(val path: String) {\n"
+                    + "    }\n"
+                    + "}\n"))
+        .testModes(TestMode.DEFAULT)
+        .run()
+        .expectClean();
+  }
     @Override
     protected Detector getDetector() {
         return new ExifInterfaceDetector();

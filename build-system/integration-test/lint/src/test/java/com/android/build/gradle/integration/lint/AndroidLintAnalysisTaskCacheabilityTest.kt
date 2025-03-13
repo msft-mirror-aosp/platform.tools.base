@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -370,11 +369,12 @@ class AndroidLintAnalysisTaskCacheabilityTest {
             assetFile.writeText(if (srcDirName == "bar") "bar" else "foo")
         }
 
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").didWork()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
 
         // Add new source directories and check that expected tasks do work
         TestFileUtils.appendToFile(
@@ -389,29 +389,32 @@ class AndroidLintAnalysisTaskCacheabilityTest {
                 }
             """.trimIndent()
         )
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").didWork()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
 
         // Replace foo1 and foo2 and check again.
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "foo1", "foo2")
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).wasUpToDate()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
 
         // Swap the order in which the foo2 and bar directories are added and check again.
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "foo2", "temp")
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "bar", "foo2")
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "temp", "bar")
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).wasUpToDate()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
 
         // Add a fake source directory and check again.
         TestFileUtils.appendToFile(
@@ -425,41 +428,44 @@ class AndroidLintAnalysisTaskCacheabilityTest {
                 }
             """.trimIndent()
         )
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).wasUpToDate()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
 
         // Switch the order of the fake source directory and check again.
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "fake", "temp")
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "bar", "fake")
         TestFileUtils.searchAndReplace(project1.getSubproject(":lib").buildFile, "temp", "bar")
-        project1.executor().run(":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintReportDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).wasUpToDate()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":lib:generateDebugLintModel")).didWork()
+        project1.executor().run(":app:lintDebug").apply {
+            assertTask(":app:lintReportDebug").didWork()
+            assertTask(":app:lintAnalyzeDebug").wasUpToDate()
+            assertTask(":lib:lintAnalyzeDebug").didWork()
+            assertTask(":lib:generateDebugLintModel").didWork()
+        }
     }
 
     @Test
     fun testLintAnalysisTasksFromCache() {
         TestFileUtils.appendToFile(project1.gradlePropertiesFile, "\norg.gradle.caching=true\n")
         project1.executor().run("clean", ":app:lintDebug")
-        project1.executor().run("clean", ":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugAndroidTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugTestFixtures")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugUnitTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebug")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebugAndroidTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebugUnitTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugAndroidTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugTestFixtures")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugUnitTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":java-lib:lintAnalyzeJvmMain")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":java-lib:lintAnalyzeJvmTest")).wasFromCache()
+        project1.executor().run("clean", ":app:lintDebug").apply {
+            assertTask(":app:lintAnalyzeDebug").wasFromCache()
+            assertTask(":app:lintAnalyzeDebugAndroidTest").wasFromCache()
+            assertTask(":app:lintAnalyzeDebugTestFixtures").wasFromCache()
+            assertTask(":app:lintAnalyzeDebugUnitTest").wasFromCache()
+            assertTask(":feature:lintAnalyzeDebug").wasFromCache()
+            assertTask(":feature:lintAnalyzeDebugAndroidTest").wasFromCache()
+            assertTask(":feature:lintAnalyzeDebugUnitTest").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebug").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugAndroidTest").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugTestFixtures").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugUnitTest").wasFromCache()
+            assertTask(":java-lib:lintAnalyzeJvmMain").wasFromCache()
+            assertTask(":java-lib:lintAnalyzeJvmTest").wasFromCache()
+        }
     }
 
     /**
@@ -472,20 +478,21 @@ class AndroidLintAnalysisTaskCacheabilityTest {
         TestFileUtils.appendToFile(project1.gradlePropertiesFile, "\norg.gradle.caching=true\n")
         project1.executor().run("clean", ":app:lintDebug")
         TestFileUtils.appendToFile(project1.getSubproject("app").buildFile, "// comment")
-        project1.executor().run("clean", ":app:lintDebug")
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebug")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugAndroidTest")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugTestFixtures")).didWork()
-        assertThat(project1.buildResult.getTask(":app:lintAnalyzeDebugUnitTest")).didWork()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebug")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebugAndroidTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":feature:lintAnalyzeDebugUnitTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebug")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugAndroidTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugTestFixtures")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":lib:lintAnalyzeDebugUnitTest")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":java-lib:lintAnalyzeJvmMain")).wasFromCache()
-        assertThat(project1.buildResult.getTask(":java-lib:lintAnalyzeJvmTest")).wasFromCache()
+        project1.executor().run("clean", ":app:lintDebug").apply {
+            assertTask(":app:lintAnalyzeDebug").didWork()
+            assertTask(":app:lintAnalyzeDebugAndroidTest").didWork()
+            assertTask(":app:lintAnalyzeDebugTestFixtures").didWork()
+            assertTask(":app:lintAnalyzeDebugUnitTest").didWork()
+            assertTask(":feature:lintAnalyzeDebug").wasFromCache()
+            assertTask(":feature:lintAnalyzeDebugAndroidTest").wasFromCache()
+            assertTask(":feature:lintAnalyzeDebugUnitTest").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebug").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugAndroidTest").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugTestFixtures").wasFromCache()
+            assertTask(":lib:lintAnalyzeDebugUnitTest").wasFromCache()
+            assertTask(":java-lib:lintAnalyzeJvmMain").wasFromCache()
+            assertTask(":java-lib:lintAnalyzeJvmTest").wasFromCache()
+        }
     }
 }
 

@@ -18,19 +18,14 @@ package com.android.tools.bazel.model;
 
 import com.android.tools.bazel.parser.ast.CallExpression;
 import com.android.tools.bazel.parser.ast.CallStatement;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ImlModule extends BazelRule {
-
-    public enum Tag {
-        MODULE,
-        TEST,
-        RUNTIME,
-    }
 
     private List<String> sources = new LinkedList<>();
     private List<String> testSources = new LinkedList<>();
@@ -41,7 +36,7 @@ public class ImlModule extends BazelRule {
     private String jvmTarget = "";
     private List<String> javacOpts = new LinkedList<>();
     private Map<String, String> prefixes = new LinkedHashMap<>();
-    private Map<BazelRule, List<Tag>> dependencyTags = new HashMap<>();
+    private Set<BazelRule> testDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> runtimeDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> testRuntimeDeps = Sets.newLinkedHashSet();
     private Set<BazelRule> testFriends = Sets.newLinkedHashSet();
@@ -63,7 +58,8 @@ public class ImlModule extends BazelRule {
         call.setArgument("exclude", exclude);
         call.setArgument("resources", resources);
         call.setArgument("test_resources", testResources);
-        call.setArgument("deps", tagDependencies(dependencies));
+        call.setArgument("deps", dependencies);
+        call.setArgument("test_deps", testDeps);
         call.setArgument("exports", exported);
         call.setArgument("iml_files", imlFiles);
         call.setArgument("jvm_target", jvmTarget);
@@ -81,6 +77,7 @@ public class ImlModule extends BazelRule {
         call.setDoNotSort("resources", reason);
         call.setDoNotSort("exports", reason);
         call.setDoNotSort("deps", reason);
+        call.setDoNotSort("test_deps", reason);
         call.setDoNotSort("runtime_deps", reason);
         call.setDoNotSort("test_runtime_deps", reason);
         call.setDoNotSort("test_friends", reason);
@@ -88,40 +85,20 @@ public class ImlModule extends BazelRule {
         statement.setIsManaged();
     }
 
-    private List<String> tagDependencies(Set<BazelRule> dependencies) {
-        List<String> deps = new LinkedList<>();
-        for (BazelRule dependency : dependencies) {
-            List<Tag> tags = dependencyTags.get(dependency);
-            String suffix = "";
-            if (tags != null && tags.size() > 0) {
-                suffix =
-                        tags.stream()
-                                .map(tag -> tag.name().toLowerCase())
-                                .collect(Collectors.joining(", ", "[", "]"));
-            }
-            deps.add(dependency.getLabel() + suffix);
-        }
-        return deps;
+    public void addRuntimeDependency(BazelRule rule) {
+        runtimeDeps.add(rule);
     }
 
-    public void addDependency(BazelRule rule, boolean isExported, List<Tag> tags) {
-        if (tags.contains(Tag.RUNTIME)) {
-            // Export is ignored it doesn't make sense for runtime deps
-            if (tags.contains(Tag.TEST)) {
-                testRuntimeDeps.add(rule);
-            } else {
-                runtimeDeps.add(rule);
-            }
-            return;
+
+    public void addTestRuntimeDependency(BazelRule rule) {
+        testRuntimeDeps.add(rule);
+    }
+
+    public void addTestDependency(BazelRule rule, boolean isExported) {
+        testDeps.add(rule);
+        if (isExported) {
+            exported.add(rule);
         }
-        super.addDependency(rule, isExported);
-        List<Tag> oldTags = dependencyTags.get(rule);
-        // Don't override with test if the dependency was not test already.
-        if (oldTags != null && !oldTags.contains(Tag.TEST) && tags.contains(Tag.TEST)) {
-            tags = new ArrayList<>(tags);
-            tags.remove(Tag.TEST);
-        }
-        dependencyTags.put(rule, tags);
     }
 
     public void addTestFriend(BazelRule rule) {

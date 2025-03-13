@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.dexing
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -71,12 +70,13 @@ class CacheableDexingTransformTest {
                 enableLocalCache(buildCacheDir.root.toPath())
             }
         }
-        val result1 = build1.executor
+        build1.executor
             .withArgument("--build-cache")
             .run(":app:mergeLibDexDebug")
-
-        assertThat(result1.getTask(":app:mergeLibDexDebug")).didWork()
-        result1.assertOutputContains("Running dexing transform non-incrementally")
+            .apply {
+                assertTask(":app:mergeLibDexDebug").didWork()
+                assertOutputContains("Running dexing transform non-incrementally")
+            }
 
         // Building the same project from a different location should get a cache hit
         val build2 = rule2.build {
@@ -88,9 +88,10 @@ class CacheableDexingTransformTest {
         val result2 = build2.executor
             .withArgument("--build-cache")
             .run(":app:mergeLibDexDebug")
-
-        assertThat(result2.getTask(":app:mergeLibDexDebug")).wasFromCache()
-        result2.assertOutputDoesNotContain("Running dexing transform")
+            .apply {
+                assertTask(":app:mergeLibDexDebug").wasFromCache()
+                assertOutputDoesNotContain("Running dexing transform")
+            }
 
         // Make a change to a nested class (regression test for bug 266599585)
         build2.androidLibrary().files.update(
@@ -101,11 +102,12 @@ class CacheableDexingTransformTest {
         )
 
         // The next build after cache hit should be incremental
-        val result3 = build2.executor
+        build2.executor
             .withArgument("--build-cache")
             .run(":app:mergeLibDexDebug")
-
-        assertThat(result3.getTask(":app:mergeLibDexDebug")).didWork()
-        result3.assertOutputContains("Running dexing transform incrementally")
+            .apply {
+                assertTask(":app:mergeLibDexDebug").didWork()
+                assertOutputContains("Running dexing transform incrementally")
+            }
     }
 }

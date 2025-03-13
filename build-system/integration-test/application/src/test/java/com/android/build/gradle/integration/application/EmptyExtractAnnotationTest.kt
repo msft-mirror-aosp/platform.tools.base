@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import org.junit.Rule
 import org.junit.Test
 
@@ -35,8 +35,9 @@ class EmptyExtractAnnotationTest {
     @Test
     fun checkExtractAnnotation() {
         project.execute("assembleRelease")
-        project.assertThatAar("release") {
-            contains("classes.jar")
+        project.assertAar(AarSelector.RELEASE) {
+            // this will make sure the jar is there.
+            mainJar()
         }
     }
 }

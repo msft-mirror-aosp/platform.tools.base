@@ -17,6 +17,7 @@ package com.android.tools.lint.checks
 
 import com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION
 import com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION
+import com.android.ide.common.gradle.Version
 import com.android.ide.common.repository.GoogleMavenRepository.Companion.MAVEN_GOOGLE_CACHE_DIR_KEY
 import com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_STABLE_API
 import com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API
@@ -45,6 +46,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.HIGH_APP_VERSION_C
 import com.android.tools.lint.checks.GradleDetector.Companion.JAVA_PLUGIN_LANGUAGE_LEVEL
 import com.android.tools.lint.checks.GradleDetector.Companion.JCENTER_REPOSITORY_OBSOLETE
 import com.android.tools.lint.checks.GradleDetector.Companion.KAPT_USAGE_INSTEAD_OF_KSP
+import com.android.tools.lint.checks.GradleDetector.Companion.KEY_IDE_AGP_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.KTX_EXTENSION_AVAILABLE
 import com.android.tools.lint.checks.GradleDetector.Companion.LIFECYCLE_ANNOTATION_PROCESSOR_WITH_JAVA8
 import com.android.tools.lint.checks.GradleDetector.Companion.MIN_SDK_TOO_LOW
@@ -79,6 +81,8 @@ import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.net.URL
+import java.net.URLConnection
 import java.util.Calendar
 import java.util.zip.GZIPOutputStream
 import junit.framework.TestCase
@@ -154,7 +158,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       build.gradle:1: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]
       apply plugin: 'android'
       ~~~~~~~~~~~~~~~~~~~~~~~
-      build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 21.0 [GradleDependency]
+      build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 17.0 [GradleDependency]
           freeCompile 'com.google.guava:guava:11.0.2'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 25.3.1 [GradleDependency]
@@ -186,10 +190,10 @@ class GradleDetectorTest : AbstractCheckTest() {
           "@@ -1 +1\n" +
           "- apply plugin: 'android'\n" +
           "+ apply plugin: 'com.android.application'\n" +
-          "Fix for build.gradle line 24: Change to 21.0:\n" +
+          "Fix for build.gradle line 24: Change to 17.0:\n" +
           "@@ -24 +24\n" +
           "-     freeCompile 'com.google.guava:guava:11.0.2'\n" +
-          "+     freeCompile 'com.google.guava:guava:21.0'\n" +
+          "+     freeCompile 'com.google.guava:guava:17.0'\n" +
           "Fix for build.gradle line 25: Change to 25.3.1:\n" +
           "@@ -25 +25\n" +
           "-     compile 'com.android.support:appcompat-v7:13.0.0'\n" +
@@ -260,12 +264,31 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(AGP_DEPENDENCY, DEPENDENCY, REMOTE_VERSION)
       .sdkHome(mockSupportLibraryInstallation)
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&wt=json",
-        "",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.autonomousapps.dependency-analysis%22+AND+a:%22com.autonomousapps.dependency-analysis.gradle.plugin%22&core=gav&wt=json",
-        "",
+        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <versioning>
+            <latest>33.4.0-jre</latest>
+            <release>33.4.0-jre</release>
+            <versions>
+              <version>28.1-android</version>
+              <version>28.1-jre</version>
+              <version>28.2-android</version>
+              <version>28.2-jre</version>
+              <version>29.0-android</version>
+              <version>29.0-jre</version>
+              <version>30.0-android</version>
+              <version>30.0-jre</version>
+              <version>30.1-android</version>
+              <version>30.1-jre</version>
+            </versions>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
       .networkData(
         "https://plugins.gradle.org/m2/com/autonomousapps/dependency-analysis/com.autonomousapps.dependency-analysis.gradle.plugin/maven-metadata.xml",
@@ -307,9 +330,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         ../gradle/libs.versions.toml:9: Warning: A newer version of com.android.application than 8.1.0-alpha01 is available: 8.1.0-rc01 [AndroidGradlePluginVersion]
         gradlePlugins-agp-alpha = "8.1.0-alpha01"
                                   ~~~~~~~~~~~~~~~
-        ../gradle/libs.versions.toml:2: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 21.0 [GradleDependency]
-        guavaVersion = "11.0.2"
-                       ~~~~~~~~
         ../gradle/libs.versions.toml:3: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 25.3.1 [GradleDependency]
         appCompatVersion="13.0.0"
                          ~~~~~~~~
@@ -319,6 +339,9 @@ class GradleDetectorTest : AbstractCheckTest() {
         ../gradle/libs.versions.toml:11: Warning: A newer version of com.google.firebase.crashlytics than 2.9.2 is available: 2.9.7 [GradleDependency]
         gradlePlugins-crashlytics = "2.9.2"
                                     ~~~~~~~
+        ../gradle/libs.versions.toml:2: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 30.1-android [NewerVersionAvailable]
+        guavaVersion = "11.0.2"
+                       ~~~~~~~~
         ../gradle/libs.versions.toml:12: Warning: A newer version of com.autonomousapps.dependency-analysis than 1.0.0 is available: 1.20.0 [NewerVersionAvailable]
         gradlePlugins-dependency-analysis = "1.0.0"
                                             ~~~~~~~
@@ -327,18 +350,14 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for gradle/libs.versions.toml line 8: Change to 8.0.2:
+        Autofix for gradle/libs.versions.toml line 8: Replace with 8.0.2:
         @@ -8 +8
         - gradlePlugins-agp = "8.0.0"
         + gradlePlugins-agp = "8.0.2"
-        Fix for gradle/libs.versions.toml line 9: Change to 8.1.0-rc01:
+        Autofix for gradle/libs.versions.toml line 9: Replace with 8.1.0-rc01:
         @@ -9 +9
         - gradlePlugins-agp-alpha = "8.1.0-alpha01"
         + gradlePlugins-agp-alpha = "8.1.0-rc01"
-        Fix for gradle/libs.versions.toml line 2: Change to 21.0:
-        @@ -2 +2
-        - guavaVersion = "11.0.2"
-        + guavaVersion = "21.0"
         Fix for gradle/libs.versions.toml line 3: Change to 25.3.1:
         @@ -3 +3
         - appCompatVersion="13.0.0"
@@ -351,6 +370,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -11 +11
         - gradlePlugins-crashlytics = "2.9.2"
         + gradlePlugins-crashlytics = "2.9.7"
+        Fix for gradle/libs.versions.toml line 2: Change to 30.1-android:
+        @@ -2 +2
+        - guavaVersion = "11.0.2"
+        + guavaVersion = "30.1-android"
         Fix for gradle/libs.versions.toml line 12: Change to 1.20.0:
         @@ -12 +12
         - gradlePlugins-dependency-analysis = "1.0.0"
@@ -360,9 +383,8 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testRemoteVersionsWithTomlVersionCatalogs() {
-    // Tests that when using version catalogs, remote dependencies (found via lookup to
-    // search.maven.org,
-    // a different code path than the maven.google.com lookup) also reports warnings.
+    // Tests that when using version catalogs, remote dependencies also reports
+    // warnings.
     lint()
       .files(
         gradleToml(
@@ -379,43 +401,56 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22joda-time%22+AND+a:%22joda-time%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"joda-time\\\" AND a:\\\"joda-time\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":34,\"start\":0,\"docs\":[" +
-          "{\"id\":\"joda-time:joda-time:2.9.9\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.9\",\"p\":\"jar\",\"timestamp\":1490275993000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.8\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.8\",\"p\":\"jar\",\"timestamp\":1490220931000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.7\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.7\",\"p\":\"jar\",\"timestamp\":1482188123000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-no-tzdb-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.6\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.6\",\"p\":\"jar\",\"timestamp\":1478812169000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb-javadoc.jar\",\"-no-tzdb.jar\",\"-sources.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.5\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.5\",\"p\":\"jar\",\"timestamp\":1478191007000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.4\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.4\",\"p\":\"jar\",\"timestamp\":1464341135000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.3\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.3\",\"p\":\"jar\",\"timestamp\":1459107331000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.2\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.2\",\"p\":\"jar\",\"timestamp\":1453988648000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.1\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.1\",\"p\":\"jar\",\"timestamp\":1447329806000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9\",\"p\":\"jar\",\"timestamp\":1445680109000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-sources.jar\",\"-no-tzdb.jar\",\"-javadoc.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <versioning>
+          <latest>2.9.9</latest>
+          <release>2.9.9</release>
+          <versions>
+            <version>0.95</version>
+            <version>1.0</version>
+            <version>2.9.7</version>
+            <version>2.9.8</version>
+            <version>2.9.9</version>
+          </versions>
+          <lastUpdated>20250203142911</lastUpdated>
+        </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.squareup.dagger%22+AND+a:%22dagger%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.squareup.dagger\\\" AND a:\\\"dagger\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":9,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.5\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.5\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.4\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.4\",\"p\":\"jar\",\"timestamp\":1462291775000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.3\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.3\",\"p\":\"jar\",\"timestamp\":1462238813000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.2\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.2\",\"p\":\"jar\",\"timestamp\":1405987370000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.1\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.1\",\"p\":\"jar\",\"timestamp\":1392614597000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.0\",\"p\":\"jar\",\"timestamp\":1386979272000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.1.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1375745812000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.0.1\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.0.1\",\"p\":\"jar\",\"timestamp\":1370304793000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.0.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1367941344000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/com/squareup/dagger/dagger/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata>
+          <groupId>com.squareup.dagger</groupId>
+          <artifactId>dagger</artifactId>
+          <versioning>
+            <latest>1.2.5</latest>
+            <release>1.2.5</release>
+            <versions>
+              <version>1.0.0</version>
+              <version>1.0.1</version>
+              <version>1.1.0</version>
+              <version>1.2.0</version>
+              <version>1.2.1</version>
+              <version>1.2.2</version>
+              <version>1.2.3</version>
+              <version>1.2.4</version>
+              <version>1.2.5</version>
+            </versions>
+            <lastUpdated>20160510041018</lastUpdated>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
-      .issues(REMOTE_VERSION)
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(
         """
@@ -2035,7 +2070,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testVersionsFromGradleCache() {
     val expected =
       "" +
-        "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.4.0-alpha3 is available: 3.5.0 [AndroidGradlePluginVersion]\n" +
+        "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.4.0-alpha3 is available: 3.5.0. (There is also a newer version of 3.4.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.4.1) [AndroidGradlePluginVersion]\n" +
         "        classpath 'com.android.tools.build:gradle:3.4.0-alpha3'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "build.gradle:11: Warning: A newer version of org.apache.httpcomponents:httpcomponents-core than 4.2 is available: 4.4 [GradleDependency]\n" +
@@ -2074,7 +2109,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         "" +
-          "Fix for build.gradle line 7: Change to 3.5.0:\n" +
+          "Autofix for build.gradle line 7: Replace with 3.4.1:\n" +
+          "@@ -7 +7\n" +
+          "-         classpath 'com.android.tools.build:gradle:3.4.0-alpha3'\n" +
+          "+         classpath 'com.android.tools.build:gradle:3.4.1'\n" +
+          "Fix for build.gradle line 7: Replace with 3.5.0:\n" +
           "@@ -7 +7\n" +
           "-         classpath 'com.android.tools.build:gradle:3.4.0-alpha3'\n" +
           "+         classpath 'com.android.tools.build:gradle:3.5.0'\n" +
@@ -2133,7 +2172,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Autofix for build.gradle line 2: Change to 8.0.2:
+        Autofix for build.gradle line 2: Replace with 8.0.2:
         @@ -2 +2
         -   id 'com.android.application' version '8.0.0'
         +   id 'com.android.application' version '8.0.2'
@@ -2265,22 +2304,25 @@ class GradleDetectorTest : AbstractCheckTest() {
       .sdkHome(mockSupportLibraryInstallation)
       .run()
       .expect(
-        "" +
-          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0 is available: 3.5.0. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
-          "        classpath 'com.android.tools.build:gradle:3.3.0'\n" +
-          "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-          "0 errors, 1 warnings"
+        """
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0 is available: 3.5.0. (There is also a newer version of 3.3.𝑥 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]
+                classpath 'com.android.tools.build:gradle:3.3.0'
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
       )
       .expectFixDiffs(
-        "" +
-          "Fix for build.gradle line 7: Change to 3.5.0:\n" +
-          "@@ -7 +7\n" +
-          "-         classpath 'com.android.tools.build:gradle:3.3.0'\n" +
-          "+         classpath 'com.android.tools.build:gradle:3.5.0'\n" +
-          "Autofix for build.gradle line 7: Change to 3.3.2:\n" +
-          "@@ -7 +7\n" +
-          "-         classpath 'com.android.tools.build:gradle:3.3.0'\n" +
-          "+         classpath 'com.android.tools.build:gradle:3.3.2'"
+        // Make sure we put the safe fix first (patch-update only)
+        """
+        Autofix for build.gradle line 7: Replace with 3.3.2:
+        @@ -7 +7
+        -         classpath 'com.android.tools.build:gradle:3.3.0'
+        +         classpath 'com.android.tools.build:gradle:3.3.2'
+        Fix for build.gradle line 7: Replace with 3.5.0:
+        @@ -7 +7
+        -         classpath 'com.android.tools.build:gradle:3.3.0'
+        +         classpath 'com.android.tools.build:gradle:3.5.0'
+        """
       )
   }
 
@@ -2365,7 +2407,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       configuration ->
       listOf(
           "com.android.support:appcompat-v7" to ("13.0.0" to "25.3.1"),
-          "com.google.guava:guava" to ("11.0.2" to "21.0"),
+          "com.google.guava:guava" to ("11.0.2" to "17.0"),
         )
         .forEach { libraryInfo ->
           val library = libraryInfo.first
@@ -2609,7 +2651,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "apply plugin: 'com.android.application'\n" +
             "\n" +
             "android {\n" +
-            "    compileSdkVersion 29\n" +
+            "    //compileSdkVersion 29\n" +
             "}\n" +
             "\n" +
             "dependencies {\n" +
@@ -2627,14 +2669,33 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .issues(REMOTE_VERSION)
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&rows=1&wt=json",
-        """{"responseHeader":{"status":0,"QTime":0,"params":{"q":"g:\"com.google.guava\" AND a:\"guava\"","core":"gav","indent":"off","fl":"id,g,a,v,p,ec,timestamp,tags","start":"","sort":"score desc,timestamp desc,g asc,a asc,v desc","rows":"1","wt":"json","version":"2.2"}},"response":{"numFound":100,"start":0,"docs":[{"id":"com.google.guava:guava:30.1-jre","g":"com.google.guava","a":"guava","v":"30.1-jre","p":"bundle","timestamp":1607961950000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]}]}}""",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&wt=json",
-        """{"responseHeader":{"status":0,"QTime":5,"params":{"q":"g:\"com.google.guava\" AND a:\"guava\"","core":"gav","indent":"off","fl":"id,g,a,v,p,ec,timestamp,tags","start":"","sort":"score desc,timestamp desc,g asc,a asc,v desc","rows":"","wt":"json","version":"2.2"}},"response":{"numFound":100,"start":0,"docs":[{"id":"com.google.guava:guava:30.1-jre","g":"com.google.guava","a":"guava","v":"30.1-jre","p":"bundle","timestamp":1607961950000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:30.1-android","g":"com.google.guava","a":"guava","v":"30.1-android","p":"bundle","timestamp":1607961275000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:30.0-jre","g":"com.google.guava","a":"guava","v":"30.0-jre","p":"bundle","timestamp":1602880862000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:30.0-android","g":"com.google.guava","a":"guava","v":"30.0-android","p":"bundle","timestamp":1602880118000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:29.0-jre","g":"com.google.guava","a":"guava","v":"29.0-jre","p":"bundle","timestamp":1586813033000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:29.0-android","g":"com.google.guava","a":"guava","v":"29.0-android","p":"bundle","timestamp":1586812496000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:28.2-jre","g":"com.google.guava","a":"guava","v":"28.2-jre","p":"bundle","timestamp":1577416125000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:28.2-android","g":"com.google.guava","a":"guava","v":"28.2-android","p":"bundle","timestamp":1577413219000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:28.1-jre","g":"com.google.guava","a":"guava","v":"28.1-jre","p":"bundle","timestamp":1567025587000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]},{"id":"com.google.guava:guava:28.1-android","g":"com.google.guava","a":"guava","v":"28.1-android","p":"bundle","timestamp":1567025039000,"ec":["-javadoc.jar","-sources.jar",".jar",".pom"],"tags":["libraries","classes","google","expanded","much","include","that","more","utility","guava","core","suite","collections"]}]}}""",
+        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <versioning>
+            <latest>33.4.0-jre</latest>
+            <release>33.4.0-jre</release>
+            <versions>
+              <version>28.1-android</version>
+              <version>28.1-jre</version>
+              <version>28.2-android</version>
+              <version>28.2-jre</version>
+              <version>29.0-android</version>
+              <version>29.0-jre</version>
+              <version>30.0-android</version>
+              <version>30.0-jre</version>
+              <version>30.1-android</version>
+              <version>30.1-jre</version>
+            </versions>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
       .run()
       .expect(
@@ -2673,7 +2734,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "apply plugin: 'com.android.application'\n" +
             "\n" +
             "android {\n" +
-            "    compileSdkVersion 29\n" +
+            "\n" +
             "}\n" +
             "\n" +
             // Available versions:
@@ -2708,32 +2769,45 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .issues(REMOTE_VERSION)
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22org.jetbrains.kotlinx%22+AND+a:%22kotlinx-coroutines-core%22&core=gav&wt=json",
-        """{"responseHeader":{"status":0,"QTime":1,"params":{"q":"g:\"org.jetbrains.kotlinx\" AND a:\"kotlinx-coroutines-core\"","core":"gav","indent":"off","fl":"id,g,a,v,p,ec,timestamp,tags","start":"","sort":"score desc,timestamp desc,g asc,a asc,v desc","rows":"","wt":"json","version":"2.2"}},"response":{"numFound":77,"start":0,"docs":[{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2-native-mt","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.2-native-mt","p":"jar","timestamp":1606484996000,"ec":["-javadoc.jar","-sources.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.2","p":"jar","timestamp":1606411162000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1-native-mt","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.1-native-mt","p":"jar","timestamp":1605797411000,"ec":["-javadoc.jar","-sources.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.1","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.1","p":"jar","timestamp":1604486053000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.0","p":"jar","timestamp":1603735442000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0-M1","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.4.0-M1","p":"jar","timestamp":1602593229000,"ec":["-javadoc.jar","-sources.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9-native-mt-2","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.3.9-native-mt-2","p":"jar","timestamp":1600769552000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9-native-mt","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.3.9-native-mt","p":"jar","timestamp":1598043333000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8-native-mt-1.4.0-rc","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.3.8-native-mt-1.4.0-rc","p":"jar","timestamp":1597826260000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]},{"id":"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9","g":"org.jetbrains.kotlinx","a":"kotlinx-coroutines-core","v":"1.3.9","p":"jar","timestamp":1597402470000,"ec":["-sources.jar","-javadoc.jar",".jar",".module",".pom"],"tags":["libraries","support","kotlin","coroutines"]}]}}""",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22org.jetbrains.kotlinx%22+AND+a:%22kotlinx-coroutines-core%22&core=gav&rows=1&wt=json",
-        """{"responseHeader":{"status":0,"QTime":0,"params":{"q":"g:\"22org.jetbrains.kotlinx\" AND a:\"kotlinx-coroutines-core\"","core":"gav","indent":"off","fl":"id,g,a,v,p,ec,timestamp,tags","start":"","sort":"score desc,timestamp desc,g asc,a asc,v desc","rows":"","wt":"json","version":"2.2"}},"response":{"numFound":0,"start":0,"docs":[]}}""",
+        "https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/maven-metadata.xml",
+        "<metadata>\n" +
+          "<groupId>org.jetbrains.kotlinx</groupId>\n" +
+          "<artifactId>kotlinx-coroutines-core</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>1.3.9</version>\n" +
+          "<version>1.3.9-native-mt</version>\n" +
+          "<version>1.3.9-native-mt-2</version>\n" +
+          "<version>1.4.0-M1</version>\n" +
+          "<version>1.4.0</version>\n" +
+          "<version>1.4.1</version>\n" +
+          "<version>1.4.1-native-mt</version>\n" +
+          "<version>1.4.2</version>\n" +
+          "<version>1.4.2-native-mt</version>\n" +
+          "</versions>\n" +
+          "<lastUpdated>20241220152809</lastUpdated>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .run()
       .expect(
         """
-                build.gradle:8: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.9 is available: 1.4.2 [NewerVersionAvailable]
-                    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9' // Suggest 1.4.2
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                build.gradle:9: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.8-native-mt-2 is available: 1.3.9-native-mt-2 [NewerVersionAvailable]
-                    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8-native-mt-2' // Suggest 1.3.9-native-mt-2
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                build.gradle:12: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.4.0-native-mt is available: 1.4.2-native-mt [NewerVersionAvailable]
-                    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0-native-mt' // Suggest 1.4.2-native-mt
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                build.gradle:13: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.8-native-mt-1.4.0-rc is available: 1.4.2-native-mt [NewerVersionAvailable]
-                    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8-native-mt-1.4.0-rc'
-                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 4 warnings
-                """
+        build.gradle:8: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.9 is available: 1.4.2 [NewerVersionAvailable]
+            compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.9' // Suggest 1.4.2
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:9: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.8-native-mt-2 is available: 1.3.9-native-mt-2 [NewerVersionAvailable]
+            compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8-native-mt-2' // Suggest 1.3.9-native-mt-2
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:12: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.4.0-native-mt is available: 1.4.2-native-mt [NewerVersionAvailable]
+            compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.0-native-mt' // Suggest 1.4.2-native-mt
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:13: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-core than 1.3.8-native-mt-1.4.0-rc is available: 1.4.2-native-mt [NewerVersionAvailable]
+            compile 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8-native-mt-1.4.0-rc'
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 4 warnings
+        """
       )
   }
 
@@ -2827,13 +2901,6 @@ class GradleDetectorTest : AbstractCheckTest() {
     // Don't offer Gradle plugin versions newer than the IDE (when running in the IDE)
     // Same (older) version of Studio and Gradle:
     // Studio 3.3, gradle: 3.3.0-alpha04: Offer latest 3.3.0, not 3.4 etc
-    val expected =
-      "" +
-        "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.3.2 [AndroidGradlePluginVersion]\n" +
-        "    classpath 'com.android.tools.build:gradle:3.3.0-alpha04'\n" +
-        "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 1 warnings"
-
     lint()
       .files(
         gradle(
@@ -2861,17 +2928,38 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory({
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
-          override fun getClientRevision(): String = "3.3.0.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.3.0" else null
+          }
         }
       })
       .run()
-      .expect(expected)
+      .expect(
+        """
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.𝑥 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for build.gradle line 7: Replace with 3.3.2:
+        @@ -7 +7
+        -     classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
+        +     classpath 'com.android.tools.build:gradle:3.3.2'
+        Fix for build.gradle line 7: Replace with 3.5.0 (Risky; prefer Upgrade Assistant):
+        @@ -7 +7
+        -     classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
+        +     classpath 'com.android.tools.build:gradle:3.5.0'
+        """
+      )
   }
 
   fun testTooRecentVersionInVersionCatalog() {
     val expected =
       """
-            ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.3.2 [AndroidGradlePluginVersion]
+            ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.𝑥 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]
             gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
@@ -2891,18 +2979,24 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
-          override fun getClientRevision(): String = "3.3.0.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.3.0.0" else null
+          }
         }
       }
       .run()
       .expect(expected)
       .expectFixDiffs(
         """
-                Autofix for gradle/libs.versions.toml line 2: Change to 3.3.2:
-                @@ -2 +2
-                - gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
-                + gradle = "  com.android.tools.build:gradle:3.3.2  "
-                """
+        Autofix for gradle/libs.versions.toml line 2: Replace with 3.3.2:
+        @@ -2 +2
+        - gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
+        + gradle = "  com.android.tools.build:gradle:3.3.2  "
+        Fix for gradle/libs.versions.toml line 2: Replace with 3.5.0 (Risky; prefer Upgrade Assistant):
+        @@ -2 +2
+        - gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
+        + gradle = "  com.android.tools.build:gradle:3.5.0  "
+        """
       )
   }
 
@@ -2938,13 +3032,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.4.0
-          override fun getClientRevision(): String = "3.4.0"
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "3.4.0" else null
+          }
         }
       }
       .run()
       .expect(
         "" +
-          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha01 is available: 3.4.1 [AndroidGradlePluginVersion]\n" +
+          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha01 is available: 3.5.0. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
           "    classpath 'com.android.tools.build:gradle:3.3.0-alpha01'\n" +
           "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
           "0 errors, 1 warnings"
@@ -2981,8 +3077,10 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(AGP_DEPENDENCY)
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-          // Studio 3.0.0
-          override fun getClientRevision(): String = "2.3.0.0"
+          // Studio 2.3.0
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "2.3.0.0" else null
+          }
         }
       }
       .run()
@@ -3044,7 +3142,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testDependencies() {
     val expected =
       "" +
-        "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 21.0 [GradleDependency]\n" +
+        "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 17.0 [GradleDependency]\n" +
         "    freeCompile 'com.google.guava:guava:11.0.2'\n" +
         "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 25.3.1 [GradleDependency]\n" +
@@ -3096,7 +3194,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.support:multidex than 1.0.0 is available: 1.0.1 [GradleDependency]
             multidexVersion = "1.0.0"
                               ~~~~~~~
-            ../gradle/libs.versions.toml:3: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 21.0 [GradleDependency]
+            ../gradle/libs.versions.toml:3: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 17.0 [GradleDependency]
             guavaVersion = { prefer = "11.0.2" }
                                       ~~~~~~~~
             ../gradle/libs.versions.toml:4: Warning: A newer version of com.android.support.test:runner than 0.3 is available: 0.5 [GradleDependency]
@@ -3123,10 +3221,10 @@ class GradleDetectorTest : AbstractCheckTest() {
             @@ -2 +2
             - multidexVersion = "1.0.0"
             + multidexVersion = "1.0.1"
-            Fix for gradle/libs.versions.toml line 3: Change to 21.0:
+            Fix for gradle/libs.versions.toml line 3: Change to 17.0:
             @@ -3 +3
             - guavaVersion = { prefer = "11.0.2" }
-            + guavaVersion = { prefer = "21.0" }
+            + guavaVersion = { prefer = "17.0" }
             Fix for gradle/libs.versions.toml line 4: Change to 0.5:
             @@ -4 +4
             - testRunnerVersion = { strictly = "0.3" }
@@ -3397,7 +3495,7 @@ class GradleDetectorTest : AbstractCheckTest() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=77594
     val expected =
       "" +
-        "build.gradle:13: Warning: A newer version of com.google.code.gson:gson than 2.2 is available: 2.8.2 [GradleDependency]\n" +
+        "build.gradle:13: Warning: A newer version of com.google.code.gson:gson than 2.2 is available: 2.8.2 [NewerVersionAvailable]\n" +
         "    compile 'com.google.code.gson:gson:2.2'\n" +
         "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "0 errors, 1 warnings\n"
@@ -3422,7 +3520,28 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .issues(DEPENDENCY)
+      .networkData(
+        "https://repo1.maven.org/maven2/com/google/code/gson/gson/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+          <groupId>com.google.code.gson</groupId>
+          <artifactId>gson</artifactId>
+          <versioning>
+            <latest>2.12.1</latest>
+            <release>2.12.1</release>
+            <versions>
+              <version>2.0</version>
+              <version>2.1</version>
+              <version>2.2</version>
+              <version>2.8.2</version>
+            </versions>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(expected)
   }
@@ -3869,10 +3988,10 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testRemoteVersions() {
     val expected =
       "" +
-        "build.gradle:9: Warning: A newer version of joda-time:joda-time than 2.1 is available: 2.9.9 [NewerVersionAvailable]\n" +
+        "build.gradle:4: Warning: A newer version of joda-time:joda-time than 2.1 is available: 2.9.9 [NewerVersionAvailable]\n" +
         "    compile 'joda-time:joda-time:2.1'\n" +
         "            ~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:10: Warning: A newer version of com.squareup.dagger:dagger than 1.2.0 is available: 1.2.5 [NewerVersionAvailable]\n" +
+        "build.gradle:5: Warning: A newer version of com.squareup.dagger:dagger than 1.2.0 is available: 1.2.5 [NewerVersionAvailable]\n" +
         "    compile 'com.squareup.dagger:dagger:1.2.0'\n" +
         "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "0 errors, 2 warnings\n"
@@ -3883,11 +4002,6 @@ class GradleDetectorTest : AbstractCheckTest() {
           "" +
             "apply plugin: 'com.android.application'\n" +
             "\n" +
-            "android {\n" +
-            "    compileSdkVersion 19\n" +
-            "    buildToolsVersion \"19.0.0\"\n" +
-            "}\n" +
-            "\n" +
             "dependencies {\n" +
             "    compile 'joda-time:joda-time:2.1'\n" +
             "    compile 'com.squareup.dagger:dagger:1.2.0'\n" +
@@ -3895,70 +4009,91 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22joda-time%22+AND+a:%22joda-time%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"joda-time\\\" AND a:\\\"joda-time\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":34,\"start\":0,\"docs\":[" +
-          "{\"id\":\"joda-time:joda-time:2.9.9\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.9\",\"p\":\"jar\",\"timestamp\":1490275993000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.8\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.8\",\"p\":\"jar\",\"timestamp\":1490220931000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.7\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.7\",\"p\":\"jar\",\"timestamp\":1482188123000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-no-tzdb-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.6\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.6\",\"p\":\"jar\",\"timestamp\":1478812169000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb-javadoc.jar\",\"-no-tzdb.jar\",\"-sources.jar\",\"-javadoc.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.5\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.5\",\"p\":\"jar\",\"timestamp\":1478191007000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb-javadoc.jar\",\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\"-no-tzdb-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.4\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.4\",\"p\":\"jar\",\"timestamp\":1464341135000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-no-tzdb.jar\",\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.3\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.3\",\"p\":\"jar\",\"timestamp\":1459107331000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.2\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.2\",\"p\":\"jar\",\"timestamp\":1453988648000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9.1\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9.1\",\"p\":\"jar\",\"timestamp\":1447329806000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-no-tzdb.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"joda-time:joda-time:2.9\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.9\",\"p\":\"jar\",\"timestamp\":1445680109000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-sources.jar\",\"-no-tzdb.jar\",\"-javadoc.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <versioning>
+          <latest>2.9.9</latest>
+          <release>2.9.9</release>
+          <versions>
+            <version>0.95</version>
+            <version>1.0</version>
+            <version>2.9.7</version>
+            <version>2.9.8</version>
+            <version>2.9.9</version>
+          </versions>
+          <lastUpdated>20250203142911</lastUpdated>
+        </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.squareup.dagger%22+AND+a:%22dagger%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.squareup.dagger\\\" AND a:\\\"dagger\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":9,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.5\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.5\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.4\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.4\",\"p\":\"jar\",\"timestamp\":1462291775000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.3\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.3\",\"p\":\"jar\",\"timestamp\":1462238813000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.2\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.2\",\"p\":\"jar\",\"timestamp\":1405987370000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.1\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.1\",\"p\":\"jar\",\"timestamp\":1392614597000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.2.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.0\",\"p\":\"jar\",\"timestamp\":1386979272000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.1.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1375745812000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\"-tests.jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.0.1\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.0.1\",\"p\":\"jar\",\"timestamp\":1370304793000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.squareup.dagger:dagger:1.0.0\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1367941344000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/com/squareup/dagger/dagger/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata>
+          <groupId>com.squareup.dagger</groupId>
+          <artifactId>dagger</artifactId>
+          <versioning>
+            <latest>1.2.5</latest>
+            <release>1.2.5</release>
+            <versions>
+              <version>1.0.0</version>
+              <version>1.0.1</version>
+              <version>1.1.0</version>
+              <version>1.2.0</version>
+              <version>1.2.1</version>
+              <version>1.2.2</version>
+              <version>1.2.3</version>
+              <version>1.2.4</version>
+              <version>1.2.5</version>
+            </versions>
+            <lastUpdated>20160510041018</lastUpdated>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
-      .issues(REMOTE_VERSION)
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(expected)
   }
 
+  fun testRemoteDisabledWithGradleDependency() {
+    lint()
+      .files(gradle("" + "dependencies {\n" + "    compile 'joda-time:joda-time:2.1'\n" + "}\n"))
+      .networkData(
+        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <versioning>
+          <versions>
+            <version>2.9.9</version>
+          </versions>
+        </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
+      .issues(REMOTE_VERSION) // Note: No DEPENDENCY
+      .run()
+      .expectClean()
+  }
+
   fun testRemoteVersionsWithPreviews() {
     // If the most recent version is a rc version, query for all versions
-
-    val expected =
-      "" +
-        "build.gradle:9: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 23.6-android [NewerVersionAvailable]\n" +
-        "    compile 'com.google.guava:guava:11.0.2'\n" +
-        "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:10: Warning: A newer version of com.google.guava:guava than 16.0-rc1 is available: 23.6-android [NewerVersionAvailable]\n" +
-        "    compile 'com.google.guava:guava:16.0-rc1'\n" +
-        "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 2 warnings\n"
-
     lint()
       .files(
         gradle(
           "" +
             "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion 19\n" +
-            "    buildToolsVersion \"19.0.0\"\n" +
-            "}\n" +
             "\n" +
             "dependencies {\n" +
             "    compile 'com.google.guava:guava:11.0.2'\n" +
@@ -3966,17 +4101,50 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n"
         )
       )
-      .issues(REMOTE_VERSION)
+      .issues(REMOTE_VERSION, DEPENDENCY)
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&rows=1&wt=json",
-        "{\"responseHeader\":{\"status\":0,\"QTime\":0,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.google.guava\\\" AND a:\\\"guava\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":38,\"start\":0,\"docs\":[{\"id\":\"com.google.guava:guava:18.0-rc1\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"18.0-rc1\",\"p\":\"bundle\",\"timestamp\":1407266204000,\"tags\":[\"spec\",\"libraries\",\"classes\",\"google\",\"code\",\"expanded\",\"much\",\"include\",\"annotation\",\"dependency\",\"that\",\"more\",\"utility\",\"guava\",\"javax\",\"only\",\"core\",\"suite\",\"collections\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-site.jar\",\".pom\"]}]}}",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&wt=json",
-        "{\"responseHeader\":{\"status\":0,\"QTime\":0,\"params\":{\"q\":\"g:\\\"com.google.guava\\\" AND a:\\\"guava\\\"\",\"core\":\"gav\",\"indent\":\"off\",\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"wt\":\"json\",\"version\":\"2.2\"}},\"response\":{\"numFound\":68,\"start\":0,\"docs\":[{\"id\":\"com.google.guava:guava:23.6-jre\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.6-jre\",\"p\":\"bundle\",\"timestamp\":1513818220000,\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.6-android\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.6-android\",\"p\":\"bundle\",\"timestamp\":1513817611000,\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.5-jre\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.5-jre\",\"p\":\"bundle\",\"timestamp\":1511382806000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.5-android\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.5-android\",\"p\":\"bundle\",\"timestamp\":1511382148000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.4-jre\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.4-jre\",\"p\":\"bundle\",\"timestamp\":1510248931000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.4-android\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.4-android\",\"p\":\"bundle\",\"timestamp\":1510248248000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.3-jre\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.3-jre\",\"p\":\"bundle\",\"timestamp\":1509048371000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.3-android\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.3-android\",\"p\":\"bundle\",\"timestamp\":1509047759000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.2-jre\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.2-jre\",\"p\":\"bundle\",\"timestamp\":1507762486000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]},{\"id\":\"com.google.guava:guava:23.2-android\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"23.2-android\",\"p\":\"bundle\",\"timestamp\":1507761822000,\"ec\":[\"-sources.jar\",\"-javadoc.jar\",\".jar\",\".pom\"],\"tags\":[\"libraries\",\"classes\",\"google\",\"expanded\",\"much\",\"include\",\"that\",\"more\",\"utility\",\"guava\",\"core\",\"suite\",\"collections\"]}]}}",
+        "https://repo1.maven.org/maven2/com/google/guava/guava/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <versioning>
+            <latest>33.4.0-jre</latest>
+            <release>33.4.0-jre</release>
+            <versions>
+              <version>18.0-rc1</version>
+              <version>18.0-rc2</version>
+              <version>18.0</version>
+              <version>23.2-android</version>
+              <version>23.2-jre</version>
+              <version>23.3-android</version>
+              <version>23.3-jre</version>
+              <version>23.4-android</version>
+              <version>23.4-jre</version>
+              <version>23.5-android</version>
+              <version>23.5-jre</version>
+              <version>23.6-android</version>
+              <version>23.6-jre</version>
+            </versions>
+            <lastUpdated>20241216222210</lastUpdated>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
       )
       .run()
-      .expect(expected)
+      .expect(
+        """
+        build.gradle:4: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 23.6-android [NewerVersionAvailable]
+            compile 'com.google.guava:guava:11.0.2'
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:5: Warning: A newer version of com.google.guava:guava than 16.0-rc1 is available: 23.6-android [NewerVersionAvailable]
+            compile 'com.google.guava:guava:16.0-rc1'
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
+      )
   }
 
   fun testPreviewVersions() {
@@ -3992,7 +4160,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "build.gradle:8: Warning: A newer version of com.android.tools.build:gradle than 3.2.1 is available: 3.5.0 [AndroidGradlePluginVersion]\n" +
         "        classpath 'com.android.tools.build:gradle:3.2.1'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0 [AndroidGradlePluginVersion]\n" +
+        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
         "        classpath 'com.android.tools.build:gradle:3.3.0-alpha04'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
@@ -4038,7 +4206,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "build.gradle.kts:8: Warning: A newer version of com.android.tools.build:gradle than 3.2.1 is available: 3.5.0 [AndroidGradlePluginVersion]\n" +
         "        classpath(\"com.android.tools.build:gradle:3.2.1\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0 [AndroidGradlePluginVersion]\n" +
+        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
         "        classpath(\"com.android.tools.build:gradle:3.3.0-alpha04\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
@@ -4358,184 +4526,6 @@ class GradleDetectorTest : AbstractCheckTest() {
           "@@ -5 +5\n" +
           "-     compile 'com.android.support:design:\${supportLibVersion}'\n" +
           "+     compile \"com.android.support:design:\${supportLibVersion}\"\n"
-      )
-  }
-
-  fun testOldFabric() {
-    // This version of Fabric created a unique string for every build which results in
-    // Hotswaps getting disabled due to resource changes
-    val expected =
-      "" +
-        "build.gradle:3: Warning: Use Fabric Gradle plugin version 1.21.6 or later to improve Instant Run performance (was 1.21.2) [GradleDependency]\n" +
-        "    classpath 'io.fabric.tools:gradle:1.21.2'\n" +
-        "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:4: Warning: Use Fabric Gradle plugin version 1.21.6 or later to improve Instant Run performance (was 1.20.0) [GradleDependency]\n" +
-        "    classpath 'io.fabric.tools:gradle:1.20.0'\n" +
-        "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:5: Warning: A newer version of io.fabric.tools:gradle than 1.22.0 is available: 1.25.1 [GradleDependency]\n" +
-        "    classpath 'io.fabric.tools:gradle:1.22.0'\n" +
-        "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 3 warnings\n"
-
-    lint()
-      .files(
-        gradle(
-          "" +
-            "buildscript {\n" +
-            "  dependencies {\n" +
-            "    classpath 'io.fabric.tools:gradle:1.21.2'\n" + // Not OK
-            "    classpath 'io.fabric.tools:gradle:1.20.0'\n" + // Not OK
-            "    classpath 'io.fabric.tools:gradle:1.22.0'\n" + // Old
-            "    classpath 'io.fabric.tools:gradle:1.+'\n" + // OK
-            "  }\n" +
-            "}\n"
-        )
-      )
-      .issues(DEPENDENCY)
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        "" +
-          "Fix for build.gradle line 3: Change to 1.22.1:\n" +
-          "@@ -3 +3\n" +
-          "-     classpath 'io.fabric.tools:gradle:1.21.2'\n" +
-          "+     classpath 'io.fabric.tools:gradle:1.22.1'\n" +
-          "Fix for build.gradle line 4: Change to 1.22.1:\n" +
-          "@@ -4 +4\n" +
-          "-     classpath 'io.fabric.tools:gradle:1.20.0'\n" +
-          "+     classpath 'io.fabric.tools:gradle:1.22.1'\n" +
-          "Fix for build.gradle line 5: Change to 1.25.1:\n" +
-          "@@ -5 +5\n" +
-          "-     classpath 'io.fabric.tools:gradle:1.22.0'\n" +
-          "+     classpath 'io.fabric.tools:gradle:1.25.1'"
-      )
-  }
-
-  fun testOldRobolectric() {
-    // Old robolectric warning is shown only for windows users
-    val expected =
-      if (isWindows())
-        """
-                    build.gradle:2: Warning: Use robolectric version 4.2.1 or later to fix issues with parsing of Windows paths [GradleDependency]
-                        testImplementation 'org.robolectric:robolectric:4.1'
-                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    build.gradle:3: Warning: Use robolectric version 4.2.1 or later to fix issues with parsing of Windows paths [GradleDependency]
-                        testImplementation 'org.robolectric:robolectric:3.8'
-                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    build.gradle:4: Warning: Use robolectric version 4.2.1 or later to fix issues with parsing of Windows paths [GradleDependency]
-                        testImplementation 'org.robolectric:robolectric:3.6'
-                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    build.gradle:5: Warning: Use robolectric version 4.2.1 or later to fix issues with parsing of Windows paths [GradleDependency]
-                        testImplementation 'org.robolectric:robolectric:2.0'
-                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    0 errors, 4 warnings
-                """
-      else "No warnings."
-
-    lint()
-      .files(
-        gradle(
-            """
-                    dependencies {
-                        testImplementation 'org.robolectric:robolectric:4.1'
-                        testImplementation 'org.robolectric:robolectric:3.8'
-                        testImplementation 'org.robolectric:robolectric:3.6'
-                        testImplementation 'org.robolectric:robolectric:2.0'
-                        testImplementation 'org.robolectric:robolectric:4.2.1'
-                    }
-                """
-          )
-          .indented()
-      )
-      .issues(DEPENDENCY)
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        if (isWindows())
-          """
-                        Fix for build.gradle line 2: Change to 4.2.1:
-                        @@ -2 +2
-                        -     testImplementation 'org.robolectric:robolectric:4.1'
-                        +     testImplementation 'org.robolectric:robolectric:4.2.1'
-                        Fix for build.gradle line 3: Change to 4.2.1:
-                        @@ -3 +3
-                        -     testImplementation 'org.robolectric:robolectric:3.8'
-                        +     testImplementation 'org.robolectric:robolectric:4.2.1'
-                        Fix for build.gradle line 4: Change to 4.2.1:
-                        @@ -4 +4
-                        -     testImplementation 'org.robolectric:robolectric:3.6'
-                        +     testImplementation 'org.robolectric:robolectric:4.2.1'
-                        Fix for build.gradle line 5: Change to 4.2.1:
-                        @@ -5 +5
-                        -     testImplementation 'org.robolectric:robolectric:2.0'
-                        @@ -7 +6
-                        +     testImplementation 'org.robolectric:robolectric:4.2.1'
-                    """
-        else ""
-      )
-  }
-
-  fun testOldBugSnag() {
-    // This version of BugSnag triggered instant run full rebuilds
-    val expected =
-      "" +
-        "build.gradle:3: Warning: Use BugSnag Gradle plugin version 2.1.2 or later to improve Instant Run performance (was 2.1.0) [GradleDependency]\n" +
-        "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.0'\n" +
-        "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:4: Warning: Use BugSnag Gradle plugin version 2.1.2 or later to improve Instant Run performance (was 2.1.1) [GradleDependency]\n" +
-        "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.1'\n" +
-        "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:5: Warning: A newer version of com.bugsnag:bugsnag-android-gradle-plugin than 2.1.2 is available: 3.2.5 [GradleDependency]\n" +
-        "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.2'\n" +
-        "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:6: Warning: A newer version of com.bugsnag:bugsnag-android-gradle-plugin than 2.2 is available: 3.2.5 [GradleDependency]\n" +
-        "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.2'\n" +
-        "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:7: Warning: A newer version of com.bugsnag:bugsnag-android-gradle-plugin than 2.5 is available: 3.2.5 [GradleDependency]\n" +
-        "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.5'\n" +
-        "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "0 errors, 5 warnings"
-
-    lint()
-      .files(
-        gradle(
-          "" +
-            "buildscript {\n" +
-            "  dependencies {\n" +
-            "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.0'\n" + // Bad
-            "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.1'\n" + // Bad
-            "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.2'\n" + // Old
-            "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.2'\n" + // Old
-            "    classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.5'\n" + // OK
-            "  }\n" +
-            "}\n"
-        )
-      )
-      .issues(DEPENDENCY)
-      .run()
-      .expect(expected)
-      .expectFixDiffs(
-        "" +
-          "Fix for build.gradle line 3: Change to 2.4.1:\n" +
-          "@@ -3 +3\n" +
-          "-     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.0'\n" +
-          "+     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.4.1'\n" +
-          "Fix for build.gradle line 4: Change to 2.4.1:\n" +
-          "@@ -4 +4\n" +
-          "-     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.1'\n" +
-          "+     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.4.1'\n" +
-          "Fix for build.gradle line 5: Change to 3.2.5:\n" +
-          "@@ -5 +5\n" +
-          "-     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.1.2'\n" +
-          "+     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:3.2.5'\n" +
-          "Fix for build.gradle line 6: Change to 3.2.5:\n" +
-          "@@ -6 +6\n" +
-          "-     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.2'\n" +
-          "+     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:3.2.5'\n" +
-          "Fix for build.gradle line 7: Change to 3.2.5:\n" +
-          "@@ -7 +7\n" +
-          "-     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:2.5'\n" +
-          "+     classpath 'com.bugsnag:bugsnag-android-gradle-plugin:3.2.5'"
       )
   }
 
@@ -6101,8 +6091,147 @@ class GradleDetectorTest : AbstractCheckTest() {
    * warnings from SDK Index
    */
   fun testSdkIndexLibraryUpgradeToVersionWithoutWarningOrError() {
-    val expectedFixes =
-      """
+    lint()
+      .files(
+        gradle(
+            """
+            dependencies {
+                compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+                compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
+                compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
+                compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
+                compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
+                compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
+            }
+            """
+          )
+          .indented()
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/com/example/ads/third/party/example/maven-metadata.xml",
+        // language=XML
+        "<metadata>\n" +
+          "<groupId>com.example.ads.third.party</groupId>\n" +
+          "<artifactId>example</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>7.2.0</version>\n" +
+          "<version>7.2.1</version>\n" +
+          "<version>7.2.2</version>\n" +
+          "<version>8.0.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/log4j/log4j/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>log4j</groupId>\n" +
+          "<artifactId>log4j</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>1.2.9</version>\n" +
+          "<version>1.2.10</version>\n" +
+          "<version>1.2.11</version>\n" +
+          "<version>1.2.12</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/com/example/issues/issues-on-latest/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>issues-on-latest</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>2.0.0</version>\n" +
+          "<version>1.9.0</version>\n" +
+          "<version>1.8.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/com/example/issues/latest-is-preview/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>latest-is-preview</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>1.0.0</version>\n" +
+          "<version>1.1.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
+      )
+      .networkData(
+        "https://repo1.maven.org/maven2/com/example/issues/deprecated/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>deprecated</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>2.0.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
+      )
+      .issues(
+        REMOTE_VERSION,
+        RISKY_LIBRARY,
+        DEPRECATED_LIBRARY,
+        DEPENDENCY,
+        PLAY_SDK_INDEX_NON_COMPLIANT,
+        PLAY_SDK_INDEX_GENERIC_ISSUES,
+        PLAY_SDK_INDEX_VULNERABILITY,
+        PLAY_SDK_INDEX_DEPRECATED,
+      )
+      .sdkHome(mockSupportLibraryInstallation)
+      .run()
+      .expect(
+        """
+        build.gradle:3: Warning: A newer version of com.example.ads.third.party:example than 7.2.1 is available: 8.0.0 [NewerVersionAvailable]
+            compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:4: Warning: A newer version of log4j:log4j than 1.2.10 is available: 1.2.18 [NewerVersionAvailable]
+            compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
+                    ~~~~~~~~~~~~~~~~~~~~
+        build.gradle:7: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+        The developer has recommended these alternatives:
+         - Alternative 1 (first:alternative)
+         - second:alternative
+         [PlaySdkIndexDeprecated]
+            compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+            compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 contains an unsafe implementation of the X509TrustManager interface. [PlaySdkIndexVulnerability]
+            compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 has been reported as outdated by its author [OutdatedLibrary]
+            compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:5: Warning: com.example.issues:issues-on-latest version 1.8.0 has been reported as outdated by its author.
+        The library author recommends using versions:
+          - 1.9.0 or higher [OutdatedLibrary]
+            compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:6: Warning: com.example.issues:latest-is-preview version 1.0.0 has been reported as outdated by its author.
+        The library author recommends using versions:
+          - 1.1.0 or higher [OutdatedLibrary]
+            compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 8 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
         Fix for build.gradle line 3: Change to 8.0.0:
         @@ -3 +3
         -     compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
@@ -6145,132 +6274,8 @@ class GradleDetectorTest : AbstractCheckTest() {
         +     compile 'com.example.issues:latest-is-preview:1.1.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
         Show URL for build.gradle line 6: View details in Google Play SDK Index:
         http://sdk.google.com/
-      """
-    lint()
-      .files(
-        gradle(
-            """
-                dependencies {
-                    compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-                    compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
-                    compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
-                    compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
-                    compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
-                    compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
-                }
-                """
-          )
-          .indented()
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.ads.third.party%22+AND+a:%22example%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.ads.third.party\\\" AND a:\\\"example\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":4,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.ads.third.party:example:8.0.0\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"8.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.2.2\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.2.2\",\"p\":\"jar\",\"timestamp\":1462851968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.2.1\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.2.1\",\"p\":\"jar\",\"timestamp\":1462850968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.2.0\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.2.0\",\"p\":\"jar\",\"timestamp\":1462849968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}]}}",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22log4j%22+AND+a:%22log4j%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"log4j\\\" AND a:\\\"log4j\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":4,\"start\":0,\"docs\":[" +
-          "{\"id\":\"log4j:log4j:1.2.12\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.12\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.11\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.11\",\"p\":\"jar\",\"timestamp\":1462851968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.10\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.10\",\"p\":\"jar\",\"timestamp\":1462850968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.9\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.9\",\"p\":\"jar\",\"timestamp\":1462849968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}]}}",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22issues-on-latest%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"issues-on-latest\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":3,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:issues-on-latest:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:issues-on-latest:1.9.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"1.9.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:issues-on-latest:1.8.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"1.8.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22latest-is-preview%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"latest-is-preview\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":2,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:latest-is-preview:1.1.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:latest-is-preview:1.0.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
-      )
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22deprecated%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"deprecated\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":3,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:deprecated:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"deprecated\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
-      )
-      .issues(
-        REMOTE_VERSION,
-        RISKY_LIBRARY,
-        DEPRECATED_LIBRARY,
-        DEPENDENCY,
-        PLAY_SDK_INDEX_NON_COMPLIANT,
-        PLAY_SDK_INDEX_GENERIC_ISSUES,
-        PLAY_SDK_INDEX_VULNERABILITY,
-        PLAY_SDK_INDEX_DEPRECATED,
-      )
-      .sdkHome(mockSupportLibraryInstallation)
-      .run()
-      .expect(
-        """
-          build.gradle:3: Warning: A newer version of com.example.ads.third.party:example than 7.2.1 is available: 8.0.0 [NewerVersionAvailable]
-              compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:4: Warning: A newer version of log4j:log4j than 1.2.10 is available: 1.2.18 [NewerVersionAvailable]
-              compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
-                      ~~~~~~~~~~~~~~~~~~~~
-          build.gradle:7: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
-          The developer has recommended these alternatives:
-           - Alternative 1 (first:alternative)
-           - second:alternative
-           [PlaySdkIndexDeprecated]
-              compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a newer version since it is deprecated
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 contains an unsafe implementation of the X509TrustManager interface. [PlaySdkIndexVulnerability]
-              compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:2: Warning: com.example.ads.third.party:example version 7.2.0 has been reported as outdated by its author [OutdatedLibrary]
-              compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:5: Warning: com.example.issues:issues-on-latest version 1.8.0 has been reported as outdated by its author.
-          The library author recommends using versions:
-            - 1.9.0 or higher [OutdatedLibrary]
-              compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:6: Warning: com.example.issues:latest-is-preview version 1.0.0 has been reported as outdated by its author.
-          The library author recommends using versions:
-            - 1.1.0 or higher [OutdatedLibrary]
-              compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 8 warnings
         """
       )
-      .expectFixDiffs(expectedFixes)
   }
 
   /**
@@ -6321,63 +6326,78 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22log4j%22+AND+a:%22log4j%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"log4j\\\" AND a:\\\"log4j\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":4,\"start\":0,\"docs\":[" +
-          "{\"id\":\"log4j:log4j:1.2.15\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.15\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.11\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.11\",\"p\":\"jar\",\"timestamp\":1462851968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.10\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.10\",\"p\":\"jar\",\"timestamp\":1462850968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"log4j:log4j:1.2.9\",\"g\":\"log4j\",\"a\":\"log4j\",\"v\":\"1.2.9\",\"p\":\"jar\",\"timestamp\":1462849968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/log4j/log4j/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>log4j</groupId>\n" +
+          "<artifactId>log4j</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>1.2.9</version>\n" +
+          "<version>1.2.10</version>\n" +
+          "<version>1.2.11</version>\n" +
+          "<version>1.2.15</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.ads.third.party%22+AND+a:%22example%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.ads.third.party\\\" AND a:\\\"example\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":4,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.ads.third.party:example:7.1.4\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.1.4\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.1.2\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.1.2\",\"p\":\"jar\",\"timestamp\":1462851968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.1.1\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.1.1\",\"p\":\"jar\",\"timestamp\":1462850968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.ads.third.party:example:7.1.0\",\"g\":\"com.example.ads.third.party\",\"a\":\"example\",\"v\":\"7.1.0\",\"p\":\"jar\",\"timestamp\":1462849968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}]}}",
+        "https://repo1.maven.org/maven2/com/example/ads/third/party/example/maven-metadata.xml",
+        // language=XML
+        "<metadata>\n" +
+          "<groupId>com.example.ads.third.party</groupId>\n" +
+          "<artifactId>example</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>7.2.0</version>\n" +
+          "<version>7.2.1</version>\n" +
+          "<version>7.2.2</version>\n" +
+          "<version>8.0.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22issues-on-latest%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"issues-on-latest\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":3,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:issues-on-latest:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:issues-on-latest:1.9.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"1.9.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:issues-on-latest:1.8.0\",\"g\":\"com.example.issues\",\"a\":\"issues-on-latest\",\"v\":\"1.8.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
+        "https://repo1.maven.org/maven2/com/example/issues/issues-on-latest/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>issues-on-latest</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>2.0.0</version>\n" +
+          "<version>1.9.0</version>\n" +
+          "<version>1.8.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22latest-is-preview%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"latest-is-preview\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":2,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:latest-is-preview:1.1.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.1.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}," +
-          "{\"id\":\"com.example.issues:latest-is-preview:1.0.0\",\"g\":\"com.example.issues\",\"a\":\"latest-is-preview\",\"v\":\"1.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
+        "https://repo1.maven.org/maven2/com/example/issues/latest-is-preview/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>latest-is-preview</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>1.0.0</version>\n" +
+          "<version>1.1.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22com.example.issues%22+AND+a:%22deprecated%22&core=gav&wt=json",
-        "" +
-          "{\"responseHeader\":" +
-          "{\"status\":0,\"QTime\":0,\"params\":" +
-          "{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.example.issues\\\" AND a:\\\"deprecated\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"version\":\"2.2\"}}," +
-          "\"response\":" +
-          "{\"numFound\":3,\"start\":0,\"docs\":[" +
-          "{\"id\":\"com.example.issues:deprecated:2.0.0\",\"g\":\"com.example.issues\",\"a\":\"deprecated\",\"v\":\"2.0.0\",\"p\":\"jar\",\"timestamp\":1462852968000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]},",
+        "https://repo1.maven.org/maven2/com/example/issues/deprecated/maven-metadata.xml",
+        // language=XML
+        "<metadata modelVersion=\"1.1.0\">\n" +
+          "<groupId>com.example.issues</groupId>\n" +
+          "<artifactId>deprecated</artifactId>\n" +
+          "<versioning>\n" +
+          "<versions>\n" +
+          "<version>3.0.0</version>\n" +
+          "</versions>\n" +
+          "</versioning>\n" +
+          "</metadata>",
       )
       .issues(
         REMOTE_VERSION,
@@ -6393,30 +6413,30 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          build.gradle:2: Warning: A newer version of log4j:log4j than 1.2.11 is available: 1.2.18 [GradleDependency]
-              compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
-                      ~~~~~~~~~~~~~~~~~~~~
-          build.gradle:6: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
-          The developer has recommended these alternatives:
-           - Alternative 1 (first:alternative)
-           - second:alternative
-           [PlaySdkIndexDeprecated]
-              compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a version
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:3: Warning: com.example.ads.third.party:example version 7.1.0 has Ads policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:4: Warning: com.example.issues:issues-on-latest version 1.8.0 has been reported as outdated by its author.
-          The library author recommends using versions:
-            - 1.9.0 or higher [OutdatedLibrary]
-              compile 'com.example.issues:issues-on-latest:1.8.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:5: Warning: com.example.issues:latest-is-preview version 1.0.0 has been reported as outdated by its author.
-          The library author recommends using versions:
-            - 1.1.0 or higher [OutdatedLibrary]
-              compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          0 errors, 5 warnings
+        build.gradle:2: Warning: A newer version of log4j:log4j than 1.2.11 is available: 1.2.18 [GradleDependency]
+            compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
+                    ~~~~~~~~~~~~~~~~~~~~
+        build.gradle:6: Warning: com.example.issues:deprecated has been deprecated by its developer. Consider updating to an alternative SDK before publishing a new release.
+        The developer has recommended these alternatives:
+         - Alternative 1 (first:alternative)
+         - second:alternative
+         [PlaySdkIndexDeprecated]
+            compile 'com.example.issues:deprecated:2.0.0' // Should not suggest a version
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:3: Warning: com.example.ads.third.party:example version 7.1.0 has Ads policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+            compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:4: Warning: com.example.issues:issues-on-latest version 1.8.0 has been reported as outdated by its author.
+        The library author recommends using versions:
+          - 1.9.0 or higher [OutdatedLibrary]
+            compile 'com.example.issues:issues-on-latest:1.8.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:5: Warning: com.example.issues:latest-is-preview version 1.0.0 has been reported as outdated by its author.
+        The library author recommends using versions:
+          - 1.1.0 or higher [OutdatedLibrary]
+            compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 5 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -8751,15 +8771,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .files(
         gradleToml(
             """
-          [versions]
-          kotlin = "1.7.10"
+            [versions]
+            kotlin = "1.7.10"
 
-          [libraries]
-          kotlin-plugin = { group = "org.jetbrains.kotlin.android", name = "org.jetbrains.kotlin.android.gradle.plugin", version.ref = "kotlin" }
+            [libraries]
+            kotlin-plugin = { group = "org.jetbrains.kotlin.android", name = "org.jetbrains.kotlin.android.gradle.plugin", version.ref = "kotlin" }
 
-          [plugins]
-          kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-        """
+            [plugins]
+            kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+            """
           )
           .indented(),
         gradle(
@@ -8767,15 +8787,11 @@ class GradleDetectorTest : AbstractCheckTest() {
             plugins {
               alias(libs.plugins.kotlin)
             }
-          """
+            """
           )
           .indented(),
       )
       .issues(DEPENDENCY, REMOTE_VERSION)
-      .networkData(
-        "https://search.maven.org/solrsearch/select?q=g:%22org.jetbrains.kotlin.android%22+AND+a:%22org.jetbrains.kotlin.android.gradle.plugin%22&core=gav&wt=json",
-        "",
-      )
       .networkData(
         "https://plugins.gradle.org/m2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/maven-metadata.xml",
         // language=XML
@@ -8800,6 +8816,28 @@ class GradleDetectorTest : AbstractCheckTest() {
               """
           .trimIndent(),
       )
+      .networkData(
+        "https://repo1.maven.org/maven2/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata>
+          <groupId>org.jetbrains.kotlin.android</groupId>
+          <artifactId>org.jetbrains.kotlin.android.gradle.plugin</artifactId>
+          <versioning>
+            <versions>
+              <version>1.7.0</version>
+              <version>1.7.10</version>
+              <version>1.7.20-Beta</version>
+              <version>1.8.0</version>
+              <version>1.8.10</version>
+              <version>1.9.0</version>
+            </versions>
+            <lastUpdated>20250306132608</lastUpdated>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
       .run()
       .expect(
         """
@@ -8807,7 +8845,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         kotlin = "1.7.10"
                  ~~~~~~~~
         0 errors, 1 warnings
-      """
+        """
           .trimIndent()
       )
       .expectFixDiffs(
@@ -8816,9 +8854,180 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -2 +2
         - kotlin = "1.7.10"
         + kotlin = "1.9.0"
-      """
+        """
           .trimIndent()
       )
+  }
+
+  fun testPlusVersionComparisons() {
+    // Make sure that we handle "+" syntax (as well as snapshot versions)
+    // correctly wrt. version comparisons
+    lint()
+      .files(
+        gradle(
+            """
+            dependencies {
+              implementation("joda-time:joda-time:2.+") // OK: already matches latest
+              implementation("joda-time:joda-time:2.9.+") // WARN 1
+              implementation("joda-time:joda-time:2.10.+") // OK: Already matches 2.10.2
+              implementation("joda-time:joda-time:2.11-SNAPSHOT")
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(DEPENDENCY, REMOTE_VERSION)
+      .networkData(
+        "https://repo1.maven.org/maven2/joda-time/joda-time/maven-metadata.xml",
+        // language=XML
+        """
+        <metadata modelVersion="1.1.0">
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <versioning>
+          <versions>
+            <version>0.95</version>
+            <version>1.0</version>
+            <version>2.9.7</version>
+            <version>2.9.8</version>
+            <version>2.9.9</version>
+            <version>2.9.9</version>
+            <version>2.10.0</version>
+            <version>2.10.1-alpha01</version>
+            <version>2.10.1-alpha05</version>
+            <version>2.10.2</version>
+            <version>2.11.1-alpha01</version>
+          </versions>
+        </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
+      .run()
+      .expect(
+        """
+        build.gradle:3: Warning: A newer version of joda-time:joda-time than 2.9.+ is available: 2.10.2 [NewerVersionAvailable]
+          implementation("joda-time:joda-time:2.9.+") // WARN 1
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warnings
+        """
+          .trimIndent()
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 3: Change to 2.10.2:
+        @@ -3 +3
+        -   implementation("joda-time:joda-time:2.9.+") // WARN 1
+        +   implementation("joda-time:joda-time:2.10.2") // WARN 1
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testMavenCentralNetworkFailureCaching() {
+    // Make sure that if we try to access a resource that
+    // doesn't exist, we remember/cache that too.
+    var networkHitCount = 0
+
+    val tempFolder = TemporaryFolder()
+    tempFolder.create()
+    val cacheDir = tempFolder.newFolder()
+    val client =
+      object : TestLintClient() {
+        override fun getCacheDir(name: String?, create: Boolean): File? {
+          return cacheDir
+        }
+
+        override fun openConnection(url: URL, timeout: Int): URLConnection? {
+          networkHitCount++
+          throw IOException("404")
+        }
+      }
+    val group = "this.dependency.does"
+    val artifact = "not-exist"
+    val currentVersion = Version.parse("1.0")
+    val version =
+      GradleDetector.getMavenCentralVersions(
+        client,
+        group,
+        artifact,
+        currentVersion,
+        allowCache = true,
+      )
+    assertNull(version)
+    assertEquals(1, networkHitCount)
+    GradleDetector.getMavenCentralVersions(
+      client,
+      group,
+      artifact,
+      currentVersion,
+      allowCache = true,
+    )
+    assertEquals(1, networkHitCount)
+    GradleDetector.getMavenCentralVersions(
+      client,
+      group,
+      "other-artifact",
+      currentVersion,
+      allowCache = true,
+    )
+    assertEquals(2, networkHitCount)
+    tempFolder.delete()
+  }
+
+  fun testGradlePortalNetworkFailureCaching() {
+    // Like testMavenCentralNetworkFailureCaching, but the Gradle plugin
+    // portal behaves differently when passed unknown URLs; instead of
+    // reporting a network error, they return a json document
+
+    // Make sure that if we try to access a resource that
+    // doesn't exist, we remember/cache that too.
+    var networkHitCount = 0
+
+    val tempFolder = TemporaryFolder()
+    tempFolder.create()
+    val cacheDir = tempFolder.newFolder()
+    val client =
+      object : TestLintClient() {
+        override fun getCacheDir(name: String?, create: Boolean): File? {
+          return cacheDir
+        }
+
+        override fun openConnection(url: URL, timeout: Int): URLConnection? {
+          networkHitCount++
+          throw IOException("404")
+        }
+      }
+    val group = "this.dependency.does"
+    val artifact = "not-exist"
+    val currentVersion = Version.parse("1.0")
+    val version =
+      GradleDetector.getMavenCentralVersions(
+        client,
+        group,
+        artifact,
+        currentVersion,
+        allowCache = true,
+      )
+    assertNull(version)
+    assertEquals(1, networkHitCount)
+    GradleDetector.getMavenCentralVersions(
+      client,
+      group,
+      artifact,
+      currentVersion,
+      allowCache = true,
+    )
+    assertEquals(1, networkHitCount)
+    GradleDetector.getMavenCentralVersions(
+      client,
+      group,
+      "other-artifact",
+      currentVersion,
+      allowCache = true,
+    )
+    assertEquals(2, networkHitCount)
+    tempFolder.delete()
   }
 
   // -------------------------------------------------------------------------------------------

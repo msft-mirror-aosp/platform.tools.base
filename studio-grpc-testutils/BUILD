@@ -16,16 +16,19 @@ kotlin_library(
 iml_module(
     name = "studio.studio-grpc-testutils",
     iml_files = ["studio-grpc-testutils.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/android-test-framework:intellij.android.testFramework",
+    ],
     test_srcs = ["testSrc"],
     test_tags = ["manual"],  # testSrc is TEST scoped but contains no runnable tests
     visibility = ["//visibility:public"],
     exports = ["//tools/adt/idea/android-test-framework:intellij.android.testFramework"],
     # do not sort: must match IML order
     deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "@intellij//:intellij-sdk[test]",
         "@intellij//:com.intellij.java",
-        "//tools/adt/idea/android-test-framework:intellij.android.testFramework[test]",
         "@intellij//:intellij.libraries.grpc",
         "//prebuilts/tools/common/m2:grpc-inprocess-1.69.1",
     ],

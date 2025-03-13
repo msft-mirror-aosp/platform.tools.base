@@ -48,7 +48,7 @@ class DynamicAppLegacyMultidexTest {
             |  dynamicFeatures = ["feature"]
             |  buildTypes {
             |    r8 {
-            |      multiDexKeepFile file('multiDex.txt')
+            |      multiDexKeepFile = file('multiDex.txt')
             |    }
             |  }
             |}

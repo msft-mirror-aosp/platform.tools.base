@@ -30,7 +30,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.1.0",
         "@maven//:org.jsoup.jsoup_1.13.1",
         "@maven//:org.junit.junit-bom_5.10.2",
-        "@maven//:org.junit.platform.junit-platform-engine",
+        "@maven//:org.junit.platform.junit-platform-engine_1.12.0",
     ],
 )
 

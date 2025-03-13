@@ -78,7 +78,11 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
         val build = rule.build
         build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsClass("Lcom/example/android/multiproject/person/Person;")
+            classes().containsExactly(
+                "com/example/android/multiproject/person/People",
+                "com/example/android/multiproject/person/Person",
+                "pkg/name/app/R"
+            )
         }
     }
 
@@ -87,7 +91,7 @@ class AppTestWithSkippedModuleDepTest : ModelComparator() {
         val build = rule.build
         build.executor.run(":app:assembleDebugAndroidTest")
         build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            doesNotContainClass("Lcom/example/android/multiproject/person/Person;")
+            classes().containsExactly("pkg/name/app/test/R")
         }
     }
 }

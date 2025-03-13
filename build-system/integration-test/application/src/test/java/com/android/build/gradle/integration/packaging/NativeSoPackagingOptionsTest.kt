@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.RELEASE
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.testutils.truth.PathSubject.assertThat
@@ -193,14 +194,14 @@ class NativeSoPackagingOptionsTest {
         androidTestApk.doesNotContainJavaResource("lib/x86/testExclude.so")
         androidTestApk.containsJavaResourceWithContent("lib/x86/testKeep.so", "foo")
 
-        libSubProject.assertThatAar("debug") {
-            entries().apply {
-                doesNotContain("jni/x86/dslExclude1.so")
-                doesNotContain("jni/x86/dslExclude2.so")
-                doesNotContain("jni/x86/dslExclude3.so")
-                doesNotContain("jni/x86/libExclude.so")
-                contains("jni/x86/libKeep.so")
-            }
+        libSubProject.assertAar(AarSelector.DEBUG) {
+            jniLibs().containsExactly(
+                "x86/libKeep.so",
+                "x86_64/variantPickFirst.so",
+                "x86_64/dslPickFirst.so",
+                "x86/variantPickFirst.so",
+                "x86/dslPickFirst.so"
+            )
         }
 
         assertThat(libSubProject.getApk(ANDROIDTEST_DEBUG).file).exists()

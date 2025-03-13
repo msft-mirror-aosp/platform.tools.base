@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.annotationprocessor
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.collect.ImmutableList
 import java.nio.charset.StandardCharsets
@@ -85,8 +86,8 @@ class AutoServiceTest(private val pluginName: String) {
                 .containsJavaResource("META-INF/services/com.example.helloworld.MyService")
         } else {
 
-            project.assertThatAar("debug") {
-                allJars().containsResource("META-INF/services/com.example.helloworld.MyService")
+            project.assertAar(AarSelector.DEBUG) {
+                javaResources().containsExactly("META-INF/services/com.example.helloworld.MyService")
             }
         }
     }

@@ -22,19 +22,21 @@ import com.android.build.gradle.integration.common.dependencies.JarBuilder
 import com.android.build.gradle.integration.common.dependencies.JarBuilderImpl
 import com.google.common.truth.ExpectFailure
 import com.google.common.truth.TruthFailureSubject
+import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import java.lang.AssertionError
 import kotlin.io.path.writeBytes
 
 val FAKE_CLASS: ByteArray =
     byteArrayOf(0xCA.toByte(), 0xFE.toByte(), 0xBA.toByte(), 0xBE.toByte())
 
+@Suppress("UnstableApiUsage")
 abstract class BaseZipSubjectTest {
 
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
+    @CheckReturnValue
     protected fun createAar(name: String, action: AarBuilder.() -> Unit): SimpleZip {
         val builder = AarBuilderImpl("groupId", "artifactId", "1.0")
         action(builder)
@@ -45,6 +47,7 @@ abstract class BaseZipSubjectTest {
         return SimpleZip(path)
     }
 
+    @CheckReturnValue
     protected fun createJar(name: String, action: JarBuilder.() -> Unit): SimpleZip {
         val builder = JarBuilderImpl()
         action(builder)

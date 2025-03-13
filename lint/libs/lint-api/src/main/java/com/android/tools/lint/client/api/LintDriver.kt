@@ -2446,6 +2446,8 @@ class LintDriver(
       return delegate.getXmlDocument(file, contents)
     }
 
+    override fun fileExists(file: File): Boolean = delegate.fileExists(file)
+
     private fun inSameFile(element1: PsiElement?, element2: PsiFile?): Boolean {
       return getContainingFile(element1) == getContainingFile(element2)
     }
@@ -2750,6 +2752,10 @@ class LintDriver(
     override fun getDisplayPath(file: File, project: Project?, format: TextFormat): String =
       delegate.getDisplayPath(file, project, format)
 
+    override fun getDisplayPath(item: ResourceItem, format: TextFormat): String {
+      return delegate.getDisplayPath(item, format)
+    }
+
     override fun getConfiguration(file: File): Configuration? {
       return delegate.getConfiguration(file)
     }
@@ -2762,6 +2768,8 @@ class LintDriver(
     override fun getClientRevision(): String? = delegate.getClientRevision()
 
     override fun getClientDisplayRevision(): String? = delegate.getClientDisplayRevision()
+
+    override fun getClientProperty(key: String): Any? = delegate.getClientProperty(key)
 
     override fun runReadAction(runnable: Runnable) = delegate.runReadAction(runnable)
 
@@ -2784,6 +2792,10 @@ class LintDriver(
 
     override fun getJavaLibraries(project: Project, includeProvided: Boolean): List<File> =
       delegate.getJavaLibraries(project, includeProvided)
+
+    override fun getKlibs(project: Project): List<File> {
+      return delegate.getKlibs(project)
+    }
 
     override fun getTestSourceFolders(project: Project): List<File> =
       delegate.getTestSourceFolders(project)

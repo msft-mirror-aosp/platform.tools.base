@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
@@ -26,29 +25,75 @@ import java.util.regex.Pattern
 /**
  * An object that can validate the content of resources.
  */
+@SubjectDsl
 interface ResourcesSubject {
 
     /**
-     * Returns a [IterableSubject] of all the resources in the jar
+     * Validates that the resource list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun resources(): IterableSubject
+    fun containsExactly(resourcePaths: Iterable<String>)
+
+    /**
+     * Validates that the resource list matches exactly with the provided item.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the provided item includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(resourcePath: String) {
+        containsExactly(listOf(resourcePath))
+    }
+
+    /**
+     * Validates that the resource list matches exactly with the provided list.
+     *
+     * The archive list contains files only. There are no folders in it.
+     *
+     * The possible format of the items in the provided list includes both file path and folders.
+     * In the case of folders, it will match against any files in the archive that are in that folder.
+     */
+    fun containsExactly(vararg resourcePaths: String) {
+        containsExactly(resourcePaths.toList())
+    }
+
+    /**
+     * Checks that the list of classes is empty
+     */
+    fun isEmpty()
+
+    /**
+     * Checks that the list of classes has the given size
+     */
+    fun hasSize(size: Int)
 
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
      *
-     * @param path the path of the item which must not include a leading /
+     * @param resourcePath the path of the item which must not include a leading /
      */
-    fun resourceAsText(path: String): StringSubject
+    fun resourceAsText(resourcePath: String): StringSubject
 
     /**
      * Returns a [BinarySubject] with the binary content of the file at the given path.
      *
-     * @param path the path of the item which must not include a leading /
+     * @param resourcePath the path of the item which must not include a leading /
      */
-    fun resourceAsBytes(path: String): BinarySubject
+    fun resourceAsBytes(resourcePath: String): BinarySubject
+
+    /**
+     * Returns a [ResourcesSubject] representing the content of the provided path
+     *
+     * @param path the path inside the current resources
+     */
+    fun folder(path: String): ResourcesSubject
 }
 
-@SubjectDsl
 internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
     metadata: FailureMetadata,
     actual: T
@@ -56,18 +101,29 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     protected abstract val allResources: List<String>
 
-    override fun resources(): IterableSubject {
-        return check("resources()").that(allResources)
+    override fun containsExactly(resourcePaths: Iterable<String>) {
+        check("entries()")
+            .about(ComparatorSubject.lists())
+            .that(allResources)
+            .containsExactly(resourcePaths)
     }
 
-    override fun resourceAsText(path: String): StringSubject {
-        resources().contains(path)
-        return check("resourceAsText($path)").that(actual().textFile(path))
+    override fun isEmpty() {
+        check("entries()").that(allResources).isEmpty()
     }
 
-    override fun resourceAsBytes(path: String): BinarySubject {
-        resources().contains(path)
-        return check("resourceAsBytes($path)").about(BinarySubject.bytes()).that(actual().binaryFile(path))
+    override fun hasSize(size: Int) {
+        check("size()").that(allResources.size).isEqualTo(size)
+    }
+
+    override fun resourceAsText(resourcePath: String): StringSubject {
+        check("entries()").that(allResources).contains(resourcePath)
+        return check("resourceAsText($resourcePath)").that(actual().textFile(resourcePath))
+    }
+
+    override fun resourceAsBytes(resourcePath: String): BinarySubject {
+        check("entries()").that(allResources).contains(resourcePath)
+        return check("resourceAsBytes($resourcePath)").about(BinarySubject.bytes()).that(actual().binaryFile(resourcePath))
     }
 }
 
@@ -76,7 +132,6 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
  *
  * The main goal here is to filter out the non java resource files
  */
-@SubjectDsl
 internal class ApkWithJavaResourcesSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -84,7 +139,7 @@ internal class ApkWithJavaResourcesSubject(
 
     companion object {
         /**
-         * Returns a [JarSubject]
+         * Returns a [ResourcesSubject]
          */
         internal fun assertThat(zip: Zip): ApkWithJavaResourcesSubject {
             return assertAbout(javaResources()).that(zip)
@@ -98,6 +153,11 @@ internal class ApkWithJavaResourcesSubject(
                 ApkWithJavaResourcesSubject(metadata, actual)
             }
         }
+    }
+
+    override fun folder(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folder($path)").about(javaResources()).that(view)
     }
 
     /**
@@ -121,7 +181,6 @@ internal class ApkWithJavaResourcesSubject(
  *
  * The main goal here is to filter out the class files
  */
-@SubjectDsl
 internal class JarWithJavaResourcesSubject(
     metadata: FailureMetadata,
     actual: Zip
@@ -129,7 +188,7 @@ internal class JarWithJavaResourcesSubject(
 
     companion object {
         /**
-         * Returns a [JarSubject]
+         * Returns a [ResourcesSubject]
          */
         internal fun assertThat(zip: Zip): JarWithJavaResourcesSubject {
             return assertAbout(jars()).that(zip)
@@ -145,6 +204,11 @@ internal class JarWithJavaResourcesSubject(
         }
     }
 
+    override fun folder(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folder($path)").about(jars()).that(view)
+    }
+
     /**
      * Cached copy of all the resources names.
      */
@@ -156,6 +220,40 @@ internal class JarWithJavaResourcesSubject(
                 else -> true
             }
         }
+    }
+}
+
+/**
+ * Implementation of [ResourcesSubject] over an archive with no filtering of any sort
+ */
+@SubjectDsl
+internal class FullJarResourcesSubject(
+    metadata: FailureMetadata,
+    actual: Zip
+): BaseJavaResourcesSubject<FullJarResourcesSubject, Zip>(metadata, actual) {
+
+    companion object {
+        /**
+         * Method for getting the subject factory (for use with assertAbout())
+         */
+        internal fun jars(): Factory<FullJarResourcesSubject, Zip> {
+            return Factory<FullJarResourcesSubject, Zip> { metadata, actual ->
+                FullJarResourcesSubject(metadata, actual)
+            }
+        }
+    }
+
+    override fun folder(path: String): ResourcesSubject {
+        val view = ZipFolderView(actual(), path)
+        return check("folder($path)").about(jars()).that(view)
+    }
+
+
+    /**
+     * Cached copy of all the resources names.
+     */
+    override val allResources: List<String> by lazy(LazyThreadSafetyMode.NONE) {
+        actual().getEntries()
     }
 }
 

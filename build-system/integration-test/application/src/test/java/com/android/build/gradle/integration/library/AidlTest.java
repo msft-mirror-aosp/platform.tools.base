@@ -21,23 +21,27 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.utils.FileUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /** Assemble tests for aidl. */
 @RunWith(FilterableParameterized.class)
@@ -108,8 +112,7 @@ public class AidlTest {
 
         TestFileUtils.appendToFile(
                 new File(javaDir, "MyRect.java"),
-                ""
-                        + "package com.example.helloworld;\n"
+                "package com.example.helloworld;\n"
                         + "\n"
                         + "import android.os.Parcel;\n"
                         + "import android.os.Parcelable;\n"
@@ -120,7 +123,8 @@ public class AidlTest {
                         + "    public int right;\n"
                         + "    public int bottom;\n"
                         + "\n"
-                        + "    public static final Parcelable.Creator<MyRect> CREATOR = new Parcelable.Creator<MyRect>() {\n"
+                        + "    public static final Parcelable.Creator<MyRect> CREATOR = new"
+                        + " Parcelable.Creator<MyRect>() {\n"
                         + "        public MyRect createFromParcel(Parcel in) {\n"
                         + "            return new MyRect(in);\n"
                         + "        }\n"
@@ -175,10 +179,11 @@ public class AidlTest {
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
                     "android.aidlPackagedList = [\"com/example/helloworld/Packaged.aidl\"]\n"
-                            + "\n"
-                            + "// Check that AIDL is published as intermediate artifact for library.\n"
-                            + "afterEvaluate {\n"
-                            + "    assert !configurations.debugApiElements.outgoing.variants.findAll { it.name == \""
+                        + "\n"
+                        + "// Check that AIDL is published as intermediate artifact for library.\n"
+                        + "afterEvaluate {\n"
+                        + "    assert !configurations.debugApiElements.outgoing.variants.findAll {"
+                        + " it.name == \""
                             + AndroidArtifacts.ArtifactType.AIDL.getType()
                             + "\" }.isEmpty()\n"
                             + "}\n");
@@ -195,7 +200,7 @@ public class AidlTest {
     @Test
     public void testAidl() throws Exception {
         project.execute("assembleDebug");
-        checkAar("ITest");
+        checkAar();
 
         // Check for original file comment in the generated file (bug: 121251997)
         File genSrcFile =
@@ -212,15 +217,14 @@ public class AidlTest {
 
         TestFileUtils.searchAndReplace(iTestAidl, "int getInt();", "");
         project.execute("assembleDebug");
-        checkAar("ITest");
+        checkAar();
 
         TestFileUtils.searchAndReplace(iTestAidl, "ITest", "IRenamed");
         TestFileUtils.searchAndReplace(activity, "ITest", "IRenamed");
         Files.move(iTestAidl, new File(aidlDir, "IRenamed.aidl"));
 
         project.execute("assembleDebug");
-        checkAar("IRenamed");
-        checkAar("ITest");
+        checkAar();
     }
 
     // Regression test for b/317262738
@@ -265,17 +269,21 @@ public class AidlTest {
         project.execute("clean", "assembleDebug");
     }
 
-    private void checkAar(String dontInclude) throws Exception {
+    private void checkAar() {
         if (!this.plugin.contains("library")) {
             return;
         }
 
-        project.testAar(
-                "debug",
+        project.assertAar(
+                AarSelector.DEBUG,
                 it -> {
-                    it.contains("aidl/com/example/helloworld/MyRect.aidl");
-                    it.contains("aidl/com/example/helloworld/Packaged.aidl");
-                    it.doesNotContain("aidl/com/example/helloworld/" + dontInclude + ".aidl");
+                    it.folder(
+                            "aidl",
+                            aidl -> {
+                                aidl.containsExactly(
+                                        "com/example/helloworld/MyRect.aidl",
+                                        "com/example/helloworld/Packaged.aidl");
+                            });
                 });
     }
 

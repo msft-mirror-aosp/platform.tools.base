@@ -222,7 +222,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         }
 
         AarSubject.assertThat(aarFile.toPath()) {
-            contains("R.txt")
+            textFile("R.txt")
             mainJar {
                 classes().containsExactly(
                     "com/example/kmpfirstlib/KmpCommonFirstLibClass",
@@ -230,7 +230,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
                     "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
                     "com/example/kmpfirstlib/KmpAndroidActivity",
                 )
-                resources().apply {
+                resources {
                     containsExactly(
                         "kmp_resource.txt",
                         "META-INF/kmpFirstLib.kotlin_module"

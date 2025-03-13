@@ -79,6 +79,9 @@ class DynamicAppTest {
     private val bundleContent: Array<String> = arrayOf(
         MAIN_DEX_LIST_PATH,
         "/BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties",
+        "/META-INF/MANIFEST.MF",
+        "/META-INF/ANDROIDD.RSA",
+        "/META-INF/ANDROIDD.SF",
         "/BundleConfig.pb",
         "/base/dex/classes.dex",
         "/base/manifest/AndroidManifest.xml",
@@ -112,13 +115,17 @@ class DynamicAppTest {
             // Only the release variant would have the dependencies file.
             "/BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb",
             // Only the release variant includes the VCS info by default
-            "/base/root/META-INF/version-control-info.textproto"
+            "/base/root/META-INF/version-control-info.textproto",
         )
     ).minus(
         listOf(
             // Dex files are merged into classes.dex
             "/feature1/dex/classes2.dex",
-            "/feature2/dex/classes2.dex"
+            "/feature2/dex/classes2.dex",
+            // Signed files
+            "/META-INF/MANIFEST.MF",
+            "/META-INF/ANDROIDD.RSA",
+            "/META-INF/ANDROIDD.SF"
         )
     ).toTypedArray()
 

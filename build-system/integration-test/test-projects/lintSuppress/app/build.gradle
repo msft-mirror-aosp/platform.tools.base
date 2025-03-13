@@ -33,7 +33,7 @@ android {
         checkTestSources = false
         checkReleaseBuilds = false
         checkDependencies = false
-        lintConfig file('extra.xml')
+        lintConfig = file('extra.xml')
         xmlReport = true
         xmlOutput = file("lint-report.xml")
     }

@@ -8,6 +8,12 @@ iml_module(
     iml_files = ["android.sdktools.mlkit-common.iml"],
     lint_baseline = "lint_baseline.xml",
     test_data = ["//prebuilts/tools/common/mlkit/testData"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:mockito",
+    ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -16,9 +22,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//prebuilts/tools/common/m2:flatbuffers-java",
         "//prebuilts/tools/common/m2:tensorflow-lite-metadata",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/base/testutils:studio.android.sdktools.testutils[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
         "//tools/base/common:studio.android.sdktools.common",
     ],
 )

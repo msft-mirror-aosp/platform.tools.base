@@ -72,7 +72,7 @@ class StripDebugSymbolsTaskTest {
             project.buildFile,
             """
                 android {
-                    ndkPath "/fake/path"
+                    ndkPath = "/fake/path"
                 }
             """.trimIndent()
         )

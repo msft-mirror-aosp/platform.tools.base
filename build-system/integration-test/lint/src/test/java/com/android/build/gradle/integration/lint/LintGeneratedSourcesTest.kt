@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -69,17 +68,19 @@ class LintGeneratedSourcesTest {
     /** Test that changes to generated sources cause the lint tasks to re-run as expected. */
     @Test
     fun testNotUpToDate() {
-        project.executor().run("clean", "lintRelease")
-        assertThat(project.buildResult.getTask(":lintReportRelease")).didWork()
-        assertThat(project.buildResult.getTask(":lintAnalyzeRelease")).didWork()
+        project.executor().run("clean", "lintRelease").apply {
+            assertTask(":lintReportRelease").didWork()
+            assertTask(":lintAnalyzeRelease").didWork()
+        }
         val lintReport = project.file("lint-results.txt")
         assertThat(lintReport).exists()
         assertThat(lintReport).contains("StopShip")
 
         TestFileUtils.searchAndReplace(project.buildFile, "STOPSHIP", "comment")
-        project.executor().run("lintRelease")
-        assertThat(project.buildResult.getTask(":lintReportRelease")).didWork()
-        assertThat(project.buildResult.getTask(":lintAnalyzeRelease")).didWork()
+        project.executor().run("lintRelease").apply {
+            assertTask(":lintReportRelease").didWork()
+            assertTask(":lintAnalyzeRelease").didWork()
+        }
         assertThat(lintReport).exists()
         assertThat(lintReport).doesNotContain("StopShip")
     }

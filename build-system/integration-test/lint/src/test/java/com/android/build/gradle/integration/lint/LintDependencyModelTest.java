@@ -16,25 +16,29 @@
 
 package com.android.build.gradle.integration.lint;
 
-import static com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat;
 import static com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
+
 import com.google.common.collect.ImmutableList;
+
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
+
+import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-import kotlin.io.FilesKt;
-import kotlin.text.Charsets;
-import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
-import org.junit.Test;
 
 /**
  * Integration test for running lint from gradle on a model with java (including indirect java)
@@ -53,10 +57,13 @@ public class LintDependencyModelTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintDeps")
-                    // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-                    .addGradleProperties(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=true")
+                    // Enforcing unique package names to prevent regressions. Remove when
+                    // b/116109681 fixed.
+                    .addGradleProperties(
+                            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=true")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
-                    .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
+                    .addGradleProperties(
+                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Test
@@ -84,20 +91,38 @@ public class LintDependencyModelTest {
         // in androidlib and indirectlib2 as error; in indirectlib1 there's more
         // ambiguity since it's imported from two contexts and either is fine.
 
-        assertThat(textReport).contains("androidlib/src/main/java/com/example/mylibrary/MyClass.java:4: Hint: Do not hardcode");
-        assertThat(textReport).contains("javalib/src/main/java/com/example/MyClass.java:4: Warning: Do not hardcode");
-        assertThat(textReport).contains("javalib2/src/main/java/com/example2/MyClass.java:4: Warning: Do not hardcode");
-        // This issue is turned off in javalib but still returns to (default) enabled when processing
+        assertThat(textReport)
+                .contains(
+                        "androidlib/src/main/java/com/example/mylibrary/MyClass.java:4: Hint: Do"
+                                + " not hardcode");
+        assertThat(textReport)
+                .contains(
+                        "javalib/src/main/java/com/example/MyClass.java:4: Warning: Do not"
+                                + " hardcode");
+        assertThat(textReport)
+                .contains(
+                        "javalib2/src/main/java/com/example2/MyClass.java:4: Warning: Do not"
+                                + " hardcode");
+        // This issue is turned off in javalib but still returns to (default) enabled when
+        // processing
         // its sibling
-        assertThat(textReport).contains("javalib2/src/main/java/com/example2/MyClass.java:5: Warning: Use Boolean.valueOf(false)");
-        assertThat(textReport).doesNotContain("javalib/src/main/java/com/example/MyClass.java:5: Warning: Use Boolean.valueOf(false)");
+        assertThat(textReport)
+                .contains(
+                        "javalib2/src/main/java/com/example2/MyClass.java:5: Warning: Use"
+                                + " Boolean.valueOf(false)");
+        assertThat(textReport)
+                .doesNotContain(
+                        "javalib/src/main/java/com/example/MyClass.java:5: Warning: Use"
+                                + " Boolean.valueOf(false)");
         // TODO(b/182859396): These 2 should be informational, as explained in comments above
         assertThat(textReport)
                 .contains(
-                        "indirectlib/src/main/java/com/example/MyClass2.java:4: Warning: Do not hardcode");
+                        "indirectlib/src/main/java/com/example/MyClass2.java:4: Warning: Do not"
+                                + " hardcode");
         assertThat(textReport)
                 .contains(
-                        "indirectlib2/src/main/java/com/example2/MyClass2.java:4: Warning: Do not hardcode");
+                        "indirectlib2/src/main/java/com/example2/MyClass2.java:4: Warning: Do not"
+                                + " hardcode");
     }
 
     @Test
@@ -121,13 +146,13 @@ public class LintDependencyModelTest {
                         ":indirectlib2:lintAnalyzeJvmTest");
 
         GradleBuildResult firstResult = project.executor().run(":app:lintDebug");
-        tasks.forEach(taskName -> assertThat(firstResult.findTask(taskName)).didWork());
+        tasks.forEach(taskName -> firstResult.assertTask(taskName).didWork());
         String textReport = readTextReportToString();
         // TODO(b/182859396): There should be 5 warnings; see TODO in checkFindNestedResult().
         assertThat(textReport).contains("0 errors, 6 warnings");
 
         GradleBuildResult secondResult = project.executor().run(":app:lintDebug");
-        tasks.forEach(taskName -> assertThat(secondResult.findTask(taskName)).wasUpToDate());
+        tasks.forEach(taskName -> secondResult.assertTask(taskName).wasUpToDate());
     }
 
     // Regression test for b/187964502
@@ -173,7 +198,7 @@ public class LintDependencyModelTest {
                 project.executor().with(LINT_ANALYSIS_PER_COMPONENT, true).run(":app:lintDebug");
         // The app's lint analysis task does work in this case because the partial results from the
         // javalib module are different after tweaking its lint.xml file.
-        assertThat(result.findTask(":app:lintAnalyzeDebug")).didWork();
+        result.assertTask(":app:lintAnalyzeDebug").didWork();
     }
 
     @NotNull

@@ -16,6 +16,7 @@
 
 package com.android.tools.screenshot
 
+import com.android.tools.screenshot.differ.ImageDiffer
 import javax.imageio.ImageIO
 import kotlin.test.assertIs
 import kotlin.test.assertNull

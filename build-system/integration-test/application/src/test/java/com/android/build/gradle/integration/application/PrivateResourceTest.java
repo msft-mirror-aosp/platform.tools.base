@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application;
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -64,30 +65,30 @@ public class PrivateResourceTest {
                         + "id mylib_shared_name";
 
         project.getSubproject("mylibrary")
-                .testAar(
-                        "release",
+                .assertAar(
+                        AarSelector.RELEASE,
                         it -> {
                             it.textFile("public.txt").isEqualTo(expected);
                         });
 
         project.getSubproject("mylibrary")
-                .testAar(
-                        "debug",
+                .assertAar(
+                        AarSelector.DEBUG,
                         it -> {
                             it.textFile("public.txt").isEqualTo(expected);
                         });
 
         // No public resources: file should exist but be empty
         project.getSubproject("mylibrary2")
-                .testAar(
-                        "debug",
+                .assertAar(
+                        AarSelector.DEBUG,
                         it -> {
                             it.textFile("public.txt").isEmpty();
                         });
 
         project.getSubproject("mylibrary2")
-                .testAar(
-                        "release",
+                .assertAar(
+                        AarSelector.RELEASE,
                         it -> {
                             it.textFile("public.txt").isEmpty();
                         });

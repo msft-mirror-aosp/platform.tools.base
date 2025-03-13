@@ -8,6 +8,11 @@ iml_module(
     iml_files = ["android.build-analyzer.common.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+    ],
     test_srcs = ["src/test/kotlin"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
@@ -16,8 +21,6 @@ iml_module(
         "@intellij//:com.intellij.java",
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
     ],
 )
 

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.gradle.tooling.BuildException
@@ -50,11 +51,12 @@ class LibWithLocalDepsTest {
     @Test
     fun testLocalJarPackagedWithAar() {
         executor().run("clean", ":baseLibrary:assembleDebug")
-        project.getSubproject("baseLibrary").assertThatAar("debug") {
-            allJars {
-                containsClass("com/example/local/Foo")
-                resourceAsText("com/example/local/javaRes.txt").isEqualTo("local java res")
-            }
+        project.getSubproject("baseLibrary").assertAar(AarSelector.DEBUG) {
+            classes().containsExactly(
+                "com/example/local/Foo",
+                "com/sample/android/multiproject/library/PersonView"
+            )
+            javaResources().resourceAsText("com/example/local/javaRes.txt").isEqualTo("local java res")
         }
     }
 
@@ -63,11 +65,10 @@ class LibWithLocalDepsTest {
         executor().run("clean", ":library:assembleDebug")
         // library depends on baseLibrary, so library has localJavaLib.jar as a transitive
         // dependency.
-        project.getSubproject("library").assertThatAar("debug") {
-            allJars {
-                doesNotContainClass("com/example/local/Foo")
-                doesNotContainResource("com/example/local/javaRes.txt")
-            }
+        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+            classes().containsExactly("com/example/android/multiproject/library/ShowPeopleActivity")
+            // we want to validate that com/example/local/javaRes.txt is not present.
+            javaResources().isEmpty()
         }
     }
 

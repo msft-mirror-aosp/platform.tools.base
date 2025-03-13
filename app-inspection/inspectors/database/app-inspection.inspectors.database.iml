@@ -25,5 +25,6 @@
     <orderEntry type="library" scope="TEST" name="libtools.testutils.lib" level="project" />
     <orderEntry type="module" module-name="app-inspection.inspectors.common" />
     <orderEntry type="library" name="mockito" level="project" />
+    <orderEntry type="library" name="androidx-sqlite" level="project" />
   </component>
 </module>

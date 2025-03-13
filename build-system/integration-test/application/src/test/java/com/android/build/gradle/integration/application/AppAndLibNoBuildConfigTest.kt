@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
@@ -51,8 +52,9 @@ class AppAndLibNoBuildConfigTest {
     fun `ensure buildConfig is not in the AAR`() {
         project.execute("lib:assembleDebug")
 
-        project.getSubproject(":lib").assertThatAar("debug") {
-            allJars().doesNotContainClass("com/android/tests/testprojecttest/lib/BuildConfig")
+        project.getSubproject(":lib").assertAar(AarSelector.DEBUG) {
+            // check this does not include the BuildConfig class
+            classes().containsExactly("com/android/tests/testprojecttest/lib/LibActivity")
         }
     }
 

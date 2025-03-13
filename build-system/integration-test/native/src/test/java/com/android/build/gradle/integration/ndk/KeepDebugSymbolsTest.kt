@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatNativeLib
 import com.android.build.gradle.integration.common.utils.ZipHelper
@@ -234,45 +235,35 @@ class KeepDebugSymbolsTest {
             .with(BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS, false)
             .run(":lib:assembleDebug", ":lib:assembleRelease", ":lib:assembleDebugAndroidTest")
 
-        libSubproject.testAar("debug") {
-            it.apply {
-                contains("jni/x86/libStrip.so")
-                contains("jni/x86/libDslDoNotStrip.so")
-                contains("jni/x86/libDebugDoNotStrip.so")
-                contains("jni/x86/libReleaseDoNotStrip.so")
-                doesNotContain("jni/x86/appStrip.so")
-                doesNotContain("jni/x86/appDslDoNotStrip1.so")
-                doesNotContain("jni/x86/appDslDoNotStrip2.so")
-                doesNotContain("jni/x86/appDebugDoNotStrip.so")
-                doesNotContain("jni/x86/appReleaseDoNotStrip.so")
-                doesNotContain("jni/x86/androidTestStrip.so")
-                doesNotContain("jni/x86/androidTestDoNotStrip.so")
+        libSubproject.assertAar(AarSelector.DEBUG) {
+            jniLibs().apply {
+                containsExactly(
+                    "x86/libStrip.so",
+                    "x86/libDslDoNotStrip.so",
+                    "x86/libDebugDoNotStrip.so",
+                    "x86/libReleaseDoNotStrip.so"
+                )
 
-                nativeLibrary("jni/x86/libStrip.so").isStripped()
-                nativeLibrary("jni/x86/libDslDoNotStrip.so").isNotStripped()
-                nativeLibrary("jni/x86/libDebugDoNotStrip.so").isNotStripped()
-                nativeLibrary("jni/x86/libReleaseDoNotStrip.so").isStripped()
+                library("x86/libStrip.so").isStripped()
+                library("x86/libDslDoNotStrip.so").isNotStripped()
+                library("x86/libDebugDoNotStrip.so").isNotStripped()
+                library("x86/libReleaseDoNotStrip.so").isStripped()
             }
         }
 
-        libSubproject.testAar("release") {
-            it.apply {
-                contains("jni/x86/libStrip.so")
-                contains("jni/x86/libDslDoNotStrip.so")
-                contains("jni/x86/libDebugDoNotStrip.so")
-                contains("jni/x86/libReleaseDoNotStrip.so")
-                doesNotContain("jni/x86/appStrip.so")
-                doesNotContain("jni/x86/appDslDoNotStrip1.so")
-                doesNotContain("jni/x86/appDslDoNotStrip2.so")
-                doesNotContain("jni/x86/appDebugDoNotStrip.so")
-                doesNotContain("jni/x86/appReleaseDoNotStrip.so")
-                doesNotContain("jni/x86/androidTestStrip.so")
-                doesNotContain("jni/x86/androidTestDoNotStrip.so")
+        libSubproject.assertAar(AarSelector.RELEASE) {
+            jniLibs().apply {
+                containsExactly(
+                    "x86/libStrip.so",
+                    "x86/libDslDoNotStrip.so",
+                    "x86/libDebugDoNotStrip.so",
+                    "x86/libReleaseDoNotStrip.so"
+                )
 
-                nativeLibrary("jni/x86/libStrip.so").isStripped()
-                nativeLibrary("jni/x86/libDslDoNotStrip.so").isNotStripped()
-                nativeLibrary("jni/x86/libDebugDoNotStrip.so").isStripped()
-                nativeLibrary("jni/x86/libReleaseDoNotStrip.so").isNotStripped()
+                library("x86/libStrip.so").isStripped()
+                library("x86/libDslDoNotStrip.so").isNotStripped()
+                library("x86/libDebugDoNotStrip.so").isStripped()
+                library("x86/libReleaseDoNotStrip.so").isNotStripped()
             }
         }
 

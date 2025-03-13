@@ -17,14 +17,15 @@ iml_module(
     srcs = ["src"],
     iml_files = ["android.sdktools.threading-agent-callback.iml"],
     resources = ["resources"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "@intellij//:intellij-sdk",
+    ],
     test_srcs = ["testSrc"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
-    deps = [
-        "//tools/adt/idea/.idea/libraries:junit4[test]",
-        "//tools/adt/idea/.idea/libraries:mockito[test]",
-        "//tools/adt/idea/.idea/libraries:truth[test]",
-        "@intellij//:intellij-sdk[test]",
-        "@intellij//:com.intellij.java",
-    ],
+    deps = ["@intellij//:com.intellij.java"],
 )

@@ -18,10 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +69,7 @@ class LibWithNavigationTest {
         val fullTaskName = "$DEFAULT_LIB_PATH:$taskName"
 
         build.executor.run(fullTaskName).apply {
-            assertThat(getTask(fullTaskName)).didWork()
+            assertTask(fullTaskName).didWork()
         }
 
         library.reconfigure {

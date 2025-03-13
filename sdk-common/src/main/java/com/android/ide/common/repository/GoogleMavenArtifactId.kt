@@ -15,16 +15,10 @@
  */
 package com.android.ide.common.repository
 
-import com.android.ide.common.gradle.Component
-import com.android.ide.common.gradle.Dependency
-import com.android.ide.common.gradle.Module
-import com.android.ide.common.gradle.RichVersion
-import com.android.ide.common.gradle.Version
-
 /**
  * Enumeration of known artifacts used in Android Studio
  */
-enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: String) {
+enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: String): WellKnownMavenArtifactId {
 
   // Platform support libraries
   SUPPORT_ANNOTATIONS("com.android.support", "support-annotations"),
@@ -58,7 +52,7 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Misc. layouts
   CONSTRAINT_LAYOUT("com.android.support.constraint", "constraint-layout"),
   ANDROIDX_CONSTRAINT_LAYOUT("androidx.constraintlayout", "constraintlayout"),
-  FLEXBOX_LAYOUT("com.google.android", "flexbox"),
+  FLEXBOX_LAYOUT("com.google.android.flexbox", "flexbox"),
   ANDROIDX_COORDINATOR_LAYOUT("androidx.coordinatorlayout", "coordinatorlayout"),
   ANDROIDX_VIEWPAGER("androidx.viewpager", "viewpager"),
   ANDROIDX_VIEWPAGER2("androidx.viewpager2", "viewpager2"),
@@ -82,8 +76,6 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   ANDROIDX_NAVIGATION_COMMON("androidx.navigation", "navigation-common"),
 
   // Testing
-  TEST_RUNNER("com.android.support.test", "runner"),
-  ANDROIDX_TEST_RUNNER("androidx.test.espresso", "test-runner"),
   ESPRESSO_CORE("com.android.support.test.espresso", "espresso-core"),
   ANDROIDX_ESPRESSO_CORE("androidx.test.espresso", "espresso-core"),
   ESPRESSO_CONTRIB("com.android.support.test.espresso", "espresso-contrib"),
@@ -117,11 +109,6 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   COMPOSE_TOOLING("androidx.compose.ui", "ui-tooling"),
   COMPOSE_TOOLING_PREVIEW("androidx.compose.ui", "ui-tooling-preview"),
   COMPOSE_UI("androidx.compose.ui", "ui"),
-  JETBRAINS_COMPOSE_TOOLING_PREVIEW("org.jetbrains.compose", "ui-tooling-preview"),
-
-  // Kotlin
-  KOTLIN_STDLIB("org.jetbrains.kotlin", "kotlin-stdlib"),
-  KOTLIN_REFLECT("org.jetbrains.kotlin", "kotlin-reflect"),
 
   // Wear Tiles
   WEAR_TILES_TOOLING("androidx.wear.tiles", "tiles-tooling"),
@@ -134,18 +121,10 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
   ;
 
-  fun getModule(): Module = Module(mavenGroupId, mavenArtifactId)
+  override val groupId = mavenGroupId
+  override val artifactId = mavenArtifactId
 
-  fun getCoordinate(revision: String): GradleCoordinate =
-    GradleCoordinate(mavenGroupId, mavenArtifactId, revision)
-
-  fun getComponent(version: String): Component =
-    Component(mavenGroupId, mavenArtifactId, Version.parse(version))
-
-  fun getDependency(richVersion: String): Dependency =
-    Dependency(mavenGroupId, mavenArtifactId, RichVersion.parse(richVersion))
-
-  override fun toString(): String = "$mavenGroupId:$mavenArtifactId"
+  override fun toString(): String = displayName
 
   companion object {
     @JvmStatic fun find(moduleId: String): GoogleMavenArtifactId? =

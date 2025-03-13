@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.GradleTaskSubject.assertThat
+import com.android.build.gradle.integration.common.output.ApkContentSize
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
@@ -171,7 +171,7 @@ class MergeResourcesTest {
         assertThat(rDef).contains("raw me")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFileWithContent("res/raw/me.raw", byteArrayOf(0, 1, 2))
+            androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(0, 1, 2))
         }
 
         val inIntermediate = build.androidApplication()
@@ -201,7 +201,7 @@ class MergeResourcesTest {
         project.build.executor.runEnforceUniquePkg(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFileWithContent("res/raw/me.raw", byteArrayOf(3))
+            androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(3))
         }
         assertThat(inIntermediate).exists()
 
@@ -218,7 +218,7 @@ class MergeResourcesTest {
         build.executor.runEnforceUniquePkg(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            containsFileWithContent("res/raw/me.raw", byteArrayOf(3))
+            androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(3))
         }
 
         assertThat(inIntermediate).wasModifiedAt(inIntermediate.lastModified())
@@ -365,7 +365,10 @@ class MergeResourcesTest {
 
         build.executor.runEnforceUniquePkg(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG.withFlavor("flavor1")) {
-            containsFile("/res/layout/additional.xml")
+            androidResources().containsExactly(
+                "layout/main.xml",
+                "layout/additional.xml"
+            )
         }
     }
 
@@ -466,11 +469,15 @@ class MergeResourcesTest {
         }
 
         // Run a full build with shrinkResources enabled
-        var result = this.project.build.executor.runEnforceUniquePkg(
-            ":app:clean", ":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
-        val apkSizeWithShrinkResources: Long =
-            build.androidApplication().withApk(ApkSelector.DEBUG) { contentsSize }
+        this.project.build.executor
+            .runEnforceUniquePkg(":app:clean", ":app:assembleDebug")
+            .apply {
+                assertTask(":app:mergeDebugResources").didWork()
+            }
+        val apkSizeWithShrinkResources = ApkContentSize.computeContent(
+            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+        )
+
 
         // Run an incremental build with shrinkResources disabled, the MergeResources task should
         // not be UP-TO-DATE and the apk size should be larger
@@ -485,10 +492,12 @@ class MergeResourcesTest {
                 }
             }
         }
-        result = build.executor.runEnforceUniquePkg(":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
-        val apkSizeWithoutShrinkResources: Long =
-            build.androidApplication().withApk(ApkSelector.DEBUG) { contentsSize }
+        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+            assertTask(":app:mergeDebugResources").didWork()
+        }
+        val apkSizeWithoutShrinkResources = ApkContentSize.computeContent(
+            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+        )
         assertThat(apkSizeWithoutShrinkResources).isGreaterThan(apkSizeWithShrinkResources)
 
         // Run an incremental build again with shrinkResources enabled, the MergeResources task
@@ -504,10 +513,12 @@ class MergeResourcesTest {
                 }
             }
         }
-        result = build.executor.runEnforceUniquePkg(":app:assembleDebug")
-        assertThat(result.getTask(":app:mergeDebugResources")).didWork()
-        val sameApkSizeShrinkResources =
-            build.androidApplication().withApk(ApkSelector.DEBUG) { contentsSize }
+        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+            assertTask(":app:mergeDebugResources").didWork()
+        }
+        val sameApkSizeShrinkResources = ApkContentSize.computeContent(
+            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+        )
         assertThat(sameApkSizeShrinkResources).isEqualTo(apkSizeWithShrinkResources)
     }
 
