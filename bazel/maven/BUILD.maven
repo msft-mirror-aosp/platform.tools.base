@@ -68282,10 +68282,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm-abi-gen_2.0.21",
-    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.0.21/jvm-abi-gen-2.0.21.pom",
+    name = "org.jetbrains.kotlin.jvm-abi-gen_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.1.10/jvm-abi-gen-2.1.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.0.21",
+    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.1.10",
     visibility = ["//visibility:public"],
 )
 
@@ -69804,6 +69804,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.1.10/kotlin-compiler-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.1.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.1.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.1.10",
+        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
+        "org.jetbrains.intellij.deps.trove4j_1.0.20200330",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler_2.1.20-RC2",
     pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.1.20-RC2/kotlin-compiler-2.1.20-RC2.pom",
     repo_root_path = "repository",
@@ -69841,6 +69856,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.0.21",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.1.10/kotlin-compose-compiler-plugin-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.1.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72803,6 +72829,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.1.10/kotlin-script-runtime-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.1.10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-script-runtime_2.1.20-RC2",
     pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.1.20-RC2/kotlin-script-runtime-2.1.20-RC2.pom",
     repo_root_path = "repository",
@@ -74503,6 +74537,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.1.10/kotlin-stdlib-jdk7-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.1.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.1.20-RC2",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.1.20-RC2/kotlin-stdlib-jdk7-2.1.20-RC2.pom",
     repo_root_path = "repository",
@@ -74928,6 +74973,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.0-RC",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.1.0-RC",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.1.10/kotlin-stdlib-jdk8-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.1.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.1.10",
     ],
     visibility = ["//visibility:public"],
 )

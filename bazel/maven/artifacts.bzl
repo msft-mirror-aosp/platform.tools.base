@@ -1048,7 +1048,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-RC2",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0-dev-5532",
-    "org.jetbrains.kotlin:jvm-abi-gen:2.0.21",
+    "org.jetbrains.kotlin:jvm-abi-gen:2.1.10",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
@@ -1086,11 +1086,13 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler:1.9.22",
     "org.jetbrains.kotlin:kotlin-compiler:1.9.23",
     "org.jetbrains.kotlin:kotlin-compiler:2.0.21",
+    "org.jetbrains.kotlin:kotlin-compiler:2.1.10",
     "org.jetbrains.kotlin:kotlin-compiler:2.1.20-RC2",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.1.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.20-RC2",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72",
