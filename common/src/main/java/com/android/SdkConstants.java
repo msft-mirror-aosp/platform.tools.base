@@ -1189,6 +1189,11 @@ public final class SdkConstants {
     public static final String TAG_ARGUMENT = "argument";
     public static final String ATTR_MODULE_NAME = "moduleName";
 
+    // Tags: Watch Face
+    public static final String TAG_WATCH_FACE = "WatchFace";
+    public static final String TAG_WATCH_FACES = "WatchFaces";
+    public static final String TAG_WATCH_FACE_INFO = "WatchFaceInfo";
+
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";
     public static final String FRAME_LAYOUT = "FrameLayout";
