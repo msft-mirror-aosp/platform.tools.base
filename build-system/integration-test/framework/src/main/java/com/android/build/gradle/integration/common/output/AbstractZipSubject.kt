@@ -43,7 +43,7 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
     override fun containsExactly(items: Collection<String>) {
         exists()
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(actual().getEntries())
             .containsExactly(items)
     }
@@ -88,7 +88,7 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
     override fun containsAtLeast(items: Collection<String>) {
         exists()
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(actual().getEntries())
             .containsAtLeast(items)
     }

@@ -177,7 +177,7 @@ abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
 
     override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.classes())
+            .about(ArchiveEntriesSubject.classes())
             .that(allClasses.keys)
             .containsExactly(items)
     }
@@ -192,7 +192,7 @@ abstract internal class BaseDexSubject<S: Subject<S, T>, T>(
 
     override fun containsAtLeast(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.classes())
+            .about(ArchiveEntriesSubject.classes())
             .that(allClasses.keys)
             .containsAtLeast(items)
     }
@@ -354,7 +354,7 @@ internal class JarWithClassesSubject(
 
     override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.classes())
+            .about(ArchiveEntriesSubject.classes())
             .that(this.classNames)
             .containsExactly(items)
     }
@@ -369,7 +369,7 @@ internal class JarWithClassesSubject(
 
     override fun containsAtLeast(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.classes())
+            .about(ArchiveEntriesSubject.classes())
             .that(this.classNames)
             .containsAtLeast(classNames)
     }

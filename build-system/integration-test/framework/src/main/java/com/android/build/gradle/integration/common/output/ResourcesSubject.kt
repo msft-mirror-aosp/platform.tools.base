@@ -59,7 +59,7 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(allResources)
             .containsExactly(items)
     }
@@ -74,7 +74,7 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     override fun containsAtLeast(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(allResources)
             .containsAtLeast(items)
     }

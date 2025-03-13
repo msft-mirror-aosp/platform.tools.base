@@ -72,7 +72,7 @@ internal class JniSubjectImpl(
 
     override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(actual().getEntries())
             .containsExactly(items)
     }
@@ -87,7 +87,7 @@ internal class JniSubjectImpl(
 
     override fun containsAtLeast(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.files())
+            .about(ArchiveEntriesSubject.files())
             .that(actual().getEntries())
             .containsAtLeast(items)
     }

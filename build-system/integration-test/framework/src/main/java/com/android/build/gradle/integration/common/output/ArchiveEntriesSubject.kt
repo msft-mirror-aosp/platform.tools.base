@@ -21,28 +21,27 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 
 /**
- * Custom truth subject to compare 2 lists of files.
- *
- * This will be renamed in the future.
+ * Custom truth subject to compare 2 lists of files that are coming
+ * from an archive.
  */
-class ComparatorSubject internal constructor(
+class ArchiveEntriesSubject internal constructor(
     private val mode: Mode,
     metadata: FailureMetadata,
     actual: Collection<String>
-): Subject<ComparatorSubject, Collection<String>>(metadata, actual) {
+): Subject<ArchiveEntriesSubject, Collection<String>>(metadata, actual) {
 
     internal enum class Mode { FILES, CLASSES }
 
     companion object {
-        internal fun files(): Factory<ComparatorSubject, Collection<String>> {
-            return Factory<ComparatorSubject, Collection<String>> { metadata, actual ->
-                ComparatorSubject(Mode.FILES, metadata, actual)
+        internal fun files(): Factory<ArchiveEntriesSubject, Collection<String>> {
+            return Factory<ArchiveEntriesSubject, Collection<String>> { metadata, actual ->
+                ArchiveEntriesSubject(Mode.FILES, metadata, actual)
             }
         }
 
-        internal fun classes(): Factory<ComparatorSubject, Collection<String>> {
-            return Factory<ComparatorSubject, Collection<String>> { metadata, actual ->
-                ComparatorSubject(Mode.CLASSES, metadata, actual)
+        internal fun classes(): Factory<ArchiveEntriesSubject, Collection<String>> {
+            return Factory<ArchiveEntriesSubject, Collection<String>> { metadata, actual ->
+                ArchiveEntriesSubject(Mode.CLASSES, metadata, actual)
             }
         }
     }

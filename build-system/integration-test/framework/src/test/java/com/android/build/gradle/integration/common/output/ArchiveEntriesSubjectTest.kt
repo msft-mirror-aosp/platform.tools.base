@@ -23,7 +23,7 @@ import org.jetbrains.annotations.CheckReturnValue
 import org.junit.Test
 
 @Suppress("UnstableApiUsage")
-class ComparatorSubjectTest {
+class ArchiveEntriesSubjectTest {
     @Test
     fun exactFileMatch() {
         withActual(
@@ -342,25 +342,25 @@ class ComparatorSubjectTest {
         private val actual: Collection<String>
     ) {
         fun expectExactMatchWith(vararg items: String) {
-            Truth.assertAbout(ComparatorSubject.files())
+            Truth.assertAbout(ArchiveEntriesSubject.files())
                 .that(actual)
                 .containsExactly(items.toList())
         }
 
         fun expectPartialMatchWith(vararg items: String) {
-            Truth.assertAbout(ComparatorSubject.files())
+            Truth.assertAbout(ArchiveEntriesSubject.files())
                 .that(actual)
                 .containsAtLeast(items.toList())
         }
 
         fun expectExactClassMatchWith(vararg items: String) {
-            Truth.assertAbout(ComparatorSubject.classes())
+            Truth.assertAbout(ArchiveEntriesSubject.classes())
                 .that(actual)
                 .containsExactly(items.toList())
         }
 
         fun expectPartialClassMatchWith(vararg items: String) {
-            Truth.assertAbout(ComparatorSubject.classes())
+            Truth.assertAbout(ArchiveEntriesSubject.classes())
                 .that(actual)
                 .containsAtLeast(items.toList())
         }
@@ -368,7 +368,7 @@ class ComparatorSubjectTest {
         @CheckReturnValue
         fun expectFailureWhenComparingExactlyTo(vararg items: String): TestError {
             return expectFailure(
-                mode = ComparatorSubject.Mode.FILES,
+                mode = ArchiveEntriesSubject.Mode.FILES,
                 items = items
             ) {
                 containsExactly(it)
@@ -378,7 +378,7 @@ class ComparatorSubjectTest {
         @CheckReturnValue
         fun expectFailureWhenComparingPartiallyTo(vararg items: String): TestError {
             return expectFailure(
-                mode = ComparatorSubject.Mode.FILES,
+                mode = ArchiveEntriesSubject.Mode.FILES,
                 items = items
             ) {
                 containsAtLeast(it)
@@ -387,14 +387,14 @@ class ComparatorSubjectTest {
 
         @CheckReturnValue
         private fun expectFailure(
-            mode: ComparatorSubject.Mode = ComparatorSubject.Mode.FILES,
+            mode: ArchiveEntriesSubject.Mode = ArchiveEntriesSubject.Mode.FILES,
             vararg items: String,
-            action: ComparatorSubject.(Collection<String>) -> Unit
+            action: ArchiveEntriesSubject.(Collection<String>) -> Unit
         ): TestError {
-            val factory = if (mode == ComparatorSubject.Mode.FILES)
-                ComparatorSubject.files()
+            val factory = if (mode == ArchiveEntriesSubject.Mode.FILES)
+                ArchiveEntriesSubject.files()
             else
-                ComparatorSubject.classes()
+                ArchiveEntriesSubject.classes()
 
             return TestError(
                 error = ExpectFailure.expectFailureAbout(factory) { subjectBuilder ->
