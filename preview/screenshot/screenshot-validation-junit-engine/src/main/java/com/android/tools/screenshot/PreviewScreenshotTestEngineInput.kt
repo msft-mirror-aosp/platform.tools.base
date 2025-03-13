@@ -47,6 +47,13 @@ object PreviewScreenshotTestEngineInput {
     object XmlReportInput {
         val outputDirectory: File = getFileFromSystemProperty("XmlReportInput.outputDirectory")
     }
+
+    object ReportEntrySetting {
+        // Redirect ReportEntry to stdout when enabled.
+        // This is a short-term workaround until Gradle supports ReportEntry.
+        // https://github.com/gradle/gradle/issues/4605
+        val redirectToStdout: Boolean = getSystemProperty("ReportEntrySetting.redirectToStdout").toBoolean()
+    }
 }
 
 private fun getSystemProperty(propertyName: String): String {

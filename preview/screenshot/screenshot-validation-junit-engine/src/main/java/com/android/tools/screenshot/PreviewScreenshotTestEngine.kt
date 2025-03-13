@@ -21,9 +21,11 @@ import com.android.tools.screenshot.descriptor.PreviewScreenshotTestEngineDescri
 import com.android.tools.screenshot.resolver.ClassSelectorResolver
 import com.android.tools.screenshot.resolver.MethodSelectorResolver
 import org.junit.platform.engine.EngineDiscoveryRequest
+import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolver
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
@@ -70,8 +72,23 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
     }
 
     override fun createExecutionContext(executionRequest: ExecutionRequest): PreviewScreenshotExecutionContext {
+        val listener = if (PreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout) {
+            object: EngineExecutionListener by executionRequest.engineExecutionListener {
+                override fun reportingEntryPublished(
+                    testDescriptor: TestDescriptor,
+                    entry: ReportEntry
+                ) {
+                    executionRequest.engineExecutionListener.reportingEntryPublished(testDescriptor, entry)
+                    entry.keyValuePairs.forEach { key, value ->
+                        println("[additionalTestArtifacts]$key=$value")
+                    }
+                }
+            }
+        } else {
+            executionRequest.engineExecutionListener
+        }
         return PreviewScreenshotExecutionContext(
-            executionRequest,
+            listener,
             PreviewScreenshotTestEngineInput.previewImageOutputDir,
             PreviewScreenshotTestEngineInput.previewDiffImageOutputDir,
             PreviewScreenshotTestEngineInput.referenceImageDir
