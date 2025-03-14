@@ -212,7 +212,12 @@ internal constructor(
       }
     }
 
-    return if (throwable != null) {
+    // TODO: https://youtrack.jetbrains.com/issue/IDEA-369261
+    fun Throwable.isLogInsufficientIsolation(): Boolean {
+      return stackTrace.firstOrNull()?.methodName == "logInsufficientIsolation"
+    }
+
+    return if (throwable != null && !throwable.isLogInsufficientIsolation()) {
       val writer = StringWriter()
       if (expectedThrowable != null && expectedThrowable.isInstance(throwable)) {
         val throwableMessage = throwable.message

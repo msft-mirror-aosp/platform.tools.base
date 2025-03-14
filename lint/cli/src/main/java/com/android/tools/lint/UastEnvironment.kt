@@ -25,7 +25,6 @@ import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.vfs.impl.ZipHandler
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
 import org.jetbrains.annotations.ApiStatus
@@ -178,10 +177,13 @@ interface UastEnvironment {
     fun disposeApplicationEnvironment() {
       // Note: if we later decide to keep the app env alive forever in the Gradle daemon, we
       // should still clear some caches between builds (see CompileServiceImpl.clearJarCache).
-      val appEnv = KotlinCoreEnvironment.applicationEnvironment ?: return
-      Disposer.dispose(appEnv.parentDisposable)
+
+      // https://youtrack.jetbrains.com/issue/IDEA-368941
+      // Between application environment initializations, we should
+      //   KotlinCoreEnvironment.resetApplicationManager(...)
+      // which is part of the following call.
+      KotlinCoreEnvironment.disposeApplicationEnvironment()
       checkApplicationEnvironmentDisposed()
-      ZipHandler.clearFileAccessorCache()
       // https://youtrack.jetbrains.com/issue/KTIJ-24467
       UastFacade.clearCachedPlugin()
     }

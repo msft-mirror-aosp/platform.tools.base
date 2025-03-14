@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.detector.api.explicitReceiver
 import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.getReceiverOrContainingClass
 import com.android.tools.lint.detector.api.isBelow
@@ -321,7 +322,7 @@ abstract class DataFlowAnalyzer(
    */
   private fun getTrackedReceiver(callExpression: UCallExpression): Pair<Boolean, UElement?>? {
     // Simple case: explicit receiver.
-    callExpression.receiver?.let { explicitReceiver ->
+    callExpression.explicitReceiver?.let { explicitReceiver ->
       return if (isTracked(explicitReceiver)) {
         true to explicitReceiver
       } else {
