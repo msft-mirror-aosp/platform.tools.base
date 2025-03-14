@@ -261,6 +261,7 @@ message DrawInstruction {
     // TODO(b/402148436): consider moving color out of draw instruction
     // Color used to render these bounds, in ARGB format.
     int32 color = 3;
+    optional string label = 4;
 }
 
 // User input detected by on-device rendering.

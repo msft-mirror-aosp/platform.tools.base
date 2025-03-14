@@ -18,6 +18,8 @@ package com.android.tools.agent.appinspection.rendering
 
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.View
@@ -43,20 +45,32 @@ class OverlayViewTest {
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView.fakeCanvas.drawLogs.clear()
+        overlayView.fakeCanvas.drawRectLogs.clear()
 
         val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = "label"
         )
         viewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(2)
+        // View bounds
+        assertThat(overlayView.fakeCanvas.drawRectLogs[0].rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView.fakeCanvas.drawRectLogs[0].paint.color).isEqualTo(0x10101010.toInt())
+        // Label background
+        assertThat(overlayView.fakeCanvas.drawRectLogs[1].rect).isEqualTo(Rect(-8, 0, 0, 0))
+        assertThat(overlayView.fakeCanvas.drawRectLogs[1].paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs[1].paint.style).isEqualTo(Paint.Style.FILL)
+        // Label text
+        assertThat(overlayView.fakeCanvas.drawTextLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawTextLogs.first().text).isEqualTo("label")
+        assertThat(overlayView.fakeCanvas.drawTextLogs.first().x).isEqualTo(-4f)
+        assertThat(overlayView.fakeCanvas.drawTextLogs.first().y).isEqualTo(0f)
+        assertThat(overlayView.fakeCanvas.drawTextLogs.first().paint.color).isEqualTo(Color.WHITE)
     }
 
     @Test
@@ -72,7 +86,7 @@ class OverlayViewTest {
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView.fakeCanvas.drawLogs.clear()
+        overlayView.fakeCanvas.drawRectLogs.clear()
 
         val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
@@ -83,9 +97,9 @@ class OverlayViewTest {
         viewModel.setHoveredNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
     }
 
     @Test
@@ -101,7 +115,7 @@ class OverlayViewTest {
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView.fakeCanvas.drawLogs.clear()
+        overlayView.fakeCanvas.drawRectLogs.clear()
 
         val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
@@ -112,9 +126,9 @@ class OverlayViewTest {
         viewModel.setVisibleNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
     }
 
     @Test
@@ -130,7 +144,7 @@ class OverlayViewTest {
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView.fakeCanvas.drawLogs.clear()
+        overlayView.fakeCanvas.drawRectLogs.clear()
 
         val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
@@ -141,9 +155,9 @@ class OverlayViewTest {
         viewModel.setRecomposingNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x40101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x40101010.toInt())
     }
 
     @Test
@@ -164,7 +178,7 @@ class OverlayViewTest {
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView1.fakeCanvas.drawLogs.clear()
+        overlayView1.fakeCanvas.drawRectLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
         val rootId1 = root1.uniqueDrawingId
@@ -178,11 +192,11 @@ class OverlayViewTest {
 
         // There are three events because listening to each selected, hovered and visible
         // triggers an invalidate.
-        assertThat(overlayView1.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView1.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
 
-        assertThat(overlayView2.fakeCanvas.drawLogs).hasSize(0)
+        assertThat(overlayView2.fakeCanvas.drawRectLogs).hasSize(0)
     }
 
     @Test
@@ -203,7 +217,7 @@ class OverlayViewTest {
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView1.fakeCanvas.drawLogs.clear()
+        overlayView1.fakeCanvas.drawRectLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
         val rootId1 = root1.uniqueDrawingId
@@ -217,11 +231,11 @@ class OverlayViewTest {
 
         // There are three events because listening to each selected, hovered and visible
         // triggers an invalidate.
-        assertThat(overlayView1.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView1.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
 
-        assertThat(overlayView2.fakeCanvas.drawLogs).hasSize(0)
+        assertThat(overlayView2.fakeCanvas.drawRectLogs).hasSize(0)
     }
 
     @Test
@@ -242,7 +256,7 @@ class OverlayViewTest {
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        overlayView1.fakeCanvas.drawLogs.clear()
+        overlayView1.fakeCanvas.drawRectLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
         val rootId1 = root1.uniqueDrawingId
@@ -256,11 +270,11 @@ class OverlayViewTest {
 
         // There are three events because listening to each selected, hovered and visible
         // triggers an invalidate.
-        assertThat(overlayView1.fakeCanvas.drawLogs).hasSize(1)
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView1.fakeCanvas.drawLogs.first().paint.color).isEqualTo(0x10101010.toInt())
+        assertThat(overlayView1.fakeCanvas.drawRectLogs).hasSize(1)
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
+        assertThat(overlayView1.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
 
-        assertThat(overlayView2.fakeCanvas.drawLogs).hasSize(0)
+        assertThat(overlayView2.fakeCanvas.drawRectLogs).hasSize(0)
     }
 
     @Test
@@ -284,9 +298,9 @@ class OverlayViewTest {
         viewModel.setSelectedNodes(drawInstruction1)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(4)
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(4)
 
-        overlayView.fakeCanvas.drawLogs.clear()
+        overlayView.fakeCanvas.drawRectLogs.clear()
         overlayView.onDetachedFromWindow()
         testScheduler.advanceUntilIdle()
 
@@ -298,7 +312,7 @@ class OverlayViewTest {
         viewModel.setSelectedNodes(drawInstruction2)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawLogs).hasSize(0)
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(0)
     }
 
     @Test

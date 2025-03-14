@@ -175,7 +175,8 @@ class OnDeviceRenderingViewModelTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 1
+            color = 1,
+            label = "label"
         )
         onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -187,7 +188,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = "label"))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -221,7 +222,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -255,7 +256,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -289,7 +290,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }
