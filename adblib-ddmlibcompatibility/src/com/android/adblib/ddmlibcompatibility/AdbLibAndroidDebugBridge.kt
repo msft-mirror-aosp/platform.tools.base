@@ -100,6 +100,7 @@ class AdbLibAndroidDebugBridge(
      * We re-use the `IDeviceManager` implementation from this ddmlib compatibility module, and
      * we create a new instance every time `start` or `restart` is called.
      */
+    @Volatile
     private var adblibCompatDeviceManager: IDeviceManager? = null
 
     private var passedAdbServerVersionCheck: Boolean = false
@@ -137,23 +138,24 @@ class AdbLibAndroidDebugBridge(
      * Initialized the library only if needed; deprecated for non-test usages.
      */
     @Deprecated("Used only in tests")
-    @Synchronized
     override fun initIfNeeded(clientSupport: Boolean) {
         logUsage(AdbDelegateUsageTracker.Method.INIT_IF_NEEDED) {
-            if (!initialized) {
-                init(clientSupport)
+            // Acquires the lock and calls another method that also acquires the same lock.
+            // This is safe because the lock acquisition order is always [initIfNeeded] -> [init].
+            withLock {
+                if (!initialized) {
+                    init(clientSupport)
+                }
             }
         }
     }
 
-    @Synchronized
     override fun init(clientSupport: Boolean) {
         logUsage(AdbDelegateUsageTracker.Method.INIT_1) {
             init(clientSupport, false, ImmutableMap.of())
         }
     }
 
-    @Synchronized
     override fun init(
         clientSupport: Boolean, useLibusb: Boolean, env: Map<String?, String?>
     ) {
@@ -168,35 +170,36 @@ class AdbLibAndroidDebugBridge(
         }
     }
 
-    @Synchronized
     override fun init(options: AdbInitOptions) {
         logUsage(AdbDelegateUsageTracker.Method.INIT_3) {
-            Preconditions.checkState(
-                !initialized, "AndroidDebugBridge.init() has already been called."
-            )
-            initialized = true
-            iDeviceManagerFactory = options.iDeviceManagerFactory
-            iDeviceUsageTracker = options.iDeviceUsageTracker
-            adbDelegateUsageTracker = options.adbDelegateUsageTracker
-            isClientSupport = options.clientSupport
-            clientManager = options.clientManager
-            if (clientManager != null) {
-                // A custom client manager is not compatible with "client support"
-                isClientSupport = false
-            }
-            if (iDeviceManagerFactory != null) {
-                // A custom "IDevice" manager is not compatible with a "Client" manager
-                clientManager = null
-                isClientSupport = false
-            }
-            adbEnvVars = options.adbEnvVars
-            isUserManagedAdbMode = options.userManagedAdbMode
-            DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
-            DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
-            DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
+            withLock {
+                Preconditions.checkState(
+                    !initialized, "AndroidDebugBridge.init() has already been called."
+                )
+                initialized = true
+                iDeviceManagerFactory = options.iDeviceManagerFactory
+                iDeviceUsageTracker = options.iDeviceUsageTracker
+                adbDelegateUsageTracker = options.adbDelegateUsageTracker
+                isClientSupport = options.clientSupport
+                clientManager = options.clientManager
+                if (clientManager != null) {
+                    // A custom client manager is not compatible with "client support"
+                    isClientSupport = false
+                }
+                if (iDeviceManagerFactory != null) {
+                    // A custom "IDevice" manager is not compatible with a "Client" manager
+                    clientManager = null
+                    isClientSupport = false
+                }
+                adbEnvVars = options.adbEnvVars
+                isUserManagedAdbMode = options.userManagedAdbMode
+                DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
+                DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
+                DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
 
-            // Determine port and instantiate socket address.
-            initAdbPort(options.userManagedAdbPort)
+                // Determine port and instantiate socket address.
+                initAdbPort(options.userManagedAdbPort)
+            }
         }
     }
 
@@ -946,9 +949,7 @@ class AdbLibAndroidDebugBridge(
 
     override fun getDevices(): Array<IDevice> {
         return logUsage(AdbDelegateUsageTracker.Method.GET_DEVICES) {
-            runBlocking {
-                adblibCompatDeviceManager?.devices?.toTypedArray() ?: emptyArray()
-            }
+            adblibCompatDeviceManager?.devices?.toTypedArray() ?: emptyArray()
         }
     }
 
