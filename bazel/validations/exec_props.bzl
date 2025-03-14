@@ -24,12 +24,18 @@ def _limit_exec_properties_impl(target, ctx):
         return []
     if "manual" in ctx.rule.attr.tags:
         return []
-    _check_machine_size(str(ctx.label), ctx.rule.attr.exec_properties, ctx.rule.attr.tags)
+    _check_machine_size(str(ctx.label), ctx.rule)
     return []
 
-def _check_machine_size(label, exec_properties, tags):
+def _check_machine_size(label, rule):
+    exec_properties = rule.attr.exec_properties
+    tags = rule.attr.tags
     machine_size = exec_properties.get("label:machine-size")
-    if machine_size == "cpu8" and "studio-e2e-test" not in tags:
+    if machine_size == "cpu8":
+      if rule.kind == '_gradle_build':
+        # Allow gradle_build rules to use cpu8.
+        return
+      if "studio-e2e-test" not in tags:
         fail(E2E_TEST_FAILURE_MESSAGE.format(label))
     if machine_size == "large" and label not in LARGE_MACHINE_ALLOWLIST:
         fail(LARGE_MACHINE_FAILURE_MESSAGE.format(label))
