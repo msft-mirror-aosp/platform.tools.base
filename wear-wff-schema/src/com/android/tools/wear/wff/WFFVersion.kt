@@ -15,12 +15,16 @@
  */
 package com.android.tools.wear.wff
 
+import java.net.URL
+
 /**
  * Represents a Watch Face Format version.
  *
  * @see <a href="https://developer.android.com/training/wearables/wff">Watch Face Format</a>
  */
-sealed class WFFVersion(private val version: String)
+sealed class WFFVersion(version: String) {
+    val schemaUrl: URL = checkNotNull(this::class.java.getResource("/specification/documents/$version/watchface.xsd"))
+}
 
 object WFFVersion1 : WFFVersion("1")
 object WFFVersion2 : WFFVersion("2")
