@@ -15,111 +15,76 @@
  */
 package com.android.ide.common.resources.configuration
 
-import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-/** Resource qualifier for Platform version.  */
-class VersionQualifier : ResourceQualifier {
-  var version: Int = DEFAULT_VERSION
-    private set
+/** Resource qualifier for Platform version. */
+class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier() {
 
-  constructor(apiLevel: Int) {
-    this.version = apiLevel
-  }
+  override fun getName() = NAME
 
-  constructor()
+  override fun getShortName() = "Version"
 
-  override fun getName(): String {
-    return NAME
-  }
+  override fun since() = 1
 
-  override fun getShortName(): String {
-    return "Version"
-  }
+  override fun isValid() = version != DEFAULT_VERSION
 
-  override fun since(): Int {
-    return 1
-  }
-
-  override fun isValid(): Boolean {
-    return this.version != DEFAULT_VERSION
-  }
-
-  override fun hasFakeValue(): Boolean {
-    return false
-  }
+  override fun hasFakeValue() = false
 
   override fun checkAndSet(value: String, config: FolderConfiguration): Boolean {
-    val qualifier: VersionQualifier? = getQualifier(value)
-    if (qualifier != null) {
-      config.setVersionQualifier(qualifier)
-      return true
-    }
+    val qualifier = getQualifier(value) ?: return false
 
-    return false
+    config.setVersionQualifier(qualifier)
+    return true
   }
 
   override fun equals(qualifier: Any?): Boolean {
-    return qualifier is VersionQualifier
-      && this.version == qualifier.version
+    return qualifier is VersionQualifier && this.version == qualifier.version
   }
 
   override fun isMatchFor(qualifier: ResourceQualifier): Boolean {
-    if (qualifier is VersionQualifier) {
-      // It is considered a match if our API level is equal or lower to the given qualifier,
-      // or the given qualifier doesn't specify an API Level.
-      return this.version <= qualifier.version
-        || qualifier.version == DEFAULT_VERSION
-    }
+    if (qualifier !is VersionQualifier) return false
 
-    return false
+    // It is considered a match if our API level is equal or lower to the given qualifier,
+    // or the given qualifier doesn't specify an API Level.
+    return this.version <= qualifier.version || qualifier.version == DEFAULT_VERSION
   }
 
   override fun isBetterMatchThan(
-    compareTo: ResourceQualifier?, reference: ResourceQualifier
+    compareTo: ResourceQualifier?,
+    reference: ResourceQualifier,
   ): Boolean {
-    if (compareTo == null) {
-      return true
-    }
+    if (compareTo == null) return true
 
     val compareQ = compareTo as VersionQualifier
     val referenceQ = reference as VersionQualifier
 
-    if (compareQ.version == referenceQ.version) {
+    return when {
       // what we have is already the best possible match (exact match)
-      return false
-    } else if (this.version == referenceQ.version) {
+      compareQ.version == referenceQ.version -> false
       // got new exact value, this is the best!
-      return true
-    } else {
-      // In all case we're going to prefer the higher version (since they have been filtered
-      // to not be too high.)
-      return this.version > compareQ.version
+      this.version == referenceQ.version -> true
+      // In all case we're going to prefer the higher version (since they have been filtered to not
+      // be too high.)
+      else -> this.version > compareQ.version
     }
   }
 
-  override fun hashCode(): Int {
-    return this.version
-  }
+  override fun hashCode() = version
 
-  /**
-   * Returns the string used to represent this qualifier in the folder name.
-   */
-  override fun getFolderSegment(): String {
-    return getFolderSegment(this.version)
-  }
+  /** Returns the string used to represent this qualifier in the folder name. */
+  override fun getFolderSegment() = getFolderSegment(version)
 
   override fun getShortDisplayValue(): String {
-    return if (this.version == DEFAULT_VERSION) "" else "API " + this.version
+    return if (version == DEFAULT_VERSION) "" else "API $version"
   }
 
   override fun getLongDisplayValue(): String {
-    return if (this.version == DEFAULT_VERSION) "" else "API Level " + this.version
+    return if (version == DEFAULT_VERSION) "" else "API Level $version"
   }
 
   companion object {
-    /** Default version. This means the property is not set.  */
-    val DEFAULT_VERSION: Int = -1
+    /** Default version. This means the property is not set. */
+    const val DEFAULT_VERSION = -1
 
     private val sVersionPattern: Pattern = Pattern.compile("^v(\\d+)$")
 
@@ -132,19 +97,13 @@ class VersionQualifier : ResourceQualifier {
      * @param segment the folder segment from which to create a qualifier
      * @return a new VersionQualifier object or `null`
      */
+    @JvmStatic
     fun getQualifier(segment: String): VersionQualifier? {
-      val m: Matcher = sVersionPattern.matcher(segment)
-      if (m.matches()) {
-        val v = m.group(1)
+      val m = sVersionPattern.matcher(segment)
+      if (!m.matches()) return null
 
-        try {
-          return VersionQualifier(v.toInt())
-        } catch (e: NumberFormatException) {
-          // Not a valid version qualifier segment - return null.
-        }
-      }
-
-      return null
+      val version = m.group(1).toIntOrNull() ?: return null
+      return VersionQualifier(version)
     }
 
     /**
@@ -154,7 +113,7 @@ class VersionQualifier : ResourceQualifier {
      * @param version the value of the qualifier, as returned by [.getVersion].
      */
     fun getFolderSegment(version: Int): String {
-      return if (version == DEFAULT_VERSION) "" else 'v'.toString() + version.toString()
+      return if (version == DEFAULT_VERSION) "" else "v$version"
     }
   }
 }
