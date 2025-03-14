@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.tasks
 
+import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
-import java.io.FileOutputStream
+import org.objectweb.asm.Type
 import java.io.File
+import java.io.FileOutputStream
 import java.util.Random
 
 /**
@@ -81,6 +84,20 @@ class UniqueClassGenerator() {
         constructorVisitor.visitMaxs(1, 1)
         constructorVisitor.visitEnd()
 
+        // Test method
+        val mv: MethodVisitor =
+            classWriter.visitMethod(Opcodes.ACC_PUBLIC, "simpleTestMethod", "()V", null, null)
+
+        // Add @Test annotation
+        val av: AnnotationVisitor = mv.visitAnnotation(Type.getObjectType("org/junit/Test").descriptor, true)
+        av.visitEnd()
+
+        mv.visitCode()
+
+        mv.visitInsn(Opcodes.RETURN)
+        mv.visitMaxs(2, 1) // Adjust max stack and locals as needed
+        mv.visitEnd()
+
         classWriter.visitEnd()
 
         // Write the class file to disk
@@ -89,7 +106,7 @@ class UniqueClassGenerator() {
         val file = FileOutputStream(File(location, "$className.class"))
         file.write(classBytes)
         file.close()
-        println("Class file $className.class generated successfully.")
+        println("Class file $className.class generated successfully in $location.")
 
     }
 }

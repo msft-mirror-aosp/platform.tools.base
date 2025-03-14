@@ -83,7 +83,6 @@ class LibraryTaskManager(
     variants: Collection<ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>>,
     testComponents: Collection<TestComponentCreationConfig>,
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
-    testSuites: Collection<TestSuiteCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
     extension: BaseExtension
@@ -92,7 +91,6 @@ class LibraryTaskManager(
     variants,
     testComponents,
     testFixturesComponents,
-    testSuites,
     globalConfig,
     localConfig,
     extension

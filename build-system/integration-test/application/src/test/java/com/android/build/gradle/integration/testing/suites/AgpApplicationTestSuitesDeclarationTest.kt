@@ -59,10 +59,7 @@ class AgpApplicationTestSuitesDeclarationTest
 
     @Test
     fun testApplicationTestSuites() {
-        val result = rule.build.executor
-            .run("tasks")
-        Truth.assertThat(result.stdout.findAll("UNIT_TEST first").count())
-
+        rule.build.executor.run(":app:tasks")
     }
 }
 

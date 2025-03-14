@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.SdkConstants
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
@@ -258,19 +259,19 @@ abstract class BasePlugin<
         }
     }
 
-
     @get:VisibleForTesting
     val variantInputModel: LegacyVariantInputManager by lazy {
         withProject("LegacyVariantInputManager") { project ->
             LegacyVariantInputManager(
-            dslServices,
-            variantFactory.componentType,
-            SourceSetManager(
-                project,
-                isPackagePublished(),
                 dslServices,
-                DelayedActionsExecutor()
-            ))
+                variantFactory.componentType,
+                SourceSetManager(
+                    project,
+                    isPackagePublished(),
+                    dslServices,
+                    DelayedActionsExecutor()
+                )
+            )
         }
     }
 
@@ -345,7 +346,6 @@ abstract class BasePlugin<
         variants: Collection<ComponentInfo<VariantBuilderT, CreationConfigT>>,
         testComponents: Collection<TestComponentCreationConfig>,
         testFixturesComponents: Collection<TestFixturesCreationConfig>,
-        testSuites: Collection<TestSuiteCreationConfig>,
         globalTaskCreationConfig: GlobalTaskCreationConfig,
         localConfig: TaskManagerConfig,
         extension: BaseExtension,
@@ -765,7 +765,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             variantComponents,
             variantManager.testComponents,
             variantManager.testFixturesComponents,
-            variantManager.testSuites,
             globalConfig,
             taskManagerConfig,
             extension

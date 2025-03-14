@@ -17,21 +17,30 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+import org.gradle.api.artifacts.dsl.DependencyCollector
 
 /**
- * Spec for running a JUnit engine against a test suite.
+ * DSL element to add dependencies to an [AgpTestSuite]
  */
 /** @suppress */
 @Incubating
-interface JUnitEngineSpec {
-
-    // TODO : We should reconcile this with org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
-    @get:Incubating
-    val includeEngines: MutableSet<String>
+interface AgpTestSuiteDependencies {
 
     /**
-     * Identifies the inputs required by the junit engine running the test suite.
+     * Returns a [DependencyCollector] that collects the set of compile-only dependencies.
      */
     @get:Incubating
-    val inputs: MutableList<AgpTestSuiteInputParameters>
+    val compileOnly: DependencyCollector
+
+    /**
+     * Returns a []DependencyCollector] that collects the set of implementation dependencies.
+     */
+    @get:Incubating
+    val implementation: DependencyCollector
+
+    /**
+     * Returns a [DependencyCollector] that collects the set of runtime-only dependencies.
+     */
+    @get:Incubating
+    val runtimeOnly: DependencyCollector
 }

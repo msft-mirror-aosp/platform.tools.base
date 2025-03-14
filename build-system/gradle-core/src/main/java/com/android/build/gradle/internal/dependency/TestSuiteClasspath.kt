@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dependency
 
-import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.dsl.JUnitEngineSpec
+import org.gradle.api.artifacts.Configuration
 
-abstract class JUnitEngineSpecImpl: JUnitEngineSpec {
+/**
+ * Resolvable dependencies of a test suite. Do not resolve these configurations before execution
+ * phase.
+ */
+class TestSuiteClasspath(
+    /**
+     * The test suite classpath that can be used to compile the test suite sources
+     */
+    val compileClasspath: Configuration,
 
-    override val includeEngines = mutableSetOf<String>()
-    override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
-}
+    /**
+     * The test suite runtime classpath that can be used when configuring the test task.
+     */
+    val runtimeClasspath: Configuration
+)

@@ -21,7 +21,6 @@ import com.android.SdkConstants
 import com.android.SdkConstants.DATA_BINDING_KTX_LIB_ARTIFACT
 import com.android.build.api.dsl.DataBinding
 import com.android.build.api.variant.VariantBuilder
-import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.attribution.CheckJetifierBuildService
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -35,6 +34,7 @@ import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
+import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -83,7 +83,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     private val variants: Collection<ComponentInfo<VariantBuilderT, VariantT>>,
     private val testComponents: Collection<TestComponentCreationConfig>,
     private val testFixturesComponents: Collection<TestFixturesCreationConfig>,
-    private val testSuites: Collection<TestSuiteCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     @JvmField protected val localConfig: TaskManagerConfig,
     @JvmField protected val extension: BaseExtension,
@@ -133,17 +132,17 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         }
 
         // Create tasks for all variants (main, testFixtures and tests)
-        for (variant in variants) {
-            createTasksForVariant(variant)
+        for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
+            createTasksForVariant(variantInfo)
+            for (testSuite in variantInfo.variant.testSuites) {
+                TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
+            }
         }
         for (testFixturesComponent in testFixturesComponents) {
             testFixturesTaskManager.createTasks(testFixturesComponent)
         }
         for (testComponent in testComponents) {
             createTasksForTest(testComponent)
-        }
-        for (testSuite in testSuites) {
-            TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
         }
         createTopLevelTasks(componentType, variantModel)
     }
@@ -302,7 +301,9 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     /** Create tasks for the specified variant.  */
-    private fun createTasksForTest(testVariant: TestComponentCreationConfig) {
+    private fun createTasksForTest(
+        testVariant: TestComponentCreationConfig,
+    ) {
         createAssembleTask(testVariant)
         val testedVariant = testVariant.mainVariant
         if (testedVariant.renderscriptCreationConfig?.renderscript?.supportModeEnabled?.get()

@@ -23,6 +23,15 @@ import org.gradle.api.Incubating
 interface JUnitEngineSpec {
 
     /**
+     * Returns the final list of included engines for this tes suite.
+     *
+     *  you must use the [AndroidComponentsExtension.beforeVariants] API and access the parameters
+     *  located in [TestSuiteBuilder.junitEngineSpec] to add new engines.
+     */
+    @get:Incubating
+    val includeEngines: Set<String>
+
+    /**
      * Returns the final list of inputs required by the junit engine running the test suite.
      *
      * Since these inputs can change the build flow, it is too late to change them here, you must

@@ -26,6 +26,7 @@ import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.TestedExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
+import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.HasDeviceTests
 import com.android.build.api.variant.HasDeviceTestsBuilder
@@ -48,8 +49,11 @@ import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
+import com.android.build.gradle.internal.api.AndroidSourceSetName
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
+import com.android.build.gradle.internal.api.SingleTestSuiteSourceSet
 import com.android.build.gradle.internal.api.VariantFilter
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -58,7 +62,6 @@ import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
@@ -95,6 +98,7 @@ import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.crea
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.DimensionCombination
@@ -110,7 +114,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.TestOptions
-import com.android.utils.appendCapitalized
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.wireless.android.sdk.stats.ApiVersion
@@ -174,11 +177,6 @@ class VariantManager<
      */
     val testComponents: MutableList<TestComponentCreationConfig> =
             Lists.newArrayList()
-
-    /**
-     * Returns a list of all test suites.
-     */
-    val testSuites = mutableListOf<TestSuiteCreationConfig>()
 
     /**
      * Returns a list of all test fixtures components.
@@ -952,16 +950,42 @@ class VariantManager<
             }
 
             (variantBuilder as? HasTestSuitesBuilder)?.suites
-                ?.forEach { (_, hostTestBuilder) ->
-                    val testComponent = TestSuiteImpl(
-                        hostTestBuilder as TestSuiteBuilderImpl,
-                        variantInfo.variant,
-                        variantServices,
-                        taskCreationServices,
+                ?.forEach { (_, testSuiteBuilder: TestSuiteBuilder) ->
+
+                    // this should really never happen but we have no type safe way of ensuring
+                    // this.
+                    if (variant !is HasTestSuitesCreationConfig) {
+                        this.variantBuilderServices.issueReporter.reportError(
+                            IssueReporter.Type.GENERIC,
+                            """Test suite ${testSuiteBuilder.name} ignored as
+                                |${variant.name} variant does not support test suites""".trimMargin()
+                        )
+                        return@forEach
+                    }
+
+                    // Create the TestSuite instance, its sources and various classpath configurations
+                    variant.addTestSuite(
+                        testSuiteBuilder.name,
+                        TestSuiteImpl(
+                            testSuiteBuilder as TestSuiteBuilderImpl,
+                            SingleTestSuiteSourceSet(
+                                testSuiteBuilder.name,
+                                variantServices,
+                            ),
+                            TestSuiteDependenciesBuilder(
+                                project,
+                                dslServices.projectOptions,
+                                projectServices.issueReporter,
+                                testSuiteBuilder,
+                                variantInfo.variant,
+                                getFlavorSelection(variantInfo.variantDslInfo),
+                                variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
+                            ).build(),
+                            variantInfo.variant,
+                            variantServices,
+                            taskCreationServices,
+                        )
                     )
-                    testSuites.add(testComponent)
-                    (variant as HasTestSuitesCreationConfig)
-                        .addTestSuite(hostTestBuilder.name, testComponent)
                 }
         }
 

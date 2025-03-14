@@ -16,13 +16,10 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.artifact.Artifacts
-import com.android.build.api.variant.Sources
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.tasks.testing.Test
 
 open class AnalyticsEnabledTestSuite(

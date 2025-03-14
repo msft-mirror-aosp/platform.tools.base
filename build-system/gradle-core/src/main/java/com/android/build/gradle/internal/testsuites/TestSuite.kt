@@ -16,10 +16,7 @@
 
 package com.android.build.gradle.internal.testsuites
 
-import com.android.build.api.artifact.Artifacts
 import com.android.build.api.variant.HasHostTestsBuilder
-import com.android.build.api.variant.Sources
-import com.android.build.api.variant.TestComponent
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.tasks.testing.Test

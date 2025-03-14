@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.component
 
+import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.gradle.internal.dependency.TestSuiteClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
@@ -35,5 +37,18 @@ interface TestSuiteCreationConfig: TestSuite {
     // Internal delegates.
     val services: TaskCreationServices
 
+    /**
+     * Tested variant, should be only read-only at this point.
+     */
     val testedVariant: VariantCreationConfig
+
+    /**
+     * Returns all the classpath Configurations for this test suite
+     */
+    val testSuiteClasspath: TestSuiteClasspath
+
+    /**
+     * Returns the sources for this test suite.
+     */
+    val sources: TestSuiteSourceSet
 }

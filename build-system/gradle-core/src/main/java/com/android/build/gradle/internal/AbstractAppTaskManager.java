@@ -77,7 +77,6 @@ public abstract class AbstractAppTaskManager<
             @NonNull Collection<? extends ComponentInfo<VariantBuilderT, VariantT>> variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -86,7 +85,6 @@ public abstract class AbstractAppTaskManager<
                 variants,
                 testComponents,
                 testFixturesComponents,
-                testSuites,
                 globalConfig,
                 localConfig,
                 extension);

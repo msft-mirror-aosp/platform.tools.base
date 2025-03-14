@@ -69,7 +69,6 @@ public class TestApplicationTaskManager
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -78,7 +77,6 @@ public class TestApplicationTaskManager
                 variants,
                 testComponents,
                 testFixturesComponents,
-                testSuites,
                 globalConfig,
                 localConfig,
                 extension);

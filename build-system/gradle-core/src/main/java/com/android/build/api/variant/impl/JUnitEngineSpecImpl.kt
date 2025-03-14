@@ -20,14 +20,16 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.utils.toImmutableList
+import com.android.build.gradle.internal.utils.toImmutableSet
 
 class JUnitEngineSpecImpl(
     junitEngineSpec: com.android.build.api.dsl.JUnitEngineSpec,
     variantServices: VariantServices
 ): JUnitEngineSpec {
 
+    override val includeEngines: Set<String> =
+        junitEngineSpec.includeEngines.toImmutableSet()
+
     override val inputs: List<AgpTestSuiteInputParameters> =
-        mutableListOf<AgpTestSuiteInputParameters>().also {
-            it.addAll(junitEngineSpec.inputs)
-        }.toImmutableList()
+        junitEngineSpec.inputs.toImmutableList()
 }

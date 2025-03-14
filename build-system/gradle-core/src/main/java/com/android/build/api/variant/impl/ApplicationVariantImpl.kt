@@ -50,6 +50,7 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.internal.utils.DefaultApkOutput
+import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
@@ -246,6 +247,9 @@ open class ApplicationVariantImpl @Inject constructor(
     override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
         internalDeviceTests[testTypeName] = deviceTest
     }
+
+    override val testSuites: List<TestSuiteCreationConfig>
+        get() = internalTestSuites.values.toImmutableList()
 
     // ---------------------------------------------------------------------------------------------
     // Private stuff

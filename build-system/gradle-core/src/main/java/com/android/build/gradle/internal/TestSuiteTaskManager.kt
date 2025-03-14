@@ -24,7 +24,7 @@ import org.gradle.api.Project
 
 class TestSuiteTaskManager(
     project: Project,
-    globalConfig: GlobalTaskCreationConfig
+    globalConfig: GlobalTaskCreationConfig,
 ): TaskManager(project, globalConfig) {
 
     override val javaResMergingScopes: Set<InternalScopedArtifacts.InternalScope>

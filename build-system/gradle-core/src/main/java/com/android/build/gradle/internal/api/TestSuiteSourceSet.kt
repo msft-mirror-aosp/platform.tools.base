@@ -14,13 +14,25 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.api
 
-import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.dsl.JUnitEngineSpec
+import com.android.build.api.variant.SourceDirectories
+import org.gradle.api.Incubating
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
-abstract class JUnitEngineSpecImpl: JUnitEngineSpec {
+/**
+ * Simplistic version of a test suite source set.
+ *
+ * Most versions will only have a single folder but more complicated use cases including a full
+ * android source set is possible in the future.
+ */
+/** @suppress */
+@Incubating
+interface TestSuiteSourceSet{
+    @Incubating
+    fun getByName(name: String): SourceDirectories.Flat
 
-    override val includeEngines = mutableSetOf<String>()
-    override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+    @Incubating
+    fun all(): Provider<out Collection<Directory>>
 }
