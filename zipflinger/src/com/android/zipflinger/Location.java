@@ -16,6 +16,7 @@
 package com.android.zipflinger;
 
 import com.android.annotations.NonNull;
+
 import java.text.NumberFormat;
 
 public class Location implements Comparable<Location> {
@@ -68,6 +69,6 @@ public class Location implements Comparable<Location> {
 
     @Override
     public int compareTo(Location o) {
-        return Math.toIntExact(this.first - o.first);
+        return Long.compare(first, o.first);
     }
 }

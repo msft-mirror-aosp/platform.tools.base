@@ -15,10 +15,13 @@
  */
 package com.android.zipflinger;
 
-import java.util.HashMap;
-import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FreeStoreTest extends AbstractZipflingerTest {
 
@@ -267,5 +270,19 @@ public class FreeStoreTest extends AbstractZipflingerTest {
                         0);
             }
         }
+    }
+
+    @Test
+    public void testLargeEntries() {
+        // Test manipulating entries with location offset larger than Integer.MAX_VALUE.
+        Map<String, Entry> zipEntries = new HashMap<>();
+
+        for (long i = 0; i < 50; i++) {
+            Entry entry = new Entry();
+            entry.setLocation(new Location(i * Integer.MAX_VALUE, Integer.MAX_VALUE));
+            zipEntries.put(String.valueOf(i), entry);
+        }
+
+        new FreeStore(zipEntries);
     }
 }
