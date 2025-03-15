@@ -19,7 +19,15 @@ package com.android.tools.bazel.lnzipper;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.zipflinger.ZipArchive;
+
 import com.google.common.collect.ImmutableList;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -27,11 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Option;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 public class LnZipperTest {
 
@@ -42,9 +45,10 @@ public class LnZipperTest {
         Path fileA = newFile("fileA.txt", "foo");
         Path fileB = newFile("fileB.txt", "bar");
         Path output = tmpPath("output.zip");
+        LnZipper.multithreaded.getValuesList().add("1");
         CommandLine commandLine =
                 buildCmd(
-                        ImmutableList.of(LnZipper.create),
+                        ImmutableList.of(LnZipper.create, LnZipper.multithreaded),
                         ImmutableList.of(output.toString(), fileA.toString(), fileB.toString()));
 
         LnZipper lnZipper = new LnZipper(commandLine);
@@ -83,9 +87,10 @@ public class LnZipperTest {
                         ImmutableList.of(
                                 String.format("dir/fileA.txt=%s", fileA), fileB.toString()));
         Path output = tmpPath("output.zip");
+        LnZipper.multithreaded.getValuesList().add("1");
         CommandLine commandLine =
                 buildCmd(
-                        ImmutableList.of(LnZipper.create),
+                        ImmutableList.of(LnZipper.create, LnZipper.multithreaded),
                         ImmutableList.of(output.toString(), "@" + argFile));
 
         LnZipper lnZipper = new LnZipper(commandLine);
@@ -117,6 +122,41 @@ public class LnZipperTest {
             ByteBuffer buffer = archive.getContent("path/my-symlink");
             String symlinkTarget = new String(buffer.array(), buffer.position(), buffer.limit());
             assertThat(symlinkTarget).isEqualTo("fileA.txt");
+        }
+    }
+
+    @Test
+    public void execute_createZip_withMultithreading() throws IOException {
+        Path fileA = newFile("fileA.txt", "foo");
+        Path fileB = newFile("fileB.txt", "bar");
+        Path fileC = newFile("fileC.txt", "bar");
+        Path fileD = newFile("fileD.txt", "bar");
+        Path fileE = newFile("fileE.txt", "bar");
+        Path output = tmpPath("output.zip");
+        LnZipper.multithreaded.getValuesList().add("2");
+        CommandLine commandLine =
+                buildCmd(
+                        ImmutableList.of(LnZipper.create, LnZipper.multithreaded),
+                        ImmutableList.of(
+                                output.toString(),
+                                fileA.toString(),
+                                fileB.toString(),
+                                fileC.toString(),
+                                fileD.toString(),
+                                fileE.toString()));
+
+        LnZipper lnZipper = new LnZipper(commandLine);
+        lnZipper.execute();
+
+        try (ZipArchive archive = new ZipArchive(output)) {
+            assertThat(archive.listEntries())
+                    .containsExactly(
+                            fileA.toString(),
+                            fileB.toString(),
+                            fileC.toString(),
+                            fileD.toString(),
+                            fileE.toString())
+                    .inOrder();
         }
     }
 
