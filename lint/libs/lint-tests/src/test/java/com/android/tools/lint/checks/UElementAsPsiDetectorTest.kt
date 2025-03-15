@@ -636,4 +636,24 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
       .run()
       .expectClean()
   }
+
+  fun testHasAnnotationOnUDeclaration() {
+    // http://yaqs/2860404788426702848
+    lint()
+      .files(
+        kotlin(
+            """
+            import org.jetbrains.uast.UDeclaration
+
+            // UDeclaration overrides hasAnnotation
+            fun UDeclaration.hasInjectAnnotation() =
+              hasAnnotation("javax.inject.Inject") || this.hasAnnotation("com.google.apps.framework.request.Rpc")
+          """
+          )
+          .indented(),
+        *getLintClassPath(),
+      )
+      .run()
+      .expectClean()
+  }
 }
