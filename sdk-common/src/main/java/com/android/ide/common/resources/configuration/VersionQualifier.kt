@@ -15,10 +15,22 @@
  */
 package com.android.ide.common.resources.configuration
 
+import com.android.sdklib.AndroidApiLevel
+import java.util.Objects
 import java.util.regex.Pattern
 
 /** Resource qualifier for Platform version. */
-class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier() {
+class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQualifier() {
+
+  constructor(
+    majorVersion: Int
+  ) : this(
+    if (majorVersion != DEFAULT_API_LEVEL.majorVersion) AndroidApiLevel(majorVersion) else null
+  )
+
+  @Deprecated("Use androidApiLevel instead.", ReplaceWith("androidApiLevel?.majorVersion"))
+  val version: Int
+    get() = androidApiLevel?.majorVersion ?: DEFAULT_API_LEVEL.majorVersion
 
   override fun getName() = NAME
 
@@ -26,7 +38,7 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
 
   override fun since() = 1
 
-  override fun isValid() = version != DEFAULT_VERSION
+  override fun isValid() = androidApiLevel != null
 
   override fun hasFakeValue() = false
 
@@ -38,7 +50,7 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
   }
 
   override fun equals(qualifier: Any?): Boolean {
-    return qualifier is VersionQualifier && this.version == qualifier.version
+    return qualifier is VersionQualifier && this.androidApiLevel == qualifier.androidApiLevel
   }
 
   override fun isMatchFor(qualifier: ResourceQualifier): Boolean {
@@ -46,7 +58,10 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
 
     // It is considered a match if our API level is equal or lower to the given qualifier,
     // or the given qualifier doesn't specify an API Level.
-    return this.version <= qualifier.version || qualifier.version == DEFAULT_VERSION
+    val thisApiLevel = this.androidApiLevel ?: DEFAULT_API_LEVEL
+    val qualifierApiLevel = qualifier.androidApiLevel
+
+    return qualifierApiLevel == null || thisApiLevel <= qualifierApiLevel
   }
 
   override fun isBetterMatchThan(
@@ -55,36 +70,36 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
   ): Boolean {
     if (compareTo == null) return true
 
-    val compareQ = compareTo as VersionQualifier
-    val referenceQ = reference as VersionQualifier
+    val thisApiLevel = androidApiLevel ?: DEFAULT_API_LEVEL
+    val compareApiLevel = (compareTo as VersionQualifier).androidApiLevel ?: DEFAULT_API_LEVEL
+    val referenceApiLevel = (reference as VersionQualifier).androidApiLevel ?: DEFAULT_API_LEVEL
 
     return when {
       // what we have is already the best possible match (exact match)
-      compareQ.version == referenceQ.version -> false
+      compareApiLevel == referenceApiLevel -> false
       // got new exact value, this is the best!
-      this.version == referenceQ.version -> true
+      thisApiLevel == referenceApiLevel -> true
       // In all case we're going to prefer the higher version (since they have been filtered to not
       // be too high.)
-      else -> this.version > compareQ.version
+      else -> thisApiLevel > compareApiLevel
     }
   }
 
-  override fun hashCode() = version
+  override fun hashCode() = Objects.hash(androidApiLevel)
 
   /** Returns the string used to represent this qualifier in the folder name. */
-  override fun getFolderSegment() = getFolderSegment(version)
+  override fun getFolderSegment() = getFolderSegment(androidApiLevel)
 
-  override fun getShortDisplayValue(): String {
-    return if (version == DEFAULT_VERSION) "" else "API $version"
-  }
+  override fun getShortDisplayValue() = androidApiLevel?.let { "API $it" } ?: ""
 
-  override fun getLongDisplayValue(): String {
-    return if (version == DEFAULT_VERSION) "" else "API Level $version"
-  }
+  override fun getLongDisplayValue() = androidApiLevel?.let { "API Level $it" } ?: ""
 
   companion object {
-    /** Default version. This means the property is not set. */
-    private const val DEFAULT_VERSION = -1
+    /**
+     * Default version. This means the property is not set. Using -1 allows comparisons within this
+     * class to be done numerically, rather than dealing with nulls.
+     */
+    private val DEFAULT_API_LEVEL = AndroidApiLevel(-1)
 
     @JvmField val DEFAULT = VersionQualifier()
 
@@ -105,7 +120,7 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
       if (!m.matches()) return null
 
       val version = m.group(1).toIntOrNull() ?: return null
-      return VersionQualifier(version)
+      return VersionQualifier(AndroidApiLevel(version))
     }
 
     /**
@@ -114,8 +129,8 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
      *
      * @param version the value of the qualifier, as returned by [.getVersion].
      */
-    fun getFolderSegment(version: Int): String {
-      return if (version == DEFAULT_VERSION) "" else "v$version"
+    fun getFolderSegment(androidApiLevel: AndroidApiLevel?): String {
+      return if (androidApiLevel == null) "" else "v${androidApiLevel.majorVersion}"
     }
   }
 }

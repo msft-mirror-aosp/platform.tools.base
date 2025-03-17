@@ -15,6 +15,8 @@
  */
 package com.android.sdklib
 
+import java.io.Serializable
+
 /**
  * If the apiLevel is at least MIN_MAJOR_WITH_EXPLICIT_MINOR, the version string will always include
  * the minor version, even if it is zero.
@@ -34,7 +36,8 @@ private const val MIN_API_FOR_EXPLICIT_MINOR: Int = 37
 
 data class AndroidApiLevel
 @JvmOverloads
-constructor(val majorVersion: Int, val minorVersion: Int = 0) : Comparable<AndroidApiLevel> {
+constructor(val majorVersion: Int, val minorVersion: Int = 0) :
+  Comparable<AndroidApiLevel>, Serializable {
 
   override fun compareTo(other: AndroidApiLevel): Int {
     if (majorVersion != other.majorVersion) return majorVersion.compareTo(other.majorVersion)
