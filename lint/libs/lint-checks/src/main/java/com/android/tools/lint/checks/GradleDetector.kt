@@ -792,9 +792,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         } else {
           null
         }
-      val clientProperties =
-        getClientProperties()?.apply { put(KEY_COORDINATE, "compileSdkVersion") }
-      report(context, cookie, DEPENDENCY, message, fix, clientProperties = clientProperties)
+      report(context, cookie, DEPENDENCY, message, fix)
     }
   }
 
@@ -1186,7 +1184,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // a micro-level different, and there is a newer micro version of the
           // version that the user is currently using, offer that one as well as it
           // may be easier to upgrade to.
-          if (!offerLatestGradleVersions && gmavenVersions?.latestPatch != newerVersion) {
+          if (gmavenVersions?.latestPatch != newerVersion) {
             safeReplacement = gmavenVersions?.latestPatch
           }
           if (newerVersion != null && newerVersion.isAgpNewerThan(dependency)) {
@@ -1320,10 +1318,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             getUpdateDependencyFix(richVersionIdentifier, versionString, groupId)
           else null
 
-        val clientProperties =
-          getClientProperties()?.apply { put(KEY_COORDINATE, "$groupId:$artifactId") }
-
-        report(context, cookie, issue, message, fix, clientProperties = clientProperties)
+        report(context, cookie, issue, message, fix)
       }
     }
   }
@@ -1395,13 +1390,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   }
 
   private var usingJitpackRepository: Boolean? = null
-
-  private fun getClientProperties(): LintMap? =
-    if (recordClientProperties) {
-      LintMap()
-    } else {
-      null
-    }
 
   private fun generateAndReportSdkIndexIssues(
     sdkIndex: GooglePlaySdkIndex,
@@ -2814,7 +2802,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     val agpVersion = context.project.buildModule?.agpVersion
     val filter =
-      if (agpVersion != null && agpVersion.major >= 7 && !offerLatestGradleVersions) {
+      if (agpVersion != null && agpVersion.major >= 7) {
         Predicate<Version> { version -> version.major == agpVersion.major }
       } else {
         null
@@ -2833,11 +2821,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         .text(currentVersion.toString())
         .with(newVersion.toString())
         .build()
-    val incident =
-      Incident(AGP_DEPENDENCY, location, message, fix).apply {
-        clientProperties =
-          getClientProperties()?.apply { put(KEY_COORDINATE, "gradle-wrapper.properties") }
-      }
+    val incident = Incident(AGP_DEPENDENCY, location, message, fix)
     context.report(incident)
   }
 
@@ -2850,23 +2834,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       lastTargetSdkVersion = Integer.MAX_VALUE
       lastTargetSdkVersionFile = null
     }
-
-    /**
-     * Whether to attach extra client properties to some of these incidents; this is intended to be
-     * used when lint is running in the IDE in special contexts and to communicate extra information
-     * to IDE-side quickfixes and refactorings without resorting to parsing error messages.
-     */
-    var recordClientProperties = false
-
-    /**
-     * For AGP and Gradle we constrain the offers a bit -- for example, the Gradle wrapper
-     * suggestion is limited to be compatible with the *current* version of AGP, and for AGP
-     * versions we try to offer it in multiple jumps in the IDE, e.g. if you're currently at version
-     * "7.1.0", and the latest is "8.8.0", we don't offer "8.8.0" immediately, we first offer the
-     * latest stable version of 7.1, say 7.1.4. This is to make it easier to make gradual updates.
-     * But if you want to do it all in one jump, that's not helpful.
-     */
-    var offerLatestGradleVersions = false
 
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null
@@ -4188,10 +4155,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     ): AvailableVersions? {
       if (gmavenRepository != null && gmavenRepository.hasGroupId(groupId)) {
         val versions = gmavenRepository.getVersions(groupId, artifactId).asSequence()
-        val mavenVersions = getMavenMetadataVersions(versions, version, groupId, artifactId)
-        if (mavenVersions != null) {
-          return mavenVersions
-        }
+        return getMavenMetadataVersions(versions, version, groupId, artifactId)
       }
 
       if (artifactId.endsWith(GRADLE_PLUGIN_ARTIFACT_SUFFIX)) {
