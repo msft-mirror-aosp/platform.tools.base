@@ -184,13 +184,14 @@ object ImageDiffUtil {
                 g.drawString("Actual", 2 * imageWidth + 10, 20)
             }
 
-            // Write image diff to undeclared outputs dir so ResultStore archives.
-            val output =
-                    TestUtils.getTestOutputDir().resolve(
-                            "delta-" + imageName.replace(File.separatorChar, '_'))
-            Files.createDirectories(output.parent)
-            deltaImage.writeImage("PNG", output)
-            error += " - see details in archived file $output"
+            // Write actual image & image diff to undeclared outputs dir for ResultStore archives.
+            val outputDir = TestUtils.getTestOutputDir()
+            val outFile = outputDir.resolve(imageName)
+            val diffFile = outputDir.resolve("delta-" + imageName.replace(File.separatorChar, '_'))
+            Files.createDirectories(outFile.parent)
+            bufferedImage.writeImage("PNG", outFile)
+            deltaImage.writeImage("PNG", diffFile)
+            error += " - see details in archived file $outFile"
             println(error)
             Assert.fail(error)
         }
