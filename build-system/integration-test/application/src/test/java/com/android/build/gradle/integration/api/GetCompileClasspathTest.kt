@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.api
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -64,27 +63,7 @@ class GetCompileClasspathTest {
                 }
             """.trimIndent())
 
-        // Test configuration cache disabled
-        val resultWithNoConfigurationCache = project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
-            .expectFailure().run("debugPrintCompileClasspath")
-        resultWithNoConfigurationCache.assertErrorContains(
-            "Configuration 'debugCompileClasspath' was resolved during configuration time."
-        )
-
-        // Test configuration cache enabled
-        val resultWithConfigurationCache = project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .expectFailure().run("debugPrintCompileClasspath")
-        resultWithConfigurationCache.assertErrorContains(
-            "Configuration 'debugCompileClasspath' was resolved during configuration time."
-        )
-
-        // With project isolation, Gradle may resolve dependencies at configuration time
-        // (https://github.com/gradle/gradle/issues/31483), so we currently disable this check for
-        // project isolation
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION)
-            .run("debugPrintCompileClasspath")
+        val result = project.executor().expectFailure().run("debugPrintCompileClasspath")
+        result.assertErrorContains("Configuration 'debugCompileClasspath' was resolved during configuration time.")
     }
 }

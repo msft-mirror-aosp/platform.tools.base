@@ -174,7 +174,7 @@ abstract class AndroidPluginBaseServices(
             SyncOptions.getErrorFormatMode(projectOptions)
         ).execute()
 
-        registerDependencyCheck(project, projectOptions, gradleBuildFeatures)
+        registerDependencyCheck(project, projectOptions)
         checkPathForErrors()
         val attributionFileLocation =
             projectOptions.get(StringOption.IDE_ATTRIBUTION_FILE_LOCATION)
