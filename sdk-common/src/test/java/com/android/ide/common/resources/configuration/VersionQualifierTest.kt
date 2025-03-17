@@ -31,7 +31,7 @@ class VersionQualifierTest {
   fun defaultVersion() {
     val vq = VersionQualifier()
 
-    assertThat(vq.version).isEqualTo(VersionQualifier.DEFAULT_VERSION)
+    assertThat(vq.version).isEqualTo(VersionQualifier.DEFAULT.version)
     assertThat(vq.isValid).isFalse()
     assertThat(vq.folderSegment).isEqualTo("")
     assertThat(vq.shortDisplayValue).isEqualTo("")

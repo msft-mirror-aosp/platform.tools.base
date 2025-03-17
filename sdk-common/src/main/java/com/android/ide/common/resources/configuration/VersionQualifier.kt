@@ -84,7 +84,9 @@ class VersionQualifier(val version: Int = DEFAULT_VERSION) : ResourceQualifier()
 
   companion object {
     /** Default version. This means the property is not set. */
-    const val DEFAULT_VERSION = -1
+    private const val DEFAULT_VERSION = -1
+
+    @JvmField val DEFAULT = VersionQualifier()
 
     private val sVersionPattern: Pattern = Pattern.compile("^v(\\d+)$")
 
