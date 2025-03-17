@@ -17,16 +17,30 @@ package com.android.ide.common.resources.configuration
 
 import com.android.sdklib.AndroidApiLevel
 import java.util.Objects
-import java.util.regex.Pattern
 
 /** Resource qualifier for Platform version. */
-class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQualifier() {
+class VersionQualifier(val androidApiLevel: AndroidApiLevel?, val includeMinorVersion: Boolean) :
+  ResourceQualifier() {
+
+  constructor() : this(null, false)
+
+  constructor(
+    androidApiLevel: AndroidApiLevel
+  ) : this(androidApiLevel, androidApiLevel.majorVersion >= 36)
 
   constructor(
     majorVersion: Int
   ) : this(
-    if (majorVersion != DEFAULT_API_LEVEL.majorVersion) AndroidApiLevel(majorVersion) else null
+    if (majorVersion != DEFAULT_API_LEVEL.majorVersion) AndroidApiLevel(majorVersion) else null,
+    false,
   )
+
+  init {
+    val minorVersion = androidApiLevel?.minorVersion ?: 0
+    require(minorVersion == 0 || includeMinorVersion) {
+      "Minor version must be included unless it is 0."
+    }
+  }
 
   @Deprecated("Use androidApiLevel instead.", ReplaceWith("androidApiLevel?.majorVersion"))
   val version: Int
@@ -50,7 +64,9 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQ
   }
 
   override fun equals(qualifier: Any?): Boolean {
-    return qualifier is VersionQualifier && this.androidApiLevel == qualifier.androidApiLevel
+    return qualifier is VersionQualifier &&
+      this.androidApiLevel == qualifier.androidApiLevel &&
+      this.includeMinorVersion == qualifier.includeMinorVersion
   }
 
   override fun isMatchFor(qualifier: ResourceQualifier): Boolean {
@@ -76,7 +92,13 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQ
 
     return when {
       // what we have is already the best possible match (exact match)
-      compareApiLevel == referenceApiLevel -> false
+      compareApiLevel == referenceApiLevel &&
+        compareTo.includeMinorVersion == reference.includeMinorVersion -> false
+      // What we have already matches the API level, but the included minor version doesn't. Only
+      // use this qualifier if it's an exact match.
+      compareApiLevel == referenceApiLevel ->
+        this.androidApiLevel == referenceApiLevel &&
+          this.includeMinorVersion == reference.includeMinorVersion
       // got new exact value, this is the best!
       thisApiLevel == referenceApiLevel -> true
       // In all case we're going to prefer the higher version (since they have been filtered to not
@@ -85,16 +107,24 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQ
     }
   }
 
-  override fun hashCode() = Objects.hash(androidApiLevel)
+  override fun hashCode() = Objects.hash(androidApiLevel, includeMinorVersion)
 
   /** Returns the string used to represent this qualifier in the folder name. */
-  override fun getFolderSegment() = getFolderSegment(androidApiLevel)
+  override fun getFolderSegment() = getDisplayValueVersion()?.let { "v$it" } ?: ""
 
-  override fun getShortDisplayValue() = androidApiLevel?.let { "API $it" } ?: ""
+  override fun getShortDisplayValue() = getDisplayValueVersion()?.let { "API $it" } ?: ""
 
-  override fun getLongDisplayValue() = androidApiLevel?.let { "API Level $it" } ?: ""
+  override fun getLongDisplayValue() = getDisplayValueVersion()?.let { "API Level $it" } ?: ""
+
+  private fun getDisplayValueVersion(): String? =
+    when {
+      androidApiLevel == null -> null
+      includeMinorVersion -> "${androidApiLevel.majorVersion}.${androidApiLevel.minorVersion}"
+      else -> androidApiLevel.majorVersion.toString()
+    }
 
   companion object {
+
     /**
      * Default version. This means the property is not set. Using -1 allows comparisons within this
      * class to be done numerically, rather than dealing with nulls.
@@ -103,9 +133,9 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQ
 
     @JvmField val DEFAULT = VersionQualifier()
 
-    private val sVersionPattern: Pattern = Pattern.compile("^v(\\d+)$")
+    private val versionPattern = Regex("^v(\\d+)(\\.(\\d+))?$")
 
-    const val NAME: String = "Platform Version"
+    const val NAME = "Platform Version"
 
     /**
      * Creates and returns a qualifier from the given folder segment. If the segment is incorrect,
@@ -116,21 +146,14 @@ class VersionQualifier(val androidApiLevel: AndroidApiLevel? = null) : ResourceQ
      */
     @JvmStatic
     fun getQualifier(segment: String): VersionQualifier? {
-      val m = sVersionPattern.matcher(segment)
-      if (!m.matches()) return null
+      val match = versionPattern.matchEntire(segment) ?: return null
 
-      val version = m.group(1).toIntOrNull() ?: return null
-      return VersionQualifier(AndroidApiLevel(version))
-    }
-
-    /**
-     * Returns the folder name segment for the given version value. This is equivalent to calling
-     * `new VersionQualifier(version).toString()`.
-     *
-     * @param version the value of the qualifier, as returned by [.getVersion].
-     */
-    fun getFolderSegment(androidApiLevel: AndroidApiLevel?): String {
-      return if (androidApiLevel == null) "" else "v${androidApiLevel.majorVersion}"
+      val majorVersion = match.groupValues[1].toIntOrNull() ?: return null
+      val minorVersion = match.groupValues[3].toIntOrNull()
+      return VersionQualifier(
+        AndroidApiLevel(majorVersion, minorVersion ?: 0),
+        minorVersion != null,
+      )
     }
   }
 }
