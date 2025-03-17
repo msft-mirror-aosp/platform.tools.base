@@ -18,9 +18,9 @@ sdkJar.manifest.attributes('Main-Class': 'com.android.jobb.Main')
 task jobbStartScripts(type: CreateStartScripts) {
     classpath = project.getTasks().getAt(JavaPlugin.JAR_TASK_NAME).getOutputs().getFiles().plus(
             project.getConfigurations().getByName('runtimeClasspath'))
-    outputDir new File(project.getBuildDir(), 'scripts')
+    outputDir=new File(project.getBuildDir(), 'scripts')
 
-    description 'Creates OS specific scripts to start jobb'
+    description='Creates OS specific scripts to start jobb'
     mainClass.set('com.android.jobb.Main')
     applicationName = 'jobb'
 }
