@@ -22,19 +22,6 @@ https://issuetracker.google.com/328748006
   * com.android.build.api.dsl.TestOptions.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
   * com.android.build.api.dsl.TestOptions.getManagedDevices: com.android.build.api.dsl.ManagedDevices ()
   * com.android.build.api.dsl.TestOptions.managedDevices: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ManagedDevices, kotlin.Unit>)
-https://issuetracker.google.com/328748007
-  * com.android.build.api.variant.DslExtension
-  * com.android.build.api.variant.DslExtension$Builder
-  * com.android.build.api.variant.DslExtension$Builder.<init>: com.android.build.api.variant.DslExtension$Builder (java.lang.String)
-  * com.android.build.api.variant.DslExtension$Builder.build: com.android.build.api.variant.DslExtension ()
-  * com.android.build.api.variant.DslExtension$Builder.extendBuildTypeWith: com.android.build.api.variant.DslExtension$Builder (java.lang.Class<?>)
-  * com.android.build.api.variant.DslExtension$Builder.extendProductFlavorWith: com.android.build.api.variant.DslExtension$Builder (java.lang.Class<?>)
-  * com.android.build.api.variant.DslExtension$Builder.extendProjectWith: com.android.build.api.variant.DslExtension$Builder (java.lang.Class<?>)
-  * com.android.build.api.variant.DslExtension.<init>: com.android.build.api.variant.DslExtension (java.lang.String, java.lang.Class, java.lang.Class, java.lang.Class, kotlin.jvm.internal.DefaultConstructorMarker)
-  * com.android.build.api.variant.DslExtension.getBuildTypeExtensionType: java.lang.Class<?> ()
-  * com.android.build.api.variant.DslExtension.getDslName: java.lang.String ()
-  * com.android.build.api.variant.DslExtension.getProductFlavorExtensionType: java.lang.Class<?> ()
-  * com.android.build.api.variant.DslExtension.getProjectExtensionType: java.lang.Class<?> ()
 https://issuetracker.google.com/328748020
   * com.android.build.api.dsl.EmulatorControl
   * com.android.build.api.dsl.EmulatorControl.getAllowedEndpoints: java.util.Set<java.lang.String> ()
@@ -185,8 +172,6 @@ https://issuetracker.google.com/328748665
   * com.android.build.api.dsl.DependencyVariantSelection
   * com.android.build.api.dsl.DependencyVariantSelection.getBuildTypes: org.gradle.api.provider.ListProperty<java.lang.String> ()
   * com.android.build.api.dsl.DependencyVariantSelection.getProductFlavors: org.gradle.api.provider.MapProperty<java.lang.String, java.util.List<java.lang.String>> ()
-https://issuetracker.google.com/328748668
-  * com.android.build.api.variant.AndroidComponentsExtension.registerExtension: void (com.android.build.api.variant.DslExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.variant.VariantExtensionConfig<VariantT>, ? extends com.android.build.api.variant.VariantExtension>)
 https://issuetracker.google.com/328748669
   * com.android.build.api.variant.Component.getLifecycleTasks: com.android.build.api.variant.LifecycleTasks ()
 https://issuetracker.google.com/328748670
@@ -526,12 +511,6 @@ https://issuetracker.google.com/328749317
 https://issuetracker.google.com/328749318
   * com.android.build.api.variant.DeviceTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.DeviceTestBuilder.setEnable: void (boolean)
-https://issuetracker.google.com/328749416
-  * com.android.build.api.variant.VariantExtensionConfig
-  * com.android.build.api.variant.VariantExtensionConfig.buildTypeExtension: T (java.lang.Class<T>)
-  * com.android.build.api.variant.VariantExtensionConfig.getVariant: VariantT ()
-  * com.android.build.api.variant.VariantExtensionConfig.productFlavorsExtensions: java.util.List<T> (java.lang.Class<T>)
-  * com.android.build.api.variant.VariantExtensionConfig.projectExtension: T (java.lang.Class<T>)
 https://issuetracker.google.com/330685970
   * com.android.build.api.dsl.FusedLibraryExtension
   * com.android.build.api.dsl.FusedLibraryExtension.getMinSdk: java.lang.Integer ()
