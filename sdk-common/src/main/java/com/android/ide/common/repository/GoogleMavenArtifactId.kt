@@ -15,6 +15,8 @@
  */
 package com.android.ide.common.repository
 
+import com.android.support.AndroidxNameUtils
+
 /**
  * Enumeration of known artifacts used in Android Studio
  */
@@ -307,5 +309,8 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
 
     @JvmStatic fun find(groupId: String, artifactId: String): GoogleMavenArtifactId? =
         values().asSequence().find { it.mavenGroupId == groupId && it.mavenArtifactId == artifactId }
+
+    @JvmStatic fun androidxIdOf(id: GoogleMavenArtifactId): GoogleMavenArtifactId =
+        find(AndroidxNameUtils.getCoordinateMapping(id.toString())) ?: id
   }
 }
