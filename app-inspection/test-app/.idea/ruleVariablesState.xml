@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RuleVariablesState">
+    <option name="ruleVariables">
+      <list>
+        <RuleVariable>
+          <option name="name" value="HOST" />
+          <option name="value" value="foo" />
+        </RuleVariable>
+        <RuleVariable>
+          <option name="name" value="PORT" />
+          <option name="value" value="80" />
+        </RuleVariable>
+      </list>
+    </option>
+  </component>
+</project>
