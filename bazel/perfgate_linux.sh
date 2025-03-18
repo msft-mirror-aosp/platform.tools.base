@@ -14,7 +14,9 @@ readonly script_name="$(basename "$0")"
 current_output_base="$(basename $(${script_dir}/bazel info output_base))"
 output_user_root="$HOME/.cache/bazel/_bazel_$USER"
 # delete old bazel output_base directories
-ls $output_user_root --ignore=cache --ignore=install --ignore=$current_output_base | xargs rm -rf
+pushd "$output_user_root"
+ls --ignore=cache --ignore=install --ignore=$current_output_base | xargs rm -rf
+popd
 
 if [[ $build_number =~ ^[0-9]+$ ]];
 then
