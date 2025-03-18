@@ -402,7 +402,6 @@
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="support-v13" new-group-name="androidx.legacy" new-artifact-name="legacy-support-v13" base-version="1.0.0"/>
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="support-v4" new-group-name="androidx.legacy" new-artifact-name="legacy-support-v4" base-version="1.0.0"/>
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="support-vector-drawable" new-group-name="androidx.vectordrawable" new-artifact-name="vectordrawable" base-version="1.0.0"/>
-  <migrate-dependency old-group-name="com.android.support" old-artifact-name="textclassifier" new-group-name="androidx.textclassifier" new-artifact-name="textclassifier" base-version="1.0.0"/>
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="transition" new-group-name="androidx.transition" new-artifact-name="transition" base-version="1.0.0"/>
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="wear" new-group-name="androidx.wear" new-artifact-name="wear" base-version="1.0.0"/>
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="asynclayoutinflater" new-group-name="androidx.asynclayoutinflater" new-artifact-name="asynclayoutinflater" base-version="1.0.0"/>
@@ -443,7 +442,7 @@
   <migrate-dependency old-group-name="android.arch.navigation" old-artifact-name="navigation-ui" new-group-name="androidx.navigation" new-artifact-name="navigation-ui" base-version="2.0.0-rc02"/>
   <migrate-dependency old-group-name="android.arch.navigation" old-artifact-name="navigation-ui-ktx" new-group-name="androidx.navigation" new-artifact-name="navigation-ui-ktx" base-version="2.0.0-rc02"/>
   <migrate-dependency old-group-name="android.arch.core" old-artifact-name="common" new-group-name="androidx.arch.core" new-artifact-name="core-common" base-version="2.0.0"/>
-  <migrate-dependency old-group-name="android.arch.core" old-artifact-name="core" new-group-name="androidx.arch.core" new-artifact-name="core" base-version="2.0.0"/>
+  <migrate-dependency old-group-name="android.arch.core" old-artifact-name="core" new-group-name="androidx.arch.core" new-artifact-name="core-runtime" base-version="2.0.0"/>
   <migrate-dependency old-group-name="android.arch.core" old-artifact-name="core-testing" new-group-name="androidx.arch.core" new-artifact-name="core-testing" base-version="2.0.0"/>
   <migrate-dependency old-group-name="android.arch.core" old-artifact-name="runtime" new-group-name="androidx.arch.core" new-artifact-name="core-runtime" base-version="2.0.0"/>
   <migrate-dependency old-group-name="android.arch.lifecycle" old-artifact-name="common" new-group-name="androidx.lifecycle" new-artifact-name="lifecycle-common" base-version="2.0.0"/>
@@ -483,14 +482,12 @@
   <migrate-dependency old-group-name="com.android.support.test.espresso" old-artifact-name="espresso-web" new-group-name="androidx.test.espresso" new-artifact-name="espresso-web" base-version="3.1.0"/>
   <migrate-dependency old-group-name="com.android.support.test.espresso.idling" old-artifact-name="idling-concurrent" new-group-name="androidx.test.espresso.idling" new-artifact-name="idling-concurrent" base-version="3.1.0"/>
   <migrate-dependency old-group-name="com.android.support.test.espresso.idling" old-artifact-name="idling-net" new-group-name="androidx.test.espresso.idling" new-artifact-name="idling-net" base-version="3.1.0"/>
-  <migrate-dependency old-group-name="com.android.support.test.janktesthelper" old-artifact-name="janktesthelper" new-group-name="androidx.test.jank" new-artifact-name="janktesthelper" base-version="1.0.1"/>
-  <migrate-dependency old-group-name="com.android.support.test.janktesthelper" old-artifact-name="janktesthelper-v23" new-group-name="androidx.test.jank" new-artifact-name="janktesthelper-v23" base-version="1.0.1"/>
+  <migrate-dependency old-group-name="com.android.support.test.janktesthelper" old-artifact-name="janktesthelper-v23" new-group-name="androidx.test.janktesthelper" new-artifact-name="janktesthelper" base-version="1.0.1"/>
   <migrate-dependency old-group-name="com.android.support.test.services" old-artifact-name="test-services" new-group-name="androidx.test.services" new-artifact-name="test-services" base-version="1.1.1"/>
-  <migrate-dependency old-group-name="com.android.support.test.uiautomator" old-artifact-name="uiautomator" new-group-name="androidx.test.uiautomator" new-artifact-name="uiautomator" base-version="2.2.0"/>
   <migrate-dependency old-group-name="com.android.support.test.uiautomator" old-artifact-name="uiautomator-v18" new-group-name="androidx.test.uiautomator" new-artifact-name="uiautomator" base-version="2.2.0"/>
   <!-- Exoplayer -->
   <migrate-dependency old-group-name="com.android.support" old-artifact-name="media2" new-group-name="androidx.media2" new-artifact-name="media2" base-version="1.0.0-alpha03"/>
-  <migrate-dependency old-group-name="com.android.support" old-artifact-name="media2-exoplayer" new-group-name="androidx.media2" new-artifact-name="media2-exoplayer" base-version="1.0.0-alpha01"/>
+  <migrate-dependency old-group-name="com.google.android.exoplayer" old-artifact-name="extension-media2" new-group-name="androidx.media2" new-artifact-name="media2-exoplayer" base-version="1.0.0-alpha01"/>
 
   <upgrade-dependency group-name="androidx.core" artifact-name="core-ktx" base-version="1.0.0" />
 </migration-map>
