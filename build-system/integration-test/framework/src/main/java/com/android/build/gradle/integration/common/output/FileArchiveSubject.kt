@@ -38,18 +38,6 @@ interface FileArchiveSubject {
      * The possible format of the items in the provided list includes both file path and folders.
      * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(item: String) {
-        containsExactly(listOf(item))
-    }
-
-    /**
-     * Validates that the archive file list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
     fun containsExactly(vararg items: String) {
         containsExactly(items.toList())
     }
