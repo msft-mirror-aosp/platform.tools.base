@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -92,22 +93,27 @@ class OnDeviceRenderingViewModel(
     }
 
     fun setSelectedNodes(instruction: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _selectedNodes.value = instruction.map { it.toOverlayViewInstruction() }
     }
 
     fun setHoveredNodes(instruction: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _hoveredNodes.value = instruction.map { it.toOverlayViewInstruction() }
     }
 
     fun setVisibleNodes(instructions: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _visibleNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setRecomposingNodes(instructions: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _recomposingNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setInterceptTouchEvents(intercept: Boolean) {
+        addOverlayViewsIfMissing()
         _interceptTouchEvents.value = intercept
     }
 
@@ -183,6 +189,18 @@ class OnDeviceRenderingViewModel(
                 // Do nothing, overlay view is not there
             }
         }
+    }
+
+    /**
+     * A root view can be missing its OverlayView if the root view children were all removed,
+     * but the root view itself was not. This can happen in some cases, for example if the
+     * Activity is relaunched, see b/402729631.
+     *
+     * This is a utility method to make sure the OverlayView is actually present, each time
+     * LayoutInspector tries to interact with it.
+     */
+    private fun addOverlayViewsIfMissing() {
+        scope.launch { roots.values.forEach { inspectorView -> addOverlayView(inspectorView) } }
     }
 }
 
