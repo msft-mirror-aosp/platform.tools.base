@@ -16,20 +16,17 @@
 package com.android.sdklib.internal.avd
 
 import com.android.prefs.AbstractAndroidLocations
-import com.android.repository.testframework.FakeProgressIndicator
 import com.android.resources.ScreenOrientation
+import com.android.sdklib.devices.Abi
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
 import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.sdklib.testing.TestSystemImages
 import com.android.testutils.file.createInMemoryFileSystem
-import com.android.testutils.file.recordExistingFile
 import com.android.testutils.file.someRoot
 import com.android.utils.NullLogger
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlin.reflect.full.memberProperties
 import org.junit.Test
 
@@ -102,10 +99,8 @@ class AvdBuilderTest {
 
   @Test
   fun createForExistingDevice() {
-    recordPlayStoreSysImg33ext4(root)
-
-    val systemImages = sdkHandler.getSystemImageManager(FakeProgressIndicator()).getImages()
-    val android33ext4 = systemImages.first()
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
 
     val pixel8 = deviceManager.getDevice("pixel_8", "Google")!!
     val avdBuilder = avdManager.createAvdBuilder(pixel8)
@@ -134,42 +129,91 @@ class AvdBuilderTest {
     }
   }
 
-  @Throws(IOException::class)
-  private fun recordPlayStoreSysImg33ext4(root: Path) {
-    root
-      .resolve("sdk/system-images/android-33-ext4/google_apis_playstore/x86_64/system.img")
-      .recordExistingFile()
-    Files.createDirectories(
-      root.resolve("sdk/system-images/android-33-ext4/google_apis_playstore/x86_64/data")
-    )
-    root
-      .resolve("sdk/system-images/android-33-ext4/google_apis_playstore/x86_64/package.xml")
-      .recordExistingFile(
-        """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<sys-img:sdk-sys-img xmlns:sys-img="http://schemas.android.com/sdk/android/repo/sys-img2/03"
-                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <localPackage path="system-images;android-33-ext4;google_apis_playstore;x86_64" obsolete="false">
-    <type-details xsi:type="sys-img:sysImgDetailsType">
-      <api-level>33</api-level>
-      <extension-level>4</extension-level>
-      <base-extension>false</base-extension>
-      <tag>
-        <id>google_apis_playstore</id>
-        <display>Google Play</display>
-      </tag>
-      <vendor>
-        <id>google</id>
-        <display>Google Inc.</display>
-      </vendor>
-      <abi>x86_64</abi>
-    </type-details>
-    <revision>
-      <major>9</major>
-    </revision>
-    <display-name>Google APIs with Playstore Intel x86 Atom System Image</display-name>
-  </localPackage>
-</sys-img:sdk-sys-img>
-"""
+  @Test
+  fun createResizableAvd() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
+
+    val avdBuilder = avdManager.createAvdBuilder(deviceManager.getDevice("resizable", "Generic")!!)
+    avdBuilder.systemImage = android33ext4
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+
+    val avdConfig = avdInfo.properties
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_WIDTH]).isEqualTo("1080")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_HEIGHT]).isEqualTo("2092")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_X_OFFSET]).isEqualTo("0")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_Y_OFFSET]).isEqualTo("0")
+    assertThat(avdConfig[ConfigKey.HINGE]).isEqualTo("yes")
+    assertThat(avdConfig[ConfigKey.HINGE_COUNT]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_TYPE]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_SUB_TYPE]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_RANGES]).isEqualTo("0-180")
+    assertThat(avdConfig[ConfigKey.HINGE_DEFAULTS]).isEqualTo("180")
+    assertThat(avdConfig[ConfigKey.HINGE_AREAS]).isEqualTo("1080-0-0-1840")
+    assertThat(avdConfig[ConfigKey.POSTURE_LISTS]).isEqualTo("1, 2, 3")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
+      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
+      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.RESIZABLE_CONFIG])
+      .isEqualTo(
+        "phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240, desktop-3-1920-1080-160"
       )
+    assertThat(avdConfig[ConfigKey.SKIN_NAME]).isEqualTo("1080x2400")
+    assertThat(avdConfig[ConfigKey.SKIN_PATH]).isEqualTo("1080x2400")
+  }
+
+  @Test
+  fun createFoldableAvd() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
+
+    val avdBuilder = avdManager.createAvdBuilder(deviceManager.getDevice("pixel_fold", "Google")!!)
+    avdBuilder.systemImage = android33ext4
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+
+    val avdConfig = avdInfo.properties
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_WIDTH]).isEqualTo("1080")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_HEIGHT]).isEqualTo("2092")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_X_OFFSET]).isEqualTo("0")
+    assertThat(avdConfig[HardwareProperties.HW_LCD_FOLDED_Y_OFFSET]).isEqualTo("0")
+    assertThat(avdConfig[ConfigKey.HINGE]).isEqualTo("yes")
+    assertThat(avdConfig[ConfigKey.HINGE_COUNT]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_TYPE]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_SUB_TYPE]).isEqualTo("1")
+    assertThat(avdConfig[ConfigKey.HINGE_RANGES]).isEqualTo("0-180")
+    assertThat(avdConfig[ConfigKey.HINGE_DEFAULTS]).isEqualTo("180")
+    assertThat(avdConfig[ConfigKey.HINGE_AREAS]).isEqualTo("1080-0-0-1840")
+    assertThat(avdConfig[ConfigKey.POSTURE_LISTS]).isEqualTo("1, 2, 3")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
+      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
+      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.SKIN_NAME]).isEqualTo("1840x2208")
+    assertThat(avdConfig[ConfigKey.SKIN_PATH]).isEqualTo("1840x2208")
+  }
+
+  @Test
+  fun createAvdWithPreferredAbi() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
+    val device = deviceManager.getDevice("medium_phone", "Generic")!!
+    val avdBuilder = avdManager.createAvdBuilder(device)
+    avdBuilder.systemImage = android33ext4
+    avdBuilder.userSettings[UserSettingsKey.PREFERRED_ABI] = Abi.RISCV64.toString()
+
+    val avdInfo = avdManager.createAvd(avdBuilder)
+
+    assertThat(avdInfo.userSettings[UserSettingsKey.PREFERRED_ABI])
+      .isEqualTo(Abi.RISCV64.toString())
+
+    val avdBuilder2 = AvdBuilder.createForExistingDevice(device, avdInfo)
+    avdBuilder2.userSettings[UserSettingsKey.PREFERRED_ABI] = Abi.X86_64.toString()
+    val avdInfo2 = avdManager.editAvd(avdInfo, avdBuilder2)
+
+    assertThat(avdInfo2.userSettings[UserSettingsKey.PREFERRED_ABI])
+      .isEqualTo(Abi.X86_64.toString())
   }
 }
