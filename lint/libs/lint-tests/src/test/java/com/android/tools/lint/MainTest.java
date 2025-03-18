@@ -162,10 +162,6 @@ public class MainTest extends AbstractCheckTest {
                     assertEquals(expectedOutput.trim(), stdout.trim());
                 }
             }
-            // TODO: https://youtrack.jetbrains.com/issue/IDEA-369261
-            if (stderr.contains("This is likely caused by an improper test isolation.")) {
-                stderr = "";
-            }
             if (expectedError != null && !expectedError.trim().equals(stderr.trim())) {
                 // TODO: https://youtrack.jetbrains.com/issue/KT-57715
                 //  Until then, we can't assert explicit "equals" yet.

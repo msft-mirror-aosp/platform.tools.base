@@ -26,7 +26,6 @@ import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.UastLintUtils
-import com.android.tools.lint.detector.api.explicitReceiver
 import com.intellij.lang.Language
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.util.io.FileUtilRt
@@ -338,7 +337,7 @@ open class DefaultUastParser(
       }
     }
 
-    val receiver = call.explicitReceiver
+    val receiver = call.receiver
     if (!includeReceiver || receiver == null) {
       if (includeArguments) {
         // Method with arguments but no receiver is the default range for UCallExpressions

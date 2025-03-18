@@ -18,7 +18,6 @@ package com.android.tools.lint.checks.infrastructure
 
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.acceptSourceFile
-import com.android.tools.lint.detector.api.isDuplicatedOverload
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiAssertStatement
 import com.intellij.psi.PsiVariable
@@ -36,7 +35,6 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.ULiteralExpression
-import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UPolyadicExpression
 import org.jetbrains.uast.UPrefixExpression
@@ -102,18 +100,6 @@ class ParenthesisTestMode(private val includeUnlikely: Boolean = false) :
     val edits = mutableListOf<Edit>()
     root.acceptSourceFile(
       object : EditVisitor() {
-        override fun visitMethod(node: UMethod): Boolean {
-          if (node.isDuplicatedOverload()) {
-            // https://youtrack.jetbrains.com/issue/KTIJ-30476
-            // Method body of @JvmOverloads is replaced with trampoline code
-            // that has a call to the original one.
-            // Stop exploring into it, as the code text is created on-the-fly.
-            // i.e., without proper text range.
-            return true
-          }
-          return super.visitMethod(node)
-        }
-
         override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
           if (node.operator == UastBinaryOperator.ASSIGN) {
             // Assignment is not allowed within parenthesis.

@@ -25,7 +25,6 @@ import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.acceptSourceFile
-import com.android.tools.lint.detector.api.isDuplicatedOverload
 import com.android.tools.lint.getErrorLines
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiAssertStatement
@@ -47,7 +46,6 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UImportStatement
-import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.getQualifiedName
 import org.jetbrains.uast.util.isConstructorCall
@@ -233,17 +231,6 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
           fields.any {
             it.name == name && it.modifierList?.hasModifierProperty(PsiModifier.STATIC) == true
           }
-      }
-
-      override fun visitMethod(node: UMethod): Boolean {
-        if (node.isDuplicatedOverload()) {
-          // https://youtrack.jetbrains.com/issue/KTIJ-30476
-          // Method body of @JvmOverloads is replaced with trampoline code
-          // Stop exploring into it: not only unnecessary, but also unresolvable
-          // since the code text is created from PSI factory on-the-fly.
-          return true
-        }
-        return super.visitMethod(node)
       }
 
       override fun visitCallExpression(node: UCallExpression): Boolean {

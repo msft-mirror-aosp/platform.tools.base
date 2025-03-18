@@ -360,9 +360,6 @@ internal fun configureApplicationEnvironment(
     PsiAugmentProvider::class.java,
   )
 
-  // https://youtrack.jetbrains.com/issue/IJPL-175398
-  System.setProperty("javac.fresh.variables.for.captured.wildcards.only", "true")
-
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
   appEnv.addExtension(UastLanguagePlugin.EP, DeclarativeUastLanguagePlugin())
@@ -427,14 +424,6 @@ private class IdeaLoggerForLint(category: String) : DefaultLogger(category) {
         t?.printStackTrace(System.err)
       }
     }
-  }
-
-  // TODO: https://youtrack.jetbrains.com/issue/IDEA-369261
-  override fun warn(message: String?, t: Throwable?) {
-    if (t?.stackTrace?.firstOrNull()?.methodName == "logInsufficientIsolation") {
-      return
-    }
-    super.warn(message, t)
   }
 }
 
