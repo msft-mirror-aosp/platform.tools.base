@@ -909,7 +909,6 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/NOTICE
   META-INF/NOTICE.txt
   META-INF/ProjectModel.xml
-  META-INF/WorkspaceModel.xml
   META-INF/WorkspaceModelExtensions.xml
   META-INF/com.android.tools/
   META-INF/com.android.tools/proguard/
@@ -1034,7 +1033,6 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/services/org.jetbrains.jps.model.java.JdkVersionDetector
   META-INF/services/org.jetbrains.jps.model.java.JpsJavaExtensionService
   META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension
-  META-INF/services/org.jetbrains.jps.model.serialization.JpsPathMacroContributor
   META-INF/services/org.jetbrains.jps.model.serialization.JpsSerializationManager
   META-INF/services/org.jetbrains.jps.model.serialization.impl.JpsSerializationViaWorkspaceModel
   META-INF/services/org.jetbrains.jps.service.JpsServiceManager
@@ -1098,7 +1096,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInsight/
   com/intellij/codeInsight/codeFragment/
   com/intellij/codeInsight/completion/
-  com/intellij/codeInsight/completion/command/
   com/intellij/codeInsight/completion/impl/
   com/intellij/codeInsight/completion/ml/
   com/intellij/codeInsight/completion/proc/
@@ -1128,7 +1125,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInsight/javadoc/
   com/intellij/codeInsight/lookup/
   com/intellij/codeInsight/lookup/impl/
-  com/intellij/codeInsight/multiverse/
   com/intellij/codeInsight/navigation/
   com/intellij/codeInsight/navigation/action/
   com/intellij/codeInsight/navigation/actions/
@@ -1211,7 +1207,11 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/java/
   com/intellij/java/frontback/
   com/intellij/java/frontback/psi/
+  com/intellij/java/frontback/psi/fake/
+  com/intellij/java/frontback/psi/fake/placeholder.txt
   com/intellij/java/frontback/psi/impl/
+  com/intellij/java/frontback/psi/impl/fake/
+  com/intellij/java/frontback/psi/impl/fake/placeholder.txt
   com/intellij/java/workspace/
   com/intellij/java/workspace/entities/
   com/intellij/java/workspace/entities/README.md
@@ -1266,7 +1266,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/command/undo/
   com/intellij/openapi/command/undo/package.html
   com/intellij/openapi/components/
-  com/intellij/openapi/concurrency/
   com/intellij/openapi/diagnostic/
   com/intellij/openapi/editor/
   com/intellij/openapi/editor/actionSystem/
@@ -1351,7 +1350,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/platform/util/coroutines/channel/
   com/intellij/platform/util/coroutines/compute/
   com/intellij/platform/util/coroutines/flow/
-  com/intellij/platform/util/coroutines/internal/
   com/intellij/platform/util/coroutines/sync/
   com/intellij/platform/util/progress/
   com/intellij/platform/util/progress/impl/
@@ -1488,7 +1486,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/testFramework/
   com/intellij/testIntegration/
   com/intellij/ui/
-  com/intellij/ui/classFilter/
   com/intellij/ui/icons/
   com/intellij/usageView/
   com/intellij/util/
@@ -1499,9 +1496,10 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/containers/
   com/intellij/util/containers/hash/
   com/intellij/util/containers/package.html
-  com/intellij/util/containers/prefixTree/
-  com/intellij/util/containers/prefixTree/map/
-  com/intellij/util/containers/prefixTree/set/
+  com/intellij/util/containers/prefix/
+  com/intellij/util/containers/prefix/factory/
+  com/intellij/util/containers/prefix/map/
+  com/intellij/util/containers/prefix/set/
   com/intellij/util/diff/
   com/intellij/util/diff/package.html
   com/intellij/util/download/
@@ -1515,7 +1513,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/indexing/containers/
   com/intellij/util/indexing/flavor/
   com/intellij/util/indexing/impl/
-  com/intellij/util/indexing/impl/diagnostics/
   com/intellij/util/indexing/impl/forward/
   com/intellij/util/io/
   com/intellij/util/io/blobstorage/
@@ -1659,6 +1656,13 @@ com/android/tools/external/com-intellij/intellij-core
   io/opentelemetry/api/baggage/
   io/opentelemetry/api/baggage/propagation/
   io/opentelemetry/api/common/
+  io/opentelemetry/api/incubator/
+  io/opentelemetry/api/incubator/events/
+  io/opentelemetry/api/incubator/logs/
+  io/opentelemetry/api/incubator/metrics/
+  io/opentelemetry/api/incubator/propagation/
+  io/opentelemetry/api/incubator/trace/
+  io/opentelemetry/api/incubator/version.properties
   io/opentelemetry/api/internal/
   io/opentelemetry/api/logs/
   io/opentelemetry/api/metrics/
@@ -1670,7 +1674,6 @@ com/android/tools/external/com-intellij/intellij-core
   io/opentelemetry/context/internal/
   io/opentelemetry/context/internal/shaded/
   io/opentelemetry/context/propagation/
-  io/opentelemetry/context/propagation/internal/
   io/opentelemetry/context/version.properties
   io/opentelemetry/internal/
   io/opentelemetry/internal/shaded/
@@ -1690,7 +1693,6 @@ com/android/tools/external/com-intellij/intellij-core
   io/opentelemetry/sdk/internal/
   io/opentelemetry/sdk/logs/
   io/opentelemetry/sdk/logs/data/
-  io/opentelemetry/sdk/logs/data/internal/
   io/opentelemetry/sdk/logs/export/
   io/opentelemetry/sdk/logs/internal/
   io/opentelemetry/sdk/logs/version.properties
@@ -1713,6 +1715,7 @@ com/android/tools/external/com-intellij/intellij-core
   io/opentelemetry/sdk/trace/data/
   io/opentelemetry/sdk/trace/export/
   io/opentelemetry/sdk/trace/internal/
+  io/opentelemetry/sdk/trace/internal/data/
   io/opentelemetry/sdk/trace/samplers/
   io/opentelemetry/sdk/trace/version.properties
   io/opentelemetry/sdk/version.properties
