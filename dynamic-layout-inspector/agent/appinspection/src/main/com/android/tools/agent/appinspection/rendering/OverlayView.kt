@@ -192,7 +192,7 @@ class OverlayView(
 
         // The rendering order matters.
         recomposingRectangles.forEach {
-            recomposingRectPaint.color = it.color.setColorAlpha(64)
+            recomposingRectPaint.color = it.color
             canvas.drawRect(it.rect.toViewCoordinates(), recomposingRectPaint)
         }
         visibleRectangles.forEach {
@@ -298,11 +298,5 @@ class OverlayView(
     /** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
     private fun List<OverlayViewInstruction>.mapToDrawInstructions(ownerRootId: Long): List<DrawInstruction> {
         return filter { it.rootId == ownerRootId }.map { DrawInstruction(it.bounds, it.color, it.label) }
-    }
-
-    /** Set the alpha for the int representation of a color. */
-    private fun Int.setColorAlpha(alpha: Int): Int {
-        val validAlpha = alpha.coerceIn(0, 255)
-        return (validAlpha shl 24) or (this and 0x00FFFFFF)
     }
 }

@@ -157,7 +157,7 @@ class OverlayViewTest {
 
         assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(1)
         assertThat(overlayView.fakeCanvas.drawRectLogs.first().rect).isEqualTo(Rect(0, 0, 2, 2))
-        assertThat(overlayView.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x40101010.toInt())
+        assertThat(overlayView.fakeCanvas.drawRectLogs.first().paint.color).isEqualTo(0x10101010.toInt())
     }
 
     @Test
