@@ -49,7 +49,11 @@ import org.jetbrains.kotlin.psi.ValueArgument
  * migration
  */
 fun main() {
+  // old/type -> new/type
   val typeMap = mutableMapOf<String, String>()
+  // sub/type -> super/type(s)
+  val subMap = mutableMapOf<String, Collection<String>>()
+  // oldApi (Lsome/entity;Lsome/other/entity;) -> newApi
   val apiMap = mutableMapOf<String, String>()
   val currentSources =
     // when using specific version of source snapshot:
@@ -77,18 +81,30 @@ fun main() {
       if (
         fileName.endsWith(DOT_KT) &&
           !entry.isDirectory &&
-          fileName.contains("org/jetbrains/kotlin/analysis/api/")
+          fileName.contains("org/jetbrains/kotlin/analysis/api/") &&
+          !fileName.contains("Test")
       ) {
         val text = String(jis.readAllBytes(), Charsets.UTF_8)
-        extract(env, fileName, text, typeMap, apiMap)
+        extract(env, fileName, text, typeMap, subMap, apiMap)
       }
       entry = jis.nextJarEntry
     }
   }
 
+  val typeToInternalName = { typeName: String ->
+    "\"" + getInternalName(typeName).replace("$", "\\$") + "\""
+  }
+
   println("=".repeat(6) + " type mapping " + "=".repeat(6))
   println()
-  printMap(typeMap) { typeName -> "\"" + getInternalName(typeName).replace("$", "\\$") + "\"" }
+  printMap(typeMap, typeToInternalName)
+  println()
+  println("=".repeat(6) + " type hierarchy " + "=".repeat(6))
+  println()
+  printMap(subMap, typeToInternalName) { superTs ->
+    // Collection literals are not allowed outside annotation.
+    superTs.joinToString(prefix = "arrayOf(", postfix = ")", transform = typeToInternalName)
+  }
   println()
   println("=".repeat(6) + " API mapping " + "=".repeat(6))
   println()
@@ -120,11 +136,19 @@ private fun printMap(m: Map<String, String>, formatter: (String) -> String) {
   }
 }
 
+private fun <K, V> printMap(m: Map<K, V>, kFormatter: (K) -> String, vFormatter: (V) -> String) {
+  val entries = m.entries.sortedBy { kFormatter(it.key) }
+  for ((key, value) in entries) {
+    println("      ${kFormatter(key)} ->\n" + "       ${vFormatter(value)}")
+  }
+}
+
 private fun extract(
   env: KotlinCoreEnvironment,
   fileName: String,
   text: String,
   typeMap: MutableMap<String, String>,
+  subMap: MutableMap<String, Collection<String>>,
   apiMap: MutableMap<String, String>,
 ) {
   val factory = KtPsiFactory(env.project)
@@ -176,8 +200,30 @@ private fun extract(
 
       var cls = ""
 
+      private fun isFrontendAgnostic(name: String): Boolean {
+        return "Fir" !in name && "Fe10" !in name
+      }
+
       override fun visitClass(klass: KtClass) {
-        klass.name?.let { cls = it }
+        klass.name?.let { name ->
+          cls = name
+          // Only interested in frontend-agnostic Ka* entities
+          if (name.startsWith("Ka") && isFrontendAgnostic(name)) {
+            val supers = mutableListOf<String>()
+            for (entry in klass.superTypeListEntries) {
+              val superT = entry.typeReference?.getTypeText()
+              if (superT != null) {
+                val fqn = tryLikelyFullyQualifiedName(superT)
+                if (fqn.isNotEmpty() && fqn != superT && isFrontendAgnostic(fqn)) {
+                  supers.add(fqn)
+                }
+              }
+            }
+            if (supers.isNotEmpty()) {
+              subMap["$pkg.$name"] = supers
+            }
+          }
+        }
         klass.acceptChildren(this)
       }
 
@@ -273,6 +319,25 @@ private fun extract(
         }
       }
 
+      private fun tryLikelyFullyQualifiedName(type: String): String {
+        // From `import org.jetbrains.kotlin.analysis.api.$Entity`,
+        // we can map $Entity back to its fully qualified name
+        imports[type]?.let {
+          return it
+        }
+        return when {
+          type.startsWith("Kt") -> {
+            // KT PSI is likely(?) used via start import
+            "org.jetbrains.kotlin.psi.$type"
+          }
+          type.startsWith("Ka") -> {
+            // Ka* entities can be reused without import as they're in the same package
+            "$pkg.$type"
+          }
+          else -> type
+        }
+      }
+
       private fun computeSignature(callable: KtCallableDeclaration): String {
 
         fun dropNullity(type: String): String {
@@ -291,31 +356,23 @@ private fun extract(
             "Double" -> "D"
             else -> {
               val nonNullType = dropNullity(type)
-              // From `import org.jetbrains.kotlin.analysis.api.$Entity`,
-              // we can map $Entity back to its fully qualified name
-              imports[nonNullType]?.let {
-                return it
-              }
-              when {
-                type.startsWith("Kt") -> {
-                  // KT PSI is likely(?) used via start import
-                  "org.jetbrains.kotlin.psi.$nonNullType"
+              val fqn = tryLikelyFullyQualifiedName(nonNullType)
+              if (fqn != nonNullType) {
+                fqn
+              } else {
+                when {
+                  type.startsWith("Collection") -> {
+                    "java.util.Collection"
+                  }
+                  type.startsWith("List") -> {
+                    "java.util.List"
+                  }
+                  '<' in type -> {
+                    // Erase type parameters
+                    nonNullType.substringBefore('<')
+                  }
+                  else -> nonNullType
                 }
-                type.startsWith("Ka") -> {
-                  // Ka* entities can be reused without import as they're in the same package
-                  "$pkg.$nonNullType"
-                }
-                type.startsWith("Collection") -> {
-                  "java.util.Collection"
-                }
-                type.startsWith("List") -> {
-                  "java.util.List"
-                }
-                '<' in type -> {
-                  // Erase type parameters
-                  nonNullType.substringBefore('<')
-                }
-                else -> nonNullType
               }
             }
           }
