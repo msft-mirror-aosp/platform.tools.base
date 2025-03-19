@@ -51,8 +51,12 @@ import org.jetbrains.kotlin.psi.ValueArgument
 fun main() {
   val typeMap = mutableMapOf<String, String>()
   val apiMap = mutableMapOf<String, String>()
-  // TODO: hard to find the right snapshot of sources. Maybe using git diff on source/api?
   val currentSources =
+    // when using specific version of source snapshot:
+    //
+    // File(".../Downloads/kotlinc-source/kotlin-compiler-source-v2.1.0.jar")
+    //
+    // when using the current version of source snapshot in prebuilts:
     File(
       TestUtils.getWorkspaceRoot().toFile(),
       "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar",
@@ -73,7 +77,7 @@ fun main() {
       if (
         fileName.endsWith(DOT_KT) &&
           !entry.isDirectory &&
-          fileName.startsWith("org/jetbrains/kotlin/analysis/api/")
+          fileName.contains("org/jetbrains/kotlin/analysis/api/")
       ) {
         val text = String(jis.readAllBytes(), Charsets.UTF_8)
         extract(env, fileName, text, typeMap, apiMap)
@@ -99,7 +103,7 @@ fun main() {
         "\n      \"" +
         mtdName +
         " " +
-        getInternalName(sig) +
+        sig +
         "\""
     } else {
       "\"$api\""
@@ -218,15 +222,23 @@ private fun extract(
           // E.g., ReplaceWith("this.getSymbol() as? S")
           // TODO: chain (of property access, followed by contains call or type cast)
           println("MISSING: $pkg.$cls#$name -> $replaced")
-        } else if ("[" in replaced && "]" in replaced) {
+        } else if ('[' in replaced && ']' in replaced) {
           // E.g. ReplaceWith("annotations[classId]")
           // TODO: chain (of property access and array access)
           println("MISSING: $pkg.$cls#$name -> $replaced")
-        } else if ("." in replaced) {
+        } else if ('.' in replaced) {
           // E.g. ReplaceWith("types.commonSupertype"))
           // TODO: chain (of property accesses)
           println("MISSING: $pkg.$cls#$name -> $replaced")
-        } else if ("(" in replaced && ")" in replaced) {
+        } else if ('{' in replaced && '}' == replaced.last()) {
+          // TODO: trailing lambda?
+          // E.g. ReplacedWith("getBuildKtModuleProvider { }")
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('!' == replaced[0]) {
+          // TODO: negation
+          // E.g. ReplacedWith("!isSubtypeOf(other, errorTypePolicy")
+          println("MISSING: $pkg.$cls#$name -> $replaced")
+        } else if ('(' in replaced && ')' in replaced) {
           // E.g., ReplaceWith("resolveToCall()") -> resolveToCall
           apiMap["$pkg.$cls.$name"] = replaced.substringBefore("(")
         } else {
@@ -262,20 +274,90 @@ private fun extract(
       }
 
       private fun computeSignature(callable: KtCallableDeclaration): String {
-        // TODO: JVM primitives, (nested) array, type parameter?
+
+        fun dropNullity(type: String): String {
+          return if (type.last() == '?') type.substringBefore('?') else type
+        }
+
+        // TODO: functional type, (primitive | nested) arrays
+        fun typeTextToJvmSignature(type: String): String {
+          return when (type) {
+            "Boolean" -> "Z"
+            "Byte" -> "B"
+            "Short" -> "S"
+            "Int" -> "I"
+            "Long" -> "J"
+            "Float" -> "F"
+            "Double" -> "D"
+            else -> {
+              val nonNullType = dropNullity(type)
+              // From `import org.jetbrains.kotlin.analysis.api.$Entity`,
+              // we can map $Entity back to its fully qualified name
+              imports[nonNullType]?.let {
+                return it
+              }
+              when {
+                type.startsWith("Kt") -> {
+                  // KT PSI is likely(?) used via start import
+                  "org.jetbrains.kotlin.psi.$nonNullType"
+                }
+                type.startsWith("Ka") -> {
+                  // Ka* entities can be reused without import as they're in the same package
+                  "$pkg.$nonNullType"
+                }
+                type.startsWith("Collection") -> {
+                  "java.util.Collection"
+                }
+                type.startsWith("List") -> {
+                  "java.util.List"
+                }
+                '<' in type -> {
+                  // Erase type parameters
+                  nonNullType.substringBefore('<')
+                }
+                else -> nonNullType
+              }
+            }
+          }
+        }
+
+        // TODO: how to check a subtype of KaSessionComponent
+        fun isKaSessionComponent(type: String): Boolean {
+          return type.endsWith("Provider") ||
+            type.endsWith("Optimizer") ||
+            type.endsWith("Resolver") ||
+            type.endsWith("Checker")
+        }
+
         return buildString {
           append("(")
           val rcvTxt = callable.receiverTypeReference?.getTypeText()
           val fqn =
             if (rcvTxt != null) {
               // Extension receiver (static call)
-              imports[rcvTxt] ?: rcvTxt
+              typeTextToJvmSignature(rcvTxt)
             } else {
               // Dispatch receiver (virtual/interface call)
-              "$pkg.$cls"
+              // Except a subtype of KaSessionComponent which will be inlined to mix-in
+              if (isKaSessionComponent(cls)) {
+                ""
+              } else {
+                "$pkg.$cls"
+              }
             }
-          append("L${fqn};")
-          // TODO: value parameters
+          if (fqn.isNotEmpty()) {
+            append("L${getInternalName(fqn)};")
+          }
+          for (param in callable.valueParameters) {
+            val paramTxt = param.typeReference?.getTypeText() ?: continue
+            val pt = typeTextToJvmSignature(paramTxt)
+            if (pt.length == 1) {
+              // primitive
+              append(pt)
+            } else {
+              append("L${getInternalName(pt)};")
+            }
+          }
           append(")")
           // TODO: return type
         }

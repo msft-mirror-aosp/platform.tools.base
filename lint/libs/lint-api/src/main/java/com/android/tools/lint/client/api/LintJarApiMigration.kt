@@ -941,18 +941,19 @@ class LintJarApiMigration(private val client: LintClient) {
       "getConstantValue (Lorg/jetbrains/kotlin/analysis/api/annotations/ConstantValue;)" ->
         "getValue"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated
-      "getAnnotationInfos (LKaAnnotated;)" -> "getAnnotations"
+      "getAnnotationInfos (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" ->
+        "getAnnotations"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotated
       "getAnnotationsList (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotated;)" ->
         "getAnnotations"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
-      "annotationsByClassId (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;)" ->
+      "annotationsByClassId (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" ->
         "get"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
       "getAnnotationClassIds (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;)" ->
         "getClassIds"
       // org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList
-      "hasAnnotation (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;)" ->
+      "hasAnnotation (Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;Lorg/jetbrains/kotlin/name/ClassId;)" ->
         "contains"
       // org/jetbrains/kotlin/analysis/api/annotations/NestedAnnotationValue
       "getAnnotationValue (Lorg/jetbrains/kotlin/analysis/api/annotations/NestedAnnotationValue;)" ->
@@ -994,12 +995,13 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes
       "getUNIT (Lorg/jetbrains/kotlin/analysis/api/components/KaBuiltinTypes;)" -> "getUnit"
       // org/jetbrains/kotlin/analysis/api/components/KaDataFlowProvider
-      "getExitPointSnapshot (Lorg/jetbrains/kotlin/analysis/api/components/KaDataFlowProvider;)" ->
-        "computeExitPointSnapshot"
+      "getExitPointSnapshot (Ljava/util/List;)" -> "computeExitPointSnapshot"
       // org/jetbrains/kotlin/analysis/api/components/KaDiagnosticProvider
-      "collectDiagnosticsForFile (Lorg/jetbrains/kotlin/psi/KtFile;)" -> "collectDiagnostics"
+      "collectDiagnosticsForFile (Lorg/jetbrains/kotlin/psi/KtFile;Lorg/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter;)" ->
+        "collectDiagnostics"
       // org/jetbrains/kotlin/analysis/api/components/KaDiagnosticProvider
-      "getDiagnostics (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "diagnostic"
+      "getDiagnostics (Lorg/jetbrains/kotlin/psi/KtElement;Lorg/jetbrains/kotlin/analysis/api/components/KaDiagnosticCheckerFilter;)" ->
+        "diagnostic"
       // org/jetbrains/kotlin/analysis/api/components/KaExpressionInformationProvider
       "getMissingCases (Lorg/jetbrains/kotlin/psi/KtWhenExpression;)" -> "computeMissingCases"
       // org/jetbrains/kotlin/analysis/api/components/KaExpressionInformationProvider
@@ -1015,12 +1017,12 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaExpressionTypeProvider
       "getReturnKtType (Lorg/jetbrains/kotlin/psi/KtDeclaration;)" -> "getReturnType"
       // org/jetbrains/kotlin/analysis/api/components/KaImportOptimizer
-      "analyseImports (Lorg/jetbrains/kotlin/analysis/api/components/KaImportOptimizer;)" ->
-        "analyzeImportsToOptimize"
+      "analyseImports (Lorg/jetbrains/kotlin/psi/KtFile;)" -> "analyzeImportsToOptimize"
       // org/jetbrains/kotlin/analysis/api/components/KaJavaInteroperabilityComponent
-      "asKtType (Lcom/intellij/psi/PsiType;)" -> "asKaType"
+      "asKtType (Lcom/intellij/psi/PsiType;Lcom/intellij/psi/PsiElement;)" -> "asKaType"
       // org/jetbrains/kotlin/analysis/api/components/KaJavaInteroperabilityComponent
-      "mapTypeToJvmType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "mapToJvmType"
+      "mapTypeToJvmType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/load/kotlin/TypeMappingMode;)" ->
+        "mapToJvmType"
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
       "collectCallCandidates (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "collectCallCandidatesOld"
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
@@ -1030,11 +1032,10 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaResolver
       "resolveCallOld (Lorg/jetbrains/kotlin/psi/KtElement;)" -> "resolveToCall"
       // org/jetbrains/kotlin/analysis/api/components/KaScopeProvider
-      "getCompositeScope (LKaScopeContext;)" -> "compositeScope"
-      // org/jetbrains/kotlin/analysis/api/components/KaScopeProvider
-      "getScopeContextForPosition (Lorg/jetbrains/kotlin/psi/KtFile;)" -> "scopeContext"
+      "getScopeContextForPosition (Lorg/jetbrains/kotlin/psi/KtFile;Lorg/jetbrains/kotlin/psi/KtElement;)" ->
+        "scopeContext"
       // org/jetbrains/kotlin/analysis/api/components/KaSymbolInformationProvider
-      "getDeprecationStatus (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol;)" ->
+      "getDeprecationStatus (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol;Lorg/jetbrains/kotlin/descriptors/annotations/AnnotationUseSiteTarget;)" ->
         "deprecationStatus"
       // org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProvider
       "getUnwrapFakeOverrides (Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;)" ->
@@ -1053,7 +1054,8 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isCharSequence (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isCharSequenceType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
-      "isClassTypeWithClassId (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isClassType"
+      "isClassTypeWithClassId (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/name/ClassId;)" ->
+        "isClassType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
       "isDouble (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "isDoubleType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeInformationProvider
@@ -1085,11 +1087,12 @@ class LintJarApiMigration(private val client: LintClient) {
       "buildSelfClassType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaNamedClassSymbol;)" ->
         "getDefaultType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "getAllSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "allSupertypes"
+      "getAllSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)" -> "allSupertypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "getDirectSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "directSuperTypes"
+      "getDirectSuperTypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)" ->
+        "directSuperTypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "getImplicitReceiverTypesAtPosition (Lorg/jetbrains/kotlin/analysis/api/components/KaTypeProvider;)" ->
+      "getImplicitReceiverTypesAtPosition (Lorg/jetbrains/kotlin/psi/KtElement;)" ->
         "collectImplicitReceiverTypes"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
       "getKaType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)" -> "getType"
@@ -1098,10 +1101,17 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
       "getReceiverKtType (Lorg/jetbrains/kotlin/psi/KtDoubleColonExpression;)" -> "getReceiverType"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeProvider
-      "hasCommonSubTypeWith (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
+      "hasCommonSubTypeWith (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
         "hasCommonSubtypeWith"
       // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
-      "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" -> "semanticallyEquals"
+      "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
+        "semanticallyEquals"
+      // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
+      "isEqualTo (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy;)" ->
+        "semanticallyEquals"
+      // org/jetbrains/kotlin/analysis/api/components/KaTypeRelationChecker
+      "isSubTypeOf (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/types/KaType;Lorg/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy;)" ->
+        "isSubtypeOf"
       // org/jetbrains/kotlin/analysis/api/projectStructure/
       "getAnalysisExtensionFileContextModule (Lcom/intellij/openapi/vfs/VirtualFile;)" ->
         "getAnalysisContextModule"
@@ -1120,9 +1130,17 @@ class LintJarApiMigration(private val client: LintClient) {
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
       "getAllSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;)" -> "getDeclarations"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;)" -> "callables"
+      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" ->
+        "callables"
       // org/jetbrains/kotlin/analysis/api/scopes/KaScope
-      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;)" -> "classifiers"
+      "getCallableSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" ->
+        "callables"
+      // org/jetbrains/kotlin/analysis/api/scopes/KaScope
+      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Ljava/util/Collection;)" ->
+        "classifiers"
+      // org/jetbrains/kotlin/analysis/api/scopes/KaScope
+      "getClassifierSymbols (Lorg/jetbrains/kotlin/analysis/api/scopes/KaScope;Lorg/jetbrains/kotlin/name/Name;)" ->
+        "classifiers"
       // org/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature
       "getCallableIdIfNonLocal (Lorg/jetbrains/kotlin/analysis/api/signatures/KaCallableSignature;)" ->
         "getCallableId"
@@ -1148,52 +1166,55 @@ class LintJarApiMigration(private val client: LintClient) {
       "getType (Lorg/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol;)" ->
         "getReturnType"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getAnonymousFunctionSymbol (LKtFunctionLiteral;)" -> "getSymbol"
+      "getAnonymousFunctionSymbol (Lorg/jetbrains/kotlin/psi/KtFunctionLiteral;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getAnonymousObjectSymbol (LKtObjectLiteralExpression;)" -> "getSymbol"
+      "getAnonymousObjectSymbol (Lorg/jetbrains/kotlin/psi/KtObjectLiteralExpression;)" ->
+        "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getClassOrObjectSymbol (LKtClassOrObject;)" -> "getClassSymbol"
+      "getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)" -> "getClassSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider;)" ->
-        "findClass"
+      "getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/name/ClassId;)" -> "findClass"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getConstructorSymbol (LKtConstructor<*>;)" -> "getSymbol"
+      "getConstructorSymbol (Lorg/jetbrains/kotlin/psi/KtConstructor;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getDestructuringDeclarationEntrySymbol (LKtDestructuringDeclarationEntry;)" -> "getSymbol"
+      "getDestructuringDeclarationEntrySymbol (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)" ->
+        "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getEnumEntrySymbol (LKtEnumEntry;)" -> "getSymbol"
+      "getEnumEntrySymbol (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getFileSymbol (LKtFile;)" -> "getSymbol"
+      "getFileSymbol (Lorg/jetbrains/kotlin/psi/KtFile;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getFunctionLikeSymbol (LKtNamedFunction;)" -> "getSymbol"
+      "getFunctionLikeSymbol (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getNamedClassOrObjectSymbol (LKtClassOrObject;)" -> "getNamedClassSymbol"
+      "getNamedClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)" ->
+        "getNamedClassSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getPackageSymbolIfPackageExists (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider;)" ->
-        "findPackage"
+      "getPackageSymbolIfPackageExists (Lorg/jetbrains/kotlin/name/FqName;)" -> "findPackage"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getParameterSymbol (LKtParameter;)" -> "getSymbol"
+      "getParameterSymbol (Lorg/jetbrains/kotlin/psi/KtParameter;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getPropertyAccessorSymbol (LKtPropertyAccessor;)" -> "getSymbol"
+      "getPropertyAccessorSymbol (Lorg/jetbrains/kotlin/psi/KtPropertyAccessor;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getROOT_PACKAGE_SYMBOL (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider;)" ->
-        "getRootPackageSymbol"
+      "getROOT_PACKAGE_SYMBOL ()" -> "getRootPackageSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getScriptSymbol (LKtScript;)" -> "getSymbol"
+      "getScriptSymbol (Lorg/jetbrains/kotlin/psi/KtScript;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getTypeAliasByClassId (Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider;)" ->
-        "findTypeAlias"
+      "getTopLevelCallableSymbols (Lorg/jetbrains/kotlin/name/FqName;Lorg/jetbrains/kotlin/name/Name;)" ->
+        "findTopLevelCallables"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getTypeAliasSymbol (LKtTypeAlias;)" -> "getSymbol"
+      "getTypeAliasByClassId (Lorg/jetbrains/kotlin/name/ClassId;)" -> "findTypeAlias"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getTypeParameterSymbol (LKtTypeParameter;)" -> "getSymbol"
+      "getTypeAliasSymbol (Lorg/jetbrains/kotlin/psi/KtTypeAlias;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
-      "getVariableSymbol (LKtProperty;)" -> "getSymbol"
+      "getTypeParameterSymbol (Lorg/jetbrains/kotlin/psi/KtTypeParameter;)" -> "getSymbol"
+      // org/jetbrains/kotlin/analysis/api/symbols/KaSymbolProvider
+      "getVariableSymbol (Lorg/jetbrains/kotlin/psi/KtProperty;)" -> "getSymbol"
       // org/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind
       "getSymbolKind (Lorg/jetbrains/kotlin/analysis/api/symbols/markers/KaSymbolWithKind;)" ->
         "getLocation"
       // org/jetbrains/kotlin/analysis/api/types/
-      "getAbbreviatedTypeOrSelf (LKaType;)" -> "getAbbreviationOrSelf"
+      "getAbbreviatedTypeOrSelf (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)" ->
+        "getAbbreviationOrSelf"
       // org/jetbrains/kotlin/analysis/api/types/KaClassErrorType
       "getCandidateClassSymbols (Lorg/jetbrains/kotlin/analysis/api/types/KaClassErrorType;)" ->
         "getCandidateSymbols"
