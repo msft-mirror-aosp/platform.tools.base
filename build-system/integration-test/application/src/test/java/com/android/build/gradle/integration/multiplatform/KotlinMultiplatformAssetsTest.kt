@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
@@ -84,11 +85,7 @@ class KotlinMultiplatformAssetsTest {
             )
         )
 
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
-
-        AarSubject.assertThat(aarPath) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             assets().resourceAsText("something.json").isEqualTo(
                 """
                    {

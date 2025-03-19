@@ -23,7 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
@@ -122,8 +122,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
                 }
             )
             .run("app:assembleDebugTestFixtures")
-        val aar = app.outputDir.resolve("aar").listFiles()!!.single()
-        AarSubject.assertThat(aar.toPath()) {
+        app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
             mainJar().classes().containsExactly(
                 "com/example/FooStringValue",
                 "com/example/Foo\$\$InnerClass",
@@ -153,8 +152,8 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             // Version 1.9.22 of the jetbrains KAPT plugin uses deprecated Gradle features
             .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
             .run("app:assembleDebugTestFixtures")
-        val aar = app.outputDir.resolve("aar").listFiles()!!.single()
-        AarSubject.assertThat(aar.toPath()) {
+
+        app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
             mainJar().classes().containsExactly(
                 "com/example/FooStringValue",
                 "com/example/Foo\$\$InnerClass",

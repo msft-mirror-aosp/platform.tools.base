@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.output
 
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedMethod
 import org.objectweb.asm.tree.ClassNode
 
 /**
@@ -68,4 +69,13 @@ internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef): Class
         get() = dex.fields.map { it.name }
     override val methods: List<String>
         get() = dex.methods.map { it.name }
+
+    /**
+     * Returns a map of all the methods of the class, and their different implementations.
+     */
+    fun methodsWithImplementations(): Map<String, List<DexBackedMethod>> = dex.methods.mapNotNull { method ->
+        method.implementation?.let {
+            method
+        }
+    }.groupBy { it.name }
 }

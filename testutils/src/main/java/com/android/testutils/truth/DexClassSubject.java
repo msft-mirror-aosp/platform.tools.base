@@ -203,7 +203,7 @@ public class DexClassSubject extends Subject<DexClassSubject, DexBackedClassDef>
         return false;
     }
 
-    private static boolean checkMethodInvokes(
+    public static boolean checkMethodInvokes(
             @NonNull DexBackedMethod method, Predicate<MethodReference> predicate) {
         for (Instruction instruction : method.getImplementation().getInstructions()) {
             Opcode opcode = instruction.getOpcode();

@@ -16,15 +16,13 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -34,8 +32,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import kotlin.io.path.pathString
-import kotlin.io.path.readText
 
 @RunWith(Parameterized::class)
 class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
@@ -79,12 +75,8 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             InternalArtifactType.MERGED_JAVA_RES.getFolderName() + "/androidDeviceTest/mergeAndroidDeviceTestJavaResource/feature-kmpFirstLib.jar"
         )
 
-        assertThat(androidTestMergedRes.exists()).isTrue()
-
-        Apk(androidTestMergedRes).use { apk ->
-            assertThat(apk.getEntry("android_lib_resource.txt").readText()).isEqualTo(
-                "android lib resource\n"
-            )
+        ZipSubject.assertThat(androidTestMergedRes) {
+            textFile("android_lib_resource.txt").isEqualTo("android lib resource")
         }
     }
 
@@ -122,7 +114,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
         val coveragePackageFolder = FileUtils.join(
             project.getSubproject("kmpFirstLib").buildDir,
-            "reports", "coverage", "test", "main", "com.example.kmpfirstlib"
+            "reports", "coverage", "test", "com.example.kmpfirstlib"
         )
         assertThat(coveragePackageFolder.exists()).isTrue()
 
@@ -164,64 +156,41 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
     @Test
     fun testAppApkContents() {
-        project.executor()
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            // classes from commonMain are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpCommonFirstLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpsecondlib/KmpCommonSecondLibClass;")
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            classes().containsAtLeast(
+                // classes from commonMain are packaged
+                "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                "com/example/kmpsecondlib/KmpCommonSecondLibClass",
+                // classes from androidMain are packaged
+                "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+                "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+                // transitive deps are packaged
+                "com/example/androidlib/AndroidLib",
 
-            // classes from androidMain are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpAndroidFirstLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpAndroidFirstLibJavaClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpsecondlib/KmpAndroidSecondLibClass;")
+                "com/example/kmpjvmonly/KmpJvmOnlyLibClass",
+                "com/example/kmpjvmonly/KmpCommonJvmOnlyLibClass",
 
-            // transitive deps are packaged
-            assertThatApk(apk).hasClass("Lcom/example/androidlib/AndroidLib;")
+                "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+                "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
 
-            assertThatApk(apk).hasClass("Lcom/example/kmpjvmonly/KmpJvmOnlyLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpjvmonly/KmpCommonJvmOnlyLibClass;")
-
-            assertThatApk(apk).hasClass("Lcom/example/kmplibraryplugin/KmpLibraryPluginAndroidClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmplibraryplugin/KmpLibraryPluginCommonClass;")
-
-            assertThatApk(apk).hasClass("Lcom/example/app/AndroidApp;")
-
-            val manifestContents = ApkSubject.getManifestContent(apk.file).joinToString("\n")
-            assertThat(manifestContents).contains(
-                "com.example.kmpfirstlib.KmpAndroidActivity"
+                "com/example/app/AndroidApp"
             )
 
-            assertThat(apk.getEntry("kmp_resource.txt").readText()).isEqualTo(
-                "kmp resource\n"
-            )
+            manifest().contains("com.example.kmpfirstlib.KmpAndroidActivity")
 
-            assertThat(apk.getEntry("android_lib_resource.txt").readText()).isEqualTo(
-                "android lib debug resource\n"
-            )
+            javaResources {
+                resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
+                resourceAsText("android_lib_resource.txt").isEqualTo("android lib debug resource")
+            }
         }
     }
 
     @Test
     fun testKmpLibraryAarContents() {
-        val aarFile = if (publishLibs) {
-            FileUtils.join(
-                project.projectDir,
-                "testRepo",
-                "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0.aar"
-            )
-        } else {
-            project.executor()
-                .run(":kmpFirstLib:assemble")
-
-            project.getSubproject("kmpFirstLib").getOutputFile(
-                "aar",
-                "kmpFirstLib.aar"
-            )
-        }
-
-        AarSubject.assertThat(aarFile.toPath()) {
+        val action: AarSubject.() ->Unit = {
             textFile("R.txt")
             mainJar {
                 classes().containsExactly(
@@ -243,6 +212,20 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
                 contains("package=\"com.example.kmpfirstlib\"")
             }
             aarMetadata().minAgpVersion().isEqualTo("7.2.0")
+        }
+
+        if (publishLibs) {
+            val file = FileUtils.join(
+                project.projectDir,
+                "testRepo",
+                "com", "example", "kmpFirstLib-android", "1.0", "kmpFirstLib-android-1.0.aar"
+            )
+
+            AarSubject.assertThat(file, action)
+        } else {
+            project.executor().run(":kmpFirstLib:assemble")
+
+            project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
         }
 
         if (publishLibs) {
@@ -277,78 +260,72 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":kmpFirstLib:assembleDeviceTest")
+        project.executor().run(":kmpFirstLib:assembleDeviceTest")
 
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
-
-        assertThat(testApk.exists()).isTrue()
-
-        Apk(testApk).use { apk ->
+        project.getSubproject("kmpFirstLib").assertApk(
+            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
+        ) {
             // Test apk should be signed by debug signing config
-            assertThatApk(apk).containsApkSigningBlock()
+            hasApkSigningBlock()
 
-            assertThatApk(apk).hasApplicationId("com.example.kmpfirstlib.test")
+            applicationId().isEqualTo("com.example.kmpfirstlib.test")
 
-            // classes from commonMain are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpCommonFirstLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpsecondlib/KmpCommonSecondLibClass;")
-
-            // instrumented test classes are packaged
-            assertThatApk(apk).containsClass("Lcom/example/kmpfirstlib/test/KmpAndroidFirstLibActivityTest;")
-
+            // full check on this to validate that
             // classes from common tests and unit tests are not packaged
-            assertThatApk(apk).doesNotContainClass("Lcom/example/kmpfirstlib/KmpCommonFirstLibClassTest;")
-            assertThatApk(apk).doesNotContainClass("Lcom/example/kmpfirstlib/KmpAndroidFirstLibClassTest;")
+            classes {
+                subPackage("com/example/kmpfirstlib").containsExactly(
+                    "KmpCommonFirstLibClass",
+                    // instrumented test classes are packaged
+                    "test/KmpAndroidFirstLibActivityTest$",
+                    // classes from androidMain are packaged
+                    "KmpAndroidFirstLibClass",
+                    "KmpAndroidFirstLibJavaClass",
+                    // other
+                    "KmpAndroidActivity",
+                    "test/R$"
+                )
+                containsAtLeast(
+                    // classes from commonMain are packaged
+                    "com/example/kmpsecondlib/KmpCommonSecondLibClass",
+                    // classes from androidMain are packaged
+                    "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+                    // classes from library dependencies are packaged
+                    "com/example/androidlib/AndroidLib",
+                    "androidx/test/core/app/ActivityScenario",
+                    // classes from jvm only project are packaged
+                    "com/example/kmpjvmonly/KmpJvmOnlyLibClass",
+                    "com/example/kmpjvmonly/KmpCommonJvmOnlyLibClass",
 
-            // classes from androidMain are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpAndroidFirstLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpfirstlib/KmpAndroidFirstLibJavaClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpsecondlib/KmpAndroidSecondLibClass;")
-
-            // classes from library dependencies are packaged
-            assertThatApk(apk).hasClass("Lcom/example/androidlib/AndroidLib;")
-            assertThatApk(apk).hasClass("Landroidx/test/core/app/ActivityScenario;")
-
-            // classes from jvm only project are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmpjvmonly/KmpJvmOnlyLibClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmpjvmonly/KmpCommonJvmOnlyLibClass;")
-
-            // classes from kmp + library plugin are packaged
-            assertThatApk(apk).hasClass("Lcom/example/kmplibraryplugin/KmpLibraryPluginAndroidClass;")
-            assertThatApk(apk).hasClass("Lcom/example/kmplibraryplugin/KmpLibraryPluginCommonClass;")
+                    // classes from kmp + library plugin are packaged
+                    "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+                    "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
+                )
+            }
 
             // resources from dependencies are packaged
-            assertThatApk(apk).contains("resources.arsc")
+            contains("resources.arsc")
 
-            val manifestContents = ApkSubject.getManifestContent(apk.file).joinToString("\n")
-            assertThat(manifestContents).contains(
-                "com.example.kmpfirstlib.KmpAndroidActivity"
-            )
+            manifest().contains("com.example.kmpfirstlib.KmpAndroidActivity")
 
-            assertThat(apk.getEntry("kmp_resource.txt").readText()).isEqualTo(
-                "kmp resource\n"
-            )
+            javaResources {
+                resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
+                resourceAsText("android_lib_resource.txt").isEqualTo("android lib debug resource")
+            }
 
-            assertThat(apk.getEntry("android_lib_resource.txt").readText()).isEqualTo(
-                "android lib debug resource\n"
-            )
-
-            // all contents
-            assertThat(
-                apk.entries.map { it.pathString }.filterNot {
-                    it.startsWith("/res") || it.endsWith(".kotlin_builtins") ||
-                            it.startsWith("/META-INF") ||
-                            (it.startsWith("/classes") && it.endsWith(".dex"))
-                }
-            ).containsExactlyElementsIn(
-                listOf(
-                    "/AndroidManifest.xml",
-                    "/kmp_resource.txt",
-                    "/android_lib_resource.txt",
-                )
+            // validate all contents by looking at the java resources which in
+            // apks are what's left after you remove res, assets, dexfiles, etc...
+            javaResources().containsExactly(
+                "META-INF/",
+                "kmp_resource.txt",
+                "android_lib_resource.txt",
+                "kotlin/annotation/annotation.kotlin_builtins",
+                "kotlin/collections/collections.kotlin_builtins",
+                "kotlin/concurrent/atomics/atomics.kotlin_builtins",
+                "kotlin/coroutines/coroutines.kotlin_builtins",
+                "kotlin/internal/internal.kotlin_builtins",
+                "kotlin/kotlin.kotlin_builtins",
+                "kotlin/ranges/ranges.kotlin_builtins",
+                "kotlin/reflect/reflect.kotlin_builtins"
             )
         }
 
@@ -361,6 +338,6 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         )
         assertThat(apkIdeRedirectFile.exists()).isTrue()
         assertThat(apkIdeRedirectFile.readText())
-            .contains("listingFile=../../../../outputs/apk/androidTest/main/output-metadata.json")
+            .contains("listingFile=../../../../outputs/apk/androidTest/output-metadata.json")
     }
 }

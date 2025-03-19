@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.nativebuild
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.apk.Apk
@@ -183,33 +184,23 @@ class KotlinMultiplatformAndroidPluginNativeTest {
             """.trimIndent()
         )
 
-        executor()
-            .run(":kmpFirstLib:assembleDeviceTest")
+        executor().run(":kmpFirstLib:assembleDeviceTest")
 
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
+        project.getSubproject("kmpFirstLib").assertApk(
+            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
+        ) {
+            jniLibs().containsExactly(
+                "x86_64/libnative_lib.so",
+                "x86/libnative_lib.so",
+                "armeabi-v7a/libnative_lib.so",
+                "arm64-v8a/libnative_lib.so"
+            )
 
-        Truth.assertThat(testApk.exists()).isTrue()
-
-        Apk(testApk).use { apk ->
-            // all contents
-            Truth.assertThat(
-                apk.entries.map { it.pathString }.filterNot {
-                    it.startsWith("/res") || it.endsWith(".kotlin_builtins") ||
-                            it.startsWith("/META-INF") ||
-                            (it.startsWith("/classes") && it.endsWith(".dex"))
-                }
-            ).containsExactlyElementsIn(
-                listOf(
-                    "/AndroidManifest.xml",
-                    "/kmp_resource.txt",
-                    "/android_lib_resource.txt",
-                    "/lib/x86_64/libnative_lib.so",
-                    "/lib/x86/libnative_lib.so",
-                    "/lib/armeabi-v7a/libnative_lib.so",
-                    "/lib/arm64-v8a/libnative_lib.so"
-                )
+            javaResources().containsExactly(
+                "META-INF/",
+                "kotlin/", // for .kotlin_builtins files
+                "kmp_resource.txt",
+                "android_lib_resource.txt"
             )
         }
     }

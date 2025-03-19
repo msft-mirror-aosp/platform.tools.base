@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.testutils.truth.DexClassSubject
+import com.google.common.truth.Fact
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
@@ -51,4 +53,37 @@ class ClassDefinitionSubject(
     fun fields(): IterableSubject = check("fields()").that(actual().fields)
 
     fun methods(): IterableSubject = check("methods()").that(actual().methods)
+
+    /**
+     * Returns the list of methods invoked by the methods matching the provided name.
+     *
+     * The subject contains all the method references found in the implementation of the methods.
+     * The value is coming from
+     * [ccom.android.tools.smali.dexlib2.iface.reference.MethodReference.toString].
+     */
+    fun invocationListForMethod(name: String): IterableSubject {
+        // validates the method exists
+        methods().contains(name)
+
+        if (actual() !is ClassDefinitionFromDex) {
+            failWithActual(Fact.simpleFact("methodByName only works on dex files"))
+            // needed to satisfy compiler, but the line above will throw already
+            throw RuntimeException("methodByName only works on dex files")
+        }
+
+        val dexActual = actual() as ClassDefinitionFromDex
+        // this should succeed since we checked earlier
+        val methods = dexActual.methodsWithImplementations()[name]!!
+
+        val list = buildList {
+            for (method in methods) {
+                DexClassSubject.checkMethodInvokes(method) { methodReference ->
+                    add(methodReference.toString())
+                    false
+                }
+            }
+        }
+
+        return check("invocationListForMethod($name)").that(list)
+    }
 }
