@@ -306,12 +306,12 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * if the caller can guarantee that only {@link #getApiString()} will be used later.
      * {@link #getApiLevel()} will return 0.
      *
-     * SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known codenames,
-     * and should be preferred.
+     * <p>SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known
+     * codenames, and should be preferred.
      *
      * @param apiString an API string that could have been produced by getApiStringWithExtension()
      * @throws IllegalArgumentException if the input doesn't match API_LEVEL_PATTERN or
-     *   PREVIEW_PATTERN
+     *     PREVIEW_PATTERN
      */
     public static AndroidVersion fromString(@NonNull String apiString) {
         try {
@@ -567,11 +567,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /**
      * Returns true if this version is equal to or newer than the given API level. If a codename is
-     * given, then this version must also either be strictly greater than the given api level,
-     * or must have a codename that is greater than the given codename (by string comparison).
+     * given, then this version must also either be strictly greater than the given api level, or
+     * must have a codename that is greater than the given codename (by string comparison).
      *
-     * This is typically used to check if a version is at least a preview for a certain API level,
-     * e.g. to check if this version contains "O" APIs: isAtLeast(VersionCodes.O - 1, "O")
+     * <p>This is typically used to check if a version is at least a preview for a certain API
+     * level, e.g. to check if this version contains "O" APIs: isAtLeast(VersionCodes.O - 1, "O")
      */
     public boolean isAtLeast(int apiLevel, @Nullable String codename) {
         return compareTo(new AndroidVersion(apiLevel, codename)) >= 0;
