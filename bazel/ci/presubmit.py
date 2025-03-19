@@ -18,7 +18,11 @@ from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import gce
 
 
-_HASH_FILE_BUCKET = 'adt-byob'
+_FILE_BUCKET = 'adt-byob'
+
+_FAILED_TESTS_FILE_NAME = 'failed-tests/v1/{changes_hash}.txt'
+_MAX_FAILED_TESTS = 5
+
 _HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _MAX_RUNS_PER_TEST = 200
 _LOCAL_REPOSITORIES = [
@@ -123,7 +127,7 @@ def _find_impacted_targets(
     )
     base_hashes = temp_path / 'base-hashes.json'
     exists = gce.download_from_gcs(
-        _HASH_FILE_BUCKET,
+        _FILE_BUCKET,
         object_name,
         str(base_hashes),
     )
@@ -264,6 +268,34 @@ def _parse_gerrit_tags(
       yield value
 
 
+def validate_and_upload_failed_tests(build_env: bazel.BuildEnv) -> None:
+  """Validates and uploads the failed tests file for the current build.
+
+  If there are no failed tests or if there are too many failed tests, the file
+  is not uploaded.
+
+  This function assumes the failed tests file is located at
+  DIST_DIR/failed_tests.txt.
+
+  Args:
+    build_env: The build environment.
+  """
+  failed_tests_path = pathlib.Path(build_env.dist_dir) / 'failed_tests.txt'
+  failed_tests = failed_tests_path.read_text().splitlines()
+  if not failed_tests or len(failed_tests) > _MAX_FAILED_TESTS:
+    logging.info('%d failed tests, not uploading', len(failed_tests))
+    return
+
+  gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
+  changes_hash = change_set_hash(gerrit_changes)
+  object_name = _FAILED_TESTS_FILE_NAME.format(
+      changes_hash = changes_hash,
+  )
+
+  gce.upload_to_gcs(failed_tests_path, _FILE_BUCKET, object_name)
+  logging.info('Uploaded failed tests to GCS with object name: %s', object_name)
+
+
 def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
   """Generates and uploads the hash file for the current build to GCS."""
   object_name = _HASH_FILE_NAME.format(
@@ -275,7 +307,7 @@ def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
   except subprocess.TimeoutExpired as e:
     logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
     return
-  gce.upload_to_gcs(hash_file_path, _HASH_FILE_BUCKET, object_name)
+  gce.upload_to_gcs(hash_file_path, _FILE_BUCKET, object_name)
   logging.info('Uploaded hash file to GCS with object name: %s', object_name)
 
 

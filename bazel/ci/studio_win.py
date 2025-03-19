@@ -61,6 +61,9 @@ def studio_win(build_env: bazel.BuildEnv):
 
   test_result = studio.run_tests(build_env, flags, targets)
 
+  if build_type == studio.BuildType.PRESUBMIT:
+    presubmit.validate_and_upload_failed_tests(build_env)
+
   studio.copy_artifacts(
       build_env,
       [
