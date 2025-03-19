@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.profile.AnalyticsService
+import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.transforms.NoOpMessageReceiver
 import com.android.build.gradle.options.SyncOptions
 import com.android.build.gradle.tasks.toSerializable
@@ -42,6 +43,7 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.work.ChangeType
 import org.gradle.work.InputChanges
@@ -378,6 +380,10 @@ class DexMergingTaskTest {
                                             override val platformMultidexProguardRules =
                                                 FakeObjectFactory.factory.listProperty(String::class.java)
                                         }
+                                    override val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
+                                        get() = FakeObjectFactory.factory.property<R8D8ThreadPoolBuildService>(R8D8ThreadPoolBuildService::class.java)
+                                    override val useThreadPool: Property<Boolean>
+                                        get() = FakeObjectFactory.factory.property<Boolean>(Boolean::class.java).value(false)
                                 })
                             }
                     override val numberOfBuckets = FakeGradleProperty(numberOfBuckets)
