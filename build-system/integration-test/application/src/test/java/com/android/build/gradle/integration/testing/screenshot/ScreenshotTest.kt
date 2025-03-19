@@ -381,7 +381,8 @@ class ScreenshotTest {
         )
 
         // Validate previews matches screenshots
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        result.assertOutputDoesNotContain("Slow render action")
 
         // Verify that HTML reports are generated and all tests pass
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
