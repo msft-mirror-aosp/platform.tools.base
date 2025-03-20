@@ -21,7 +21,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
-import com.android.build.gradle.internal.services.KotlinServices
+import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Project
@@ -37,7 +37,7 @@ private const val KAPT_WORKERS_CONFIGURATION = "kotlinKaptWorkerDependencies"
 class KaptCreationAction(
     creationConfig: ComponentCreationConfig,
     project: Project,
-    private val kotlinServices: KotlinServices,
+    private val kotlinServices: BuiltInKotlinServices,
     private val kaptExtension: KaptExtensionConfig?
 ) : KotlinTaskCreationAction<Kapt>(creationConfig) {
 

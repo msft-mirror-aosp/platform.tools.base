@@ -75,7 +75,7 @@ import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
-import com.android.build.gradle.internal.services.KotlinServices
+import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
@@ -150,7 +150,6 @@ import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -957,62 +956,51 @@ abstract class TaskManager(
         if (!creationConfig.useBuiltInKotlinSupport) {
             return
         }
-        val kotlinServices = creationConfig.services.kotlinServices
-        if (kotlinServices == null) {
-            creationConfig.services
-                .issueReporter
-                .reportError(
-                    IssueReporter.Type.GENERIC,
-                    RuntimeException(
-                        "Unable to access KotlinServices for AGP Built-in Kotlin support."
+        val kotlinServices = creationConfig.services.builtInKotlinServices
+        maybeAddKotlinStdlibDependency(project, creationConfig)
+        val kotlinCompileTaskProvider =
+            KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
+        val kaptGenerateStubsProvider =
+            if (creationConfig.useBuiltInKaptSupport) {
+                if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+                    copyKaptExtensionProperties(kotlinServices)
+                }
+                val kaptCreationAction =
+                    KaptCreationAction(
+                        creationConfig,
+                        project,
+                        kotlinServices,
+                        creationConfig.global.kaptExtension
                     )
-                )
-        } else {
-            maybeAddKotlinStdlibDependency(project, creationConfig)
-            val kotlinCompileTaskProvider =
-                KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
-            val kaptGenerateStubsProvider =
-                if (creationConfig.useBuiltInKaptSupport) {
-                    if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
-                        copyKaptExtensionProperties(kotlinServices)
-                    }
-                    val kaptCreationAction =
-                        KaptCreationAction(
-                            creationConfig,
-                            project,
-                            kotlinServices,
-                            creationConfig.global.kaptExtension
-                        )
-                    kaptCreationAction.registerTask()
-                    val kaptStubGenerationCreationAction =
-                        KaptStubGenerationCreationAction(
-                            creationConfig,
-                            kotlinServices,
-                            kotlinCompileTaskProvider,
-                            creationConfig.global.kaptExtension
-                        )
-                    kaptStubGenerationCreationAction.registerTask()
-                } else {
-                    null
-                }
-
-            val androidTarget = creationConfig.global.kotlinAndroidProjectExtension?.target
-            val kotlinCompilation =
-                androidTarget?.let {
-                    BuiltInKotlinJvmAndroidCompilation(
-                        creationConfig.name,
-                        it,
-                        kotlinCompileTaskProvider
+                kaptCreationAction.registerTask()
+                val kaptStubGenerationCreationAction =
+                    KaptStubGenerationCreationAction(
+                        creationConfig,
+                        kotlinServices,
+                        kotlinCompileTaskProvider,
+                        creationConfig.global.kaptExtension
                     )
-                }
-            if (kotlinCompilation != null) {
-                if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
-                    // Ensure "kotlin-extension" configuration exists here, because the Compose
-                    // Compiler Gradle plugin assumes it will have been created already.
-                    maybeCreateKotlinExtensionConfiguration()
-                }
-                addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
+                kaptStubGenerationCreationAction.registerTask()
+            } else {
+                null
             }
+
+        val androidTarget = creationConfig.global.kotlinAndroidProjectExtension?.target
+        val kotlinCompilation =
+            androidTarget?.let {
+                BuiltInKotlinJvmAndroidCompilation(
+                    creationConfig.name,
+                    it,
+                    kotlinCompileTaskProvider
+                )
+            }
+        if (kotlinCompilation != null) {
+            if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
+                // Ensure "kotlin-extension" configuration exists here, because the Compose
+                // Compiler Gradle plugin assumes it will have been created already.
+                maybeCreateKotlinExtensionConfiguration()
+            }
+            addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
         }
     }
 
@@ -1024,7 +1012,7 @@ abstract class TaskManager(
      *  because the kapt extension is passed to the task registration functions starting with Kotlin
      *  2.1.0-Beta2
      */
-    private fun copyKaptExtensionProperties(kotlinServices: KotlinServices) {
+    private fun copyKaptExtensionProperties(kotlinServices: BuiltInKotlinServices) {
         project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
             project.afterEvaluate {
                 val jetbrainsKaptExtension =

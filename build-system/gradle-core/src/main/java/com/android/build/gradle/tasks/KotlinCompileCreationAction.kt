@@ -27,7 +27,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAP
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
-import com.android.build.gradle.internal.services.KotlinServices
+import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Task
@@ -37,7 +37,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 class KotlinCompileCreationAction(
     creationConfig: ComponentCreationConfig,
-    private val kotlinServices: KotlinServices
+    private val kotlinServices: BuiltInKotlinServices
 ) : KotlinTaskCreationAction<KotlinJvmCompile>(creationConfig) {
 
     private val kotlinJvmFactory = kotlinServices.factory
