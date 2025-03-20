@@ -21,7 +21,6 @@ import com.android.build.api.variant.Packaging
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.packaging.defaultExcludes
@@ -260,9 +259,9 @@ abstract class MergeJavaResourceTask
         map { SourcedInput(it, it.absolutePath) }
 
     class CreationAction(
-        creationConfig: ComponentCreationConfig,
         private val mergeScopes: Set<InternalScopedArtifacts.InternalScope>,
-        private val packaging: Packaging? = null
+        private val packaging: Packaging,
+        creationConfig: ComponentCreationConfig,
     ) : VariantTaskCreationAction<MergeJavaResourceTask, ComponentCreationConfig>(
         creationConfig
     ) {
@@ -277,10 +276,7 @@ abstract class MergeJavaResourceTask
             taskProvider: TaskProvider<MergeJavaResourceTask>
         ) {
             super.handleProvider(taskProvider)
-            val fileName = if (
-                creationConfig.componentType.isBaseModule ||
-                creationConfig is HostTestCreationConfig
-            ) {
+            val fileName = if (creationConfig.componentType.isBaseModule) {
                 "base.jar"
             } else {
                 TaskManager.getFeatureFileName(
@@ -341,15 +337,9 @@ abstract class MergeJavaResourceTask
 
             task.mergeScopes.addAll(mergeScopes)
             task.mergeScopes.disallowChanges()
-            if (packaging == null) {
-                task.excludes.setDisallowChanges(defaultExcludes)
-                task.pickFirsts.setDisallowChanges(emptySet())
-                task.merges.setDisallowChanges(emptySet())
-            } else {
-                task.excludes.setDisallowChanges(packaging.resources.excludes)
-                task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
-                task.merges.setDisallowChanges(packaging.resources.merges)
-            }
+            task.excludes.setDisallowChanges(packaging.resources.excludes)
+            task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
+            task.merges.setDisallowChanges(packaging.resources.merges)
             task.intermediateDir =
                 creationConfig.paths.getIncrementalDir("${creationConfig.name}-mergeJavaRes")
             task.cacheDir = File(task.intermediateDir, "zip-cache")

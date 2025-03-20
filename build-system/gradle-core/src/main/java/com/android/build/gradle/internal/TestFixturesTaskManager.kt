@@ -75,7 +75,7 @@ class TestFixturesTaskManager(
         // java resources merging task
         taskFactory.register(
             MergeJavaResourceTask.CreationAction(
-                testFixturesComponent, javaResMergingScopes, testFixturesComponent.mainVariant.packaging
+                javaResMergingScopes, testFixturesComponent.mainVariant.packaging, testFixturesComponent
             )
         )
 
