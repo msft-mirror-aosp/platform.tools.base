@@ -33,6 +33,8 @@ class AdbDeviceServicesCommandDetector : Detector(), SourceCodeScanner {
 
     private val discouragedMethods = listOf("exec", "shell", "shellV2")
 
+    private val exemptedPackages = setOf("com.android.adblib", "com.android.adblib.impl")
+
     private val IMPLEMENTATION =
       Implementation(AdbDeviceServicesCommandDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
@@ -61,7 +63,7 @@ class AdbDeviceServicesCommandDetector : Detector(), SourceCodeScanner {
     }
 
     // Do not trigger lint violations for adblib implementation
-    if (context.uastFile?.packageName == "com.android.adblib.impl") {
+    if (exemptedPackages.contains(context.uastFile?.packageName)) {
       return
     }
 
