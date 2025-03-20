@@ -7,6 +7,11 @@ LARGE_MACHINE_ALLOWLIST = [
     # This one runs mutually exclusively with the above in the perfgate-linux target
     "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000MemoryReleaseBranch",
     "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000Cpu",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000CpuLatestGradleTest",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000CpuReleaseBranch",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000MemoryLatestGradleTest",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000CpuLatestKotlinTest",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000MemoryLatestKotlinTest",
 ]
 
 LARGE_MACHINE_FAILURE_MESSAGE = """'{}' is trying to use large machines.
@@ -32,11 +37,11 @@ def _check_machine_size(label, rule):
     tags = rule.attr.tags
     machine_size = exec_properties.get("label:machine-size")
     if machine_size == "cpu8":
-      if rule.kind == '_gradle_build':
-        # Allow gradle_build rules to use cpu8.
-        return
-      if "studio-e2e-test" not in tags:
-        fail(E2E_TEST_FAILURE_MESSAGE.format(label))
+        if rule.kind == "_gradle_build":
+            # Allow gradle_build rules to use cpu8.
+            return
+        if "studio-e2e-test" not in tags:
+            fail(E2E_TEST_FAILURE_MESSAGE.format(label))
     if machine_size == "large" and label not in LARGE_MACHINE_ALLOWLIST:
         fail(LARGE_MACHINE_FAILURE_MESSAGE.format(label))
 
