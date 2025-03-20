@@ -1189,6 +1189,11 @@ public final class SdkConstants {
     public static final String TAG_ARGUMENT = "argument";
     public static final String ATTR_MODULE_NAME = "moduleName";
 
+    // Tags: Watch Face
+    public static final String TAG_WATCH_FACE = "WatchFace";
+    public static final String TAG_WATCH_FACES = "WatchFaces";
+    public static final String TAG_WATCH_FACE_INFO = "WatchFaceInfo";
+
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";
     public static final String FRAME_LAYOUT = "FrameLayout";
@@ -2164,6 +2169,7 @@ public final class SdkConstants {
     public static final String DOT_SRCJAR = ".srcjar";
     public static final String DOT_KLIB = ".klib";
     public static final String DOT_GRADLE = ".gradle";
+    public static final String DOT_GRADLE_KTS = ".gradle.kts";
     public static final String DOT_DECLARATIVE = ".dcl";
     public static final String DOT_PROPERTIES = ".properties";
     public static final String DOT_JSON = ".json";
@@ -2192,6 +2198,10 @@ public final class SdkConstants {
     public static final String EXT_ATOM = "atom";
     /** Extension of java files, i.e. "java" */
     public static final String EXT_JAVA = "java";
+
+    /** Extension of kotlin files, i.e. "kt" */
+    public static final String EXT_KT = "kt";
+
     /** Extension of compiled java files, i.e. "class" */
     public static final String EXT_CLASS = "class";
     /** Extension of xml files, i.e. "xml" */

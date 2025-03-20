@@ -206,11 +206,13 @@ class PrivacySandboxSdkConsumptionTest {
         val privacySandboxSdkInfo = exampleAppDebug.mainArtifact.privacySandboxSdkInfo!!
 
         val profiles = ProfileCapturer(build).capture {
-            build.configuredExecutor().with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
-                    .run(exampleAppDebug.mainArtifact.assembleTaskName,
-                            privacySandboxSdkInfo.task,
-                            privacySandboxSdkInfo.taskLegacy,
-                            privacySandboxSdkInfo.additionalApkSplitTask)
+            exampleAppDebug.mainArtifact.assembleTaskName?.let {
+                build.configuredExecutor().with(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
+                    .run(it,
+                        privacySandboxSdkInfo.task,
+                        privacySandboxSdkInfo.taskLegacy,
+                        privacySandboxSdkInfo.additionalApkSplitTask)
+            }
         }
 
         val actualMetricsMetadata = profiles.single().projectList.single { it.androidPlugin == GradleBuildProject.PluginType.APPLICATION }.variantList.single { it.isDebug }.privacySandboxDependenciesInfo

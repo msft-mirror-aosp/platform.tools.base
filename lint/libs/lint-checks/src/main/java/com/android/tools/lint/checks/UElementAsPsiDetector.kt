@@ -40,6 +40,7 @@ import org.jetbrains.uast.UBinaryExpressionWithType
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UClassInitializer
+import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.UMethod
@@ -84,6 +85,7 @@ class UElementAsPsiDetector : Detector(), SourceCodeScanner {
 
     private val ALLOWED_REDEFINITION =
       setOf<String?>(
+        UDeclaration::class.java.name,
         UClass::class.java.name,
         UMethod::class.java.name,
         UVariable::class.java.name,

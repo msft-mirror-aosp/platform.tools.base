@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     // For O and newer devices, use a Unix abstract socket.
     // Since we are building a gRPC server, we need a special prefix to inform
     // gRPC that this is a Unix socket name.
-    std::string grpc_target{profiler::kGrpcUnixSocketAddrPrefix};
+    std::string grpc_target{profiler::kGrpcUnixAbstractSocketAddrPrefix};
     grpc_target.append(config.GetConfig().common().service_socket_name());
 
     daemon.RunServer(grpc_target);

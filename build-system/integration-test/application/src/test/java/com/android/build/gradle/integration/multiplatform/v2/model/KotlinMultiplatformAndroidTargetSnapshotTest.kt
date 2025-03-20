@@ -43,7 +43,6 @@ class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
                     "targets"
                 ).listFiles()!!.toList()
             },
-            configCacheMode = BaseGradleExecutor.ConfigurationCaching.ON
         ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
     }
 }

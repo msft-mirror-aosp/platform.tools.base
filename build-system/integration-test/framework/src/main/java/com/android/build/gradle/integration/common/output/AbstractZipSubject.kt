@@ -30,7 +30,7 @@ import java.util.function.Consumer
 open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal constructor(
     metadata: FailureMetadata,
     actual: T
-): BaseZipSubject<S, T>(metadata, actual) {
+): BaseZipSubject<S, T>(metadata, actual), FileArchiveSubject {
 
     /**
      * Validates that the archive file list matches exactly with the provided list.
@@ -40,12 +40,12 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
      * The possible format of the items in the provided list includes both file path and folders.
      * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(filePaths: Iterable<String>) {
+    override fun containsExactly(items: Collection<String>) {
         exists()
         check("entries()")
-            .about(ComparatorSubject.lists())
+            .about(ArchiveEntriesSubject.files())
             .that(actual().getEntries())
-            .containsExactly(filePaths)
+            .containsExactly(items)
     }
 
     /**
@@ -56,8 +56,8 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
      * The possible format of the items in the provided list includes both file path and folders.
      * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(filePath: String) {
-        containsExactly(listOf(filePath))
+    override fun containsExactly(item: String) {
+        containsExactly(listOf(item))
     }
 
     /**
@@ -68,28 +68,29 @@ open class AbstractZipSubject<S: BaseZipSubject<S, T>, T: Zip> internal construc
      * The possible format of the items in the provided list includes both file path and folders.
      * In the case of folders, it will match against any files in the archive that are in that folder.
      */
-    fun containsExactly(vararg filePaths: String) {
-        containsExactly(filePaths.toList())
+    override fun containsExactly(vararg items: String) {
+        containsExactly(items.toList())
     }
 
     /**
      * Validates whether the archive is empty.
      */
-    fun isEmpty() {
+    override fun isEmpty() {
         exists()
         check("entries()").that(actual().getEntries()).isEmpty()
     }
 
-    /**
-     * Checks if the zip file contains a given path.
-     *
-     * This is a shortcut to `entries().contains(path)`
-     *
-     * @param path the path of the item which must not include a leading /
-     */
-    fun contains(path: String) {
+    override fun hasSize(size: Int) {
         exists()
-        check("entries()").that(actual().getEntries()).contains(path)
+        check("entries()").that(actual().getEntries()).hasSize(size)
+    }
+
+    override fun containsAtLeast(items: Collection<String>) {
+        exists()
+        check("entries()")
+            .about(ArchiveEntriesSubject.files())
+            .that(actual().getEntries())
+            .containsAtLeast(items)
     }
 
     // --------------

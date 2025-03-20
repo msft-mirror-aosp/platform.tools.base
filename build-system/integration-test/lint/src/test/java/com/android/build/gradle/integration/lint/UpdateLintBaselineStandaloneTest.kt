@@ -113,9 +113,7 @@ class UpdateLintBaselineStandaloneTest {
 
         // Then test the case when a user runs updateLintBaseline and lint at the same time.
         project.executor().run("updateLintBaseline", "lint").apply {
-            assertStdOut {
-                doesNotContain("Gradle detected a problem")
-            }
+            assertOutputDoesNotContain("Gradle detected a problem")
             assertTask(":lintAnalyzeJvmMain").wasUpToDate()
             assertTask(":updateLintBaselineJvm").didWork()
         }
@@ -132,21 +130,19 @@ class UpdateLintBaselineStandaloneTest {
         project.executor().run(":updateLintBaseline").apply {
             assertTask(":lintAnalyzeJvmMain").didWork()
             assertTask(":updateLintBaselineJvm").didWork()
-            assertStdOut {
-                contains(
-                    """
-                No baseline file is specified, so no baseline file will be created.
+            assertOutputContains(
+                """
+                    No baseline file is specified, so no baseline file will be created.
 
-                Please specify a baseline file in the build.gradle file like so:
+                    Please specify a baseline file in the build.gradle file like so:
 
-                ```
-                lint {
-                    baseline = file("lint-baseline.xml")
-                }
-                ```
+                    ```
+                    lint {
+                        baseline = file("lint-baseline.xml")
+                    }
+                    ```
                 """.trimIndent()
-                )
-            }
+            )
         }
         PathSubject.assertThat(baselineFile).doesNotExist()
     }

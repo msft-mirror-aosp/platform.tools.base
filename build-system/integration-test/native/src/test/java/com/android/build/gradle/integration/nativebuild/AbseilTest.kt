@@ -54,9 +54,9 @@ class AbseilTest(
         project = NativeBuildBenchmarkProject(
             relativeBuildRoot = "android",
             workingFolder = temporaryFolder.newFolder(),
-            buildbenchmark = "abseil-cpp.731689ff",
-            setupDiff = setupDiff
+            buildbenchmark = "abseil-cpp.731689ff"
         )
+        project.applyDiff(setupDiff)
     }
 
     @Test

@@ -112,7 +112,8 @@ class DynamicFeatureLocalesTest {
             "android.androidResources.localeFilters += [\"de\", \"es-rES\", \"b+zh+Hant+TW\"]",
             "android.androidResources.localeFilters += [\"round\"]"
         )
-        val result = project.executor().expectFailure().run(":feature1:assembleDebug")
-        ScannerSubject.assertThat(result.stderr).contains("The locale in localeFilters \"round\" is invalid.")
+        project.executor().expectFailure().run(":feature1:assembleDebug").assertErrorContains(
+            "The locale in localeFilters \"round\" is invalid."
+        )
     }
 }

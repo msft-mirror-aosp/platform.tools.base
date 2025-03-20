@@ -21,7 +21,6 @@ import com.android.Version
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Ignore
 import org.junit.Rule
@@ -79,20 +78,16 @@ class AgpVersionConsistencyTest {
             """.trimIndent()
         )
 
-        val result =
-            project.executor()
-                .withFailOnWarning(false)
-                .expectFailure()
-                .run("androidLib1:mergeDebugAssets")
-
-        result.stderr.use {
-            assertThat(it).contains(
+        project.executor()
+            .withFailOnWarning(false)
+            .expectFailure()
+            .run("androidLib1:mergeDebugAssets")
+            .assertErrorContains(
                 """
                     Using multiple versions of the Android Gradle plugin($DIFFERENT_AGP,
                      ${Version.ANDROID_GRADLE_PLUGIN_VERSION}) in the same build is not allowed.
                 """.trimIndent()
             )
-        }
     }
 
     private fun addDirectClasspath(name: String, agpVersion: String) {

@@ -36,6 +36,7 @@ import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiSwitchLabelStatement
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
@@ -43,6 +44,7 @@ import com.intellij.psi.PsiWildcardType
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiTreeUtil.getNonStrictParentOfType
+import org.jetbrains.kotlin.analysis.api.KaIdeApi
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
@@ -79,6 +81,7 @@ import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
 import org.jetbrains.kotlin.psi.KtThisExpression
+import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
@@ -1085,57 +1088,74 @@ private fun UFile.acceptMultiFileClass(visitor: UastVisitor) {
 /**
  * Does this expression have an unconditional return? This means that all possible branches contains
  * a return or exception throw or yield.
+ *
+ * @return `true` for "definitely unconditional return", and `false` for "not sure"
  */
 fun UExpression.isUnconditionalReturn(): Boolean {
-  val statement = this
-  @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
-  if (statement is UBlockExpression) {
-    statement.expressions.lastOrNull()?.let {
-      return it.isUnconditionalReturn()
+
+  /**
+   * Check whether [statement] never finishes.
+   *
+   * The result is an over-approximation of the runtime behavior w.r.t. to a lattice of [Boolean]
+   * where (⊥ := `true`, ⊤ := `false`, ⊑ := `<-`, ⊔ := `and`, ⊓ := `or`).
+   *
+   * So `false` is the safe (but sometimes suboptimal) value we resort to when not sure. We join
+   * results over different branches, and meet along steps of a sequence. Missing a branch results
+   * in a soundness bug, while missing a step results in imprecision.
+   */
+  fun check(statement: UExpression?): Boolean =
+    @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
+    when (statement) {
+      is UBlockExpression -> statement.expressions.any(::check)
+      is UExpressionList -> statement.expressions.any(::check)
+      // (Kotlin when statements will sometimes be represented using yields in the UAST
+      // representation)
+      is UYieldExpression -> check(statement.expression)
+      is UParenthesizedExpression -> check(statement.expression)
+      is UIfExpression ->
+        check(statement.condition) ||
+          check(statement.thenExpression) && check(statement.elseExpression)
+      is USwitchExpression ->
+        statement.isExhaustive() &&
+          statement.body.expressions.all { case ->
+            case is USwitchClauseExpressionWithBody && check(case.body)
+          }
+      is UQualifiedReferenceExpression -> check(statement.findSelector() as? UExpression)
+      is UReturnExpression,
+      is UThrowExpression -> true
+      is UCallExpression ->
+        callNeverReturns(statement) ||
+          check(statement.receiver) ||
+          statement.valueArguments.any(::check)
+      else -> false
     }
-  } else if (statement is UExpressionList) {
-    statement.expressions.lastOrNull()?.let {
-      return it.isUnconditionalReturn()
+
+  return check(this)
+}
+
+/**
+ * Even though "syntactic exhaustiveness" is decidable, the uncertainty comes from incomplete
+ * handling of UAST/Psi representations.
+ *
+ * @return `true` for "definitely exhaustive", and "false" for not sure.
+ */
+private fun USwitchExpression.isExhaustive(): Boolean {
+  return when {
+    isKotlin(body.lang) -> {
+      val ktWhen = sourcePsi as? KtWhenExpression ?: return false
+      ktWhen.entries.lastOrNull()?.isElse == true ||
+        @OptIn(KaIdeApi::class) analyze(ktWhen) { ktWhen.computeMissingCases().isEmpty() }
     }
-  } else if (statement is UYieldExpression) {
-    // (Kotlin when statements will sometimes be represented using yields in the UAST
-    // representation)
-    val yieldExpression = statement.expression
-    if (yieldExpression != null) {
-      return yieldExpression.isUnconditionalReturn()
-    }
-  } else if (statement is UParenthesizedExpression) {
-    return statement.expression.isUnconditionalReturn()
-  } else if (statement is UIfExpression) {
-    val thenExpression = statement.thenExpression
-    val elseExpression = statement.elseExpression
-    if (thenExpression != null && elseExpression != null) {
-      return thenExpression.isUnconditionalReturn() && elseExpression.isUnconditionalReturn()
-    }
-    return false
-  } else if (statement is USwitchExpression) {
-    for (case in statement.body.expressions) {
-      if (case is USwitchClauseExpressionWithBody) {
-        if (!case.body.isUnconditionalReturn()) {
-          return false
-        }
+    isJava(body.lang) ->
+      body.expressions.any { case ->
+        case is USwitchClauseExpressionWithBody &&
+          case.caseValues.any {
+            val value = it.sourcePsi
+            value is PsiSwitchLabelStatement && value.isDefaultCase
+          }
       }
-    }
-    return true
-  } else if (statement is UQualifiedReferenceExpression) {
-    val selector = statement.findSelector()
-    if (selector is UExpression) {
-      return selector.isUnconditionalReturn()
-    }
+    else -> false
   }
-
-  if (statement is UReturnExpression || statement is UThrowExpression) {
-    return true
-  } else if (statement is UCallExpression && callNeverReturns(statement)) {
-    return true
-  }
-
-  return false
 }
 
 /**

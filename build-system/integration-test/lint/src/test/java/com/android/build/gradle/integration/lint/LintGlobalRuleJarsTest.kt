@@ -58,9 +58,7 @@ class LintGlobalRuleJarsTest {
         executor.run(lintTaskName).apply {
             assertTask(lintReportTaskName).didWork()
             assertTask(lintAnalyzeTaskName).didWork()
-            assertStdOut {
-                doesNotContain("this will stop working soon.")
-            }
+            assertOutputDoesNotContain("this will stop working soon.")
         }
     }
 }

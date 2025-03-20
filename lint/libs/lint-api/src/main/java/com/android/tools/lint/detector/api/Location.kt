@@ -88,7 +88,7 @@ protected constructor(
    * Returns the client data associated with this location - an optional field which can be used by
    * the creator of the [Location] to store temporary state associated with the location.
    */
-  var clientData: Any? = null
+  open var clientData: Any? = null
 
   /**
    * Whether this location should be visible on its own. "Visible" here refers to whether the
@@ -124,7 +124,7 @@ protected constructor(
    * the range for the method name, but the [originalSource] will point to the [UMethod] itself,
    * instead of the [UIdentifier].
    */
-  var originalSource: Any? = null
+  open var originalSource: Any? = null
 
   /**
    * Sets a secondary location with the given message and returns the current location updated with
@@ -469,11 +469,20 @@ protected constructor(
     @JvmField
     val NONE: Location =
       object : Location(File("NONE"), null, null) {
-        override fun setMessage(message: String, selfExplanatory: Boolean): Location = this
+        override fun setMessage(message: String, selfExplanatory: Boolean): Location {
+          warnImmutable()
+          return this
+        }
 
-        override fun setData(clientData: Any?): Location = this
+        override fun setData(clientData: Any?): Location {
+          warnImmutable()
+          return this
+        }
 
-        override fun setSelfExplanatory(selfExplanatory: Boolean): Location = this
+        override fun setSelfExplanatory(selfExplanatory: Boolean): Location {
+          warnImmutable()
+          return this
+        }
 
         @Suppress("UNUSED_PARAMETER")
         override var visible: Boolean = false
@@ -481,14 +490,27 @@ protected constructor(
 
         @Suppress("UNUSED_PARAMETER")
         override var secondary: Location? = null
-          set(value) = Unit
+          set(_) = warnImmutable()
 
         @Suppress("SetterBackingFieldAssignment")
         override var source: Any? = null
-          set(_) {
-            // Deliberately not allowing the source to be
-            // overridden on the shared & static location
+          set(_) = warnImmutable()
+
+        @Suppress("SetterBackingFieldAssignment")
+        override var originalSource: Any? = null
+          set(_) = warnImmutable()
+
+        @Suppress("SetterBackingFieldAssignment")
+        override var clientData: Any? = null
+          set(_) = warnImmutable()
+
+        private fun warnImmutable() {
+          // Deliberately not allowing the source to be
+          // overridden on the shared & static location
+          if (LintClient.isUnitTest) {
+            error("Location.NONE is immutable; manipulating it usually a bug")
           }
+        }
       }
 
     /**

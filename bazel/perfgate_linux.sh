@@ -11,6 +11,13 @@ readonly test_tag="${4:-ci:perfgate-linux}"
 readonly script_dir="$(dirname "$0")"
 readonly script_name="$(basename "$0")"
 
+current_output_base="$(basename $(${script_dir}/bazel info output_base))"
+output_user_root="$HOME/.cache/bazel/_bazel_$USER"
+# delete old bazel output_base directories
+pushd "$output_user_root"
+ls --ignore=cache --ignore=install --ignore=$current_output_base | xargs rm -rf
+popd
+
 if [[ $build_number =~ ^[0-9]+$ ]];
 then
   readonly is_post_submit=true
@@ -26,7 +33,6 @@ readonly invocation_id="$(uuidgen)"
 
 # Run Bazel
 "${script_dir}/bazel" \
-  --max_idle_secs=60 \
   test \
   --keep_going \
   ${config_options} --config=ants \

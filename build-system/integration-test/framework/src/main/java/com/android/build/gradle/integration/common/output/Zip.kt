@@ -265,7 +265,7 @@ internal class ZipFolderView(
     private val zip: Zip,
     folderName: String
 ): Zip("${zip.name}/$folderName") {
-    private val prefix = "$folderName/"
+    private val prefix = if (folderName.endsWith('/')) folderName else "$folderName/"
 
     override fun exists(): Boolean {
         return zip.exists()

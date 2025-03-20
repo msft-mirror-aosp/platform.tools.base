@@ -39,11 +39,10 @@ class LintErrorTest {
             "// placeholder",
             "throw new RuntimeException(\"test123\");"
         )
-        project.executor().expectFailure().run(":app:lintAnalyzeDebug")
-        val stderr = project.buildResult.stderr
-        ScannerSubject.assertThat(stderr).contains("test123")
-        ScannerSubject.assertThat(stderr)
-            .contains("You can try disabling it with something like this:")
-        ScannerSubject.assertThat(stderr).contains("disable \"UnitTestLintCheck\"")
+        project.executor().expectFailure().run(":app:lintAnalyzeDebug").apply {
+            assertErrorContains("test123")
+            assertErrorContains("You can try disabling it with something like this:")
+            assertErrorContains("disable \"UnitTestLintCheck\"")
+        }
     }
 }

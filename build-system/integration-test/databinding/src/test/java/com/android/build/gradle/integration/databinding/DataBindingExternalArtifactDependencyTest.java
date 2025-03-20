@@ -21,21 +21,22 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
-import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
+
 import com.google.common.collect.ImmutableList;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Scanner;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 @RunWith(FilterableParameterized.class)
 public class DataBindingExternalArtifactDependencyTest {
@@ -148,15 +149,13 @@ public class DataBindingExternalArtifactDependencyTest {
                         .expectFailure()
                         .run("assembleDebug");
 
-        try (Scanner s = result.getStderr()) {
-            if (useNonTransitiveR) {
-                // If we're namespacing the R class references, we'll actually verify the resources
-                // during the package search step in DB, getting the error early on.
-                ScannerSubject.assertThat(s)
-                        .contains("Resource not found: string incorrect_string");
-            } else {
-                ScannerSubject.assertThat(s).contains("getString(R.string.incorrect_string)");
-            }
+        if (useNonTransitiveR) {
+            // If we're namespacing the R class references, we'll actually
+            // verify the resources
+            // during the package search step in DB, getting the error early on.
+            result.assertErrorContains("Resource not found: string incorrect_string");
+        } else {
+            result.assertErrorContains("getString(R.string.incorrect_string)");
         }
     }
 }

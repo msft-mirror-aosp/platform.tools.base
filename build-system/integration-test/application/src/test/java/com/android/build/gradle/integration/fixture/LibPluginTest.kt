@@ -47,9 +47,10 @@ class LibPluginTest {
     fun testReleaseVariantIsDisabled() {
         val build = rule.build
 
-        val result = build.executor.expectFailure().run(":lib:assembleRelease")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("Cannot locate tasks that match ':lib:assembleRelease' as task 'assembleRelease' not found in project ':lib'.")
+        build.executor.expectFailure().run(":lib:assembleRelease")
+            .assertErrorContains(
+                "Cannot locate tasks that match ':lib:assembleRelease' as task 'assembleRelease' not found in project ':lib'."
+            )
     }
 
     class LibCallback: LibraryComponentCallback {

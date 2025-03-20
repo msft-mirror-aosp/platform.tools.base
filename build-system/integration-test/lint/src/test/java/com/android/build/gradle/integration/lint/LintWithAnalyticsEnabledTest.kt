@@ -48,9 +48,9 @@ class LintWithAnalyticsEnabledTest {
 
     @Test
     fun testLintFix() {
-        val result = getExecutor().expectFailure().run("lintFix")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("Aborting build since sources were modified to apply quickfixes")
+        getExecutor().expectFailure().run("lintFix").assertErrorContains(
+            "Aborting build since sources were modified to apply quickfixes"
+        )
     }
 
     @Test

@@ -20,6 +20,8 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Rect
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import androidx.inspection.Connection
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.google.common.truth.Truth.assertThat
@@ -36,14 +38,16 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView.fakeCanvas.drawLogs.clear()
 
+        val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -63,14 +67,16 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView.fakeCanvas.drawLogs.clear()
 
+        val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -90,14 +96,16 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView.fakeCanvas.drawLogs.clear()
 
+        val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -117,14 +125,16 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView.fakeCanvas.drawLogs.clear()
 
+        val rootId = root.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -144,19 +154,22 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView1 = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root1 = ViewGroup(context)
+        val overlayView1 = OverlayView(root = root1, scope = this, viewModel = viewModel)
         overlayView1.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        val overlayView2 = OverlayView(context = context, rootId = 2L, scope = this, viewModel = viewModel)
+        val root2 = ViewGroup(context)
+        val overlayView2 = OverlayView(root = root2, scope = this, viewModel = viewModel)
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView1.fakeCanvas.drawLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
+        val rootId1 = root1.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -180,19 +193,22 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView1 = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root1 = ViewGroup(context)
+        val overlayView1 = OverlayView(root = root1, scope = this, viewModel = viewModel)
         overlayView1.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        val overlayView2 = OverlayView(context = context, rootId = 2L, scope = this, viewModel = viewModel)
+        val root2 = ViewGroup(context)
+        val overlayView2 = OverlayView(root = root2, scope = this, viewModel = viewModel)
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView1.fakeCanvas.drawLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
+        val rootId1 = root1.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -216,19 +232,22 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView1 = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root1 = ViewGroup(context)
+        val overlayView1 = OverlayView(root = root1, scope = this, viewModel = viewModel)
         overlayView1.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
-        val overlayView2 = OverlayView(context = context, rootId = 2L, scope = this, viewModel = viewModel)
+        val root2 = ViewGroup(context)
+        val overlayView2 = OverlayView(root = root2, scope = this, viewModel = viewModel)
         overlayView2.onAttachedToWindow()
         testScheduler.advanceUntilIdle()
 
         overlayView1.fakeCanvas.drawLogs.clear()
 
         // This draw instruction is meant for OverlayView belonging to root id 1.
+        val rootId1 = root1.uniqueDrawingId
         val drawInstruction = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -252,11 +271,13 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
 
+        val rootId = root.uniqueDrawingId
         val drawInstruction1 = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -270,7 +291,7 @@ class OverlayViewTest {
         testScheduler.advanceUntilIdle()
 
         val drawInstruction2 = buildDrawInstructionsProto(
-            rootId = 1L,
+            rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt()
         )
@@ -293,7 +314,8 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
 
         assertThat(overlayView.onTouchEvent(MotionEvent(1f, 1f))).isFalse()
@@ -308,8 +330,9 @@ class OverlayViewTest {
 
         assertThat(overlayView.onTouchEvent(MotionEvent(3f, 3f))).isFalse()
 
+        val rootId = root.uniqueDrawingId
         val expectedSelectionEvent = buildUserInputEventProto(
-            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
         ).toByteArray()
         assertThat(receivedEvents).hasSize(1)
         assertThat(receivedEvents.first()).isEqualTo(expectedSelectionEvent)
@@ -328,7 +351,8 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
 
         assertThat(overlayView.onTouchEvent(rightClick(1f, 1f))).isFalse()
@@ -343,11 +367,12 @@ class OverlayViewTest {
 
         assertThat(overlayView.onTouchEvent(rightClick(3f, 3f))).isFalse()
 
+        val rootId = root.uniqueDrawingId
         val expectedSelectionEvent = buildUserInputEventProto(
-            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
         ).toByteArray()
         val expectedRightClickEvent = buildUserInputEventProto(
-            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.RIGHT_CLICK
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.RIGHT_CLICK
         ).toByteArray()
         assertThat(receivedEvents).hasSize(2)
         assertThat(receivedEvents[0]).isEqualTo(expectedRightClickEvent)
@@ -367,7 +392,8 @@ class OverlayViewTest {
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
-        val overlayView = OverlayView(context = context, rootId = 1L, scope = this, viewModel = viewModel)
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
 
         assertThat(overlayView.onHoverEvent(MotionEvent(1f, 1f))).isFalse()
@@ -382,11 +408,41 @@ class OverlayViewTest {
 
         assertThat(overlayView.onHoverEvent(MotionEvent(3f, 3f))).isFalse()
 
+        val rootId = root.uniqueDrawingId
         val expectedHoverEvent = buildUserInputEventProto(
-            rootId = 1L, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.HOVER
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.HOVER
         ).toByteArray()
         assertThat(receivedEvents).hasSize(1)
         assertThat(receivedEvents.first()).isEqualTo(expectedHoverEvent)
+    }
+
+    @Test
+    fun testMeasuredSize() = runTest {
+        val connection = object : Connection() {}
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+        val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
+        val root = ViewGroup(context)
+        root.setPadding(10, 5, 10, 20)
+        val view1 = View(context).apply {
+            left = 25
+            top = 25
+            width = 300
+            height = 100
+        }
+        val view2 = View(context).apply {
+            left = 25
+            top = 15
+            width = 100
+            height = 200
+        }
+        root.addView(view1)
+        root.addView(view2)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
+        root.addView(overlayView)
+        root.measure(1000, 2000)
+        assertThat(overlayView.measuredWidth).isEqualTo(315)
+        assertThat(overlayView.measuredHeight).isEqualTo(210)
     }
 }
 

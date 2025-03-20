@@ -1,0 +1,35 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 8fdcf44..7e8ed7b 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -35,6 +35,7 @@
+ 
+ load("@rules_cc//cc:defs.bzl", "cc_library")
+ load("@rules_license//rules:license.bzl", "license")
++load("//:copy_file.bzl", "copy_file")
+ 
+ package(
+     default_applicable_licenses = [":license"],
+@@ -69,16 +70,13 @@ _ZLIB_PREFIXED_HEADERS = ["zlib/include/" + hdr for hdr in _ZLIB_HEADERS]
+ # In order to limit the damage from the `includes` propagation
+ # via `:zlib`, copy the public headers to a subdirectory and
+ # expose those.
+-genrule(
+-    name = "copy_public_headers",
+-    srcs = _ZLIB_HEADERS,
+-    outs = _ZLIB_PREFIXED_HEADERS,
+-    cmd_bash = "cp $(SRCS) $(@D)/zlib/include/",
+-    cmd_bat = " && ".join(
+-        ["@copy /Y \"$(location %s)\" \"$(@D)\\zlib\\include\\\"  >NUL" %
+-         s for s in _ZLIB_HEADERS],
+-    ),
++[
++copy_file(
++    name = "_copy_" + header,
++    src = header,
++    out = "zlib/include/" + header,
+ )
++for header in _ZLIB_HEADERS]
+ 
+ config_setting(
+     name = "mingw_gcc_compiler",

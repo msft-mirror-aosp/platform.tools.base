@@ -36,22 +36,14 @@ class MessageRewriteWithJvmResCompilerTest {
         val executor = project.executor()
         TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
             it.replaceInFile(
-                    "app/src/flavor1/res/values/strings.xml",
-                    "</resources>", "<id name=\"incorrect\">hello</id></resources>"
+                "app/src/flavor1/res/values/strings.xml",
+                "</resources>", "<id name=\"incorrect\">hello</id></resources>"
             )
-            val result = executor.expectFailure().run("assembleDebug")
-            result.stderr.use { stderr ->
-                assertThat(stderr)
-                        .contains(
-                                FileUtils.join("app",
-                                        "src",
-                                        "flavor1",
-                                        "res",
-                                        "values",
-                                        "strings.xml")
-                        )
-            }
+            executor.expectFailure().run("assembleDebug").assertErrorContains(
+                FileUtils.join("app", "src", "flavor1", "res", "values", "strings.xml")
+            )
         }
+
         // Fix it up and check that it compiles correctly.
         TemporaryProjectModification.doTest(project) { it: TemporaryProjectModification ->
             it.replaceInFile(
@@ -71,14 +63,9 @@ class MessageRewriteWithJvmResCompilerTest {
                     "app/src/main/res/layout/main.xml",
                     "</LinearLayout>", ""
             )
-            val result = executor.expectFailure().run(":app:mergeFlavor1DebugResources")
-            result.stderr.use { stderr ->
-                assertThat(stderr)
-                        .contains(
-                                FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
-                        )
-            }
+            executor.expectFailure().run(":app:mergeFlavor1DebugResources").assertErrorContains(
+                FileUtils.join("app", "src", "main", "res", "layout", "main.xml")
+            )
         }
     }
-
 }

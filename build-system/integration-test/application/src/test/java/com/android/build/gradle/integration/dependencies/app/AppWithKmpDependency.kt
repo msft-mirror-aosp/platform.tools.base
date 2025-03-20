@@ -75,7 +75,7 @@ class AppWithKmpDependency : ModelComparator() {
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().contains("androidx/lifecycle/ReportFragment")
+            classes().contains("androidx/lifecycle/ReportFragment")
         }
     }
 
@@ -88,7 +88,39 @@ class AppWithKmpDependency : ModelComparator() {
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().doesNotContain("androidx/lifecycle/ReportFragment")
+            // FIXME we should fix this by publishing a simple KMP library that only has a few classes
+            classes().subPackage("androidx/lifecycle").containsExactly(
+                "ClassesInfoCache$",
+                "CompositeGeneratedAdaptersObserver",
+                "DefaultLifecycleObserver$",
+                "DefaultLifecycleObserverAdapter$",
+                "DispatchQueue$",
+                "FlowExtKt$",
+                "GeneratedAdapter",
+                "GenericLifecycleObserver",
+                "Lifecycle$",
+                "LifecycleController$",
+                "LifecycleCoroutineScope$",
+                "LifecycleCoroutineScopeImpl$",
+                "LifecycleDestroyedException",
+                "LifecycleEventObserver",
+                "LifecycleKt$",
+                "LifecycleObserver",
+                "LifecycleOwner",
+                "LifecycleOwnerKt",
+                "LifecycleRegistry$",
+                "LifecycleRegistry_desktopKt",
+                "Lifecycle_jvmKt",
+                "Lifecycling",
+                "MethodCallsLogger",
+                "OnLifecycleEvent",
+                "PausingDispatcher",
+                "PausingDispatcherKt$",
+                "ReflectiveGenericLifecycleObserver",
+                "RepeatOnLifecycleKt$",
+                "SingleGeneratedAdapterObserver",
+                "WithLifecycleStateKt$",
+            )
         }
     }
 }

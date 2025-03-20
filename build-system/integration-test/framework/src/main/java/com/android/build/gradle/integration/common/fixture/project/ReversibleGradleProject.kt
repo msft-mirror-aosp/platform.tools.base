@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
+import com.android.SdkConstants
 import com.android.build.api.artifact.Artifact
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.FileUpdateBuilder
@@ -23,9 +24,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.searchAndReplace
 import java.io.File
-import java.nio.charset.Charset
 import java.nio.file.Path
-import java.util.regex.Pattern
+import kotlin.io.path.extension
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
@@ -105,6 +105,14 @@ internal open class ReversibleProjectFiles(
         override fun searchAndReplace(
             search: String,
             replace: String,
+            lenient: Boolean,
+        ): FileUpdateBuilder {
+            return searchAndReplace(search.toRegex(RegexOption.LITERAL), replace, lenient)
+        }
+
+        override fun searchAndReplace(
+            search: Regex,
+            replace: String,
             lenient: Boolean
         ): FileUpdateBuilder {
             if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
@@ -114,7 +122,6 @@ internal open class ReversibleProjectFiles(
                     file.toString(),
                     search,
                     replace,
-                    Pattern.LITERAL,
                     lenient
                 )
             }
@@ -133,6 +140,16 @@ internal open class ReversibleProjectFiles(
             }
         }
 
+        override fun appendMethod(method: String): FileUpdateBuilder {
+            if (file.extension != SdkConstants.EXT_JAVA || file.extension != SdkConstants.EXT_KT) {
+                throw RuntimeException(
+                    "Cannot append method to $file. " +
+                            "Filename must end with '{${SdkConstants.DOT_JAVA}}' or '${SdkConstants.DOT_KT}'."
+                )
+            }
+            return searchAndReplace(Regex("\n}\\s*$"), "\n    $method\n\n}")
+        }
+
         override fun transform(action: (String) -> String): FileUpdateBuilder {
             if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
 
@@ -142,7 +159,10 @@ internal open class ReversibleProjectFiles(
         }
 
         override fun moveTo(relativePath: String): FileUpdater {
-            projectModification.addFile(relativePath, location.resolve(this.relativePath).readBytes())
+            projectModification.addFile(
+                relativePath,
+                location.resolve(this.relativePath).readBytes()
+            )
             projectModification.removeFile(this.relativePath)
             return this
         }

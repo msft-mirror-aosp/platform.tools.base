@@ -12,7 +12,7 @@ load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")
 def setup_vendor_repositories():
     native.android_sdk_repository(
         name = "androidsdk",
-        build_tools_version = "30.0.3",
+        build_tools_version = "34.0.0",
         api_level = 34,
     )
 

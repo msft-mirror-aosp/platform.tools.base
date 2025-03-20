@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.output.ApkContentSize
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
 import com.android.build.gradle.internal.scope.getOutputDir
@@ -439,11 +438,9 @@ class MergeResourcesTest {
             """
         )
 
-        TestFileUtils.addMethod(
-            app.resolve("src/main/java/com/example/android/multiproject/MainActivity.java")
-                .toFile(),
-            "public int useFoo() { return R.id.foo; }"
-        )
+        app.files.update(
+            "src/main/java/com/example/android/multiproject/MainActivity.java")
+            .appendMethod("public int useFoo() { return R.id.foo; }")
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23)
             .runEnforceUniquePkg(":app:assembleDebug")

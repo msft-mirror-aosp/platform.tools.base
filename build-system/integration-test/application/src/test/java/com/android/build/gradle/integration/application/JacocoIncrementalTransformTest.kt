@@ -126,23 +126,14 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                contains("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/B")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
         }
         build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt").append(
             "\nfun bar() {}"
         )
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                contains("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/B")
-                contains("com/agpTest/libWithClasses/BKt")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "BKt", "C", "R")
         }
     }
 
@@ -153,20 +144,12 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                contains("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/B")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
         }
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                doesNotContain("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/B")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("B", "C", "R")
         }
     }
 
@@ -175,11 +158,7 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                contains("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/B")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
         }
         // Remove file that impacts file ordering.
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
@@ -187,10 +166,7 @@ class JacocoIncrementalTransformTest {
             .searchAndReplace("class B {}", """class B { fun bar () {} }""")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().classes().apply {
-                doesNotContain("com/agpTest/libWithClasses/A")
-                contains("com/agpTest/libWithClasses/C")
-            }
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("B", "C", "R")
             secondaryDexes().classDefinition("com/agpTest/libWithClasses/B").methods().contains("bar")
         }
     }

@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.DOT_GRADLE;
+import static com.android.SdkConstants.DOT_GRADLE_KTS;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 
 import com.android.annotations.NonNull;
@@ -660,7 +661,7 @@ public abstract class LintDetectorTest extends BaseLintDetectorTest {
         for (TestFile fp : testFiles) {
             if (fp instanceof GradleTestFile
                     || fp.targetRelativePath.endsWith(DOT_GRADLE)
-                    || fp.targetRelativePath.endsWith(".gradle.kts")) {
+                    || fp.targetRelativePath.endsWith(DOT_GRADLE_KTS)) {
                 haveGradle = true;
                 break;
             }

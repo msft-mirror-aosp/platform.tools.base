@@ -52,30 +52,6 @@ class GradleBuildResult(
         withInfo: String? = null
     ): GradleTaskSubject = taskStateList.assertTask(name, withInfo)
 
-    fun assertStdErr(action: ScannerSubject.() -> Unit)  {
-        Scanner(stderrFile).use {
-            action(ScannerSubject.assertThat(it))
-        }
-    }
-
-    fun assertStdErr(action: Consumer<ScannerSubject>)  {
-        assertStdErr {
-            action.accept(this)
-        }
-    }
-
-    fun assertStdOut(action: ScannerSubject.() -> Unit)  {
-        Scanner(stdoutFile).use {
-            action(ScannerSubject.assertThat(it))
-        }
-    }
-
-    fun assertStdOut(action: Consumer<ScannerSubject>)  {
-        assertStdOut {
-            action.accept(this)
-        }
-    }
-
     fun assertFailureMessage(): StringSubject {
         return Truth.assertThat(failureMessage)
     }
@@ -93,6 +69,7 @@ class GradleBuildResult(
     /**
      * Returns a new [Scanner] for the stdout messages. This instance MUST be closed when done.
      */
+    @Deprecated("Use assertStdOut")
     val stdout
         get() = Scanner(stdoutFile)
 
@@ -196,26 +173,34 @@ class GradleBuildResult(
         throwableType == PlaceholderException::class.java.name
                 || throwableType == ContextualPlaceholderException::class.java.name
 
-    @Deprecated("Use assertStdOut")
+    @Suppress("DEPRECATION")
     fun assertOutputContains(text: String) {
         stdout.use {
-            ScannerSubject.assertThat(it).contains(text)
+            ScannerSubject.assertThat(it, name = "stdout").contains(text)
         }
     }
 
-    @Deprecated("Use assertStdErr")
+    @Suppress("DEPRECATION")
     fun assertErrorContains(text: String) {
         stderr.use {
-            ScannerSubject.assertThat(it).contains(text)
+            ScannerSubject.assertThat(it, name = "stderr").contains(text)
         }
     }
 
-    @Deprecated("Use assertStdErr")
+    @Suppress("DEPRECATION")
     fun assertOutputDoesNotContain(text: String) {
         stdout.use {
-            ScannerSubject.assertThat(it).doesNotContain(text)
+            ScannerSubject.assertThat(it, name = "stdout").doesNotContain(text)
         }
     }
+
+    @Suppress("DEPRECATION")
+    fun assertErrorDoesNotContain(text: String) {
+        stderr.use {
+            ScannerSubject.assertThat(it, name = "stderr").doesNotContain(text)
+        }
+    }
+
 
     /** Checks that the [GradleBuildResult] hit the configuration cache */
     fun assertConfigurationCacheHit() {
@@ -230,11 +215,11 @@ class GradleBuildResult(
     }
 
     private fun Scanner.asText(): String = use {
-        StringBuilder().apply {
+        buildString {
             while (it.hasNextLine()) {
                 appendLine(it.nextLine())
             }
-        }.toString()
+        }
     }
 
     /**

@@ -40,11 +40,30 @@ import org.gradle.api.Incubating
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
+import org.gradle.declarative.dsl.model.annotations.Configuring
+import org.gradle.declarative.dsl.model.annotations.ElementFactoryName
 import org.gradle.declarative.dsl.model.annotations.Restricted
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 import java.io.File
 import java.io.Serializable
 import javax.inject.Inject
+
+@ElementFactoryName("buildType")
+abstract class DeclarativeBuildType @Inject constructor(
+    private val name: String,
+    private val dslServices: DslServices,
+    private val componentType: ComponentType
+) : BuildType(name, dslServices, componentType) {
+
+    val dependencies: BuildTypeDependenciesExtension by lazy {
+        dslServices.newInstance(BuildTypeDependenciesExtension::class.java)
+    }
+
+    @Configuring
+    fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {
+        configure.invoke(dependencies)
+    }
+}
 
 /** DSL object to configure build types.  */
 abstract class BuildType @Inject constructor(

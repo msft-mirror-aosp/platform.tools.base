@@ -17,6 +17,7 @@
 package android.view;
 
 import android.content.Context;
+import android.graphics.Point;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,5 +60,19 @@ public final class ViewGroup extends View {
 
     public void removeView(View view) {
         mChildren.remove(view);
+    }
+
+    /** Note: This is not a correct implementation of onMeasure. Used only in tests. */
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = 0;
+        int height = 0;
+        for (int index=0; index < mChildren.size(); index++) {
+            View child = mChildren.get(index);
+            child.measure(widthMeasureSpec, heightMeasureSpec);
+            width = Math.max(width, child.getLeft() + child.getMeasuredWidth());
+            height = Math.max(height, child.getTop() + child.getMeasuredHeight());
+        }
+        setMeasuredDimension(width, height);
     }
 }

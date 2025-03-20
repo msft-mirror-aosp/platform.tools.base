@@ -40,7 +40,8 @@ import com.android.build.gradle.internal.res.PrivacySandboxSdkLinkAndroidResourc
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.services.R8ParallelBuildService
+import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
+import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
 import com.android.build.gradle.internal.tasks.AppMetadataTask
@@ -154,12 +155,8 @@ class PrivacySandboxSdkPlugin @Inject constructor(
         Aapt2DaemonBuildService.RegistrationAction(project, projectOptions).execute()
         SymbolTableBuildService.RegistrationAction(project).execute()
 
-        R8ParallelBuildService.RegistrationAction(
-            project,
-            // These `IntegerOption`s have default values so get() should return not-null
-            projectOptions.get(IntegerOption.R8_MAX_WORKERS)!!,
-            projectOptions.get(IntegerOption.R8_THREAD_POOL_SIZE)!!
-        ).execute()
+        R8D8ThreadPoolBuildService.RegistrationAction(project, projectOptions).execute()
+        R8MaxParallelTasksBuildService.RegistrationAction(project, projectOptions).execute()
     }
 
     override fun configureExtension(project: Project) {

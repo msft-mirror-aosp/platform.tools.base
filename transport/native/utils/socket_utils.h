@@ -25,6 +25,7 @@ namespace profiler {
 
 // Prefix used by gRPC to designate a Unix socket address.
 const char* const kGrpcUnixSocketAddrPrefix = "unix:";
+const char* const kGrpcUnixAbstractSocketAddrPrefix = "unix-abstract:";
 
 // This is a Unix abstract socket name that is passed to bind() with the
 // '@' replaced by '\0'. It designates an abstract socket of name

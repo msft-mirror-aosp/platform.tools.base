@@ -26,51 +26,7 @@ import java.util.regex.Pattern
  * An object that can validate the content of resources.
  */
 @SubjectDsl
-interface ResourcesSubject {
-
-    /**
-     * Validates that the resource list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(resourcePaths: Iterable<String>)
-
-    /**
-     * Validates that the resource list matches exactly with the provided item.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the provided item includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(resourcePath: String) {
-        containsExactly(listOf(resourcePath))
-    }
-
-    /**
-     * Validates that the resource list matches exactly with the provided list.
-     *
-     * The archive list contains files only. There are no folders in it.
-     *
-     * The possible format of the items in the provided list includes both file path and folders.
-     * In the case of folders, it will match against any files in the archive that are in that folder.
-     */
-    fun containsExactly(vararg resourcePaths: String) {
-        containsExactly(resourcePaths.toList())
-    }
-
-    /**
-     * Checks that the list of classes is empty
-     */
-    fun isEmpty()
-
-    /**
-     * Checks that the list of classes has the given size
-     */
-    fun hasSize(size: Int)
+interface ResourcesSubject: FileArchiveSubject {
 
     /**
      * Returns a [StringSubject] with the text content of the file at the given path.
@@ -101,11 +57,11 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     protected abstract val allResources: List<String>
 
-    override fun containsExactly(resourcePaths: Iterable<String>) {
+    override fun containsExactly(items: Collection<String>) {
         check("entries()")
-            .about(ComparatorSubject.lists())
+            .about(ArchiveEntriesSubject.files())
             .that(allResources)
-            .containsExactly(resourcePaths)
+            .containsExactly(items)
     }
 
     override fun isEmpty() {
@@ -114,6 +70,13 @@ internal abstract class BaseJavaResourcesSubject<S: Subject<S, T>, T: Zip>(
 
     override fun hasSize(size: Int) {
         check("size()").that(allResources.size).isEqualTo(size)
+    }
+
+    override fun containsAtLeast(items: Collection<String>) {
+        check("entries()")
+            .about(ArchiveEntriesSubject.files())
+            .that(allResources)
+            .containsAtLeast(items)
     }
 
     override fun resourceAsText(resourcePath: String): StringSubject {

@@ -37,7 +37,7 @@ class KmpModelComparator(
     private val modelSnapshotTask: String,
     private val taskOutputsLocator: (String) -> List<File>,
     private val configCacheMode: BaseGradleExecutor.ConfigurationCaching
-    = BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION
+    = BaseGradleExecutor.ConfigurationCaching.OFF
 ): BasicComparator(testClass) {
 
     private val buildMap = project.getBuildMap()
@@ -114,8 +114,7 @@ class KmpModelComparator(
     ) {
         // Generate project structure metadata json file for all subproject
         // They are needed in order to resolve project dependencies
-        // TODO: https://b.corp.google.com/issues/401235596
-        val executor = project.executor().withFailOnWarning(false).withConfigurationCaching(configCacheMode)
+        val executor = project.executor().withConfigurationCaching(configCacheMode)
         executor.run("generateProjectStructureMetadata")
 
         projects.forEach { projectPath ->

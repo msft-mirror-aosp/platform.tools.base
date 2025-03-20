@@ -40,13 +40,7 @@ cc_library(
     hdrs = [
         "log.h",
     ],
-    copts = select_android(
-        ["-std=c++11"],
-        [],
-    ) + select({
-        "@platforms//os:windows": [],
-        "//conditions:default": ["-std=c++11"],
-    }),
+    copts = [],
     visibility = ["//tools/base/deploy:__subpackages__"],
     deps = [
         ":env",

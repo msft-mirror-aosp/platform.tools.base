@@ -74,12 +74,12 @@ class LintStandaloneFixTest {
 
     @Test
     fun checkStandaloneLintFix() {
-        val result = project.executor().expectFailure().run("lintFixJvm")
-        assertThat(result.stderr)
-            .contains(
+        project.executor().expectFailure().run("lintFixJvm").apply {
+            assertErrorContains(
                 "Aborting build since sources were modified to apply quickfixes after compilation"
             )
-        Truth.assertThat(result.failedTasks).contains(":lintFixJvm")
+            assertTask(":lintFixJvm").failed()
+        }
 
         // Make sure quickfix worked too
         val sourceFile = project.file("src/main/java/com/example/foo/Foo.java")

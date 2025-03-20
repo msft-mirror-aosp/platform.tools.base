@@ -145,6 +145,7 @@ public final class SourceProviderHelper {
         testSinglePathCollection(
                 "rs", renderscriptDir, sourceProvider.getRenderscriptDirectories());
 
+        Truth.assertThat(sourceProvider.getManifestFile()).isNotNull();
         Truth.assertWithMessage("AndroidManifest")
                 .that((Comparable<Path>) new File(projectDir, manifestFile).toPath())
                 .isEquivalentAccordingToCompareTo(sourceProvider.getManifestFile().toPath());

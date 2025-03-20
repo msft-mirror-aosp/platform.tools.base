@@ -17,15 +17,20 @@
 package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.detector.api.LintUtilsTest.parse;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Location.SearchDirection;
 import com.android.tools.lint.detector.api.Location.SearchHints;
 import com.android.utils.Pair;
+
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.util.Disposer;
-import java.io.File;
+
 import junit.framework.TestCase;
+
+import java.io.File;
 
 @SuppressWarnings("javadoc")
 public class LocationTest extends TestCase {
@@ -191,5 +196,30 @@ public class LocationTest extends TestCase {
         Location location = handle.resolve();
         assertEquals(10, location.getEnd().getOffset());
         Disposer.dispose(pair.getSecond());
+    }
+
+    public void testStatelessNone() {
+        // Regression test for b/403301031
+        LintClient.setClientName(LintClient.CLIENT_STUDIO);
+        Location none = Location.NONE;
+        none.setSecondary(none);
+        none.setClientData(LocationTest.class);
+        none.setOriginalSource(LocationTest.class);
+        none.setData(LocationTest.class);
+        assertNull(none.getSecondary());
+        assertNull(none.getClientData());
+        assertNull(none.getOriginalSource());
+        Location location = Location.create(new File("foo"));
+        location.setVisible(true);
+        assertTrue(location.getVisible());
+        location.setVisible(false);
+        assertFalse(location.getVisible());
+        LintClient.setClientName(LintClient.CLIENT_UNIT_TESTS);
+        try {
+            none.setOriginalSource(LocationTest.class);
+            fail("Expected throw from mutating location");
+        } catch (Exception ignore) {
+            // OK
+        }
     }
 }

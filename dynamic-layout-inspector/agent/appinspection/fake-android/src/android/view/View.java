@@ -80,6 +80,12 @@ public class View {
     private int mHeight = 0;
     private int mScrollX = 0;
     private int mScrollY = 0;
+    private int mMeasuredWidth = 0;
+    private int mMeasuredHeight = 0;
+    private int mPaddingLeft = 0;
+    private int mPaddingRight = 0;
+    private int mPaddingTop = 0;
+    private int mPaddingBottom = 0;
     private ViewGroup.LayoutParams mLayoutParams = new ViewGroup.LayoutParams();
     @Nullable private ViewTreeObserver mViewTreeObserver = null;
 
@@ -327,5 +333,44 @@ public class View {
 
     public boolean onHoverEvent(MotionEvent ev) {
         return false;
+    }
+
+    public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
+        onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+    }
+
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        setMeasuredDimension(mWidth, mHeight);
+    }
+
+    protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) {
+        mMeasuredWidth = measuredWidth;
+        mMeasuredHeight = measuredHeight;
+    }
+
+    public final int getMeasuredWidth() {
+        return mMeasuredWidth;
+    }
+
+    public final int getMeasuredHeight() {
+        return mMeasuredHeight;
+    }
+
+    public void setPadding(int left, int top, int right, int bottom) {
+        mPaddingLeft = left;
+        mPaddingRight = right;
+        mPaddingTop = top;
+        mPaddingBottom = bottom;
+    }
+
+    public int getPaddingLeft() {
+        return mPaddingLeft;
+    }
+
+    public int getPaddingTop() {
+        return mPaddingTop;
     }
 }

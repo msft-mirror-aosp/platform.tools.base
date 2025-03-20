@@ -210,17 +210,17 @@ class MinSdkViaSettingsInLibModelTest {
 
         Truth
             .assertWithMessage("minSdkVersion")
-            .that(androidDsl.defaultConfig.minSdkVersion)
+            .that(androidDsl.defaultConfig?.minSdkVersion)
             .isNotNull()
 
         Truth
             .assertWithMessage("minSdkVersion.apiLevel")
-            .that(androidDsl.defaultConfig.minSdkVersion?.apiLevel)
+            .that(androidDsl.defaultConfig?.minSdkVersion?.apiLevel)
             .isEqualTo(23)
 
         Truth
             .assertWithMessage("minSdkVersion.codename")
-            .that(androidDsl.defaultConfig.minSdkVersion?.codename)
+            .that(androidDsl.defaultConfig?.minSdkVersion?.codename)
             .isNull()
     }
 }

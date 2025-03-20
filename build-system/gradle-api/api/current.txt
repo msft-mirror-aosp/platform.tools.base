@@ -2570,7 +2570,7 @@ package com.android.build.api.variant {
     method @Deprecated public void finalizeDSl(org.gradle.api.Action<DslExtensionT> callback);
     method public void onVariants(optional com.android.build.api.variant.VariantSelector selector, kotlin.jvm.functions.Function1<? super VariantT,kotlin.Unit> callback);
     method public void onVariants(optional com.android.build.api.variant.VariantSelector selector, org.gradle.api.Action<VariantT> callback);
-    method @org.gradle.api.Incubating public void registerExtension(com.android.build.api.variant.DslExtension dslExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.variant.VariantExtensionConfig<VariantT>,? extends com.android.build.api.variant.VariantExtension> configurator);
+    method public void registerExtension(com.android.build.api.variant.DslExtension dslExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.variant.VariantExtensionConfig<VariantT>,? extends com.android.build.api.variant.VariantExtension> configurator);
     method public void registerSourceType(String name);
     method public com.android.build.api.variant.VariantSelector selector();
   }
@@ -2919,7 +2919,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.file.RegularFileProperty multiDexKeepProguard;
   }
 
-  @org.gradle.api.Incubating public final class DslExtension {
+  public final class DslExtension {
     method public Class<?>? getBuildTypeExtensionType();
     method public String getDslName();
     method public Class<?>? getProductFlavorExtensionType();
@@ -2930,7 +2930,7 @@ package com.android.build.api.variant {
     property public final Class<?>? projectExtensionType;
   }
 
-  @org.gradle.api.Incubating public static final class DslExtension.Builder {
+  public static final class DslExtension.Builder {
     ctor public DslExtension.Builder(String dslName);
     method public com.android.build.api.variant.DslExtension build();
     method public com.android.build.api.variant.DslExtension.Builder extendBuildTypeWith(Class<?> typeExtension);
@@ -3437,7 +3437,7 @@ package com.android.build.api.variant {
   public interface VariantExtension {
   }
 
-  @org.gradle.api.Incubating public interface VariantExtensionConfig<VariantT extends com.android.build.api.variant.Variant> {
+  public interface VariantExtensionConfig<VariantT extends com.android.build.api.variant.Variant> {
     method public <T> T buildTypeExtension(Class<T> extensionType);
     method public VariantT getVariant();
     method public <T> java.util.List<T> productFlavorsExtensions(Class<T> extensionType);

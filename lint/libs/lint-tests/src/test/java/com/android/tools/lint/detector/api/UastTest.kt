@@ -2858,6 +2858,70 @@ class UastTest : TestCase() {
     assertEquals(3, count)
   }
 
+  fun testJavaFieldIntersectionOverride() {
+    // b/400467551
+    // https://youtrack.jetbrains.com/issue/KT-75894
+    val testFiles =
+      arrayOf(
+        kotlin(
+          """
+            data class WrapInt(val p: Int)
+
+            data class WrapFloat(val p: Float)
+
+            fun <T : Any> test(conf: Config<T>, other: Int) {
+              when (other) {
+                0 -> {
+                  conf as Config<Int>
+                  // intersection of T and Int
+                  WrapInt(conf.minValue ?: Int.MIN_VALUE)
+                }
+                else -> {
+                  conf as Config<Float>
+                  // intersection of T and Float
+                  WrapFloat(conf.minValue ?: Float.MIN_VALUE)
+                }
+              }
+            }
+          """
+        ),
+        java(
+          """
+            public class Config<T> {
+              public final T minValue;
+
+              public T getMinValue() {
+                return minValue;
+              }
+           }
+          """
+        ),
+      )
+    var count = 0
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitSimpleNameReferenceExpression(
+            node: USimpleNameReferenceExpression
+          ): Boolean {
+            if (node.resolvedName != "minValue")
+              return super.visitSimpleNameReferenceExpression(node)
+
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            assertTrue(txt, resolved is PsiField)
+            assertEquals(txt, "minValue", (resolved as PsiField).name)
+            count++
+
+            return super.visitSimpleNameReferenceExpression(node)
+          }
+        }
+      )
+    }
+    assertEquals(2, count)
+  }
+
   fun testImplicitLambdaParameterInTest() {
     // Example from b/302708854
     val testFiles =

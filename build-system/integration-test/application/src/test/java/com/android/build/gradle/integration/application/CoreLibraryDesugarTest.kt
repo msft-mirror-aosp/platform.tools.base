@@ -366,7 +366,8 @@ class CoreLibraryDesugarTest {
     @Test
     fun testModelFetching() {
         val model = app.modelV2().fetchModels().container.getProject(":app").androidProject
-        Truth.assertThat(model!!.javaCompileOptions.isCoreLibraryDesugaringEnabled).isTrue()
+        assertThat(model!!.javaCompileOptions).isNotNull()
+        Truth.assertThat(model.javaCompileOptions?.isCoreLibraryDesugaringEnabled).isTrue()
     }
 
     @Test

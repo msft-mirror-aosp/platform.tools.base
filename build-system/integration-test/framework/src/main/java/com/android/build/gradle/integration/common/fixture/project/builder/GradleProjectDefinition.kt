@@ -99,7 +99,12 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
     val dependencies: DependenciesBuilder
 
     /**
-     * The list of plugin callbacks for this project
+     * The list of plugin callbacks for this project.
+     *
+     * The callbacks from all the subprojects are all added to a single jar that is setup
+     * in the buildscript classpath of the root project. Dependencies required by the callbacks
+     * must be added to the build classpath by updating [buildscript] on
+     * [GradleBuildDefinition.rootProject]
      */
     val pluginCallbacks: MutableList<Class<out PluginCallback>>
 

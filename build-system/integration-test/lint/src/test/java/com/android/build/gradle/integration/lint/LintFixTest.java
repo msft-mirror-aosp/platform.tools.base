@@ -24,10 +24,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
-import com.google.common.truth.Truth;
-import java.io.File;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
 
 /**
  * Integration test for the lintFix target on the synthetic accessor warnings found in the Kotlin
@@ -45,10 +46,9 @@ public class LintFixTest {
     @Test
     public void checkFindNestedResult() throws Exception {
         GradleBuildResult result = project.executor().expectFailure().run(":app:lintFix");
-        assertThat(result.getStderr())
-                .contains(
-                        "Aborting build since sources were modified to apply quickfixes after compilation");
-        Truth.assertThat(result.getFailedTasks()).contains(":app:lintFixDebug");
+        result.assertErrorContains(
+                "Aborting build since sources were modified to apply quickfixes after compilation");
+        result.assertTask(":app:lintFixDebug").failed();
 
         // Make sure quickfixes worked too
         File source = project.file("app/src/main/kotlin/test/pkg/AccessTest2.kt");
@@ -64,8 +64,10 @@ public class LintFixTest {
         //    ...
         assertThat(source).contains("internal fun method1()");
         assertThat(source).contains("internal constructor()");
-        GradleBuildResult result2 = project.executor().expectFailure().run("clean", ":app:lintFix");
-        assertThat(result2.getStderr()).contains("Lint found errors in the project; aborting build");
+        project.executor()
+                .expectFailure()
+                .run("clean", ":app:lintFix")
+                .assertErrorContains("Lint found errors in the project; aborting build");
     }
 
     @Test
@@ -82,10 +84,12 @@ public class LintFixTest {
 
         FileUtils.copyDirectory(sourceDir, sourceDirCopy);
 
-        GradleBuildResult result = project.executor().expectFailure().run(":app:lintFix");
-        assertThat(result.getStderr())
-                .contains(
-                        "Aborting build since sources were modified to apply quickfixes after compilation");
+        project.executor()
+                .expectFailure()
+                .run(":app:lintFix")
+                .assertErrorContains(
+                        "Aborting build since sources were modified to apply quickfixes after"
+                                + " compilation");
 
         // Make sure quickfixes worked too
         File source = FileUtils.join(sourceDirCopy, "AccessTest2.kt");
@@ -101,9 +105,10 @@ public class LintFixTest {
         //    ...
         assertThat(source).contains("internal fun method1()");
         assertThat(source).contains("internal constructor()");
-        GradleBuildResult result2 = project.executor().expectFailure().run("clean", ":app:lintFix");
-        assertThat(result2.getStderr())
-                .contains("Lint found errors in the project; aborting build");
+        project.executor()
+                .expectFailure()
+                .run("clean", ":app:lintFix")
+                .assertErrorContains("Lint found errors in the project; aborting build");
     }
 }
 

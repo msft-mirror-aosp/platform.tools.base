@@ -295,7 +295,8 @@ class VariantManager<
         // variant-specific and multi-flavor name as we add/create the variant providers later.
         for (productFlavorData in productFlavorDataList) {
             variantDslInfoBuilder.addProductFlavor(
-                    productFlavorData.productFlavor, productFlavorData.sourceSet)
+                    productFlavorData.productFlavor, productFlavorData.sourceSet
+            )
         }
         val variantDslInfo = variantDslInfoBuilder.createDslInfo()
         val componentIdentity = variantDslInfo.componentIdentity

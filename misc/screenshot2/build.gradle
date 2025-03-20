@@ -16,9 +16,9 @@ dependencies {
 task Screenshot2StartScripts(type: CreateStartScripts) {
     classpath = project.getTasks().getAt(JavaPlugin.JAR_TASK_NAME).getOutputs().getFiles().plus(
             project.getConfigurations().getByName('runtimeClasspath'))
-    outputDir new File(project.getBuildDir(), 'scripts')
+    outputDir=new File(project.getBuildDir(), 'scripts')
 
-    description 'Creates OS specific scripts to start screenshot2'
+    description='Creates OS specific scripts to start screenshot2'
     mainClass.set('com.android.screenshot.Screenshot')
     applicationName = 'screenshot2'
 }

@@ -324,9 +324,8 @@ class LintDynamicFeatureTest {
             """.trimIndent()
         )
 
-        val result = project.executor().expectFailure().run(":app:lintFix")
-        ScannerSubject.assertThat(result.stderr)
-            .contains(
+        project.executor().expectFailure().run(":app:lintFix")
+            .assertErrorContains(
                 "Aborting build since sources were modified to apply quickfixes after compilation"
             )
 
@@ -343,8 +342,7 @@ class LintDynamicFeatureTest {
         assertThat(appSourceFile).contains("void bar()")
         assertThat(featureSourceFile).doesNotContain("private void bar()")
         assertThat(featureSourceFile).contains("void bar()")
-        val result2 = project.executor().run("clean", "lintFix")
-        ScannerSubject.assertThat(result2.stdout).contains("BUILD SUCCESSFUL")
+        project.executor().run("clean", "lintFix").assertOutputContains("BUILD SUCCESSFUL")
     }
 
     @Test

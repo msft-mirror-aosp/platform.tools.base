@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.BaseAndroidProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_MANIFEST
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
@@ -167,12 +166,9 @@ internal class FusedLibraryManifestMergerTaskTest {
             }
         }
 
-        val result = build.executor.expectFailure().run(":fusedLib1:mergeManifest")
-        result.stderr.use { scanner ->
-            assertThat(scanner)
-                    .contains(
-                            "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [:androidLib3]")
-        }
+        build.executor.expectFailure().run(":fusedLib1:mergeManifest").assertErrorContains(
+            "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [:androidLib3]"
+        )
     }
 
     @Test
@@ -196,12 +192,9 @@ internal class FusedLibraryManifestMergerTaskTest {
             }
         }
 
-        val result = build.executor.expectFailure().run(":app:processDebugMainManifest")
-        result.stderr.use { scanner ->
-            assertThat(scanner).contains(
-                    "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [fusedLib1.aar]"
-            )
-        }
+        build.executor.expectFailure().run(":app:processDebugMainManifest").assertErrorContains(
+            "uses-sdk:minSdkVersion 19 cannot be smaller than version 20 declared in library [fusedLib1.aar]"
+        )
     }
 
     @Test

@@ -94,11 +94,11 @@ class LintStandaloneTest(
             project.buildFile,
             "\n\nlintOptions.error 'UseValueOf'\n\n"
         )
-        getExecutor().expectFailure().run( ":lint")
-        ScannerSubject.assertThat(project.buildResult.stderr)
-            .contains("Lint found errors in the project; aborting build.")
-        assertThat(project.buildResult.failedTasks).contains(":lintJvm")
-        assertThat(project.buildResult.didWorkTasks).contains(":lintReportJvm")
+        getExecutor().expectFailure().run( ":lint").apply {
+            assertErrorContains("Lint found errors in the project; aborting build.")
+            assertTask(":lintJvm").failed()
+            assertTask(":lintReportJvm").didWork()
+        }
         assertThat(project.buildResult.failedTasks).doesNotContain(":lintReportJvm")
     }
 
@@ -126,9 +126,10 @@ class LintStandaloneTest(
             """.trimIndent()
         )
 
-        val result = getExecutor().run(":foo", ":lint")
-        ScannerSubject.assertThat(result.stdout).doesNotContain("Gradle detected a problem")
-        ScannerSubject.assertThat(result.stderr).doesNotContain("Gradle detected a problem")
+        getExecutor().run(":foo", ":lint").apply {
+            assertOutputDoesNotContain("Gradle detected a problem")
+            assertErrorDoesNotContain("Gradle detected a problem")
+        }
     }
 
     @Test

@@ -247,7 +247,7 @@ class NetworkCacheTest {
     private abstract class TestCache(
             cacheDir: Path = Files.createTempDirectory(""),
             networkEnabled: Boolean
-    ) : NetworkCache("", "cacheKey", cacheDir, networkEnabled = networkEnabled) {
+    ) : NetworkCache("", cacheDir, networkEnabled = networkEnabled) {
         fun loadArtifact() = findData("artifact.xml")
 
         fun getContentAsString(relative: String, treatAsDirectory: Boolean=false): String? = findData(relative, treatAsDirectory)?.use { it.readBytes().toString(Charsets.UTF_8) }

@@ -345,9 +345,9 @@ class BuiltInKotlinForAppTest {
             }
         }
 
-        val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
-        ScannerSubject.assertThat(result.stderr)
-            .contains("Visibility must be specified in explicit API mode")
+        build.executor.expectFailure().run(":app:compileDebugKotlin").assertErrorContains(
+            "Visibility must be specified in explicit API mode"
+        )
     }
 
     /**
@@ -374,11 +374,13 @@ class BuiltInKotlinForAppTest {
             .run(":app:compileDebugKotlin")
 
         // Then test that the build fails if Kotlin attribute setup is disabled
-        val result = build.executor
+        build.executor
             .expectFailure()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
             .run(":app:compileDebugKotlin")
-        ScannerSubject.assertThat(result.stderr).contains("Could not find androidx.compose.ui")
+            .assertErrorContains(
+                "Could not find androidx.compose.ui"
+            )
     }
 }

@@ -162,11 +162,9 @@ sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.str
             }
         }
 
-        val result = executor().expectFailure().run(":privacy-sandbox-sdk:lintFix")
-        assertThat(result.stderr)
-            .contains(
-                "Aborting build since sources were modified to apply quickfixes after compilation"
-            )
+        executor().expectFailure().run(":privacy-sandbox-sdk:lintFix").assertErrorContains(
+            "Aborting build since sources were modified to apply quickfixes after compilation"
+        )
         // Make sure quickfixes worked too
         val sourceTestFile = build.androidLibrary(":android-lib").resolve(sourceTestPath)
         assertThat(sourceTestFile).doesNotContain("private AccessTest()")

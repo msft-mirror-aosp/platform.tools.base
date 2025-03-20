@@ -250,7 +250,9 @@ androidComponents.onVariants(androidComponents.selector().all(), {
         Truth.assertThat(assembleTaskOutputListingFile?.name).doesNotContain("acme_apks")
 
         // now executes assemble to make sure the redirect file is created.
-        val result = project.executor().run(debugVariant.mainArtifact.assembleTaskName, "debugVerifier")
+        val assembleTaskName = debugVariant.mainArtifact.assembleTaskName
+        Truth.assertThat(assembleTaskName).isNotNull()
+        val result = project.executor().run(assembleTaskName!!, "debugVerifier")
         Truth.assertThat(result.didWorkTasks).containsExactly(
             ":createDebugApkListingFileRedirect", ":debugProducerTask", ":debugConsumerTask", ":debugVerifier")
 

@@ -30,8 +30,11 @@ import com.android.tools.res.AssetRepositoryBase
 import com.android.tools.res.ResourceRepositoryManager
 import com.android.tools.res.ids.ResourceIdManager
 import com.android.tools.sdk.AndroidPlatform
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.CheckedDisposable
+import com.intellij.openapi.util.Disposer
 import java.io.FileInputStream
 import java.io.InputStream
 import java.lang.ref.WeakReference
@@ -59,6 +62,10 @@ class StandaloneRenderModelModule(
     })
     override val manifest: RenderModelManifest? = null
 
+    override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
+    override val isDisposed: Boolean
+        get() = parentDisposable.isDisposed
+
     override fun getClassLoaderProvider(
         privateClassLoader: Boolean,
     ): RenderModelModule.ClassLoaderProvider {
@@ -77,12 +84,13 @@ class StandaloneRenderModelModule(
         }
     }
 
-    override val isDisposed: Boolean = false
     override val name: String = "Fake Module"
-
-    override fun dispose() { }
 
     override fun getIdeaModule(): Module {
         throw UnsupportedOperationException("Should not be called in standalone rendering")
+    }
+
+    override fun dispose() {
+        Disposer.dispose(parentDisposable)
     }
 }

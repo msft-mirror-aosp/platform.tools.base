@@ -18,9 +18,7 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
@@ -63,13 +61,10 @@ androidComponents {
     })
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "debugSomeTask")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "Task debugSomeTask was passed to Artifacts::use method without wiring any input " +
+        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
+            "Task debugSomeTask was passed to Artifacts::use method without wiring any input " +
                     "and/or output to an artifact."
-            )
-        }
+        )
     }
 
     @Test
@@ -103,13 +98,10 @@ androidComponents {
     })
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "debugSomeTask")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                    "was wired with an output but neither toAppend, toCreate, toListenTo methods were " +
-                            "invoked."
-            )
-        }
+        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
+            "was wired with an output but neither toAppend, toCreate, toListenTo methods were " +
+                    "invoked."
+        )
     }
 
     @Test
@@ -145,13 +137,10 @@ androidComponents {
     })
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "debugSomeTask")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                    "was wired with an Input and an Output but " +
-                            "toTransform or toTransformMany methods were never invoked"
-            )
-        }
+        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
+            "was wired with an Input and an Output but " +
+                    "toTransform or toTransformMany methods were never invoked"
+        )
     }
 
     @Test
@@ -187,13 +176,9 @@ androidComponents {
     })
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "debugSomeTask")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "was wired with an Input and an Output but " +
-                        "toTransform method was never invoked"
-            )
-        }
+        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
+            "was wired with an Input and an Output but toTransform method was never invoked"
+        )
     }
 
     @Test
@@ -229,13 +214,10 @@ androidComponents {
     })
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "debugSomeTask")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "was wired to combine multiple inputs into an output but " +
-                        "toTransform method was never invoked"
-            )
-        }
+        project.executor().expectFailure().run("clean", "debugSomeTask").assertErrorContains(
+            "was wired to combine multiple inputs into an output but " +
+                    "toTransform method was never invoked"
+        )
     }
 
     @Test
@@ -261,12 +243,9 @@ android {
     }
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "It is too late to add actions as the callbacks already executed."
-            )
-        }
+        project.executor().expectFailure().run("clean", "assembleDebug").assertErrorContains(
+            "It is too late to add actions as the callbacks already executed."
+        )
     }
 
     @Test
@@ -292,12 +271,8 @@ android {
     }
 }
 """)
-        val result = project.executor().expectFailure().run("clean", "assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "It is too late to add actions as the callbacks already executed."
-            )
-        }
+        project.executor().expectFailure().run("clean", "assembleDebug").assertErrorContains(
+            "It is too late to add actions as the callbacks already executed."
+        )
     }
-
 }

@@ -3826,6 +3826,36 @@ class VersionChecksTest : AbstractCheckTest() {
                         val actionBar = getActionBar() // ERROR
                     }
 
+                    fun testInexhaustiveWhen_1() {
+                        if (SDK_INT < 11) {
+                            when {
+                                // implicit else -> Unit
+                            }
+                        }
+                        val actionBar = getActionBar() // ERROR 1
+                    }
+
+                    fun testInexhaustiveWhen_2(n: Int) {
+                        if (SDK_INT < 11) {
+                            when {
+                                n > 10 -> willThrow()
+                                // implicit else -> Unit
+                            }
+                        }
+                        val actionBar = getActionBar() // ERROR 2
+                    }
+
+                    fun testInexhaustiveWhen_3(n: Any) {
+                        if (SDK_INT < 11) {
+                            when (n) {
+                                1,
+                                2,
+                                is String -> willThrow()
+                            }
+                        }
+                        val actionBar = getActionBar() // ERROR 3
+                    }
+
                     private fun mayThrow(): Nothing? {
                         if (SDK_INT < 24) {
                             throw IllegalStateException()
@@ -3833,8 +3863,91 @@ class VersionChecksTest : AbstractCheckTest() {
                             return null
                         }
                     }
+
+                    fun testSequence() {
+                        if (SDK_INT < 11) {
+                            willThrow()
+                            println()
+                        }
+                        val actionBar = getActionBar() // OK 5
+                    }
+
+                    fun testConditional() {
+                        if (SDK_INT < 11) {
+                            if (willThrow()) {} else {}
+                        }
+                        val actionBar = getActionBar() // OK 6
+                    }
+
+                    fun testCall() {
+                        if (SDK_INT < 11) {
+                            neverThrow(willThrow(), mayThrow())
+                        }
+                        val actionBar = getActionBar() // OK 7
+                    }
+
+                    private fun neverThrow(x: Int, y: String): Int {
+                        return 42
+                    }
                 }
                 """
+          )
+          .indented(),
+        java(
+            """
+            import android.app.Activity;
+            import android.os.Build;
+
+            public class JavaExitTest extends Activity {
+                public static void testInexhaustiveWhen_1(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                        }
+                    }
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_2(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_3(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0:
+                            case 1: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ERROR
+                }
+
+                public static void testInexhaustiveWhen_4(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            case 0:
+                            case 1:
+                            default: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ok
+                }
+
+                public static void testInexhaustiveWhen_5(int n) {
+                    if (Build.VERSION.SDK_INT < 11) {
+                        switch(n) {
+                            default: return;
+                        }
+                    }
+                    var actionBar = getActionBar(); // ok
+                }
+            }
+          """
+              .trimIndent()
           )
           .indented(),
         SUPPORT_ANNOTATIONS_JAR,
@@ -3842,10 +3955,28 @@ class VersionChecksTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+          src/ExitTest.kt:43: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
         val actionBar = getActionBar() // ERROR
                         ~~~~~~~~~~~~
-1 error
+src/ExitTest.kt:52: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        val actionBar = getActionBar() // ERROR 1
+                        ~~~~~~~~~~~~
+src/ExitTest.kt:62: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        val actionBar = getActionBar() // ERROR 2
+                        ~~~~~~~~~~~~
+src/ExitTest.kt:73: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        val actionBar = getActionBar() // ERROR 3
+                        ~~~~~~~~~~~~
+src/JavaExitTest.java:10: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        var actionBar = getActionBar(); // ERROR
+                        ~~~~~~~~~~~~
+src/JavaExitTest.java:19: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        var actionBar = getActionBar(); // ERROR
+                        ~~~~~~~~~~~~
+src/JavaExitTest.java:29: Error: Call requires API level 11 (current min is 1): android.app.Activity#getActionBar [NewApi]
+        var actionBar = getActionBar(); // ERROR
+                        ~~~~~~~~~~~~
+7 errors
         """
       )
   }

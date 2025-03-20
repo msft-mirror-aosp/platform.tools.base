@@ -44,7 +44,7 @@ class KotlinSourcesModelTest {
 
         val basicProject =
             project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject!!
-        assertThat(basicProject.mainSourceSet!!.sourceProvider.kotlinDirectories)
+        assertThat(basicProject.mainSourceSet!!.sourceProvider?.kotlinDirectories)
                 .containsExactly(
                         project.file("src/main/kotlinDir"),
                         project.file("src/main/java"),
@@ -68,8 +68,8 @@ class KotlinSourcesModelTest {
         """.trimIndent())
 
         val basicProject =
-            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject!!
-        assertThat(basicProject.mainSourceSet!!.sourceProvider.kotlinDirectories)
+            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject
+        assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
                 .containsExactly(
                         project.file("src/main/kotlinDir"),
                         project.file("src/main/java"),

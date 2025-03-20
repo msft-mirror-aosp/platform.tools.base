@@ -135,11 +135,14 @@ class JavaCompileWithToolChainTest {
         // Compiling should not throw an error (regression test for bug 260059413)
         project.executor().run("compileDebugJavaWithJavac")
 
-        project.modelV2().fetchModels(variantName = "debug").container.getProject().androidProject!!
-            .javaCompileOptions.let {
-                assertThat(it.sourceCompatibility).isEqualTo(latestJdkVersion.toString())
-                assertThat(it.targetCompatibility).isEqualTo(latestJdkVersion.toString())
-            }
+        val androidProject =
+            project.modelV2()
+                .fetchModels(variantName = "debug").container.getProject().androidProject!!
+        assertThat(androidProject.javaCompileOptions).isNotNull()
+        androidProject.javaCompileOptions?.let {
+            assertThat(it.sourceCompatibility).isEqualTo(latestJdkVersion.toString())
+            assertThat(it.targetCompatibility).isEqualTo(latestJdkVersion.toString())
+        }
     }
 
     @Test

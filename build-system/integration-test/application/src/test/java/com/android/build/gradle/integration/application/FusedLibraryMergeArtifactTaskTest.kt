@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
 import org.junit.Rule
@@ -223,9 +222,8 @@ internal class FusedLibraryMergeArtifactTaskTest {
         val androidLib2 = build.androidLibrary(":androidLib2")
         androidLib2.files.add("src/main/resources/my_java_resource.txt", "content")
 
-        val result = build.executor.expectFailure().run(":fusedLib1:assemble")
-        result.stderr.use { out ->
-            assertThat(out).contains("2 files found with path 'my_java_resource.txt'")
-        }
+        build.executor.expectFailure().run(":fusedLib1:assemble").assertErrorContains(
+            "2 files found with path 'my_java_resource.txt'"
+        )
     }
 }

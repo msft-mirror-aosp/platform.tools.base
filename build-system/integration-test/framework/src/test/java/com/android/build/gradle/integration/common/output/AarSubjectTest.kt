@@ -229,7 +229,6 @@ class AarSubjectTest: BaseZipSubjectTest() {
                 factValue("but was").isEqualTo("[]")
                 factValue("aar was").isEqualTo("Zip(name='empty.aar', status=EXISTS)")
             }
-
         }
     }
 

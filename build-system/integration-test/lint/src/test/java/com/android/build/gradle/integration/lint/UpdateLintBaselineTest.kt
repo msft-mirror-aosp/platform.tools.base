@@ -111,9 +111,7 @@ class UpdateLintBaselineTest {
 
         // Then test the case when a user runs updateLintBaseline and lint at the same time.
         project.executor().run("updateLintBaseline", "lint").apply {
-            assertStdOut {
-                doesNotContain("Gradle detected a problem")
-            }
+            assertOutputDoesNotContain("Gradle detected a problem")
             assertTask(":app:lintAnalyzeDebug").wasUpToDate()
             assertTask(":app:updateLintBaselineDebug").didWork()
         }
@@ -130,9 +128,8 @@ class UpdateLintBaselineTest {
         project.executor().run(":app:updateLintBaseline").apply {
             assertTask(":app:lintAnalyzeDebug").didWork()
             assertTask(":app:updateLintBaselineDebug").didWork()
-            assertStdOut {
-                contains(
-                    """
+            assertOutputContains(
+                """
                     No baseline file is specified, so no baseline file will be created.
 
                     Please specify a baseline file in the build.gradle file like so:
@@ -144,9 +141,8 @@ class UpdateLintBaselineTest {
                         }
                     }
                     ```
-                    """.trimIndent()
-                )
-            }
+                """.trimIndent()
+            )
         }
         PathSubject.assertThat(baselineFile).doesNotExist()
     }

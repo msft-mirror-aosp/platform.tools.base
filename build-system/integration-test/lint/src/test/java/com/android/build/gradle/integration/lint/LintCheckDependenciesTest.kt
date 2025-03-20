@@ -175,9 +175,7 @@ class LintCheckDependenciesTest {
         )
         // First run with checkDependencies false
         project.executor().run(":app:lintVitalRelease").apply {
-            assertStdOut {
-                contains("BUILD SUCCESSFUL")
-            }
+            assertOutputContains("BUILD SUCCESSFUL")
             assertTask(":lib:lintVitalAnalyzeRelease").didWork()
         }
 
@@ -189,10 +187,8 @@ class LintCheckDependenciesTest {
             "checkDependencies = true",
         )
         project.executor().expectFailure().run(":app:lintVitalRelease").apply {
-            assertStdErr {
-                contains("Lib.java:4: Error: STOPSHIP comment found")
-                contains("LibTwo.java:4: Error: STOPSHIP comment found")
-            }
+            assertErrorContains("Lib.java:4: Error: STOPSHIP comment found")
+            assertErrorContains("LibTwo.java:4: Error: STOPSHIP comment found")
         }
     }
 
@@ -200,22 +196,17 @@ class LintCheckDependenciesTest {
     fun testWarningForJavaLibDependencyWithoutLintPlugin() {
         val warning =
             "Warning: Lint will treat :javaLib as an external dependency and not analyze it."
+
         // We expect no warning when checkDependencies is false
-        project.executor().run(":app:lintDebug").apply {
-            assertStdOut {
-                doesNotContain(warning)
-            }
-        }
+        project.executor().run(":app:lintDebug").assertOutputDoesNotContain(warning)
+
         TestFileUtils.searchAndReplace(
             project.getSubproject(":app").buildFile,
             "checkDependencies = false",
             "checkDependencies = true",
         )
+
         // We expect the warning when checkDependencies is true
-        project.executor().run(":app:lintDebug").apply {
-            assertStdOut {
-                contains(warning)
-            }
-        }
+        project.executor().run(":app:lintDebug").assertOutputContains(warning)
     }
 }
