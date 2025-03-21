@@ -146,8 +146,8 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
 
         // Assert
         assertEquals(0, reply.errorCode)
-        assertEquals(122, reply.length)
-        assertEquals(111, reply.withPayload { it.countBytes() })
+        assertEquals(140, reply.length)
+        assertEquals(129, reply.withPayload { it.countBytes() })
     }
 
     @Test
@@ -1159,8 +1159,8 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
         assertEquals(DdmsPacketConstants.DDMS_CMD_SET, cmd1.cmdSet)
 
         assertEquals(0, reply1.errorCode)
-        assertEquals(122, reply1.length)
-        assertEquals(111, reply1.withPayload { it.countBytes() })
+        assertEquals(140, reply1.length)
+        assertEquals(129, reply1.withPayload { it.countBytes() })
     }
 
     @Test
@@ -1194,7 +1194,7 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
             }
         }
         (0 until heloCount).forEach { index ->
-            assertEquals("`HELO` reply payload should be 111 bytes", 111, payloads[index * 2].size)
+            assertEquals("`HELO` reply payload should be 129 bytes", 129, payloads[index * 2].size)
             assertEquals("`APNM` command payload should be 40 bytes", 40, payloads[index * 2 + 1].size)
         }
     }
