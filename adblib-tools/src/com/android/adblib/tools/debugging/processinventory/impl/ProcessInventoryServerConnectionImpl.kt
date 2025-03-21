@@ -23,6 +23,7 @@ import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.mergeWith
@@ -303,7 +304,7 @@ private class ProcessInventoryServerConnectionForDevice(
             packageName = if (source.hasPackageName()) source.packageName else null,
             userId = if (source.hasUserId()) source.userId else null,
             vmIdentifier = if (source.hasVmIdentifier()) source.vmIdentifier else null,
-            abi = if (source.hasAbi()) source.abi else null,
+            instructionSet = if (source.hasInstructionSet()) InstructionSet.fromString(source.instructionSet) else null,
             jvmFlags = if (source.hasJvmFlags()) source.jvmFlags else null,
             isNativeDebuggable = if (source.hasNativeDebuggable()) source.nativeDebuggable else false,
             waitCommandReceived = if (source.hasWaitPacketReceived()) source.waitPacketReceived else false,
@@ -327,7 +328,7 @@ private class ProcessInventoryServerConnectionForDevice(
                 source.packageName?.also { proto.packageName = it }
                 source.userId?.also { proto.userId = it }
                 source.vmIdentifier?.also { proto.vmIdentifier = it }
-                source.abi?.also { proto.abi = it }
+                source.instructionSet?.also { proto.instructionSet = it.text }
                 source.jvmFlags?.also { proto.jvmFlags = it }
                 @Suppress("DEPRECATION")
                 source.isNativeDebuggable.also { proto.nativeDebuggable = it }

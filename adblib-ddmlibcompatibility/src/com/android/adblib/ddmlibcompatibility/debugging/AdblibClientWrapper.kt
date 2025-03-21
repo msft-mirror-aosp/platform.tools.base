@@ -115,6 +115,7 @@ internal class AdblibClientWrapper(
                 hasChanged(packageName, newProcessInfo.packageName) ||
                 hasChanged(vmIdentifier, newProcessInfo.vmIdentifier) ||
                 hasChanged(abi, newProcessInfo.abi) ||
+                hasChanged(instructionSet, newProcessInfo.instructionSet) ||
                 hasChanged(jvmFlags, newProcessInfo.jvmFlags) ||
                 hasChanged(isWaitingForDebugger, newProcessInfo.isWaitingForDebugger) ||
                 hasChanged(isNativeDebuggable, newProcessInfo.isNativeDebuggable)

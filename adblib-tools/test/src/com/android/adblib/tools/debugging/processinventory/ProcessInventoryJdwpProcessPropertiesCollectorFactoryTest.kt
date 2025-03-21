@@ -228,6 +228,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
         Assert.assertEquals(props1.userId, this.userId)
         Assert.assertEquals(props1.vmIdentifier, this.vmIdentifier)
         Assert.assertEquals(props1.abi, this.abi)
+        Assert.assertEquals(props1.instructionSet, this.instructionSet)
         Assert.assertEquals(props1.jvmFlags, this.jvmFlags)
         @Suppress("DEPRECATION")
         Assert.assertEquals(props1.isNativeDebuggable, this.isNativeDebuggable)

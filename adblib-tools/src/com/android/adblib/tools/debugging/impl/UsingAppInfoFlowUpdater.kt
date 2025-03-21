@@ -24,9 +24,9 @@ import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.addException
-import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -95,6 +95,7 @@ internal class UsingAppInfoFlowUpdater(
                                 (properties.vmIdentifier != null) &&
                                 (properties.jvmFlags != null) &&
                                 (properties.abi != null) &&
+                                (properties.instructionSet != null) &&
                                 (properties.features.isNotEmpty())
 
                     completed
@@ -137,28 +138,10 @@ internal class UsingAppInfoFlowUpdater(
                 packageName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
                     ?: current.packageName,
                 userId = appProcessEntry.userId32 ?: current.userId,
-                abi = convertToLegacyDescription(appProcessEntry.architecture),
+                instructionSet = InstructionSet.fromString(appProcessEntry.architecture),
                 isWaitingForDebugger = appProcessEntry.waitingForDebugger ?: current.isWaitingForDebugger,
                 jvmFlags = legacyJvmFlags()
             )
-        }
-    }
-
-    /**
-     * We need to convert the [AppProcessEntry.architecture] property (typically "arm64" or "arm")
-     * to the legacy representation used in [DdmsHeloChunk] for backward compatibility.
-     */
-    private fun convertToLegacyDescription(architecture: String): String {
-        // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
-        val instructionSetDescription = if (architecture.contains("64")) {
-            "64-bit"
-        } else {
-            "32-bit"
-        }
-        return if (architecture.isEmpty()) {
-            instructionSetDescription
-        } else {
-            "$instructionSetDescription (${architecture})"
         }
     }
 

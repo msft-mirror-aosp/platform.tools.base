@@ -288,7 +288,7 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                 if (other.hasProcessName()) proto.processName = other.processName
                 if (other.hasPackageName()) proto.packageName = other.packageName
                 if (other.hasUserId()) proto.userId = other.userId
-                if (other.hasAbi()) proto.abi = other.abi
+                if (other.hasInstructionSet()) proto.instructionSet = other.instructionSet
                 if (other.hasVmIdentifier()) proto.vmIdentifier = other.vmIdentifier
                 if (other.hasJvmFlags()) proto.jvmFlags = other.jvmFlags
                 if (other.hasNativeDebuggable()) proto.nativeDebuggable = other.nativeDebuggable

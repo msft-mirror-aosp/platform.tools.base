@@ -23,6 +23,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.tools.AdbLibToolsProperties
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.jdwpProcessTracker
@@ -365,6 +366,7 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         assertEquals("pkg", properties.packageName)
         assertEquals("FakeVM", properties.vmIdentifier)
         assertEquals("64-bit (x86_64)", properties.abi)
+        assertEquals(InstructionSet.X86_64, properties.instructionSet)
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)

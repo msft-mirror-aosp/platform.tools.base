@@ -28,6 +28,7 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
@@ -365,12 +366,16 @@ internal class UsingJdwpSessionFlowUpdater(
                 userId = heloChunk.userId,
                 packageName = filterFakeName(heloChunk.packageName),
                 vmIdentifier = heloChunk.vmIdentifier,
-                abi = heloChunk.abi,
+                instructionSet = convertLegacyDescriptionToInstructionSet(heloChunk.abi),
                 jvmFlags = heloChunk.jvmFlags,
                 isNativeDebuggable = heloChunk.isNativeDebuggable
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
+    }
+
+    private fun convertLegacyDescriptionToInstructionSet(abi: String?): InstructionSet? {
+        return abi?.let { InstructionSet.fromLegacyDescription(abi) }
     }
 
     private suspend fun processFeatReply(

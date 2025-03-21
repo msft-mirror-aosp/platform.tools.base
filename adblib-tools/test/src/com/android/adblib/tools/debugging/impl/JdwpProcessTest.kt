@@ -25,6 +25,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
 import com.android.adblib.tools.debugging.isAppInfoSupported
@@ -499,6 +500,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             assertEquals("FakeVM", properties.vmIdentifier)
         }
         assertEquals("64-bit (x86_64)", properties.abi)
+        assertEquals(InstructionSet.X86_64, properties.instructionSet)
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
@@ -544,6 +546,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertNull(properties.packageName)
         assertNull(properties.vmIdentifier)
         assertNull(properties.abi)
+        assertNull(properties.instructionSet)
         assertNull(properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)

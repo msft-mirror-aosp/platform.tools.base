@@ -188,9 +188,9 @@ message JdwpProcessInfo {
     optional int32 user_id = 6;
 
     /*
-     * The ABI identifier, or `null` if the value is not known yet.
+     * The AndroidVM instruction set architecture (isa), or `null` if the value is not known yet.
      */
-    optional string abi = 7;
+    optional string instruction_set = 7;
 
     /*
      * The Android VM identifier, or `null` if the value is not known yet.

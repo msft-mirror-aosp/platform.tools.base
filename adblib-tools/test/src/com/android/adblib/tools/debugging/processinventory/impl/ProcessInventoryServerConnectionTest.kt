@@ -22,6 +22,7 @@ import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.waitNonNull
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
@@ -129,7 +130,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             packageName = "Bar",
             userId = 5,
             vmIdentifier = "vm",
-            abi = "x86",
+            instructionSet = InstructionSet.X86,
             jvmFlags = "flags",
             isNativeDebuggable = true,
             waitCommandReceived = true,
@@ -186,7 +187,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             packageName = "Bar",
             userId = 5,
             vmIdentifier = "vm",
-            abi = "x86",
+            instructionSet = InstructionSet.X86,
             jvmFlags = "flags",
             isNativeDebuggable = true,
             waitCommandReceived = true,
@@ -253,7 +254,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             packageName = "Bar",
             userId = 5,
             vmIdentifier = "vm",
-            abi = "x86",
+            instructionSet = InstructionSet.X86,
             jvmFlags = "flags",
             isNativeDebuggable = true,
             waitCommandReceived = true,
@@ -425,6 +426,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertNull(it.userId)
             assertNull(it.vmIdentifier)
             assertNull(it.abi)
+            assertNull(it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -447,6 +449,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertNull(it.userId)
             assertNull(it.vmIdentifier)
             assertNull(it.abi)
+            assertNull(it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -469,6 +472,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertNull(it.userId)
             assertNull(it.vmIdentifier)
             assertNull(it.abi)
+            assertNull(it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -491,6 +495,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals(12, it.userId)
             assertNull(it.vmIdentifier)
             assertNull(it.abi)
+            assertNull(it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -513,6 +518,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
             assertNull(it.abi)
+            assertNull(it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -525,16 +531,17 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertNull(it.exception)
         }
 
-        localProperties = localProperties.copy(abi = "x86")
+        localProperties = localProperties.copy(instructionSet = InstructionSet.X86)
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.abi == "x86"
+            it.pid == 10 && it.abi == "32-bit (x86)"
         }.also {
             assertEquals(10, it.pid)
             assertEquals("Foo", it.processName)
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertNull(it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -556,7 +563,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertFalse(it.isNativeDebuggable)
@@ -579,7 +587,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -601,7 +610,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -623,7 +633,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -649,7 +660,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -676,7 +688,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -698,7 +711,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -720,7 +734,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
@@ -742,7 +757,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals("Bar", it.packageName)
             assertEquals(12, it.userId)
             assertEquals("vm", it.vmIdentifier)
-            assertEquals("x86", it.abi)
+            assertEquals("32-bit (x86)", it.abi)
+            assertEquals(InstructionSet.X86, it.instructionSet)
             assertEquals("FooBar", it.jvmFlags)
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
