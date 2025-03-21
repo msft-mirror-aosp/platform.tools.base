@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.AppProcessEntry
 import com.android.adblib.tools.debugging.impl.JdwpSessionProxy
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import java.net.InetSocketAddress
@@ -60,7 +61,8 @@ data class JdwpProcessProperties(
     val vmIdentifier: String? = null,
 
     /**
-     * The ABI identifier, or `null` if the value is not known yet.
+     * A description of the instruction set (e.g. "64-bit (arm64)"), or `null` if
+     * the value is not known yet.
      */
     val abi: String? = null,
 

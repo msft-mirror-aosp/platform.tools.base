@@ -498,17 +498,8 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         } else {
             assertEquals("FakeVM", properties.vmIdentifier)
         }
-        if (isFromAppInfo) {
-            assertEquals("x86_64", properties.abi)
-        } else {
-            assertEquals("64-bit (x86_64)", properties.abi)
-        }
-        if (isFromAppInfo) {
-            // When using `app_info`, there is no equivalent of "jvmFlag" available
-            assertNull(properties.jvmFlags)
-        } else {
-            assertEquals("CheckJNI=true", properties.jvmFlags)
-        }
+        assertEquals("64-bit (x86_64)", properties.abi)
+        assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
         assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
