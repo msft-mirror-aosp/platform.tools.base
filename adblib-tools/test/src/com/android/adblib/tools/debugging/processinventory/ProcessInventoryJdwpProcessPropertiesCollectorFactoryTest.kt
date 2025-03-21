@@ -18,6 +18,7 @@ package com.android.adblib.tools.debugging.processinventory
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
+import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.FakeAdbServerProvider
@@ -37,10 +38,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.job
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import java.net.InetSocketAddress
 import java.time.Duration
+import kotlin.use
 
 class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
 
@@ -55,10 +57,14 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     @Rule
     val closeables = CloseablesRule()
 
-    @Ignore("b/345498106")
     @Test
     fun testJdwpPropertiesCollectionIsDistributed(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
+            fakeAdbRule.host.setPropertyValue(
+                AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+                findFreeTcpPort()
+            )
+
             // Prepare
             // Create 2 adblib sessions for a single fake adb server, install a
             // ProcessInventoryServer on both sessions, start collecting properties from both
@@ -79,10 +85,13 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             })
         }
 
-    @Ignore("b/349545929")
     @Test
     fun testJdwpPropertiesCollectionSupportsBothDistributedAndLocalOnly(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
+            fakeAdbRule.host.setPropertyValue(
+                AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+                findFreeTcpPort()
+            )
             fakeAdbRule.host.setPropertyValue(
                 AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
                 Duration.ofSeconds(2)
@@ -99,7 +108,6 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             })
         }
 
-    @Ignore("b/345498106")
     @Test
     fun testDistributedJdwpPropertiesCollectionRecoversFromSessionClosing(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
@@ -110,6 +118,10 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             // sessions is stuck waiting for the other one when trying to collect properties),
             // check that properties are available faster than the long delay on *both* sessions.
             val fakeAdbServer = fakeAdbRule.fakeAdb
+            fakeAdbRule.host.setPropertyValue(
+                AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+                findFreeTcpPort()
+            )
             fakeAdbRule.host.setPropertyValue(
                 AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
                 Duration.ofMinutes(10)
@@ -151,7 +163,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             Assert.assertEquals(clientState1.processName, props1.processName)
             Assert.assertEquals(clientState1.packageName, props1.packageName)
             Assert.assertEquals(clientState1.userId, props1.userId)
-            Assert.assertEquals(clientState1.architecture, props1.instructionSetDescription)
+            Assert.assertEquals(clientState1.architecture, props1.instructionSet?.text)
             Assert.assertEquals(false, props1.isWaitingForDebugger)
             Assert.assertTrue(props1.features.contains("feat1"))
             Assert.assertTrue(props1.features.contains("feat2"))
@@ -169,7 +181,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             Assert.assertEquals(clientState2.processName, props2pid2.processName)
             Assert.assertEquals(clientState2.packageName, props2pid2.packageName)
             Assert.assertEquals(clientState2.userId, props2pid2.userId)
-            Assert.assertEquals(clientState2.architecture, props2pid2.instructionSetDescription)
+            Assert.assertEquals(clientState2.architecture, props2pid2.instructionSet?.text)
             Assert.assertEquals(false, props2pid2.isWaitingForDebugger)
             Assert.assertTrue(props2pid2.features.contains("feat1"))
             Assert.assertTrue(props2pid2.features.contains("feat2"))
@@ -208,7 +220,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
         Assert.assertEquals(clientState.processName, props1.processName)
         Assert.assertEquals(clientState.packageName, props1.packageName)
         Assert.assertEquals(clientState.userId, props1.userId)
-        Assert.assertEquals(clientState.architecture, props1.instructionSetDescription)
+        Assert.assertEquals(clientState.architecture, props1.instructionSet?.text)
         Assert.assertEquals(false, props1.isWaitingForDebugger)
         Assert.assertTrue(props1.features.contains("feat1"))
         Assert.assertTrue(props1.features.contains("feat2"))
@@ -297,6 +309,14 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             TestServerConfig(),
             enabled = { true }
         )
+    }
+
+    private suspend fun findFreeTcpPort(): Int {
+        val session = registerCloseable(FakeAdbSession())
+        val freePort = session.channelFactory.createServerSocket().use {
+            it.bind(InetSocketAddress(0)).port
+        }
+        return freePort
     }
 
     private class TestServerConfig : ProcessInventoryServerConfiguration {

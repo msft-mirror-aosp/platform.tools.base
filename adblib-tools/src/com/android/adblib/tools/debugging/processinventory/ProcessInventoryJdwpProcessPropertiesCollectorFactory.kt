@@ -34,7 +34,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactory private constructor(
     session: AdbSession,
     config: ProcessInventoryServerConfiguration,
     private val enabled: () -> Boolean
-) : ExternalJdwpProcessPropertiesCollectorFactory, AutoCloseable {
+) : ExternalJdwpProcessPropertiesCollectorFactory {
 
     private val serverConnection = ProcessInventoryServerConnectionImpl(session, config)
 
