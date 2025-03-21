@@ -25,9 +25,10 @@ object SuppressedExceptions {
         return emptyList()
     }
 
+    /** Returns a result that must be assigned to a variable and used. */
     fun add(existing: List<Throwable>, e: Throwable): List<Throwable> {
         return if (existing.isEmpty()) {
-            ArrayList<Throwable>().apply { add(e) }
+            ArrayList<Throwable>(1).apply { add(e) }
         } else {
             (existing as ArrayList<Throwable>).apply { add(e) }
         }
