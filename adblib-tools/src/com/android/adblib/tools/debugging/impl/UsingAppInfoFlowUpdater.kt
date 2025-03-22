@@ -94,7 +94,7 @@ internal class UsingAppInfoFlowUpdater(
                                 (properties.userId != null) &&
                                 (properties.vmIdentifier != null) &&
                                 (properties.jvmFlags != null) &&
-                                (properties.abi != null) &&
+                                (properties.instructionSetDescription != null) &&
                                 (properties.instructionSet != null) &&
                                 (properties.features.isNotEmpty())
 

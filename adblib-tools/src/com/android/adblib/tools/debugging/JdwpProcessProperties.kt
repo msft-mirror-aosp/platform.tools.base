@@ -15,7 +15,6 @@
  */
 package com.android.adblib.tools.debugging
 
-import com.android.adblib.AppProcessEntry
 import com.android.adblib.tools.debugging.impl.JdwpSessionProxy
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
@@ -125,7 +124,7 @@ data class JdwpProcessProperties(
      *
      * See [instructionSet] for the specific CPU architecture
      */
-    val abi: String?
+    val instructionSetDescription: String?
         get() = instructionSet?.toLegacyDescription()
 }
 

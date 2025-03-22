@@ -114,7 +114,7 @@ internal class AdblibClientWrapper(
                 hasChanged(userId, newProcessInfo.userId) ||
                 hasChanged(packageName, newProcessInfo.packageName) ||
                 hasChanged(vmIdentifier, newProcessInfo.vmIdentifier) ||
-                hasChanged(abi, newProcessInfo.abi) ||
+                hasChanged(instructionSetDescription, newProcessInfo.instructionSetDescription) ||
                 hasChanged(instructionSet, newProcessInfo.instructionSet) ||
                 hasChanged(jvmFlags, newProcessInfo.jvmFlags) ||
                 hasChanged(isWaitingForDebugger, newProcessInfo.isWaitingForDebugger) ||
@@ -155,7 +155,7 @@ internal class AdblibClientWrapper(
             clientWrapper.clientData.setNames(names)
         }
         clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier
-        clientWrapper.clientData.abi = newProperties.abi
+        clientWrapper.clientData.abi = newProperties.instructionSetDescription
         clientWrapper.clientData.jvmFlags = newProperties.jvmFlags
         clientWrapper.clientData.isNativeDebuggable = newProperties.isNativeDebuggable
         if (newProperties.features.isNotEmpty()) {

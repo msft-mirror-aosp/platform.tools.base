@@ -499,7 +499,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         } else {
             assertEquals("FakeVM", properties.vmIdentifier)
         }
-        assertEquals("64-bit (x86_64)", properties.abi)
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
         assertEquals(InstructionSet.X86_64, properties.instructionSet)
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
@@ -545,7 +545,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertNull(properties.userId)
         assertNull(properties.packageName)
         assertNull(properties.vmIdentifier)
-        assertNull(properties.abi)
+        assertNull(properties.instructionSetDescription)
         assertNull(properties.instructionSet)
         assertNull(properties.jvmFlags)
         @Suppress("DEPRECATION")

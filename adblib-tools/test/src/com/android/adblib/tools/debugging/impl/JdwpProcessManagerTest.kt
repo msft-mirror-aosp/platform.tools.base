@@ -365,7 +365,7 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         assertEquals(2, properties.userId)
         assertEquals("pkg", properties.packageName)
         assertEquals("FakeVM", properties.vmIdentifier)
-        assertEquals("64-bit (x86_64)", properties.abi)
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
         assertEquals(InstructionSet.X86_64, properties.instructionSet)
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
