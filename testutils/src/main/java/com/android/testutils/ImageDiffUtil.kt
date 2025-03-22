@@ -71,14 +71,19 @@ object ImageDiffUtil {
 
     /**
      * Asserts that the given image is similar to the golden one contained in the given file.
-     * If the golden image file does not exist, it is created and the test fails.
+     * If the golden image file does not exist, it is created and AssertionError is thrown unless
+     * [ignoreMissingGoldenFile] is true, in which case the method simply returns.
      */
     @Throws(IOException::class)
     @JvmStatic
     @JvmOverloads
     fun assertImageSimilar(goldenFile: Path, actual: BufferedImage,
-            maxPercentDifferent: Double = 0.0, maxSizeDifference: Int = 0) {
+            maxPercentDifferent: Double = 0.0, maxSizeDifference: Int = 0,
+            ignoreMissingGoldenFile: Boolean = false) {
         if (Files.notExists(goldenFile)) {
+            if (ignoreMissingGoldenFile) {
+                return
+            }
             val converted = convertToARGB(actual)
             Files.createDirectories(goldenFile.parent)
             val outFile = TestUtils.getTestOutputDir().resolve(goldenFile.fileName.toString())
