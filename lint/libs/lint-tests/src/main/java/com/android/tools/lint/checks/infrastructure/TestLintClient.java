@@ -95,6 +95,7 @@ import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.tools.lint.gradle.LintGradleUtilsKt;
 import com.android.tools.lint.model.LintModelExternalLibrary;
 import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelLintOptions;
@@ -398,7 +399,8 @@ public class TestLintClient extends LintCliClient {
     @Nullable
     @Override
     public File getSdkHome() {
-        if (task.sdkHome != null) {
+        //noinspection ConstantValue
+        if (task != null && task.sdkHome != null) {
             return task.sdkHome;
         }
 
@@ -492,8 +494,29 @@ public class TestLintClient extends LintCliClient {
             project.setDirectLibraries(oldProject.getDirectLibraries());
         }
 
+        if (project.isGradleProject()) {
+            project.isGradleRootHolder =
+                    LintGradleUtilsKt.isDesignatedGradleRootHolder(project, this);
+        }
+
         registerProject(dir, project);
         return project;
+    }
+
+    @Override
+    public @Nullable File getRootDir() {
+        File root = getPathVariables().get("TEST_ROOT");
+        //noinspection ConstantValue
+        if (root != null && task != null) {
+            // No this is one level too high
+            TestMode mode = task.runner.getCurrentTestMode();
+            File taskFolder = new File(root, mode.getFolderName());
+            if (taskFolder.isDirectory()) {
+                return taskFolder;
+            }
+            return root;
+        }
+        return super.getRootDir();
     }
 
     private static boolean hasOldDirectoryLayout(File dir) {
@@ -798,7 +821,7 @@ public class TestLintClient extends LintCliClient {
     }
 
     public String writeOutput(List<Incident> incidents) throws IOException {
-        LintStats stats = LintStats.Companion.create(incidents, (LintBaseline)null);
+        LintStats stats = LintStats.Companion.create(incidents, (LintBaseline) null);
         for (Reporter reporter : getFlags().getReporters()) {
             reporter.write(stats, incidents, driver.getRegistry());
         }

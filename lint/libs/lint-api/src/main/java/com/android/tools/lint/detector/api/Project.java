@@ -70,8 +70,6 @@ import com.android.tools.lint.client.api.SdkInfo;
 import com.android.tools.lint.client.api.UastParser;
 import com.android.tools.lint.model.LintModelAndroidArtifact;
 import com.android.tools.lint.model.LintModelAndroidLibrary;
-import com.android.tools.lint.model.LintModelArtifact;
-import com.android.tools.lint.model.LintModelArtifactType;
 import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelMavenName;
 import com.android.tools.lint.model.LintModelModule;
@@ -98,7 +96,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,6 +174,19 @@ public class Project {
     private Map<Object, Object> clientProperties;
 
     private CoreApplicationEnvironment env;
+
+    /**
+     * Returns true if this is the project which should analyze and represent files in the root
+     * Gradle project (path=":"), for warnings on the root build files, the version catalog files,
+     * the properties file (gradle and gradle wrapper), etc.
+     *
+     * <p>This is necessary since when lint for example runs from the command line, this project
+     * isn't explicitly passed to lint so we'll pick one of the existing ones (usually the app
+     * module) as the holder project.
+     *
+     * <p>(This property only applies in Gradle projects.)
+     */
+    public boolean isGradleRootHolder;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -1288,9 +1298,8 @@ public class Project {
                 // pick up project-wide properties files here that don't belong to
                 // this specific project, without repeating them for each module.
                 propertyDir = null;
-                File rootDir = client.getRootDir();
-                if (rootDir != null && isDesignatedTomlModule(rootDir)) {
-                    propertyDir = rootDir;
+                if (isGradleRootHolder) {
+                    propertyDir = client.getRootDir();
                 }
             }
             if (propertyDir != null) {
@@ -1373,15 +1382,17 @@ public class Project {
                 // same TOML warnings for each project. Instead, we process them here, but just
                 // once.
                 tomlFiles = new ArrayList<>(3);
-                File rootDir = client.getRootDir();
-                if (rootDir != null && isDesignatedTomlModule(rootDir)) {
-                    File gradle = new File(rootDir, FD_GRADLE);
-                    if (gradle.isDirectory()) {
-                        File[] catalogs = gradle.listFiles();
-                        if (catalogs != null) {
-                            for (File catalog : catalogs) {
-                                if (catalog.getPath().endsWith(DOT_VERSIONS_DOT_TOML)) {
-                                    tomlFiles.add(catalog);
+                if (isGradleRootHolder) {
+                    File rootDir = client.getRootDir();
+                    if (rootDir != null) {
+                        File gradle = new File(rootDir, FD_GRADLE);
+                        if (gradle.isDirectory()) {
+                            File[] catalogs = gradle.listFiles();
+                            if (catalogs != null) {
+                                for (File catalog : catalogs) {
+                                    if (catalog.getPath().endsWith(DOT_VERSIONS_DOT_TOML)) {
+                                        tomlFiles.add(catalog);
+                                    }
                                 }
                             }
                         }
@@ -1393,43 +1404,6 @@ public class Project {
         }
 
         return tomlFiles;
-    }
-
-    /**
-     * TOML files aren't actually part of this project; we went looking outside (from the root
-     * project). This means that we'd potentially end up repeating analysis (and reporting) on the
-     * same files over and over, from each project. We should only do this once. For now, we're
-     * assigning the responsibility to the first module alphabetically in the root directory.
-     *
-     * <p>(**This is a workaround until the catalog files are provided from the lint model
-     * instead.**)
-     */
-    private boolean isDesignatedTomlModule(File root) {
-        LintModelVariant variant = getBuildVariant();
-        if (variant != null) {
-            // In AGP we'll be invoked for each artifact (main, test, androidTest, testFixtures)
-            // as if it's a whole project; we only want to report TOML and gradle properties
-            // files from the main artifact.
-            LintModelArtifact artifact = variant.getArtifact();
-            if (artifact.getType() != LintModelArtifactType.MAIN) {
-                return false;
-            }
-        }
-
-        File[] moduleDirs = root.listFiles();
-        if (moduleDirs != null) {
-            Arrays.sort(moduleDirs);
-            for (File moduleDir : moduleDirs) {
-                if (new File(moduleDir, FN_BUILD_GRADLE).exists()
-                        || new File(moduleDir, FN_BUILD_GRADLE_KTS).exists()
-                        || new File(moduleDir, FN_BUILD_GRADLE_DECLARATIVE).exists()) {
-                    return dir.getPath().equalsIgnoreCase(moduleDir.getPath());
-                }
-            }
-        }
-        // No directories match, just fall back to assigning the responsibility to the app module;
-        // there's usually exactly one.
-        return getType() == LintModelModuleType.APP;
     }
 
     /**
@@ -1697,10 +1671,5 @@ public class Project {
     @NonNull
     public DependencyKind getDependencyKind(@NonNull Project lib) {
         return dependencyKind.getOrDefault(lib, DependencyKind.Regular);
-    }
-
-    public static boolean isDesignatedRootProject(LintClient client, Project project) {
-        File rootDir = client.getRootDir();
-        return rootDir != null && project.isDesignatedTomlModule(rootDir);
     }
 }

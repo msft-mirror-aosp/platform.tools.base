@@ -2077,7 +2077,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         source(
-            "gradle/wrapper/gradle-wrapper.properties",
+            "../gradle/wrapper/gradle-wrapper.properties",
             // language=properties
             """
             #Tue Jun 11 09:46:18 PDT 2024
@@ -2097,7 +2097,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:2: Warning: A newer version of com.android.application than 8.0.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '8.0.0'
                                                ~~~~~~~
-        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -2129,7 +2129,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         source(
-            "gradle/wrapper/gradle-wrapper.properties",
+            "../gradle/wrapper/gradle-wrapper.properties",
             // language=properties
             """
             #Tue Jun 11 09:46:18 PDT 2024
@@ -2149,7 +2149,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:2: Warning: A newer version of com.android.application than 7.1.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '7.1.0'
                                                ~~~~~~~
-        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings

@@ -31,6 +31,7 @@ import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_USAGE;
 import static com.android.tools.lint.detector.api.Lint.endsWith;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static com.android.tools.lint.gradle.LintGradleUtilsKt.isDesignatedGradleRootHolder;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -1700,11 +1701,12 @@ public class Main {
                 assert variant != null;
                 LintModelModuleProject project =
                         new LintModelModuleProject(client, dir, dir, variant, null);
+                project.isGradleRootHolder = isDesignatedGradleRootHolder(project, client);
                 // Create and register projects from dependencies with partial results.
                 // This is necessary to allow lint to access partial results from module
                 // dependencies during lint analysis.
                 for (LintModelLibrary lintModelLibrary :
-                        variant.getMainArtifact().getDependencies().getAll()) {
+                        variant.getArtifact().getDependencies().getAll()) {
                     if (lintModelLibrary instanceof LintModelAndroidLibrary) {
                         LintModelAndroidLibrary lintModelAndroidLibrary =
                                 (LintModelAndroidLibrary) lintModelLibrary;
