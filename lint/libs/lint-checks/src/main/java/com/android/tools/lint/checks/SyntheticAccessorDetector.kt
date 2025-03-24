@@ -36,7 +36,10 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.successfulConstructorCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.successfulFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaSymbolOrigin
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.isGetter
@@ -121,6 +124,8 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
             return
           } else if (isCallToPrivateCtorDueToValueClassType(node)) {
             return
+          } else if (isWrongResolutionForDataClassSynthetic(node)) {
+            return
           }
 
           val aClass = method.containingClass ?: return
@@ -169,6 +174,21 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
       private fun KaSession.typeForValueClass(type: KaType): Boolean {
         val symbol = type.expandedSymbol as? KaNamedClassSymbol ?: return false
         return symbol.isInline
+      }
+
+      private fun isWrongResolutionForDataClassSynthetic(node: UCallExpression): Boolean {
+        // Workaround for b/405654866
+        // TODO: remove this after https://youtrack.jetbrains.com/issue/KTIJ-33572
+        val sourcePsi = node.sourcePsi as? KtCallElement ?: return false
+        analyze(sourcePsi) {
+          val call = sourcePsi.resolveToCall()?.successfulFunctionCallOrNull() ?: return false
+          val member = call.symbol
+          if (member.origin == KaSymbolOrigin.SOURCE_MEMBER_GENERATED) {
+            val klass = member.containingDeclaration as? KaNamedClassSymbol ?: return false
+            return klass.isData
+          }
+          return false
+        }
       }
 
       private fun isSameCompilationUnit(aClass: PsiClass, node: UElement): Boolean {
