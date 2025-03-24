@@ -27,14 +27,6 @@ fun buildGradle(
   targetApi: String,
   useAndroidX: Boolean
 ): String {
-  val kotlinOptionsBlock = renderIf(generateKotlin) {
-    """
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
-    """
-  }
-
   return """
 plugins {
     id 'com.android.library'
@@ -50,7 +42,6 @@ android {
 
         testInstrumentationRunner "${getMaterialComponentName("android.support.test.runner.AndroidJUnitRunner", useAndroidX)}"
     }
-    $kotlinOptionsBlock
 }
 
 """

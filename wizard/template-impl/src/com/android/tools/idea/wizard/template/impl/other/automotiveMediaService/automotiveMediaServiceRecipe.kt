@@ -68,6 +68,7 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
         useAndroidX = useAndroidX),
       to = projectData.rootDir.resolve(sharedModule).resolve("build.gradle"),
     )
+    setJavaKotlinCompileOptions(projectData.language == Language.Kotlin, projectData.rootDir.resolve(sharedModule))
     addDependency(mavenCoordinate = "com.android.support:support-media-compat:${appCompatVersion}.+",
                   moduleDir = projectData.rootDir.resolve(sharedModule))
     // TODO: It may be better to not rely on the hard-coded module name
