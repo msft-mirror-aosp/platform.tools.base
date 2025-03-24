@@ -806,7 +806,7 @@ class AdbServerControllerImplTest {
     fun testMultipleStateTransitions_properlyCancelled_whenPreempted(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            processRunner.delayByMs = 100
+            processRunner.delayByMs = 5000
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
@@ -818,27 +818,32 @@ class AdbServerControllerImplTest {
                 it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
 
-            // Act: queue up a few start/stop pairs, and a final start
-            var index = 0
+            // Act: queue up a bunch of start/stop pairs
+            val totalOperations = 20
             var failingTransitions = 0
-            val startStopJobs = List(20) {
-                 launch {
-                     try {
-                         if (index++ % 2 == 0) {
-                             controller.start()
-                         } else {
-                             controller.stop()
-                         }
-                     } catch (_: IOException) {
-                         // Expected
-                         ++failingTransitions
-                     }
-                }.also { delay(50) }
+            var index = 0
+            val startStopJobs = List(totalOperations) {
+                launch {
+                    try {
+                        if (index == totalOperations - 1) {
+                            // This is the last operation. Make it run quickly.
+                            processRunner.delayByMs = 10
+                        }
+                        if (index++ % 2 == 0) {
+                            controller.start()
+                        } else {
+                            controller.stop()
+                        }
+                    } catch (_: IOException) {
+                        // Expected
+                        ++failingTransitions
+                    }
+                }.also { delay(25) }
             }
 
             startStopJobs.joinAll()
 
-            // Assert
+            // Assert: only the last controller operation succeeds
             assertFalse(controller.isStarted)
             assertEquals(19, failingTransitions)
             assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
