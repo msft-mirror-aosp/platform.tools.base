@@ -63,7 +63,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -77,13 +76,11 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.OptionalLong;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -263,112 +260,10 @@ public class AvdManager {
         return null;
     }
 
-    /** Returns whether an emulator is currently running the AVD. */
-    @Slow
-    public boolean isAvdRunning(@NonNull AvdInfo info) {
-        String pid;
-        try {
-            pid = getAvdPid(info);
-        }
-        catch (IOException e) {
-            mLog.error(e, "IOException while getting PID");
-            // To be safe return true
-            return true;
-        }
-        if (pid != null) {
-            String command;
-            if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-                command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid
-                        + "\"";
-            } else {
-                command = "kill -0 " + pid;
-            }
-            try {
-                Process p = Runtime.getRuntime().exec(command);
-                // If the process ends with non-0 it means the process doesn't exist
-                return p.waitFor() == 0;
-            } catch (IOException e) {
-                mLog.warning(
-                        "Got IOException while checking running processes:\n%s",
-                        Arrays.toString(e.getStackTrace()));
-                // To be safe return true
-                return true;
-            } catch (InterruptedException e) {
-                mLog.warning(
-                        "Got InterruptedException while checking running processes:\n%s",
-                        Arrays.toString(e.getStackTrace()));
-                // To be safe return true
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // Log info about a running AVD.
-    // This is intended to help identify why we occasionally get a false report
-    // that an AVD instance is already executing.
-    @Slow
-    public void logRunningAvdInfo(@NonNull AvdInfo info) {
-        String pid;
-        try {
-            pid = getAvdPid(info);
-        }
-        catch (IOException ex) {
-            mLog.error(ex, "AVD not launched but got IOException while getting PID");
-            return;
-        }
-        if (pid == null) {
-            mLog.warning(
-                    "AVD not launched but PID is null. Should not have indicated that the AVD is"
-                            + " running.");
-            return;
-        }
-        mLog.warning("AVD not launched because an instance appears to be running on PID " + pid);
-        String command;
-        int numTermChars;
-        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-            command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" /FO csv /V /NH\"";
-            numTermChars = 2; // <CR><LF>
-        }
-        else {
-            command =
-                    "ps -o pid= -o user= -o pcpu= -o tty= -o stat= -o time= -o etime= -o cmd= -p "
-                            + pid;
-            numTermChars = 1; // <LF>
-        }
-        try {
-            Process proc = Runtime.getRuntime().exec(command);
-            if (proc.waitFor() != 0) {
-                mLog.warning("Could not get info for that AVD process");
-            }
-            else {
-                InputStream procInfoStream = proc.getInputStream(); // proc's output is our input
-                final int strMax = 256;
-                byte[] procInfo = new byte[strMax];
-                int nRead = procInfoStream.read(procInfo, 0, strMax);
-                if (nRead <= numTermChars) {
-                    mLog.warning("Info for that AVD process is null");
-                }
-                else {
-                    mLog.warning(
-                            "AVD process info: ["
-                                    + new String(procInfo, 0, nRead - numTermChars)
-                                    + "]");
-                }
-            }
-        }
-        catch (IOException | InterruptedException ex) {
-            mLog.warning(
-                    "Got exception when getting info on that AVD process:\n%s",
-                    Arrays.toString(ex.getStackTrace()));
-        }
-    }
-
     @Slow
     public void stopAvd(@NonNull AvdInfo info) {
         try {
-            String pid = getAvdPid(info);
+            Long pid = getPid(info);
             if (pid != null) {
                 String command;
                 if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
@@ -389,32 +284,45 @@ public class AvdManager {
     }
 
     @Slow
-    @NonNull
-    public OptionalLong getPid(@NonNull AvdInfo avd) {
-        OptionalLong pid = getPid(avd, "hardware-qemu.ini.lock");
-
-        if (pid.isPresent()) {
+    public @Nullable Long getPid(@NonNull AvdInfo avd) {
+        Long pid = getPid(avd, "hardware-qemu.ini.lock");
+        if (pid != null) {
             return pid;
         }
 
         return getPid(avd, "userdata-qemu.img.lock");
     }
 
-    @NonNull
-    private OptionalLong getPid(@NonNull AvdInfo avd, @NonNull String element) {
+    private @Nullable Long getPid(@NonNull AvdInfo avd, @NonNull String element) {
         Path file = resolve(avd, element);
 
         try (Scanner scanner = new Scanner(file)) {
             // TODO(http://b/233670812)
             scanner.useDelimiter("\0");
-
-            return OptionalLong.of(scanner.nextLong());
+            return scanner.nextLong();
         } catch (NoSuchFileException exception) {
             mLog.info("%s not found for %s", file, avd.getName());
-            return OptionalLong.empty();
+            return null;
         } catch (IOException | NoSuchElementException exception) {
             mLog.error(exception, "avd = %s, file = %s", avd.getName(), file);
-            return OptionalLong.empty();
+            return null;
+        }
+    }
+
+    /** Deletes lock files from the AVD directory if they exist there. */
+    @Slow
+    public void deleteLockFiles(@NonNull AvdInfo avd) {
+        deleteLockFile(avd, "hardware-qemu.ini.lock");
+        deleteLockFile(avd, "userdata-qemu.img.lock");
+    }
+
+    private void deleteLockFile(@NonNull AvdInfo avd, @NonNull String element) {
+        Path file = resolve(avd, element);
+        try {
+            Files.deleteIfExists(file);
+        }
+        catch (IOException e) {
+            mLog.error(e, "Unable to delete %s", file);
         }
     }
 
@@ -430,32 +338,6 @@ public class AvdManager {
         }
 
         return path;
-    }
-
-    /** @deprecated Use {@link #getPid(AvdInfo)} */
-    @Deprecated
-    private String getAvdPid(@NonNull AvdInfo info) throws IOException {
-        Path dataFolderPath = mBaseAvdFolder.resolve(info.getDataFolderPath());
-        // this is a file on Unix, and a directory on Windows.
-        Path f = dataFolderPath.resolve("hardware-qemu.ini.lock"); // $NON-NLS-1$
-        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-            f = f.resolve("pid");
-        }
-        // This is an alternative identifier for Unix and Windows when the above one is missing.
-        Path alternative = dataFolderPath.resolve("userdata-qemu.img.lock");
-        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-            alternative = alternative.resolve("pid");
-        }
-        try {
-            return CancellableFileIo.readString(f).trim();
-        } catch (NoSuchFileException ignore) {
-        }
-        try {
-            return CancellableFileIo.readString(alternative).trim();
-        } catch (NoSuchFileException ignore) {
-        }
-
-        return null;
     }
 
     /**

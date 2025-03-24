@@ -65,7 +65,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.OptionalLong;
 import java.util.TreeMap;
 
 @RunWith(JUnit4.class)
@@ -133,10 +132,10 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        Long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.of(412503), pid);
+        assertThat(pid).isEqualTo(412503);
     }
 
     @Test
@@ -162,10 +161,10 @@ public final class AvdManagerTest {
         Files.createFile(file);
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        Long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isNull();
     }
 
     @Test
@@ -191,10 +190,10 @@ public final class AvdManagerTest {
         Files.write(file, "notlong".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        Long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isNull();
     }
 
     @Test
@@ -220,10 +219,10 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        Long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.of(412503), pid);
+        assertThat(pid).isEqualTo(412503);
     }
 
     @Test
@@ -244,10 +243,10 @@ public final class AvdManagerTest {
                         false);
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        Long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isNull();
     }
 
     @Test
