@@ -98,7 +98,7 @@ internal class AdbServicesImpl(
         .first()
     val stderr = output.stderr
     if (stderr.isNotEmpty()) {
-      throw BackupException(ErrorCode.READ_CONTENT_FAILED, "Error writing content $uri: $stderr")
+      throw BackupException(ErrorCode.WRITE_CONTENT_FAILED, "Error writing content $uri: $stderr")
     }
   }
 }

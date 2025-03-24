@@ -29,6 +29,7 @@ import com.android.backup.BackupService.Companion.getRestoreToken
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.backup.ErrorCode.READ_CONTENT_FAILED
+import com.android.backup.ErrorCode.WRITE_CONTENT_FAILED
 import java.io.IOException
 import java.nio.file.Path
 import java.util.Properties
@@ -180,7 +181,14 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     val authEntry: ZipEntry? = zip.getEntry(AUTH_DATA_FILE)
     if (authEntry != null) {
       // Backup files from older version will not have the auth file and backups
-      pushFileFromZip(zip, AUTH_DATA_FILE)
+      try {
+        pushFileFromZip(zip, AUTH_DATA_FILE)
+      } catch (e: BackupException) {
+        // older versions of GmsCore may not have AUTH backup support
+        if (e.errorCode != WRITE_CONTENT_FAILED) {
+          throw e
+        }
+      }
     }
   }
 
