@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -97,6 +98,15 @@ class ReportingTaskStatesTest {
 
         runReportingTaskDryRun().stdout.use { scanner ->
             assertThat(findTask("app:device1DebugAndroidTest", scanner)).isTrue()
+        }
+    }
+
+    @Test
+    fun androidReportingPluginDeprecationWarning() {
+        runReportingTaskDryRun().stdout.use { scanner ->
+            ScannerSubject.assertThat(scanner).contains(
+                "android-reporting plugin is deprecated and is set to be removed in AGP 9.0"
+            )
         }
     }
 }
