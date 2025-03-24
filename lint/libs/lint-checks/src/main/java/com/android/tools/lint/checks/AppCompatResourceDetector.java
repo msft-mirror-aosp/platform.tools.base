@@ -32,9 +32,11 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+
+import org.w3c.dom.Attr;
+
 import java.util.Arrays;
 import java.util.Collection;
-import org.w3c.dom.Attr;
 
 /**
  * Check that the right namespace is used for app compat menu items
@@ -48,13 +50,13 @@ public class AppCompatResourceDetector extends ResourceXmlDetector {
             Issue.create(
                     "AppCompatResource",
                     "Menu namespace",
-                    "When using the appcompat library, menu resources should refer to the "
-                            + "`showAsAction` (or `actionViewClass`, or `actionProviderClass`) in the "
-                            + "`app:` namespace, not the `android:` namespace.\n"
-                            + "\n"
-                            + "Similarly, when **not** using the appcompat library, you should be using "
-                            + "the `android:showAsAction` (or `actionViewClass`, or `actionProviderClass`) "
-                            + "attribute.",
+                    "When using the appcompat library, menu resources should refer to the"
+                        + " `showAsAction` (or `actionViewClass`, or `actionProviderClass`) in the"
+                        + " `app:` namespace, not the `android:` namespace.\n"
+                        + "\n"
+                        + "Similarly, when **not** using the appcompat library, you should be using"
+                        + " the `android:showAsAction` (or `actionViewClass`, or"
+                        + " `actionProviderClass`) attribute.",
                     Category.CORRECTNESS,
                     5,
                     Severity.ERROR,

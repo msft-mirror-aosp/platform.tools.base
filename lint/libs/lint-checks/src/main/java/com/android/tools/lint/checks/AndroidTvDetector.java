@@ -45,19 +45,22 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.tools.lint.detector.api.XmlScanner;
 import com.android.utils.XmlUtils;
+
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /** Detects various issues for Android TV. */
 public class AndroidTvDetector extends Detector implements XmlScanner {
@@ -71,11 +74,12 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "UnsupportedTvHardware",
                             "Unsupported TV Hardware Feature",
-                            "The `<uses-feature>` element should not require this unsupported TV hardware feature. "
-                                    + "Any uses-feature not explicitly marked with `required=\"false\"` is necessary on the "
-                                    + "device to be installed on. "
-                                    + "Ensure that any features that might prevent it from being installed on a TV device "
-                                    + "are reviewed and marked as not required in the manifest.",
+                            "The `<uses-feature>` element should not require this unsupported TV"
+                                + " hardware feature. Any uses-feature not explicitly marked with"
+                                + " `required=\"false\"` is necessary on the device to be installed"
+                                + " on. Ensure that any features that might prevent it from being"
+                                + " installed on a TV device are reviewed and marked as not"
+                                + " required in the manifest.",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -87,11 +91,12 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "ImpliedTouchscreenHardware",
                             "Touchscreen not optional",
-                            "Apps require the `android.hardware.touchscreen` feature by default. If you want "
-                                    + "your app to be available on TV, you must also explicitly declare that a touchscreen "
-                                    + "is not required as follows:\n"
-                                    + "`<uses-feature android:name=\"android.hardware.touchscreen\" "
-                                    + "android:required=\"false\"/>`",
+                            "Apps require the `android.hardware.touchscreen` feature by default. If"
+                                + " you want your app to be available on TV, you must also"
+                                + " explicitly declare that a touchscreen is not required as"
+                                + " follows:\n"
+                                + "`<uses-feature android:name=\"android.hardware.touchscreen\" "
+                                + "android:required=\"false\"/>`",
                             Category.CORRECTNESS,
                             6,
                             Severity.ERROR,
@@ -104,9 +109,9 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "MissingLeanbackLauncher",
                             "Missing Leanback Launcher Intent Filter",
-                            "An application intended to run on TV devices must declare a launcher activity "
-                                    + "for TV in its manifest using a `android.intent.category.LEANBACK_LAUNCHER` "
-                                    + "intent filter.",
+                            "An application intended to run on TV devices must declare a launcher"
+                                    + " activity for TV in its manifest using a"
+                                    + " `android.intent.category.LEANBACK_LAUNCHER` intent filter.",
                             Category.CORRECTNESS,
                             8,
                             Severity.ERROR,
@@ -119,8 +124,8 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "MissingLeanbackSupport",
                             "Missing Leanback Support",
-                            "The manifest should declare the use of the Leanback user interface required "
-                                    + "by Android TV.\n"
+                            "The manifest should declare the use of the Leanback user interface"
+                                    + " required by Android TV.\n"
                                     + "\n"
                                     + "To fix this, add\n"
                                     + "```xml\n"
@@ -140,11 +145,12 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "PermissionImpliesUnsupportedHardware",
                             "Permission Implies Unsupported Hardware",
-                            "The `<uses-permission>` element should not require a permission that implies an "
-                                    + "unsupported TV hardware feature. Google Play assumes that certain hardware related "
-                                    + "permissions indicate that the underlying hardware features are required by default. "
-                                    + "To fix the issue, consider declaring the corresponding `uses-feature` element with "
-                                    + "`required=\"false\"` attribute.",
+                            "The `<uses-permission>` element should not require a permission that"
+                                + " implies an unsupported TV hardware feature. Google Play assumes"
+                                + " that certain hardware related permissions indicate that the"
+                                + " underlying hardware features are required by default. To fix"
+                                + " the issue, consider declaring the corresponding `uses-feature`"
+                                + " element with `required=\"false\"` attribute.",
                             Category.CORRECTNESS,
                             3,
                             Severity.WARNING,
@@ -157,9 +163,10 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
             Issue.create(
                             "MissingTvBanner",
                             "TV Missing Banner",
-                            "A TV application must provide a home screen banner for each localization if it "
-                                    + "includes a Leanback launcher intent filter. The banner is the app launch point that "
-                                    + "appears on the home screen in the apps and games rows.",
+                            "A TV application must provide a home screen banner for each"
+                                + " localization if it includes a Leanback launcher intent filter."
+                                + " The banner is the app launch point that appears on the home"
+                                + " screen in the apps and games rows.",
                             Category.CORRECTNESS,
                             7,
                             Severity.ERROR,
@@ -375,8 +382,9 @@ public class AndroidTvDetector extends Detector implements XmlScanner {
                     if (unsupportedHardwareName != null) {
                         String message =
                                 String.format(
-                                        "Permission exists without corresponding hardware `<uses-feature "
-                                                + "android:name=\"%1$s\" required=\"false\">` tag",
+                                        "Permission exists without corresponding hardware"
+                                                + " `<uses-feature android:name=\"%1$s\""
+                                                + " required=\"false\">` tag",
                                         unsupportedHardwareName);
                         LintFix fix = fix().data(KEY_FEATURE_NAME, unsupportedHardwareName);
                         xmlContext.report(
