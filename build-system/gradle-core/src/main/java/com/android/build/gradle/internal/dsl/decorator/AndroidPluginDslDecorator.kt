@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dsl.decorator
 
 import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.AbiSplit
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AndroidTest
 import com.android.build.api.dsl.AnnotationProcessorOptions
 import com.android.build.api.dsl.ApplicationPublishing
@@ -174,7 +173,6 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(DependencyVariantSelection::class.java, DependencyVariantSelectionImpl::class.java),
     SupportedPropertyType.Block(MultiDexConfig::class.java, MultiDexConfigImpl::class.java),
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
-    SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
 
     // FusedLibrary Extensions.
     SupportedPropertyType.Block(PrivacySandboxSdkOptimization::class.java, PrivacySandboxSdkOptimizationImpl::class.java),

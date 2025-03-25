@@ -36,7 +36,6 @@ dependencies {
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.mockito_core
     testImplementation libs.equalsverifier
-    testImplementation libs.truth
 }
 
 javadoc {
