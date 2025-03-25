@@ -41,6 +41,7 @@ def studio_win(build_env: bazel.BuildEnv):
       f'--test_tag_filters={test_tag_filters}',
 
       '--tool_tag=studio_win.cmd',
+      '--jobs=500',
   ]
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
