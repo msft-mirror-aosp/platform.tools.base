@@ -11,6 +11,7 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.parseFirst
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.useFirUast
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.Segment
 import com.intellij.psi.PsiMethod
@@ -77,6 +78,125 @@ private val UPDATE_IN_PLACE: String? = null
 )
 class ControlFlowGraphTest {
   @get:Rule val temporaryFolder = TemporaryFolder()
+
+  @Test
+  fun checkCallChainInFunctionArgument() {
+    val expectedCfg =
+      if (useFirUast()) {
+        """
+         Block:   ╭─ { foo(bar(baz("42"))) }
+      FuncCall: ╭─╰→ foo(bar(baz("42")))
+      FuncCall: ╰→╭─ bar(baz("42"))                 ─╮ Exception
+      FuncCall: ╭─╰→ baz("42")                       ┆─╮ Exception
+                ╰→   *exit*                         ←╯←╯
+      """
+      } else {
+        """
+         Block:   ╭─ { foo(bar(baz("42"))) }
+      FuncCall: ╭─╰→ foo(bar(baz("42")))
+      FuncCall: ╰→╭─ bar(baz("42"))
+      FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
+                ╰→   *exit*                         ←╯
+      """
+      }
+    val expectedPaths =
+      if (useFirUast()) {
+        """
+            foo() → bar() → baz() → exit
+            foo() → bar() → baz() → exit
+            foo() → bar() → exit
+      """
+      } else {
+        """
+            foo() → bar() → baz() → exit
+            foo() → bar() → baz() → exit
+      """
+      }
+    checkAstGraph(
+      kotlin(
+          """
+          fun baz(p: String): Int { return p.toInt() }
+          fun bar(p: Int): Boolean { return p > 0 }
+          fun foo(p: Boolean) { }
+
+          // val i = baz("42")
+          // val b = bar(i)
+          // foo(b)
+          fun target() {
+            foo(bar(baz("42")))
+          }
+        """
+        )
+        .indented(),
+      expectedCfg,
+      useGraph = { graph, start ->
+        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
+      },
+    )
+  }
+
+  @Test
+  fun checkCallChainInFunctionArgument_expanded() {
+    val expectedCfg =
+      if (useFirUast()) {
+        """
+              Block:   ╭─ { val i = baz(…bar(i) foo(b) }
+           FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
+      LocalVariable: ╰→╭─ val i = baz("42")               ┆
+       Declarations: ╭─╰→ val i = baz("42")               ┆
+           FuncCall: ╰→╭─ bar(i)                          ┆─╮ Exception
+      LocalVariable: ╭─╰→ val b = bar(i)                  ┆ ┆
+       Declarations: ╰→╭─ val b = bar(i)                  ┆ ┆
+           FuncCall: ╭─╰→ foo(b)                          ┆ ┆
+                     ╰→   *exit*                         ←╯←╯
+      """
+      } else {
+        """
+              Block:   ╭─ { val i = baz(…bar(i) foo(b) }
+           FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
+      LocalVariable: ╰→╭─ val i = baz("42")               ┆
+       Declarations: ╭─╰→ val i = baz("42")               ┆
+           FuncCall: ╰→╭─ bar(i)                          ┆
+      LocalVariable: ╭─╰→ val b = bar(i)                  ┆
+       Declarations: ╰→╭─ val b = bar(i)                  ┆
+           FuncCall: ╭─╰→ foo(b)                          ┆
+                     ╰→   *exit*                         ←╯
+      """
+      }
+    val expectedPaths =
+      if (useFirUast()) {
+        """
+            baz() → bar() → foo() → exit
+            baz() → bar() → exit
+            baz() → exit
+      """
+      } else {
+        """
+            baz() → bar() → foo() → exit
+            baz() → exit
+      """
+      }
+    checkAstGraph(
+      kotlin(
+          """
+          fun baz(p: String): Int { return p.toInt() }
+          fun bar(p: Int): Boolean { return p > 0 }
+          fun foo(p: Boolean) { }
+
+          fun target() {
+            val i = baz("42")
+            val b = bar(i)
+            foo(b)
+          }
+        """
+        )
+        .indented(),
+      expectedCfg,
+      useGraph = { graph, start ->
+        checkPaths(graph, start, expectedPaths, followExceptionalFlow = false)
+      },
+    )
+  }
 
   @Test
   fun checkTryCatchJava() {
@@ -703,42 +823,9 @@ class ControlFlowGraphTest {
       """,
       canThrow = { _, method -> if (method.name.startsWith("randomCall")) true else null },
       useGraph = { graph, start ->
-
-        // Test the DFS methods to print out all exit paths here -- both with and
-        // without followExceptionalFlow enabled.
-        fun checkPaths(expected: String, followExceptionalFlow: Boolean) {
-          val matches = mutableListOf<List<ControlFlowGraph.Edge<UElement>>>()
-
-          val startNode = graph.getNode(start)!!
-          graph.dfs(
-            ControlFlowGraph.UnitDomain,
-            object : ControlFlowGraph.DfsRequest<UElement, Unit>(startNode) {
-              override fun visitNode(
-                node: ControlFlowGraph.Node<UElement>,
-                path: List<ControlFlowGraph.Edge<UElement>>,
-                status: Unit,
-              ) {
-                if (node.isExit()) matches.add(path)
-                node.visit = 0
-              }
-
-              override val followExceptionalFlow: Boolean = followExceptionalFlow
-
-              override fun consumesException(edge: ControlFlowGraph.Edge<UElement>): Boolean {
-                val instruction = edge.to.instruction
-                val parent = instruction.uastParent
-                return parent is UTryExpression && parent.catchClauses.any { it == instruction }
-              }
-            },
-          )
-
-          assertEquals(
-            expected.trimIndent().trim(),
-            matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim(),
-          )
-        }
-
         checkPaths(
+          graph,
+          start,
           """
           try → randomCall1() → finally → cleanup() → next() → exit
           try → randomCall1() → finally → cleanup() → java.io.FileNotFoundException exit
@@ -751,6 +838,8 @@ class ControlFlowGraphTest {
         // Notice how the third path is no longer there: we do not flow to the "next" node via an
         // exception path
         checkPaths(
+          graph,
+          start,
           """
           try → randomCall1() → finally → cleanup() → next() → exit
           try → randomCall1() → finally → cleanup() → java.io.FileNotFoundException exit
@@ -3920,6 +4009,45 @@ class ControlFlowGraphTest {
     )
 
     return instructionOrder
+  }
+
+  // Test the DFS methods to print out all exit paths here -- both with and
+  // without followExceptionalFlow enabled.
+  fun checkPaths(
+    graph: ControlFlowGraph<UElement>,
+    start: UExpression,
+    expected: String,
+    followExceptionalFlow: Boolean,
+  ) {
+    val matches = mutableListOf<List<ControlFlowGraph.Edge<UElement>>>()
+
+    val startNode = graph.getNode(start)!!
+    graph.dfs(
+      ControlFlowGraph.UnitDomain,
+      object : ControlFlowGraph.DfsRequest<UElement, Unit>(startNode) {
+        override fun visitNode(
+          node: ControlFlowGraph.Node<UElement>,
+          path: List<ControlFlowGraph.Edge<UElement>>,
+          status: Unit,
+        ) {
+          if (node.isExit()) matches.add(path)
+          node.visit = 0
+        }
+
+        override val followExceptionalFlow: Boolean = followExceptionalFlow
+
+        override fun consumesException(edge: ControlFlowGraph.Edge<UElement>): Boolean {
+          val instruction = edge.to.instruction
+          val parent = instruction.uastParent
+          return parent is UTryExpression && parent.catchClauses.any { it == instruction }
+        }
+      },
+    )
+
+    assertEquals(
+      expected.trimIndent().trim(),
+      matches.joinToString("\n") { ControlFlowGraph.describePath(it) }.trim(),
+    )
   }
 }
 
