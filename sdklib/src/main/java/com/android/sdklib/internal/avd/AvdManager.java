@@ -263,8 +263,8 @@ public class AvdManager {
     @Slow
     public void stopAvd(@NonNull AvdInfo info) {
         try {
-            Long pid = getPid(info);
-            if (pid != null) {
+            long pid = getPid(info);
+            if (pid != 0) {
                 String command;
                 if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
                     command = "cmd /c \"taskkill /PID " + pid + "\"";
@@ -283,29 +283,32 @@ public class AvdManager {
         }
     }
 
+    /**
+     * Returns the process ID of the emulator running for the given AVD, or zero if the AVD is not
+     * running.
+     */
     @Slow
-    public @Nullable Long getPid(@NonNull AvdInfo avd) {
-        Long pid = getPid(avd, "hardware-qemu.ini.lock");
-        if (pid != null) {
+    public long getPid(@NonNull AvdInfo avd) {
+        long pid = getPid(avd, "hardware-qemu.ini.lock");
+        if (pid != 0) {
             return pid;
         }
 
         return getPid(avd, "userdata-qemu.img.lock");
     }
 
-    private @Nullable Long getPid(@NonNull AvdInfo avd, @NonNull String element) {
+    private long getPid(@NonNull AvdInfo avd, @NonNull String element) {
         Path file = resolve(avd, element);
 
         try (Scanner scanner = new Scanner(file)) {
-            // TODO(http://b/233670812)
             scanner.useDelimiter("\0");
             return scanner.nextLong();
         } catch (NoSuchFileException exception) {
             mLog.info("%s not found for %s", file, avd.getName());
-            return null;
+            return 0;
         } catch (IOException | NoSuchElementException exception) {
             mLog.error(exception, "avd = %s, file = %s", avd.getName(), file);
-            return null;
+            return 0;
         }
     }
 

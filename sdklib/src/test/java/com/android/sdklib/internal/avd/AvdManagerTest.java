@@ -135,7 +135,7 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Long pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
         assertThat(pid).isEqualTo(412503);
@@ -164,10 +164,10 @@ public final class AvdManagerTest {
         Files.createFile(file);
 
         // Act
-        Long pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertThat(pid).isNull();
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
@@ -193,10 +193,10 @@ public final class AvdManagerTest {
         Files.write(file, "notlong".getBytes());
 
         // Act
-        Long pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertThat(pid).isNull();
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
@@ -222,7 +222,7 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Long pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
         assertThat(pid).isEqualTo(412503);
@@ -246,10 +246,10 @@ public final class AvdManagerTest {
                         false);
 
         // Act
-        Long pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertThat(pid).isNull();
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
