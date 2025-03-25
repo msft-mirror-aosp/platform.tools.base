@@ -43,7 +43,7 @@ interface BaseServices {
     val projectInfo: ProjectInfo
 
     /**
-     * Services related to the built-in Kotlin plugin.
+     * Services related to the built-in Kotlin support.
      *
      * NOTE: This property is available only when
      * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true.

@@ -64,8 +64,7 @@ class KaptStubGenerationCreationAction(
                 taskName,
                 kotlinCompileTaskProvider,
                 kaptExtension ?: kotlinJvmFactory.kaptExtension,
-                creationConfig.services
-                    .provider { creationConfig.global.kotlinAndroidProjectExtension?.explicitApi }
+                creationConfig.services.provider { kotlinServices.kotlinAndroidProjectExtension.explicitApi }
             )
         }
         return kotlinJvmFactory.registerKaptGenerateStubsTask(taskName)
@@ -153,10 +152,7 @@ class KaptStubGenerationCreationAction(
         }
 
         if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
-            creationConfig.global
-                .kotlinAndroidProjectExtension
-                ?.compilerOptions
-                ?.let { task.applyCompilerOptions(it) }
+            task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
         }
     }
 }

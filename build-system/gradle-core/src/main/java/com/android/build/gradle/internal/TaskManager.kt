@@ -958,7 +958,8 @@ abstract class TaskManager(
             return
         }
         val kotlinServices = creationConfig.services.builtInKotlinServices
-        maybeAddKotlinStdlibDependency(project, creationConfig)
+
+        maybeAddKotlinStdlibDependency(project, creationConfig, kotlinServices)
         val kotlinCompileTaskProvider =
             KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =
@@ -986,23 +987,17 @@ abstract class TaskManager(
                 null
             }
 
-        val androidTarget = creationConfig.global.kotlinAndroidProjectExtension?.target
-        val kotlinCompilation =
-            androidTarget?.let {
-                BuiltInKotlinJvmAndroidCompilation(
-                    creationConfig.name,
-                    it,
-                    kotlinCompileTaskProvider
-                )
-            }
-        if (kotlinCompilation != null) {
-            if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
-                // Ensure "kotlin-extension" configuration exists here, because the Compose
-                // Compiler Gradle plugin assumes it will have been created already.
-                maybeCreateKotlinExtensionConfiguration()
-            }
-            addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
+        val kotlinCompilation = BuiltInKotlinJvmAndroidCompilation(
+            creationConfig.name,
+            kotlinServices.kotlinAndroidProjectExtension.target,
+            kotlinCompileTaskProvider
+        )
+        if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
+            // Ensure "kotlin-extension" configuration exists here, because the Compose
+            // Compiler Gradle plugin assumes it will have been created already.
+            maybeCreateKotlinExtensionConfiguration()
         }
+        addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**

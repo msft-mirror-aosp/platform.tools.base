@@ -249,8 +249,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
         get() = throw IllegalAccessException("Not supported for kmp")
     override val dataBinding: DataBinding
         get() = throw IllegalAccessException("Not supported for kmp")
-    override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension
-        get() = throw IllegalAccessException("Not supported for kmp")
     override val kaptExtension: KaptExtensionConfig
         get() = throw IllegalAccessException("Not supported for kmp")
 }

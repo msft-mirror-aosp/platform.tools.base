@@ -95,7 +95,6 @@ interface GlobalTaskCreationConfig: BootClasspathConfig {
     val unitTestOptions: UnitTestOptionsDslInfo
     val testServers: List<TestServer>
 
-    val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension?
     val kaptExtension: KaptExtensionConfig?
 
     // processed access to some DSL values

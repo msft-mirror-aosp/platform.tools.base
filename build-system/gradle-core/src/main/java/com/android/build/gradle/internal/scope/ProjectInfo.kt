@@ -100,6 +100,9 @@ class ProjectInfo(private val project: Project) {
     fun <T : Plugin<*>> findPlugin(pluginClass: Class<T>): T? =
         project.plugins.findPlugin(pluginClass)
 
+    fun <T> findExtensionByType(extensionType: Class<T>): T? =
+        project.extensions.findByType(extensionType)
+
     fun getTestResultsFolder(): Provider<Directory> {
         return buildDirectory.dir("test-results")
     }

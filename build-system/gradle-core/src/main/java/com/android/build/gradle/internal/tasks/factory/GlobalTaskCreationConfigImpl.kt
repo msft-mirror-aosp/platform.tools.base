@@ -190,12 +190,6 @@ class GlobalTaskCreationConfigImpl(
     override val testServers: List<TestServer>
         get() = oldExtension.testServers
 
-    override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension? by lazy {
-        val extension = project.extensions.findByName("kotlin") as? KotlinAndroidProjectExtension
-        extension?.compilerOptions?.moduleName?.convention(project.name)
-        return@lazy extension
-    }
-
     override val kaptExtension: KaptExtensionConfig? by lazy {
         project.extensions.findByName("kapt") as? KaptExtensionConfig
     }
