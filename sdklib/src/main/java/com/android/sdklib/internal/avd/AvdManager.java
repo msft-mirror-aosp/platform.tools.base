@@ -1274,6 +1274,14 @@ public class AvdManager {
             }
         }
 
+        // Set the "display.name" property if it is not present.
+        // This can happen when the emulator has been created using the avdmanager cli tool
+        if (!properties.containsKey(ConfigKey.DISPLAY_NAME)) {
+            String avdName = AvdInfo.getAvdNameFromFile(metadataIniFile);
+            String displayName = AvdInfo.avdNameToDisplayName(avdName);
+            properties.put(ConfigKey.DISPLAY_NAME, displayName);
+        }
+
         Map<String, String> userSettings = AvdInfo.parseUserSettingsFile(avdFolder, mLog);
 
         AvdInfo info =
