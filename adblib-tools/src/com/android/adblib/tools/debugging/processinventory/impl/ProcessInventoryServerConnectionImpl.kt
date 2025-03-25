@@ -18,12 +18,12 @@ package com.android.adblib.tools.debugging.processinventory.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.InstructionSet
 import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
-import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.mergeWith

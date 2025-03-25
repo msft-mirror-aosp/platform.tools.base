@@ -17,7 +17,7 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AppProcess
-import com.android.adblib.tools.debugging.architecture
+import com.android.adblib.tools.debugging.instructionSet
 import com.android.adblib.tools.debugging.debuggable
 import com.android.adblib.tools.debugging.profileable
 import com.android.adblib.tools.debugging.retrieveProcessName
@@ -37,7 +37,7 @@ internal class AdblibProfileableClientWrapper(
 
     private val logger = adbLogger(trackerHost.device.session)
 
-    private val data = ProfileableClientData(appProcess.pid, "", appProcess.architecture)
+    private val data = ProfileableClientData(appProcess.pid, "", appProcess.instructionSet.toString())
 
     /**
      * [AdblibClientWrapper] instance if this process is [AppProcess.debuggable], `null` otherwise

@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.InstructionSet
 import com.android.adblib.tools.debugging.impl.JdwpSessionProxy
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
@@ -129,152 +130,37 @@ data class JdwpProcessProperties(
 }
 
 /**
- * The instruction set used by an Android VM.
- *
- * See [Android VM Instruction Set](https://cs.android.com/android/platform/superproject/main/+/b8e25499cd5f4290507e5be0d7686c2b129cb6ab:art/libartbase/arch/instruction_set.cc;l=41)
+ * Convert this [InstructionSet] (typically `"arm64"` or `"arm"`) to the legacy representation
+ * used in [DdmsHeloChunk.abi] for backward compatibility (e.g. `"64-bit (arm)"`).
  */
-sealed class InstructionSet {
-
-    abstract val text: String
-
-    abstract override fun toString(): String
-
-    data object Arm : InstructionSet() {
-
-        override val text: String
-            get() = "arm"
-
-        override fun toString(): String {
-            return text
-        }
-
+fun InstructionSet.toLegacyDescription(): String {
+    // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
+    val instructionSetDescription = if (text.contains("64")) {
+        "64-bit"
+    } else {
+        "32-bit"
     }
-
-    data object Arm64 : InstructionSet() {
-
-        override val text: String
-            get() = "arm64"
-
-        override fun toString(): String {
-            return text
-        }
-
+    return if (text.isEmpty()) {
+        instructionSetDescription
+    } else {
+        "$instructionSetDescription (${text})"
     }
+}
 
-    data object Riscv64 : InstructionSet() {
-
-        override val text: String
-            get() = "riscv64"
-
-        override fun toString(): String {
-            return text
-        }
-
-    }
-
-    data object X86 : InstructionSet() {
-
-        override val text: String
-            get() = "x86"
-
-        override fun toString(): String {
-            return text
-        }
-    }
-
-    data object X86_64 : InstructionSet() {
-
-        override val text: String
-            get() = "x86_64"
-
-        override fun toString(): String {
-            return text
-        }
-    }
-
-    /**
-     * Unknown or unrecognized instruction set. [text] contains the original string as returned
-     * by the Android VM. This could happen in case of newly released CPU types not yet supported
-     * by `adblib`.
-     */
-    data class Unknown(override val text: String) : InstructionSet() {
-
-        override fun toString(): String {
-            return text
-        }
-    }
-
-    open val is64Bit: Boolean
-        get() = text.contains("64")
-
-    open val is32Bit: Boolean
-        get() = !is64Bit
-
-    open val isArm: Boolean
-        get() = text.startsWith("arm")
-
-    open val isX86: Boolean
-        get() = text.startsWith("x86")
-
-    open val isRiscV: Boolean
-        get() = text.startsWith("riscv")
-
-    open val isUnknown: Boolean
-        get() = (this is Unknown)
-
-    /**
-     * Convert this [InstructionSet] (typically `"arm64"` or `"arm"`) to the legacy representation
-     * used in [DdmsHeloChunk.abi] for backward compatibility (e.g. `"64-bit (arm)"`).
-     */
-    fun toLegacyDescription(): String {
-        // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
-        val instructionSetDescription = if (text.contains("64")) {
-            "64-bit"
-        } else {
-            "32-bit"
-        }
-        return if (text.isEmpty()) {
-            instructionSetDescription
-        } else {
-            "$instructionSetDescription (${text})"
-        }
-    }
-
-    companion object {
-
-        /**
-         * Convert an instruction string representation (e.g. from [AppProcessEntry.architecture])
-         * to a valid [InstructionSet] instance.
-         *
-         * Note: Values that are not recognized are returned as [InstructionSet.Unknown] instances.
-         */
-        fun fromString(value: String): InstructionSet {
-            return when (value) {
-                Arm.text -> Arm
-                Arm64.text -> Arm64
-                Riscv64.text -> Riscv64
-                X86.text -> X86
-                X86_64.text -> X86_64
-                else -> Unknown(value)
-            }
-        }
-
-        /**
-         * Convert a legacy instruction set description from the [DdmsHeloChunk.abi] field
-         * of [DdmsHeloChunk] (e.g. `"64-bit (arm)"`) into a valid [InstructionSet].
-         *
-         * Note: Values that are not recognized are returned as [InstructionSet.Unknown] instances.
-         */
-        fun fromLegacyDescription(value: String): InstructionSet {
-            // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
-            val index1 = value.indexOf('(')
-            val index2 = value.indexOf(')')
-            return if (index1 >= 0 && index2 > index1) {
-                fromString(value.substring(index1 + 1, index2))
-            } else {
-                fromString(value)
-            }
-        }
+/**
+ * Convert a legacy instruction set description from the [DdmsHeloChunk.abi] field
+ * of [DdmsHeloChunk] (e.g. `"64-bit (arm)"`) into a valid [InstructionSet].
+ *
+ * Note: Values that are not recognized are returned as [InstructionSet.Unknown] instances.
+ */
+fun InstructionSet.Companion.fromLegacyDescription(value: String): InstructionSet {
+    // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
+    val index1 = value.indexOf('(')
+    val index2 = value.indexOf(')')
+    return if (index1 >= 0 && index2 > index1) {
+        fromString(value.substring(index1 + 1, index2))
+    } else {
+        fromString(value)
     }
 }
 

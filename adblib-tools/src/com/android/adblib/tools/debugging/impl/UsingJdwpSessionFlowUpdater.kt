@@ -20,6 +20,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.AdbUsageTracker
 import com.android.adblib.ByteBufferAdbOutputChannel
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.InstructionSet
 import com.android.adblib.adbLogger
 import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT
@@ -28,10 +29,10 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
-import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
+import com.android.adblib.tools.debugging.fromLegacyDescription
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView

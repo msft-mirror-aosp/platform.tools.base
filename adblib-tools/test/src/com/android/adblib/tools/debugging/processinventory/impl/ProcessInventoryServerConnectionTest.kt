@@ -17,12 +17,12 @@ package com.android.adblib.tools.debugging.processinventory.impl
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.InstructionSet
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.waitNonNull
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
-import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties

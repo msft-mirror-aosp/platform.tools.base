@@ -19,13 +19,13 @@ import com.android.adblib.AdbUsageTracker
 import com.android.adblib.AdbUsageTracker.JdwpProcessPropertiesCollectorEvent
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.InstructionSet
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
-import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
 import com.android.adblib.tools.debugging.isAppInfoSupported

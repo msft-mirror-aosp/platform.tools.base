@@ -24,9 +24,9 @@ import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
-import com.android.adblib.tools.debugging.InstructionSet
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.addException
+import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -138,7 +138,7 @@ internal class UsingAppInfoFlowUpdater(
                 packageName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
                     ?: current.packageName,
                 userId = appProcessEntry.userId32 ?: current.userId,
-                instructionSet = InstructionSet.fromString(appProcessEntry.architecture),
+                instructionSet = appProcessEntry.instructionSet,
                 isWaitingForDebugger = appProcessEntry.waitingForDebugger ?: current.isWaitingForDebugger,
                 jvmFlags = legacyJvmFlags()
             )

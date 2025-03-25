@@ -19,6 +19,7 @@ import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.InstructionSet
 import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties.APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_COUNT
 import com.android.adblib.tools.AdbLibToolsProperties.APP_PROCESS_RETRIEVE_PROCESS_NAME_RETRY_DELAY
@@ -81,10 +82,10 @@ val AppProcess.profileable: Boolean
     get() = appProcessEntryFlow.value.profileable
 
 /**
- * The process architecture (or "abi") such as `x86`, `arm64`, etc.
+ * The [InstructionSet] used by this process
  */
-val AppProcess.architecture: String
-    get() = appProcessEntryFlow.value.architecture
+val AppProcess.instructionSet: InstructionSet
+    get() = appProcessEntryFlow.value.instructionSet
 
 /**
  * The [CoroutineScope] whose lifetime matches the lifetime of the process on the device.
