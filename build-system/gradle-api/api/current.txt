@@ -295,20 +295,8 @@ package com.android.build.api.dsl {
   @org.gradle.api.Incubating public interface AgpTestSuite extends org.gradle.testing.base.TestSuite {
     method @org.gradle.api.Incubating public java.util.List<kotlin.Pair<java.lang.String,java.lang.String>> getTargetProductFlavors();
     method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.JUnitEngineSpec getUseJunitEngine();
     property @org.gradle.api.Incubating public abstract java.util.List<kotlin.Pair<java.lang.String,java.lang.String>> targetProductFlavors;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JUnitEngineSpec useJunitEngine;
-  }
-
-  public enum AgpTestSuiteInputParameters {
-    method public String getPropertyName();
-    property public final String propertyName;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MERGED_MANIFEST;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TESTED_APKS;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TESTING_APK;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TEST_CLASSES;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TEST_CLASSPATH;
   }
 
   @org.gradle.api.Incubating public interface AiPackExtension {
@@ -1092,15 +1080,6 @@ package com.android.build.api.dsl {
   public interface DefaultConfig extends com.android.build.api.dsl.BaseFlavor {
   }
 
-  public enum DefaultInputsForAgpTestSuites {
-    method public java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> getSupportedProperties();
-    method @org.gradle.api.Incubating public void initialize(com.android.build.api.dsl.JUnitEngineSpec testSuite);
-    property public final java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> supportedProperties;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.DefaultInputsForAgpTestSuites DEVICE_TEST;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.DefaultInputsForAgpTestSuites HOST_TEST;
-    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.DefaultInputsForAgpTestSuites JOURNEYS_TEST;
-  }
-
   @Deprecated public interface DensitySplit extends com.android.build.api.dsl.Split {
     method @Deprecated public void compatibleScreens(java.lang.String... sizes);
     method @Deprecated public java.util.Set<java.lang.String> getCompatibleScreens();
@@ -1260,11 +1239,6 @@ package com.android.build.api.dsl {
     method public void setTimeOutInMs(int);
     property public abstract java.util.List<java.lang.String> installOptions;
     property public abstract int timeOutInMs;
-  }
-
-  @org.gradle.api.Incubating public interface JUnitEngineSpec {
-    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> getInputs();
-    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> inputs;
   }
 
   @Deprecated @org.gradle.api.Incubating public interface JacocoOptions extends com.android.build.api.dsl.TestCoverage {

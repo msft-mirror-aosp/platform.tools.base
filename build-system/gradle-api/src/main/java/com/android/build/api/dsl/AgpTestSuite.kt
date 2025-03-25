@@ -38,15 +38,6 @@ import org.gradle.testing.base.TestSuite
 interface AgpTestSuite: TestSuite {
 
     /**
-     * Spec to identify the test engine that will be used to run this test suite. Do not call this
-     * method if the test suite should use a dedicated test task. Calling this method will direct
-     * AGP to create a [org.gradle.api.tasks.testing.Test] task and configure it using the
-     * returned [JUnitEngineSpec]
-     */
-    @get:Incubating
-    val useJunitEngine: JUnitEngineSpec
-
-    /**
      * Sets the list of [ProductFlavor]s this test suite will target.
      *
      * The list must be finalized during configuration time as we must create compilation and
