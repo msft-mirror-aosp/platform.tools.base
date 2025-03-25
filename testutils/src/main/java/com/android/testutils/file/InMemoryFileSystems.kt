@@ -103,7 +103,7 @@ fun getPlatformSpecificPath(path: String): String {
  * Parent folders are automatically created.
  */
 @JvmOverloads
-fun Path.recordExistingFile(contents: String? = "") =
+fun Path.recordExistingFile(contents: String? = ""): Path =
         recordExistingFile(0, contents?.toByteArray())
 
 /**
