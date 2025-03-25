@@ -17,17 +17,21 @@
 package com.android.builder.files;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.utils.FileUtils;
+
 import com.google.common.io.Files;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.util.Set;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.util.Set;
 
 public class RelativeFilesTest {
 
@@ -60,7 +64,7 @@ public class RelativeFilesTest {
             zf.add("dir/file2", new ByteArrayInputStream(new byte[0]));
         }
 
-        Set<RelativeFile> relativeFiles = RelativeFiles.fromZip(new ZipCentralDirectory(zfile));
+        Set<RelativeFile> relativeFiles = RelativeFiles.fromZip(zfile);
         assertEquals(2, relativeFiles.size());
         assertThat(relativeFiles).contains(new RelativeFile(zfile, "file1"));
         assertThat(relativeFiles).contains(new RelativeFile(zfile, "dir/file2"));

@@ -17,14 +17,11 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.internal.cxx.configure.trySymlinkNdk
 import com.android.build.gradle.internal.packaging.ParsedPackagingOptions
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
-import com.android.builder.files.KeyedFileCache
+import com.android.builder.files.ZipSnapshotRepository
 import com.android.builder.files.SerializableInputChanges
-import com.android.builder.merge.IncrementalFileMergerInput
 import com.android.utils.FileUtils
-import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -51,7 +48,7 @@ abstract class MergeJavaResWorkAction : ProfileAwareWorkAction<MergeJavaResWorkA
         }
         val cacheDir = parameters.cacheDir.asFile.get().also { FileUtils.mkdirs(it) }
 
-        val zipCache = KeyedFileCache(cacheDir, KeyedFileCache::fileNameKey)
+        val zipCache = ZipSnapshotRepository(cacheDir)
         val cacheUpdates = mutableListOf<Runnable>()
         val inputDataList = mutableListOf<InputData>()
 

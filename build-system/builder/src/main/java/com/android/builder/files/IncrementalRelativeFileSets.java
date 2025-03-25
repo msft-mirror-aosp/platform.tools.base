@@ -19,15 +19,15 @@ package com.android.builder.files;
 import com.android.annotations.NonNull;
 import com.android.ide.common.resources.FileStatus;
 import com.android.tools.build.apkzlib.utils.IOExceptionRunnable;
+
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -63,59 +63,6 @@ public final class IncrementalRelativeFileSets {
     }
 
     /**
-     * Reads a zip file and adds all files in the file in a new incremental relative set. The
-     * status of each file is set to {@link FileStatus#NEW}. This method is used to construct an
-     * initial set of files and is, therefore, an incremental update from zero.
-     *
-     * @param zip the zip file to read, must be a valid, existing zip file
-     * @return the file set
-     * @throws IOException failed to read the zip file
-     */
-    @NonNull
-    public static ImmutableMap<RelativeFile, FileStatus> fromZip(@NonNull File zip)
-            throws IOException {
-        return fromZip(zip, FileStatus.NEW);
-    }
-
-    /**
-     * Reads a zip file and adds all files in the file in a new incremental relative set. The
-     * status of each file is set to {@code status}.
-     *
-     * @param zip the zip file to read, must be a valid, existing zip file
-     * @param status the status to set the files to
-     * @return the file set
-     * @throws IOException failed to read the zip file
-     */
-    @NonNull
-    public static ImmutableMap<RelativeFile, FileStatus> fromZip(
-            @NonNull File zip,
-            FileStatus status)
-            throws IOException {
-        Preconditions.checkArgument(zip.isFile(), "!zip.isFile(): %s", zip);
-
-        return ImmutableMap.<RelativeFile, FileStatus>builder()
-                .putAll(
-                        Maps.asMap(
-                                RelativeFiles.fromZip(new ZipCentralDirectory(zip)), f -> status))
-                .build();
-    }
-
-    /**
-     * Reads a zip file and adds all files in the file in a new incremental relative set. The status
-     * of each file is set to {@link FileStatus#NEW}. This method is used to construct an initial
-     * set of files and is, therefore, an incremental update from zero.
-     *
-     * @param zip the zip file to read, must be a valid, existing zip file
-     * @return the file set
-     * @throws IOException failed to read the zip file
-     */
-    @NonNull
-    public static ImmutableMap<RelativeFile, FileStatus> fromZip(@NonNull ZipCentralDirectory zip)
-            throws IOException {
-        return fromZip(zip, FileStatus.NEW);
-    }
-
-    /**
      * Reads a zip file and adds all files in the file in a new incremental relative set. The status
      * of each file is set to {@code status}.
      *
@@ -125,22 +72,41 @@ public final class IncrementalRelativeFileSets {
      * @throws IOException failed to read the zip file
      */
     @NonNull
-    public static ImmutableMap<RelativeFile, FileStatus> fromZip(
-            @NonNull ZipCentralDirectory zip, FileStatus status) throws IOException {
+    public static ImmutableMap<RelativeFile, FileStatus> fromZipSnapshot(
+            @NonNull File zip, FileStatus status) throws IOException {
+        Preconditions.checkArgument(zip.isFile(), "!zip.isFile(): %s", zip);
+
         return ImmutableMap.<RelativeFile, FileStatus>builder()
                 .putAll(Maps.asMap(RelativeFiles.fromZip(zip), f -> status))
                 .build();
     }
 
     /**
+     * Adds all files present in a zip snapshot into a new incremental relative set. The status of
+     * each file is set to {@code status}.
+     *
+     * @param snapshot a zip snapshot
+     * @param status the status to set the files to
+     * @return the file set
+     * @throws IOException failed to read the zip file
+     */
+    @NonNull
+    public static ImmutableMap<RelativeFile, FileStatus> fromZipSnapshot(
+            @NonNull ZipSnapshot snapshot, FileStatus status) throws IOException {
+        return ImmutableMap.<RelativeFile, FileStatus>builder()
+                .putAll(Maps.asMap(RelativeFiles.fromZipSnapshot(snapshot), f -> status))
+                .build();
+    }
+
+    /**
      * Computes the incremental file set that results from comparing a zip file with a possibly
-     * existing cached file. If the cached file does not exist, then the whole zip is reported as
-     * {@link FileStatus#NEW}. If {@code zip} does not exist and a cached file exists, then the
-     * whole zip is reported as {@link FileStatus#REMOVED}. Otherwise, both zips are compared and
+     * existing snapshot. If the snapshot does not exist, then the whole zip is reported as {@link
+     * FileStatus#NEW}. If {@code zip} does not exist and a snapshot file exists, then the whole zip
+     * is reported as {@link FileStatus#REMOVED}. Otherwise, both zip and snapshot are compared and
      * the difference returned.
      *
-     * @param zipCentralDirectory the zip file to read, must be a valid, existing zip file
-     * @param cache the cache where to find the old version of the zip
+     * @param zip the zip file to read, must be a valid, existing zip file
+     * @param zipSnapshotRepository the repository where zip snapshot can be found
      * @param cacheUpdates receives all runnables that will update the cache; running all runnables
      *     placed in this set will ensure that a second invocation of this method reports no changes
      * @return the file set
@@ -148,67 +114,69 @@ public final class IncrementalRelativeFileSets {
      */
     @NonNull
     public static Map<RelativeFile, FileStatus> fromZip(
-            @NonNull ZipCentralDirectory zipCentralDirectory,
-            @NonNull KeyedFileCache cache,
+            @NonNull File zip,
+            @NonNull ZipSnapshotRepository zipSnapshotRepository,
             @NonNull Set<Runnable> cacheUpdates)
             throws IOException {
-        File zipFile = zipCentralDirectory.getFile();
-        File oldFile = cache.get(zipFile);
-        if (oldFile == null) {
+        ZipSnapshot snapshot = zipSnapshotRepository.getLastSnapshotOfZip(zip);
+        if (snapshot == null) {
             /*
-             * No old zip in cache. If the zip also doesn't exist, report all empty.
+             * No zip snapshot in repository. If the zip also doesn't exist, report all empty.
              */
-            if (!zipFile.isFile()) {
+            if (!zip.isFile()) {
                 return ImmutableMap.of();
             }
 
-            cacheUpdates.add(IOExceptionRunnable.asRunnable(() -> cache.add(zipCentralDirectory)));
-            return fromZip(zipCentralDirectory, FileStatus.NEW);
+            cacheUpdates.add(
+                    IOExceptionRunnable.asRunnable(
+                            () -> zipSnapshotRepository.takeSnapshotOfZip(zip)));
+            return fromZipSnapshot(zip, FileStatus.NEW);
         }
 
-        if (!zipFile.isFile()) {
+        if (!zip.isFile()) {
             /*
-             * Zip does not exist, but a cached version does. This means the zip was deleted
+             * Zip does not exist, but a snapshot does. This means the zip was deleted
              * and all entries are removed.
              */
-            ZipCentralDirectory oldCdr = new ZipCentralDirectory(oldFile);
-            Collection<DirectoryEntry> entries = oldCdr.getEntries().values();
+            ZipEntryList entryList = snapshot.getEntryList();
 
-            Map<RelativeFile, FileStatus> map = Maps.newHashMapWithExpectedSize(entries.size());
+            Map<RelativeFile, FileStatus> map =
+                    Maps.newHashMapWithExpectedSize(entryList.getEntries().size());
 
-            for (DirectoryEntry entry : entries) {
-                map.put(new RelativeFile(zipFile, entry.getName()), FileStatus.REMOVED);
+            for (ZipEntry entry : entryList.getEntries().values()) {
+                map.put(new RelativeFile(zip, entry.getName()), FileStatus.REMOVED);
             }
 
-            cacheUpdates.add(IOExceptionRunnable.asRunnable(() -> cache.remove(zipFile)));
+            cacheUpdates.add(
+                    IOExceptionRunnable.asRunnable(
+                            () -> zipSnapshotRepository.removeSnapshotOfZip(zip)));
             return Collections.unmodifiableMap(map);
         }
 
         /*
-         * We have both a new and old zip. Compare both.
+         * We have both a new zip and a snapshot. Compare both.
          */
         Map<RelativeFile, FileStatus> result = Maps.newHashMap();
 
         Closer closer = Closer.create();
         try {
-            Map<String, DirectoryEntry> newEntries = zipCentralDirectory.getEntries();
-            Map<String, DirectoryEntry> oldEntries = new ZipCentralDirectory(oldFile).getEntries();
+            ZipEntryList newEntries = ZipEntryList.Companion.fromZip(zip);
+            ZipEntryList oldEntries = snapshot.getEntryList();
 
             /*
              * Search for new and modified files.
              */
-            for (DirectoryEntry entry : newEntries.values()) {
+            for (ZipEntry entry : newEntries.getEntries().values()) {
                 String path = entry.getName();
-                RelativeFile newRelative = new RelativeFile(zipFile, path);
+                RelativeFile newRelative = new RelativeFile(zip, path);
 
-                DirectoryEntry oldEntry = oldEntries.get(path);
+                ZipEntry oldEntry = oldEntries.getEntries().get(path);
                 if (oldEntry == null) {
                     result.put(newRelative, FileStatus.NEW);
                     continue;
                 }
 
-                if (oldEntry.getCrc32() != entry.getCrc32()
-                        || oldEntry.getSize() != entry.getSize()) {
+                if (oldEntry.getCrc() != entry.getCrc() || oldEntry.getSize() != entry.getSize()) {
                     result.put(newRelative, FileStatus.CHANGED);
                 }
 
@@ -217,11 +185,11 @@ public final class IncrementalRelativeFileSets {
                  */
             }
 
-            for (DirectoryEntry entry : oldEntries.values()) {
+            for (ZipEntry entry : oldEntries.getEntries().values()) {
                 String path = entry.getName();
-                RelativeFile oldRelative = new RelativeFile(zipFile, path);
+                RelativeFile oldRelative = new RelativeFile(zip, path);
 
-                DirectoryEntry newEntry = newEntries.get(path);
+                ZipEntry newEntry = newEntries.getEntries().get(path);
                 if (newEntry == null) {
                     /*
                      * File does not exist in new. It has been deleted.
@@ -235,7 +203,8 @@ public final class IncrementalRelativeFileSets {
             closer.close();
         }
 
-        cacheUpdates.add(IOExceptionRunnable.asRunnable(() -> cache.add(zipCentralDirectory)));
+        cacheUpdates.add(
+                IOExceptionRunnable.asRunnable(() -> zipSnapshotRepository.takeSnapshotOfZip(zip)));
         return Collections.unmodifiableMap(result);
     }
 

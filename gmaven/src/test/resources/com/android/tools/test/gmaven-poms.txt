@@ -504,6 +504,7 @@ com.android.tools.build:builder
     org.bouncycastle:bcprov-jdk18on (runtime)
     javax.inject:javax.inject (runtime)
     org.ow2.asm:asm-commons (runtime)
+    com.google.code.gson:gson (runtime)
 
 com.android.tools.build:builder-model
   pomName=com.android.tools.build.builder-model
