@@ -260,29 +260,6 @@ public class AvdManager {
         return null;
     }
 
-    @Slow
-    public void stopAvd(@NonNull AvdInfo info) {
-        try {
-            long pid = getPid(info);
-            if (pid != 0) {
-                String command;
-                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-                    command = "cmd /c \"taskkill /PID " + pid + "\"";
-                } else {
-                    command = "kill " + pid;
-                }
-                try {
-                    Process p = Runtime.getRuntime().exec(command);
-                    // If the process ends with non-0 it means the process doesn't exist
-                    p.waitFor();
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-        catch (IOException e) {
-        }
-    }
-
     /**
      * Returns the process ID of the emulator running for the given AVD, or zero if the AVD is not
      * running.
