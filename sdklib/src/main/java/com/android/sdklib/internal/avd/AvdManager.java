@@ -686,6 +686,19 @@ public class AvdManager {
         }
     }
 
+    /** Checks if the given file is one of the files created at the AVD creation time. */
+    public boolean isFoundationalAvdFile(@NonNull Path file, @NonNull AvdInfo avd) {
+        Path avdFolder = avd.getDataFolderPath();
+        if (!file.startsWith(avdFolder)) {
+            return false; // Outside AVD directory.
+        }
+        String relative = avdFolder.relativize(file).toString();
+        return relative.equals(CONFIG_INI) ||
+               relative.equals(SDCARD_IMG) ||
+               relative.equals(USER_SETTINGS_INI) ||
+               relative.equals(USERDATA_IMG);
+    }
+
     /**
      * Duplicates an existing AVD. Update the 'config.ini' and 'hardware-qemu.ini' files to
      * reference the new name and path.
