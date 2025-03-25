@@ -80,3 +80,10 @@ fun testFunctionReference(): Int {
   val ref = ::referenceThis
   return ref.invoke()
 }
+
+fun adaptThis(x: Int = 100): Int = x
+
+fun testAdaptedReference(): Int {
+    fun inner(f: () -> Int) = f()
+    return inner(::adaptThis)
+}
