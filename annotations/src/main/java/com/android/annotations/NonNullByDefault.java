@@ -25,23 +25,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Denotes that all parameters, fields or methods within a class or method by
- * default can not be null. This can be overridden by adding specific
- * {@link com.android.annotations.Nullable} annotations on fields, parameters or
- * methods that should not use the default.
- * <p>
- * NOTE: Eclipse does not yet handle defaults well (in particular, if
- * you add this on a class which implements Comparable, then it will insist
- * that your compare method is changing the nullness of the compare parameter,
- * so you'll need to add @Nullable on it, which also is not right (since
- * the method should have implied @NonNull and you do not need to check
- * the parameter.). For now, it's best to individually annotate methods,
- * parameters and fields.
- * <p>
- * This is a marker annotation and it has no specific attributes.
+ * Denotes that all parameters, fields or methods within a class or method by default can not be
+ * null. This can be overridden by adding specific {@link com.android.annotations.Nullable}
+ * annotations on fields, parameters or methods that should not use the default.
+ *
+ * <p>NOTE: Eclipse does not yet handle defaults well (in particular, if you add this on a class
+ * which implements Comparable, then it will insist that your compare method is changing the
+ * nullness of the compare parameter, so you'll need to add @Nullable on it, which also is not right
+ * (since the method should have implied @NonNull and you do not need to check the parameter.). For
+ * now, it's best to individually annotate methods, parameters and fields.
+ *
+ * <p>This is a marker annotation and it has no specific attributes.
+ *
+ * @deprecated Do not use this - just mark all fields and methods explicitly.
  */
+@Deprecated
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({PACKAGE, TYPE})
-public @interface NonNullByDefault {
-}
+public @interface NonNullByDefault {}
