@@ -1100,6 +1100,86 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       null,
     )
   }
+
+  fun testExportedFlags() {
+    // Regression test for b/404565190
+    lint()
+      .files(
+        java(
+            """
+            package test.api;
+            import android.annotation.FlaggedApi;
+            import com.example.foobar.Flags;
+
+            @FlaggedApi(Flags.FLAG_FOOBAR)
+            public class MyApi {
+              public void apiMethod() { }
+              public int apiField = 42;
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.ExportedFlags;
+
+            public class Test {
+              public void test(MyApi api) {
+                if (ExportedFlags.foobar()) {
+                  api.apiMethod(); // OK
+                  int val = api.apiField; // OK
+                }
+                api.apiMethod(); // ERROR 1
+                int val = api.apiField; // ERROR 2
+                Object o = MyApi.class; // ERROR 3
+              }
+            }
+            """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
+            package com.example.foobar;
+
+            public class Flags {
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.foobar;
+
+            public class ExportedFlags {
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        flaggedApiAnnotationStub,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:11: Error: Method apiMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            api.apiMethod(); // ERROR 1
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:12: Error: Field apiField is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            int val = api.apiField; // ERROR 2
+                          ~~~~~~~~
+        src/test/pkg/Test.java:13: Error: Class MyApi is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            Object o = MyApi.class; // ERROR 3
+                       ~~~~~~~~~~~
+        3 errors
+        """
+      )
+  }
 }
 
 private val flaggedApiAnnotationStub: TestFile =
