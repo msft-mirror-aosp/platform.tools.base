@@ -2,6 +2,7 @@
 
 import collections
 import dataclasses
+import enum
 import hashlib
 import json
 import logging
@@ -20,7 +21,7 @@ from tools.base.bazel.ci import gce
 
 _FILE_BUCKET = 'adt-byob'
 
-_FAILED_TESTS_FILE_NAME = 'failed-tests/v1/{changes_hash}.txt'
+_FAILED_TESTS_FILE_NAME = 'failed-tests/v1/{changes_hash}-{target}.txt'
 _MAX_FAILED_TESTS = 5
 
 _HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
@@ -34,6 +35,14 @@ _LOCAL_REPOSITORIES = [
 class SelectivePresubmitError(Exception):
   """Represents an error obtaining selective presubmit targets."""
   pass
+
+
+class SelectivePresubmitStrategy(enum.Enum):
+  """Strategies used to select targets for selective presubmit."""
+  DEFAULT_FALLBACK = 'default_fallback'
+  DEFAULT_EXPLICIT = 'default_explicit'
+  RETRY_FAILED     = 'retry_failed'
+  IMPACTED_TARGETS = 'impacted_targets'
 
 
 @dataclasses.dataclass
@@ -68,11 +77,49 @@ class TargetsResult:
 
 @dataclasses.dataclass
 class SelectivePresubmitResult:
-  """Represents the result of attempting a selective presubmit."""
+  """Represents the result of selecting presubmit targets."""
 
-  found: bool
+  strategy: SelectivePresubmitStrategy
   targets: List[str]
-  flags: List[str]
+  base_flags: List[str]
+
+  @property
+  def flags(self) -> List[str]:
+    # TODO: Remove selective_presubmit_found when stats are migrated to
+    # selective_presubmit_strategy.
+    found = self.strategy == SelectivePresubmitStrategy.IMPACTED_TARGETS
+    return self.base_flags + [
+        f'--build_metadata=selective_presubmit_found={found}',
+        f'--build_metadata=selective_presubmit_strategy={self.strategy.value}',
+    ]
+
+
+def _find_failed_tests(build_env: bazel.BuildEnv) -> List[str]:
+  """Returns the list of failed targets from a previous run.
+
+  Args:
+    build_env: The build environment.
+
+  Returns:
+    The list of failed tests from a previous run.
+
+  Raises:
+    SelectivePresubmitError: If previous failed tests could not be found.
+  """
+  gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
+  changes_hash = change_set_hash(gerrit_changes)
+  object_name = _FAILED_TESTS_FILE_NAME.format(
+      changes_hash=changes_hash,
+      target=build_env.build_target_name,
+  )
+  logging.info('Attempting to find failed tests at %s', object_name)
+
+  with tempfile.TemporaryDirectory() as temp_dir:
+    temp_path = pathlib.Path(temp_dir) / 'failed_tests.txt'
+    if not gce.download_from_gcs(_FILE_BUCKET, object_name, str(temp_path)):
+      raise SelectivePresubmitError(f'Failed tests file {object_name} not found')
+    logging.info('Failed tests file %s found', object_name)
+    return temp_path.read_text().splitlines()
 
 
 def _generate_hash_file(
@@ -99,8 +146,7 @@ def _find_impacted_targets(
     build_env: The build environment.
 
   Returns:
-    The list of impacted targets if the base hash file was found, or None
-    otherwise.
+    The list of impacted targets.
 
   Raises:
     SelectivePresubmitError: If there was a problem obtaining the impacted
@@ -289,7 +335,8 @@ def validate_and_upload_failed_tests(build_env: bazel.BuildEnv) -> None:
   gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
   changes_hash = change_set_hash(gerrit_changes)
   object_name = _FAILED_TESTS_FILE_NAME.format(
-      changes_hash = changes_hash,
+      changes_hash=changes_hash,
+      target=build_env.build_target_name,
   )
 
   gce.upload_to_gcs(failed_tests_path, _FILE_BUCKET, object_name)
@@ -342,79 +389,83 @@ def find_test_targets(
 
   Tags can be repeated in one description and across multiple changes.
   """
-  # Parse Presubmit-Test tags.
-  use_base_targets = False
-  explicit_targets = []
-  for value in _parse_gerrit_tags(build_env, 'Presubmit-Test'):
-    # "default" is a special value that indicates that all default targets
-    # should be tested.
-    if value.lower() == 'default':
-      use_base_targets = True
-      continue
-
-    # Add any targets that are explicitly requested.
-    explicit_targets.append(value)
-
-  targets_result = None
-  impacted_targets = None
-  if use_base_targets:
-    target_labels = base_targets
-  else:
-    try:
-      targets_result = _find_impacted_test_targets(
-          build_env,
-          base_targets,
-          test_flag_filters,
-      )
-      impacted_targets = targets_result.all_targets()
-      target_labels = [t.label for t in impacted_targets]
-    except SelectivePresubmitError as e:
-      logging.warning('Failed to find impacted test targets: %s', e)
-      logging.warning('Falling back to testing default targets')
-      target_labels = base_targets
-
-  found = target_labels != base_targets
-  impacted_target_count = len(target_labels) if found else 0
-  targets = target_labels + explicit_targets
+  # Flags that are always returned.
   gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
   change = gerrit_changes[0]
   changes_hash = change_set_hash(gerrit_changes)
 
-  if found:
-    logging.info('Found %d impacted targets', impacted_target_count)
-  else:
-    logging.info('Not using selective presubmit')
-
   flags = [
-      f'--build_metadata=selective_presubmit_found={found}',
-      f'--build_metadata=selective_presubmit_impacted_target_count={impacted_target_count}',
       f'--build_metadata=gerrit_change_set_hash={changes_hash}',
       f'--build_metadata=gerrit_owner={change.owner}',
       f'--build_metadata=gerrit_change_id={change.change_id}',
       f'--build_metadata=gerrit_change_number={change.change_number}',
       f'--build_metadata=gerrit_change_patchset={change.patchset}',
   ]
-  if targets_result and impacted_targets:
-    target_distances = collections.defaultdict(int)
-    pkg_distances = collections.defaultdict(int)
-    for target in impacted_targets:
-      target_distances[target.target_distance] += 1
-      pkg_distances[target.package_distance] += 1
-    flags.extend([
-          f'--build_metadata=selective_presubmit_target_distance=' + ','.join(
-            [f'({distance}:{count})' for distance, count in target_distances.items()]
-        ),
-          f'--build_metadata=selective_presubmit_package_distance=' + ','.join(
-            [f'({distance}:{count})' for distance, count in pkg_distances.items()]
-        ),
-      ])
 
   if change.topic:
     flags.append(f'--build_metadata=gerrit_topic={change.topic}')
+
+  # Parse Presubmit-Test tags.
+  explicit_targets = []
+  for value in _parse_gerrit_tags(build_env, 'Presubmit-Test'):
+    # "default" is a special value that indicates that all default targets
+    # should be tested.
+    if value.lower() == 'default':
+      return SelectivePresubmitResult(
+          strategy=SelectivePresubmitStrategy.DEFAULT_EXPLICIT,
+          targets=base_targets + explicit_targets,
+          base_flags=flags,
+      )
+
+    explicit_targets.append(value)
+
+  # Prioritize failed tests.
+  try:
+    failed_test_targets = _find_failed_tests(build_env)
+    return SelectivePresubmitResult(
+        strategy=SelectivePresubmitStrategy.RETRY_FAILED,
+        targets=failed_test_targets + explicit_targets,
+        base_flags=flags,
+    )
+  except SelectivePresubmitError as e:
+    logging.warning('Failed to find failed tests: %s', e)
+
+  # Finally, try impacted targets.
+  try:
+    targets_result = _find_impacted_test_targets(
+        build_env,
+        base_targets,
+        test_flag_filters,
+    )
+    impacted_targets = targets_result.all_targets()
+    labels = [t.label for t in impacted_targets]
+    impacted_count = len(labels)
+    logging.info('Found %d impacted targets', impacted_count)
+
+    target_distances = collections.Counter(t.target_distance for t in impacted_targets)
+    pkg_distances = collections.Counter(t.package_distance for t in impacted_targets)
+
+    return SelectivePresubmitResult(
+        strategy=SelectivePresubmitStrategy.IMPACTED_TARGETS,
+        targets=labels + explicit_targets,
+        base_flags = flags + [
+            f'--build_metadata=selective_presubmit_impacted_target_count={impacted_count}',
+            f'--build_metadata=selective_presubmit_target_distance=' + ','.join(
+                f'({distance}:{count})' for distance, count in target_distances.items()
+            ),
+            f'--build_metadata=selective_presubmit_package_distance=' + ','.join(
+                f'({distance}:{count})' for distance, count in pkg_distances.items()
+            ),
+        ],
+    )
+  except SelectivePresubmitError as e:
+    logging.warning('Failed to find impacted test targets: %s', e)
+    logging.warning('Falling back to testing default targets')
+
   return SelectivePresubmitResult(
-      found=found,
-      targets=targets,
-      flags=flags,
+      strategy=SelectivePresubmitStrategy.DEFAULT_FALLBACK,
+      targets=base_targets + explicit_targets,
+      base_flags=flags,
   )
 
 
