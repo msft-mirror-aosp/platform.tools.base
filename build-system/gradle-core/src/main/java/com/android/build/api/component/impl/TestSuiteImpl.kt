@@ -16,13 +16,15 @@
 
 package com.android.build.api.component.impl
 
-import com.android.build.api.variant.impl.JUnitEngineSpecImpl
+import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.variant.impl.JUnitEngineSpecImplForTestSuiteVariant
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.TestSuiteClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
@@ -37,8 +39,10 @@ class TestSuiteImpl(
     override val sources: TestSuiteSourceSet,
     override val testSuiteClasspath: TestSuiteClasspath,
     override val testedVariant: VariantCreationConfig,
+    override val global: GlobalTaskCreationConfig,
     val variantServices: VariantServices,
     override val services: TaskCreationServices,
+    override val artifacts: ArtifactsImpl,
 ) : TestSuite, TestSuiteCreationConfig {
 
     private val _name = testSuiteBuilder.name
@@ -46,7 +50,10 @@ class TestSuiteImpl(
     override fun getName() = _name
 
     override val junitEngineSpec: JUnitEngineSpec =
-            JUnitEngineSpecImpl(testSuiteBuilder.junitEngineSpec, variantServices)
+            JUnitEngineSpecImplForTestSuiteVariant(
+                testSuiteBuilder.junitEngineSpec,
+                { variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf()) }
+            )
 
     override fun configureTestTask(action: (Test) -> Unit) {
         throw RuntimeException("Not yet implemented")

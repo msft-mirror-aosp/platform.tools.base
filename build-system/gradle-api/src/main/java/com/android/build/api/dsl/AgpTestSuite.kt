@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.Action
 import org.gradle.api.Incubating
 import org.gradle.testing.base.TestSuite
 
@@ -49,6 +50,12 @@ interface AgpTestSuite: TestSuite {
     val useJunitEngine: JUnitEngineSpec
 
     /**
+     * Specifies properties for the JUnit test engines to run in this test suite
+     */
+    @Incubating
+    fun useJunitEngine(action: JUnitEngineSpec.() -> Unit)
+
+    /**
      * Sets the list of [ProductFlavor]s this test suite will target.
      *
      * The list must be finalized during configuration time as we must create compilation and
@@ -78,8 +85,17 @@ interface AgpTestSuite: TestSuite {
     val targetVariants: MutableList<String>
 
     /**
-     * Dependency handler for this test suite.
+     * Dependency handler for this test suite. For now, both the test sources dependencies as well
+     * as the test engines dependencies must be configured through this object. However, in a
+     * future version of this API, the test sources dependencies will move to the source set
+     * definition.
      */
     @get:Incubating
     val dependencies: AgpTestSuiteDependencies
+
+    /**
+     * Specifies dependency information for this test suite.
+     */
+    @Incubating
+    fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
 }

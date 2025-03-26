@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.testsuites
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import org.gradle.api.Incubating
+import org.gradle.api.provider.Provider
 
 @Incubating
 interface JUnitEngineSpec {
@@ -30,6 +31,18 @@ interface JUnitEngineSpec {
      */
     @get:Incubating
     val includeEngines: Set<String>
+
+    /**
+     * Adds a new key value pair property to the list of inputs for this test engine.
+     */
+    @Incubating
+    fun addInputProperty(propertyName: String, propertyValue: String)
+
+    /**
+     * Adds a new key value pair property to the list of inputs of this test engine, the value
+     * will only be resolved at execution time.
+     */
+    fun addInputProperty(propertyName: String, propertyValue: Provider<String>)
 
     /**
      * Returns the final list of inputs required by the junit engine running the test suite.

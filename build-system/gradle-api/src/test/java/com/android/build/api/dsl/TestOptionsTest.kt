@@ -25,6 +25,7 @@ import org.mockito.quality.Strictness
 import com.google.common.truth.Truth
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testing.base.TestSuite
 import org.gradle.testing.base.TestSuiteTarget
@@ -45,23 +46,28 @@ class TestOptionsTest {
 
     private lateinit var project: Project
 
-    open class AgpTestSuiteImpl(private val name: String) : AgpTestSuite {
+    open class AgpTestSuiteImplForTest(private val name: String) : AgpTestSuite {
         override fun getName(): String = name
 
         override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<out TestSuiteTarget> {
             throw RuntimeException("Unexpected call to `getTargets()`")
         }
 
-        private val jUnitEngineSpec = object: JUnitEngineSpec {
-            override val includeEngines = mutableSetOf<String>()
-            override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
-        }
+        private val jUnitEngineSpec = JunitEngineSpecForTest()
 
         override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
         override val targetProductFlavors: MutableList<Pair<String, String>> = mutableListOf<Pair<String, String>>()
         override val targetVariants: MutableList<String> = mutableListOf<String>()
         override val dependencies: AgpTestSuiteDependencies
             get() = throw RuntimeException("Unexpected call")
+
+        override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
+            throw RuntimeException("Unexpected call")
+        }
+
+        override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
+            throw RuntimeException("Unexpected call")
+        }
     }
 
     @Before
@@ -72,7 +78,7 @@ class TestOptionsTest {
 
         val suites = project.objects.polymorphicDomainObjectContainer(AgpTestSuite::class.java)
 
-        suites.registerBinding(AgpTestSuite::class.java, AgpTestSuiteImpl::class.java)
+        suites.registerBinding(AgpTestSuite::class.java, AgpTestSuiteImplForTest::class.java)
         Mockito.`when`(testOptions.suites).thenReturn(suites)
     }
 
@@ -93,13 +99,9 @@ class TestOptionsTest {
      */
     @Test
     fun testNewUnknownTestSuite() {
-        open class RandomTestSuiteImpl(name: String) : AgpTestSuiteImpl(name), RandomTestSuite {
+        open class RandomTestSuiteImpl(name: String) : AgpTestSuiteImplForTest(name), RandomTestSuite {
             override var instructions: String = ""
-            override val useJunitEngine: JUnitEngineSpec =
-                object: JUnitEngineSpec {
-                    override val includeEngines = mutableSetOf<String>()
-                    override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
-                }
+            override val useJunitEngine: JUnitEngineSpec = JunitEngineSpecForTest()
 
             init {
                 DefaultInputsForAgpTestSuites.JOURNEYS_TEST.initialize(this.useJunitEngine)
@@ -131,5 +133,15 @@ class TestOptionsTest {
             DefaultInputsForAgpTestSuites.JOURNEYS_TEST.supportedProperties
                 .plus(AgpTestSuiteInputParameters.TESTING_APK)
         )
+    }
+
+    private class JunitEngineSpecForTest: JUnitEngineSpec {
+        override val includeEngines = mutableSetOf<String>()
+        override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+        override fun addInputProperty(propertyName: String, propertyValue: String) { }
+        override fun addInputProperty(
+            propertyName: String,
+            propertyValue: Provider<String>
+        ) { }
     }
 }

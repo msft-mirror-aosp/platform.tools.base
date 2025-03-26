@@ -17,14 +17,16 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
+import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForTestSuiteVariantBuilder
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableSet
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Provider
 
-class JUnitEngineSpecImpl(
-    junitEngineSpec: com.android.build.api.dsl.JUnitEngineSpec,
-    variantServices: VariantServices
+class JUnitEngineSpecImplForTestSuiteVariant(
+    junitEngineSpec: JUnitEngineSpecForTestSuiteVariantBuilder,
+    mapFactory: () -> MapProperty<String, String>
 ): JUnitEngineSpec {
 
     override val includeEngines: Set<String> =
@@ -32,4 +34,16 @@ class JUnitEngineSpecImpl(
 
     override val inputs: List<AgpTestSuiteInputParameters> =
         junitEngineSpec.inputs.toImmutableList()
+
+    internal val inputProperties = mapFactory().also {
+        it.putAll(junitEngineSpec.inputProperties)
+    }
+
+    override fun addInputProperty(propertyName: String, propertyValue: String) {
+        inputProperties.put(propertyName, propertyValue)
+    }
+
+    override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+        inputProperties.put(propertyName, propertyValue)
+    }
 }

@@ -20,30 +20,37 @@ import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
+import com.android.build.api.variant.impl.JUnitEngineSpecImplForTestSuiteVariant
+import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
+import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
+import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.buildanalyzer.common.TaskCategory
-import java.io.File
+import com.android.builder.testing.api.DeviceProvider
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
-import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
+import java.io.File
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -52,12 +59,18 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:Nested
     abstract val engineInputParameters: ListProperty<AgpTestSuiteInputParameter>
 
+    @get:Nested
+    abstract val buildTools: BuildToolsExecutableInput
+
+    @get:Input
+    abstract val engineInputProperties: MapProperty<String, String>
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceFolders: ListProperty<Directory>
 
     @get:OutputFile
-    abstract val engineInputProperties: RegularFileProperty
+    abstract val engineInputPropertiesFiles: RegularFileProperty
 
     @get:OutputFile
     abstract val logFile: RegularFileProperty
@@ -65,45 +78,81 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:OutputFile
     abstract val streamingOutputFile: RegularFileProperty
 
+    @get:OutputDirectory
+    abstract val resultsDir: DirectoryProperty
+
+    @get:Nested
+    abstract val deviceProviderFactory: DeviceProviderFactory
+
     @TaskAction
     override fun executeTests() {
+        val deviceProvider = deviceProviderFactory.getDeviceProvider(
+            buildTools.adbExecutable(),
+            System.getenv("ANDROID_SERIAL")
+        )
+        deviceProvider.use {
+            executeTests(deviceProvider)
+        }
+    }
+
+    private fun executeTests(deviceProvider: DeviceProvider) {
+
+        val serialIds = deviceProvider.devices.joinToString(",") { device ->
+            device.serialNumber
+        }
+
+        val standardInputs = mutableListOf(
+            TestEngineInputProperty(
+                TestEngineInputProperty.SOURCE_FOLDERS,
+                sourceFolders.get()
+                    .joinToString(separator = File.separator) { it.asFile.absolutePath }
+            ),
+            TestEngineInputProperty(
+                TestEngineInputProperty.LOGGING_FILE,
+                providerToPath(logFile)
+            ),
+            TestEngineInputProperty(
+                TestEngineInputProperty.STREAMING_FILE,
+                providerToPath(streamingOutputFile)
+            ),
+            TestEngineInputProperty(
+                TestEngineInputProperty.RESULTS_DIR,
+                providerToPath(resultsDir)
+            ),
+            TestEngineInputProperty(
+                AgpTestSuiteInputParameters.ADB_EXECUTABLE.propertyName,
+                buildTools.adbExecutable().get().asFile.absolutePath
+            ),
+            TestEngineInputProperty(
+                TestEngineInputProperty.SERIAL_IDS,
+                serialIds
+            )
+        )
 
         // write all the input properties for the junit engine. This mean the input properties
         // that were requested through the TestSuite DSL/Variant APIs but also the default ones
         // that are always provided.
-        TestEngineInputProperties(
-            engineInputParameters.get(). map { inputProperty ->
+        AgpTestSuiteInputsSerializer.serialize(
+            engineInputProperties = engineInputProperties.get(),
+            engineInputParameters = engineInputParameters.get(). map { inputProperty ->
                 TestEngineInputProperty(
                     inputProperty.type.toString(),
                     inputProperty.value.get().asFile.absolutePath
                 )
-            }.plus(
-                listOf(
-                    TestEngineInputProperty(
-                        TestEngineInputProperty.SOURCE_FOLDERS,
-                        sourceFolders.get()
-                            .joinToString(separator = File.separator) { it.asFile.absolutePath }
-                    ),
-                    TestEngineInputProperty(
-                        TestEngineInputProperty.LOGGING_FILE,
-                        providerToPath(logFile)
-                    ),
-                    TestEngineInputProperty(
-                        TestEngineInputProperty.STREAMING_FILE,
-                        providerToPath(streamingOutputFile)
-                    ),
-                )
-            )
-        ).save(engineInputProperties.asFile.get())
+            }.plus(standardInputs),
+            into = engineInputPropertiesFiles.asFile.get(),
+        )
 
         super.executeTests()
 
         // Read the junit engine logging file and output it.
         // This is probably a temporary solution until something better is figured out.
-        this.logger.info(logFile.get().asFile.readText())
+        if (logFile.get().asFile.exists()) {
+            this.logger.info(logFile.get().asFile.readText())
+        }
     }
 
-    private fun providerToPath(value: Provider<RegularFile>): String =
+    private fun providerToPath(value: Provider<out FileSystemLocation>): String =
         value.get().asFile.absolutePath
 
     class CreationAction(
@@ -129,7 +178,8 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 it.from(creationConfig.testSuiteClasspath.runtimeClasspath)
             }
 
-            creationConfig.junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
+            val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForTestSuiteVariant)
+            junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
                 when (inputParameter) {
                     AgpTestSuiteInputParameters.MERGED_MANIFEST -> {
                         task.engineInputParameters.add(
@@ -152,12 +202,32 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                             )
                         )
                     }
+                    AgpTestSuiteInputParameters.ADB_EXECUTABLE -> {
+                        // do nothing so far, we always do it but it might change in the near future.
+                    }
 
                     else -> {
                         println("I don't know of this parameter $inputParameter")
                     }
                 }
             }
+
+            // always wire adb inputs
+            // TODO: Find ways to do this on demand.
+            task.buildTools.initialize(
+                task,
+                creationConfig.services.buildServiceRegistry,
+                creationConfig.global.compileSdkHashString,
+                creationConfig.global.buildToolsRevision
+            )
+
+            task.engineInputProperties.set(junitEngineSpec.inputProperties)
+            // add default properties.
+            task.engineInputProperties.put(
+                TestEngineInputProperty.TESTED_APPLICATION_ID,
+                creationConfig.testedVariant.applicationId
+            )
+
             task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
                 testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
                 testFramework.excludeEngines("junit-jupiter")
@@ -168,7 +238,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
 
             task.engineInputParameters.disallowChanges()
             // TODO : Improve file handling by using Artifacts APIs.
-            task.engineInputProperties.set(
+            task.engineInputPropertiesFiles.set(
                 task.project.layout.buildDirectory
                     .file("intermediates/${creationConfig.testedVariant.name}/$name/junit_inputs.json")
             )
@@ -180,8 +250,13 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 task.project.layout.buildDirectory
                     .file("intermediates/${creationConfig.testedVariant.name}/$name/streaming.txt")
             )
-            task.environment(TestEngineInputProperties.INPUT_PARAMETERS, task.engineInputProperties.get().asFile.absolutePath)
+            task.resultsDir.set(
+                task.project.layout.buildDirectory
+                    .dir("intermediates/${creationConfig.testedVariant.name}/$name/results")
+            )
+            task.environment(TestEngineInputProperties.INPUT_PARAMETERS, task.engineInputPropertiesFiles.get().asFile.absolutePath)
             task.environment("junit.platform.commons.logging.level","debug")
+            task.deviceProviderFactory.timeOutInMs.set(10000)
 
             // TODO : Provide this as a DSL setting
             val debugJunitEngine = System.getenv("DEBUG_JUNIT_ENGINE")
@@ -201,4 +276,23 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
         @get:PathSensitive(PathSensitivity.RELATIVE)
         val value: Provider<out FileSystemLocation>
     )
+
+    class AgpTestSuiteInputsSerializer {
+        companion object {
+            fun serialize(
+                engineInputParameters: List<TestEngineInputProperty>,
+                engineInputProperties: Map<String, String>,
+                into: File
+            ) {
+                TestEngineInputProperties(
+                    engineInputParameters
+                        .plus(
+                            engineInputProperties.map {
+                                TestEngineInputProperty(it.key, it.value)
+                            }
+                        )
+                ).save(into)
+            }
+        }
+    }
 }

@@ -18,9 +18,21 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
+import org.gradle.api.provider.Provider
 
 abstract class JUnitEngineSpecImpl: JUnitEngineSpec {
 
     override val includeEngines = mutableSetOf<String>()
     override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
+
+    override fun addInputProperty(propertyName: String, propertyValue: String) {
+        inputStaticProperties[propertyName] = propertyValue
+    }
+
+    override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+        inputProperties[propertyName] = propertyValue
+    }
+
+    internal val inputStaticProperties = mutableMapOf<String, String>()
+    internal val inputProperties = mutableMapOf<String, Provider<String>>()
 }

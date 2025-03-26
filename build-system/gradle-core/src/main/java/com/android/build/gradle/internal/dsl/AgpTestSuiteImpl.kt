@@ -20,9 +20,11 @@ import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.JUnitEngineSpec
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
+import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.testing.base.TestSuiteTarget
 import java.util.concurrent.atomic.AtomicBoolean
+
 
 /**
  * Implementation of the [AgpTestSuite] Dsl extension.
@@ -32,10 +34,21 @@ abstract class AgpTestSuiteImpl(
     val objects: ObjectFactory
 ): AgpTestSuite {
 
-    private val jUnitEngineSpec = objects.newInstance(JUnitEngineSpecImpl::class.java)
+    private val jUnitEngineSpec = objects.newInstance(
+        JUnitEngineSpecImpl::class.java,
+    )
+
     private val junitEngineUsed = AtomicBoolean(false)
 
     fun getJunitEngineIfUsed(): JUnitEngineSpec? = jUnitEngineSpec.takeIf { junitEngineUsed.get() }
+
+    override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
+        action.invoke(useJunitEngine)
+    }
+
+    fun useJunitEngine(action: Action<JUnitEngineSpec>) {
+        action.execute(useJunitEngine)
+    }
 
     override val useJunitEngine: JUnitEngineSpec
         get() {
@@ -54,4 +67,12 @@ abstract class AgpTestSuiteImpl(
     }
 
     override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
+
+    fun dependencies(action:Action<AgpTestSuiteDependencies>) {
+        action.execute(dependencies)
+    }
+
+    override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
+        action.invoke(dependencies)
+    }
 }

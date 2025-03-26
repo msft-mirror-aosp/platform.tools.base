@@ -121,6 +121,7 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
+import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
 import java.util.Locale
 import java.util.stream.Collectors
@@ -980,8 +981,10 @@ class VariantManager<
                                 variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
                             ).build(),
                             variantInfo.variant,
+                            globalTaskCreationConfig,
                             variantServices,
                             taskCreationServices,
+                            ArtifactsImpl(project, "${testSuiteBuilder.name}${variantInfo.variant.name.capitalized()}")
                         )
                     )
                 }

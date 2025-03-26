@@ -37,5 +37,20 @@ data class TestEngineInputProperty(val name: String, val value: String) {
          * Path to a file location to use to stream results back to the Test task
          */
         const val STREAMING_FILE = "com.android.junit.engine.results.streaming.file"
+
+        /**
+         * Path to the results directory
+         */
+        const val RESULTS_DIR = "com.android.junit.engine.results.dir"
+
+        /**
+         * Serial IDs to deploy to
+         */
+        const val SERIAL_IDS = "com.android.junit.engine.serial.ids"
+
+        /**
+         * Tested application ID
+         */
+        const val TESTED_APPLICATION_ID = "com.android.junit.engine.tested.application.id"
     }
 }
