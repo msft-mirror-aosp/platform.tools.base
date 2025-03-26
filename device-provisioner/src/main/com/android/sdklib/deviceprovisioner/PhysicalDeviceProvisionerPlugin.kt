@@ -184,4 +184,6 @@ private class PhysicalDeviceHandle(
     }
     updateState()
   }
+
+  override fun toString(): String = "PhysicalDeviceHandle for $id"
 }
