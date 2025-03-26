@@ -236,8 +236,7 @@ class KotlinMultiplatformAndroidPluginNativeTest {
             """.trimIndent()
         )
 
-        // TODO (b/375664775): remove fail on warning after fixing deprecation error
-        executor().withFailOnWarning(false).run(":kmpFirstLib:publish")
+        executor().run(":kmpFirstLib:publish")
 
         // Assert that maven metadata and gradle module metadata files have no mention of the native
         // lib dependency.
