@@ -63,7 +63,7 @@ fun RecipeExecutor.googleWalletActivityRecipe(
 
   // Copy static resources
   val resLocation: File = if (moduleData.isDynamic) moduleData.baseFeature!!.resDir else resOut
-  copy(File("google-wallet-activity"), resLocation)
+  copy(File("google-wallet-activity").resolve("res"), resLocation)
 
   // Generated resources
   mergeXml(stringsXml(activityClass, simpleName), resLocation.resolve("values/strings.xml"))
