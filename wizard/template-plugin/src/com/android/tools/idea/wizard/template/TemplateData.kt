@@ -158,6 +158,7 @@ data class ModuleTemplateData(
   val commonSrcDir: File? = null,
   val iosSrcDir: File? = null,
   val currentVariant: String?,
+  val isWatchFace: Boolean = false,
 ): TemplateData() {
   val isDynamic: Boolean
     get() = baseFeature != null

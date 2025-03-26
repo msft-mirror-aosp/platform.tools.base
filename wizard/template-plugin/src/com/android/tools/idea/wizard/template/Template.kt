@@ -35,6 +35,7 @@ enum class Category {
   Google,
   Compose,
   Test,
+  WatchFace,
   Other,
 }
 

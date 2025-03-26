@@ -71,6 +71,7 @@ import com.android.tools.idea.wizard.template.impl.other.folders.folderTemplates
 import com.android.tools.idea.wizard.template.impl.other.intentService.intentServiceTemplate
 import com.android.tools.idea.wizard.template.impl.other.service.serviceTemplate
 import com.android.tools.idea.wizard.template.impl.other.sliceProvider.sliceProviderTemplate
+import com.android.tools.idea.wizard.template.impl.other.wearDeclarativeWatchFace.wearDeclarativeWatchFaceTemplate
 
 /**
  * Implementation of the Android Wizard Template plugin extension point.
@@ -126,6 +127,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
     intentServiceTemplate,
     serviceTemplate,
     sliceProviderTemplate,
+    wearDeclarativeWatchFaceTemplate,
   ) + folderTemplates + fileTemplates
 
   private val fileTemplates = listOf(
