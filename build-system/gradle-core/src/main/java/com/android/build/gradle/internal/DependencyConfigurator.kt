@@ -481,7 +481,7 @@ class DependencyConfigurator(
         compileSdkHashString: String,
         buildToolsRevision: Revision,
         bootstrapCreationConfig: BootClasspathConfig,
-        variants: List<VariantCreationConfig> = emptyList()
+        privacySandboxExperimentalProperties: Map<String, Any>?
     )
     : DependencyConfigurator {
         for (from in AsarTransform.supportedAsarTransformTypes) {
@@ -494,11 +494,11 @@ class DependencyConfigurator(
             }
         }
 
-        fun configureExtractSdkShimTransforms(experimentalProperties: Map<String, Any>?) {
+        fun configureExtractSdkShimTransforms(privacySandboxSdkProperties: Map<String, Any>?) {
             val extractSdkShimTransformParamConfig =
                 { reg: TransformSpec<ExtractSdkShimTransform.Parameters> ->
                     val experimentalPropertiesApiGenerator: Dependency? =
-                        experimentalProperties?.let {
+                        privacySandboxSdkProperties?.let {
                             ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR
                                 .getValue(it)?.single()
                         }
@@ -510,7 +510,7 @@ class DependencyConfigurator(
                             ) as Dependency
 
                     val experimentalPropertiesRuntimeApigeneratorDependencies =
-                        experimentalProperties?.let {
+                        privacySandboxSdkProperties?.let {
                             ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES.getValue(
                                 it
                             )
@@ -551,11 +551,11 @@ class DependencyConfigurator(
                     params.bootstrapClasspath.from(bootstrapCreationConfig.fullBootClasspath)
 
                     val kotlinEmbeddableCompiler =
-                        experimentalProperties?.let {
+                        privacySandboxSdkProperties?.let {
                             ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_KOTLIN_COMPILER_EMBEDDABLE.getValue(
                                 it
                             )?.single()
-                        } as Dependency?
+                        }
                     val kotlinCompiler: Configuration =
                         project.configurations.detachedConfiguration(
                             kotlinEmbeddableCompiler ?: project.dependencies.create(
@@ -626,20 +626,7 @@ class DependencyConfigurator(
             registerExtractSdkShimTransform(Usage.JAVA_RUNTIME)
         }
 
-        val properties = variants.map { variant ->
-            variant.experimentalProperties.also { it.disallowChanges() }.get().filterKeys {
-                it == ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES.key ||
-                        it == ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR.key
-            }
-        }.distinct()
-
-        if (properties.count() > 1) {
-            error(
-                "It is not possible to override Privacy Sandbox experimental properties per variant.\n" +
-                        "Properties with different values defined across multiple variants: ${properties.joinToString()} "
-            )
-        }
-        configureExtractSdkShimTransforms(properties.singleOrNull())
+        configureExtractSdkShimTransforms(privacySandboxExperimentalProperties)
 
         return this
     }
