@@ -3296,6 +3296,7 @@ com/android/tools/lint/lint
   META-INF/
   META-INF/MANIFEST.MF
   META-INF/dcl-lang.kotlin_module
+  META-INF/gradle-declarative-lang.xml
   META-INF/lint-cli.kotlin_module
   NOTICE
   com/
