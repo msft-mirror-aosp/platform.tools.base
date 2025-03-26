@@ -416,6 +416,7 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_for_compose_prebuilts",
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
+        "//tools/base/build-system/integration-test:compose_gradle_plugin",
     ],
     shard_count = 2,
     deps = TEST_DEPS,
@@ -482,6 +483,16 @@ maven_repository(
     visibility = [":__subpackages__"],
 )
 
+maven_repository(
+    name = "kotlin_dependencies_for_built_in_kapt_tests",
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.1.20",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.1.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.1.20",
+    ],
+    visibility = [":__subpackages__"],
+)
+
 gradle_integration_test(
     name = "built-in-kotlin-support-tests",
     srcs = glob(
@@ -505,6 +516,7 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
         "//tools/base/build-system/integration-test/application:kotlin_1_8_10",
         "//tools/base/build-system/integration-test/application:kotlin_1_9_22",
+        "//tools/base/build-system/integration-test/application:kotlin_dependencies_for_built_in_kapt_tests",
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),

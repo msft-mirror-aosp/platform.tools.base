@@ -41,7 +41,7 @@ class BuiltInKotlinAutomaticStdlibTest {
                 .executor
                 .run(":app:dependencies", "--configuration", "debugCompileClasspath")
         result.assertOutputContains(
-            "--- org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+            "--- org.jetbrains.kotlin:kotlin-stdlib:2.1.20"
         )
     }
 

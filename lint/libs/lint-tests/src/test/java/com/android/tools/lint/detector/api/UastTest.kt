@@ -1246,6 +1246,11 @@ class UastTest : TestCase() {
                         UMethod (name = Name2) [public fun Name2(@org.jetbrains.annotations.NotNull n: java.lang.String) = UastEmptyExpression]
                             UParameter (name = n) [@org.jetbrains.annotations.NotNull var n: java.lang.String] : PsiType:String
                                 UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]"""
+      val defaultMethod =
+        if (useFirUast())
+          """UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
+                            UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]"""
+        else """UMethod (name = foo) [public default fun foo() : int {...}] : PsiType:int"""
       assertEquals(
         """
                 UFile (package = test.pkg) [package test.pkg...]
@@ -1349,8 +1354,7 @@ class UastTest : TestCase() {
                             UAnnotation (fqName = org.jetbrains.annotations.NotNull) [@org.jetbrains.annotations.NotNull]$valueClassDiff
                         UMethod (name = getN) [public final fun getN() : java.lang.String = UastEmptyExpression] : PsiType:String$valueClassConstructor
                     UClass (name = FooInterface2) [public abstract interface FooInterface2 {...}]
-                        UMethod (name = foo) [@kotlin.jvm.JvmDefault...}] : PsiType:int
-                            UAnnotation (fqName = kotlin.jvm.JvmDefault) [@kotlin.jvm.JvmDefault]
+                        $defaultMethod
                             UBlockExpression [{...}]
                                 UReturnExpression [return 42]
                                     ULiteralExpression (value = 42) [42] : PsiType:int
